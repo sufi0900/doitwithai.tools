@@ -62,7 +62,7 @@ export default  function Page() {
           "@type": "ItemList",
           "@id": "https://sufi-blog-website.vercel.app/ai-tools" 
         },
-        "itemListElement": itemList,
+        "itemListElement": ${JSON.stringify(itemList)}
       }),
       }
   `,
@@ -80,8 +80,8 @@ export default  function Page() {
   <meta property="og:title" content={metadata.title} />
   <meta property="og:description" content={metadata.description} />
   <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1694356123/Sufian-Mustafa-Web-Developer_en5jxl.png"/>
-  <meta property="og:url" content="https://yoursitename/best-ai-tools"/>
-  <link rel="canonical" href="https://yoursitename/best-ai-tools"/>
+  <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools"/>
+  <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools"/>
   {/*  */}
       
         <NextSeo
