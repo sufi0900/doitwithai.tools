@@ -8,7 +8,7 @@ import { NextSeo } from "next-seo";
 export const metadata = {
   title: "Best AI Tools",
   description:
-    "Explore our blogs on the Best AI Tools software & apps for Productivity (Free & Paid), offering detailed reviews of the top artificial intelligence solutions.",
+    "Explore a comprehensive blog list of the best AI tools for productivity (Free & Paid), providing detailed reviews of the top artificial intelligence solutions",
   author: "Sufian Mustafa",
 };
 
