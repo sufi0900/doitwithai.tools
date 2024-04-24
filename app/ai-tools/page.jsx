@@ -95,15 +95,21 @@ export default  function Page() {
   <meta name="author" content="sufian mustafa" />
   <meta property="og:title" content={metadata.title} />
   <meta property="og:description" content={metadata.description} />
-  <meta property="og:image" content="<generated>" />
-<meta property="og:image:type" content="<generated>" />
-<meta property="og:image:width" content="<generated>" />
-<meta property="og:image:height" content="<generated>" />
-{/*  */}
-<meta name="twitter:image" content="<generated>" />
-<meta name="twitter:image:type" content="<generated>" />
-<meta name="twitter:image:width" content="<generated>" />
-<meta name="twitter:image:height" content="<generated>" />
+
+
+
+  <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Best AI Tools" />
+        <meta property="og:description" content="Explore a comprehensive blog list of the best AI tools for productivity (Free & Paid), providing detailed reviews of the top artificial intelligence solutions" />
+        <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
+        <meta property="twitter:url" content="https://sufi-blog-website.vercel.app/ai-tools" />
+        <meta name="twitter:title" content="Best AI Tools" />
+        <meta name="twitter:description" content="Explore a comprehensive blog list of the best AI tools for productivity (Free & Paid), providing detailed reviews of the top artificial intelligence solutions" />
+        <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
+
 
   {/* <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg"/>
   <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools"/> */}
