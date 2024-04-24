@@ -43,7 +43,7 @@ export default  function Page() {
       "@type": "ListItem",
       "name": category.name,
       "description": category.description,
-      "url": `https://localhost:3000/${category.link}`,
+      "url": `https://sufi-blog-website.vercel.app/ai-tools/${category.link}`,
     }));
     
     return {
