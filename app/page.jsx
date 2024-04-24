@@ -1,9 +1,13 @@
+
+
+
 "use client";
+
 import Grid from "@mui/material/Grid";
 import { client } from "@/sanity/lib/client";
-import React, { useEffect, useState } from "react";
+
 import { urlForImage } from "@/sanity/lib/image"; 
-// 
+
 import ScrollUp from "@/components/Common/ScrollUp";
 import Contact from "@/components/Contact";
 import OnlineEarn from "@/components/Online-Earning/page";
@@ -16,7 +20,7 @@ import AiTools from "@/components/AITools/page";
 import Trending from "@/components/Trending/page";
 
 import DigitalMarketing from "@/components/DigitalMarketing/page";
-
+import React, { useEffect, useState } from "react";
 import RecentPost from "@/components/RecentPost/page";
 import Categories from "@/components/Categories/page";
 import Hero from "@/components/Hero";
@@ -25,10 +29,9 @@ import NewsLatterBox from "@/components/Contact/NewsLatterBox";
 import DigiResources from "@/components/DigiResources/page";
 import News from "@/components/News/page";
 import DigiSolution from "@/components/DigiSolution/page";
-export const revalidate = false;
-export const dynamic = "force-dynamic";
 
-export default function Home() {
+
+export default  function Home() {
   const [featurePostBig, setFeaturePostBig] = useState([]);
 
   const [trendBigData, setTrendBigData] = useState([]);
