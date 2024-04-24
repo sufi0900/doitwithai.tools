@@ -60,7 +60,7 @@ export default  function Page() {
         "datePublished": "2024-04-24",
         "mainEntityOfPage": {
           "@type": "ItemList",
-          "@id": "https://sufi-blog-website.vercel.app/ai-tools",  
+          "@id": "https://sufi-blog-website.vercel.app/ai-tools" 
         },
         "itemListElement": itemList,
       }),
@@ -88,7 +88,7 @@ export default  function Page() {
          title={metadata.title}
          description={metadata.description}
           author={metadata.author}
-          canonical=""
+          canonical="https://sufi-blog-website.vercel.app/ai-tools"
           openGraph={{
             title: "",
             description:
