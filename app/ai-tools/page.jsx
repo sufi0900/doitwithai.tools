@@ -10,6 +10,19 @@ export const metadata = {
   description:
     "Explore a comprehensive blog list of the best AI tools for productivity (Free & Paid), providing detailed reviews of the top artificial intelligence solutions",
   author: "Sufian Mustafa",
+  images: [
+    {
+      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
+      width: 800,
+      height: 600,
+    },
+    {
+      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
+      width: 1800,
+      height: 1600,
+      alt: 'My custom alt',
+    },
+  ],
 };
 
 export default  function Page() {
