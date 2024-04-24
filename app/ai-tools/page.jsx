@@ -52,7 +52,7 @@ export default  function Page() {
         "@type": "ItemList",
         "name": "Best AI Tools"",
         "description": "A comprehensive list of the best AI tools for productivity and creativity, carefully curated to enhance your digital workflows.",
-        "url": "https://localhost:3000/best-ai-tools",
+        "url": "https://sufi-blog-website.vercel.app/ai-tools",
         "author": {
           "@type": "Organization",
           "name": "Sufian Mustafa"
@@ -60,7 +60,7 @@ export default  function Page() {
         "datePublished": "2024-04-24",
         "mainEntityOfPage": {
           "@type": "ItemList",
-          "@id": "https://localhost:3000/best-ai-tools#blog-list"  
+          "@id": "https://sufi-blog-website.vercel.app/ai-tools"  
         },
 
         "itemListElement":{$itemList}
