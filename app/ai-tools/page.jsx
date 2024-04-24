@@ -82,7 +82,7 @@ export default  function Page() {
   <meta name="author" content="sufian mustafa" />
   <meta property="og:title" content={metadata.title} />
   <meta property="og:description" content={metadata.description} />
-  <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1694356123/Sufian-Mustafa-Web-Developer_en5jxl.png"/>
+  <meta property="og:image" content="https://news.microsoft.com/wp-content/uploads/prod/sites/680/2024/02/COVER.png"/>
   <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools"/>
   <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools"/>
   {/*  */}
@@ -93,11 +93,10 @@ export default  function Page() {
           author={metadata.author}
           canonical="https://sufi-blog-website.vercel.app/ai-tools"
           openGraph={{
-            title: "",
-            description:
-              "",
-            type: "",
-            url: "",
+            title: metadata.title,
+            description: metadata.description,
+            url: "https://sufi-blog-website.vercel.app/ai-tools",
+            type: "ItemList",
             images: [
               {
                 url: "https://res.cloudinary.com/dtvtphhsc/image/upload/v1697725757/Screenshot_249_edsr2z.png",
@@ -114,7 +113,7 @@ export default  function Page() {
        id="schemaMarkup"
        type="application/ld+json"
         dangerouslySetInnerHTML={metatagsdesc()}
-        key=""
+        key="AiTools-jsonld"
       />
       <Allblogs/>
     </div>
