@@ -62,9 +62,8 @@ export default  function Page() {
           "@type": "ItemList",
           "@id": "https://sufi-blog-website.vercel.app/ai-tools",  
         },
-
-        "itemListElement":{$itemList}
-
+        "itemListElement": itemList,
+      }),
       }
   `,
     };
