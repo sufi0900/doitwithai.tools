@@ -60,7 +60,7 @@ export default  function Page() {
         "datePublished": "2024-04-24",
         "mainEntityOfPage": {
           "@type": "ItemList",
-          "@id": "https://sufi-blog-website.vercel.app/ai-tools"  
+          "@id": "https://sufi-blog-website.vercel.app/ai-tools",  
         },
 
         "itemListElement":{$itemList}
