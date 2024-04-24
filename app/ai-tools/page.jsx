@@ -59,13 +59,16 @@ export default  function Page() {
         },
         "datePublished": "2024-04-24",
         "mainEntityOfPage": {
-          "@type": "ItemList",
-          "@id": "https://sufi-blog-website.vercel.app/ai-tools" 
-        },
-        "itemListElement": ${JSON.stringify(itemList)}
-      }),
-      }
-  `,
+          "@type": "WebPage",
+          "@id": "https://sufi-blog-website.vercel.app/ai-tools",
+          "mainEntity": {
+            "@type": "ItemList",
+            "name": "Best AI Tools",
+            "description": "A comprehensive list of the best AI tools for productivity and creativity, carefully curated to enhance your digital workflows.",
+            "itemListElement": ${JSON.stringify(itemList)}
+          }
+        }
+      }`
     };
   }
  
