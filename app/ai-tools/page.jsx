@@ -107,9 +107,10 @@ export default  function Page() {
           }}
         />
       </Head>
+      
       <Script
-        id=""
-        type=""
+       id="schemaMarkup"
+       type="application/ld+json"
         dangerouslySetInnerHTML={metatagsdesc()}
         key=""
       />
