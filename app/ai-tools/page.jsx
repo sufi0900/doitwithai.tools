@@ -82,7 +82,7 @@ export default  function Page() {
   <meta name="author" content="sufian mustafa" />
   <meta property="og:title" content={metadata.title} />
   <meta property="og:description" content={metadata.description} />
-  <meta property="og:image" content="https://news.microsoft.com/wp-content/uploads/prod/sites/680/2024/02/COVER.png"/>
+  <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg"/>
   <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools"/>
   <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools"/>
   {/*  */}
