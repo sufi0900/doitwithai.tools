@@ -10,6 +10,9 @@ export const metadata = {
   description:
     "Explore a comprehensive blog list of the best AI tools for productivity (Free & Paid), providing detailed reviews of the top artificial intelligence solutions",
   author: "Sufian Mustafa",
+  openGraph: {
+    images: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
+  },
   images: [
     {
       url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
@@ -64,6 +67,7 @@ export default  function Page() {
         "@context": "http://schema.org",
         "@type": "ItemList",
         "name": "Best AI Tools",
+
         "description": "A comprehensive list of the best AI tools for productivity and creativity, carefully curated to enhance your digital workflows.",
         "url": "https://sufi-blog-website.vercel.app/ai-tools",
         "author": {
@@ -111,8 +115,7 @@ export default  function Page() {
         <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
 
 
-  {/* <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg"/>
-  <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools"/> */}
+
   <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools"/>
   {/*  */}
       
