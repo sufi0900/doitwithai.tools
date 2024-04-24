@@ -43,7 +43,7 @@ export default  function Page() {
       "@type": "ListItem",
       "name": category.name,
       "description": category.description,
-      "url": `https://www.yoursitename.com/${category.link}`,
+      "url": `https://localhost:3000/${category.link}`,
     }));
     
     return {
@@ -52,7 +52,7 @@ export default  function Page() {
         "@type": "ItemList",
         "name": "Best AI Tools"",
         "description": "A comprehensive list of the best AI tools for productivity and creativity, carefully curated to enhance your digital workflows.",
-        "url": "https://www.yoursitename.com/best-ai-tools",
+        "url": "https://localhost:3000/best-ai-tools",
         "author": {
           "@type": "Organization",
           "name": "Sufian Mustafa"
@@ -60,10 +60,10 @@ export default  function Page() {
         "datePublished": "2024-04-24",
         "mainEntityOfPage": {
           "@type": "ItemList",
-          "@id": "https://www.yoursitename.com/best-ai-tools#blog-list"  
+          "@id": "https://localhost:3000/best-ai-tools#blog-list"  
         },
 
-        "itemListElement": itemList 
+        "itemListElement":{$itemList}
 
       }
   `,
