@@ -50,7 +50,7 @@ export default  function Page() {
       __html: `  {
         "@context": "http://schema.org",
         "@type": "ItemList",
-        "name": "Best AI Tools"",
+        "name": "Best AI Tools",
         "description": "A comprehensive list of the best AI tools for productivity and creativity, carefully curated to enhance your digital workflows.",
         "url": "https://sufi-blog-website.vercel.app/ai-tools",
         "author": {
