@@ -90,6 +90,7 @@ export default  function Page() {
     };
   }
   return (
+    <>
     <Head>
         <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -134,15 +135,17 @@ export default  function Page() {
             images: metadata.openGraph.images
           }}
         />
-      <Script
-       id="BreadcrumbListSchema"
-       type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup()}
-        key="AiTools-jsonld"
-      />
-      <Allblogs/> 
+      
 
     </Head>
+    <Script
+    id="BreadcrumbListSchema"
+    type="application/ld+json"
+     dangerouslySetInnerHTML={schemaMarkup()}
+     key="AiTools-jsonld"
+   />
+   <Allblogs/> 
+   </>
   )
 }
 
