@@ -43,7 +43,7 @@ const Page = () => {
     <Breadcrumb
       pageName="AI Image"
       pageName2="Generators"
-      description="Unlock your creative potential with our AI Image Generator - the ultimate solution for effortless graphic design. Explore our in-depth reviews and expert recommendations to find the top AI (artificial intelligence) picture creation software. Whether you're a beginner or a professional designer, these tools are made to improve creativity, boost production, and easily convert simple descriptions into beautiful artwork (Text to Image generator). Perfect for creating a wide range of products from social media graphics to high-quality print designs."
+      description="Unlock your creative potential with our AI Image Generator - the ultimate solution for effortless graphic design. Explore our in-depth reviews and expert recommendations to find the top AI (artificial intelligence) picture creation software. Whether you're a beginner or a professional designer, these tools are made to improve creativity, boost production, and easily convert simple descriptions into beautiful artwork (Text to Image generator)."
       link="/ai-tools/ai-image-generator" // Specify the link here
       linktext="ai-image-generator"
       firstlinktext="ai-tools"
