@@ -42,7 +42,7 @@ const Page = () => {
     <Breadcrumb
       pageName="Make Money Online"
       pageName2="Using AI"
-      description="Discover useful tips and tools to help you earn money online. From freelancing to affiliate marketing, explore valuable resources to start and grow your online income streams. Start making money online today!"
+      description="Step into the future of video production with our AI Video Generator section. Explore a curated list of the top AI (artificial intelligence)-powered video creation tools that make professional-quality video production accessible to everyone. From automated editing features to cinematic effects, these tools help you produce engaging content that captivates your audience. Ideal for marketers, educators, and content creators aiming to enhance their video marketing strategies without the steep learning curve."
       link="/digital-marketing" // Specify the link here
       firstlinktext="Home"
       firstlink="/"

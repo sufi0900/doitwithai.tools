@@ -5,7 +5,7 @@ import { Skeleton } from "@mui/material"; // Import Skeleton component from Mate
 import { useRouter } from "next/navigation";
 import groq from "groq";
 import BlogCard from "./Card"
-import AiCategory from "@/components/Categories/page";
+
 import Recent from "@/components/RecentPost/page";
 import { client } from "@/sanity/lib/client";
 import {
@@ -27,7 +27,7 @@ export const revalidate = false;
 export const dynamic = "force-dynamic";
 
 
-
+import AiCategory from "@/components/Categories/page";
 async function fetchAllBlogs(page = 1, limit = 2) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
@@ -93,8 +93,7 @@ export default function AllBlogs() {
           pageName="Best"
           pageName2="AI Tools"
           description="Ready to take your work and creativity to the next level? The AI revolution is here, and it's changing the way we work!  Whether you're a seasoned pro or just curious to learn more Our blog explores Best AI Tools for Productivity. These AI tools free you from booring  tasks, boost  your skills, and supercharge  your creativity."
-          // description="Stop struggling, start creating something new! Explore awesome AI tools designed to make your work easier, improve your skills, and get more done in a shorter amount of time."
-          link="/ai-tools" // Specify the link here
+          link="/ai-tools" 
           linktext="/ai-tools"
           firstlinktext="Home"
           firstlink="/"
@@ -229,7 +228,7 @@ export default function AllBlogs() {
             </div>
           </div>
 
-      {/* <Recent posts={recentPosts} /> */}
+
     </div>
   );
 };

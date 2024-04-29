@@ -43,7 +43,7 @@ const Page = () => {
     <Breadcrumb
       pageName="Make Money Online"
       pageName2="Using AI"
-      description="Discover useful tips and tools to help you earn money online. From freelancing to affiliate marketing, explore valuable resources to start and grow your online income streams. Start making money online today!"
+      description="Enhance your digital experience with our selection of the best AI Extensions. These powerful tools integrate seamlessly into your browser or software, bringing smart functionality right where you need it. From language translation to productivity boosts, AI Extensions are designed to simplify complex tasks and enhance efficiency. Dive into our comprehensive reviews to find the perfect AI extension that meets your needs, and start transforming your workflow today."
       link="/digital-marketing" // Specify the link here
       firstlinktext="Home"
       firstlink="/"

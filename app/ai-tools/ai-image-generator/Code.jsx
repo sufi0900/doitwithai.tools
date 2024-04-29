@@ -1,4 +1,5 @@
 "use client";
+
 import { client } from "@/sanity/lib/client";
 import React, { useEffect, useState } from "react";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
@@ -23,8 +24,8 @@ const Page = () => {
     useEffect(() => {
       const fetchData = async () => {
       
-        const isFeature = `*[_type == "aitool" && isAiWebsiteBuilderBig == true]`;
-        const isBlog = `*[_type == "aitool" && isAiWebsiteBuilder == true]`;
+        const isFeature = `*[_type == "aitool" && isAiImageGenBig == true]`;
+        const isBlog = `*[_type == "aitool" && isAiImageGen == true]`;
   
         const isFeatureData = await client.fetch(isFeature);
         const isBlogData = await client.fetch(isBlog);
@@ -38,14 +39,15 @@ const Page = () => {
     }, []);
 
   return (
-    <div className="container">
+    <div className="container mt-10">
     <Breadcrumb
-      pageName="Make Money Online"
-      pageName2="Using AI"
-      description="Create stunning websites effortlessly with our collection of AI Website Builders. Designed for both tech-savvy individuals and beginners, these tools leverage artificial intelligence to simplify web design and development. Discover platforms that offer drag-and-drop interfaces, pre-designed templates, and customization options powered by AI, making it easier than ever to launch your online presence. Ideal for small businesses, entrepreneurs, and creatives who want to build a professional website without the coding hassle"
-      link="/digital-marketing" // Specify the link here
-      firstlinktext="Home"
-      firstlink="/"
+      pageName="AI Image"
+      pageName2="Generators"
+      description="Unlock your creative potential with our AI Image Generator - the ultimate solution for effortless graphic design. Explore our in-depth reviews and expert recommendations to find the top AI (artificial intelligence) picture creation software. Whether you're a beginner or a professional designer, these tools are made to improve creativity, boost production, and easily convert simple descriptions into beautiful artwork (Text to Image generator). Perfect for creating a wide range of products from social media graphics to high-quality print designs."
+      link="/ai-tools/ai-image-generator" // Specify the link here
+      linktext="ai-image-generator"
+      firstlinktext="ai-tools"
+      firstlink="/ai-tools"
     />
     <Grid container spacing={2}>
       {/* First Row: one Big Blogs */}
@@ -56,7 +58,7 @@ const Page = () => {
             className="card cursor-pointer  items-center  rounded-lg         border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700
         " // Adjust background and text color based on theme
             sx={{
-              marginTop: "5px",
+      
               display: "flex",
               flexDirection: "column",
               height: "100%",
@@ -154,7 +156,7 @@ const Page = () => {
     <br/>
     <br/>
     <Grid item  xs={12} md={12}>
-      <div className="-mx-4  m-8  mt-8 flex flex-wrap justify-center">
+      <div className="-mx-4  m-8  mt-4 flex flex-wrap justify-center">
    
             {/* Conditionally render search results within the loop */}
             {isBlog.map((blog) => (

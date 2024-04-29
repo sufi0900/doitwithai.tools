@@ -132,7 +132,7 @@ export default  function Page() {
             description: metadata.description,
             url: "https://sufi-blog-website.vercel.app/ai-tools",
             type: "ItemList",
-            images: metadata.openGraph.images
+            images: metadata.images
           }}
         />
       

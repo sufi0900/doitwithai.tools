@@ -42,7 +42,7 @@ const Page = () => {
     <Breadcrumb
       pageName="Make Money Online"
       pageName2="Using AI"
-      description="Discover useful tips and tools to help you earn money online. From freelancing to affiliate marketing, explore valuable resources to start and grow your online income streams. Start making money online today!"
+      description="Easily build your brand with an expert logo! Explore the ability of AI logo creation. Without any design experience, find the perfect logo for your company in just a couple of minutes. Discover how to select the most suitable AI-generated logo for your needs"
       link="/digital-marketing" // Specify the link here
       firstlinktext="Home"
       firstlink="/"

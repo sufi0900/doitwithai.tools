@@ -21,12 +21,7 @@ export const metadata = {
       width: 800,
       height: 600,
     },
-    {
-      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
-      width: 1800,
-      height: 1600,
-      alt: 'My custom alt',
-    },
+    
   ],
 };
 
@@ -129,9 +124,9 @@ export default  function Page() {
   <meta name="author" content="sufian mustafa" />
   <meta property="og:title" content={metadata.title} />
   <meta property="og:description" content={metadata.description} />
-  {/* <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" /> */}
   <meta property="og:image" content={metadata.image} />
-
+  <meta property="og:image:width" content="1200" />
+ <meta property="og:image:height" content="630" />
 
 
 
@@ -151,7 +146,7 @@ export default  function Page() {
 
 
   <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools"/>
-  {/*  */}
+
       
         <NextSeo
          title={metadata.title}
@@ -162,15 +157,11 @@ export default  function Page() {
             title: metadata.title,
             description: metadata.description,
             url: "https://sufi-blog-website.vercel.app/ai-tools",
-            type: "ItemList",
-            images: [
-              {
-                url: "https://res.cloudinary.com/dtvtphhsc/image/upload/v1697725757/Screenshot_249_edsr2z.png",
-                width: 800,
-                height: 800,
-                alt: "",
-              },
-            ],
+            type: "website",
+            locale: 'en_IE',
+            site_name: 'AiToolTrend',
+
+           
           }}
         />
       </Head>
