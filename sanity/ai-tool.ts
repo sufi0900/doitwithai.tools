@@ -122,8 +122,7 @@ export const aitool = {
         title: "isRecent",
         type: "boolean",
       },
-     
-     
+      
       {
         name: "isAiImageGen",
         title: "isAiImageGen",
