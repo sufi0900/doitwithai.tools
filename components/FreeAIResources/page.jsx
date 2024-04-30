@@ -18,15 +18,15 @@ import Link from "next/link";
 import Breadcrumb from "../Common/Breadcrumb";
 import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-const DigitalSolution = () => {
+const FreeAIResources = () => {
   // Define the static web dev blogs
   const [digitalTrendBigData, setDigitalTrendBigData] = useState([]);
   const [digitalTrendRelatedData, setDigitalTrendRelatedData] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
     
-      const isHomePageDigitalTrendBig = `*[_type == "digital" && isHomePageDigitalTrendBig == true]`;
-      const isHomePageDigitalTrendRelated = `*[_type == "digital" && isHomePageDigitalTrendRelated == true]`;
+      const isHomePageDigitalTrendBig = `*[_type == "freeairesources" && isHomePageDigitalTrendBig == true]`;
+      const isHomePageDigitalTrendRelated = `*[_type == "freeairesources" && isHomePageDigitalTrendRelated == true]`;
 
       const isHomePageDigitalTrendBigData = await client.fetch(isHomePageDigitalTrendBig);
       const isHomePageDigitalTrendRelatedData = await client.fetch(isHomePageDigitalTrendRelated);
@@ -46,9 +46,11 @@ const DigitalSolution = () => {
       <Breadcrumb
           pageName="Free AI Resources"
           pageName2=" & Solution"
-          description="Simplify your life and boost your productivity with  easy-to-use  online tools."
-          link="/digital-marketing" // Specify the link here firstlinktext="Home"
-          firstlink="/"        />
+          description="Supercharge your creativity and problem-solving skills with free AI resources! Our blog provides an extensive collection of useful resources, including stunning, free, non-copyrighted AI-generated images and creative writing prompts for various tasks. Discover how AI can be applied to different fields to solve problems and enhance your work. Explore the potential of AI and see how it can empower you in any domain!"
+          firstlinktext="Home"
+          firstlink="/"
+          link="/free-ai-resources" 
+          linktext="free-ai-resources"     />
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>
           {digitalTrendBigData.slice(0, 1).map((post) => (
@@ -84,7 +86,7 @@ const DigitalSolution = () => {
   </div>
 </div>
   <Link
-        href={`/digital-solution/${post.slug.current}`}
+        href={`/free-ai-resources/${post.slug.current}`}
 
     className="mt-4 mb-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
   >
@@ -146,7 +148,7 @@ const DigitalSolution = () => {
   </div>
 </div>
   <Link
-        href={`/digital-solution/${post.slug.current}`}
+        href={`/free-ai-resources/${post.slug.current}`}
 
     className="mt-4 mb-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
   >
@@ -208,7 +210,7 @@ const DigitalSolution = () => {
   </div>
 </div>
   <Link
-        href={`/digital-solution/${post.slug.current}`}
+        href={`/free-ai-resources/${post.slug.current}`}
 
     className="mt-4 mb-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
   >
@@ -275,7 +277,7 @@ const DigitalSolution = () => {
 </div>
 
 <Link
-                   href={`/digital-solution/${post.slug.current}`}
+                   href={`/free-ai-resources/${post.slug.current}`}
 
                 className="mt-2  inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                         >
@@ -327,4 +329,4 @@ const DigitalSolution = () => {
   );
 };
 
-export default DigitalSolution;
+export default FreeAIResources;

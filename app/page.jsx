@@ -24,11 +24,11 @@ import React, { useEffect, useState } from "react";
 import RecentPost from "@/components/RecentPost/page";
 import Categories from "@/components/Categories/page";
 import Hero from "@/components/Hero";
-import Programming from "@/components/Trending/WebDev";
+import CodeWithAI from "@/components/Trending/WebDev";
 import NewsLatterBox from "@/components/Contact/NewsLatterBox";
 import DigiResources from "@/components/DigiResources/page";
 import News from "@/components/News/page";
-import DigiSolution from "@/components/DigiSolution/page";
+import FreeAIResources from "@/components/FreeAIResources/page";
 
 
 export default  function Home() {
@@ -178,11 +178,11 @@ export default  function Home() {
         <br />
       </section>
       {/* <AiTools /> */}
-      <OnlineEarn />
-      <News />
-      <Programming /> 
+      {/* <OnlineEarn /> */}
+      {/* <News /> */}
+      {/* <CodeWithAI />  */}
  
-      <DigiSolution />
+      <FreeAIResources />
       <DigitalMarketing />
    
  

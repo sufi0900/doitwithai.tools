@@ -46,13 +46,13 @@ const DigitalMarketing = () => {
     <section>
       <div className="container">
         <Breadcrumb
-          pageName=" AI in SEO &"
+          pageName="AI in SEO &"
           pageName2="Digital Marketing "
-          description="Explore valuable insights, strategies, and tools to improve your digital marketing skills. From social media marketing to email campaigns, discover expert tips and resources to boost your online presence and drive results. Start optimizing your digital marketing efforts today!"
-          // description="Explore the dynamic world of digital marketing and discover strategies, tips, and insights to elevate your online presence. From social media marketing and content creation to email campaigns and analytics, dive into actionable resources to enhance your digital marketing efforts."
-          link="/digital-marketing" // Specify the link here
+          description="The digital marketing landscape is changing rapidly, and AI is leading the way!  Our blog equips you with the knowledge and tools to leverage AI for SEO and marketing success. Discover how AI can help you generate high-quality content, optimize your website, and craft data-driven marketing campaigns.  Explore expert tips on using AI tools like SEO AI and ChatGPT to write SEO-friendly blog posts, improve rankings, and  drive massive traffic.  Embrace the power of AI and take your digital marketing to the next level! "
           firstlinktext="Home"
           firstlink="/"
+          link="/seo-with-ai" 
+          linktext="seo-with-ai" 
         />
 
         <Grid container spacing={2}>

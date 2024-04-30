@@ -48,11 +48,12 @@ const News = () => {
       <div className="container">
         <Breadcrumb
           pageName="AI News"
-          pageName2=" & Trends "
-          description="Explore essential tips and tools to optimize your website's visibility on search engines. From improving your website's content to enhancing its technical aspects, discover valuable resources to boost your SEO efforts and drive organic traffic. Start improving your website's search engine ranking today!"
-          link="/digital-marketing" // Specify the link here
+          pageName2="& Trends"
+          description="Are you curious about the latest breakthroughs in artificial intelligence? Look no further! Our blog keeps you at the forefront of AI news and trends.  We deliver in-depth analysis of cutting-edge AI developments, from OpenAI's advancements to the impact of AI on various industries. Explore the exciting possibilities of AI and its potential to reshape our world!"
           firstlinktext="Home"
           firstlink="/"
+          link="/ai-trending-news" 
+          linktext="ai-trending-news"
         />
         <Grid container spacing={2}>
          

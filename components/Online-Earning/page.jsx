@@ -5,9 +5,7 @@ import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import {
   Card,
   CardContent,
-
   Grid,
-
   CardMedia,
 
 } from "@mui/material";
@@ -48,10 +46,10 @@ const OnlineEarningPage = () => {
           pageName="Make Money Online"
           pageName2="Using AI"
           description="Discover useful tips and tools to help you earn money online. From freelancing to affiliate marketing, explore valuable resources to start and grow your online income streams. Start making money online today!"
-          link="/make-money-with-ai" 
           firstlinktext="Home"
           firstlink="/"
-
+          link="/make-money-with-ai" 
+      
           linktext="make-money-with-ai"
          
   

@@ -1,13 +1,13 @@
-export const digital = {
-    name: "digital",
-    title: "Digital",
+export const freeairesources = {
+    name: "freeairesources",
+    title: "Free AI Resources",
     type: "document",
     fields: [
       {
         name: "title",
         title: "Title",
         type: "string",
-        description: "title of digital",
+        description: "title of freeairesources",
       },
       {
         name: "dataTables",

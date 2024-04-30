@@ -40,10 +40,11 @@ const WebDev = () => {
         <Breadcrumb
           pageName="Code"
           pageName2="With AI"
-          description="Explore valuable tips and tools to enhance your programming skills and boost your career. From coding techniques to software development tools, discover resources to help you excel in the world of programming. Start mastering programming today!"
-          link="/digital-marketing" // Specify the link here
+          description="The future of coding is here! Explore how AI can become your powerful coding partner. Our blog teaches you to leverage tools like ChatGPT to generate website code (HTML, CSS, React, etc.) and build beautiful UI components.  Learn to optimize existing code (MERN Stack, Next.js), solve coding challenges, and streamline your development process.  We even offer free website templates built with AI!  Unlock the potential of AI and code like never before!"
           firstlinktext="Home"
           firstlink="/"
+          link="/code-with-ai" 
+          linktext="code-with-ai"
         />
         <Grid container spacing={2}>
           {/* Blog Cards */}
