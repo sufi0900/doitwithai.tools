@@ -1,5 +1,4 @@
 "use client";
-
 import { client } from "@/sanity/lib/client";
 import React, { useEffect, useState } from "react";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
@@ -24,8 +23,8 @@ const Page = () => {
     useEffect(() => {
       const fetchData = async () => {
       
-        const isFeature = `*[_type == "aitool" && isAiImageGenBig == true]`;
-        const isBlog = `*[_type == "aitool" && isAiImageGen == true]`;
+        const isFeature = `*[_type == "aitool" && isAiLogoGenBig == true]`;
+        const isBlog = `*[_type == "aitool" && isAiLogoGen == true]`;
   
         const isFeatureData = await client.fetch(isFeature);
         const isBlogData = await client.fetch(isBlog);
@@ -39,15 +38,14 @@ const Page = () => {
     }, []);
 
   return (
-    <div className="container mt-10">
+    <div className="container mt-8">
     <Breadcrumb
-      pageName="AI Image"
-      pageName2="Generators"
-      description="Our AI Image Generator is the best way to maximize your creativity to generate stunning graphics instantly. Explore our in-depth reviews and expert recommendations to find the top AI (artificial intelligence) picture-creation Tools, Apps, and Software. Whether you're a beginner or a professional designer, these tools are made to improve creativity, boost production, and easily convert simple descriptions into beautiful artwork."
-      link="/ai-tools/ai-image-generator" // Specify the link here
-      linktext="ai-image-generator"
-      firstlinktext="ai-tools"
-      firstlink="/ai-tools"
+      pageName="Best AI Logo"
+      pageName2="Generator"
+      description="Easily build your brand with an expert logo! Explore the ability of AI logo creation. Without any design experience, find the perfect logo for your company in just a couple of minutes. Discover how to select the most suitable AI-generated logo for your needs"
+      link="/digital-marketing" // Specify the link here
+      firstlinktext="Home"
+      firstlink="/"
     />
     <Grid container spacing={2}>
       {/* First Row: one Big Blogs */}
@@ -58,7 +56,7 @@ const Page = () => {
             className="card cursor-pointer  items-center  rounded-lg         border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700
         " // Adjust background and text color based on theme
             sx={{
-      
+              marginTop: "5px",
               display: "flex",
               flexDirection: "column",
               height: "100%",
@@ -156,7 +154,7 @@ const Page = () => {
     <br/>
     <br/>
     <Grid item  xs={12} md={12}>
-      <div className="-mx-4  m-8  mt-4 flex flex-wrap justify-center">
+      <div className="-mx-4  m-8  mt-8 flex flex-wrap justify-center">
    
             {/* Conditionally render search results within the loop */}
             {isBlog.map((blog) => (

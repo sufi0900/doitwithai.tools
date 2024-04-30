@@ -3,7 +3,7 @@
 import Link from "next/link";
 import React from "react";
 
-const Categories = () => {
+const SubCategories = () => {
   const categoriesData = [
     {
       imageUrl:
@@ -90,4 +90,4 @@ const Categories = () => {
   );
 };
 
-export default Categories;
+export default SubCategories;

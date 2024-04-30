@@ -23,7 +23,7 @@ export const metadata = {
   ],
 };
 
-export default  function Page() {
+export default function Page() {
   
   function schemaMarkup() {
  

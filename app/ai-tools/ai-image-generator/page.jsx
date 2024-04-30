@@ -7,7 +7,7 @@ import Code from "./Code"
 export const metadata = {
   title: "Best AI Image Generator Tools",
   description:
-    "Explore a comprehensive list of blogs on the top AI tools for generating and Editing pictures. With our careful reviews, find the best text-to-image creator.",
+    "Explore the world of AI image creation, where your imagination comes to life! This exciting technology combines art and artificial intelligence, allowing you to generate beautiful images from simple text descriptions. Our blog features in-depth reviews of the best AI image creators, including free and online options. Whether you're a seasoned artist or just starting, discover how AI can help you create stunning AI art, pictures, graphics, photos, drawings, and even headshots effortlessly. Unleash your creativity and explore the possibilities of text-to-image AI!.",
   author: "Sufian Mustafa",
   openGraph: {
     images: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
@@ -29,9 +29,9 @@ export default function Page() {
       __html: `   {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        "name": "Best AI Tools",
-        "description": "Explore an extensive collection of artificial intelligence tools and resources, all designed for boosting your productivity and creativity. Everybody, from students to business owners and researchers in different fields of study, will find something to interest them on our site, whether it's image creation, video editing, AI extensions, or any other aspect of AI technology. Explore all of the blogs from different AI domains or dive into specific subcategories to find articles that are relevant to your interests. Take use of the greatest artificial intelligence solutions to increase your output and creativity!",
-        "url": "https://sufi-blog-website.vercel.app/ai-tools",
+        "name": "Best AI Image Generator Tools",
+        "description": "Step into the revolutionary world of AI Image Generation, where each creation is a masterpiece This emerging artistry blends traditional artistic techniques with cutting-edge artificial intelligence, turning simple text descriptions into visually captivating artworks. Our blogs delve deeply into the most advanced AI image creators, giving everyone from seasoned artists to casual creatives the power to stunning images effortlessly. Uncover the potential behind 'text-to-image' technology and transcend traditional visual boundaries with the magic of AI.",
+        "url": "https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator",
         "breadcrumb": {
           "@type": "BreadcrumbList",
           "itemListElement": [
@@ -51,7 +51,7 @@ export default function Page() {
               "@type": "ListItem",
               "position": 3,
               "name": "AI Image Generators",
-              "item": "https://sufi-blog-website.vercel.app/ai-image-generator"
+              "item": "https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator"
             }
           ]
         }
@@ -76,18 +76,18 @@ export default function Page() {
 <meta property="og:image:height" content="630" />
 
   {/*  */}
-  <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools" />
+  <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={metadata.title} />
         <meta property="og:description" content={metadata.description} />
         <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
-        <meta property="twitter:url" content="https://sufi-blog-website.vercel.app/ai-tools" />
+        <meta property="twitter:url" content="https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator" />
         <meta name="twitter:title" content={metadata.title} />
         <meta name="twitter:description" content={metadata.description} />
         <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-  <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools"/>
+  <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator"/>
 
         <NextSeo
          title={metadata.title}
@@ -97,11 +97,11 @@ export default function Page() {
           locale= 'en_IE'
           site_name= 'AiToolTrend'
 
-          canonical="https://sufi-blog-website.vercel.app/ai-tools"
+          canonical="https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator"
           openGraph={{
             title: metadata.title,
             description: metadata.description,
-            url: "https://sufi-blog-website.vercel.app/ai-tools",
+            url: "https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator",
             type: "ItemList",
             images: metadata.images
           }}

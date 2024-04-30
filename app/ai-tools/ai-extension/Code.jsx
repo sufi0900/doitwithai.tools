@@ -1,5 +1,4 @@
 "use client";
-
 import { client } from "@/sanity/lib/client";
 import React, { useEffect, useState } from "react";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
@@ -8,9 +7,10 @@ import {
   CardContent,
   Grid,
   CardMedia,
+
 } from "@mui/material";
 import SingleBlog from "./Card"
-
+import Box from "@mui/material/Box";
 import Link from "next/link";
 import Breadcrumb from "../../../components/Common/Breadcrumb";
 import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
@@ -18,20 +18,20 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { CalendarMonth } from "@mui/icons-material";
 
 const Page = () => {
-    const [isFeature, setIsFeature] = useState([]);
-    const [isBlog, setIsBlog] = useState([]);
+    const [isAiExtensionBig, setIsAiExtensionBig] = useState([]);
+    const [isAiExtension, setIsAiExtension] = useState([]);
   
     useEffect(() => {
       const fetchData = async () => {
       
-        const isFeature = `*[_type == "aitool" && isAiImageGenBig == true]`;
-        const isBlog = `*[_type == "aitool" && isAiImageGen == true]`;
+        const isAiExtensionBig = `*[_type == "aitool" && isAiExtensionBig == true]`;
+        const isAiExtension = `*[_type == "aitool" && isAiExtension == true]`;
   
-        const isFeatureData = await client.fetch(isFeature);
-        const isBlogData = await client.fetch(isBlog);
+        const isAiExtensionBigData = await client.fetch(isAiExtensionBig);
+        const isAiExtensionData = await client.fetch(isAiExtension);
     
-        setIsFeature(isFeatureData);
-        setIsBlog(isBlogData);
+        setIsAiExtensionBig(isAiExtensionBigData);
+        setIsAiExtension(isAiExtensionData);
        
       };
   
@@ -39,26 +39,25 @@ const Page = () => {
     }, []);
 
   return (
-    <div className="container mt-10">
+    <div className="container mt-8">
     <Breadcrumb
-      pageName="AI Image"
-      pageName2="Generators"
-      description="Our AI Image Generator is the best way to maximize your creativity to generate stunning graphics instantly. Explore our in-depth reviews and expert recommendations to find the top AI (artificial intelligence) picture-creation Tools, Apps, and Software. Whether you're a beginner or a professional designer, these tools are made to improve creativity, boost production, and easily convert simple descriptions into beautiful artwork."
-      link="/ai-tools/ai-image-generator" // Specify the link here
-      linktext="ai-image-generator"
-      firstlinktext="ai-tools"
-      firstlink="/ai-tools"
+      pageName="Best AI Chrome"
+      pageName2="Extension"
+      description="Enhance your digital experience with our selection of the best AI Extensions. With the help of these powerful tools, which can easily connect to Google Chrome and Microsoft Edge, you have access to intelligent functionality anywhere you need it.  AI Extensions simplify complicated tasks and increase productivity. They can be used for everything from language translation to productivity enhancements. Explore our comprehensive reviews to select the best AI extension for your requirements and start transforming your workflow instantly."
+      link="/digital-marketing" // Specify the link here
+      firstlinktext="Home"
+      firstlink="/"
     />
     <Grid container spacing={2}>
       {/* First Row: one Big Blogs */}
-      {isFeature.slice(0, 1).map((post) => (
+      {isAiExtensionBig.slice(0, 1).map((post) => (
         <Grid item key={post._id} xs={12} md={12}>
           <Card
             // key={firstPost._id}
             className="card cursor-pointer  items-center  rounded-lg         border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700
         " // Adjust background and text color based on theme
             sx={{
-      
+              marginTop: "5px",
               display: "flex",
               flexDirection: "column",
               height: "100%",
@@ -156,10 +155,10 @@ const Page = () => {
     <br/>
     <br/>
     <Grid item  xs={12} md={12}>
-      <div className="-mx-4  m-8  mt-4 flex flex-wrap justify-center">
+      <div className="-mx-4  m-8  mt-8 flex flex-wrap justify-center">
    
             {/* Conditionally render search results within the loop */}
-            {isBlog.map((blog) => (
+            {isAiExtension.map((blog) => (
               <SingleBlog key={blog.id} {...blog} />
             ))}
        
