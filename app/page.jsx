@@ -177,10 +177,10 @@ export default  function Home() {
         <br />
         <br />
       </section>
-      {/* <AiTools /> */}
-      {/* <OnlineEarn /> */}
-      {/* <News /> */}
-      {/* <CodeWithAI />  */}
+      <AiTools />
+      <OnlineEarn />
+      <News />
+      <CodeWithAI /> 
  
       <FreeAIResources />
       <DigitalMarketing />

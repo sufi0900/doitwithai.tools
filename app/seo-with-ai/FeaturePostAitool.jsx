@@ -24,7 +24,7 @@ const FeaturePost = () => {
   useEffect(() => {
     const fetchData = async () => {
     
-      const isHomePageAIToolTrendBig = `*[_type == "freeairesources" && isOwnPageFeature == true]`;
+      const isHomePageAIToolTrendBig = `*[_type == "seo" && isOwnPageFeature == true]`;
 
       const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
   

@@ -31,7 +31,7 @@ import AiCategory from "@/components/Categories/page";
 async function fetchAllBlogs(page = 1, limit = 2) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
-    groq`*[_type == "freeairesources"] | order(publishedAt desc) {
+    groq`*[_type == "seo"] | order(publishedAt desc) {
       _id, title, slug, mainImage, overview, body, publishedAt
     }[${start}...${start + limit}]`
   );
@@ -71,7 +71,7 @@ export default function AllBlogs() {
       console.log("Please enter at least 4 characters for search.");
       return;
     }
-    const query = `*[_type == "freeairesources" && (title match $searchText || content match $searchText)]`;
+    const query = `*[_type == "seo" && (title match $searchText || content match $searchText)]`;
     const searchResults = await client.fetch(query, {
       searchText: `*${searchText}*`,
     });
