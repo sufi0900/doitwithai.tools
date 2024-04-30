@@ -48,9 +48,13 @@ const OnlineEarningPage = () => {
           pageName="Make Money Online"
           pageName2="Using AI"
           description="Discover useful tips and tools to help you earn money online. From freelancing to affiliate marketing, explore valuable resources to start and grow your online income streams. Start making money online today!"
-          link="/digital-marketing" 
+          link="/make-money-with-ai" 
           firstlinktext="Home"
           firstlink="/"
+
+          linktext="make-money-with-ai"
+         
+  
         />
         <Grid container spacing={2}>
           {/* First Row: one Big Blogs */}
@@ -127,7 +131,7 @@ const OnlineEarningPage = () => {
   </div>
 </div>
                       <Link
-                         href={`/ai-earn/${post.slug.current}`}
+                         href={`/make-money-with-ai/${post.slug.current}`}
                          className="mt-4 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                       >
                         Read more
@@ -198,7 +202,7 @@ const OnlineEarningPage = () => {
 </div>
 
 <Link
-                                    href={`/ai-earn/${post.slug.current}`}
+                                    href={`/make-money-with-ai/${post.slug.current}`}
 
                 className="mt-2  inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                         >
@@ -281,7 +285,7 @@ const OnlineEarningPage = () => {
 </div>
 
 <Link
-                         href={`/ai-earn/${post.slug.current}`}
+                         href={`/make-money-with-ai/${post.slug.current}`}
                          className="mt-2  inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                         >
                           Read more

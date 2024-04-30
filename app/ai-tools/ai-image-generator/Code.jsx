@@ -124,7 +124,7 @@ const Page = () => {
 </div>
 </div>
                   <Link
-                     href={`/ai-earn/${post.slug.current}`}
+                     href={`/make-money-with-ai/${post.slug.current}`}
                      className="mt-4 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                   >
                     Read more

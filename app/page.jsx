@@ -143,7 +143,7 @@ export default  function Home() {
       >
         <div className="container">
           <Grid container spacing={2}>
-             <Trending /> 
+             {/* <Trending />  */}
           </Grid>
         </div>
       </section>
@@ -170,14 +170,14 @@ export default  function Home() {
           </h1>
           {/* <AboutPage /> */}
           <Grid container spacing={2}>
-            <FeaturePost posts={featurePostBig} />
-            <RelatedFeaturePost posts={featureRelatedData} /> 
+            {/* <FeaturePost posts={featurePostBig} />
+            <RelatedFeaturePost posts={featureRelatedData} />  */}
           </Grid>
         </div>
         <br />
         <br />
       </section>
-      <AiTools />
+      {/* <AiTools /> */}
       <OnlineEarn />
       <News />
       <Programming /> 

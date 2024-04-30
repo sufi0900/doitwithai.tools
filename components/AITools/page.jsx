@@ -49,7 +49,7 @@ const AiTools = () => {
           description="Ready to take your work and creativity to the next level? The AI revolution is here, and it's changing the way we work!  Whether you're a seasoned pro or just curious to learn more Our blog explores Best AI Tools for Productivity. These tools free you from booring  tasks, boost  your skills, and supercharge  your creativity."
           // description="Stop struggling, start creating something new! Explore awesome AI tools designed to make your work easier, improve your skills, and get more done in a shorter amount of time."
           link="/ai-tools" // Specify the link here
-          linktext="/ai-tools"
+          linktext="ai-tools"
           firstlinktext="Home"
           firstlink="/"
         />
