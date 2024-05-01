@@ -80,7 +80,7 @@ export default async function ParentPage({ params }) {
       }`
     };
   }
-  const MAX_DESCRIPTION_LENGTH = 200; // Define maximum length for description
+  const MAX_DESCRIPTION_LENGTH = 200; 
 
 
   const metadata = await generateMetadata({ params });
@@ -104,10 +104,10 @@ export default async function ParentPage({ params }) {
   <meta property="og:site_name" content="AiToolTrend" />
         <meta property="og:locale" content="en_US" />
   <title>{title}</title>
-  <meta name="description" content={description}/>
+  <meta name="description" content={description2}/>
   <meta name="author" content="sufian mustafa" />
   <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
+  <meta property="og:description" content={description2} />
   <meta property="og:image" content={image} />
   <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
@@ -125,6 +125,8 @@ export default async function ParentPage({ params }) {
         <meta name="twitter:description" content={description2} />
         <meta name="twitter:image" content={image} />
         <link rel="canonical" href={canonicalUrl}/>
+        <meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 
         <NextSeo
          title={title}
