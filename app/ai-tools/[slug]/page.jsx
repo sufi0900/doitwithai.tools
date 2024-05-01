@@ -88,7 +88,7 @@ export default async function ParentPage({ params }) {
   <meta name="author" content="sufian mustafa" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content={image} />
+  <meta property="og:image" content={urlForImage(data.mainImage).url()} />
   <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 
