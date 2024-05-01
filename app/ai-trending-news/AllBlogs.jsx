@@ -90,7 +90,7 @@ export default function AllBlogs() {
   return (
     <div className="container mt-10 mr-4 ml-4">
       <Breadcrumb
-          pageName="AI News "
+          pageName="AI News"
           pageName2="& Trends"
           description="The future of work is here! Explore how Artificial Intelligence (AI) can transform your skills into a profitable side hustle. Our blog features in-depth guides on using AI tools like ChatGPT, Midjourney, and OpenAI to generate content, create stunning visuals, and automate tasks.  Discover powerful AI money-making strategies and turn your passion into profit"
           link="/make-money-with-ai" 

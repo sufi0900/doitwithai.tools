@@ -90,7 +90,7 @@ export default function AllBlogs() {
   return (
     <div className="container mt-10 mr-4 ml-4">
       <Breadcrumb
-          pageName="AI in SEO "
+          pageName="AI in SEO"
           pageName2="& Digital Marketing"
           description="The digital marketing landscape is changing rapidly, and AI is leading the way!  Our blog equips you with the knowledge and tools to leverage AI for SEO and marketing success. Discover how AI can help you generate high-quality content, optimize your website, and craft data-driven marketing campaigns.  Explore expert tips on using AI tools like SEO AI and ChatGPT to write SEO-friendly blog posts, improve rankings, and  drive massive traffic.  Embrace the power of AI and take your digital marketing to the next level!"
           link="/seo-with-ai" 

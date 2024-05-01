@@ -4,6 +4,8 @@ import Script from "next/script";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
 
+export const revalidate = false;
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Best AI Tools",
