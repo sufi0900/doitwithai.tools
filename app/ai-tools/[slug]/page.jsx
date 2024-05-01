@@ -80,7 +80,7 @@ export default async function ParentPage({ params }) {
       }`
     };
   }
-  const MAX_DESCRIPTION_LENGTH = 100; 
+
 
 
   const metadata = await generateMetadata({ params });
@@ -90,8 +90,12 @@ export default async function ParentPage({ params }) {
   const overview = `${data.overview}`;
 
   const description = `${data.overview}`;
-  const description2 = overview.length > MAX_DESCRIPTION_LENGTH ? overview.substring(0, MAX_DESCRIPTION_LENGTH) : overview; // Apply limit to description
-
+  // const description2 = overview.length > MAX_DESCRIPTION_LENGTH ? overview.substring(0, MAX_DESCRIPTION_LENGTH) : overview; // Apply limit to description
+  const maxLength = 50;
+  const truncatedDescription = data.overview.length > maxLength ? `${data.overview.substring(0, maxLength)}...` : data.overview;
+  
+  // Assign the truncated description to the variable
+  const description2 = truncatedDescription;
   const image = `${data.image}`;
   const author = `${data.author}`;
   const canonicalUrl = `https://sufi-blog-website.vercel.app/ai-tools/${params.slug}`;
