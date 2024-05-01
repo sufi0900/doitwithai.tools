@@ -80,9 +80,18 @@ export default async function ParentPage({ params }) {
       }`
     };
   }
+  const MAX_DESCRIPTION_LENGTH = 200; // Define maximum length for description
+
+
+  const metadata = await generateMetadata({ params });
+
   const data = await getData(params.slug);
   const title = `${data.title}`;
+  const overview = `${data.overview}`;
+
   const description = `${data.overview}`;
+  const description2 = overview.length > MAX_DESCRIPTION_LENGTH ? overview.substring(0, MAX_DESCRIPTION_LENGTH) : overview; // Apply limit to description
+
   const image = `${data.image}`;
   const author = `${data.author}`;
   const canonicalUrl = `https://sufi-blog-website.vercel.app/ai-tools/${params.slug}`;
@@ -107,13 +116,13 @@ export default async function ParentPage({ params }) {
   <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
+        <meta property="og:description" content={description2} />
         <meta property="og:image" content={image}/>
         <meta name="twitter:card" content="summary_large_image" />
         <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
         <meta property="twitter:url" content={canonicalUrl} />
         <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description} />
+        <meta name="twitter:description" content={description2} />
         <meta name="twitter:image" content={image} />
         <link rel="canonical" href={canonicalUrl}/>
 
@@ -127,11 +136,8 @@ export default async function ParentPage({ params }) {
 
           canonical={canonicalUrl}
           openGraph={{
-            title: title,
-            description: description,
-            url: canonicalUrl,
-            type: "ItemList",
-            image: image
+            ...metadata.openGraph,
+            images: metadata.image, // Pass single image object
           }}
         />
       
