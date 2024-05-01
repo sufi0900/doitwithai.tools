@@ -3,14 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent,  CardMedia, } from "@mui/material";
 
-import { PortableText } from "@portabletext/react";
-import { Schedule, LocalOffer, AccessTime } from "@mui/icons-material";
+
+import {  CalendarMonthOutlined, LocalOffer,} from "@mui/icons-material";
 import Grid from "@mui/material/Grid";
 import Link from "next/link";
 import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
 import Box from "@mui/material/Box";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
-import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 const FeaturePost = ({ posts }) => {
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
@@ -108,7 +107,7 @@ const FeaturePost = ({ posts }) => {
                   </p>
                   <div className="mb-3 mt-3 flex items-center justify-start gap-2">
   <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-    <EventNoteIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+    <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">06/12/2024</p>
   </div>
   <div className="flex items-center">
