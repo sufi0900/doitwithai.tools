@@ -50,11 +50,11 @@ const Header = () => {
       >
         <div className="container">
           <div className="relative -mx-4 flex items-center justify-between">
-            <div className=" w-60 mt-1  max-w-full px-4 xl:mr-12">
+            <div className=" w-30    max-w-full px-4 xl:mr-12">
             <Avatar
           src="/7.png"
           alt="Logo"
-          sx={{ width: 75, height: 75 }} // Adjust size as needed
+          sx={{ width: 70, height: 70 ,}} 
         />
             </div>
             <div className="flex w-full items-center justify-between px-4">
@@ -89,25 +89,27 @@ const Header = () => {
                       : "invisible top-[120%] opacity-0"
                   }`}
                 >
-                  <ul className="block lg:flex lg:space-x-12">
+                  <ul className="block lg:flex lg:space-x-6 ">
                     {menuData.map((menuItem, index) => (
-                      <li key={index} className="group relative">
+                      <li key={index} className="group relative  font-bold">
                         {menuItem.path ? (
-                          <Link
-                            href={menuItem.path}
-                            className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 ${
-                              usePathName === menuItem.path
-                                ? "text-primary dark:text-white"
-                                : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
-                            }`}
-                          >
-                            {menuItem.title}
-                          </Link>
+                         <Link
+                         href={menuItem.path}
+                         className={`flex mt-6 mb-6 p-2 transition duration-200 ease-in-out  items-center justify-center lg:mr-0 lg:inline-flex rounded-xl border border-transparent ${
+                           usePathName === menuItem.path
+                             ? "text-white bg-primary dark:bg-dark dark:text-blue-500"
+                             : "text-dark hover:text-white dark:text-white/70 dark:hover:text-blue-500 hover:bg-primary dark:hover:bg-dark"
+                         }`}
+                       >
+                         {menuItem.title}
+                       </Link>
+                       
+                        
                         ) : (
                           <>
                             <p
                               onClick={() => handleSubmenu(index)}
-                              className="flex cursor-pointer items-center justify-between py-2 text-base text-dark group-hover:text-primary dark:text-white/70 dark:group-hover:text-white lg:mr-0 lg:inline-flex lg:px-0 lg:py-6"
+                              className="mt-6 p-2 flex cursor-pointer items-center justify-between text-base text-dark group-hover:text-primary dark:text-white/70 dark:group-hover:text-white  lg:inline-flex"
                             >
                               {menuItem.title}
                               <span className="pl-3">

@@ -326,7 +326,7 @@ const OnlineEarningPage = () => {
         </Grid>
         <div className="mt-6 flex justify-center md:justify-end">
           <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
-            Read more
+          Explore All Blogs
           </button>
         </div>
       </div>

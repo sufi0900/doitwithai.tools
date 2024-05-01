@@ -180,7 +180,7 @@ const TrendingPage = () => {
                       className="  cursor-pointer     overflow-visible transition duration-200 ease-in-out hover:scale-105 card rounded-lg bg-white text-black shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
 
                         <Box position="relative">
-                        <div className="relative aspect-[33/22] overflow-visible">
+                        <div className="relative aspect-[37/22] overflow-visible">
               <Image
                 className=" absolute rounded-lg inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                 src={urlForImage(post.mainImage).url()}
@@ -270,7 +270,7 @@ fill
                   className="  cursor-pointer     overflow-visible transition duration-200 ease-in-out hover:scale-105 card rounded-lg bg-white text-black shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
 
                     <Box position="relative">
-                    <div className="relative aspect-[33/22] overflow-visible">
+                    <div className="relative aspect-[37/22] overflow-visible">
           <img
             className="absolute rounded-lg inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.3]"
             src={urlForImage(post.mainImage).url()}

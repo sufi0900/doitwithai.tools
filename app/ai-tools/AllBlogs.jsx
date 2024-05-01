@@ -88,7 +88,7 @@ export default function AllBlogs() {
   };
  
   return (
-    <div className="container mt-10 mr-4 ml-4">
+    <div className="container mt-10  ">
       <Breadcrumb
           pageName="Best"
           pageName2="AI Tools"
@@ -99,9 +99,10 @@ export default function AllBlogs() {
           firstlink="/"
 
         />
-        <Grid item xs={12} md={12}  >
-    
-            <FeaturePost/>
+          
+        <Grid item xs={12}  >
+        <FeaturePost/>
+       
                  
             </Grid>
         

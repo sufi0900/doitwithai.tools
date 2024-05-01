@@ -10,7 +10,7 @@ import { urlForImage } from "@/sanity/lib/image";
 
 import ScrollUp from "@/components/Common/ScrollUp";
 import Contact from "@/components/Contact";
-import OnlineEarn from "@/components/Online-Earning/page";
+import AIEarn from "@/components/Online-Earning/page";
 import AboutPage from "./about/page";
 import MainCategory from "@/components/MainCategories/page";
 import FeaturePost from "@/components/FeaturePost/index";
@@ -19,7 +19,7 @@ import MBrands from "@/components/Marquee-Brands/index";
 import AiTools from "@/components/AITools/page";
 import Trending from "@/components/Trending/page";
 
-import DigitalMarketing from "@/components/DigitalMarketing/page";
+import AISEO from "@/components/DigitalMarketing/page";
 import React, { useEffect, useState } from "react";
 import RecentPost from "@/components/RecentPost/page";
 import Categories from "@/components/Categories/page";
@@ -27,7 +27,7 @@ import Hero from "@/components/Hero";
 import CodeWithAI from "@/components/Trending/WebDev";
 import NewsLatterBox from "@/components/Contact/NewsLatterBox";
 import DigiResources from "@/components/DigiResources/page";
-import News from "@/components/News/page";
+import AINews from "@/components/News/page";
 import FreeAIResources from "@/components/FreeAIResources/page";
 
 
@@ -143,7 +143,7 @@ export default  function Home() {
       >
         <div className="container">
           <Grid container spacing={2}>
-             {/* <Trending />  */}
+             <Trending /> 
           </Grid>
         </div>
       </section>
@@ -168,22 +168,22 @@ export default  function Home() {
               </span>
             </span>
           </h1>
-          {/* <AboutPage /> */}
+        
           <Grid container spacing={2}>
-            {/* <FeaturePost posts={featurePostBig} />
-            <RelatedFeaturePost posts={featureRelatedData} />  */}
+            <FeaturePost posts={featurePostBig} />
+            <RelatedFeaturePost posts={featureRelatedData} /> 
           </Grid>
         </div>
         <br />
         <br />
       </section>
       <AiTools />
-      <OnlineEarn />
-      <News />
+      <AIEarn />
+      <AINews />
       <CodeWithAI /> 
  
       <FreeAIResources />
-      <DigitalMarketing />
+      <AISEO />
    
  
      

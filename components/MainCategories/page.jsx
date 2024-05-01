@@ -5,61 +5,43 @@ const Categories = () => {
   const categoriesData = [
     {
       imageUrl:
-        "https://t3.ftcdn.net/jpg/05/71/06/76/360_F_571067620_JS5T5TkDtu3gf8Wqm78KoJRF1vobPvo6.jpg",
+        "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714586054/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_alrq5i.png",
       heading: "AI Tools",
       link: "/digital-resources",
     },
     {
       imageUrl:
-        "https://t3.ftcdn.net/jpg/05/71/06/76/360_F_571067620_JS5T5TkDtu3gf8Wqm78KoJRF1vobPvo6.jpg",
-      heading: "Digital resources",
-      link: "/digital-resources",
+        "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587424/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_1_ju8jda.png",
+      heading: "Make Money Online Using AI",
+      link: "/make-money-with-ai",
     },
     {
       imageUrl:
-        "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
-      heading: "Web Dev corner",
-      link: "/web-dev",
+        "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587675/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_2_aytyui.png",
+      heading: "AI News & Trends",
+      link: "/ai-trending-news",
     },
     {
       imageUrl:
-        "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
-      heading: "Copywriting  ",
-      link: "/copywriting",
+        "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587424/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_3_ixrqom.png",
+        heading: "Code With AI",
+        link: "/code-with-ai",
     },
     {
       imageUrl:
-        "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
-      heading: "Online Earning",
-      link: "/online-earning",
+        "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587423/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_4_h249te.png",
+        heading: "Free AI Resources",
+        link: "/free-ai-resources",
     },
-    // {
-    //   imageUrl:
-    //     "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
-    //   heading: "Blogging ",
-    //   link: "/blogging",
-    // },
+   
     {
       imageUrl:
-        "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
+        "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587424/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_5_z9bjvg.png",
 
-      heading: "SEO ",
-      link: "/seo",
+      heading: "SEO with AI",
+      link: "/seo-with-ai",
     },
-    {
-      imageUrl:
-        "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
-
-      heading: "News ",
-      link: "/seo",
-    },
-    {
-      imageUrl:
-        "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
-
-      heading: "Gadgets ",
-      link: "/seo",
-    },
+  
   ];
 
   return (
@@ -78,15 +60,15 @@ const Categories = () => {
           </span>
         </h1>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 ">
           {categoriesData.map((category, index) => (
             <div
               key={index}
-              className={`relative rounded-lg border border-gray-200 bg-white p-3 shadow dark:border-gray-700 dark:bg-gray-800 md:col-span-1`}
+              className={`  p-4 relative rounded-lg border border-gray-200 bg-white  shadow dark:border-gray-700 dark:bg-gray-800 md:col-span-1`}
             >
               <a href={category.link} className="relative block">
                 <img
-                  className="h-auto w-full rounded-lg"
+                  className="h-auto w-full rounded-lg "
                   src={category.imageUrl}
                   alt={category.heading}
                 />
@@ -113,11 +95,11 @@ const Categories = () => {
                   />
                 </svg>
               </a>
-              <p>
+              {/* <p>
                 {" "}
                 Lorem ipsum dolor, sit amet consectetur adipisicing elit.
                 Obcaecati quos, facilis reiciendis cupiditate voluptatum et
-              </p>
+              </p> */}
             </div>
           ))}
         </div>

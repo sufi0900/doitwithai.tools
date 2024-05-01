@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import { CardContent, Typography } from "@mui/material";
+import { CardContent,  } from "@mui/material";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
-import { PortableText } from "@portabletext/react";
+
 import Link from "next/link";
-import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
+
 const RelatedTrendingPosts = ({ posts }) => {
   const [isLoading, setIsLoading] = useState(true); // State to track loading status
 

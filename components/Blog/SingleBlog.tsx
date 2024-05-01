@@ -4,7 +4,7 @@ import { urlForImage } from "@/sanity/lib/image";
 import Image from "next/image";
 import Link from "next/link";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
+import { CalendarMonthOutlined } from "@mui/icons-material";
 export default function SingleBlog({
   publishedAt,
   mainImage,
@@ -21,11 +21,7 @@ export default function SingleBlog({
         title.split(" ").length > 3 ? " ..." : ""
       }`
     : "";
-  // const formattedOverview = overview
-  //   ? `${overview.split(" ").slice(0, 12).join(" ")}${
-  //       overview.split(" ").length > 12 ? " ..." : ""
-  //     }`
-  //   : "";
+
   return (
     <>
       <div className="px-2 py-4">
@@ -69,7 +65,7 @@ export default function SingleBlog({
                 </p>
               </div>
               <div className="flex items-center">
-                <EventNoteIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+                <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
                 <p className="text-sm font-medium text-dark dark:text-white">
                   {formattedDate}
                 </p>

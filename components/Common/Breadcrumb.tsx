@@ -22,18 +22,19 @@ const Breadcrumb = ({
     <>
       <section className="relative z-10 overflow-hidden ">
         <div className="container">
-          <div className="-mx-4 flex flex-wrap items-center">
+          <div className="-mx-4 mt-4   flex flex-wrap items-center">
             <div className="w-full px-4 md:w-8/12 lg:w-7/12">
               <div className="mb-8 max-w-[650px] md:mb-0 lg:mb-12">
+                <Link  href={link}>
                 <h1 className="mb-6 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
                   <span className="group inline-block cursor-pointer">
-                    <span className="relative text-blue-500">
+                    <span className="relative  text-blue-500">
                       {pageName}
                       <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
                     </span>
                     {/* Add space between the texts */}{" "}
                     {/* Add space between the texts */}
-                    <span className="relative  inline-block ">
+                    <span className="relative my-4  inline-block ">
                       {" "}
                       {/* Apply smaller font size */}
                       {pageName2}
@@ -41,6 +42,7 @@ const Breadcrumb = ({
                     </span>
                   </span>
                 </h1>
+                </Link>
                 {/* <h1 className="mb-5 text-2xl font-bold text-black dark:text-white sm:text-3xl">
                 
                 </h1> */}

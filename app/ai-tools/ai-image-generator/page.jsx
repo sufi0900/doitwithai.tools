@@ -6,8 +6,9 @@ import Code from "./Code"
 
 export const metadata = {
   title: "Best AI Image Generator Tools",
-  description:
-    "Explore the world of AI image creation, where your imagination comes to life! This exciting technology combines art and artificial intelligence, allowing you to generate beautiful images from simple text descriptions. Our blog features in-depth reviews of the best AI image creators, including free and online options. Whether you're a seasoned artist or just starting, discover how AI can help you create stunning AI art, pictures, graphics, photos, drawings, and even headshots effortlessly. Unleash your creativity and explore the possibilities of text-to-image AI!.",
+  description:"Explore a comprehensive list of blogs on the top AI tools for generating images. Our detailed reviews help you find the perfect text-to-video creator for your projects.",
+  // description:
+  //   "Explore the world of AI image creation, where your imagination comes to life! This exciting technology combines art and artificial intelligence, allowing you to generate beautiful images from simple text descriptions. Our blog features in-depth reviews of the best AI image creators, including free and online options. Whether you're a seasoned artist or just starting, discover how AI can help you create stunning AI art, pictures, graphics, photos, drawings, and even headshots effortlessly. Unleash your creativity and explore the possibilities of text-to-image AI!.",
   author: "Sufian Mustafa",
   openGraph: {
     images: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',

@@ -95,12 +95,13 @@ const page = ({ posts }) => {
               </div>
             </div>
           ))}
-          <div className="mt-6 flex justify-center md:justify-end">
+         
+        </div>
+        <div className="mt-6 flex justify-center md:justify-center">
             <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
               Read more
             </button>
           </div>
-        </div>
       </div>
     </section>
   );

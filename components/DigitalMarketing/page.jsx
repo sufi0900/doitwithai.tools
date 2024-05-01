@@ -12,10 +12,9 @@ import {
  
 } from "@mui/material";
 import Link from "next/link";
-import { Schedule, LocalOffer, AccessTime } from "@mui/icons-material";
+import {  LocalOffer,  CalendarMonthOutlined } from "@mui/icons-material";
 import Box from "@mui/material/Box";
 import Breadcrumb from "../Common/Breadcrumb";
-import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 const DigitalMarketing = () => {
   // Define the static SEO blogs
@@ -76,7 +75,7 @@ const DigitalMarketing = () => {
   </p>
   <div className="mb-3 mt-3 flex items-center justify-start gap-2">
   <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-    <EventNoteIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+    <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
     <p className="text-xs font-medium text-gray-600 dark:text-gray-400">06/12/2024</p>
   </div>
   <div className="flex items-center">
@@ -153,7 +152,7 @@ const DigitalMarketing = () => {
                       </h5  >
                       <div className="mb-3 mt-3 flex items-center justify-start gap-2">
 <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-<EventNoteIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+<CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
 <p className="text-xs font-medium text-gray-600 dark:text-gray-400">06/12/2024</p>
 </div>
 <div className="flex items-center">
@@ -192,7 +191,7 @@ const DigitalMarketing = () => {
         </Grid>
         <div className="mt-6 flex justify-center md:justify-end">
           <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
-            Read more
+          Explore All Blogs
           </button>
         </div>
       </div>
