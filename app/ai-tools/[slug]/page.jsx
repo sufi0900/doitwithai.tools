@@ -22,11 +22,22 @@ export async function generateMetadata({ params }) {
     title: `${data.title}`,
     description: `${data.overview}`,
     author: "Sufian Mustafa",
-    image: {   url: urlForImage(data.mainImage).url(),
+   
+
+    image: {
+      url: urlForImage(data.mainImage).url(),
       width: 800,
-      height: 600, 
-     
+      height: 600,
     },
+    openGraph: {
+      images: [
+        {
+          url: urlForImage(data.mainImage).url(),
+          width: 800,
+          height: 600,
+        }
+      ]
+    }
   
   };
   
@@ -88,7 +99,7 @@ export default async function ParentPage({ params }) {
   <meta name="author" content="sufian mustafa" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content={urlForImage(data.mainImage).url()} />
+  <meta property="og:image" content={image} />
   <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 
