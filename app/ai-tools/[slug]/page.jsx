@@ -108,14 +108,14 @@ export default async function ParentPage({ params }) {
         <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
-        <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
+        <meta property="og:image" content={image}/>
         <meta name="twitter:card" content="summary_large_image" />
         <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
-        <meta property="twitter:url" content="https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator" />
+        <meta property="twitter:url" content={canonicalUrl} />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-        <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator"/>
+        <meta name="twitter:image" content={image} />
+        <link rel="canonical" href={canonicalUrl}/>
 
         <NextSeo
          title={title}
@@ -131,7 +131,7 @@ export default async function ParentPage({ params }) {
             description: description,
             url: canonicalUrl,
             type: "ItemList",
-            images: image
+            image: image
           }}
         />
       
