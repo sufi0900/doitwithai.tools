@@ -80,7 +80,7 @@ export default async function ParentPage({ params }) {
       }`
     };
   }
-  const MAX_DESCRIPTION_LENGTH = 200; 
+  const MAX_DESCRIPTION_LENGTH = 100; 
 
 
   const metadata = await generateMetadata({ params });
