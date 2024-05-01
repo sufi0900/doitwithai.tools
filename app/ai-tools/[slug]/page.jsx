@@ -91,7 +91,7 @@ export default async function ParentPage({ params }) {
 
   const description = `${data.overview}`;
   // const description2 = overview.length > MAX_DESCRIPTION_LENGTH ? overview.substring(0, MAX_DESCRIPTION_LENGTH) : overview; // Apply limit to description
-  const maxLength = 50;
+  const maxLength = 10;
   const truncatedDescription = data.overview.length > maxLength ? `${data.overview.substring(0, maxLength)}...` : data.overview;
   
   // Assign the truncated description to the variable

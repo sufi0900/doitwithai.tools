@@ -87,7 +87,7 @@ export default function Page() {
         <meta name="twitter:title" content={metadata.title} />
         <meta name="twitter:description" content={metadata.description} />
         <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-  <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator"/>
+        <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools/ai-image-generator"/>
 
         <NextSeo
          title={metadata.title}

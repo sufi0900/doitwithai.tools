@@ -79,6 +79,18 @@ export const aitool = {
           hotspot: true,
         },
       },
+      {
+        name: "metadesc",
+        title: "Meta Description",
+        type: "string",
+        
+      },
+      {
+        name: "schemadesc",
+        title: "Schema Description",
+        type: "string",
+        
+      },
   
       {
         name: "isHomePageTrendBig",
