@@ -5,13 +5,13 @@ import SharePost from "@/components/Blog/SharePost";
 import TagButton from "@/components/Blog/TagButton";
 import NewsLatterBox from "@/components/Contact/NewsLatterBox";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect  } from "react";
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
-import Link from "next/link";
+
 
 export const revalidate = false;
 export const dynamic = "force-dynamic";
@@ -20,6 +20,7 @@ export const dynamic = "force-dynamic";
 
 // Update the portableTextComponents object to include the custom table component
 import "@/styles/customanchor.css";
+import Link from "next/link";
 const portableTextComponents = {
   block: {
     normal: ({ children }) => (
@@ -160,7 +161,33 @@ const portableTextComponents = {
 };
 portableTextComponents.types.button = portableTextComponents.button;
 
-export default function BlogSidebarPage( { data, relatedPosts, params } ) {
+export default function BlogSidebarPage({ data }) {
+  const [aiToolRelatedPost, setAiToolRelatedPostData] = useState([]);
+  const [visitedRelatedPosts, setVisitedRelatedPosts] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+        // Fetch random posts from the "aitool" category
+        const query = `*[_type == "aitool"][0...50] | order(_createdAt desc)`;
+        const allPosts = await client.fetch(query);
+        const shuffledPosts = allPosts.sort(() => 0.5 - Math.random());
+        setAiToolRelatedPostData(shuffledPosts.slice(0, 3));
+    };
+
+    fetchData();
+}, []);
+
+
+ // Function to handle visiting a related post
+const handleVisitRelatedPost = (postId) => {
+  // Check if the visited post is already in the visitedRelatedPosts state
+  if (!visitedRelatedPosts.includes(postId)) {
+    // If not, add the visited post to the visitedRelatedPosts state
+    setVisitedRelatedPosts((prevVisitedPosts) => [...prevVisitedPosts, postId]);
+  }
+};
+
+
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
 
   // Function to toggle the state of the table of contents box
@@ -229,6 +256,39 @@ export default function BlogSidebarPage( { data, relatedPosts, params } ) {
                         components={portableTextComponents}
                       />
                     </div>
+                    {aiToolRelatedPost
+  .filter((post) => !visitedRelatedPosts.includes(post._id))
+  .slice(0, 3)
+  .map((post) => (
+                  <li key={post._id} className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
+               
+                  <div  className="flex items-center lg:block xl:flex">
+            <div className="mr-5 lg:mb-3 xl:mb-0">
+                <div className="relative h-[60px] w-[70px] overflow-hidden rounded-md sm:h-[75px] sm:w-[85px]">
+                    <img                  src={urlForImage(post.mainImage).url()}
+ alt={post.title} layout='fill' objectFit='cover' />
+                </div>
+            </div>
+            <div>
+                <h5>
+                    <Link       href={`/ai-tools/${post.slug.current}`}
+ className="text-base font-medium leading-snug text-black hover:text-primary dark:text-white dark:hover:text-primary">
+                        {post.title}
+                    </Link>
+                </h5>
+                <p className="text-xs font-medium text-body-color">{post.date}</p>
+            </div>
+            
+        </div>
+          
+                    {/* <RelatedPost
+                      title="Best way to boost your online sales."
+                      image="/images/blog/post-01.jpg"
+                      slug="#"
+                      date="12 Feb 2025"
+                    /> */}
+                  </li>
+                    ))}
                   </div>
                   <div className="mb-10 flex flex-wrap items-center justify-between border-b border-body-color border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="flex flex-wrap items-center">
@@ -583,17 +643,36 @@ export default function BlogSidebarPage( { data, relatedPosts, params } ) {
                   Related Posts
                 </h3>
                 <ul className="p-8">
-                  <li className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
-                  {relatedPosts.map(post => (
-                    <RelatedPost 
-                        key={post._id}
-                        title={post.title}
-                        image={urlForImage(post.mainImage).url()}
-                        slug={`/aitool/${post.slug.current}`}
-                        date={new Date(post.publishedAt).toLocaleDateString()}
-                    />
-                ))}
+                {aiToolRelatedPost.slice(0, 3).map((post) => (
+                  <li key={post._id} className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
+               
+                  <div  className="flex items-center lg:block xl:flex">
+            <div className="mr-5 lg:mb-3 xl:mb-0">
+                <div className="relative h-[60px] w-[70px] overflow-hidden rounded-md sm:h-[75px] sm:w-[85px]">
+                    <img                  src={urlForImage(post.mainImage).url()}
+ alt={post.title} layout='fill' objectFit='cover' />
+                </div>
+            </div>
+            <div>
+                <h5>
+                    <Link       href={`/ai-tools/${post.slug.current}`}
+ className="text-base font-medium leading-snug text-black hover:text-primary dark:text-white dark:hover:text-primary">
+                        {post.title}
+                    </Link>
+                </h5>
+                <p className="text-xs font-medium text-body-color">{post.date}</p>
+            </div>
+            
+        </div>
+          
+                    {/* <RelatedPost
+                      title="Best way to boost your online sales."
+                      image="/images/blog/post-01.jpg"
+                      slug="#"
+                      date="12 Feb 2025"
+                    /> */}
                   </li>
+                    ))}
                   <li className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
                     <RelatedPost
                       title="50 Best web design tips & tricks that will help you."

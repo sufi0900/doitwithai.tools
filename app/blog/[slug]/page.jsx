@@ -16,7 +16,7 @@ export const metadata = {
 };
 
 async function getData(slug) {
-  const query = `*[_type == "aitool" && slug.current == "${slug}"][0]`;
+  const query = `*[_type == "blog" && slug.current == "${slug}"][0]`;
   const data = await client.fetch(query);
   return data;
 }
