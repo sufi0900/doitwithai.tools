@@ -12,7 +12,7 @@ async function fetchAllBlogs(page = 1, limit = 2, categories = []) {
     const result = await client.fetch(query, { categories });
     return result;
   }
-  export default  function Allposts({ params }) {
+  export default  function Allposts() {
   const schemaSlugMap = {
         makemoney: "make-money-with-ai",
         aitool: "aitools",

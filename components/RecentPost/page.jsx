@@ -4,7 +4,7 @@ import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import Link from "next/link";
 import Image from "next/image";
-const page = () => {
+export default  function RecentPosts() {
   const [recentData, setRecentData] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
@@ -129,4 +129,4 @@ const page = () => {
   );
 };
 
-export default page;
+
