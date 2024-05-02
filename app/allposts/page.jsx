@@ -6,21 +6,24 @@ import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import Link from "next/link";
 import Image from "next/image";
 import BlogCard from "./Card"
-async function fetchAllBlogs(page = 1, limit = 2, categories = []) {
+
+
+  async function fetchAllBlogs(page = 1, limit = 2, categories = []) {
     const start = (page - 1) * limit;
-    const query = `*[_type in $categories] | order(publishedAt desc) { _id, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
+    const query = `*[_type in $categories] | order(publishedAt desc) { _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
     const result = await client.fetch(query, { categories });
     return result;
   }
+  
   export default  function Allposts() {
-  const schemaSlugMap = {
+    const schemaSlugMap = {
         makemoney: "make-money-with-ai",
         aitool: "aitools",
         news: "ai-trending-news",
         coding: "code-with-ai",
-        freeairesources : "free-ai-resources",
+        freeairesources: "free-ai-resources",
         seo: "seo-with-ai",
-      };
+      }
       const MAX_TITLE_LENGTH = 20; // Maximum characters for title
       const MAX_OVERVIEW_LENGTH = 100; // Maximum characters for overview
       const truncateText = (text, maxLength) => {
@@ -28,7 +31,7 @@ async function fetchAllBlogs(page = 1, limit = 2, categories = []) {
           ? `${text.substring(0, maxLength)}...`
           : text;
       };
-      
+    
     const [currentPage, setCurrentPage] = useState(1);
     const [searchText, setSearchText] = useState("");
     const [searchResults, setSearchResults] = useState([]);
@@ -46,10 +49,12 @@ async function fetchAllBlogs(page = 1, limit = 2, categories = []) {
           "freeairesources",
           "seo",
         ]);
+        
         setAllData(newData);
         setLoading(false);
       };
       fetchData();
+      
     }, [currentPage]);
   
     const handlePrevious = () => {
@@ -65,7 +70,7 @@ async function fetchAllBlogs(page = 1, limit = 2, categories = []) {
           console.log("Please enter at least 4 characters for search.");
           return;
         }
-        const       query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"] && (title match $searchText || content match $searchText)] | order(publishedAt desc)`;
+        const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"] && (title match $searchText || content match $searchText)] | order(publishedAt desc)`;
 
         const searchResults = await client.fetch(query, {
           searchText: `*${searchText}*`,
