@@ -24,8 +24,8 @@ const TrendingPage = () => {
   useEffect(() => {
     const fetchData = async () => {
     
-      const isHomePageTrendBig = `*[_type in [ "makemoney", "news", "coding", "digital", "seo",] && isHomePageTrendBig == true]`;
-      const isHomePageTrendRelated =`*[_type in [ "makemoney", "news", "coding", "digital", "seo", ] && isHomePageTrendRelated == true]`;
+      const isHomePageTrendBig = `*[_type in [ "makemoney", "freeairesources", "news", "coding", "aitool", "seo",] && isHomePageTrendBig == true]`;
+      const isHomePageTrendRelated =`*[_type in [ "makemoney", "freeairesources",  "news", "coding", "aitool", "seo", ] && isHomePageTrendRelated == true]`;
 
       const isHomePageTrendBigData = await client.fetch(isHomePageTrendBig);
       const isHomePageTrendRelatedData = await client.fetch(isHomePageTrendRelated);
@@ -43,6 +43,14 @@ const TrendingPage = () => {
     fetchData();
   }, []);
 
+  const schemaSlugMap = {
+    makemoney: "make-money-with-ai",
+    aitool: "aitools",
+    news: "ai-trending-news",
+    coding: "code-with-ai",
+    digital: "free-ai-resources",
+    seo: "seo-with-ai",
+  };
 
   return (
     <section className="pb-[20px] pt-[20px]">
@@ -142,8 +150,8 @@ const TrendingPage = () => {
     </div>
 
     <Link
-      href={`/ai-tool/${post.slug.current}`}
-      className="mt-4 mb-2 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                    href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // Construct link dynamically based on the post's schema
+                    className="mt-4 mb-2 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
     >
       Read more
       <svg
@@ -233,8 +241,8 @@ fill
 </div>
 
                           <Link
-                          href={`/ai-tool/${post.slug.current}`}
-                            className="mt-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                    href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // Construct link dynamically based on the post's schema
+                    className="mt-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                           >
                             Read more
                             <svg
@@ -313,8 +321,8 @@ fill
 </div>
 
                           <Link
-                            href={`/ai-tool/${post.slug.current}`}
-                            className="mt-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                    href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // Construct link dynamically based on the post's schema
+                    className="mt-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                           >
                             Read more
                             <svg

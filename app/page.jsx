@@ -54,7 +54,16 @@ export default  function Home() {
   const [codingData, setCodingData] = useState([]);
   // 
   const [recentData, setRecentData] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      const query = `*[_type in ["makemoney", "news", "coding", "freeairesources", "seo"]]|order(publishedAt desc)[0...5]`;
 
+      const recentData = await client.fetch(query);
+      setRecentData(recentData);
+    };
+
+    fetchData();
+  }, []);
   useEffect(() => {
     const fetchData = async () => {
     
@@ -79,9 +88,7 @@ export default  function Home() {
       // 
       const isHomePageCoding = `*[_type == "coding" && isHomePageCoding == true]`;
       // 
-      const isRecent = `*[_type == "blog" && isRecent == true]`;
-
-
+  
       const isHomePageFeatureBigData = await client.fetch(isHomePageFeatureBig);
       const isHomePageTrendBigData = await client.fetch(isHomePageTrendBig);
       const isHomePageTrendRelatedData = await client.fetch(isHomePageTrendRelated);
@@ -103,7 +110,7 @@ export default  function Home() {
       // 
       const isHomePageCodingData = await client.fetch(isHomePageCoding);
       // 
-      const isRecentData = await client.fetch(isRecent);
+      // const isRecentData = await client.fetch(isRecent);
   
 
       setFeaturePostBig(isHomePageFeatureBigData);
@@ -127,7 +134,7 @@ export default  function Home() {
       // 
       setCodingData(isHomePageCodingData);
       // 
-      setRecentData(isRecentData);
+      // setRecentData(isRecentData);
      
     };
 
@@ -143,7 +150,7 @@ export default  function Home() {
       >
         <div className="container">
           <Grid container spacing={2}>
-             <Trending /> 
+             {/* <Trending />  */}
           </Grid>
         </div>
       </section>
@@ -158,11 +165,10 @@ export default  function Home() {
                 Feature
                 <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
               </span>
-              {/* Add space between the texts */}{" "}
-              {/* Add space between the texts */}
+             
               <span className="relative mt-4 inline-block ">
-                {" "}
-                {/* Apply smaller font size */}
+     
+              
                 Posts
                 <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
               </span>
@@ -170,14 +176,14 @@ export default  function Home() {
           </h1>
         
           <Grid container spacing={2}>
-            <FeaturePost posts={featurePostBig} />
-            <RelatedFeaturePost posts={featureRelatedData} /> 
+            {/* <FeaturePost posts={featurePostBig} />
+            <RelatedFeaturePost posts={featureRelatedData} />  */}
           </Grid>
         </div>
         <br />
         <br />
       </section>
-      <AiTools />
+      {/* <AiTools /> */}
       <AIEarn />
       <AINews />
       <CodeWithAI /> 
@@ -189,7 +195,7 @@ export default  function Home() {
      
   
 
-      <RecentPost posts={recentData} />
+      <RecentPost  />
       <MainCategory />
       <MBrands />
 

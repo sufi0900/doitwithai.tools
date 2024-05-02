@@ -18,7 +18,7 @@ export const metadata = {
 };
 
 async function getData(slug) {
-  const query = `*[_type == "coding" && slug.current == "${slug}"][0]`;
+  const query = `*[_type == "freeairesources" && slug.current == "${slug}"][0]`;
   const data = await client.fetch(query);
   return data;
 }

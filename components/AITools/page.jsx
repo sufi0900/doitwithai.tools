@@ -2,15 +2,12 @@
 "use client";
 import { client } from "@/sanity/lib/client";
 import React, { useEffect, useState } from "react";
-import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
+import { urlForImage } from "@/sanity/lib/image"; 
 import {
   Card,
   CardContent,
- 
   Grid,
-
   CardMedia,
-
 } from "@mui/material";
 import Box from "@mui/material/Box";
 import Link from "next/link";

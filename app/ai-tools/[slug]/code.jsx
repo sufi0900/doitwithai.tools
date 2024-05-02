@@ -161,31 +161,22 @@ const portableTextComponents = {
 };
 portableTextComponents.types.button = portableTextComponents.button;
 
-export default function BlogSidebarPage({ data }) {
-  const [aiToolRelatedPost, setAiToolRelatedPostData] = useState([]);
-  const [visitedRelatedPosts, setVisitedRelatedPosts] = useState([]);
+export default function BlogSidebarPage({ data, params, currentCategory  }) {
+  const [relatedPosts, setRelatedPosts] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
-        // Fetch random posts from the "aitool" category
-        const query = `*[_type == "aitool"][0...50] | order(_createdAt desc)`;
-        const allPosts = await client.fetch(query);
-        const shuffledPosts = allPosts.sort(() => 0.5 - Math.random());
-        setAiToolRelatedPostData(shuffledPosts.slice(0, 3));
+        const query = `*[_type == "aitool" && category == $currentCategory][0...3]`;
+        const relatedPostsData = await client.fetch(query, {currentCategory});
+        setRelatedPosts(relatedPostsData);
     };
 
-    fetchData();
-}, []);
+    if (currentCategory) {
+      fetchData();
+    }
+  }, [currentCategory]);
 
 
- // Function to handle visiting a related post
-const handleVisitRelatedPost = (postId) => {
-  // Check if the visited post is already in the visitedRelatedPosts state
-  if (!visitedRelatedPosts.includes(postId)) {
-    // If not, add the visited post to the visitedRelatedPosts state
-    setVisitedRelatedPosts((prevVisitedPosts) => [...prevVisitedPosts, postId]);
-  }
-};
 
 
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
@@ -256,39 +247,7 @@ const handleVisitRelatedPost = (postId) => {
                         components={portableTextComponents}
                       />
                     </div>
-                    {aiToolRelatedPost
-  .filter((post) => !visitedRelatedPosts.includes(post._id))
-  .slice(0, 3)
-  .map((post) => (
-                  <li key={post._id} className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
-               
-                  <div  className="flex items-center lg:block xl:flex">
-            <div className="mr-5 lg:mb-3 xl:mb-0">
-                <div className="relative h-[60px] w-[70px] overflow-hidden rounded-md sm:h-[75px] sm:w-[85px]">
-                    <img                  src={urlForImage(post.mainImage).url()}
- alt={post.title} layout='fill' objectFit='cover' />
-                </div>
-            </div>
-            <div>
-                <h5>
-                    <Link       href={`/ai-tools/${post.slug.current}`}
- className="text-base font-medium leading-snug text-black hover:text-primary dark:text-white dark:hover:text-primary">
-                        {post.title}
-                    </Link>
-                </h5>
-                <p className="text-xs font-medium text-body-color">{post.date}</p>
-            </div>
-            
-        </div>
-          
-                    {/* <RelatedPost
-                      title="Best way to boost your online sales."
-                      image="/images/blog/post-01.jpg"
-                      slug="#"
-                      date="12 Feb 2025"
-                    /> */}
-                  </li>
-                    ))}
+              
                   </div>
                   <div className="mb-10 flex flex-wrap items-center justify-between border-b border-body-color border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="flex flex-wrap items-center">
@@ -643,7 +602,7 @@ const handleVisitRelatedPost = (postId) => {
                   Related Posts
                 </h3>
                 <ul className="p-8">
-                {aiToolRelatedPost.slice(0, 3).map((post) => (
+                {relatedPosts.map((post) => (
                   <li key={post._id} className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
                
                   <div  className="flex items-center lg:block xl:flex">
@@ -673,6 +632,37 @@ const handleVisitRelatedPost = (postId) => {
                     /> */}
                   </li>
                     ))}
+                {/* {relatedPosts.map((post) => (
+                  <li key={post._id} className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
+               
+                  <div  className="flex items-center lg:block xl:flex">
+            <div className="mr-5 lg:mb-3 xl:mb-0">
+                <div className="relative h-[60px] w-[70px] overflow-hidden rounded-md sm:h-[75px] sm:w-[85px]">
+                    <img                  src={urlForImage(post.mainImage).url()}
+ alt={post.title} layout='fill' objectFit='cover' />
+                </div>
+            </div>
+            <div>
+                <h5>
+                    <Link       href={`/ai-tools/${post.slug.current}`}
+ className="text-base font-medium leading-snug text-black hover:text-primary dark:text-white dark:hover:text-primary">
+                        {post.title}
+                    </Link>
+                </h5>
+                <p className="text-xs font-medium text-body-color">{post.date}</p>
+            </div>
+            
+        </div>
+          
+                 
+                  </li>
+                    ))} */}
+                       {/* <RelatedPost
+                      title="Best way to boost your online sales."
+                      image="/images/blog/post-01.jpg"
+                      slug="#"
+                      date="12 Feb 2025"
+                    /> */}
                   <li className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
                     <RelatedPost
                       title="50 Best web design tips & tricks that will help you."

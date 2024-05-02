@@ -1,16 +1,36 @@
-import React from "react";
-import Link from "next/link";
+
+import React, { useEffect, useState } from "react";
+import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
+import Link from "next/link";
 import Image from "next/image";
-const page = ({ posts }) => {
+const page = () => {
+  const [recentData, setRecentData] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]]|order(publishedAt desc)[0...5]`;
+
+      const recentData = await client.fetch(query);
+      setRecentData(recentData);
+    };
+
+    fetchData();
+  }, []);
   const MAX_TITLE_LENGTH = 20; // Maximum characters for title
   const MAX_OVERVIEW_LENGTH = 100; // Maximum characters for overview
   const truncateText = (text, maxLength) => {
-    return text.length > maxLength
+    return text?.length > maxLength
       ? `${text.substring(0, maxLength)}...`
       : text;
   };
-  const recentPosts = posts.slice(0, 3);
+  const schemaSlugMap = {
+    makemoney: "make-money-with-ai",
+    aitool: "aitools",
+    news: "ai-trending-news",
+    coding: "code-with-ai",
+    freeairesources : "free-ai-resources",
+    seo: "seo-with-ai",
+  };
 
   return (
     <section className="pb-[20px] pt-[20px]">
@@ -23,10 +43,11 @@ const page = ({ posts }) => {
           <span className="text-blue-500">Post</span>
         </h1>
         <div className="-mx-4 flex flex-wrap justify-center">
-          {recentPosts.map((post) => (
+          {recentData.slice(0, 3).map((post) => (
             <div key={post._id} className="mb-6 px-2 ">
               <div className="max-w-sm rounded-lg border border-gray-200 bg-white shadow dark:border-gray-700 dark:bg-gray-800">
-                <Link href={`/blog/${post.slug.current}`}>
+                <Link                     href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // Construct link dynamically based on the post's schema
+>
                   <img
                     className="rounded-t-lg"
                     src={urlForImage(post.mainImage).url()}
@@ -39,7 +60,8 @@ const page = ({ posts }) => {
                   />
                 </Link>
                 <div className="p-5">
-                  <Link href={`/blog/${post.slug.current}`}>
+                  <Link                     href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // Construct link dynamically based on the post's schema
+>
                     <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                       {truncateText(post.title, MAX_TITLE_LENGTH)}
                     </h5>
@@ -71,7 +93,7 @@ const page = ({ posts }) => {
                     </div>
                   </div>
                   <Link
-                    href={`/blog/${post.slug.current}`}
+                    href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // Construct link dynamically based on the post's schema
                     className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                   >
                     Read more

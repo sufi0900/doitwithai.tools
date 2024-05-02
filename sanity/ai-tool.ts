@@ -30,7 +30,27 @@ export const aitool = {
           source: "title",
         },
       },
-  
+      // options: {
+      //   list: [
+      //     {title: "AI Image Generator", value: "ai-image-gen"},
+      //     {title: "AI Video Generator", value: "ai-video-gen"},
+      //     // Add more subcategories as needed
+      //   ],
+      // },
+      {
+        name: "category",
+        title: "Category",
+        type: "string",
+        options
+      : {
+            list: [
+             {title: "AI Image Generator", value: "ai-image-gen"},
+             {title: "AI Video Generator", value: "ai-video-gen"},
+         
+            ]
+        },
+      },
+      
       {
         name: "content",
         type: "array",
