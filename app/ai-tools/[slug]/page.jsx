@@ -12,7 +12,10 @@ import { urlForImage } from "@/sanity/lib/image";
 
 
 async function getData(slug) {
-  const query = `*[_type == "aitool" && slug.current == "${slug}"][0]`;
+  const query = `{
+    "post": *[_type == "aitool" && slug.current == "${slug}"][0],
+    "relatedPosts": *[_type == "aitool" && slug.current != "${slug}"] | order(publishedAt desc)[0...3]
+}`;
   const data = await client.fetch(query);
   return data;
 }
@@ -152,7 +155,7 @@ export default async function ParentPage({ params }) {
      key="AiTools-jsonld"
    />
       <section>
-        <ChildComp data={data} params={params} />
+      <ChildComp data={data.post} relatedPosts={data.relatedPosts} params={params} />
       </section>
     </>
   );

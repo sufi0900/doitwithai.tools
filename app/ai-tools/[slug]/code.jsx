@@ -160,7 +160,7 @@ const portableTextComponents = {
 };
 portableTextComponents.types.button = portableTextComponents.button;
 
-export default function BlogSidebarPage({ data }) {
+export default function BlogSidebarPage( { data, relatedPosts, params } ) {
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
 
   // Function to toggle the state of the table of contents box
@@ -584,12 +584,15 @@ export default function BlogSidebarPage({ data }) {
                 </h3>
                 <ul className="p-8">
                   <li className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
-                    <RelatedPost
-                      title="Best way to boost your online sales."
-                      image="/images/blog/post-01.jpg"
-                      slug="#"
-                      date="12 Feb 2025"
+                  {relatedPosts.map(post => (
+                    <RelatedPost 
+                        key={post._id}
+                        title={post.title}
+                        image={urlForImage(post.mainImage).url()}
+                        slug={`/aitool/${post.slug.current}`}
+                        date={new Date(post.publishedAt).toLocaleDateString()}
                     />
+                ))}
                   </li>
                   <li className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
                     <RelatedPost

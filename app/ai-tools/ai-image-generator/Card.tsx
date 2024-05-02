@@ -31,7 +31,7 @@ export default function SingleBlog({
         <div className="card max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow transition duration-200 ease-in-out  hover:scale-105 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
           {" "}
           <Link
-            href={`/${slugUrl}`}
+            href={`/ai-tools/${slugUrl}`}
             className="relative block aspect-[37/22] w-full"
           >
             <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
@@ -50,7 +50,7 @@ export default function SingleBlog({
           {/* Content */}
           <div className="p-5">
             {/* Title */}
-            <Link href={`/blog/${slugUrl}`}>
+            <Link href={`/ai-tools/${slugUrl}`}>
               <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                 {formattedTitle}
               </h5>
@@ -76,7 +76,7 @@ export default function SingleBlog({
             </div>
             {/* Read more link */}
             <Link
-              href={`/${slugUrl}`}
+              href={`/ai-tools/${slugUrl}`}
               className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
               Read more
