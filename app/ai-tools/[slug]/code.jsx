@@ -383,7 +383,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
   };
   const renderSearchResults = () => {
     return searchResults.map((blog) =>
-    <div className="mb-10 rounded-sm bg-white shadow-three dark:bg-gray-dark dark:shadow-none">
+    <div key={blog._id} className="mb-10 rounded-sm bg-white shadow-three dark:bg-gray-dark dark:shadow-none">
 <h3 className="border-b border-black border-opacity-10 px-8 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white">
                   Search Result
  </h3>
