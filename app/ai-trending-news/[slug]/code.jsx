@@ -426,7 +426,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
   };
   useEffect(() => {
     const fetchData = async () => {
-      const query = `*[_type == "news"][0...50] | order(_createdAt desc)`;
+      const query = `*[_type == "coding"] [0...50] | order(_createdAt desc)`;
       const relatedPostsData = await client.fetch(query);
         setRelatedPosts(relatedPostsData);
     };

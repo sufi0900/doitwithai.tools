@@ -5,31 +5,39 @@ import SharePost from "@/components/Blog/SharePost";
 import TagButton from "@/components/Blog/TagButton";
 import NewsLatterBox from "@/components/Contact/NewsLatterBox";
 import Image from "next/image";
-import React, { useState } from "react";
-import { ExpandMore, ExpandLess } from "@mui/icons-material";
+import React, { useState, useEffect  } from "react";
+import { ExpandMore, ExpandLess, AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
+import RecentPost from "@/components/RecentPost/page";
+import Card from "@/components/Card/Page";
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
-import Link from "next/link";
+
 
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 
-// Define a custom table component
-
-// Update the portableTextComponents object to include the custom table component
 import "@/styles/customanchor.css";
+import Link from "next/link";
+async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
+  const start = (page - 1) * limit;
+  const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
+  const result = await client.fetch(query, { categories });
+  return result;
+}
 const portableTextComponents = {
   block: {
     normal: ({ children }) => (
-      <p className="mb-4 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-        {children}
-      </p>
-    ),
+      <p className="mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+  {children}
+</p>
 
+
+    ),
+ 
     h1: ({ children }) => (
-      <h1 className="mb-8 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
+      <h1 className="mb-4 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
         {children}
       </h1>
     ),
@@ -39,10 +47,172 @@ const portableTextComponents = {
         {children}
       </h2>
     ),
+    h3: ({ children }) => (
+      <h3 className="mb-4 text-2xl font-semibold leading-tight text-gray-800 dark:text-gray-200 sm:text-3xl lg:text-2xl xl:text-3xl">
+        {children}
+      </h3>
+    ),
+  
+    // Heading 4
     h4: ({ children }) => (
+      <h4 className="mb-4 text-xl font-semibold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
+        {children}
+      </h4>
+    ),
+  
+    // Heading 5
+    h5: ({ children }) => (
+      <h5 className="mb-4 text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+        {children}
+      </h5>
+    ),
+    h6: ({ children }) => (
       <div className="relative z-10 mb-10 overflow-hidden rounded-md bg-primary bg-opacity-10 p-8 md:p-9 lg:p-8 xl:p-9">
         <h4 className="text-center text-base font-medium italic text-body-color">
+        <span className="absolute left-0 top-0 z-[-1]">
+                      <svg
+                        width="132"
+                        height="109"
+                        viewBox="0 0 132 109"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          opacity="0.5"
+                          d="M33.0354 90.11C19.9851 102.723 -3.75916 101.834 -14 99.8125V-15H132C131.456 -12.4396 127.759 -2.95278 117.318 14.5117C104.268 36.3422 78.7114 31.8952 63.2141 41.1934C47.7169 50.4916 49.3482 74.3435 33.0354 90.11Z"
+                          fill="url(#paint0_linear_111:606)"
+                        />
+                        <path
+                          opacity="0.5"
+                          d="M33.3654 85.0768C24.1476 98.7862 1.19876 106.079 -9.12343 108.011L-38.876 22.9988L100.816 -25.8905C100.959 -23.8126 99.8798 -15.5499 94.4164 0.87754C87.5871 21.4119 61.9822 26.677 49.5641 38.7512C37.146 50.8253 44.8877 67.9401 33.3654 85.0768Z"
+                          fill="url(#paint1_linear_111:606)"
+                        />
+                        <defs>
+                          <linearGradient
+                            id="paint0_linear_111:606"
+                            x1="94.7523"
+                            y1="82.0246"
+                            x2="8.40951"
+                            y2="52.0609"
+                            gradientUnits="userSpaceOnUse"
+                          >
+                            <stop stopColor="white" stopOpacity="0.06" />
+                            <stop
+                              offset="1"
+                              stopColor="white"
+                              stopOpacity="0"
+                            />
+                          </linearGradient>
+                          <linearGradient
+                            id="paint1_linear_111:606"
+                            x1="90.3206"
+                            y1="58.4236"
+                            x2="1.16149"
+                            y2="50.8365"
+                            gradientUnits="userSpaceOnUse"
+                          >
+                            <stop stopColor="white" stopOpacity="0.06" />
+                            <stop
+                              offset="1"
+                              stopColor="white"
+                              stopOpacity="0"
+                            />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                    </span>
+             
+                  
           {children}
+          <span className="absolute bottom-0 right-0 z-[-1]">
+              
+              <svg
+                width="53"
+                height="30"
+                viewBox="0 0 53 30"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle
+                  opacity="0.8"
+                  cx="37.5"
+                  cy="37.5"
+                  r="37.5"
+                  fill="#4A6CF7"
+                />
+                <mask
+                  id="mask0_111:596"
+                  style={{ maskType: "alpha" }}
+                  maskUnits="userSpaceOnUse"
+                  x="0"
+                  y="0"
+                  width="75"
+                  height="75"
+                >
+                  <circle
+                    opacity="0.8"
+                    cx="37.5"
+                    cy="37.5"
+                    r="37.5"
+                    fill="#4A6CF7"
+                  />
+                </mask>
+                <g mask="url(#mask0_111:596)">
+                  <circle
+                    opacity="0.8"
+                    cx="37.5"
+                    cy="37.5"
+                    r="37.5"
+                    fill="url(#paint0_radial_111:596)"
+                  />
+                  <g opacity="0.8" filter="url(#filter0_f_111:596)">
+                    <circle
+                      cx="40.8089"
+                      cy="19.853"
+                      r="15.4412"
+                      fill="white"
+                    />
+                  </g>
+                </g>
+                <defs>
+                  <filter
+                    id="filter0_f_111:596"
+                    x="4.36768"
+                    y="-16.5881"
+                    width="72.8823"
+                    height="72.8823"
+                    filterUnits="userSpaceOnUse"
+                    colorInterpolationFilters="sRGB"
+                  >
+                    <feFlood
+                      floodOpacity="0"
+                      result="BackgroundImageFix"
+                    />
+                    <feBlend
+                      mode="normal"
+                      in="SourceGraphic"
+                      in2="BackgroundImageFix"
+                      result="shape"
+                    />
+                    <feGaussianBlur
+                      stdDeviation="10.5"
+                      result="effect1_foregroundBlur_111:596"
+                    />
+                  </filter>
+                  <radialGradient
+                    id="paint0_radial_111:596"
+                    cx="0"
+                    cy="0"
+                    r="1"
+                    gradientUnits="userSpaceOnUse"
+                    gradientTransform="translate(37.5 37.5) rotate(90) scale(40.2574)"
+                  >
+                    <stop stopOpacity="0.47" />
+                    <stop offset="1" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+              </svg>
+            </span>
         </h4>
       </div>
     ),
@@ -78,14 +248,18 @@ const portableTextComponents = {
       const imageUrl = urlForImage(value.asset).url();
       const altText = value.alt || "";
       return (
-        <div className="card3 m-2 rounded-xl xs:m-1 sm:m-2">
-          <figure className=" relative mb-10  mt-4 ">
+        <div className=" lg:-mx-5 w-full overflow-hidden rounded">
+        <div className="lg:m-4 ">
+        <div className="card3 rounded-xl ">
+
+          <figure className=" relative my-8 ">
             <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
               <a href={imageUrl}>
-                <img
+                <Image
                   className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                   src={imageUrl}
                   alt={altText}
+                  fill
                 />
               </a>
             </div>
@@ -93,6 +267,8 @@ const portableTextComponents = {
               {altText}
             </figcaption>
           </figure>
+        </div>
+        </div>
         </div>
       );
     },
@@ -160,7 +336,104 @@ const portableTextComponents = {
 };
 portableTextComponents.types.button = portableTextComponents.button;
 
-export default function BlogSidebarPage({ data }) {
+export default function BlogSidebarPage({ data, params, currentCategory  }) {
+  const [searchText, setSearchText] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allData, setAllData] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const newData = await fetchAllBlogs(currentPage, 5, [
+        "makemoney",
+        "aitool",
+        "news",
+        "coding",
+        "freeairesources",
+        "seo",
+      ]);
+      
+      setAllData(newData);
+      setLoading(false);
+    };
+    fetchData();
+    
+  }, [currentPage]);
+  const handleSearch = async () => {
+    if (searchText.trim().length < 4) {
+      console.log("Please enter at least 4 characters for search.");
+      return;
+    }
+    const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"] && (title match $searchText || content match $searchText)] | order(publishedAt desc)`;
+
+    const searchResults = await client.fetch(query, {
+      searchText: `*${searchText}*`,
+    });
+    setSearchResults(searchResults);
+  };
+   
+  const resetSearch = () => {
+    setSearchText("");
+    setSearchResults([]);
+  };
+  const renderSearchResults = () => {
+    return searchResults.map((blog) =>
+    <div key={blog._id} className="mb-10 rounded-sm bg-white shadow-three dark:bg-gray-dark dark:shadow-none">
+<h3 className="border-b border-black border-opacity-10 px-8 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white">
+                  Search Result
+ </h3>
+    <ul className="p-8">
+
+      <li  className="mb-6 border-b border-black border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
+   
+     <RelatedPost key={blog._id} title={blog.title}
+    image={urlForImage(blog.mainImage).url()}
+    slug={`/${schemaSlugMap[blog._type]}/${blog.slug.current}`}
+    date={new Date(blog.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+{...blog} />
+
+</li>
+</ul>
+</div>
+);
+  };
+  const [recentData, setRecentData] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]]|order(publishedAt desc)[0...5]`;
+
+      const recentData = await client.fetch(query);
+      setRecentData(recentData);
+    };
+
+    fetchData();
+  }, []);
+
+  const [relatedPosts, setRelatedPosts] = useState([]);
+
+  const schemaSlugMap = {
+    makemoney: "make-money-with-ai",
+    aitool: "aitools",
+    news: "ai-trending-news",
+    coding: "code-with-ai",
+    freeairesources : "free-ai-resources",
+    seo: "seo-with-ai",
+  };
+  useEffect(() => {
+    const fetchData = async () => {
+      const query = `*[_type == "seo"][0...50] | order(_createdAt desc)`;
+      const relatedPostsData = await client.fetch(query);
+        setRelatedPosts(relatedPostsData);
+    };
+      fetchData();
+
+  }, []);
+
+
+
+
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
 
   // Function to toggle the state of the table of contents box
@@ -193,27 +466,25 @@ export default function BlogSidebarPage({ data }) {
       </div>
     );
   };
-
   return (
-    <>
-      <section className=" overflow-hidden pb-[120px] pt-[50px]">
+    <>  
+      <section className="overflow-hidden pb-[120px] pt-[40px]">
         <div className="container">
-          <div className="-mx-4 flex flex-wrap">
-            <div className="w-full px-4  lg:w-8/12">
-              <div>
-                <h1 className="mb-8 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
-                  {data.title}
+          <div className=" lg:m-4  flex flex-wrap">
+        <div className=" lg:-mx-5 w-full overflow-hidden rounded">
+          <div className="lg:m-4 ">
+        <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
+                {data.title}
                 </h1>
-                <div>
-                  <div className="mb-10 w-full overflow-hidden rounded">
-                    <div className="card4 m-4 rounded-xl">
-                      <figure className=" relative overflow-hidden rounded-lg">
-                        <div className="relative aspect-[37/22]">
+        <div className="card4  rounded-xl">
+        <figure className=" relative overflow-hidden rounded-lg">
+                        <div className="overflow-hidden lg:aspect-[40/16]">
                           <a href={urlForImage(data.mainImage).url()}>
-                            <img
+                            <Image
                               className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
                               src={urlForImage(data.mainImage).url()}
                               alt=""
+                              fill
                             />
                           </a>
                         </div>
@@ -221,16 +492,13 @@ export default function BlogSidebarPage({ data }) {
                           Caption
                         </figcaption>
                       </figure>
+                      </div>
                     </div>
+                            </div>
 
-                    <div className="customanchor mb-4 mt-4">
-                      <PortableText
-                        value={data.content}
-                        components={portableTextComponents}
-                      />
-                    </div>
-                  </div>
-                  <div className="mb-10 flex flex-wrap items-center justify-between border-b border-body-color border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+            <div className="w-full  lg:w-8/12 ">
+                  <div className="mb-10 mt-4 w-full overflow-hidden rounded">
+                  <div className="mb-10 flex flex-wrap items-center justify-between border-b border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="flex flex-wrap items-center">
                       <div className="mb-5 mr-10 flex items-center">
                         <div className="mr-4">
@@ -251,39 +519,20 @@ export default function BlogSidebarPage({ data }) {
                       <div className="mb-5 flex items-center">
                         <p className="mr-5 flex items-center text-base font-medium text-body-color">
                           <span className="mr-3">
-                            <svg
-                              width="15"
-                              height="15"
-                              viewBox="0 0 15 15"
-                              className="fill-current"
-                            >
-                              <path d="M3.89531 8.67529H3.10666C2.96327 8.67529 2.86768 8.77089 2.86768 8.91428V9.67904C2.86768 9.82243 2.96327 9.91802 3.10666 9.91802H3.89531C4.03871 9.91802 4.1343 9.82243 4.1343 9.67904V8.91428C4.1343 8.77089 4.03871 8.67529 3.89531 8.67529Z" />
-                              <path d="M6.429 8.67529H5.64035C5.49696 8.67529 5.40137 8.77089 5.40137 8.91428V9.67904C5.40137 9.82243 5.49696 9.91802 5.64035 9.91802H6.429C6.57239 9.91802 6.66799 9.82243 6.66799 9.67904V8.91428C6.66799 8.77089 6.5485 8.67529 6.429 8.67529Z" />
-                              <path d="M8.93828 8.67529H8.14963C8.00624 8.67529 7.91064 8.77089 7.91064 8.91428V9.67904C7.91064 9.82243 8.00624 9.91802 8.14963 9.91802H8.93828C9.08167 9.91802 9.17727 9.82243 9.17727 9.67904V8.91428C9.17727 8.77089 9.08167 8.67529 8.93828 8.67529Z" />
-                              <path d="M11.4715 8.67529H10.6828C10.5394 8.67529 10.4438 8.77089 10.4438 8.91428V9.67904C10.4438 9.82243 10.5394 9.91802 10.6828 9.91802H11.4715C11.6149 9.91802 11.7105 9.82243 11.7105 9.67904V8.91428C11.7105 8.77089 11.591 8.67529 11.4715 8.67529Z" />
-                              <path d="M3.89531 11.1606H3.10666C2.96327 11.1606 2.86768 11.2562 2.86768 11.3996V12.1644C2.86768 12.3078 2.96327 12.4034 3.10666 12.4034H3.89531C4.03871 12.4034 4.1343 12.3078 4.1343 12.1644V11.3996C4.1343 11.2562 4.03871 11.1606 3.89531 11.1606Z" />
-                              <path d="M6.429 11.1606H5.64035C5.49696 11.1606 5.40137 11.2562 5.40137 11.3996V12.1644C5.40137 12.3078 5.49696 12.4034 5.64035 12.4034H6.429C6.57239 12.4034 6.66799 12.3078 6.66799 12.1644V11.3996C6.66799 11.2562 6.5485 11.1606 6.429 11.1606Z" />
-                              <path d="M8.93828 11.1606H8.14963C8.00624 11.1606 7.91064 11.2562 7.91064 11.3996V12.1644C7.91064 12.3078 8.00624 12.4034 8.14963 12.4034H8.93828C9.08167 12.4034 9.17727 12.3078 9.17727 12.1644V11.3996C9.17727 11.2562 9.08167 11.1606 8.93828 11.1606Z" />
-                              <path d="M11.4715 11.1606H10.6828C10.5394 11.1606 10.4438 11.2562 10.4438 11.3996V12.1644C10.4438 12.3078 10.5394 12.4034 10.6828 12.4034H11.4715C11.6149 12.4034 11.7105 12.3078 11.7105 12.1644V11.3996C11.7105 11.2562 11.591 11.1606 11.4715 11.1606Z" />
-                              <path d="M13.2637 3.3697H7.64754V2.58105C8.19721 2.43765 8.62738 1.91189 8.62738 1.31442C8.62738 0.597464 8.02992 0 7.28906 0C6.54821 0 5.95074 0.597464 5.95074 1.31442C5.95074 1.91189 6.35702 2.41376 6.93058 2.58105V3.3697H1.31442C0.597464 3.3697 0 3.96716 0 4.68412V13.2637C0 13.9807 0.597464 14.5781 1.31442 14.5781H13.2637C13.9807 14.5781 14.5781 13.9807 14.5781 13.2637V4.68412C14.5781 3.96716 13.9807 3.3697 13.2637 3.3697ZM6.6677 1.31442C6.6677 0.979841 6.93058 0.716957 7.28906 0.716957C7.62364 0.716957 7.91042 0.979841 7.91042 1.31442C7.91042 1.649 7.64754 1.91189 7.28906 1.91189C6.95448 1.91189 6.6677 1.6251 6.6677 1.31442ZM1.31442 4.08665H13.2637C13.5983 4.08665 13.8612 4.34954 13.8612 4.68412V6.45261H0.716957V4.68412C0.716957 4.34954 0.979841 4.08665 1.31442 4.08665ZM13.2637 13.8612H1.31442C0.979841 13.8612 0.716957 13.5983 0.716957 13.2637V7.16957H13.8612V13.2637C13.8612 13.5983 13.5983 13.8612 13.2637 13.8612Z" />
-                            </svg>
+                    
+                            
+                            
+                            <CalendarMonthOutlined/>
                           </span>
-                          12 Jan 2024
+                          {new Date(data.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
                         <p className="mr-5 flex items-center text-base font-medium text-body-color">
                           <span className="mr-3">
-                            <svg
-                              width="18"
-                              height="13"
-                              viewBox="0 0 18 13"
-                              className="fill-current"
-                            >
-                              <path d="M15.6375 0H1.6875C0.759375 0 0 0.759375 0 1.6875V10.6875C0 11.3062 0.309375 11.8406 0.84375 12.15C1.09687 12.2906 1.40625 12.375 1.6875 12.375C1.96875 12.375 2.25 12.2906 2.53125 12.15L5.00625 10.7156C5.11875 10.6594 5.23125 10.6312 5.34375 10.6312H15.6094C16.5375 10.6312 17.2969 9.87187 17.2969 8.94375V1.6875C17.325 0.759375 16.5656 0 15.6375 0ZM16.3406 8.94375C16.3406 9.3375 16.0312 9.64687 15.6375 9.64687H5.37187C5.09062 9.64687 4.78125 9.73125 4.52812 9.87187L2.05313 11.3063C1.82812 11.4187 1.575 11.4187 1.35 11.3063C1.125 11.1938 1.0125 10.9688 1.0125 10.7156V1.6875C1.0125 1.29375 1.32188 0.984375 1.71563 0.984375H15.6656C16.0594 0.984375 16.3687 1.29375 16.3687 1.6875V8.94375H16.3406Z" />
-                              <path d="M12.2342 3.375H4.69668C4.41543 3.375 4.19043 3.6 4.19043 3.88125C4.19043 4.1625 4.41543 4.3875 4.69668 4.3875H12.2623C12.5435 4.3875 12.7685 4.1625 12.7685 3.88125C12.7685 3.6 12.5154 3.375 12.2342 3.375Z" />
-                              <path d="M11.0529 6.55322H4.69668C4.41543 6.55322 4.19043 6.77822 4.19043 7.05947C4.19043 7.34072 4.41543 7.56572 4.69668 7.56572H11.0811C11.3623 7.56572 11.5873 7.34072 11.5873 7.05947C11.5873 6.77822 11.3342 6.55322 11.0529 6.55322Z" />
-                            </svg>
+                          
+                              <AccessTime />
+                         
                           </span>
-                          50
+                          Read Time: {data.readTime?.minutes} min
                         </p>
                         <p className="flex items-center text-base font-medium text-body-color">
                           <span className="mr-3">
@@ -302,12 +551,14 @@ export default function BlogSidebarPage({ data }) {
                       </div>
                     </div>
                     <div className="mb-5">
-                      <a
-                        href="#0"
+                      <p
+                      
                         className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white"
                       >
-                        Design
-                      </a>
+                       {data.tags && data.tags.slice(0, 1).map((tag) => (
+    <Link key={tag.name} href={tag.link} className="tag">{tag.name}</Link>
+  ))}
+                      </p>
                     </div>
                   </div>
                   <button
@@ -324,219 +575,24 @@ export default function BlogSidebarPage({ data }) {
                       </>
                     )}
                   </button>
-                  {/* <div className="mb-4 mt-4">
-                    {data.dataTables && renderTable()}
-                  </div> */}
-
-                  {renderTableOfContents()}
-
-                  {/* <p className="mb-8 text-base font-medium leading-relaxed text-body-color sm:text-lg sm:leading-relaxed lg:text-base lg:leading-relaxed xl:text-lg xl:leading-relaxed">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                    do eiusmod tempor incididunt ut labore et dolore magna
-                    aliqua. Quis enim lobortis scelerisque fermentum. Neque
-                    sodales ut etiam sit amet. Ligula ullamcorper
-                    <strong className="text-primary dark:text-white">
-                      {" "}
-                      malesuada{" "}
-                    </strong>
-                    proin libero nunc consequat interdum varius. Quam
-                    pellentesque nec nam aliquam sem et tortor consequat.
-                    Pellentesque adipiscing commodo elit at imperdiet.
-                  </p>
-                  <p className="mb-10 text-base font-medium leading-relaxed text-body-color sm:text-lg sm:leading-relaxed lg:text-base lg:leading-relaxed xl:text-lg xl:leading-relaxed">
-                    Semper auctor neque vitae tempus quam pellentesque nec.
-                    <span className="text-primary underline dark:text-white">
-                      {" "}
-                      Amet dictum sit amet justo{" "}
-                    </span>
-                    donec enim diam. Varius sit amet mattis vulputate enim nulla
-                    aliquet porttitor. Odio pellentesque diam volutpat commodo
-                    sed.
-                  </p>
-                  <h3 className="font-xl mb-10 font-bold leading-tight text-black dark:text-white sm:text-2xl sm:leading-tight lg:text-xl lg:leading-tight xl:text-2xl xl:leading-tight">
-                    Digital marketplace for Ui/Ux designers.
-                  </h3>
-                  <p className="mb-10 text-base font-medium leading-relaxed text-body-color sm:text-lg sm:leading-relaxed lg:text-base lg:leading-relaxed xl:text-lg xl:leading-relaxed">
-                    consectetur adipiscing elit in voluptate velit esse cillum
-                    dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-                    mattis vulputate cupidatat.
-                  </p> */}
-                  {/* <ul className="mb-10 list-inside list-disc text-body-color">
-                    <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-                      Consectetur adipiscing elit in voluptate velit.
-                    </li>
-                    <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-                      Mattis vulputate cupidatat.
-                    </li>
-                    <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-                      Vulputate enim nulla aliquet porttitor odio pellentesque
-                    </li>
-                    <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-                      Ligula ullamcorper malesuada proin
-                    </li>
-                  </ul> */}
-                  <div className="relative z-10 mb-10 overflow-hidden rounded-md bg-primary bg-opacity-10 p-8 md:p-9 lg:p-8 xl:p-9">
-                    {/* <p className="text-center text-base font-medium italic text-body-color">
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-                      sed do eiusmod incididunt utionals labore et dolore magna
-                      aliqua. Quis lobortis scelerisque fermentum, The Neque ut
-                      etiam sit amet.
-                    </p> */}
-                    <span className="absolute left-0 top-0 z-[-1]">
-                      <svg
-                        width="132"
-                        height="109"
-                        viewBox="0 0 132 109"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          opacity="0.5"
-                          d="M33.0354 90.11C19.9851 102.723 -3.75916 101.834 -14 99.8125V-15H132C131.456 -12.4396 127.759 -2.95278 117.318 14.5117C104.268 36.3422 78.7114 31.8952 63.2141 41.1934C47.7169 50.4916 49.3482 74.3435 33.0354 90.11Z"
-                          fill="url(#paint0_linear_111:606)"
-                        />
-                        <path
-                          opacity="0.5"
-                          d="M33.3654 85.0768C24.1476 98.7862 1.19876 106.079 -9.12343 108.011L-38.876 22.9988L100.816 -25.8905C100.959 -23.8126 99.8798 -15.5499 94.4164 0.87754C87.5871 21.4119 61.9822 26.677 49.5641 38.7512C37.146 50.8253 44.8877 67.9401 33.3654 85.0768Z"
-                          fill="url(#paint1_linear_111:606)"
-                        />
-                        <defs>
-                          <linearGradient
-                            id="paint0_linear_111:606"
-                            x1="94.7523"
-                            y1="82.0246"
-                            x2="8.40951"
-                            y2="52.0609"
-                            gradientUnits="userSpaceOnUse"
-                          >
-                            <stop stopColor="white" stopOpacity="0.06" />
-                            <stop
-                              offset="1"
-                              stopColor="white"
-                              stopOpacity="0"
-                            />
-                          </linearGradient>
-                          <linearGradient
-                            id="paint1_linear_111:606"
-                            x1="90.3206"
-                            y1="58.4236"
-                            x2="1.16149"
-                            y2="50.8365"
-                            gradientUnits="userSpaceOnUse"
-                          >
-                            <stop stopColor="white" stopOpacity="0.06" />
-                            <stop
-                              offset="1"
-                              stopColor="white"
-                              stopOpacity="0"
-                            />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                    </span>
-                    <span className="absolute bottom-0 right-0 z-[-1]">
-                      <svg
-                        width="53"
-                        height="30"
-                        viewBox="0 0 53 30"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <circle
-                          opacity="0.8"
-                          cx="37.5"
-                          cy="37.5"
-                          r="37.5"
-                          fill="#4A6CF7"
-                        />
-                        <mask
-                          id="mask0_111:596"
-                          style={{ maskType: "alpha" }}
-                          maskUnits="userSpaceOnUse"
-                          x="0"
-                          y="0"
-                          width="75"
-                          height="75"
-                        >
-                          <circle
-                            opacity="0.8"
-                            cx="37.5"
-                            cy="37.5"
-                            r="37.5"
-                            fill="#4A6CF7"
-                          />
-                        </mask>
-                        <g mask="url(#mask0_111:596)">
-                          <circle
-                            opacity="0.8"
-                            cx="37.5"
-                            cy="37.5"
-                            r="37.5"
-                            fill="url(#paint0_radial_111:596)"
-                          />
-                          <g opacity="0.8" filter="url(#filter0_f_111:596)">
-                            <circle
-                              cx="40.8089"
-                              cy="19.853"
-                              r="15.4412"
-                              fill="white"
-                            />
-                          </g>
-                        </g>
-                        <defs>
-                          <filter
-                            id="filter0_f_111:596"
-                            x="4.36768"
-                            y="-16.5881"
-                            width="72.8823"
-                            height="72.8823"
-                            filterUnits="userSpaceOnUse"
-                            colorInterpolationFilters="sRGB"
-                          >
-                            <feFlood
-                              floodOpacity="0"
-                              result="BackgroundImageFix"
-                            />
-                            <feBlend
-                              mode="normal"
-                              in="SourceGraphic"
-                              in2="BackgroundImageFix"
-                              result="shape"
-                            />
-                            <feGaussianBlur
-                              stdDeviation="10.5"
-                              result="effect1_foregroundBlur_111:596"
-                            />
-                          </filter>
-                          <radialGradient
-                            id="paint0_radial_111:596"
-                            cx="0"
-                            cy="0"
-                            r="1"
-                            gradientUnits="userSpaceOnUse"
-                            gradientTransform="translate(37.5 37.5) rotate(90) scale(40.2574)"
-                          >
-                            <stop stopOpacity="0.47" />
-                            <stop offset="1" stopOpacity="0" />
-                          </radialGradient>
-                        </defs>
-                      </svg>
-                    </span>
+                 
+                    <div className="customanchor mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+                      <PortableText
+                        value={data.content}
+                        components={portableTextComponents}
+                      />
+                    </div>             
                   </div>
-                  {/* <p className="mb-10 text-base font-medium leading-relaxed text-body-color sm:text-lg sm:leading-relaxed lg:text-base lg:leading-relaxed xl:text-lg xl:leading-relaxed">
-                    consectetur adipiscing elit in voluptate velit esse cillum
-                    dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-                    mattis vulputate cupidatat.
-                  </p> */}
+                  {/* {renderTableOfContents()} */}
                   <div className="items-center justify-between sm:flex">
                     <div className="mb-5">
                       <h4 className="mb-3 text-sm font-medium text-body-color">
                         Popular Tags :
                       </h4>
                       <div className="flex items-center">
-                        <TagButton text="Design" />
-                        <TagButton text="Development" />
-                        <TagButton text="Info" />
+                      {data.tags && data.tags.slice(0, 3).map((tag) => (
+    <TagButton key={tag.name} href={tag.link} text={tag.name} /> 
+  ))}
                       </div>
                     </div>
                     <div className="mb-5">
@@ -548,8 +604,7 @@ export default function BlogSidebarPage({ data }) {
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
+               
             </div>
             <div className="w-full px-4 lg:w-4/12">
               <div className="mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
@@ -558,10 +613,17 @@ export default function BlogSidebarPage({ data }) {
                     type="text"
                     placeholder="Search here..."
                     className="mr-4 w-full rounded-sm border border-stroke bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
                   />
                   <button
                     aria-label="search button"
                     className="flex h-[50px] w-full max-w-[50px] items-center justify-center rounded-sm bg-primary text-white"
+                    onClick={() => {
+                      if (searchText.trim() !== "") {
+                        handleSearch();
+                      }
+                    }}
                   >
                     <svg
                       width="20"
@@ -576,103 +638,168 @@ export default function BlogSidebarPage({ data }) {
                       />
                     </svg>
                   </button>
+                  <button
+                aria-label="reset button"
+                className="ml-2 flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-gray-300   text-gray-700"
+                onClick={resetSearch}
+              >
+                Reset
+              </button>
                 </div>
               </div>
-              <div className="mb-10 rounded-sm bg-white shadow-three dark:bg-gray-dark dark:shadow-none">
-                <h3 className="border-b border-body-color border-opacity-10 px-8 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white">
+              {searchResults.length > 0 && (
+            <div className="-mx-4 flex flex-wrap justify-center">
+              {renderSearchResults()}
+            </div>
+          )}
+              <div className="mb-10  rounded-sm bg-white shadow-three dark:bg-gray-dark dark:shadow-none">
+                <h3 className="border-b border-black border-opacity-10 px-8 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white">
                   Related Posts
                 </h3>
                 <ul className="p-8">
-                  <li className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
-                    <RelatedPost
-                      title="Best way to boost your online sales."
-                      image="/images/blog/post-01.jpg"
-                      slug="#"
-                      date="12 Feb 2025"
-                    />
+                {relatedPosts.map((post) => (
+                  <li key={post._id} className="mb-6 border-b border-black border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
+               
+               <RelatedPost
+                
+                title={post.title}
+                image={urlForImage(post.mainImage).url()}
+                slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+
+              />
+          
+                   
                   </li>
-                  <li className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
+                    ))}
+              <h3 className="border-b border-black border-opacity-10 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white">
+                  Recent Posts
+                </h3>
+                    <br/>
+                    <br/>
+                          {recentData.slice(0, 3).map((post) => (
+                            
+                  <li  key={post._id} className="mb-6 border-b border-black border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
+                    
                     <RelatedPost
-                      title="50 Best web design tips & tricks that will help you."
-                      image="/images/blog/post-02.jpg"
-                      slug="#"
-                      date="15 Feb, 2024"
+                
+                      title={post.title}
+                      image={urlForImage(post.mainImage).url()}
+                      slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                      date= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                     />
+             
+             
                   </li>
-                  <li>
-                    <RelatedPost
-                      title="The 8 best landing page builders, reviewed"
-                      image="/images/blog/post-03.jpg"
-                      slug="#"
-                      date="05 Jun, 2024"
-                    />
-                  </li>
+                       ))}
+                       <Link href="/allposts">
+                      <h3 className=" cursor-pointer text-center border-b border-black border-opacity-10 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white dark:hover:text-primary hover:text-primary">
+               Explore all Posts
+                </h3>
+                </Link>
                 </ul>
               </div>
               <div className="mb-10 rounded-sm bg-white shadow-three dark:bg-gray-dark dark:shadow-none">
-                <h3 className="border-b border-body-color border-opacity-10 px-8 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white">
+                <h3 className="border-b border-black border-opacity-10 px-8 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white">
                   Popular Category
                 </h3>
                 <ul className="px-8 py-6">
                   <li>
-                    <a
-                      href="#0"
+                    <Link
+                      href="/ai-tools"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
-                      Tailwind Templates
-                    </a>
+                     AI Tools
+                    </Link>
                   </li>
                   <li>
-                    <a
-                      href="#0"
+                    <Link
+                      href="/make-money-with-ai"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
-                      Landing page
-                    </a>
+                     Make Money With AI
+                    </Link>
                   </li>
                   <li>
-                    <a
-                      href="#0"
+                    <Link
+                      href="/free-ai-resources"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
-                      Startup
-                    </a>
+                   Free AI Resources
+                    </Link>
+                  </li>
+                  
+                  <li>
+                    <Link
+                      href="/seo-with-ai"
+                      className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
+                    >
+                SEO With AI
+                    </Link>
                   </li>
                   <li>
-                    <a
-                      href="#0"
+                    <Link
+                      href="/code-with-ai"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
-                      Business
-                    </a>
+                   Code With AI
+                    </Link>
                   </li>
                   <li>
-                    <a
-                      href="#0"
+                    <Link
+                      href="/ai-trending-news"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
-                      Multipurpose
-                    </a>
+                 AI Trends & News
+                    </Link>
                   </li>
                 </ul>
               </div>
               <div className="mb-10 rounded-sm bg-white shadow-three dark:bg-gray-dark dark:shadow-none">
-                <h3 className="border-b border-body-color border-opacity-10 px-8 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white">
+                <h3 className="border-b border-black border-opacity-10 px-8 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white">
                   Popular Tags
                 </h3>
                 <div className="flex flex-wrap px-8 py-6">
-                  <TagButton text="Themes" />
-                  <TagButton text="UI Kit" />
-                  <TagButton text="Tailwind" />
-                  <TagButton text="Startup" />
-                  <TagButton text="Business" />
+                  
+                <TagButton text="AI Tools" href="/ai-tools" /> 
+                  <TagButton text="AI Image Generator" href="/ai-tools/ai-image-generator" />
+                  <TagButton text="AI Video Generator"  href="/ai-tools/ai-video-generator" />
+                  <TagButton text="AI Extension" href="/ai-tools/ai-extension" />
+             
+                  <TagButton text="AI Article Writer"  href="/ai-tools/ai-article-generator"/>
                 </div>
               </div>
 
               <NewsLatterBox />
             </div>
           </div>
+          <div className="container border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+        <h1 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+          <span className="relative  mr-2 inline-block">
+           Related
+            <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
+          </span>
+          <span className="text-blue-500">Post</span>
+        </h1>
+        <div className="flex flex-wrap justify-start">
+        {relatedPosts.map((post) => (          
+               <Card
+                key={post._id}
+                tags={post.tags} 
+                ReadTime={post.readTime?.minutes} 
+                overview={post.overview}
+                title={post.title}
+                mainImage={urlForImage(post.mainImage).url()}
+                slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+              />
+))}
+                    </div>
+                    </div>
+       <div className="border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+        <RecentPost  />
         </div>
+        </div>    
       </section>
     </>
   );
