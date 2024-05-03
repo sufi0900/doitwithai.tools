@@ -43,10 +43,11 @@ export default function SingleBlog({
 
             {/* Image */}
             <div className="relative  aspect-[37/22] overflow-hidden">
-              <img
+              <Image
                 className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform "
                 src={mainImage}
                 alt={title}
+                fill
               />
             </div>
           </Link>

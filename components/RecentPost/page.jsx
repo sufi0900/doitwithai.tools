@@ -56,10 +56,11 @@ export default  function RecentPosts() {
 
             {/* Image */}
             <div className="relative aspect-[30/22] overflow-hidden">
-              <img
+              <Image
                 className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform "
                 src={urlForImage(post.mainImage).url()}
                 alt={post.title}
+                fill
               />
             </div>
           </Link>

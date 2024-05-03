@@ -508,7 +508,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                       <div className="mb-5 mr-10 flex items-center">
                         <div className="mr-4">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                            <Image
+                            <img
                               src="https://res.cloudinary.com/dtvtphhsc/image/upload/v1708783237/prisma/y2tbix1x3ufnewmcadfb.png"
                               alt="author"
                               fill
