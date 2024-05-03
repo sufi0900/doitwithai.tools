@@ -14,11 +14,14 @@ const RelatedPost = ({
 }) => {
   return (
     <div className="flex items-center lg:block xl:flex">
+       <Link
+            href={slug}>
       <div className="mr-5 lg:mb-3 xl:mb-0">
         <div className="relative h-[60px] w-[70px] overflow-hidden rounded-md sm:h-[75px] sm:w-[85px]">
-          <Image src={image} alt={title} fill />
+          <img src={image} alt={title}  />
         </div>
       </div>
+      </Link>
       <div className="w-full">
         <h5>
           <Link

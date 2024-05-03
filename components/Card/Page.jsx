@@ -10,19 +10,15 @@ export default function SingleBlog({
   mainImage,
   title,
   overview,
+  ReadTime,
   slug,
 }) {
-  const formattedDate = new Date(publishedAt).toLocaleDateString();
-  const slugUrl = slug?.current;
 
-  const formattedTitle = title
-    ? `${title.split(" ").slice(0, 3).join(" ")}${
-        title.split(" ").length > 3 ? " ..." : ""
-      }`
-    : "";
+  
 
   return (
     <>
+          
       <div className="px-2 py-4">
         <div className="card max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow transition duration-200 ease-in-out  hover:scale-105 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
           {" "}
@@ -48,7 +44,7 @@ export default function SingleBlog({
             {/* Title */}
             <Link href={slug}>
               <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                {formattedTitle}
+                {title   }
               </h5>
             </Link>
             {/* Overview */}
@@ -60,7 +56,7 @@ export default function SingleBlog({
               <div className="flex items-center">
                 <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
                 <p className="text-sm font-medium text-dark dark:text-white">
-                  Read Time: 5 min
+                Read Time:  {ReadTime} min
                 </p>
               </div>
               <div className="flex items-center">
@@ -95,6 +91,7 @@ export default function SingleBlog({
           </div>
         </div>
       </div>
+
     </>
   );
 }

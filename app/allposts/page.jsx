@@ -9,7 +9,7 @@ import BlogCard from "./Card"
 import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 
 
-  async function fetchAllBlogs(page = 1, limit = 2, categories = []) {
+  async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
     const start = (page - 1) * limit;
     const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
     const result = await client.fetch(query, { categories });
@@ -25,13 +25,7 @@ import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
         freeairesources: "free-ai-resources",
         seo: "seo-with-ai",
       }
-      const MAX_TITLE_LENGTH = 20; // Maximum characters for title
-      const MAX_OVERVIEW_LENGTH = 100; // Maximum characters for overview
-      const truncateText = (text, maxLength) => {
-        return text?.length > maxLength
-          ? `${text.substring(0, maxLength)}...`
-          : text;
-      };
+
     
     const [currentPage, setCurrentPage] = useState(1);
     const [searchText, setSearchText] = useState("");
@@ -42,7 +36,7 @@ import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
     useEffect(() => {
       const fetchData = async () => {
         setLoading(true);
-        const newData = await fetchAllBlogs(currentPage, 2, [
+        const newData = await fetchAllBlogs(currentPage, 5, [
           "makemoney",
           "aitool",
           "news",

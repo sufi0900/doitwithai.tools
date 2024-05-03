@@ -30,7 +30,7 @@ export default  function RecentPosts() {
   return (
     <section className="pb-[20px] pt-[20px]">
       <div className="container">
-        <h1 className="mb-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+        <h1 className="mb-8  text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
           <span className="relative mr-2 inline-block">
             Recent
             <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
@@ -42,7 +42,7 @@ export default  function RecentPosts() {
               >
               </Link> // Construct link dynamically based on the post's schema */}
 
-        <div className="-mx-16 flex flex-wrap justify-center">
+        <div className="flex flex-wrap justify-start">
           {recentData.slice(0, 3).map((post) => (
             <div key={post._id} className="mb-6 px-2 ">
                <div className="card max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow transition duration-200 ease-in-out  hover:scale-105 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
@@ -87,7 +87,7 @@ export default  function RecentPosts() {
               <div className="flex items-center">
                 <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
                 <p className="text-sm font-medium text-dark dark:text-white">
-                {new Date(post.publishedAt).toLocaleDateString()}
+                {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
 
                 </p>
               </div>
