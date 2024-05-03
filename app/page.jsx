@@ -26,7 +26,6 @@ import Categories from "@/components/Categories/page";
 import Hero from "@/components/Hero";
 import CodeWithAI from "@/components/Trending/WebDev";
 import NewsLatterBox from "@/components/Contact/NewsLatterBox";
-import DigiResources from "@/components/DigiResources/page";
 import AINews from "@/components/News/page";
 import FreeAIResources from "@/components/FreeAIResources/page";
 
@@ -150,7 +149,7 @@ export default  function Home() {
       >
         <div className="container">
           <Grid container spacing={2}>
-             {/* <Trending />  */}
+             <Trending /> 
           </Grid>
         </div>
       </section>

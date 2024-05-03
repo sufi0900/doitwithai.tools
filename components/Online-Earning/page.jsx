@@ -43,8 +43,8 @@ const OnlineEarningPage = () => {
     <section>
       <div className="container">
         <Breadcrumb
-          pageName="Make Money Online"
-          pageName2="Using AI"
+          pageName="Make Money"
+          pageName2="With AI"
           description="Discover useful tips and tools to help you earn money online. From freelancing to affiliate marketing, explore valuable resources to start and grow your online income streams. Start making money online today!"
           firstlinktext="Home"
           firstlink="/"
@@ -59,9 +59,9 @@ const OnlineEarningPage = () => {
           {aiEarnTrendBigData.slice(0, 1).map((post) => (
             <Grid item key={post._id} xs={12} md={12}>
               <Card
-                // key={firstPost._id}
-                className="card cursor-pointer  items-center  rounded-lg         border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700
-            " // Adjust background and text color based on theme
+   
+                className="card cursor-pointer  items-center  rounded-lg border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700
+            " 
                 sx={{
                   marginTop: "5px",
                   display: "flex",
@@ -325,9 +325,12 @@ const OnlineEarningPage = () => {
           ))}
         </Grid>
         <div className="mt-6 flex justify-center md:justify-end">
+          <Link                          href="/make-money-with-ai"
+>
           <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
           Explore All Blogs
           </button>
+          </Link>
         </div>
       </div>
     </section>

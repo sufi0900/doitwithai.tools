@@ -75,11 +75,16 @@ const AiTools = () => {
  <div className="mb-3 mt-3 flex items-center justify-start gap-2">
  <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
    <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">06/12/2024</p>
+   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+   {new Date(post.publishedAt).toLocaleDateString()}
+
+    </p>
  </div>
  <div className="flex items-center">
    <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: 5 min</p>
+   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+   Read Time: {post.readTime?.minutes} min
+    </p>
  </div>
 </div>
  <Link
@@ -143,9 +148,12 @@ const AiTools = () => {
                 .  best way to boost your  boost your  boost your  boost your  boost your
               </h5>  
               <div className="mb-1 mt-1 flex items-center justify-start gap-2">
-              {/* <p className="text-xs font-medium text-body-color">  06/12/2024</p> */}
+              
 <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-<p className="text-xs font-medium text-body-color">  06/12/2024</p>
+<p className="text-xs font-medium text-body-color">
+{new Date(post.publishedAt).toLocaleDateString()}
+
+    </p>
 </div>
 <div className="flex items-center">
 <p className="text-xs font-medium text-body-color">  5 Min Read</p>
@@ -229,12 +237,15 @@ const AiTools = () => {
             <Box sx={{ flex: 1, padding:"0px", margin:"0px" }} >
               <h5 className="mb-2 mr-2 mt-2 line-clamp-2 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
                 {post.title}
-                .  best way to boost your  boost your  boost your  boost your  boost your
+              
               </h5>  
               <div className="mb-1 mt-1 flex items-center justify-start gap-2">
               {/* <p className="text-xs font-medium text-body-color">  06/12/2024</p> */}
 <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-<p className="text-xs font-medium text-body-color">  06/12/2024</p>
+<p className="text-xs font-medium text-body-color"> 
+{new Date(post.publishedAt).toLocaleDateString()}
+
+</p>
 </div>
 <div className="flex items-center">
 <p className="text-xs font-medium text-body-color">  5 Min Read</p>
@@ -314,7 +325,9 @@ const AiTools = () => {
  </div>
  <div className="flex items-center">
    <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: 5 min</p>
+   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+   Read Time: {post.readTime?.minutes} min
+    </p>
  </div>
 </div>
  <Link

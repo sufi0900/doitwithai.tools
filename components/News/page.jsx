@@ -6,9 +6,7 @@ import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import {
   Card,
   CardContent,
-
   Grid,
- 
   CardMedia,
  
 } from "@mui/material";
@@ -18,7 +16,6 @@ import Link from "next/link";
 import Breadcrumb from "../Common/Breadcrumb";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 const News = () => {
-  // Define the static web dev blogs
 
 
   const [newsTrendBigData, setNewsTrendBigData] = useState([]);
@@ -278,8 +275,11 @@ const News = () => {
           </Grid>
         </Grid>
         <div className="mt-6 flex justify-center md:justify-end">
+          <Link href="/ai-trending-news">
           <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
-    Explore All Blogs          </button>
+                     Explore All Blogs         
+          </button>
+         </Link>
         </div>
       </div>
     </section>

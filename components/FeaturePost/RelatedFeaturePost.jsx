@@ -33,14 +33,8 @@ const RelatedTrendingPosts = ({ posts }) => {
           width: "100%", // Ensure fixed width for all cards
         }}
       >
-        {/* <h1 className="mb-5 p-4 text-xl font-bold tracking-wide text-black dark:text-white sm:text-2xl">
-          <span className="relative mr-2 inline-block">
-            Related
-            <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
-          </span>
-          <span className="text-blue-500">Posts</span>
-        </h1> */}
-        {isLoading ? ( // Render skeleton UI if loading
+      
+        {isLoading ? ( 
           <>
             <Skeleton
               variant="rectangular"
@@ -68,7 +62,7 @@ const RelatedTrendingPosts = ({ posts }) => {
             />
           </>
         ) : (
-          // Render actual post content if not loading
+       
           posts.slice(0, 5).map((post) => (
             <CardContent
               key={post._id}
@@ -83,15 +77,20 @@ const RelatedTrendingPosts = ({ posts }) => {
               <Box sx={{ flex: 1 }}>
                 <h5 className="mb-2 mr-2 mt-2 line-clamp-2 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
                   {post.title}
-                  .  best way to boost your
+       
                 </h5>
                 <div className="mb-1 mt-1 flex items-center justify-start gap-2">
                 {/* <p className="text-xs font-medium text-body-color">  06/12/2024</p> */}
   <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-  <p className="text-xs font-medium text-body-color">  06/12/2024</p>
+  <p className="text-xs font-medium text-body-color"> 
+  {new Date(post.publishedAt).toLocaleDateString()}
+
+   </p>
   </div>
   <div className="flex items-center">
-  <p className="text-xs font-medium text-body-color">  5 Min Read</p>
+  <p className="text-xs font-medium text-body-color">
+  Read Time: {post.readTime?.minutes} min
+      </p>
 
     {/* <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
     <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: 5 min</p> */}

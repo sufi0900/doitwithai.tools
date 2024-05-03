@@ -320,9 +320,11 @@ const FreeAIResources = () => {
           ))}
         </Grid>
         <div className="mt-6 flex justify-center md:justify-end">
+          <Link href="/free-ai-resources">
           <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
           Explore All Blogs
           </button>
+          </Link>
         </div>
       </div>
     </section>

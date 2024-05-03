@@ -24,13 +24,15 @@ import Link from "next/link";
 const portableTextComponents = {
   block: {
     normal: ({ children }) => (
-      <p className="mb-4 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-        {children}
-      </p>
+      <p className="mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+  {children}
+</p>
+
+
     ),
 
     h1: ({ children }) => (
-      <h1 className="mb-8 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
+      <h1 className="mb-4 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
         {children}
       </h1>
     ),
@@ -79,8 +81,8 @@ const portableTextComponents = {
       const imageUrl = urlForImage(value.asset).url();
       const altText = value.alt || "";
       return (
-        <div className="card3 m-2 rounded-xl xs:m-1 sm:m-2">
-          <figure className=" relative mb-10  mt-4 ">
+        <div className="card3 rounded-xl ">
+          <figure className=" relative my-8 ">
             <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
               <a href={imageUrl}>
                 <img
@@ -162,8 +164,28 @@ const portableTextComponents = {
 portableTextComponents.types.button = portableTextComponents.button;
 
 export default function BlogSidebarPage({ data, params, currentCategory  }) {
+  const [recentData, setRecentData] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]]|order(publishedAt desc)[0...5]`;
+
+      const recentData = await client.fetch(query);
+      setRecentData(recentData);
+    };
+
+    fetchData();
+  }, []);
+
   const [relatedPosts, setRelatedPosts] = useState([]);
 
+  const schemaSlugMap = {
+    makemoney: "make-money-with-ai",
+    aitool: "aitools",
+    news: "ai-trending-news",
+    coding: "code-with-ai",
+    freeairesources : "free-ai-resources",
+    seo: "seo-with-ai",
+  };
   useEffect(() => {
     const fetchData = async () => {
         const query = `*[_type == "aitool" && category == $currentCategory][0...3]`;
@@ -214,19 +236,20 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
 
   return (
     <>
-      <section className=" overflow-hidden pb-[120px] pt-[50px]">
+   
+      <section className="overflow-hidden pb-[120px] pt-[40px]">
         <div className="container">
-          <div className="-mx-4 flex flex-wrap">
-            <div className="w-full px-4  lg:w-8/12">
-              <div>
-                <h1 className="mb-8 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
+          <div className=" lg:m-4  flex flex-wrap">
+
+        <div className=" lg:-mx-5 w-full overflow-hidden rounded">
+          <div className="lg:m-4 ">
+        <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
                   {data.title}
                 </h1>
-                <div>
-                  <div className="mb-10 w-full overflow-hidden rounded">
-                    <div className="card4 m-4 rounded-xl">
+        <div className="card4  rounded-xl">
+     
                       <figure className=" relative overflow-hidden rounded-lg">
-                        <div className="relative aspect-[37/22]">
+                        <div className="overflow-hidden lg:aspect-[40/16]">
                           <a href={urlForImage(data.mainImage).url()}>
                             <img
                               className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
@@ -239,7 +262,19 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                           Caption
                         </figcaption>
                       </figure>
+                      </div>
                     </div>
+         
+        </div>
+ 
+            <div className="w-full   lg:w-8/12 ">
+            
+              <div>
+                
+                <div>
+              
+                  <div className="mb-10 w-full overflow-hidden rounded">
+                   
 
                     <div className="customanchor mb-4 mt-4">
                       <PortableText
@@ -343,64 +378,13 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                       </>
                     )}
                   </button>
-                  {/* <div className="mb-4 mt-4">
-                    {data.dataTables && renderTable()}
-                  </div> */}
+                 
 
                   {renderTableOfContents()}
 
-                  {/* <p className="mb-8 text-base font-medium leading-relaxed text-body-color sm:text-lg sm:leading-relaxed lg:text-base lg:leading-relaxed xl:text-lg xl:leading-relaxed">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                    do eiusmod tempor incididunt ut labore et dolore magna
-                    aliqua. Quis enim lobortis scelerisque fermentum. Neque
-                    sodales ut etiam sit amet. Ligula ullamcorper
-                    <strong className="text-primary dark:text-white">
-                      {" "}
-                      malesuada{" "}
-                    </strong>
-                    proin libero nunc consequat interdum varius. Quam
-                    pellentesque nec nam aliquam sem et tortor consequat.
-                    Pellentesque adipiscing commodo elit at imperdiet.
-                  </p>
-                  <p className="mb-10 text-base font-medium leading-relaxed text-body-color sm:text-lg sm:leading-relaxed lg:text-base lg:leading-relaxed xl:text-lg xl:leading-relaxed">
-                    Semper auctor neque vitae tempus quam pellentesque nec.
-                    <span className="text-primary underline dark:text-white">
-                      {" "}
-                      Amet dictum sit amet justo{" "}
-                    </span>
-                    donec enim diam. Varius sit amet mattis vulputate enim nulla
-                    aliquet porttitor. Odio pellentesque diam volutpat commodo
-                    sed.
-                  </p>
-                  <h3 className="font-xl mb-10 font-bold leading-tight text-black dark:text-white sm:text-2xl sm:leading-tight lg:text-xl lg:leading-tight xl:text-2xl xl:leading-tight">
-                    Digital marketplace for Ui/Ux designers.
-                  </h3>
-                  <p className="mb-10 text-base font-medium leading-relaxed text-body-color sm:text-lg sm:leading-relaxed lg:text-base lg:leading-relaxed xl:text-lg xl:leading-relaxed">
-                    consectetur adipiscing elit in voluptate velit esse cillum
-                    dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-                    mattis vulputate cupidatat.
-                  </p> */}
-                  {/* <ul className="mb-10 list-inside list-disc text-body-color">
-                    <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-                      Consectetur adipiscing elit in voluptate velit.
-                    </li>
-                    <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-                      Mattis vulputate cupidatat.
-                    </li>
-                    <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-                      Vulputate enim nulla aliquet porttitor odio pellentesque
-                    </li>
-                    <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-                      Ligula ullamcorper malesuada proin
-                    </li>
-                  </ul> */}
+                 
                   <div className="relative z-10 mb-10 overflow-hidden rounded-md bg-primary bg-opacity-10 p-8 md:p-9 lg:p-8 xl:p-9">
-                    {/* <p className="text-center text-base font-medium italic text-body-color">
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-                      sed do eiusmod incididunt utionals labore et dolore magna
-                      aliqua. Quis lobortis scelerisque fermentum, The Neque ut
-                      etiam sit amet.
-                    </p> */}
+                   
                     <span className="absolute left-0 top-0 z-[-1]">
                       <svg
                         width="132"
@@ -542,11 +526,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                       </svg>
                     </span>
                   </div>
-                  {/* <p className="mb-10 text-base font-medium leading-relaxed text-body-color sm:text-lg sm:leading-relaxed lg:text-base lg:leading-relaxed xl:text-lg xl:leading-relaxed">
-                    consectetur adipiscing elit in voluptate velit esse cillum
-                    dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-                    mattis vulputate cupidatat.
-                  </p> */}
+                 
                   <div className="items-center justify-between sm:flex">
                     <div className="mb-5">
                       <h4 className="mb-3 text-sm font-medium text-body-color">
@@ -624,12 +604,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
             
         </div>
           
-                    {/* <RelatedPost
-                      title="Best way to boost your online sales."
-                      image="/images/blog/post-01.jpg"
-                      slug="#"
-                      date="12 Feb 2025"
-                    /> */}
+                   
                   </li>
                     ))}
                 {/* {relatedPosts.map((post) => (
@@ -664,12 +639,14 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                       date="12 Feb 2025"
                     /> */}
                   <li className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
+                  {recentData.slice(0, 3).map((post) => (
                     <RelatedPost
-                      title="50 Best web design tips & tricks that will help you."
-                      image="/images/blog/post-02.jpg"
+                      title={post.title}
+                      image={urlForImage(data.mainImage).url()}
                       slug="#"
-                      date="15 Feb, 2024"
+                      date=       {new Date(post.publishedAt).toLocaleDateString()}
                     />
+                  ))}
                   </li>
                   <li>
                     <RelatedPost

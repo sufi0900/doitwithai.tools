@@ -4,6 +4,7 @@ import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import Link from "next/link";
 import Image from "next/image";
+import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 export default  function RecentPosts() {
   const [recentData, setRecentData] = useState([]);
   useEffect(() => {
@@ -16,13 +17,7 @@ export default  function RecentPosts() {
 
     fetchData();
   }, []);
-  const MAX_TITLE_LENGTH = 20; // Maximum characters for title
-  const MAX_OVERVIEW_LENGTH = 100; // Maximum characters for overview
-  const truncateText = (text, maxLength) => {
-    return text?.length > maxLength
-      ? `${text.substring(0, maxLength)}...`
-      : text;
-  };
+
   const schemaSlugMap = {
     makemoney: "make-money-with-ai",
     aitool: "aitools",
@@ -42,87 +37,95 @@ export default  function RecentPosts() {
           </span>
           <span className="text-blue-500">Post</span>
         </h1>
-        <div className="-mx-4 flex flex-wrap justify-center">
+        {/* <Link               
+              href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+              >
+              </Link> // Construct link dynamically based on the post's schema */}
+
+        <div className="-mx-16 flex flex-wrap justify-center">
           {recentData.slice(0, 3).map((post) => (
             <div key={post._id} className="mb-6 px-2 ">
-              <div className="max-w-sm rounded-lg border border-gray-200 bg-white shadow dark:border-gray-700 dark:bg-gray-800">
-                <Link                     href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // Construct link dynamically based on the post's schema
->
-                  <img
-                    className="rounded-t-lg"
-                    src={urlForImage(post.mainImage).url()}
-                    alt={post.title}
-                    style={{
-                      width: "100%",
-                      height: "300px",
-                      objectFit: "cover",
-                    }}
-                  />
-                </Link>
-                <div className="p-5">
-                  <Link                     href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // Construct link dynamically based on the post's schema
->
-                    <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                      {truncateText(post.title, MAX_TITLE_LENGTH)}
-                    </h5>
-                  </Link>
-                  <p className="mb-3 font-normal text-gray-700 dark:text-gray-400">
-                    {truncateText(post.overview, MAX_OVERVIEW_LENGTH)}
-                  </p>
-                  <div className="mb-3 mt-3 flex items-center">
-                    <div className="mr-5 flex items-center border-r border-body-color border-opacity-10 pr-5 dark:border-white dark:border-opacity-10 xl:mr-3 xl:pr-3 2xl:mr-5 2xl:pr-5">
-                      <div className="mr-4">
-                        <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                          <Image src="" alt="author" fill />
-                        </div>
-                      </div>
-                      <div className="w-full">
-                        <h4 className="mb-1 text-sm font-medium text-dark dark:text-white">
-                          By author.name
-                        </h4>
-                        <p className="text-xs text-body-color">
-                          author.designation
-                        </p>
-                      </div>
-                    </div>
-                    <div className="inline-block">
-                      <h4 className="mb-1 text-sm font-medium text-dark dark:text-white">
-                        Date
-                      </h4>
-                      <p className="text-xs text-body-color">publishDate</p>
-                    </div>
-                  </div>
-                  <Link
-                    href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // Construct link dynamically based on the post's schema
-                    className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                  >
-                    Read more
-                    <svg
-                      className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 14 10"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M1 5h12m0 0L9 1m4 4L9 9"
-                      />
-                    </svg>
-                  </Link>
-                </div>
+               <div className="card max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow transition duration-200 ease-in-out  hover:scale-105 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
+          {" "}
+          <Link
+          href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+            className="relative block aspect-[37/22] w-full"
+          >
+            <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
+              Computer
+            </span>
+
+            {/* Image */}
+            <div className="relative aspect-[30/22] overflow-hidden">
+              <img
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+                src={urlForImage(post.mainImage).url()}
+                alt={post.title}
+              />
+            </div>
+          </Link>
+          {/* Content */}
+          <div className="p-5">
+            {/* Title */}
+            <Link      href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}>
+              <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {post.title}
+              </h5>
+            </Link>
+            {/* Overview */}
+            <p className="mb-3 line-clamp-5 font-normal text-gray-700 dark:text-gray-400">
+              {post.overview}
+            </p>
+            {/* Meta Data */}
+            <div className="mb-3 mt-3 flex items-center justify-between">
+              <div className="flex items-center">
+                <AccessTime className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+                <p className="text-sm font-medium text-dark dark:text-white">
+                Read Time: {post.readTime?.minutes} min
+                </p>
               </div>
+              <div className="flex items-center">
+                <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+                <p className="text-sm font-medium text-dark dark:text-white">
+                {new Date(post.publishedAt).toLocaleDateString()}
+
+                </p>
+              </div>
+            </div>
+            {/* Read more link */}
+            <Link
+               href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+              className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+            >
+              Read more
+              <svg
+                className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 14 10"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M1 5h12m0 0L9 1m4 4L9 9"
+                />
+              </svg>
+            </Link>
+          </div>
+        </div>
             </div>
           ))}
          
         </div>
         <div className="mt-6 flex justify-center md:justify-center">
+          <Link href="/allposts">
             <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
-              Read more
+             Explore All Blogs
             </button>
+            </Link>
           </div>
       </div>
     </section>

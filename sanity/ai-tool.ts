@@ -10,12 +10,35 @@ export const aitool = {
         description: "title of aitool",
       },
       {
+        name: "tag",
+        title: "Tag",
+        type: "string",
+        description: "tag of aitool",
+      },
+      {
         name: "dataTables",
         title: "Data Tables",
-        type: "table", // This refers to the table type provided by @sanity/table
+        type: "table", 
         options: {
-          // Options if any
+         
         },
+      },
+      {
+        name: "readTime",
+        title: "Read Time",
+        type: "object",
+        fields: [
+          {
+            name: "hours",
+            title: "Hours",
+            type: "number",
+          },
+          {
+            name: "minutes",
+            title: "Minutes",
+            type: "number",
+          },
+        ],
       },
       {
         name: "overview",
@@ -30,13 +53,11 @@ export const aitool = {
           source: "title",
         },
       },
-      // options: {
-      //   list: [
-      //     {title: "AI Image Generator", value: "ai-image-gen"},
-      //     {title: "AI Video Generator", value: "ai-video-gen"},
-      //     // Add more subcategories as needed
-      //   ],
-      // },
+      {
+        name: "publishedAt",
+        title: "Published at",
+        type: "datetime",
+      },
       {
         name: "category",
         title: "Category",
@@ -219,11 +240,7 @@ export const aitool = {
         title: "isAiWebsiteBuilderBig",
         type: "boolean",
       },
-      {
-        name: "publishedAt",
-        title: "Published at",
-        type: "datetime",
-      },
+
       {
         name: "tableOfContents",
         title: "Table of Contents",
