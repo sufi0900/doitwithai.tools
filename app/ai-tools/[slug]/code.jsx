@@ -641,6 +641,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                   <li className="mb-6 border-b border-body-color border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
                   {recentData.slice(0, 3).map((post) => (
                     <RelatedPost
+                    key={post._id}
                       title={post.title}
                       image={urlForImage(data.mainImage).url()}
                       slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
