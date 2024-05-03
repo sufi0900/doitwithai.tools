@@ -251,14 +251,18 @@ const portableTextComponents = {
       const imageUrl = urlForImage(value.asset).url();
       const altText = value.alt || "";
       return (
+        <div className=" lg:-mx-5 w-full overflow-hidden rounded">
+        <div className="lg:m-4 ">
         <div className="card3 rounded-xl ">
+
           <figure className=" relative my-8 ">
             <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
               <a href={imageUrl}>
-                <img
+                <Image
                   className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                   src={imageUrl}
                   alt={altText}
+                  fill
                 />
               </a>
             </div>
@@ -266,6 +270,8 @@ const portableTextComponents = {
               {altText}
             </figcaption>
           </figure>
+        </div>
+        </div>
         </div>
       );
     },
@@ -479,10 +485,11 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
         <figure className=" relative overflow-hidden rounded-lg">
                         <div className="overflow-hidden lg:aspect-[40/16]">
                           <a href={urlForImage(data.mainImage).url()}>
-                            <img
+                            <Image
                               className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
                               src={urlForImage(data.mainImage).url()}
                               alt=""
+                              fill
                             />
                           </a>
                         </div>
@@ -501,7 +508,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                       <div className="mb-5 mr-10 flex items-center">
                         <div className="mr-4">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                            <img
+                            <Image
                               src="https://res.cloudinary.com/dtvtphhsc/image/upload/v1708783237/prisma/y2tbix1x3ufnewmcadfb.png"
                               alt="author"
                               fill
@@ -780,14 +787,14 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
           <span className="text-blue-500">Post</span>
         </h1>
         <div className="flex flex-wrap justify-start">
-        {relatedPosts.map((post) => (
-               
+        {relatedPosts.map((post) => (          
                <Card
                 key={post._id}
+                tags={post.tags} 
                 ReadTime={post.readTime?.minutes} 
                 overview={post.overview}
                 title={post.title}
-                image={urlForImage(post.mainImage).url()}
+                mainImage={urlForImage(post.mainImage).url()}
                 slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
                 publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
               />

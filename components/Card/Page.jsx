@@ -12,6 +12,7 @@ export default function SingleBlog({
   overview,
   ReadTime,
   slug,
+  tags
 }) {
 
   
@@ -20,20 +21,30 @@ export default function SingleBlog({
     <>
           
       <div className="px-2 py-4">
-        <div className="card max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow transition duration-200 ease-in-out  hover:scale-105 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
+        <div className="card transition duration-300 hover:scale-[1.05] max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow  hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
           {" "}
           <Link
-            href={  slug}
-            className="relative block aspect-[37/22] w-full"
+            href={ slug}
+           
           >
-            <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
-              Computer
-            </span>
+            {/* <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary"> */}
+            {tags && tags.slice(0, 1).map((tag, index) => (
+              <Link
+                key={index}
+                href={tag.link} 
+           
+              >
+                <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
+                  {tag.name}
+                </span>
+              </Link>
+            ))}
+            {/* </span> */}
 
             {/* Image */}
-            <div className="relative aspect-[37/22] overflow-hidden">
+            <div className="relative  aspect-[37/22] overflow-hidden">
               <img
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+                className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform "
                 src={mainImage}
                 alt={title}
               />
@@ -43,7 +54,7 @@ export default function SingleBlog({
           <div className="p-5">
             {/* Title */}
             <Link href={slug}>
-              <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              <h5 className="mb-2 line-clamp-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                 {title   }
               </h5>
             </Link>

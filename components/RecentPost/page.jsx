@@ -37,28 +37,27 @@ export default  function RecentPosts() {
           </span>
           <span className="text-blue-500">Post</span>
         </h1>
-        {/* <Link               
-              href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-              >
-              </Link> // Construct link dynamically based on the post's schema */}
+       
 
-        <div className="flex flex-wrap justify-start">
+        <div className="flex  flex-wrap justify-start">
           {recentData.slice(0, 3).map((post) => (
-            <div key={post._id} className="mb-6 px-2 ">
-               <div className="card max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow transition duration-200 ease-in-out  hover:scale-105 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
+            <div key={post._id} className="mt-4 mb-6 px-2 ">
+        <div className="card transition duration-300 hover:scale-[1.05] max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow  hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
           {" "}
           <Link
           href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
             className="relative block aspect-[37/22] w-full"
           >
-            <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
-              Computer
-            </span>
+             {post.tags && post.tags.length > 0 && (
+          <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
+            {post.tags[0].name} {/* Access the name property of the tag object */}
+          </span>
+        )}
 
             {/* Image */}
             <div className="relative aspect-[30/22] overflow-hidden">
               <img
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+                className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform "
                 src={urlForImage(post.mainImage).url()}
                 alt={post.title}
               />
@@ -68,7 +67,7 @@ export default  function RecentPosts() {
           <div className="p-5">
             {/* Title */}
             <Link      href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}>
-              <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              <h5 className="mb-2 line-clamp-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
               {post.title}
               </h5>
             </Link>
