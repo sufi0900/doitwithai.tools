@@ -112,7 +112,7 @@ const DigitalMarketing = () => {
             </Grid>
           ))}
           {/* Second Row: Four Blogs */}
-          {seoTrendRelatedData.slice(2).map((post) => (
+          {seoTrendRelatedData.slice(0, 4).map((post) => (
             <Grid item key={post._id} xs={12} sm={6} md={3}>
                  <Card
                   

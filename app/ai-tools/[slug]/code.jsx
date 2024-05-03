@@ -560,7 +560,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                       
                         className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white"
                       >
-                       {data.tags.slice(0, 1).map((tag) => (
+                       {data.tags && data.tags.slice(0, 1).map((tag) => (
     <Link key={tag.name} href={tag.link} className="tag">{tag.name}</Link>
   ))}
                       </p>
@@ -595,7 +595,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                         Popular Tags :
                       </h4>
                       <div className="flex items-center">
-                      {data.tags.slice(0, 3).map((tag) => (
+                      {data.tags && data.tags.slice(0, 3).map((tag) => (
     <TagButton key={tag.name} href={tag.link} text={tag.name} /> 
   ))}
                       </div>

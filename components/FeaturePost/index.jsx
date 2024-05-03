@@ -109,14 +109,14 @@ const FeaturePost = ({ posts }) => {
   <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
     <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-    {new Date(post.publishedAt).toLocaleDateString()}
+    {new Date(firstPost.publishedAt).toLocaleDateString()}
 
       </p>
   </div>
   <div className="flex items-center">
     <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-    Read Time: {post.readTime?.minutes} min
+    Read Time: {firstPost.readTime?.minutes} min
       </p>
   </div>
 </div>

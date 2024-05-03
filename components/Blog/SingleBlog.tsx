@@ -61,7 +61,7 @@ export default function SingleBlog({
               <div className="flex items-center">
                 <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
                 <p className="text-sm font-medium text-dark dark:text-white">
-                  Read Time: 5 min
+              
                 </p>
               </div>
               <div className="flex items-center">

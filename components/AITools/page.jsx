@@ -57,12 +57,20 @@ const AiTools = () => {
             {/* Big Blog Card */}
             {aiToolTrendBigData.slice(0, 1).map((post) => (
                <Card key={post._id} className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
-               <CardMedia
-                 component="img"
-                 src={urlForImage(post.mainImage).url()}
-                 alt={post.title}
-                 sx={{ height: 315, objectFit: "cover" }}
-               />
+                <div className="overflow-hidden lg:aspect-[35/16]">
+                <CardMedia
+  component="img"
+  src={urlForImage(post.mainImage).url()}
+  alt={post.title}
+  sx={{
+    height: { xs: "auto", lg: "100%" }, // Auto height for small devices and fixed height for large devices
+    objectFit: "cover",
+  }}
+/>
+                       
+                        </div>
+            
+
                <CardContent>
                <h1 className="mb-4 line-clamp-2 text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight" style={{ minHeight: "4.5rem" }}>
   {post.title} 
@@ -135,8 +143,7 @@ const AiTools = () => {
               borderRadius:"10px",
               marginRight:"0px",
               paddingRight:"5px",
-            //  paddingTop: "10px",
-            //  padding:"5px",
+          
          
             }}
             className="transition duration-200 ease-in-out hover:scale-105 cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
@@ -165,7 +172,7 @@ const AiTools = () => {
 
 <Link
             href={`/ai-tools/${post.slug.current}`}
-                className="mt-2  inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                className="my-2  inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                         >
                           Read more
                           <svg
@@ -194,7 +201,7 @@ const AiTools = () => {
               alt="Related News"
               sx={{
                 width: { xs: "100%", lg: 150 },
-                height: { xs: 200, lg: 140 },
+                height: { xs: "auto", lg: 140 },
                 objectFit: "cover",
           
                 marginTop:"10px",
@@ -286,7 +293,7 @@ const AiTools = () => {
               alt="Related News"
               sx={{
                 width: { xs: "100%", lg: 150 },
-                height: { xs: 200, lg: 140 },
+                height: { xs: "auto", lg: 140 },
                 objectFit: "cover",
           
                 marginTop:"10px",
@@ -303,12 +310,18 @@ const AiTools = () => {
             {/* Big Blog Card for the 2nd row 2nd column*/}
             {aiToolTrendBigData.slice(1, 2).map((post) => (
                <Card className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
-               <CardMedia
-                 component="img"
-                 src={urlForImage(post.mainImage).url()}
-                 alt={post.title}
-                 sx={{ height: 315, objectFit: "cover" }}
-               />
+               <div className="overflow-hidden lg:aspect-[35/16]">
+                <CardMedia
+  component="img"
+  src={urlForImage(post.mainImage).url()}
+  alt={post.title}
+  sx={{
+    height: { xs: "auto", lg: "100%" }, // Auto height for small devices and fixed height for large devices
+    objectFit: "cover",
+  }}
+/>
+                       
+                        </div>
                <CardContent>
                <h1 className="mb-4 line-clamp-2 text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight" style={{ minHeight: "4.5rem" }}>
   {post.title} 
