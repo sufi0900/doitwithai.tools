@@ -643,8 +643,8 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                     <RelatedPost
                       title={post.title}
                       image={urlForImage(data.mainImage).url()}
-                      slug="#"
-                      date=       {new Date(post.publishedAt).toLocaleDateString()}
+                      slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                      date={new Date(post.publishedAt).toLocaleDateString()}
                     />
                   ))}
                   </li>
