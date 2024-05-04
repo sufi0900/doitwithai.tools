@@ -489,8 +489,8 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                               src={urlForImage(data.mainImage).url()}
                               alt=""
                               layout="responsive"
-                              width={500} 
-                              height={500}
+                              width={500}
+                              height={200} // Adjust the height to maintain the aspect ratio
                               placeholder="blur"
                               blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
                         
