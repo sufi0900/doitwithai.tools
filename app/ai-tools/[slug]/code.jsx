@@ -259,6 +259,7 @@ const portableTextComponents = {
                   className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                   src={imageUrl}
                   alt={altText}
+                  layout="responsive"
                   width={500} 
                   height={500}
                 />
