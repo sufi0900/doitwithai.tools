@@ -488,7 +488,13 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                               className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
                               src={urlForImage(data.mainImage).url()}
                               alt=""
-                              fill
+                              layout="responsive"
+                              width={originalWidth}
+                              height={originalHeight}
+                              placeholder="blur"
+                              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+                        
+
                             />
                           </a>
                         </div>
