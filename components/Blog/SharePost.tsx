@@ -21,8 +21,11 @@ const SharePost = () => {
         </svg>
       </a>
       <a
-        href="#0"
-        aria-label="social-share"
+           href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl)}`}
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="Share on Twitter"
+       
         className="bg-gray-light dark:bg-gray-dark mb-3 ml-3 inline-flex h-9 w-9 items-center justify-center rounded-sm text-body-color duration-300 hover:bg-primary hover:text-white dark:hover:bg-primary"
       >
         <svg
@@ -35,8 +38,10 @@ const SharePost = () => {
         </svg>
       </a>
       <a
-        href="#0"
-        aria-label="social-share"
+         href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`}
+         target="_blank"
+         rel="noopener noreferrer"
+         aria-label="Share on Facebook"
         className="bg-gray-light dark:bg-gray-dark mb-3 ml-3 inline-flex h-9 w-9 items-center justify-center rounded-sm text-body-color duration-300 hover:bg-primary hover:text-white dark:hover:bg-primary"
       >
         <svg width="9" height="18" viewBox="0 0 9 18" className="fill-current">
