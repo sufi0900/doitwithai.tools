@@ -482,22 +482,17 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                 </h1>
         <div className="card4  rounded-xl">
         <figure className=" relative overflow-hidden rounded-lg">
-                        <div className="overflow-hidden lg:aspect-[40/16]">
-                          <a href={urlForImage(data.mainImage).url()}>
-                            <Image
-                              className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
-                              src={urlForImage(data.mainImage).url()}
-                              alt=""
-                              layout="responsive"
-                              width={500}
-                              height={200} // Adjust the height to maintain the aspect ratio
-                              placeholder="blur"
-                              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-                        
+        <div className="relative w-full overflow-hidden rounded-lg aspect-w-40 aspect-h-16">
+  <a href="{urlForImage(data.mainImage).url()}">
+    <Image
+      className="absolute inset-0 h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
+      src="{urlForImage(data.mainImage).url()}"
+      alt=""
+      layout="fill"  // Ensures image fills the container
+    />
+  </a>
+</div>
 
-                            />
-                          </a>
-                        </div>
                         <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
                           Caption
                         </figcaption>
