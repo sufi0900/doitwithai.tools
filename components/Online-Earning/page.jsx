@@ -14,8 +14,8 @@ import Box from "@mui/material/Box";
 import Link from "next/link";
 
 import Breadcrumb from "../Common/Breadcrumb";
-import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { CalendarMonthOutlined } from "@mui/icons-material";
 const OnlineEarningPage = () => {
   // Define the static SEO blogs
   const [aiEarnTrendBigData, setAiEarnTrendBigData] = useState([]);
@@ -86,9 +86,11 @@ const OnlineEarningPage = () => {
                         alt="Blog thumbnail"
                         sx={{
                           width: "100%",
-                          height: "340px",
+                       
+                          height: { xs: "auto", lg:  "320px", }, // Auto height for small devices and fixed height for large devices
+
                           objectFit: "cover",
-                    
+             
                           borderRadius:"10px"
                         }}
                         className="m-0 "
@@ -108,24 +110,24 @@ const OnlineEarningPage = () => {
                       padding: "5px",
                     }}
                   >
-                    {/* Person Avatar with Name and Date */}
-
-                    {/* Content */}
+                 
                     <CardContent sx={{ flexGrow: 1 }}>
-                      <h1 className="mb-2 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
-                        {post.title}
+                      <h1 className="mb-2 line-clamp-2 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
+                        {post.title}  
                       </h1>
                       <p className="line-clamp-4 text-base font-medium text-dark dark:text-white sm:text-lg lg:text-base xl:text-lg">
                         {post.overview}
                       </p>
                       <div className="mb-3 mt-3 flex items-center justify-start gap-2">
   <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-    <EventNoteIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">06/12/2024</p>
+    <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+    <p className="text-xs font-medium text-gray-600 dark:text-gray-400"
+    >        {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+</p>
   </div>
   <div className="flex items-center">
     <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: 5 min</p>
+    <p className="text-xs font-medium text-gray-600 dark:text-gray-400"> Read Time: {post.readTime?.minutes} min</p>
   </div>
 </div>
                       <Link
@@ -174,28 +176,29 @@ const OnlineEarningPage = () => {
               borderRadius:"10px",
               marginRight:"0px",
               paddingRight:"5px",
-            //  paddingTop: "10px",
-            //  padding:"5px",
+          
          
             }}
             className="transition duration-200 ease-in-out hover:scale-105 cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
           >
    
             <Box sx={{ flex: 1, padding:"0px", margin:"0px" }} >
-              <h5 className="mb-2 mr-2 mt-2 line-clamp-2 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
+              <h5 className="mb-2 lg:leading-6 mr-2 mt-2 line-clamp-2 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
                 {post.title}
                 .  best way to boost your  boost your  boost your  boost your  boost your
               </h5>  
               <div className="mb-1 mt-1 flex items-center justify-start gap-2">
-              {/* <p className="text-xs font-medium text-body-color">  06/12/2024</p> */}
+              {/* <p className="text-xs font-medium text-body-color">          {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+</p> */}
 <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-<p className="text-xs font-medium text-body-color">  06/12/2024</p>
+<p className="text-xs font-medium text-body-color">          {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+</p>
 </div>
 <div className="flex items-center">
-<p className="text-xs font-medium text-body-color">  5 Min Read</p>
+<p className="text-xs font-medium text-body-color">   Read Time: {post.readTime?.minutes} min</p>
 
   {/* <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: 5 min</p> */}
+  <p className="text-xs font-medium text-gray-600 dark:text-gray-400"> Read Time: {post.readTime?.minutes} min</p> */}
 </div>
 </div>
 
@@ -270,15 +273,16 @@ const OnlineEarningPage = () => {
                 .  best way to boost your  boost your  boost your  boost your  boost your
               </h5>  
               <div className="mb-1 mt-1 flex items-center justify-start gap-2">
-              {/* <p className="text-xs font-medium text-body-color">  06/12/2024</p> */}
+
 <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-<p className="text-xs font-medium text-body-color">  06/12/2024</p>
+<p className="text-xs font-medium text-body-color">          {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+</p>
 </div>
 <div className="flex items-center">
-<p className="text-xs font-medium text-body-color">  5 Min Read</p>
+<p className="text-xs font-medium text-body-color">   Read Time: {post.readTime?.minutes} min</p>
 
   {/* <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: 5 min</p> */}
+  <p className="text-xs font-medium text-gray-600 dark:text-gray-400"> Read Time: {post.readTime?.minutes} min</p> */}
 </div>
 </div>
 

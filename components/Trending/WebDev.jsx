@@ -2,7 +2,7 @@
 import { client } from "@/sanity/lib/client";
 import React, { useEffect, useState } from "react";
 import { urlForImage } from "@/sanity/lib/image"; 
-import { Card, CardContent, Grid, CardMedia } from "@mui/material";
+import { Card, CardContent, Grid, CardMedia, Typography } from "@mui/material";
 import NewsLatterBox from "../Contact/NewsLatterBox";
 import Breadcrumb from "../Common/Breadcrumb";
 import {  LocalOffer,  CalendarMonthOutlined } from "@mui/icons-material";
@@ -49,63 +49,56 @@ const WebDev = () => {
           {/* Blog Cards */}
           <Grid item lg={8} xl={8} md={8} sm={12} xs={12} sx={{zIndex:"5"}} className="overflow-visible">
             <Grid container spacing={2} className="overflow-visible">
-              {codingData.map((post) => (
+              {codingData.slice(0, 4).map((post) => (
                 <Grid key={post._id} item xs={12} className="overflow-visible">
                   <Card 
             className="transition  duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
             <Grid container>
                       <Grid item xs={12} sm={6}>
-                        <Box position="relative"                             className=" inset-0  object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+                        <Box position="relative" className=" overflow-hidden inset-0  object-cover "
 >
                           <CardMedia
+                          className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                             component="img"
                             src={urlForImage(post.mainImage).url()}
                             alt={post.title}
                             sx={{
                               width: "100%",
-                              height: "200px",
+                              height: { xs: "auto", lg: 312 }, 
+                             
                               objectFit: "cover",
                               borderRadius:"10px  ",
                        
                             }}
                           />
-                          <span
-                            style={{
-                              position: "absolute",
-                              top: 16, // Distance from the top of the image
-                              right: 16, // Distance from the right edge of the image
-                              borderRadius: "9999px", // rounded-full
-                              backgroundColor: " #2b6cb0", // bg-blue-100
-                              padding: "0.25rem 0.75rem", // px-3 py-1
-                              fontSize: "0.75rem", // text-xs
-                              fontWeight: "600", // font-semibold
-                              color: "#ebf8ff", // text-blue-800
-                              transition: "all 300ms", // duration-300
-                            }}
-                            className="hover:bg-blue-200 hover:text-blue-900 dark:bg-blue-200 dark:text-blue-900 dark:hover:bg-blue-300 dark:hover:text-blue-800"
-                          >
-                            <LocalOffer fontSize="small" /> Tag
-                          </span>
+                      {post.tags && post.tags.length > 0 && (
+         <Link
+         href={post.tags[0].link} className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary"
+         >
+           <LocalOffer fontSize="small" />      {post.tags[0].name} 
+         </Link>
+        )}
                         </Box>
                       </Grid>
                       <Grid item xs={12} sm={6}>
                         <CardContent>
-                        <h5 className="mb-2 line-clamp-2  text-base font-medium  leading-relaxed  tracking-wide text-black dark:text-white sm:text-lg sm:leading-tight">
+                        <h1 className="mb-4 line-clamp-2 text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight">
                             {post.title}
-                          </h5>
+                          </h1>
                           <div className="mb-3 mt-3 flex items-center justify-start gap-2">
   <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
     <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">06/12/2024</p>
+    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">        {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+</p>
   </div>
   <div className="flex items-center">
     <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: 5 min</p>
+    <p className="text-xs font-medium text-gray-600 dark:text-gray-400"> Read Time: {post.readTime?.minutes} min</p>
   </div>
 </div>
-                          {/* <Typography variant="body2" color="text.secondary">
+<Typography className=" line-clamp-3 dark-bg-green-50 rounded-bl-xl rounded-br-xl text-start text-base text-gray-800 dark:text-gray-400">
                         {post.overview}
-                      </Typography> */}
+ </Typography>
                           <Link
                            href={`/coding/${post.slug.current}`}
 

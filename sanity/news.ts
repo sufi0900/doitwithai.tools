@@ -18,6 +18,28 @@ export const news = {
         },
       },
       {
+        name: "tags",
+        title: "Tags",
+        type: "array",
+        of: [
+          {
+            type: "object",
+            fields: [
+              {
+                name: "name",
+                title: "Tag Name",
+                type: "string",
+              },
+              {
+                name: "link",
+                title: "Custom Link",
+                type: "url", // or string if you want to store relative paths
+              },
+            ],
+          },
+        ],
+      },
+      {
         name: "overview",
         title: "overview",
         type: "string",

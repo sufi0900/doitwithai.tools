@@ -149,43 +149,16 @@ export default  function Home() {
       >
         <div className="container">
           <Grid container spacing={2}>
-             {/* <Trending />  */}
+             <Trending /> 
           </Grid>
         </div>
       </section>
-      <section
-        id="blog"
-        className="bg-gray-light py-16 dark:bg-bg-color-dark md:py-4 lg:py-4"
-      >
-        <div className="container">
-          <h1 className="mb-6 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
-            <span className="group inline-block cursor-pointer">
-              <span className="relative text-blue-500">
-                Feature
-                <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
-              </span>
-             
-              <span className="relative mt-4 inline-block ">
-     
-              
-                Posts
-                <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
-              </span>
-            </span>
-          </h1>
-        
-          <Grid container spacing={2}>
-            <FeaturePost posts={featurePostBig} />
-            <RelatedFeaturePost posts={featureRelatedData} /> 
-          </Grid>
-        </div>
-        <br />
-        <br />
-      </section>
+     {/*  */}
+     <FeaturePost/>
       <AiTools />
-      <AIEarn />
-      <AINews />
-      <CodeWithAI /> 
+      {/* <AIEarn /> */}
+      {/* <AINews /> */}
+      {/* <CodeWithAI />  */}
  
       <FreeAIResources />
       <AISEO />

@@ -75,7 +75,7 @@ const RelatedTrendingPosts = ({ posts }) => {
               className="transition duration-200 ease-in-out hover:scale-105 cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
             >
               <Box sx={{ flex: 1 }}>
-                <h5 className="mb-2 mr-2 mt-2 line-clamp-2 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
+                <h5 className="mb-2 mr-2 mt-2 line-clamp-1 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
                   {post.title}
        
                 </h5>
