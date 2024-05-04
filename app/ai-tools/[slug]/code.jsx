@@ -486,7 +486,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
   <a href="{urlForImage(data.mainImage).url()}">
     <Image
       className="absolute inset-0 h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
-      src="{urlForImage(data.mainImage).url()}"
+      src={urlForImage(data.mainImage).url()}
       alt=""
       layout="fill"  // Ensures image fills the container
     />
