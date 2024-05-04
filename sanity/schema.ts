@@ -6,7 +6,8 @@ import { makemoney } from "./make-money";
 import { seo } from "./seo";
 import { news } from "./news";
 import { blog } from "./blogs";
+import { complexTable } from "./complextable";
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [blog, aitool, makemoney, news, coding, freeairesources, seo ],
+  types: [complexTable, blog, aitool, makemoney, news, coding, freeairesources, seo ],
 };

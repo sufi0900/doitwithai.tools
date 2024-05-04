@@ -32,14 +32,7 @@ export const aitool = {
       ],
     },
     
-    {
-      name: "dataTables",
-      title: "Data Tables",
-      type: "table", 
-      options: {
-       
-      },
-    },
+  
     {
       name: "readTime",
       title: "Read Time",
@@ -94,8 +87,10 @@ export const aitool = {
         {
           type: "block",
         },
+        
         {
-          type: "table", //
+          type: "table", 
+        
         },
         {
           name: "button",
@@ -122,6 +117,25 @@ export const aitool = {
               name: "alt",
               title: "Alternative Text",
             },
+            {
+              name: "imageDescriptionOfBlockImg",
+              title: "Image Description",
+              type: "array", 
+              of: [
+                {
+                  type: "block",
+               
+                  
+                }
+              ],
+              description: "Extended image description that can include links and formatted text."
+            },
+            {
+              name: "url",
+              title: "URL",
+              type: "url",
+              description: "Custom link for the image"
+            },
           ],
         },
       ],
@@ -133,7 +147,30 @@ export const aitool = {
       options: {
         hotspot: true,
       },
-    },
+      fields: [
+        {
+          name: "alt",
+          title: "Alternative Text",
+          type: "string", // Keep it simple for accessibility and SEO
+          description: "Short alt text for the image, for accessibility."
+        },
+        {
+          name: "imageDescription",
+          title: "Image Description",
+          type: "array", // Rich text array for detailed description
+          of: [
+            {
+              type: "block",
+           
+              
+            }
+          ],
+          description: "Extended image description that can include links and formatted text."
+        }
+      ]
+    }
+    
+,    
     {
       name: "metadesc",
       title: "Meta Description",
@@ -259,6 +296,7 @@ export const aitool = {
       name: "tableOfContents",
       title: "Table of Contents",
       type: "array",
+      
       of: [{ type: "string" }],
     },
   ],

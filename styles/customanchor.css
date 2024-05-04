@@ -3,6 +3,12 @@
   color: #3b82f6;
   transition: 0.3s;
 }
+ .imgdesc a,  .imgdesc link {
+  font-weight: 500;
+  color: #3b82f6;
+  text-decoration: underline;
+  transition: 0.3s;
+}
 .customanchor a:hover {
   font-weight: 500;
 
