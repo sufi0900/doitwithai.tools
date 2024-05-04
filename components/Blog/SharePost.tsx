@@ -1,9 +1,14 @@
 const SharePost = () => {
+  const currentUrl = typeof window !== "undefined" ? window.location.href : '';
+
   return (
     <>
       <a
-        href="#0"
-        aria-label="social-share"
+           href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(currentUrl)}`}
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="Share on LinkedIn"
+      
         className="bg-gray-light dark:bg-gray-dark mb-3 inline-flex h-9 w-9 items-center justify-center rounded-sm text-body-color duration-300 hover:bg-primary hover:text-white dark:hover:bg-primary sm:ml-3"
       >
         <svg
