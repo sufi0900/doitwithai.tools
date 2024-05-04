@@ -1,5 +1,4 @@
-import Ais from "@/components/Categories/page";
-import Recent from "@/components/RecentPost/page";
+
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image";
 import {
@@ -7,10 +6,10 @@ import {
   CardContent,
   Grid,
   CardMedia,
-  Container,
+
 } from "@mui/material";
 
-import Box from "@mui/material/Box";
+
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
@@ -112,7 +111,7 @@ const FeaturePost = () => {
 </div>
 
                     <Link
-         href={`/seo-with-ai/${slugUrl}`}
+         href={`/seo-with-ai/${post.slug.current}`}
    className="mt-4 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                     >
                       Read more

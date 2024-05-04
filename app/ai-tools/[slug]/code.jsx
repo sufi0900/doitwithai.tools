@@ -276,17 +276,16 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
       image: ({ value }) => {
         const imageUrl = urlForImage(value.asset).url();
         return (
-          <div className=" lg:-mx-5 w-full overflow-hidden rounded">
+          <div className=" lg:-mx-2 w-full overflow-hidden rounded">
           <div className="lg:m-4 ">
           <div className="card3 rounded-xl ">
   
             <figure className=" relative my-8 ">
               <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
                 <a href={imageUrl}>
-                  <img
+                  <Image
                     className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                     src={imageUrl}
-             
                     layout="responsive"
                     width={500} 
                     height={500}
@@ -295,7 +294,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
               </div>
               <figcaption 
               
-              className="dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400"            >
+              className=" imgdesc dark-bg-green-50 py-2 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400"            >
             <PortableText value={value.imageDescriptionOfBlockImg} components={imgdesc} />
               </figcaption>
             </figure>
@@ -527,7 +526,7 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                             />
                           </a>
                         </div>
-                        <figcaption className="imgdesc mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
+                        <figcaption className="imgdesc  my-2 text-center text-sm text-gray-500 dark:text-gray-400">
                           {/* Iteratively render descriptions and links from the imageDescription array */}
    
               <PortableText value={data.mainImage.imageDescription} components={imgdesc}  />

@@ -29,16 +29,39 @@ async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
   const result = await client.fetch(query, { categories });
   return result;
 }
+const imgdesc ={
+  block: {  
+    normal: ({ children }) => (
+      <p   className="dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400">
+  {children}
+</p>
+    ),
+    link: ({ children }) => (
+      <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+        {children}
+      </a>
+    ),
+    a: ({ children }) => (
+      <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+        {children}
+      </a>
+    )
+  
+  },
+  link: ({ children }) => (
+    <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+      {children}
+    </a>
+  ),
+}
+
 const portableTextComponents = {
   block: {
     normal: ({ children }) => (
       <p className="mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
   {children}
 </p>
-
-
     ),
- 
     h1: ({ children }) => (
       <h1 className="mb-4 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
         {children}
@@ -249,25 +272,28 @@ const portableTextComponents = {
   types: {
     image: ({ value }) => {
       const imageUrl = urlForImage(value.asset).url();
-      const altText = value.alt || "";
       return (
-        <div className=" lg:-mx-5 w-full overflow-hidden rounded">
+        <div className=" lg:-mx-2 w-full overflow-hidden rounded">
         <div className="lg:m-4 ">
         <div className="card3 rounded-xl ">
 
           <figure className=" relative my-8 ">
             <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
               <a href={imageUrl}>
-                <Image
+              <Image
                   className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                   src={imageUrl}
-                  alt={altText}
-                  fill
+           
+                  layout="responsive"
+                  width={500} 
+                  height={500}
                 />
               </a>
             </div>
-            <figcaption className="dark-bg-green-50 rounded-bl-xl rounded-br-xl bg-green-50 text-center text-sm text-gray-800 dark:text-gray-800">
-              {altText}
+            <figcaption 
+            
+            className=" imgdesc dark-bg-green-50 py-2 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400"            >
+          <PortableText value={value.imageDescriptionOfBlockImg} components={imgdesc} />
             </figcaption>
           </figure>
         </div>
@@ -339,7 +365,7 @@ const portableTextComponents = {
 };
 portableTextComponents.types.button = portableTextComponents.button;
 
-export default function BlogSidebarPage({ data, params, currentCategory  }) {
+export default function BlogSidebarPage({ data  }) {
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -433,10 +459,6 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
       fetchData();
 
   }, []);
-
-
-
-
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
 
   // Function to toggle the state of the table of contents box
@@ -487,18 +509,33 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                               className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
                               src={urlForImage(data.mainImage).url()}
                               alt=""
-                              fill
+                              layout="responsive"
+                              width={500} 
+                              height={500}
+                              placeholder="blur"
+                              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+                        
+
                             />
                           </a>
                         </div>
-                        <figcaption className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
-                          Caption
+                        <figcaption className="imgdesc  my-2 text-center text-sm text-gray-500 dark:text-gray-400">
+                          {/* Iteratively render descriptions and links from the imageDescription array */}
+   
+              <PortableText value={data.mainImage.imageDescription} components={imgdesc}  />
+
+
                         </figcaption>
                       </figure>
                       </div>
                     </div>
                             </div>
-
+                            <div className="customanchor mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+                      {/* <PortableText
+                        value={data.content}
+                        components={portableTextComponents}
+                      /> */}
+                    </div>   
             <div className="w-full  lg:w-8/12 ">
                   <div className="mb-10 mt-4 w-full overflow-hidden rounded">
                   <div className="mb-10 flex flex-wrap items-center justify-between border-b border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
@@ -506,8 +543,8 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                       <div className="mb-5 mr-10 flex items-center">
                         <div className="mr-4">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full">
-                            <img
-                              src="https://res.cloudinary.com/dtvtphhsc/image/upload/v1708783237/prisma/y2tbix1x3ufnewmcadfb.png"
+                            <Image
+                              src="/sufi.png"
                               alt="author"
                               fill
                             />
@@ -587,12 +624,12 @@ export default function BlogSidebarPage({ data, params, currentCategory  }) {
                     </div>             
                   </div>
                   {/* {renderTableOfContents()} */}
-                  <div className="items-center justify-between sm:flex">
+                  <div className="items-center justify-between sm:flex mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="mb-5">
                       <h4 className="mb-3 text-sm font-medium text-body-color">
-                        Popular Tags :
+                        Related Tags :
                       </h4>
-                      <div className="flex items-center">
+                      <div className="flex items-center ">
                       {data.tags && data.tags.slice(0, 3).map((tag) => (
     <TagButton key={tag.name} href={tag.link} text={tag.name} /> 
   ))}

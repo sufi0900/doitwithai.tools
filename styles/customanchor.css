@@ -7,7 +7,22 @@
   font-weight: 500;
   color: #3b82f6;
   text-decoration: underline;
+  text-underline-position: under;
   transition: 0.3s;
+}
+.imgdesc a:hover {
+  font-weight: 500;
+
+  padding: 2px 7px;
+  border-radius: 8px; /* Equivalent to 6px */
+  text-decoration: none !important; /* Use !important to override other styles */
+  box-shadow:
+    rgba(0, 0, 0, 0.19) 0px 10px 20px,
+    rgba(0, 0, 0, 0.23) 0px 6px 6px;
+  outline: none;
+
+  color: #fff;
+  background-color: #1e40af;
 }
 .customanchor a:hover {
   font-weight: 500;
