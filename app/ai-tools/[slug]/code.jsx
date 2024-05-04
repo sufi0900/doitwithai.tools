@@ -35,10 +35,7 @@ const portableTextComponents = {
       <p className="mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
   {children}
 </p>
-
-
     ),
- 
     h1: ({ children }) => (
       <h1 className="mb-4 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
         {children}
@@ -251,28 +248,30 @@ const portableTextComponents = {
       const imageUrl = urlForImage(value.asset).url();
       const altText = value.alt || "";
       return (
-        <div className=" lg:-mx-5 w-full overflow-hidden rounded">
-        <div className="lg:m-4 ">
-        <div className="card3 rounded-xl ">
-
-          <figure className=" relative my-8 ">
-            <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
-              <a href={imageUrl}>
-                <Image
-                  className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
-                  src={imageUrl}
-                  alt={altText}
-                  fill
-                />
-              </a>
-            </div>
-            <figcaption className="dark-bg-green-50 rounded-bl-xl rounded-br-xl bg-green-50 text-center text-sm text-gray-800 dark:text-gray-800">
-              {altText}
-            </figcaption>
-          </figure>
+        <div className="lg:-mx-5 w-full overflow-hidden rounded">
+        <div className="lg:m-4">
+          <div className="card3 rounded-xl">
+      
+            <figure className="relative my-8">
+              <div className="w-full overflow-hidden rounded-tl-xl rounded-tr-xl">
+                <a href={imageUrl}>
+                  <Image
+                    className="h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+                    src={imageUrl}
+                    alt={altText}
+                    width={100} 
+                    height={100}
+                  />
+                </a>
+              </div>
+              <figcaption className="dark-bg-green-50 rounded-bl-xl rounded-br-xl bg-green-50 text-center text-sm text-gray-800 dark:text-gray-800">
+                {altText}
+              </figcaption>
+            </figure>
+          </div>
         </div>
-        </div>
-        </div>
+      </div>
+      
       );
     },
     table: ({ value }) => (
