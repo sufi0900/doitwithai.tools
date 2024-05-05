@@ -390,12 +390,12 @@ const BlogSidebarPage = () => {
                     /> */}
                   </li>
                   <li>
-                    <RelatedPost
+                    {/* <RelatedPost
                       title="The 8 best landing page builders, reviewed"
                       image="/images/blog/post-03.jpg"
                       slug="#"
                       date="05 Jun, 2024"
-                    />
+                    /> */}
                   </li>
                 </ul>
               </div>
