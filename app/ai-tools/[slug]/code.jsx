@@ -844,6 +844,7 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
                 mainImage={urlForImage(post.mainImage).url()}
                 slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
                 publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                
               />
 ))}
                     </div>

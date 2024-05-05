@@ -16,6 +16,7 @@ import {
   
   import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
   import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import Image from "next/image";
   
   
     export default function FeaturePost({
@@ -50,21 +51,42 @@ import {
                     <Card className=" flex2  card cursor-pointer rounded-lg bg-white text-black shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
                     <Box position="relative" sx={{overflow:"hidden"}}>
   
-                      <CardMedia
-                        component="img"
-                        src={mainImage}
-                        alt={title}
+                    <CardMedia
+  component="div" // Use 'div' instead of 'img' to allow nesting of Next.js <Image> tag
+
                         sx={{
                           width: "100%",
-                          height: { xs: "auto", lg: "300px" },
+                          height: { xs: "auto", lg: "340px" },
                      
-                          objectFit: "cover",
                     
                           borderRadius:"10px"
                         }}
                         className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
 
-                      />
+                      >
+  <Image
+    src={mainImage}
+    alt={title}
+    layout="responsive"
+    width={500} 
+    height={500}
+  />
+</CardMedia>
+               
+{/* <CardMedia
+                        component="img"
+                        src={mainImage}
+                        alt={title}
+                        sx={{
+                          width: "100%",
+                          height: { xs: "auto", lg: "340px" },
+                     
+                    
+                          borderRadius:"10px"
+                        }}
+                        className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+
+                      /> */}
                        {tags && tags.length > 0 && (
             <Link href={tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
              <LocalOfferIcon  style={{fontSize:"14px"}} />   {tags[0].name}
