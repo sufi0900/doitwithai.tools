@@ -47,7 +47,6 @@ const Page = () => {
       firstlink="/"
     />
        <Grid container spacing={2}>
-      {/* First Row: one Big Blogs */}
       {isAiExtensionBig.slice(0, 1).map((post) => (
         <Grid item key={post._id} xs={12} md={12}>
           <FeaturePost

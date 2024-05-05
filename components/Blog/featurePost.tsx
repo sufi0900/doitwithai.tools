@@ -52,11 +52,15 @@ import Image from "next/image";
                     <Box position="relative" sx={{overflow:"hidden"}}>
   
                     <CardMedia
-  component="div" // Use 'div' instead of 'img' to allow nesting of Next.js <Image> tag
-
+                       component="div" 
+  
                         sx={{
-                          width: "100%",
-                          height: { xs: "auto", lg: "340px" },
+                          position: "relative", // Required for positioning Next.js <Image> within CardMedia
+                          height: { xs: "auto", lg: 280 }, // Auto height for small devices and fixed height for large devices
+                          width:{xs: "auto", lg: 540 },
+                          overflow: "hidden", // Ens
+                         
+                    
                      
                     
                           borderRadius:"10px"
@@ -70,6 +74,7 @@ import Image from "next/image";
     layout="responsive"
     width={500} 
     height={500}
+
   />
 </CardMedia>
                
@@ -79,7 +84,7 @@ import Image from "next/image";
                         alt={title}
                         sx={{
                           width: "100%",
-                          height: { xs: "auto", lg: "340px" },
+                          height: { xs: "auto", lg: 340 },
                      
                     
                           borderRadius:"10px"
