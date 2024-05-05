@@ -58,11 +58,7 @@ import Image from "next/image";
                           position: "relative", // Required for positioning Next.js <Image> within CardMedia
                           height: { xs: "auto", lg: 280 }, // Auto height for small devices and fixed height for large devices
                           width:{xs: "auto", lg: 540 },
-                          overflow: "hidden", // Ens
-                         
-                    
-                     
-                    
+                          overflow: "hidden",
                           borderRadius:"10px"
                         }}
                         className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
