@@ -73,7 +73,7 @@ export default  function RecentPosts() {
               </h5>
             </Link>
             {/* Overview */}
-            <p className="mb-3 line-clamp-5 font-normal text-gray-700 dark:text-gray-400">
+            <p className="mb-3 line-clamp-4 font-normal text-gray-700 dark:text-gray-400">
               {post.overview}
             </p>
             {/* Meta Data */}

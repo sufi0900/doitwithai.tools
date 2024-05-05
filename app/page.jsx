@@ -157,7 +157,7 @@ export default  function Home() {
      <FeaturePost/>
       <AiTools />
       {/* <AIEarn /> */}
-      {/* <AINews /> */}
+      <AINews />
       {/* <CodeWithAI />  */}
  
       <FreeAIResources />

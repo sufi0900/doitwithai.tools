@@ -58,9 +58,14 @@ const AiTools = () => {
           <Grid item xs={12} md={12} lg={6} xl={6} >
             {/* Big Blog Card */}
             {aiToolTrendBigData.slice(0, 1).map((post) => (
-               <Card key={post._id} className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+               <Card 
+               sx={{
+                height: { xs: "auto", lg: "652px" }, // Auto height for xs and fixed for lg
+
+               }}
+               key={post._id} className="transition duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
                 {/* <div className="overflow-hidden lg:aspect-[35/16]"> */}
-                <Box position="relative">
+                <Box position="relative" sx={{overflow:"hidden"}}>
                 <CardMedia
   component="img"
   src={urlForImage(post.mainImage).url()}
@@ -69,6 +74,7 @@ const AiTools = () => {
     height: { xs: "auto", lg: 312 }, // Auto height for small devices and fixed height for large devices
     objectFit: "cover",
   }}
+  className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
 />
                        
                         {/* </div> */}
@@ -80,11 +86,12 @@ const AiTools = () => {
                         </Box>
 
                <CardContent>
-               <h1 className="mb-4 line-clamp-2 text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight" style={{ minHeight: "4.5rem" }}>
-               {post.title}      
+               <h1 className="mb-4 line-clamp-2 text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight" >
+               {post.title}     
+                  
 </h1>
 
-<p className="mb-4 line-clamp-4 text-base font-medium text-gray-900 dark:text-gray-100 sm:text-lg lg:text-base xl:text-lg" style={{ minHeight: "7rem" }}>
+<p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400" >
 {post.overview} 
 </p>
 
@@ -135,7 +142,7 @@ const AiTools = () => {
           {/* Second Column: Small Blog List for First Row */}
           <Grid item xs={12} md={6}>
             {/* Small Blog List for First Row */}
-            <Grid container spacing={2}>
+            <Grid container spacing={2} >
               {aiToolTrendRelatedData.slice(1, 5).map((post) => (
                 <Grid item key={post._id} xs={12} sm={6} md={12} >
                    <CardContent
@@ -154,12 +161,12 @@ const AiTools = () => {
           
          
             }}
-            className="transition duration-200 ease-in-out hover:scale-105 cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+            className="transition duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
           >
    
             <Box sx={{ flex: 1, padding:"0px", margin:"0px" }} >
               <h5 className="mb-2 mr-2 mt-2 lg:leading-6 line-clamp-2 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
-              {post.title} 
+              {post.title}  
               </h5>  
               <div className="mb-1 mt-1 flex items-center justify-start gap-2">
               
@@ -227,34 +234,34 @@ Read Time: {post.readTime?.minutes} min
 
           <Grid item xs={12} md={6}>
             {/* List of Blogs for Second Row 1st column */}
-            <Grid container spacing={2}>
-              {aiToolTrendRelatedData.slice(5, 8).map((post) => (
-              <Grid item key={post._id} xs={12} sm={6} md={12} >
-              <CardContent
-       key={post._id}
-       sx={{
-         // marginBottom: "5px",
-         display: "flex",
-        
-         flexDirection: { xs: "column", lg: "row" }, // Column layout for xs and row for lg
-         alignItems: "center",
-         justifyContent: "space-between",
-         height: { xs: "auto", lg: "151px" }, // Auto height for xs and fixed for lg
-         borderRadius:"10px",
-         marginRight:"0px",
-         paddingRight:"5px",
-     
-    
-       }}
-       className="transition duration-200 ease-in-out hover:scale-105 cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
-     >
-
-       <Box sx={{ flex: 1, padding:"0px", margin:"0px" }} >
-         <h5 className="mb-2 mr-2 mt-2 lg:leading-6 line-clamp-2 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
-         {post.title}  
-         </h5>  
-         <div className="mb-1 mt-1 flex items-center justify-start gap-2">
+            <Grid container spacing={2} >
+              {aiToolTrendRelatedData.slice(1, 4).map((post) => (
+               <Grid item key={post._id} xs={12} sm={6} md={12} >
+               <CardContent
+        key={post._id}
+        sx={{
+          // marginBottom: "5px",
+          display: "flex",
          
+          flexDirection: { xs: "column", lg: "row" }, // Column layout for xs and row for lg
+          alignItems: "center",
+          justifyContent: "space-between",
+          height: { xs: "auto", lg: "151px" }, // Auto height for xs and fixed for lg
+          borderRadius:"10px",
+          marginRight:"0px",
+          paddingRight:"5px",
+      
+     
+        }}
+        className="transition duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+      >
+
+        <Box sx={{ flex: 1, padding:"0px", margin:"0px" }} >
+          <h5 className="mb-2 mr-2 mt-2 lg:leading-6 line-clamp-2 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
+          {post.title} 
+          </h5>  
+          <div className="mb-1 mt-1 flex items-center justify-start gap-2">
+          
 <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
 <p className="text-xs font-medium text-body-color">
 {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -264,6 +271,7 @@ Read Time: {post.readTime?.minutes} min
 <div className="flex items-center">
 <p className="text-xs font-medium text-body-color"> 
 Read Time: {post.readTime?.minutes} min
+
 </p>
 
 
@@ -271,55 +279,60 @@ Read Time: {post.readTime?.minutes} min
 </div>
 
 <Link
-       href={`/ai-tools/${post.slug.current}`}
-           className="my-2  inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                   >
-                     Read more
-                     <svg
-                       className="ms-2 h-3 w-3 rtl:rotate-180"
-                       aria-hidden="true"
-                       xmlns="http://www.w3.org/2000/svg"
-                       fill="none"
-                       viewBox="0 0 14 10"
-                     >
-                       <path
-                         stroke="currentColor"
-                         strokeLinecap="round"
-                         strokeLinejoin="round"
-                         strokeWidth={2}
-                         d="M1 5h12m0 0L9 1m4 4L9 9"
-                       />
-                     </svg>
-                   </Link>
-       </Box>
-     
-       <Box
-                       className=" inset-0  object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+        href={`/ai-tools/${post.slug.current}`}
+            className="my-2  inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                    >
+                      Read more
+                      <svg
+                        className="ms-2 h-3 w-3 rtl:rotate-180"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 14 10"
+                      >
+                        <path
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M1 5h12m0 0L9 1m4 4L9 9"
+                        />
+                      </svg>
+                    </Link>
+        </Box>
+      
+        <Box
+                        className=" inset-0  object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
 
-         component="img"
-         src={urlForImage(post.mainImage).url()}
-         alt="Related News"
-         sx={{
-           width: { xs: "100%", lg: 150 },
-           height: { xs: "auto", lg: 140 },
-           objectFit: "cover",
-     
-           marginTop:"10px",
-           borderRadius:"10px"
-         }}
-       />
-     </CardContent>
-           </Grid>
+          component="img"
+          src={urlForImage(post.mainImage).url()}
+          alt="Related News"
+          sx={{
+            width: { xs: "100%", lg: 150 },
+            height: { xs: "auto", lg: 140 },
+            objectFit: "cover",
+      
+            marginTop:"10px",
+            borderRadius:"10px"
+          }}
+        />
+      </CardContent>
+            </Grid>
               ))}
             </Grid>
           </Grid>
 
-          <Grid item  xs={12} md={12} lg={6} xl={6}>
+          <Grid item  xs={12} md={12} lg={6} xl={6} >
             {/* Big Blog Card for the 2nd row 2nd column*/}
             {aiToolTrendBigData.slice(1, 2).map((post) => (
-                 <Card key={post._id} className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+                <Card 
+                sx={{
+                 height: { xs: "auto", lg: "652px" }, // Auto height for xs and fixed for lg
+ 
+                }}
+                key={post._id} className="transition duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
                  {/* <div className="overflow-hidden lg:aspect-[35/16]"> */}
-                 <Box position="relative">
+                 <Box position="relative" sx={{overflow:"hidden"}}>
                  <CardMedia
    component="img"
    src={urlForImage(post.mainImage).url()}
@@ -328,6 +341,7 @@ Read Time: {post.readTime?.minutes} min
      height: { xs: "auto", lg: 312 }, // Auto height for small devices and fixed height for large devices
      objectFit: "cover",
    }}
+   className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
  />
                         
                          {/* </div> */}
@@ -339,11 +353,12 @@ Read Time: {post.readTime?.minutes} min
                          </Box>
  
                 <CardContent>
-                <h1 className="mb-4 line-clamp-2 text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight" style={{ minHeight: "4.5rem" }}>
-                {post.title}      
+                <h1 className="mb-4 line-clamp-2 text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight" >
+                {post.title}    
+                   
  </h1>
  
- <p className="mb-4 line-clamp-4 text-base font-medium text-gray-900 dark:text-gray-100 sm:text-lg lg:text-base xl:text-lg" style={{ minHeight: "7rem" }}>
+ <p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400" >
  {post.overview} 
  </p>
  

@@ -56,7 +56,7 @@ const News = () => {
         <Grid container spacing={2}>
          
           <Grid item xs={12} md={3}>
-            <Grid container spacing={2}>
+            <Grid container spacing={3} paddingX={1}>
               {newsTrendRelatedData.slice(0, 2).map((post) => (
                 <Grid key={post._id} item xs={12}>
                   <Card
@@ -131,7 +131,13 @@ const News = () => {
             <Grid container spacing={2}>
               {newsTrendBigData.slice(0, 1).map((post) => (
                 <Grid key={post._id} item xs={12}>
-                 <Card className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+                 <Card 
+                 sx={{
+                  height: { xs: "auto", lg: "755px" }, // Auto height for xs and fixed for lg
+
+                 }}
+                 className="transition duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+                  <div className=" overflow-hidden">
                 <CardMedia
                   component="img"
                   src={urlForImage(post.mainImage).url()}
@@ -141,13 +147,15 @@ const News = () => {
 
                 
                 }}
+                className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                 />
+                </div>
                 <CardContent>
-                <h1 className="mb-4 line-clamp-2  text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight" style={{ minHeight: "4.5rem" }}>
+                <h1 className="mb-4 line-clamp-2  text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight" >
                   
     {post.title}   
   </h1>
-  <p className="mb-4 line-clamp-4 text-base font-medium text-gray-900 dark:text-gray-100 sm:text-lg lg:text-base xl:text-lg">
+  <p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
 
     {post.overview}
   </p>
@@ -192,7 +200,7 @@ const News = () => {
             </Grid>
           </Grid>
           <Grid item xs={12} md={3}>
-            <Grid container spacing={2}>
+            <Grid container spacing={2} paddingX={1}>
               {newsTrendRelatedData.slice(2, 4).map((post) => (
                 <Grid key={post._id} item xs={12}>
   <Card

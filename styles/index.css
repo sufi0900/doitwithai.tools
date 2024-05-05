@@ -137,3 +137,8 @@
     rgba(0, 0, 0, 0.22) 0px 10px 10px;
   transition: 0.3s;
 }
+/* Add this CSS to your stylesheet */
+button:hover {
+  /* Define the hover effect for the background gradient */
+  /* background-image: linear-gradient(to bottom right, var(--from-color-hover), var(--to-color-hover)); */
+}

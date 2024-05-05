@@ -14,6 +14,8 @@ import {
 import Link from "next/link";
 import {  LocalOffer,  CalendarMonthOutlined } from "@mui/icons-material";
 import Box from "@mui/material/Box";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+
 import Breadcrumb from "../Common/Breadcrumb";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 const DigitalMarketing = () => {
@@ -54,37 +56,55 @@ const DigitalMarketing = () => {
           linktext="seo-with-ai" 
         />
 
-        <Grid container spacing={2}>
+        <Grid container spacing={2} >
           {/* First Row: Two Blogs */}
           {seoTrendBigData.slice(0, 2).map((post) => (
-            <Grid item key={post._id} xs={12} md={6}>
-                 <Card className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+            <Grid item key={post._id} xs={12} md={6} >
+                 <Card 
+
+                 sx={{
+                  height: { xs: "auto", lg: 652 }
+                 }}
+                 className="transition duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+                 <Box position="relative" sx={{overflow:"hidden"}}>
+                 <div className=" overflow-hidden">
                 <CardMedia
                   component="img"
                   src={urlForImage(post.mainImage).url()}
                   alt={post.title}
                   sx={{ height: 350, objectFit: "cover" }}
+                  className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+
                 />
+                </div>
+                   {post.tags && post.tags.length > 0 && (
+          <Link href={post.tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
+           <LocalOfferIcon  style={{fontSize:"14px"}} />   {post.tags[0].name}
+          </Link>
+        )}
+                        </Box>
                 <CardContent>
                 <h1 className="mb-4 line-clamp-2 text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight">
-    {post.title}   {post.title}   {post.title}
+    {post.title}   
   </h1>
-  <p className="mb-4 line-clamp-4 text-base font-medium text-gray-900 dark:text-gray-100 sm:text-lg lg:text-base xl:text-lg">
+  <p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
 
     {post.overview}
   </p>
   <div className="mb-3 mt-3 flex items-center justify-start gap-2">
   <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
     <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">06/12/2024</p>
+    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">        {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+</p>
   </div>
   <div className="flex items-center">
     <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: 5 min</p>
+    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">        Read Time: {post.readTime?.minutes} min
+</p>
   </div>
 </div>
   <Link
-              href={`/ai-seo/${post.slug.current}`}
+              href={`/seo-with-ai/${post.slug.current}`}
 
     className="mt-4 mb-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
   >
@@ -113,57 +133,47 @@ const DigitalMarketing = () => {
           ))}
           {/* Second Row: Four Blogs */}
           {seoTrendRelatedData.slice(0, 4).map((post) => (
-            <Grid item key={post._id} xs={12} sm={6} md={3}>
-                 <Card
+            <Grid item key={post._id} xs={12} sm={6} md={3} marginTop={1}>
+                  <Card
                   
                   className="  cursor-pointer     overflow-visible transition duration-200 ease-in-out hover:scale-105 card rounded-lg bg-white text-black shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
 
                     <Box position="relative">
-                    <div className="relative aspect-[27/22] overflow-visible">
+                    <div className="relative aspect-[37/22] overflow-hidden">
           <img
             className="absolute rounded-lg inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
             src={urlForImage(post.mainImage).url()}
             alt={post.title}
           />
         </div>
-                     
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: 16, // Distance from the top of the image
-                          right: 16, // Distance from the right edge of the image
-                          borderRadius: "9999px", // rounded-full
-                          backgroundColor: " #2b6cb0", // bg-blue-100
-                          padding: "0.25rem 0.75rem", // px-3 py-1
-                          fontSize: "0.75rem", // text-xs
-                          fontWeight: "600", // font-semibold
-                          color: "#ebf8ff", // text-blue-800
-                          transition: "all 300ms", // duration-300
-                        }}
-                        className="hover:bg-blue-200 hover:text-blue-900 dark:bg-blue-200 dark:text-blue-900 dark:hover:bg-blue-300 dark:hover:text-blue-800"
-                      >
-                        <LocalOffer fontSize="small" /> Tag
-                      </span>
+                    
+        {post.tags && post.tags.length > 0 && (
+         <Link
+         href={post.tags[0].link} className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary"
+         >
+           <LocalOfferIcon fontSize="small" />      {post.tags[0].name} 
+         </Link>
+        )}
                     </Box>
                     <CardContent>
                       <h5 className="mb-2 line-clamp-2  text-base font-medium  leading-relaxed  tracking-wide text-black dark:text-white sm:text-lg sm:leading-tight">
-                        {post.title} {post.title} {post.title} {post.title}{" "}
-                        {post.title}
+                        {post.title} 
                       </h5  >
                       <div className="mb-3 mt-3 flex items-center justify-start gap-2">
 <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
 <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-<p className="text-xs font-medium text-gray-600 dark:text-gray-400">06/12/2024</p>
+<p className="text-xs font-medium text-gray-600 dark:text-gray-400">        {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+</p>
 </div>
 <div className="flex items-center">
 <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-<p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: 5 min</p>
+<p className="text-xs font-medium text-gray-600 dark:text-gray-400"> Read Time: {post.readTime?.minutes} min</p>
 </div>
 </div>
 
                       <Link
-              href={`/ai-seo/${post.slug.current}`}
-                        className="mt-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                         href={`/seo-with-ai/${post.slug.current}`}
+                         className="mt-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                       >
                         Read more
                         <svg

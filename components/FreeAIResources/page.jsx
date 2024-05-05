@@ -57,9 +57,13 @@ const FreeAIResources = () => {
           <Grid item xs={12} md={4}>
           {digitalTrendBigData.slice(0, 1).map((post) => (
            <Card
+           sx={{
+            height: { xs: "auto", lg: 642 }
+           }}
            key={post._id}
            className="transition  duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
-              <Box position="relative">
+              <Box position="relative ">
+                <div className="overflow-hidden">
                <CardMedia
                  component="img"
                  src={urlForImage(post.mainImage).url()}
@@ -71,7 +75,10 @@ const FreeAIResources = () => {
   
                    objectFit: "cover",
                  }}
+                 className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+
                />
+               </div>
                 {post.tags && post.tags.length > 0 && (
           <Link href={post.tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
            <LocalOfferIcon  style={{fontSize:"14px"}} />   {post.tags[0].name}
@@ -79,7 +86,7 @@ const FreeAIResources = () => {
         )}
                         </Box>
                <CardContent>
-               <h1 className="mb-3 line-clamp-2  font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl sm:leading-normal" style={{ minHeight: "3rem" }}>
+               <h1 className="mb-3 line-clamp-2  font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl sm:leading-normal" >
    {post.title}   
  </h1>
  <p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
@@ -128,145 +135,159 @@ const FreeAIResources = () => {
 
           <Grid item xs={12} md={4}>
           {digitalTrendBigData.slice(1, 2).map((post) => (
-            <Card
-            key={post._id}
-            className="transition  duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
-               <Box position="relative">
-                <CardMedia
-                  component="img"
-                  src={urlForImage(post.mainImage).url()}
-                  alt={post.title}
-                  sx={{
-                    width: "100%",
-                    height: { xs: "auto", lg: 352 }, // Auto height for small devices and fixed height for large devices
+           <Card
+           sx={{
+            height: { xs: "auto", lg: 642 }
+           }}
+           key={post._id}
+           className="transition  duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+              <Box position="relative ">
+                <div className="overflow-hidden">
+               <CardMedia
+                 component="img"
+                 src={urlForImage(post.mainImage).url()}
+                 alt={post.title}
+                 sx={{
+                   width: "100%",
+                   height: { xs: "auto", lg: 352 }, // Auto height for small devices and fixed height for large devices
 
-   
-                    objectFit: "cover",
-                  }}
-                />
-                 {post.tags && post.tags.length > 0 && (
-           <Link href={post.tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
-            <LocalOfferIcon  style={{fontSize:"14px"}} />   {post.tags[0].name}
-           </Link>
-         )}
-                         </Box>
-                <CardContent>
-                <h1 className="mb-4 line-clamp-2  font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl sm:leading-normal" style={{ minHeight: "3rem" }}>
-    {post.title}   
-  </h1>
-  <p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
+  
+                   objectFit: "cover",
+                 }}
+                 className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
 
-    {post.overview}
-  </p>
-  <div className="mb-3 mt-3 flex items-center justify-start gap-2">
-  <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-    <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">   {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+               />
+               </div>
+                {post.tags && post.tags.length > 0 && (
+          <Link href={post.tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
+           <LocalOfferIcon  style={{fontSize:"14px"}} />   {post.tags[0].name}
+          </Link>
+        )}
+                        </Box>
+               <CardContent>
+               <h1 className="mb-3 line-clamp-2  font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl sm:leading-normal" >
+   {post.title}   
+ </h1>
+ <p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
+
+   {post.overview}
+ </p>
+ <div className="mb-3 mt-3 flex items-center justify-start gap-2">
+ <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
+   <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">   {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
 </p>
-  </div>
-  <div className="flex items-center">
-    <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: {post.readTime?.minutes} min</p>
-  </div>
+ </div>
+ <div className="flex items-center">
+   <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: {post.readTime?.minutes} min</p>
+ </div>
 </div>
-  <Link
-        href={`/free-ai-resources/${post.slug.current}`}
+ <Link
+       href={`/free-ai-resources/${post.slug.current}`}
 
-    className="mt-4 mb-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-  >
-    Read more
-    <svg
-      className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
-      aria-hidden="true"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 14 10"
-    >
-      <path
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M1 5h12m0 0L9 1m4 4L9 9"
-      />
-    </svg>
-  </Link>
-              
+   className="mt-4 mb-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+ >
+   Read more
+   <svg
+     className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
+     aria-hidden="true"
+     xmlns="http://www.w3.org/2000/svg"
+     fill="none"
+     viewBox="0 0 14 10"
+   >
+     <path
+       stroke="currentColor"
+       strokeLinecap="round"
+       strokeLinejoin="round"
+       strokeWidth={2}
+       d="M1 5h12m0 0L9 1m4 4L9 9"
+     />
+   </svg>
+ </Link>
+             
 </CardContent>
 
-              </Card>
+             </Card>
                    ))}
           </Grid>
 
           <Grid item xs={12} md={4}>
           {digitalTrendBigData.slice(2, 3).map((post) => (
-            <Card
-            key={post._id}
-            className="transition  duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
-               <Box position="relative">
-                <CardMedia
-                  component="img"
-                  src={urlForImage(post.mainImage).url()}
-                  alt={post.title}
-                  sx={{
-                    width: "100%",
-                    height: { xs: "auto", lg: 352 }, // Auto height for small devices and fixed height for large devices
+           <Card
+           sx={{
+            height: { xs: "auto", lg: 642 }
+           }}
+           key={post._id}
+           className="transition  duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+              <Box position="relative ">
+                <div className="overflow-hidden">
+               <CardMedia
+                 component="img"
+                 src={urlForImage(post.mainImage).url()}
+                 alt={post.title}
+                 sx={{
+                   width: "100%",
+                   height: { xs: "auto", lg: 352 }, // Auto height for small devices and fixed height for large devices
 
-   
-                    objectFit: "cover",
-                  }}
-                />
-                 {post.tags && post.tags.length > 0 && (
-           <Link href={post.tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
-            <LocalOfferIcon  style={{fontSize:"14px"}} />   {post.tags[0].name}
-           </Link>
-         )}
-                         </Box>
-                <CardContent>
-                <h1 className="mb-4 line-clamp-2  font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl sm:leading-normal" style={{ minHeight: "3rem" }}>
-    {post.title}  
-  </h1>
-  <p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
+  
+                   objectFit: "cover",
+                 }}
+                 className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
 
-    {post.overview}
-  </p>
-  <div className="mb-3 mt-3 flex items-center justify-start gap-2">
-  <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-    <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">   {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+               />
+               </div>
+                {post.tags && post.tags.length > 0 && (
+          <Link href={post.tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
+           <LocalOfferIcon  style={{fontSize:"14px"}} />   {post.tags[0].name}
+          </Link>
+        )}
+                        </Box>
+               <CardContent>
+               <h1 className="mb-3 line-clamp-2  font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl sm:leading-normal" >
+   {post.title}   
+ </h1>
+ <p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
+
+   {post.overview}
+ </p>
+ <div className="mb-3 mt-3 flex items-center justify-start gap-2">
+ <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
+   <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">   {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
 </p>
-  </div>
-  <div className="flex items-center">
-    <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: {post.readTime?.minutes} min</p>
-  </div>
+ </div>
+ <div className="flex items-center">
+   <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
+   <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Read Time: {post.readTime?.minutes} min</p>
+ </div>
 </div>
-  <Link
-        href={`/free-ai-resources/${post.slug.current}`}
+ <Link
+       href={`/free-ai-resources/${post.slug.current}`}
 
-    className="mt-4 mb-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-  >
-    Read more
-    <svg
-      className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
-      aria-hidden="true"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 14 10"
-    >
-      <path
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M1 5h12m0 0L9 1m4 4L9 9"
-      />
-    </svg>
-  </Link>
-              
+   className="mt-4 mb-1 inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+ >
+   Read more
+   <svg
+     className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
+     aria-hidden="true"
+     xmlns="http://www.w3.org/2000/svg"
+     fill="none"
+     viewBox="0 0 14 10"
+   >
+     <path
+       stroke="currentColor"
+       strokeLinecap="round"
+       strokeLinejoin="round"
+       strokeWidth={2}
+       d="M1 5h12m0 0L9 1m4 4L9 9"
+     />
+   </svg>
+ </Link>
+             
 </CardContent>
 
-              </Card>
+             </Card>
                   ))}
           </Grid>
 
