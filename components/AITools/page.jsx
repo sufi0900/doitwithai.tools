@@ -15,6 +15,7 @@ import Breadcrumb from "../Common/Breadcrumb";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import {  CalendarMonthOutlined } from "@mui/icons-material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import Image from "next/image";
 
 const AiTools = () => {
   const [aiToolTrendBigData, setAiToolTrendBigData] = useState([]);
@@ -66,17 +67,23 @@ const AiTools = () => {
                 {/* <div className="overflow-hidden lg:aspect-[35/16]"> */}
                 <Box position="relative" sx={{overflow:"hidden"}}>
                 <CardMedia
-  component="img"
-  src={urlForImage(post.mainImage).url()}
-  alt={post.title}
+  component="div" // Use 'div' instead of 'img' to allow nesting of Next.js <Image> tag
   sx={{
+    position: "relative", // Required for positioning Next.js <Image> within CardMedia
     height: { xs: "auto", lg: 312 }, // Auto height for small devices and fixed height for large devices
-    objectFit: "cover",
+    overflow: "hidden", // Ensure content doesn't overflow
   }}
   className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
-/>
+>
+<Image
+    src={urlForImage(post.mainImage).url()}
+    alt={post.title}
+    layout="fill" // Fill the entire parent container
+    objectFit="cover" // Cover the container while preserving aspect ratio
+  />
+</CardMedia>
                        
-                        {/* </div> */}
+                   
                         {post.tags && post.tags.length > 0 && (
           <Link href={post.tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
            <LocalOfferIcon  style={{fontSize:"14px"}} />   {post.tags[0].name}

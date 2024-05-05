@@ -9,6 +9,7 @@ import { urlForImage } from "@/sanity/lib/image";
 
 import { client } from "@/sanity/lib/client";
 import {Grid} from "@mui/material";
+import CardComponent from "@/components/Card/Page"
 
 import FeaturePost from "@/components/Blog/featurePost"
 import React, { useEffect, useState } from "react";
@@ -21,7 +22,7 @@ async function fetchAllBlogs(page = 1, limit = 2) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
     groq`*[_type == "news"] | order(publishedAt desc) {
-      _id, title, slug, mainImage, overview, body, publishedAt
+      _id, title, slug, tags, mainImage, overview, body, publishedAt
     }[${start}...${start + limit}]`
   );
   return result;
@@ -90,7 +91,16 @@ export default function AllBlogs() {
   };
 
   const renderSearchResults = () => {
-    return searchResults.map((blog) => <BlogCard key={blog._id} {...blog} />);
+    return searchResults.map((post) => <CardComponent key={post._id}
+    tags={post.tags} 
+    ReadTime={post.readTime?.minutes} 
+    overview={post.overview}
+   
+    title={post.title}
+    mainImage={urlForImage(post.mainImage).url()}
+    slug={`/ai-tools/${post.slug.current}`}
+    publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+    />);
   };
  
   return (
@@ -123,7 +133,8 @@ export default function AllBlogs() {
       ))}
                  
             </Grid>
-        
+        <br/>
+        <br/>
       {/* <AiCategory /> */}
       <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
             <div className=" flex items-center justify-between">
@@ -133,6 +144,11 @@ export default function AllBlogs() {
                 className="mr-4 w-full rounded-sm border border-stroke bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchText.trim() !== "") {
+                    handleSearch();
+                  }
+                }}
               />
 
               <button
@@ -188,7 +204,17 @@ export default function AllBlogs() {
           ))
         ) : (
           // Render BlogCard components when data is available
-          data.map((blog) => <BlogCard key={blog.id} {...blog} />)
+          data.map((post) =>
+        <CardComponent
+          key={post._id}
+          ReadTime={post.readTime?.minutes} 
+          overview={post.overview}
+          title={post.title}
+          tags={post.tags} 
+          mainImage={urlForImage(post.mainImage).url()}
+          slug={`/ai-tools/${post.slug.current}`}
+          publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
+         />)
         )}
           </div>
 
@@ -246,7 +272,6 @@ export default function AllBlogs() {
               </ul>
             </div>
           </div>
-
 
     </div>
   );

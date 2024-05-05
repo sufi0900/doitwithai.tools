@@ -4,7 +4,7 @@ import { Skeleton } from "@mui/material"; // Import Skeleton component from Mate
 
 
 import groq from "groq";
-import BlogCard from "./Card"
+
 import { urlForImage } from "@/sanity/lib/image";
 import CardComponent from "@/components/Card/Page"
 import { client } from "@/sanity/lib/client";
@@ -22,7 +22,7 @@ async function fetchAllBlogs(page = 1, limit = 2) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
     groq`*[_type == "aitool"] | order(publishedAt desc) {
-      _id, title, slug, mainImage, overview, body, publishedAt
+      _id, title, slug, mainImage, tags, overview, body, publishedAt
     }[${start}...${start + limit}]`
   );
   return result;
@@ -208,14 +208,13 @@ export default function AllBlogs() {
           data.map((post) =>
         <CardComponent
           key={post._id}
-          tags={post.tags} 
           ReadTime={post.readTime?.minutes} 
           overview={post.overview}
           title={post.title}
+          tags={post.tags} 
           mainImage={urlForImage(post.mainImage).url()}
           slug={`/ai-tools/${post.slug.current}`}
-          publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-          
+          publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
          />)
         )}
           </div>

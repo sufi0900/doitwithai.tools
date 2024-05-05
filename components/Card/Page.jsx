@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
+import { Card } from "@mui/material";
 export default function SingleBlog({
   publishedAt,
   mainImage,
@@ -15,13 +16,16 @@ export default function SingleBlog({
   tags
 }) {
 
-  
-
   return (
-    <>
-          
-      <div className="px-2 py-4">
-        <div className="card transition duration-300 hover:scale-[1.05] max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow  hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
+    <>    
+      <div className="px-2 py-4 ">
+        <Card 
+        sx={{
+          height: { xs: "auto", lg: "502px" }, // Auto height for xs and fixed for lg
+
+        }}
+        
+        className=" card4 transition duration-300 hover:scale-[1.05] max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow  hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
           {" "}
           <Link
             href={ slug}
@@ -51,19 +55,19 @@ export default function SingleBlog({
               />
             </div>
           </Link>
-          {/* Content */}
+    
           <div className="p-5">
-            {/* Title */}
+     
             <Link href={slug}>
               <h5 className="mb-2 line-clamp-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                {title   }
+                {title}
               </h5>
             </Link>
-            {/* Overview */}
-            <p className="mb-3 line-clamp-5 font-normal text-gray-700 dark:text-gray-400">
+  
+            <p className="mb-3 line-clamp-4 font-normal text-gray-700 dark:text-gray-400">
               {overview}
             </p>
-            {/* Meta Data */}
+    
             <div className="mb-3 mt-3 flex items-center justify-between">
               <div className="flex items-center">
                 <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
@@ -101,7 +105,7 @@ export default function SingleBlog({
               </svg>
             </Link>
           </div>
-        </div>
+        </Card>
       </div>
 
     </>
