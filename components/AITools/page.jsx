@@ -3,6 +3,8 @@
 import { client } from "@/sanity/lib/client";
 import React, { useEffect, useState } from "react";
 import { urlForImage } from "@/sanity/lib/image"; 
+import Image from "next/image";
+
 import {
   Card,
   CardContent,
@@ -15,7 +17,6 @@ import Breadcrumb from "../Common/Breadcrumb";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import {  CalendarMonthOutlined } from "@mui/icons-material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import Image from "next/image";
 
 const AiTools = () => {
   const [aiToolTrendBigData, setAiToolTrendBigData] = useState([]);
@@ -75,11 +76,10 @@ const AiTools = () => {
   }}
   className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
 >
-<Image
+  <Image
     src={urlForImage(post.mainImage).url()}
     alt={post.title}
-    layout="fill" // Fill the entire parent container
-    objectFit="cover" // Cover the container while preserving aspect ratio
+    layout="fill"
   />
 </CardMedia>
                        
