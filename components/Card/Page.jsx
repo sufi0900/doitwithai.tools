@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
-import { Card } from "@mui/material";
+import { Box, Card, CardMedia } from "@mui/material";
 export default function SingleBlog({
   publishedAt,
   mainImage,
@@ -21,7 +21,7 @@ export default function SingleBlog({
       <div className="px-2 py-4 ">
         <Card 
         sx={{
-          height: { xs: "auto", lg: "502px" }, // Auto height for xs and fixed for lg
+          height: { xs: "auto", lg: "522px" }, // Auto height for xs and fixed for lg
 
         }}
         
@@ -32,6 +32,7 @@ export default function SingleBlog({
            
           >
             {/* <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary"> */}
+
             {tags && tags.slice(0, 1).map((tag, index) => (
               <Link
                 key={index}
@@ -46,14 +47,26 @@ export default function SingleBlog({
             {/* </span> */}
 
             {/* Image */}
-            <div className="relative  aspect-[37/22] overflow-hidden">
-              <Image
-                className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform "
-                src={mainImage}
-                alt={title}
-                fill
-              />
-            </div>
+            <Box position="relative" sx={{overflow:"hidden"}}>
+
+            <CardMedia
+  component="div" // Use 'div' instead of 'img' to allow nesting of Next.js <Image> tag
+  sx={{
+    position: "relative", // Required for positioning Next.js <Image> within CardMedia
+    height: { xs: "auto", lg: 262 }, // Auto height for small devices and fixed height for large devices
+    overflow: "hidden", // Ensure content doesn't overflow
+  }}
+  className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+>
+  <Image
+    src={mainImage}
+    alt={title}
+    layout="responsive"
+    width={500} 
+    height={500}
+  />
+</CardMedia>
+</Box>
           </Link>
     
           <div className="p-5">

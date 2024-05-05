@@ -79,7 +79,9 @@ const AiTools = () => {
   <Image
     src={urlForImage(post.mainImage).url()}
     alt={post.title}
-    layout="fill"
+    layout="responsive"
+    width={500} 
+    height={500}
   />
 </CardMedia>
                        
