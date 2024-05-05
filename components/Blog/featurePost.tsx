@@ -31,13 +31,16 @@ import Image from "next/image";
    
     return (
       <div>
-    <Card className="transition duration-200 ease-in-out hover:scale-[1.03] card3 cursor-pointer  items-center  rounded-lg         border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700" // Adjust background and text color based on theme
+    <Card className=" card3 cursor-pointer  items-center  rounded-lg         border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700" // Adjust background and text color based on theme
                 sx={{
                 
                   display: "flex",
                   flexDirection: "column",
                   height: "100%",
-                  width: "100%", // Ensure fixed width for all cards
+                  width: "100%", 
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "scale(1.03)",}
                 }}
               >
                 <Grid container className="flex">
@@ -53,7 +56,6 @@ import Image from "next/image";
   
                     <CardMedia
                        component="div" 
-  
                         sx={{
                           position: "relative", // Required for positioning Next.js <Image> within CardMedia
                           height: { xs: "auto", lg: 280 }, // Auto height for small devices and fixed height for large devices

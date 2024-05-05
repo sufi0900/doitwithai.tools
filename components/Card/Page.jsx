@@ -22,10 +22,12 @@ export default function SingleBlog({
         <Card 
         sx={{
           height: { xs: "auto", lg: "522px" }, // Auto height for xs and fixed for lg
-
+          transition: "transform 0.2s, box-shadow 0.2s",
+          "&:hover": {
+            transform: "scale(1.04)",}
         }}
         
-        className=" card4 transition duration-300 hover:scale-[1.05] max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow  hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
+        className=" card4  max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow  hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
           {" "}
           <Link
             href={ slug}

@@ -86,7 +86,6 @@ const TrendingPage = () => {
     transition: "transform 0.2s, box-shadow 0.2s",
     "&:hover": {
       transform: "scale(1.03)",
-      boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
     },
     width: "100%", // Ensures the Card width is responsive
     height: "auto", // Adjust based on content but maintains image height
@@ -184,9 +183,13 @@ const TrendingPage = () => {
                     <Grid key={post._id} item xs={12} >
                       <Card
                   sx={{
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    "&:hover": {
+                      transform: "scale(1.03)",
+                    },
                     height: { xs: "auto", lg: "355px" }, // Auto height for xs and fixed for lg
                   }}
-                      className="  cursor-pointer     overflow-hidden transition duration-200 ease-in-out hover:scale-105 card rounded-lg bg-white text-black shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
+                      className="  cursor-pointer     overflow-hidden  card rounded-lg bg-white text-black shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
 
                         <Box position="relative">
                         <div className="relative aspect-[38/22] overflow-hidden">
@@ -260,11 +263,15 @@ fill
                 <Grid container flex spacing={2} className="mb-2 flex ">
                   {trendRelatedData.slice(2, 4).map((post) => (
                     <Grid key={post._id} item xs={12} >
-                    <Card
+                     <Card
                   sx={{
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    "&:hover": {
+                      transform: "scale(1.03)",
+                    },
                     height: { xs: "auto", lg: "355px" }, // Auto height for xs and fixed for lg
                   }}
-                      className="  cursor-pointer     overflow-hidden transition duration-200 ease-in-out hover:scale-105 card rounded-lg bg-white text-black shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
+                      className="  cursor-pointer     overflow-hidden  card rounded-lg bg-white text-black shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
 
                         <Box position="relative">
                         <div className="relative aspect-[38/22] overflow-hidden">
