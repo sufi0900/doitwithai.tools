@@ -6,7 +6,7 @@ import { Skeleton } from "@mui/material"; // Import Skeleton component from Mate
 import groq from "groq";
 import BlogCard from "./Card"
 import { urlForImage } from "@/sanity/lib/image";
-import RealtedCard from "@/components/Card/Page"
+import CardComponent from "@/components/Card/Page"
 import { client } from "@/sanity/lib/client";
 import {Grid} from "@mui/material";
 
@@ -91,7 +91,7 @@ export default function AllBlogs() {
   };
 
   const renderSearchResults = () => {
-    return searchResults.map((post) =>  <RealtedCard
+    return searchResults.map((post) =>  <CardComponent
 
     key={post._id}
     tags={post.tags} 
@@ -206,7 +206,7 @@ export default function AllBlogs() {
         ) : (
           // Render BlogCard components when data is available
           data.map((post) =>
-        <RealtedCard
+        <CardComponent
           key={post._id}
           tags={post.tags} 
           ReadTime={post.readTime?.minutes} 
