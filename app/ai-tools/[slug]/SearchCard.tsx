@@ -1,15 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 
-
-export default function SingleBlog({
-  publishedAt,
+const RelatedPost = ({
   image,
-  title,
-  overview,
-  date,
   slug,
-}){
+  title,
+  date,
+}: {
+  image: string;
+  slug: string;
+  title: string;
+  date: string;
+}) => {
   return (
     <div className="flex items-center lg:block xl:flex">
        <Link
@@ -35,4 +37,4 @@ export default function SingleBlog({
   );
 };
 
-
+export default RelatedPost;

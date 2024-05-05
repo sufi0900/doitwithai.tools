@@ -14,17 +14,12 @@ export default function SingleBlog({
 }) {
   const formattedDate = new Date(publishedAt).toLocaleDateString();
   const slugUrl = slug?.current;
-  const imageUrl = mainImage?.url;
   const formattedTitle = title
     ? `${title.split(" ").slice(0, 3).join(" ")}${
         title.split(" ").length > 3 ? " ..." : ""
       }`
     : "";
-  // const formattedOverview = overview
-  //   ? `${overview.split(" ").slice(0, 12).join(" ")}${
-  //       overview.split(" ").length > 12 ? " ..." : ""
-  //     }`
-  //   : "";
+ 
   return (
     <>
       <div className="px-2 py-4">

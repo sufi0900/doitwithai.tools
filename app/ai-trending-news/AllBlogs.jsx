@@ -2,32 +2,21 @@
 "use client";
 import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
 
-import { useRouter } from "next/navigation";
+
 import groq from "groq";
 import BlogCard from "./Card"
+import { urlForImage } from "@/sanity/lib/image";
 
-import Recent from "@/components/RecentPost/page";
 import { client } from "@/sanity/lib/client";
-import {
+import {Grid} from "@mui/material";
 
-  Grid,
-
-} from "@mui/material";
-
-import Box from "@mui/material/Box";
-import Link from "next/link";
-
-import FeaturePost from "./FeaturePostAitool"
-
-import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import FeaturePost from "@/components/Blog/featurePost"
 import React, { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 
 
-import AiCategory from "@/components/Categories/page";
 async function fetchAllBlogs(page = 1, limit = 2) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
@@ -39,14 +28,31 @@ async function fetchAllBlogs(page = 1, limit = 2) {
 }
 
 export default function AllBlogs() {
-  const router = useRouter();
+
   const [currentPage, setCurrentPage] = useState(1);
 
   const [data, setData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [aiToolTrendBigData, setAiToolTrendBigData] = useState([]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+    
+      const isHomePageAIToolTrendBig = `*[_type == "news" && isOwnPageFeature == true]`;
+
+      const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
+  
+
+
+      setAiToolTrendBigData(isHomePageAIToolTrendBigData);
+     
+     
+    };
+
+    fetchData();
+  }, []);
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -101,7 +107,20 @@ export default function AllBlogs() {
         />
         <Grid item xs={12} md={12}  >
     
-            <FeaturePost/>
+        {aiToolTrendBigData.map((post) => (
+        <FeaturePost
+         key={post}
+         title={post.title}
+         overview={post.overview}
+         mainImage={urlForImage(post.mainImage).url()}
+         slug={`/ai-tools/${post.slug.current}`}
+         date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+         readTime={post.readTime?.minutes}
+         tags={post.tags}
+
+         />
+       
+      ))}
                  
             </Grid>
         

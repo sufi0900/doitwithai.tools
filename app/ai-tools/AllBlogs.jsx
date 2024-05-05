@@ -2,25 +2,15 @@
 "use client";
 import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
 
-import { useRouter } from "next/navigation";
+
 import groq from "groq";
 import BlogCard from "./Card"
-
-import Recent from "@/components/RecentPost/page";
+import { urlForImage } from "@/sanity/lib/image";
+import RealtedCard from "@/components/Card/Page"
 import { client } from "@/sanity/lib/client";
-import {
+import {Grid} from "@mui/material";
 
-  Grid,
-
-} from "@mui/material";
-
-import Box from "@mui/material/Box";
-import Link from "next/link";
-
-import FeaturePost from "./FeaturePostAitool"
-
-import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import FeaturePost from "@/components/Blog/featurePost"
 import React, { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 export const revalidate = false;
@@ -39,14 +29,31 @@ async function fetchAllBlogs(page = 1, limit = 2) {
 }
 
 export default function AllBlogs() {
-  const router = useRouter();
+ 
   const [currentPage, setCurrentPage] = useState(1);
 
   const [data, setData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [aiToolTrendBigData, setAiToolTrendBigData] = useState([]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+    
+      const isHomePageAIToolTrendBig = `*[_type == "aitool" && isOwnPageFeature == true]`;
+
+      const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
+  
+
+
+      setAiToolTrendBigData(isHomePageAIToolTrendBigData);
+     
+     
+    };
+
+    fetchData();
+  }, []);
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -84,7 +91,19 @@ export default function AllBlogs() {
   };
 
   const renderSearchResults = () => {
-    return searchResults.map((blog) => <BlogCard key={blog._id} {...blog} />);
+    return searchResults.map((post) =>  <RealtedCard
+
+    key={post._id}
+    tags={post.tags} 
+    ReadTime={post.readTime?.minutes} 
+    overview={post.overview}
+   
+    title={post.title}
+    mainImage={urlForImage(post.mainImage).url()}
+    slug={`/ai-tools/${post.slug.current}`}
+    publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+    
+   />);
   };
  
   return (
@@ -101,9 +120,20 @@ export default function AllBlogs() {
         />
           
         <Grid item xs={12}  >
-        <FeaturePost/>
+        {aiToolTrendBigData.map((post) => (
+        <FeaturePost
+         key={post}
+         title={post.title}
+         overview={post.overview}
+         mainImage={urlForImage(post.mainImage).url()}
+         slug={`/ai-tools/${post.slug.current}`}
+         date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+         readTime={post.readTime?.minutes}
+         tags={post.tags}
+
+         />
        
-                 
+      ))}
             </Grid>
         
       <AiCategory />
@@ -115,6 +145,11 @@ export default function AllBlogs() {
                 className="mr-4 w-full rounded-sm border border-stroke bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchText.trim() !== "") {
+                    handleSearch();
+                  }
+                }}
               />
 
               <button
@@ -170,7 +205,18 @@ export default function AllBlogs() {
           ))
         ) : (
           // Render BlogCard components when data is available
-          data.map((blog) => <BlogCard key={blog.id} {...blog} />)
+          data.map((post) =>
+        <RealtedCard
+          key={post._id}
+          tags={post.tags} 
+          ReadTime={post.readTime?.minutes} 
+          overview={post.overview}
+          title={post.title}
+          mainImage={urlForImage(post.mainImage).url()}
+          slug={`/ai-tools/${post.slug.current}`}
+          publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+          
+         />)
         )}
           </div>
 

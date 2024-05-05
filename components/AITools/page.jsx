@@ -53,8 +53,7 @@ const AiTools = () => {
           firstlink="/"
         />
         <Grid container spacing={2}>
-          {/* First Row: Big Blog and Small Blog List */}
-          {/* First Column: Big Blog */}
+     
           <Grid item xs={12} md={12} lg={6} xl={6} >
             {/* Big Blog Card */}
             {aiToolTrendBigData.slice(0, 1).map((post) => (

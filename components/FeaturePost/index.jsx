@@ -90,7 +90,7 @@ const FeaturePost = ({ posts }) => {
       
             <Card
               key={post._id}
-              className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+              // className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
               sx={{
                 marginTop: "5px",
                 display: "flex",
@@ -102,6 +102,8 @@ const FeaturePost = ({ posts }) => {
               
         
               }}
+              className=" transition duration-200 ease-in-out hover:scale-[1.02] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+
             >
               <Link 
                     href={`/${schemaSlugMap[post._type]}/${post.slug.current}`} 
@@ -119,6 +121,8 @@ const FeaturePost = ({ posts }) => {
     width:"100%",
     objectFit: "cover",
   }}
+  className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+
 />
 </div>
 
@@ -137,7 +141,7 @@ const FeaturePost = ({ posts }) => {
                   <h1 className="mb-8 mt-4 line-clamp-2 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
                   {post.title} 
                   </h1>
-                  <p className="mb-4 line-clamp-4 text-base font-medium text-gray-900 dark:text-gray-100 sm:text-lg lg:text-base xl:text-lg">
+                  <p className="mb-4 line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
 
                   {post.overview}
                   </p>

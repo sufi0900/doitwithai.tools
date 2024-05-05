@@ -48,7 +48,7 @@ const WebDev = () => {
         <Grid container spacing={2}>
           {/* Blog Cards */}
           <Grid item lg={8} xl={8} md={8} sm={12} xs={12} sx={{zIndex:"5"}} className="overflow-visible">
-            <Grid container spacing={2} className="overflow-visible">
+            <Grid container spacing={3} paddingRight={1} className="overflow-visible">
               {codingData.slice(0, 4).map((post) => (
                 <Grid key={post._id} item xs={12} className="overflow-visible">
                   <Card 
@@ -64,7 +64,7 @@ const WebDev = () => {
                             alt={post.title}
                             sx={{
                               width: "100%",
-                              height: { xs: "auto", lg: 312 }, 
+                              height: { xs: "auto", lg: 252 }, 
                              
                               objectFit: "cover",
                               borderRadius:"10px  ",

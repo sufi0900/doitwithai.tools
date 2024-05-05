@@ -421,7 +421,7 @@ export default function BlogSidebarPage({ data  }) {
     image={urlForImage(blog.mainImage).url()}
     slug={`/${schemaSlugMap[blog._type]}/${blog.slug.current}`}
     date={new Date(blog.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-{...blog} />
+ />
 
 </li>
 </ul>
@@ -655,6 +655,11 @@ export default function BlogSidebarPage({ data  }) {
                     className="mr-4 w-full rounded-sm border border-stroke bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && searchText.trim() !== "") {
+                        handleSearch();
+                      }
+                    }}
                   />
                   <button
                     aria-label="search button"

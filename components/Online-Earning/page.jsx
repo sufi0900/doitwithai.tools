@@ -60,7 +60,7 @@ const OnlineEarningPage = () => {
             <Grid item key={post._id} xs={12} md={12}>
               <Card
    
-                className="card cursor-pointer  items-center  rounded-lg border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700
+                className="transition duration-200 ease-in-out hover:scale-[1.02] card cursor-pointer  items-center  rounded-lg border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700
             " 
                 sx={{
                   marginTop: "5px",
@@ -79,6 +79,8 @@ const OnlineEarningPage = () => {
                     sx={{ alignItems: "stretch",  }}
                   >
                     <Card className="flex2  card cursor-pointer rounded-lg bg-white text-black shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
+                    <div className=" overflow-hidden">
+
                       <CardMedia
                         component="img"
                         src={urlForImage(post.mainImage).url()}
@@ -87,14 +89,16 @@ const OnlineEarningPage = () => {
                         sx={{
                           width: "100%",
                        
-                          height: { xs: "auto", lg:  "320px", }, // Auto height for small devices and fixed height for large devices
+                          height: { xs: "auto", lg:  "300px", }, // Auto height for small devices and fixed height for large devices
 
                           objectFit: "cover",
              
                           borderRadius:"10px"
                         }}
-                        className="m-0 "
-                      />
+                        className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.3]"
+
+                />
+                </div>
                     </Card>
                   </Grid>
 
@@ -115,7 +119,7 @@ const OnlineEarningPage = () => {
                       <h1 className="mb-2 line-clamp-2 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
                         {post.title}  
                       </h1>
-                      <p className="line-clamp-4 text-base font-medium text-dark dark:text-white sm:text-lg lg:text-base xl:text-lg">
+                      <p className="line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
                         {post.overview}
                       </p>
                       <div className="mb-3 mt-3 flex items-center justify-start gap-2">
@@ -179,7 +183,7 @@ const OnlineEarningPage = () => {
           
          
             }}
-            className="transition duration-200 ease-in-out hover:scale-105 cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+            className="transition duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
           >
    
             <Box sx={{ flex: 1, padding:"0px", margin:"0px" }} >
@@ -227,7 +231,7 @@ const OnlineEarningPage = () => {
             </Box>
           
             <Box
-                            className=" inset-0  object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+                            className=" inset-0  object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.3]"
 
               component="img"
               src={urlForImage(post.mainImage).url()}
@@ -264,13 +268,13 @@ const OnlineEarningPage = () => {
             //  padding:"5px",
          
             }}
-            className="transition duration-200 ease-in-out hover:scale-105 cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+            className="transition duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
           >
    
             <Box sx={{ flex: 1, padding:"0px", margin:"0px" }} >
               <h5 className="mb-2 mr-2 mt-2 line-clamp-2 text-base font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
                 {post.title}
-                .  best way to boost your  boost your  boost your  boost your  boost your
+               
               </h5>  
               <div className="mb-1 mt-1 flex items-center justify-start gap-2">
 
@@ -310,7 +314,7 @@ const OnlineEarningPage = () => {
             </Box>
           
             <Box
-                            className=" inset-0  object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+                            className=" inset-0  object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.3]"
 
               component="img"
               src={urlForImage(post.mainImage).url()}
