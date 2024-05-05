@@ -98,14 +98,14 @@ export default function AllBlogs() {
    
     title={post.title}
     mainImage={urlForImage(post.mainImage).url()}
-    slug={`/ai-tools/${post.slug.current}`}
+    slug={`/ai-trending-news/${post.slug.current}`}
     publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
     />);
   };
  
   return (
     <div className="container mt-10 mr-4 ml-4">
-      <Breadcrumb
+     <Breadcrumb
           pageName="AI News"
           pageName2="& Trends"
           description="The future of work is here! Explore how Artificial Intelligence (AI) can transform your skills into a profitable side hustle. Our blog features in-depth guides on using AI tools like ChatGPT, Midjourney, and OpenAI to generate content, create stunning visuals, and automate tasks.  Discover powerful AI money-making strategies and turn your passion into profit"
@@ -123,7 +123,7 @@ export default function AllBlogs() {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/ai-tools/${post.slug.current}`}
+         slug={`/ai-trending-news/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -137,7 +137,7 @@ export default function AllBlogs() {
         <br/>
       {/* <AiCategory /> */}
       <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
-            <div className=" flex items-center justify-between">
+            <div className="  flex items-center justify-between">
               <input
                 type="text"
                 placeholder="Search here..."
@@ -212,7 +212,7 @@ export default function AllBlogs() {
           title={post.title}
           tags={post.tags} 
           mainImage={urlForImage(post.mainImage).url()}
-          slug={`/ai-tools/${post.slug.current}`}
+          slug={`/ai-trending-news/${post.slug.current}`}
           publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
          />)
         )}

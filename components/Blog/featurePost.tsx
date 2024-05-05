@@ -30,7 +30,7 @@ import {
    
     return (
       <div>
-    <Card className="transition duration-200 ease-in-out hover:scale-[1.03] card4 cursor-pointer  items-center  rounded-lg         border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700" // Adjust background and text color based on theme
+    <Card className="transition duration-200 ease-in-out hover:scale-[1.03] card3 cursor-pointer  items-center  rounded-lg         border border-gray-200 bg-white text-black shadow hover:bg-gray-100  dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700" // Adjust background and text color based on theme
                 sx={{
                 
                   display: "flex",

@@ -341,16 +341,23 @@ Read Time: {post.readTime?.minutes} min
                 key={post._id} className="transition duration-200 ease-in-out hover:scale-[1.03] cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
                  {/* <div className="overflow-hidden lg:aspect-[35/16]"> */}
                  <Box position="relative" sx={{overflow:"hidden"}}>
-                 <CardMedia
-   component="img"
-   src={urlForImage(post.mainImage).url()}
-   alt={post.title}
-   sx={{
-     height: { xs: "auto", lg: 312 }, // Auto height for small devices and fixed height for large devices
-     objectFit: "cover",
-   }}
-   className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
- />
+<CardMedia
+  component="div" // Use 'div' instead of 'img' to allow nesting of Next.js <Image> tag
+  sx={{
+    position: "relative", // Required for positioning Next.js <Image> within CardMedia
+    height: { xs: "auto", lg: 312 }, // Auto height for small devices and fixed height for large devices
+    overflow: "hidden", // Ensure content doesn't overflow
+  }}
+  className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+>
+  <Image
+    src={urlForImage(post.mainImage).url()}
+    alt={post.title}
+    layout="responsive"
+    width={500} 
+    height={500}
+  />
+</CardMedia>
                         
                          {/* </div> */}
                          {post.tags && post.tags.length > 0 && (

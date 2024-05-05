@@ -2,51 +2,58 @@
 "use client";
 import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
 
-import { useRouter } from "next/navigation";
+
 import groq from "groq";
-import BlogCard from "./Card"
 
-import Recent from "@/components/RecentPost/page";
+import { urlForImage } from "@/sanity/lib/image";
+
 import { client } from "@/sanity/lib/client";
-import {
+import {Grid} from "@mui/material";
+import CardComponent from "@/components/Card/Page"
 
-  Grid,
-
-} from "@mui/material";
-
-import Box from "@mui/material/Box";
-import Link from "next/link";
-
-import FeaturePost from "./FeaturePostAitool"
-
-import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import FeaturePost from "@/components/Blog/featurePost"
 import React, { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 
 
-import AiCategory from "@/components/Categories/page";
 async function fetchAllBlogs(page = 1, limit = 2) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
     groq`*[_type == "makemoney"] | order(publishedAt desc) {
-      _id, title, slug, mainImage, overview, body, publishedAt
+      _id, title, slug, tags, mainImage, overview, body, publishedAt
     }[${start}...${start + limit}]`
   );
   return result;
 }
 
 export default function AllBlogs() {
-  const router = useRouter();
+
   const [currentPage, setCurrentPage] = useState(1);
 
   const [data, setData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [aiToolTrendBigData, setAiToolTrendBigData] = useState([]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+    
+      const isHomePageAIToolTrendBig = `*[_type == "makemoney" && isOwnPageFeature == true]`;
+
+      const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
+  
+
+
+      setAiToolTrendBigData(isHomePageAIToolTrendBigData);
+     
+     
+    };
+
+    fetchData();
+  }, []);
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -84,15 +91,24 @@ export default function AllBlogs() {
   };
 
   const renderSearchResults = () => {
-    return searchResults.map((blog) => <BlogCard key={blog._id} {...blog} />);
+    return searchResults.map((post) => <CardComponent key={post._id}
+    tags={post.tags} 
+    ReadTime={post.readTime?.minutes} 
+    overview={post.overview}
+   
+    title={post.title}
+    mainImage={urlForImage(post.mainImage).url()}
+    slug={`/make-money-with-ai/${post.slug.current}`}
+    publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+    />);
   };
  
   return (
     <div className="container mt-10 mr-4 ml-4">
-      <Breadcrumb
-          pageName="Make Money"
-          pageName2="With AI"
-          description="The future of work is here! Explore how Artificial Intelligence (AI) can transform your skills into a profitable side hustle. Our blog features in-depth guides on using AI tools like ChatGPT, Midjourney, and OpenAI to generate content, create stunning visuals, and automate tasks.  Discover powerful AI money-making strategies and turn your passion into profit"
+       <Breadcrumb
+          pageName="Free AI Resources"
+          pageName2="& Solution"
+          description="Supercharge your creativity and problem-solving skills with free AI resources! Our blog provides an extensive collection of useful resources, including stunning, free, non-copyrighted AI-generated images and creative writing prompts for various tasks. Discover how AI can be applied to different fields to solve problems and enhance your work. Explore the potential of AI and see how it can empower you in any domain!"
           link="/make-money-with-ai" 
           linktext="make-money-with-ai"
           firstlinktext="Home"
@@ -101,19 +117,38 @@ export default function AllBlogs() {
         />
         <Grid item xs={12} md={12}  >
     
-            <FeaturePost/>
+        {aiToolTrendBigData.map((post) => (
+        <FeaturePost
+         key={post}
+         title={post.title}
+         overview={post.overview}
+         mainImage={urlForImage(post.mainImage).url()}
+         slug={`/make-money-with-ai/${post.slug.current}`}
+         date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+         readTime={post.readTime?.minutes}
+         tags={post.tags}
+
+         />
+       
+      ))}
                  
             </Grid>
-        
+        <br/>
+        <br/>
       {/* <AiCategory /> */}
       <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
-            <div className=" flex items-center justify-between">
+            <div className="  flex items-center justify-between">
               <input
                 type="text"
                 placeholder="Search here..."
                 className="mr-4 w-full rounded-sm border border-stroke bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchText.trim() !== "") {
+                    handleSearch();
+                  }
+                }}
               />
 
               <button
@@ -169,7 +204,17 @@ export default function AllBlogs() {
           ))
         ) : (
           // Render BlogCard components when data is available
-          data.map((blog) => <BlogCard key={blog.id} {...blog} />)
+          data.map((post) =>
+        <CardComponent
+          key={post._id}
+          ReadTime={post.readTime?.minutes} 
+          overview={post.overview}
+          title={post.title}
+          tags={post.tags} 
+          mainImage={urlForImage(post.mainImage).url()}
+          slug={`/make-money-with-ai/${post.slug.current}`}
+          publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
+         />)
         )}
           </div>
 
@@ -227,7 +272,6 @@ export default function AllBlogs() {
               </ul>
             </div>
           </div>
-
 
     </div>
   );
