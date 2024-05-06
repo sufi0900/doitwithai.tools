@@ -149,12 +149,12 @@ export default  function Home() {
       >
         <div className="container">
           <Grid container spacing={2}>
-             <Trending /> 
+             {/* <Trending />  */}
           </Grid>
         </div>
       </section>
      {/*  */}
-     <FeaturePost/>
+     {/* <FeaturePost/> */}
       <AiTools />
       <AIEarn />
       <AINews />
