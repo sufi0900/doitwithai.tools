@@ -11,7 +11,8 @@ import { Skeleton } from "@mui/material"; // Import Skeleton component from Mate
 
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 
-
+import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
+import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
 import SmallCard from "@/components/Blog/HomeSmallCard"
 import BigCard from "@/components/Blog/HomeBigCard"
 const FeaturePost = ({ posts }) => {
@@ -81,12 +82,9 @@ const FeaturePost = ({ posts }) => {
       <Grid container spacing={2} padding={2}>
       <Grid item xs={12} lg={7}>
       {isLoading ? (
-        <Skeleton
-          variant="rectangular"
-          width="100%"
-          height={400}
-          animation="wave"
-        />
+        <Grid item xs={12} lg={7}>
+        <BigSkeleton/>
+          </Grid>
       ) : (
         featurePostBig.slice(0, 1).map((post) => (
       
@@ -95,7 +93,7 @@ const FeaturePost = ({ posts }) => {
           title={post.title}
           overview={post.overview}
           mainImage={urlForImage(post.mainImage).url()}
-          slug={`/ai-tools/${post.slug.current}`}
+          slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
           publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
           ReadTime={post.readTime?.minutes}
           tags={post.tags}
@@ -139,13 +137,14 @@ const FeaturePost = ({ posts }) => {
             <Grid item key={post._id} xs={12} sm={12} md={12}  marginBottom={2}>
                       <SmallCard 
                              key={post}
-                             title={post.title}
-                             overview={post.overview}
-                             mainImage={urlForImage(post.mainImage).url()}
-                             slug={`/ai-tools/${post.slug.current}`}
-                             publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                             ReadTime={post.readTime?.minutes}
-                             tags={post.tags}
+                           
+          title={post.title}
+          overview={post.overview}
+          mainImage={urlForImage(post.mainImage).url()}
+          slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+          publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+          ReadTime={post.readTime?.minutes}
+          tags={post.tags}
           />
          </Grid>
           ))

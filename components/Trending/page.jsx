@@ -3,20 +3,13 @@
 import React, { useEffect, useState } from "react";
 
 import {
-  Card,
-  CardContent,
-  CardMedia,
+
   Grid,
+  Skeleton,
 } from "@mui/material";
-import Box from "@mui/material/Box";
-import Link from "next/link";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import Image from "next/image";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { CalendarMonth } from "@mui/icons-material";
+
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
-import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
 import MediumCard from "@/components/Blog/HomeMediumCard"
@@ -87,8 +80,10 @@ const TrendingPage = () => {
       
            
                 {isLoading ? (
-                   <Grid item xs={12} lg={6}>
+                          
+                   <Grid  item  xs={12} lg={6} spacing={2} justifyContent="center">
       <BigSkeleton/>
+      
         </Grid>
       ) : (
         trendBigData.slice(0, 1).map((post) => (
@@ -107,8 +102,8 @@ const TrendingPage = () => {
               <Grid item xs={12} sm={12}  lg={3} xl={3}>
                 <Grid container flex spacing={2} className="mb-2 flex ">
  {isLoading ? ( 
-     <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginLeft: {lg:"80px"} , display: 'inline-block' }}>
-     <Grid item xs={12}  sx={{ display: 'inline-block',}}>
+     <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginLeft: {lg:"80px"} , display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
+     <Grid item xs={12}  sx={{ display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
        <MedSkeleton />
      </Grid>
      <Grid item xs={12} sx={{ display: 'inline-block' }}>
@@ -142,8 +137,8 @@ const TrendingPage = () => {
               <Grid item xs={12} sm={12}  lg={3} xl={3}>
               <Grid container flex spacing={2} className="mb-2 flex ">
  {isLoading ? ( 
-        <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{   marginLeft:{lg:"15px"}, display: 'inline-block' }}>
-        <Grid item xs={12}  sx={{ display: 'inline-block',}}>
+        <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginLeft: {lg:"80px"} , display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
+        <Grid item xs={12}  sx={{ display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
           <MedSkeleton />
         </Grid>
         <Grid item xs={12} sx={{ display: 'inline-block' }}>
