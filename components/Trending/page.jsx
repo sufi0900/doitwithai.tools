@@ -92,7 +92,7 @@ const TrendingPage = () => {
         </Grid>
       ) : (
         trendBigData.slice(0, 1).map((post) => (
-          <Grid item xs={12} lg={6}>
+          <Grid  key={post} item xs={12} lg={6}>
           <BigCard          key={post}
           title={post.title}
           overview={post.overview}
