@@ -155,7 +155,10 @@ const AiTools = () => {
   <Link      href={`/ai-tools/${post.slug.current}`}    key={post._id} className=" lg:h-[151px] transition duration-200 ease-in-out hover:scale-[1.03] flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow md:flex-row  hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
                      <div className="rounded-md overflow-hidden ">
 
-        <img className="  transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] lg:aspect-[18/16] object-cover w-full rounded-t-lg sm:h-auto  md:h-auto md:w-48 md:rounded-none md:rounded-s-lg"  src={urlForImage(post.mainImage).url()} alt="" />
+                     <Image     
+    width={500} 
+    height={500} className="  transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] lg:aspect-[18/16] object-cover w-full rounded-t-lg sm:h-auto  md:h-auto md:w-48 md:rounded-none md:rounded-s-lg"  src={urlForImage(post.mainImage).url()} alt="" />
+    
         </div>
         <div className="flex flex-col justify-between m-4 leading-normal">
         <h5 className=" lg:leading-6 line-clamp-2  lg:text-lg font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
@@ -215,14 +218,15 @@ Read Time: {post.readTime?.minutes} min
           <Grid item xs={12} md={6}>
             {/* List of Blogs for Second Row 1st column */}
             <Grid container spacing={2} >
-              {aiToolTrendRelatedData.slice(1, 4).map((post) => (
+              {aiToolTrendRelatedData.slice(0, 4).map((post) => (
                <Grid item key={post._id} xs={12} sm={6} md={12} >
       <Link      href={`/ai-tools/${post.slug.current}`}    key={post._id} className=" lg:h-[151px] transition duration-200 ease-in-out hover:scale-[1.03] flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow md:flex-row  hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
                      <div className="rounded-md overflow-hidden ">
 
-        <Image     layout="responsive"
+        <Image     
     width={500} 
     height={500} className="  transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] lg:aspect-[18/16] object-cover w-full rounded-t-lg sm:h-auto  md:h-auto md:w-48 md:rounded-none md:rounded-s-lg"  src={urlForImage(post.mainImage).url()} alt="" />
+
         </div>
         <div className="flex flex-col justify-between m-4 leading-normal">
         <h5 className=" lg:leading-6 line-clamp-2  lg:text-lg font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
@@ -289,7 +293,7 @@ Read Time: {post.readTime?.minutes} min
                  {/* <div className="overflow-hidden lg:aspect-[35/16]"> */}
                  <Box position="relative" sx={{overflow:"hidden"}}>
 <CardMedia
-  component="div" // Use 'div' instead of 'img' to allow nesting of Next.js <Image> tag
+  component="div" // Use 'div' instead of 'img' to allow nesting of Next.js 
   sx={{
     position: "relative", // Required for positioning Next.js <Image> within CardMedia
     height: { xs: "auto", lg: 312 }, // Auto height for small devices and fixed height for large devices
