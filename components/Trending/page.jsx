@@ -17,7 +17,8 @@ import { CalendarMonth } from "@mui/icons-material";
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
-
+import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
+import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
 import MediumCard from "@/components/Blog/HomeMediumCard"
 import BigCard from "@/components/Blog/HomeBigCard"
 const TrendingPage = () => {
@@ -48,7 +49,7 @@ const TrendingPage = () => {
     };
 
     fetchData();
-  }, []); // Ensure this useEffect runs only once on mount
+  }, []); 
 
 
 
@@ -84,16 +85,14 @@ const TrendingPage = () => {
           {/* Trending Post */}
 
       
-            <Grid item xs={12} md={6}>
+           
                 {isLoading ? (
-        <Skeleton
-          variant="rectangular"
-          width="100%"
-          height={400}
-          animation="wave"
-        />
+                   <Grid item xs={12} lg={6}>
+      <BigSkeleton/>
+        </Grid>
       ) : (
         trendBigData.slice(0, 1).map((post) => (
+          <Grid item xs={12} lg={6}>
           <BigCard          key={post}
           title={post.title}
           overview={post.overview}
@@ -103,18 +102,27 @@ const TrendingPage = () => {
           ReadTime={post.readTime?.minutes}
           tags={post.tags}
 />    
+</Grid>
             )) )}  
-
-            </Grid>
-    
-
-          {/* Smaller Blogs */}
-       
-       
-              <Grid item xs={12} sm={12} md={3} lg={3} xl={3  }>
+              <Grid item xs={12} sm={12}  lg={3} xl={3}>
                 <Grid container flex spacing={2} className="mb-2 flex ">
-                  {trendRelatedData.slice(0, 2).map((post) => (
-                    <Grid  item xs={12} >
+ {isLoading ? ( 
+     <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginLeft: {lg:"80px"} , display: 'inline-block' }}>
+     <Grid item xs={12}  sx={{ display: 'inline-block',}}>
+       <MedSkeleton />
+     </Grid>
+     <Grid item xs={12} sx={{ display: 'inline-block' }}>
+       <MedSkeleton />
+     </Grid>
+   </Grid>
+   
+    
+     
+        ) : (
+
+          trendRelatedData.slice(0, 2).map((post) => (
+            <Grid key={post}  item xs={12}>
+
                                  <MediumCard          key={post}
              title={post.title}
              overview={post.overview}
@@ -124,15 +132,30 @@ const TrendingPage = () => {
              ReadTime={post.readTime?.minutes}
              tags={post.tags}
 /> 
-                    </Grid>
-                  ))}
+</Grid>
+ ))
+)}
+               
+       
                 </Grid>
               </Grid>
-              <Grid item xs={12} sm={12} md={3} lg={3} xl={3  }>
-                <Grid container flex spacing={2} className="mb-2 flex ">
-                  {trendRelatedData.slice(2, 4).map((post) => (
-                    <Grid  item xs={12} >
-                      <MediumCard          key={post}
+              <Grid item xs={12} sm={12}  lg={3} xl={3}>
+              <Grid container flex spacing={2} className="mb-2 flex ">
+ {isLoading ? ( 
+        <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{   marginLeft:{lg:"15px"}, display: 'inline-block' }}>
+        <Grid item xs={12}  sx={{ display: 'inline-block',}}>
+          <MedSkeleton />
+        </Grid>
+        <Grid item xs={12} sx={{ display: 'inline-block' }}>
+          <MedSkeleton />
+        </Grid>
+      </Grid>
+        ) : (
+
+          trendRelatedData.slice(2, 4).map((post) => (
+            <Grid key={post}  item xs={12}>
+
+                                 <MediumCard          key={post}
              title={post.title}
              overview={post.overview}
              mainImage={urlForImage(post.mainImage).url()}
@@ -141,8 +164,11 @@ const TrendingPage = () => {
              ReadTime={post.readTime?.minutes}
              tags={post.tags}
 /> 
-                  </Grid>
-                  ))}
+</Grid>
+ ))
+)}
+               
+       
                 </Grid>
               </Grid>
 

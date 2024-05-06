@@ -36,7 +36,7 @@ export default function SingleBlog({
                 "&:hover": {
                   transform: "scale(1.03)"},
          
-                height: { xs: "auto", lg: "652px" }, // Auto height for xs and fixed for lg
+                height: { xs: "auto", lg: "652px" }, 
 
                }}
             className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
