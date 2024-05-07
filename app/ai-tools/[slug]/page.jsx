@@ -128,7 +128,7 @@ export default async function ParentPage({ params }) {
 
         <NextSeo
          title={title}
-         description={description}
+         description={overview}
           author={author}
           type= "website"
           locale= 'en_IE'
