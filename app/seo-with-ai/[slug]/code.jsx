@@ -9,7 +9,8 @@ import React, { useState, useEffect  } from "react";
 import { ExpandMore, ExpandLess, AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
-
+import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
+import SkelCard from "@/components/Blog/Skeleton/Card"
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
@@ -496,6 +497,12 @@ export default function BlogSidebarPage({ data }) {
   return (
     <section className="overflow-hidden pb-[120px] pt-[40px]">
         <div className="container">
+        {loading ? (
+         
+         <BigSkeleton/>
+         
+                   
+                 ) : (
           <div className=" lg:m-4  flex flex-wrap">
         <div className=" lg:-mx-5 w-full overflow-hidden rounded">
           <div className="lg:m-4 ">
@@ -541,19 +548,21 @@ export default function BlogSidebarPage({ data }) {
                   <div className="mb-10 mt-4 w-full overflow-hidden rounded">
                   <div className="mb-10 flex flex-wrap items-center justify-between border-b border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="flex flex-wrap items-center">
-                      <div className="mb-5 mr-10 flex items-center">
+                    <div className="mb-5 mr-10 flex items-center">
                         <div className="mr-4">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full">
+                          <Link href="/author/sufian-mustafa">
                             <Image
                               src="/sufi.png"
                               alt="author"
                               fill
                             />
+                            </Link>
                           </div>
                         </div>
                         <div className="w-full">
                           <span className="mb-1 text-base font-medium text-body-color">
-                            By <span> Sufian Mustafa</span>
+                            By <Link href="/author/sufian-mustafa">  Sufian Mustafa</Link>
                           </span>
                         </div>
                       </div>
@@ -819,6 +828,7 @@ export default function BlogSidebarPage({ data }) {
               <NewsLatterBox />
             </div>
           </div>
+             )}
           <div className="container border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
         <h1 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
           <span className="relative  mr-2 inline-block">
@@ -828,7 +838,16 @@ export default function BlogSidebarPage({ data }) {
           <span className="text-blue-500">Post</span>
         </h1>
         <div className="flex flex-wrap justify-start">
-        {relatedPosts.map((post) => (          
+        {loading ? (
+          // Display Skeleton components while loading
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="mx-2 mb-4  flex  flex-wrap justify-start">
+              
+              <SkelCard />
+            </div>
+          ))
+        ) : (
+        relatedPosts.map((post) =>         
                <Card
                 key={post._id}
                 tags={post.tags} 
@@ -838,6 +857,7 @@ export default function BlogSidebarPage({ data }) {
                 mainImage={urlForImage(post.mainImage).url()}
                 slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
                 publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                
               />
 ))}
                     </div>

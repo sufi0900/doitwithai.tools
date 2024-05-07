@@ -9,6 +9,8 @@ import React, { useState, useEffect  } from "react";
 import { ExpandMore, ExpandLess, AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
+import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
+import SkelCard from "@/components/Blog/Skeleton/Card"
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
@@ -445,7 +447,7 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
 
   const schemaSlugMap = {
     makemoney: "make-money-with-ai",
-    aitool: "aitools",
+    aitool: "ai-tools",
     news: "ai-trending-news",
     coding: "code-with-ai",
     freeairesources : "free-ai-resources",
@@ -453,11 +455,16 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
   };
   useEffect(() => {
     const fetchData = async () => {
+      try {
         const query = `*[_type == "aitool" && category == $currentCategory][0...3]`;
         const relatedPostsData = await client.fetch(query, {currentCategory});
         setRelatedPosts(relatedPostsData);
+        setLoading(false); // Set loading to false after data is fetched
+      } catch (error) {
+        console.error("Failed to fetch data", error);
+        setLoading(false); // Ensure loading is set to false in case of error too
+      }
     };
-
     if (currentCategory) {
       fetchData();
     }
@@ -502,7 +509,13 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
     <>  
       <section className="overflow-hidden pb-[120px] pt-[40px]">
         <div className="container">
-          <div className=" lg:m-4  flex flex-wrap">
+        {loading ? (
+         
+<BigSkeleton/>
+
+          
+        ) : (
+          <div className="lg:m-4  flex flex-wrap">
         <div className=" lg:-mx-5 w-full overflow-hidden rounded">
           <div className="lg:m-4 ">
         <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
@@ -538,10 +551,7 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
                     </div>
                             </div>
                             <div className="customanchor mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-                      {/* <PortableText
-                        value={data.content}
-                        components={portableTextComponents}
-                      /> */}
+                     
                     </div>   
             <div className="w-full  lg:w-8/12 ">
                   <div className="mb-10 mt-4 w-full overflow-hidden rounded">
@@ -550,16 +560,18 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
                       <div className="mb-5 mr-10 flex items-center">
                         <div className="mr-4">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full">
+                          <Link href="/author/sufian-mustafa">
                             <Image
                               src="/sufi.png"
                               alt="author"
                               fill
                             />
+                            </Link>
                           </div>
                         </div>
                         <div className="w-full">
                           <span className="mb-1 text-base font-medium text-body-color">
-                            By <span> Sufian Mustafa</span>
+                            By <Link href="/author/sufian-mustafa">  Sufian Mustafa</Link>
                           </span>
                         </div>
                       </div>
@@ -825,6 +837,8 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
               <NewsLatterBox />
             </div>
           </div>
+                  )}
+
           <div className="container border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
         <h1 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
           <span className="relative  mr-2 inline-block">
@@ -834,7 +848,16 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
           <span className="text-blue-500">Post</span>
         </h1>
         <div className="flex flex-wrap justify-start">
-        {relatedPosts.map((post) => (          
+        {loading ? (
+          // Display Skeleton components while loading
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="mx-2 mb-4  flex  flex-wrap justify-start">
+              
+              <SkelCard />
+            </div>
+          ))
+        ) : (
+        relatedPosts.map((post) =>         
                <Card
                 key={post._id}
                 tags={post.tags} 
@@ -850,7 +873,9 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
                     </div>
                     </div>
        <div className="border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+      
         <RecentPost  />
+     
         </div>
         </div>    
       </section>

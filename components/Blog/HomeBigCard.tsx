@@ -40,6 +40,7 @@ export default function SingleBlog({
 
                }}
             className="cursor-pointer items-center rounded-lg border border-gray-200 bg-white shadow hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+              
                 {/* <div className="overflow-hidden lg:aspect-[35/16]"> */}
                 <Box position="relative" sx={{overflow:"hidden"}}>
                 <CardMedia

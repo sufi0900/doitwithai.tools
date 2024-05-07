@@ -9,7 +9,6 @@ import BlogCard from "./Card"
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import CardComponent from "@/components/Card/Page"
 
-import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 
 
   async function fetchAllBlogs(page = 1, limit = 5, categories = []) {

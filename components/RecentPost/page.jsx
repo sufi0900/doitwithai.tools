@@ -3,20 +3,30 @@ import React, { useEffect, useState } from "react";
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import Link from "next/link";
+import SkelCard from "@/components/Blog/Skeleton/Card"
+
 import Image from "next/image";
 import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 export default  function RecentPosts() {
+  const [loading, setLoading] = useState(true);
+
   const [recentData, setRecentData] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
+      try {
       const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]]|order(publishedAt desc)[0...5]`;
 
       const recentData = await client.fetch(query);
       setRecentData(recentData);
-    };
+      setLoading(false); // Set loading to false after data is fetched
+    } catch (error) {
+      console.error("Failed to fetch data", error);
+      setLoading(false); // Ensure loading is set to false in case of error too
+    }
+  };
 
-    fetchData();
-  }, []);
+  fetchData();
+}, []); 
 
   const schemaSlugMap = {
     makemoney: "make-money-with-ai",
@@ -40,7 +50,16 @@ export default  function RecentPosts() {
        
 
         <div className="flex  flex-wrap justify-start">
-          {recentData.slice(0, 3).map((post) => (
+        {loading ? (
+          // Display Skeleton components while loading
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="mx-2 mb-4  flex  flex-wrap justify-start">
+              
+              <SkelCard />
+            </div>
+          ))
+        ) : (
+          recentData.slice(0, 3).map((post) => 
             <div key={post._id} className="mt-4 mb-6 px-2 ">
         <div className="card transition duration-300 hover:scale-[1.05] max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow  hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
           {" "}

@@ -32,7 +32,8 @@ export default function SingleBlog({ publishedAt,
 
                      <Image     
     width={500} 
-    height={500} className="  transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] lg:aspect-[21/16] object-cover w-full rounded-t-lg sm:h-auto  md:h-auto md:w-48 md:rounded-none md:rounded-s-lg"  src={mainImage} alt="" />
+    height={500} 
+    className="  transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] lg:aspect-[21/16] object-cover w-full rounded-t-lg sm:h-auto  md:h-auto md:w-48 md:rounded-none md:rounded-s-lg"  src={mainImage} alt="" />
     
         </div>
         <div className="flex flex-col justify-between m-4 leading-normal">

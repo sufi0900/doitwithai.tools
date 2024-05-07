@@ -1,12 +1,9 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
-import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
 
 
 import groq from "groq";
 import SkelCard from "@/components/Blog/Skeleton/Card"
-import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
-import MediumCard from "@/components/Blog/HomeMediumCard"
 import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
 import { urlForImage } from "@/sanity/lib/image";
 import CardComponent from "@/components/Card/Page"
