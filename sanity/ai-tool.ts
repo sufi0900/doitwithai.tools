@@ -10,6 +10,30 @@ export const aitool = {
       description: "title of aitool",
     },
     {
+      name: "metatitle",
+      title: "Meta Title",
+      type: "string",
+    
+      },
+        {
+        name: "metadesc",
+        title: "Meta Description",
+        type: "string",
+        
+      },
+      {
+        name: "schematitle",
+        title: "Schema Title",
+        type: "string",
+        
+      },
+      {
+        name: "schemadesc",
+        title: "Schema Description",
+        type: "string",
+        
+      },
+    {
       name: "tags",
       title: "Tags",
       type: "array",
@@ -25,7 +49,7 @@ export const aitool = {
             {
               name: "link",
               title: "Custom Link",
-              type: "url", // or string if you want to store relative paths
+              type: "url", 
             },
           ],
         },
@@ -59,11 +83,7 @@ export const aitool = {
         source: "title",
       },
     },
-    {
-      name: "publishedAt",
-      title: "Published at",
-      type: "datetime",
-    },
+   
     {
       name: "tableOfContents",
       title: "Table of Contents",
@@ -72,18 +92,35 @@ export const aitool = {
       of: [{ type: "string" }],
     },
     {
-      name: "category",
-      title: "Category",
-      type: "string",
-      options
-    : {
-          list: [
-           {title: "AI Image Generator", value: "ai-image-gen"},
-           {title: "AI Video Generator", value: "ai-video-gen"},
-       
-          ]
+      name: "mainImage",
+      title: "Main Image",
+      type: "image",
+      options: {
+        hotspot: true,
       },
+      fields: [
+        {
+          name: "alt",
+          title: "Alternative Text",
+          type: "string", 
+          description: "Short alt text for the image, for accessibility."
+        },
+        {
+          name: "imageDescription",
+          title: "Image Description",
+          type: "array", // Rich text array for detailed description
+          of: [
+            {
+              type: "block",
+           
+              
+            }
+          ],
+          description: "Extended image description that can include links and formatted text."
+        }
+      ]
     },
+    
     
     {
       name: "content",
@@ -146,61 +183,9 @@ export const aitool = {
         },
       ],
     },
-    {
-      name: "mainImage",
-      title: "Main Image",
-      type: "image",
-      options: {
-        hotspot: true,
-      },
-      fields: [
-        {
-          name: "alt",
-          title: "Alternative Text",
-          type: "string", // Keep it simple for accessibility and SEO
-          description: "Short alt text for the image, for accessibility."
-        },
-        {
-          name: "imageDescription",
-          title: "Image Description",
-          type: "array", // Rich text array for detailed description
-          of: [
-            {
-              type: "block",
-           
-              
-            }
-          ],
-          description: "Extended image description that can include links and formatted text."
-        }
-      ]
-    }
-    
-,    
-    {
-    name: "metatitle",
-    title: "Meta Title",
-    type: "string",
   
-    },
-      {
-      name: "metadesc",
-      title: "Meta Description",
-      type: "string",
-      
-    },
-    {
-      name: "schematitle",
-      title: "Schema Title",
-      type: "string",
-      
-    },
-    {
-      name: "schemadesc",
-      title: "Schema Description",
-      type: "string",
-      
-    },
+,    
+   
 
     {
       name: "isHomePageTrendBig",
@@ -309,7 +294,24 @@ export const aitool = {
       title: "isAiWebsiteBuilderBig",
       type: "boolean",
     },
-
+    {
+      name: "category",
+      title: "Category",
+      type: "string",
+      options
+    : {
+          list: [
+           {title: "AI Image Generator", value: "ai-image-gen"},
+           {title: "AI Video Generator", value: "ai-video-gen"},
+       
+          ]
+      },
+    },
+    {
+      name: "publishedAt",
+      title: "Published at",
+      type: "datetime",
+    },
     
   ],
 };

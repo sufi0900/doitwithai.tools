@@ -10,12 +10,65 @@ export const freeairesources = {
         description: "title of freeairesources",
       },
       {
-        name: "dataTables",
-        title: "Data Tables",
-        type: "table", // This refers to the table type provided by @sanity/table
-        options: {
-          // Options if any
+        name: "metatitle",
+        title: "Meta Title",
+        type: "string",
+      
         },
+          {
+          name: "metadesc",
+          title: "Meta Description",
+          type: "string",
+          
+        },
+        {
+          name: "schematitle",
+          title: "Schema Title",
+          type: "string",
+          
+        },
+        {
+          name: "schemadesc",
+          title: "Schema Description",
+          type: "string",
+          
+        },
+      {
+        name: "tags",
+        title: "Tags",
+        type: "array",
+        of: [
+          {
+            type: "object",
+            fields: [
+              {
+                name: "name",
+                title: "Tag Name",
+                type: "string",
+              },
+              {
+                name: "link",
+                title: "Custom Link",
+                type: "url", 
+              },
+            ],
+          },
+        ],
+      },
+      
+      {
+        name: "readTime",
+        title: "Read Time",
+        type: "object",
+        fields: [
+         
+          {
+            name: "minutes",
+            title: "Minutes",
+            type: "number",
+          },
+         
+        ],
       },
       {
         name: "overview",
@@ -30,7 +83,45 @@ export const freeairesources = {
           source: "title",
         },
       },
-  
+     
+      {
+        name: "tableOfContents",
+        title: "Table of Contents",
+        type: "array",
+        
+        of: [{ type: "string" }],
+      },
+      {
+        name: "mainImage",
+        title: "Main Image",
+        type: "image",
+        options: {
+          hotspot: true,
+        },
+        fields: [
+          {
+            name: "alt",
+            title: "Alternative Text",
+            type: "string", 
+            description: "Short alt text for the image, for accessibility."
+          },
+          {
+            name: "imageDescription",
+            title: "Image Description",
+            type: "array", // Rich text array for detailed description
+            of: [
+              {
+                type: "block",
+             
+                
+              }
+            ],
+            description: "Extended image description that can include links and formatted text."
+          }
+        ]
+      },
+      
+      
       {
         name: "content",
         type: "array",
@@ -39,8 +130,10 @@ export const freeairesources = {
           {
             type: "block",
           },
+          
           {
-            type: "table", //
+            type: "table", 
+          
           },
           {
             name: "button",
@@ -67,18 +160,30 @@ export const freeairesources = {
                 name: "alt",
                 title: "Alternative Text",
               },
+              {
+                name: "imageDescriptionOfBlockImg",
+                title: "Image Description",
+                type: "array", 
+                of: [
+                  {
+                    type: "block",
+                 
+                    
+                  }
+                ],
+                description: "Extended image description that can include links and formatted text."
+              },
+              {
+                name: "url",
+                title: "URL",
+                type: "url",
+                description: "Custom link for the image"
+              },
             ],
           },
         ],
       },
-      {
-        name: "mainImage",
-        title: "Main Image",
-        type: "image",
-        options: {
-          hotspot: true,
-        },
-      },
+    
       
   
       {
@@ -103,12 +208,12 @@ export const freeairesources = {
       },
 
       {
-        name: "isHomePageDigitalTrendBig",
+        name: "isHomePageFreeAITrendBig",
         title: "isHomePageDigitalTrendBig",
         type: "boolean",
       },
       {
-        name: "isHomePageDigitalTrendRelated",
+        name: "isHomePageFreeAITrendRelated",
         title: "isHomePageDigitalTrendRelated",
         type: "boolean",
       },
@@ -117,35 +222,13 @@ export const freeairesources = {
         title: "isOwnPageFeature",
         type: "boolean",
       },
-      {
-        name: "isRecent",
-        title: "isRecent",
-        type: "boolean",
-      },
      
-      {
-        name: "isAllBlog",
-        title: "isAllBlog",
-        type: "boolean",
-      },
-     
-      
-    
-      
-   
-     
-      
       {
         name: "publishedAt",
         title: "Published at",
         type: "datetime",
       },
-      {
-        name: "tableOfContents",
-        title: "Table of Contents",
-        type: "array",
-        of: [{ type: "string" }],
-      },
+    
     ],
   };
   

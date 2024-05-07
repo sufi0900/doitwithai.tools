@@ -88,8 +88,8 @@ const menuData: Menu[] = [
       },
       {
         id: 47,
-        title: "Sign Up Page",
-        path: "/signup",
+        title: "author",
+        path: "/author/sufian-mustafa",
         newTab: false,
       },
       {
