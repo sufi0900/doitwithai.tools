@@ -217,20 +217,7 @@ export const coding = {
         title: "isOwnPageFeature",
         type: "boolean",
       },
-     
-     
-     
-      
-    
-      
-      {
-        name: "isAiEarn",
-        title: "isAiEarn",
-        type: "boolean",
-      },
-     
-     
-      
+   
       {
         name: "publishedAt",
         title: "Published at",

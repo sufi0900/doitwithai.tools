@@ -3,8 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
-import Link from "next/link";
-import Image from "next/image";
+
 import BlogCard from "./Card"
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import CardComponent from "@/components/Card/Page"
