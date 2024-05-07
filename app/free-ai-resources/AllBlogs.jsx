@@ -126,7 +126,7 @@ export default function AllBlogs() {
 </Grid>
  ) : (    
         aiToolTrendBigData.map((post) => (
-          <Grid item xs={12}  >
+          <Grid item    key={post} xs={12}  >
 
         <FeaturePost
          key={post}
