@@ -60,7 +60,7 @@ export default async function ParentPage({  params }) {
         "author": {
           "@type": "Person",
           "name": "Sufian Mustafa",
-          "url": "https://sufi-blog-website.vercel.app/author/sufian-mustafa",
+          "url": "https://sufi-blog-website.vercel.app/author/sufian-mustafa"
 
         },
         "image": {
