@@ -6,6 +6,9 @@ import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import Link from "next/link";
 import Image from "next/image";
 import BlogCard from "./Card"
+import SkelCard from "@/components/Blog/Skeleton/Card"
+import CardComponent from "@/components/Card/Page"
+
 import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 
 
@@ -144,85 +147,31 @@ import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
               {renderSearchResults()}
             </div>
           )}
-      <div className="-mx-4 flex flex-wrap justify-center">
-        {allData.map((post) => (
-        <div key={post._id} className="mb-6 px-2 ">
-        <div className="card max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow transition duration-200 ease-in-out  hover:scale-105 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
-   {" "}
-   <Link
-   href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-     className="relative block aspect-[37/22] w-full"
-   >
-     <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
-       Computer
-     </span>
+                    <div className="-mx-4 flex flex-wrap justify-center">
 
-     {/* Image */}
-     <div className="relative aspect-[30/22] overflow-hidden">
-       <img
-         className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
-         src={urlForImage(post.mainImage).url()}
-         alt={post.title}
-       />
-     </div>
-   </Link>
-   {/* Content */}
-   <div className="p-5">
-     {/* Title */}
-     <Link      href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}>
-       <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-         {post.title}
-       </h5>
-     </Link>
-     {/* Overview */}
-     <p className="mb-3 line-clamp-5 font-normal text-gray-700 dark:text-gray-400">
-       {post.overview}
-     </p>
-     {/* Meta Data */}
-     <div className="mb-3 mt-3 flex items-center justify-between">
-       <div className="flex items-center">
-         <AccessTime className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-         <p className="text-sm font-medium text-dark dark:text-white">
-         Read Time: {post.readTime?.minutes} min
-
-         </p>
-       </div>
-       <div className="flex items-center">
-         <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-         <p className="text-sm font-medium text-dark dark:text-white">
-         {new Date(post.publishedAt).toLocaleDateString()}
-
-         </p>
-       </div>
-     </div>
-
-     <Link
-        href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-       className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-     >
-       Read more
-       <svg
-         className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
-         aria-hidden="true"
-         xmlns="http://www.w3.org/2000/svg"
-         fill="none"
-         viewBox="0 0 14 10"
-       >
-         <path
-           stroke="currentColor"
-           strokeLinecap="round"
-           strokeLinejoin="round"
-           strokeWidth={2}
-           d="M1 5h12m0 0L9 1m4 4L9 9"
+      {loading ? (
+          // Display Skeleton components while loading
+          Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="mx-2 mb-4  flex flex-wrap justify-center">
+              <SkelCard />
+            </div>
+          ))
+        ) : (
+        allData.map((post) =>
+          <CardComponent
+          key={post._id}
+          ReadTime={post.readTime?.minutes} 
+          overview={post.overview}
+          title={post.title}
+          tags={post.tags} 
+          mainImage={urlForImage(post.mainImage).url()}
+          slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+          publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
          />
-       </svg>
-     </Link>
-   </div>
- </div>
-     </div>
-        ))}
+        )
+      )}
+  </div>
 
-      </div>
       
       <div
             className="wow fadeInUp -mx-4 flex flex-wrap"

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
-import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
-
+import SkelCard from "@/components/Blog/Skeleton/Card"
+import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
 
 import groq from "groq";
 
@@ -31,6 +31,7 @@ async function fetchAllBlogs(page = 1, limit = 2) {
 export default function AllBlogs() {
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true); 
 
   const [data, setData] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -40,7 +41,8 @@ export default function AllBlogs() {
 
   useEffect(() => {
     const fetchData = async () => {
-    
+      try {
+
       const isHomePageAIToolTrendBig = `*[_type == "makemoney" && isOwnPageFeature == true]`;
 
       const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
@@ -50,10 +52,14 @@ export default function AllBlogs() {
       setAiToolTrendBigData(isHomePageAIToolTrendBigData);
      
      
-    };
+    } catch (error) {
+      console.error("Failed to fetch data", error);
+      setIsLoading(false); // Ensure loading is set to false in case of error too
+    }
+  };
 
-    fetchData();
-  }, []);
+  fetchData();
+}, []); 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -115,10 +121,15 @@ export default function AllBlogs() {
           firstlink="/"
 
         />
-        <Grid item xs={12} md={12}  >
-    
-        {aiToolTrendBigData.map((post) => (
-        <FeaturePost
+                {isLoading ? (
+                      <Grid item xs={12}  >
+<FeatureSkeleton/>
+</Grid>
+ ) : (
+  
+        aiToolTrendBigData.map((post) => (
+          <Grid        key={post} item xs={12}  >
+         <FeaturePost
          key={post}
          title={post.title}
          overview={post.overview}
@@ -127,12 +138,14 @@ export default function AllBlogs() {
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
-
          />
        
-      ))}
-                 
+       
+      
             </Grid>
+          )) )}  
+    
+      
         <br/>
         <br/>
       {/* <AiCategory /> */}
@@ -198,8 +211,8 @@ export default function AllBlogs() {
             {loading ? (
           // Display Skeleton components while loading
           Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="w-full px-4 mb-4">
-              <Skeleton variant="rectangular" width="100%" height={200} />
+            <div key={index} className="mx-2 mb-4  flex flex-wrap justify-center">
+              <SkelCard />
             </div>
           ))
         ) : (

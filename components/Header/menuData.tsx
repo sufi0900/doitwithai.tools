@@ -7,12 +7,7 @@ const menuData: Menu[] = [
     path: "/",
     newTab: false,
   },
-  {
-    id: 2,
-    title: "About",
-    path: "/about",
-    newTab: false,
-  },
+  
   {
     id: 3,
     title: "AiTools",
@@ -69,8 +64,8 @@ const menuData: Menu[] = [
       },
       {
         id: 43,
-        title: "Blog Grid Page",
-        path: "/blog",
+        title: "All Blogs",
+        path: "/all-posts",
         newTab: false,
       },
       {
@@ -101,6 +96,12 @@ const menuData: Menu[] = [
         id: 48,
         title: "Error Page",
         path: "/error",
+        newTab: false,
+      },
+      {
+        id: 43,
+        title: "Blog Grid Page",
+        path: "/blog",
         newTab: false,
       },
     ],

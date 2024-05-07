@@ -24,20 +24,15 @@ const TrendingPage = () => {
       try {
       const isHomePageTrendBig = `*[_type in [ "makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && isHomePageTrendBig == true]`;
       const isHomePageTrendRelated =`*[_type in [ "makemoney", "freeairesources",  "news", "coding", "aitool", "seo", ] && isHomePageTrendRelated == true]`;
-
       const isHomePageTrendBigData = await client.fetch(isHomePageTrendBig);
       const isHomePageTrendRelatedData = await client.fetch(isHomePageTrendRelated);
-     
-  
-
-
       setTrendBigData(isHomePageTrendBigData);
-
       setTrendRelatedData(isHomePageTrendRelatedData);
-      setIsLoading(isHomePageTrendBig); // Set loading to false after data is fetched
+
+      setIsLoading(false); // Set loading to false after data is fetched
       } catch (error) {
         console.error("Failed to fetch data", error);
-        setIsLoading(isHomePageTrendBig); // Ensure loading is set to false in case of error too
+        setIsLoading(false); // Ensure loading is set to false in case of error too
       }
     };
 

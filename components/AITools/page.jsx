@@ -9,7 +9,8 @@ import {
 } from "@mui/material";
 
 import Breadcrumb from "../Common/Breadcrumb";
-
+import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
+import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
 import SmallCard from "@/components/Blog/HomeSmallCard"
 import BigCard from "@/components/Blog/HomeBigCard"
 const AiTools = () => {
@@ -17,8 +18,10 @@ const AiTools = () => {
   const [aiToolTrendRelatedData, setAiToolTrendRelatedData] = useState([]);
 
   useEffect(() => {
+
+
     const fetchData = async () => {
-    
+      try {
       const isHomePageAIToolTrendBig = `*[_type == "aitool" && isHomePageAIToolTrendBig == true]`;
       const isHomePageAIToolTrendRelated = `*[_type == "aitool" && isHomePageAIToolTrendRelated == true]`;
 
@@ -29,12 +32,16 @@ const AiTools = () => {
 
       setAiToolTrendBigData(isHomePageAIToolTrendBigData);
       setAiToolTrendRelatedData(isHomePageAIToolTrendRelatedData);
-     
-     
-    };
+      setIsLoading(false); // Set loading to false after data is fetched
+    } catch (error) {
+      console.error("Failed to fetch data", error);
+      setIsLoading(false); // Ensure loading is set to false in case of error too
+    }
+  };
 
-    fetchData();
-  }, []);
+  fetchData();
+}, []); 
+
   return (
     <section>
       <div className="container">
@@ -165,7 +172,8 @@ Read Time: {post.readTime?.minutes} min
           <Grid item  xs={12} md={12} lg={6} xl={6} >
             {/* Big Blog Card for the 2nd row 2nd column*/}
             {aiToolTrendBigData.slice(1, 2).map((post) => (
-                <BigCard          key={post}
+                <BigCard         
+                 key={post}
                 title={post.title}
                 overview={post.overview}
                 mainImage={urlForImage(post.mainImage).url()}

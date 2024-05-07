@@ -31,6 +31,7 @@ async function fetchAllBlogs(page = 1, limit = 2) {
 }
 
 export default function AllBlogs() {
+  const [isLoading, setIsLoading] = useState(true); 
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -42,7 +43,8 @@ export default function AllBlogs() {
 
   useEffect(() => {
     const fetchData = async () => {
-    
+      try {
+
       const isHomePageAIToolTrendBig = `*[_type == "news" && isOwnPageFeature == true]`;
 
       const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
@@ -50,12 +52,15 @@ export default function AllBlogs() {
 
 
       setAiToolTrendBigData(isHomePageAIToolTrendBigData);
-     
-     
-    };
+      setIsLoading(false); // Set loading to false after data is fetched
+    } catch (error) {
+      console.error("Failed to fetch data", error);
+      setIsLoading(false); // Ensure loading is set to false in case of error too
+    }
+  };
 
-    fetchData();
-  }, []);
+  fetchData();
+}, []); 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -117,9 +122,15 @@ export default function AllBlogs() {
           firstlink="/"
 
         />
-        <Grid item xs={12} md={12}  >
-    
-        {aiToolTrendBigData.map((post) => (
+       {isLoading ? (
+                      <Grid item xs={12}  >
+<FeatureSkeleton/>
+</Grid>
+ ) : (
+  
+       
+        aiToolTrendBigData.map((post) => (
+          <Grid item    key={post} xs={12}  >
         <FeaturePost
          key={post}
          title={post.title}
@@ -132,9 +143,10 @@ export default function AllBlogs() {
 
          />
        
-      ))}
-                 
-            </Grid>
+
+       </Grid>
+           
+          )) )}  
         <br/>
         <br/>
       {/* <AiCategory /> */}
@@ -200,9 +212,9 @@ export default function AllBlogs() {
             {loading ? (
           // Display Skeleton components while loading
           Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="w-full px-4 mb-4">
-              <Skeleton variant="rectangular" width="100%" height={200} />
-            </div>
+            <div key={index} className="mx-2 mb-4  flex flex-wrap justify-center">
+            <SkelCard />
+          </div>
           ))
         ) : (
           // Render BlogCard components when data is available
