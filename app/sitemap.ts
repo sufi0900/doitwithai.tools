@@ -1,4 +1,6 @@
-module.exports = {
+// sitemap.ts
+
+const sitemapConfig = {
     siteUrl: 'https://sufi-blog-website.vercel.app/', // replace with your domain
     generateRobotsTxt: true, // generate robots.txt
     sitemapSize: 7000,
@@ -14,7 +16,7 @@ module.exports = {
       ],
     },
     // Generate sitemap for dynamic paths
-    transform: async (config, path) => {
+    transform: async (_config: any, path: any) => {
       return {
         loc: path, // Return the path (i.e. URL) without changes
         changefreq: 'daily',
@@ -23,4 +25,6 @@ module.exports = {
       }
     },
   };
+  
+  export default sitemapConfig; // Export the sitemapConfig object as the default export
   
