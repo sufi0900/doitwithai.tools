@@ -445,7 +445,7 @@ export default function BlogSidebarPage({ data  }) {
 
   const schemaSlugMap = {
     makemoney: "make-money-with-ai",
-    aitool: "aitools",
+    aitool: "ai-tools",
     news: "ai-trending-news",
     coding: "code-with-ai",
     freeairesources : "free-ai-resources",

@@ -32,7 +32,6 @@ export const aitool = {
       ],
     },
     
-  
     {
       name: "readTime",
       title: "Read Time",
@@ -64,6 +63,13 @@ export const aitool = {
       name: "publishedAt",
       title: "Published at",
       type: "datetime",
+    },
+    {
+      name: "tableOfContents",
+      title: "Table of Contents",
+      type: "array",
+      
+      of: [{ type: "string" }],
     },
     {
       name: "category",
@@ -172,8 +178,20 @@ export const aitool = {
     
 ,    
     {
+    name: "metatitle",
+    title: "Meta Title",
+    type: "string",
+  
+    },
+      {
       name: "metadesc",
       title: "Meta Description",
+      type: "string",
+      
+    },
+    {
+      name: "schematitle",
+      title: "Schema Title",
       type: "string",
       
     },
@@ -292,12 +310,6 @@ export const aitool = {
       type: "boolean",
     },
 
-    {
-      name: "tableOfContents",
-      title: "Table of Contents",
-      type: "array",
-      
-      of: [{ type: "string" }],
-    },
+    
   ],
 };
