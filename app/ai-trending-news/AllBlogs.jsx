@@ -10,7 +10,9 @@ import { urlForImage } from "@/sanity/lib/image";
 import { client } from "@/sanity/lib/client";
 import {Grid} from "@mui/material";
 import CardComponent from "@/components/Card/Page"
+import SkelCard from "@/components/Blog/Skeleton/Card"
 
+import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
 import FeaturePost from "@/components/Blog/featurePost"
 import React, { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Common/Breadcrumb";

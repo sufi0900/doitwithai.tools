@@ -7,7 +7,6 @@ import { client } from "@/sanity/lib/client";
 
 import Grid from "@mui/material/Grid";
 
-import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
 
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 
@@ -52,8 +51,8 @@ const FeaturePost = ({ posts }) => {
 
 
   useEffect(() => {
-    setIsLoading(posts); 
-  }, [posts]);
+    setIsLoading(featurePostBig); 
+  }, [featurePostBig]);
 
 
   
@@ -82,7 +81,7 @@ const FeaturePost = ({ posts }) => {
       <Grid container spacing={2} padding={2}>
       <Grid item xs={12} lg={7}>
       {isLoading ? (
-        <Grid item xs={12} lg={7}>
+        <Grid item xs={12} >
         <BigSkeleton/>
           </Grid>
       ) : (
@@ -106,30 +105,24 @@ const FeaturePost = ({ posts }) => {
       
         {isLoading ? ( 
           <>
-            <Skeleton
-              variant="rectangular"
-              width="100%"
-              height={100}
-              animation="wave"
-            />
-            <Skeleton
-              variant="rectangular"
-              width="100%"
-              height={100}
-              animation="wave"
-            />
-            <Skeleton
-              variant="rectangular"
-              width="100%"
-              height={100}
-              animation="wave"
-            />
-            <Skeleton
-              variant="rectangular"
-              width="100%"
-              height={100}
-              animation="wave"
-            />
+          <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginRight: {lg:"20px"} , display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
+        <Grid item xs={12}  sx={{ display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
+          <MedSkeleton />
+        </Grid>
+        <Grid item xs={12} sx={{ display: 'inline-block' }}>
+          <MedSkeleton />
+        </Grid>
+      </Grid>
+          <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginRight: {lg:"20px"} , display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
+        <Grid item xs={12}  sx={{ display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
+          <MedSkeleton />
+        </Grid>
+        <Grid item xs={12} sx={{ display: 'inline-block' }}>
+          <MedSkeleton />
+        </Grid>
+      </Grid>
+     
+  
           </>
         ) : (
        

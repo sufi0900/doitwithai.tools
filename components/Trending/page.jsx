@@ -34,10 +34,10 @@ const TrendingPage = () => {
       setTrendBigData(isHomePageTrendBigData);
 
       setTrendRelatedData(isHomePageTrendRelatedData);
-      setIsLoading(false); // Set loading to false after data is fetched
+      setIsLoading(isHomePageTrendBig); // Set loading to false after data is fetched
       } catch (error) {
         console.error("Failed to fetch data", error);
-        setIsLoading(false); // Ensure loading is set to false in case of error too
+        setIsLoading(isHomePageTrendBig); // Ensure loading is set to false in case of error too
       }
     };
 
@@ -137,7 +137,7 @@ const TrendingPage = () => {
               <Grid item xs={12} sm={12}  lg={3} xl={3}>
               <Grid container flex spacing={2} className="mb-2 flex ">
  {isLoading ? ( 
-        <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginLeft: {lg:"80px"} , display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
+        <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginRight: {lg:"20px"} , display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
         <Grid item xs={12}  sx={{ display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
           <MedSkeleton />
         </Grid>
