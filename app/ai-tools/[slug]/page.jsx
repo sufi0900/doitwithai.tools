@@ -42,7 +42,7 @@ export async function generateMetadata({ params }) {
   };
   
 }
-export default async function ParentPage({ params }) {
+export default async function ParentPage({  params }) {
   function schemaMarkup() {
  
     

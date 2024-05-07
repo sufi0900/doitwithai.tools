@@ -33,7 +33,7 @@ async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
 }
 
 
-export default function BlogSidebarPage({ data,  currentCategory  }) {
+export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
   const imgdesc ={
     block: {  
       normal: ({ children }) => (
@@ -592,6 +592,8 @@ export default function BlogSidebarPage({ data,  currentCategory  }) {
                          
                           </span>
                           Read Time: {data.readTime?.minutes} min
+                        
+                       
                         </p>
                         <p className="flex items-center text-base font-medium text-body-color">
                           <span className="mr-3">
