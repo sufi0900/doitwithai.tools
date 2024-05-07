@@ -9,7 +9,8 @@ import {
 } from "@mui/material";
 
 
-
+import SkelCard from "@/components/Blog/Skeleton/Card"
+import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
 import Breadcrumb from "../../../components/Common/Breadcrumb";
 
 

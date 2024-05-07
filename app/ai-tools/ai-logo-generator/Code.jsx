@@ -10,6 +10,7 @@ import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
 import CardComponent from "@/components/Card/Page"
 import FeaturePost from "@/components/Blog/featurePost"
 import Breadcrumb from "../../../components/Common/Breadcrumb";
+
 const Page = () => {
 
   const [isLoading, setIsLoading] = useState(true); 
