@@ -50,8 +50,8 @@ export default async function ParentPage({ params }) {
       __html: `   {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
-        "name": "${data.schematitle}",
-        "description": "${data.schemadesc}",
+        "name": "${data.title}",
+        "description": "${data.overview}",
         "url": "https://sufi-blog-website.vercel.app/ai-tools/${params.slug}",
         "breadcrumb": {
           "@type": "BreadcrumbList",
