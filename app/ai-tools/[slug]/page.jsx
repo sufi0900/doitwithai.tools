@@ -50,8 +50,8 @@ export default async function ParentPage({ params }) {
       __html: `   {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
-        "name": "${data.title}",
-        "description": "${data.overview}",
+        "name": "${data.schematitle}",
+        "description": "${data.schemadesc}",
         "url": "https://sufi-blog-website.vercel.app/ai-tools/${params.slug}",
         "breadcrumb": {
           "@type": "BreadcrumbList",
@@ -80,17 +80,15 @@ export default async function ParentPage({ params }) {
       }`
     };
   }
-  const MAX_DESCRIPTION_LENGTH = 50; 
 
 
   const metadata = await generateMetadata({ params });
 
   const data = await getData(params.slug);
-  const title = `${data.title}`;
-  const overview = `${data.overview}`;
+  const title = `${data.metatitle}`;
+  const overview = `${data.metadesc}`;
 
-  const description = `${data.overview}`;
-  const description2 = overview.length > MAX_DESCRIPTION_LENGTH ? overview.substring(0, MAX_DESCRIPTION_LENGTH) : overview; // Apply limit to description
+
 
   const image = `${data.image}`;
   const author = `${data.author}`;
@@ -104,10 +102,10 @@ export default async function ParentPage({ params }) {
   <meta property="og:site_name" content="AiToolTrend" />
         <meta property="og:locale" content="en_US" />
   <title>{title}</title>
-  <meta name="description" content={description2}/>
+  <meta name="description" content={overview}/>
   <meta name="author" content="sufian mustafa" />
   <meta property="og:title" content={title} />
-  <meta property="og:description" content={description2} />
+  <meta property="og:description" content={overview} />
   <meta property="og:image" content={image} />
   <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
@@ -116,13 +114,13 @@ export default async function ParentPage({ params }) {
   <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
-        <meta property="og:description" content={description2} />
+        <meta property="og:description" content={overview} />
         <meta property="og:image" content={image}/>
         <meta name="twitter:card" content="summary_large_image" />
         <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
         <meta property="twitter:url" content={canonicalUrl} />
         <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={description2} />
+        <meta name="twitter:description" content={overview} />
         <meta name="twitter:image" content={image} />
         <link rel="canonical" href={canonicalUrl}/>
         <meta property="og:image:width" content="1200" />
