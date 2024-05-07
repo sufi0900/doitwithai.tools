@@ -43,44 +43,68 @@ export async function generateMetadata({ params }) {
   
 }
 export default async function ParentPage({  params }) {
-  function schemaMarkup() {
- 
-    
+
+
+  function schemaBlogPostingMarkup() {
     return {
-      __html: `   {
+      __html: `
+      {
         "@context": "https://schema.org",
         "@type": "BlogPosting",
-        "name": "${data.schematitle}",
+        "name": "${data.metatitle}",
+        "headline": "${data.schematitle}",
+
         "description": "${data.schemadesc}",
         "url": "https://sufi-blog-website.vercel.app/ai-tools/${params.slug}",
-        "breadcrumb": {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://sufi-blog-website.vercel.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "AI Tools",
-              "item": "https://sufi-blog-website.vercel.app/ai-tools"
-            },
-            {
-              "@type": "ListItem",
-              "position": 3,
-              "name": "${data.schematitle}",
-              "item": "https://sufi-blog-website.vercel.app/ai-tools/${params.slug}"
-            }
-          ]
+
+        "author": {
+          "@type": "Person",
+          "name": "Sufian Mustafa"
+        },
+        "image": {
+          "@type": "ImageObject",
+          "url": "${urlForImage(data.mainImage).url()}",
+          "width": 800,
+          "height": 600
         }
-      
       }`
     };
   }
-
+  function schemaBreadcrumbMarkup() {
+    return {
+      __html: `
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "item": {
+              "@id": "https://sufi-blog-website.vercel.app/",
+              "name": "Home"
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "item": {
+              "@id": "https://sufi-blog-website.vercel.app/ai-tools",
+              "name": "AI Tools"
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "item": {
+              "@id": "https://sufi-blog-website.vercel.app/ai-tools/${params.slug}",
+              "name": "${data.schematitle}"
+            }
+          }
+        ]
+      }`
+    };
+  }
 
   const metadata = await generateMetadata({ params });
 
@@ -144,11 +168,17 @@ export default async function ParentPage({  params }) {
 
     </Head>
     <Script
-    id="BreadcrumbListSchema"
-    type="application/ld+json"
-     dangerouslySetInnerHTML={schemaMarkup()}
-     key="AiTools-jsonld"
-   />
+        id="BreadcrumbListSchema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={schemaBreadcrumbMarkup()}
+        key="BreadcrumbList-jsonld"
+      />
+       <Script
+        id="BlogPostingSchema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={schemaBlogPostingMarkup()}
+        key="BlogPosting-jsonld"
+      />
       <section>
         <ChildComp data={data} params={params} />
       </section>
