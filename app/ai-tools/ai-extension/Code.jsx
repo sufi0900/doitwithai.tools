@@ -7,9 +7,7 @@ import {
   Grid,
 
 } from "@mui/material";
-import CardComponent from "@/components/Card/Page"
 
-import FeaturePost from "@/components/Blog/featurePost"
 
 
 import Breadcrumb from "../../../components/Common/Breadcrumb";

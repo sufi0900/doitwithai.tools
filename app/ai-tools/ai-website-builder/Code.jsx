@@ -5,8 +5,7 @@ import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import {
   Grid,
 } from "@mui/material";
-import CardComponent from "@/components/Card/Page"
-import FeaturePost from "@/components/Blog/featurePost"
+
 import Breadcrumb from "../../../components/Common/Breadcrumb";
 import CardComponent from "@/components/Card/Page"
 import FeaturePost from "@/components/Blog/featurePost"
