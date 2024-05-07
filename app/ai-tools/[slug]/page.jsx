@@ -71,7 +71,7 @@ export default async function ParentPage({  params }) {
             {
               "@type": "ListItem",
               "position": 3,
-              "name": "",
+              "name": "${data.schematitle}",
               "item": "https://sufi-blog-website.vercel.app/ai-tools/${params.slug}"
             }
           ]

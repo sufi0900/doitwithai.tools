@@ -117,6 +117,7 @@ export default function AllBlogs() {
           pageName="Best"
           pageName2="AI Tools"
           description="Ready to take your work and creativity to the next level? The AI revolution is here, and it's changing the way we work!  Whether you're a seasoned pro or just curious to learn more Our blog explores Best AI Tools for Productivity. These AI tools free you from booring  tasks, boost  your skills, and supercharge  your creativity."
+          
           link="/ai-tools" 
           linktext="/ai-tools"
           firstlinktext="Home"
