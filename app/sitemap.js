@@ -1,4 +1,35 @@
-// // // Import the Sanity client module
+// sitemap.js
+import Sitemap from 'next-sitemap';
+import { fetchURLs } from '../app/lib/sanity'; // Adjust the path
+
+export default new Sitemap()
+  .add({
+    url: '/', // Homepage
+    changefreq: 'daily', // Change frequency (e.g., daily)
+    priority: 1.0, // Priority (0.0 to 1.0)
+  })
+  .add({
+    url: '/blog', // Blog page
+    changefreq: 'weekly',
+    priority: 0.8,
+  })
+  .add({
+    url: '/about', // About page
+    changefreq: 'monthly',
+    priority: 0.5,
+  })
+  .add(await fetchURLs()) // Add dynamic post URLs
+  .build(); // Build the sitemap
+
+
+
+
+
+
+
+
+
+//  Import the Sanity client module
 // // import { sanity } from '$lib/sanity';
 
 // import { client } from "@/sanity/lib/client";

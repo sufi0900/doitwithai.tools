@@ -1,4 +1,3 @@
-// lib/sanity.js or a similar file where you setup Sanity client
 import { createClient } from "next-sanity";
 
 export const client = createClient({
