@@ -9,6 +9,7 @@ export const client = createClient({
 export async function fetchURLs() {
   const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]] {
     "slug": slug.current,
+    "title": title, 
     _type
   }`;
   const posts = await client.fetch(query);
