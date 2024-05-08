@@ -14,6 +14,7 @@ import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
 import MediumCard from "@/components/Blog/HomeMediumCard"
 import BigCard from "@/components/Blog/HomeBigCard"
+import Breadcrumb from "../Common/Breadcrumb";
 const TrendingPage = () => {
   const [isLoading, setIsLoading] = useState(true); 
 
@@ -53,10 +54,21 @@ const TrendingPage = () => {
   return (
     <section className="pb-[20px] pt-[20px]">
       <div className="container ">
+      {/* <Breadcrumb
+          pageName="Trending"
+          pageName2="Posts"
+          description="Ready to take your work and creativity to the next level? The AI revolution is here, and it's changing the way we work!  Whether you're a seasoned pro or just curious to learn more Our blog explores Best AI Tools for Productivity. These AI tools free you from booring  tasks, boost  your skills, and supercharge  your creativity."
+          link="" 
+          linktext=""
+          firstlinktext=""
+          firstlink="/"
+
+        /> */}
       <h1 className="mb-8 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
                   <span className="group inline-block cursor-pointer">
                     <span className="relative text-blue-500">
-                   Whats
+                    Trending
+
                       <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
                     </span>
                     {/* Add space between the texts */}{" "}
@@ -64,7 +76,7 @@ const TrendingPage = () => {
                     <span className="relative  inline-block ">
                       {" "}
                       {/* Apply smaller font size */}
-                   Trending
+                   Posts
                       <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
                     </span>
                   </span>

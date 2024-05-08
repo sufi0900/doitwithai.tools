@@ -16,6 +16,7 @@ import BigCard from "@/components/Blog/HomeBigCard"
 const AiTools = () => {
   const [aiToolTrendBigData, setAiToolTrendBigData] = useState([]);
   const [aiToolTrendRelatedData, setAiToolTrendRelatedData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); 
 
   useEffect(() => {
 
@@ -58,8 +59,13 @@ const AiTools = () => {
         <Grid container spacing={2}>
      
           <Grid item xs={12} md={12} lg={6} xl={6} >
-            {/* Big Blog Card */}
-            {aiToolTrendBigData.slice(0, 1).map((post) => (
+          {isLoading ? (
+        <Grid item xs={12} >
+        <BigSkeleton/>
+          </Grid>
+      ) : (
+     
+            aiToolTrendBigData.slice(0, 1).map((post) => (
              <BigCard          key={post}
              title={post.title}
              overview={post.overview}
@@ -69,7 +75,7 @@ const AiTools = () => {
              ReadTime={post.readTime?.minutes}
              tags={post.tags}
 />    
-            ))}
+           )) )}
           </Grid>
 
           {/* Second Column: Small Blog List for First Row */}
