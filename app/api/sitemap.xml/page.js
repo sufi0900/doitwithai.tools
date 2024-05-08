@@ -19,9 +19,20 @@ const createSitemap = (posts) => {
   return sitemap;
 };
 
+// Assuming fetchURLs is correctly implemented and imported
 export default async function sitemap(req, res) {
-  const posts = await fetchURLs(); // Fetch all relevant URLs from your CMS
-  const sitemap = createSitemap(posts);
-  res.setHeader("Content-Type", "text/xml");
-  res.status(200).send(sitemap);
+  try {
+    const posts = await fetchURLs(); // Make sure this actually returns an array
+    console.log("Fetched posts:", posts); // Check what you actually got
+    if (!Array.isArray(posts)) {
+      throw new TypeError("Expected posts to be an array");
+    }
+    
+    const sitemap = createSitemap(posts);
+    res.setHeader("Content-Type", "text/xml");
+    res.status(200).send(sitemap);
+  } catch (e) {
+    console.error("Error generating sitemap:", e);
+    res.status(500).json({ error: 'Failed to generate sitemap', details: e.message });
+  }
 }
