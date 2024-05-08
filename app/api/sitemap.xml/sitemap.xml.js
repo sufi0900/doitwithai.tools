@@ -1,4 +1,4 @@
-import { fetchURLs } from "../../app/lib/sanity"; // Adjust the import according to your project structure
+import { fetchURLs } from "../../../app/lib/sanity"; // Adjust the import according to your project structure
 
 const createSitemap = (posts) => {
   let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -26,8 +26,12 @@ export default async function sitemap(req, res) {
     res.setHeader("Content-Type", "text/xml");
     res.write(sitemap);
     res.end();
-  } catch (e) {
-    console.log(e);
-    res.send(JSON.stringify(e));
+  } catch (error) {
+    console.error('Error generating sitemap:', error);
+    if (res && res.status) {
+      res.status(500).send(JSON.stringify(error));
+    } else {
+      console.error('Unable to send error response: Response object not properly defined.');
+    }
   }
 }
