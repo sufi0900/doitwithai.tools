@@ -1,7 +1,7 @@
 export const siteUrl = 'https://sufi-blog-website.vercel.app';
 export const generateRobotsTxt = true;
 export const sitemapSize = 7000;
-export const outDir = './public';
+export const outDir = '../public';
 export async function transform(config, paths) {
   // Fetch all posts or items you need from Sanity.io
   const fetchedSchemas = await getAllSlugsFromSanity(); // Define this function to fetch your data

@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://sufi-blog-website.vercel.app/sitemap.xml
