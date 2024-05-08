@@ -1,22 +1,33 @@
-const { client } = require('../../sanity/lib/client'); // import your configured sanity client
+// scripts/generate-sitemap.js
 const fs = require('fs');
-const path = require('path');
+const fetch = require('isomorphic-unfetch');
 
-async function generateSitemap() {
-  const query = '*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]]';
-  const posts = await client.fetch(query);
+const BASE_URL = 'https://sufi-blog-website.vercel.app/'; // Change this to your domain
+const SITEMAP_PATH = './public/sitemap.xml';
+
+const fetchPosts = async () => {
+  const res = await fetch(`${BASE_URL}/api/sitemap-data`);
+  const posts = await res.json();
+  return posts;
+};
+
+const generateSitemap = async () => {
+  const posts = await fetchPosts();
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${posts.map(post => `
-    <url>
-      <loc>${`https://sufi-blog-website.vercel.app/${post._type}/${post.slug.current}`}</loc>
-      <lastmod>${new Date(post._updatedAt).toISOString()}</lastmod>
-      <priority>0.9</priority>
-    </url>`).join('')}
+  ${posts
+    .map(post => {
+      return `<url>
+    <loc>${BASE_URL}/${post.slug.current}</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>`;
+    })
+    .join('')}
 </urlset>`;
 
-  fs.writeFileSync(path.resolve(__dirname, '../public/sitemap.xml'), sitemap);
-}
+  fs.writeFileSync(SITEMAP_PATH, sitemap);
+};
 
 generateSitemap();
