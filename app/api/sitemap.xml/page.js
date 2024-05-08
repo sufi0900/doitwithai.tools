@@ -1,3 +1,12 @@
+import React from 'react'
+
+const page = () => {
+  return (
+    <div>page</div>
+  )
+}
+
+export default page
 // import { fetchURLs } from "../../../app/lib/sanity"; // Adjust the import according to your project structure
 
 // const createSitemap = (posts) => {
