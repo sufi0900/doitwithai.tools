@@ -1,20 +1,16 @@
-module.exports = {
-  siteUrl: 'https://sufi-blog-website.vercel.app',
-  generateRobotsTxt: true, // Enable robots.txt file generation.
-  sitemapSize: 7000, // Maximum URLs per sitemap file
-  outDir: './public', // Where to output the files
+export const siteUrl = 'https://sufi-blog-website.vercel.app';
+export const generateRobotsTxt = true;
+export const sitemapSize = 7000;
+export const outDir = './public';
+export async function transform(config, paths) {
+  // Fetch all posts or items you need from Sanity.io
+  const fetchedSchemas = await getAllSlugsFromSanity(); // Define this function to fetch your data
+  const allPages = fetchedSchemas.map(slug => {
+    return { loc: `${config.siteUrl}/${slug}`, changefreq: 'daily', priority: 0.7 };
+  });
 
-  // Define how to fetch URLs for the sitemap dynamically
-  transform: async (config, paths) => {
-    // Fetch all posts or items you need from Sanity.io
-    const fetchedSchemas = await getAllSlugsFromSanity(); // Define this function to fetch your data
-    const allPages = fetchedSchemas.map(slug => {
-      return { loc: `${config.siteUrl}/${slug}`, changefreq: 'daily', priority: 0.7 };
-    });
-
-    return [...paths, ...allPages];
-  },
-};
+  return [...paths, ...allPages];
+}
 
 // An example function to fetch all unique pages' or posts' slugs across all schemas
 async function getAllSlugsFromSanity() {
