@@ -14,17 +14,19 @@ const createSitemap = (posts) => `<?xml version="1.0" encoding="UTF-8"?>
 </urlset>`;
 
 export default async function sitemapHandler(req, res) {
-  const query = '*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]]{_type, "slug": slug.current, _updatedAt}';
-  const posts = await client.fetch(query);
+  try {
+    const query = '*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]]{_type, "slug": slug.current, _updatedAt}';
+    console.log("Handling request...");
 
-  res.setHeader('Content-Type', 'application/xml');
-  res.write(createSitemap(posts));
-  res.end();
+    const posts = await client.fetch(query);
+    console.log("Fetched posts:", posts);
+
+    res.setHeader('Content-Type', 'application/xml');
+    res.status(200).send(createSitemap(posts));
+} catch (error) {
+    res.status(500).send("Error generating sitemap.");
 }
-
-
-
-
+}
 
 
 
