@@ -1,7 +1,7 @@
-// lib/sanity.js
-import client from '@sanity/client';
 
-export const client = sanityClient({
+import { createClient } from "next-sanity";
+
+export const client = createClient({
     projectId: 'gglvlxzt', // Replace with your project ID
     dataset: 'production',
     useCdn: true,
