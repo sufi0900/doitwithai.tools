@@ -1,5 +1,6 @@
 import { createClient } from "next-sanity";
-
+export const revalidate = false;
+export const dynamic = "force-dynamic";
 export const client = createClient({
   projectId: 'gglvlxzt', // find this at manage.sanity.io or your sanity.json
   dataset: 'production', // or the name of your dataset
