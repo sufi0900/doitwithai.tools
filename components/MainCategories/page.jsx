@@ -9,7 +9,7 @@ const Categories = () => {
       imageUrl:
         "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714586054/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_alrq5i.png",
       heading: "AI Tools 🛠️",
-      link: "/digital-resources",
+      link: "/ai-tools",
       gradientClass: "from-purple-600 to-blue-500",
       hoverGradientClass: "from-blue-500 to-purple-600", // Define hover gradient class
 

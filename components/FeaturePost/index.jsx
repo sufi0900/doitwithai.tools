@@ -14,7 +14,6 @@ import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
 import SmallCard from "@/components/Blog/HomeSmallCard"
 import BigCard from "@/components/Blog/HomeBigCard"
-import MedCard from "@/components/Blog/HomeMediumCard"
 const FeaturePost = () => {
   const [isLoading, setIsLoading] = useState(true); 
 
