@@ -20,14 +20,8 @@ const createSitemap = (posts) => {
 };
 
 export default async function sitemap(req, res) {
-  try {
-  const posts = await fetchURLs(); 
+  const posts = await fetchURLs(); // Fetch all relevant URLs from your CMS
   const sitemap = createSitemap(posts);
   res.setHeader("Content-Type", "text/xml");
   res.status(200).send(sitemap);
-
-} catch (e) {
-  console.error(e);
-  res.status(500).json({ error: 'Failed to generate sitemap.' });
-}
 }

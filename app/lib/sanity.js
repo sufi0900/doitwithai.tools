@@ -7,7 +7,7 @@ export const client = createClient({
   useCdn: false, // `false` if you want to ensure fresh data
 });
 
-async function fetchURLs() {
+export async function fetchURLs() {
   const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]] {
     "slug": slug.current,
     _type
