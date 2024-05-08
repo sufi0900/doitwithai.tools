@@ -3,13 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
-
-import BlogCard from "./Card"
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import CardComponent from "@/components/Card/Page"
-
-
-
   async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
     const start = (page - 1) * limit;
     const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, tags, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
@@ -18,19 +13,11 @@ import CardComponent from "@/components/Card/Page"
   }
   
   export default  function Allposts() {
-    const schemaSlugMap = {
-        makemoney: "make-money-with-ai",
-        aitool: "ai-tools",
-        news: "ai-trending-news",
-        coding: "code-with-ai",
-        freeairesources: "free-ai-resources",
-        seo: "seo-with-ai",
-      }
+   
 
     
     const [currentPage, setCurrentPage] = useState(1);
-    const [searchText, setSearchText] = useState("");
-    const [searchResults, setSearchResults] = useState([]);
+  
     const [loading, setLoading] = useState(true);
     const [allData, setAllData] = useState([]);
   
@@ -62,7 +49,14 @@ import CardComponent from "@/components/Card/Page"
     };
  
   
-
+    const schemaSlugMap = {
+      makemoney: "make-money-with-ai",
+      aitool: "ai-tools",
+      news: "ai-trending-news",
+      coding: "code-with-ai",
+      freeairesources: "free-ai-resources",
+      seo: "seo-with-ai",
+    }
 
 
   return (

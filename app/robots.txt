@@ -1,0 +1,5 @@
+# public/robots.txt
+User-agent: *
+Disallow:
+
+Sitemap: http://localhost:3000/sitemap.xml
