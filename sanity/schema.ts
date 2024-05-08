@@ -9,5 +9,5 @@ import { blog } from "./blogs";
 import { complexTable } from "./complextable";
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [complexTable, blog, makemoney, news, coding, freeairesources, seo ],
+  types: [complexTable, blog, aitool, makemoney, news, coding, freeairesources, seo ],
 };

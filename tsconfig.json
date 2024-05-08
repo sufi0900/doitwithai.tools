@@ -31,6 +31,6 @@
     "**/*.tsx",
     "app/blog/[slug]/page.jsx",
     "app/blog/page.jsx"
-, "app/page.jsx"  ],
+, "app/page.jsx", "app/sitemap.xml/page.js"  ],
   "exclude": ["node_modules"]
 }

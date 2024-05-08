@@ -19,20 +19,13 @@ const createSitemap = (posts) => {
   return sitemap;
 };
 
-// Assuming fetchURLs is correctly implemented and imported
-export default async function sitemap(req, res) {
+// Assuming fetchURLs is correctly implemented and imported// pages/api/sitemap.xml.js
+export default function sitemap(req, res) {
   try {
-    const posts = await fetchURLs(); // Make sure this actually returns an array
-    console.log("Fetched posts:", posts); // Check what you actually got
-    if (!Array.isArray(posts)) {
-      throw new TypeError("Expected posts to be an array");
-    }
-    
-    const sitemap = createSitemap(posts);
     res.setHeader("Content-Type", "text/xml");
-    res.status(200).send(sitemap);
-  } catch (e) {
-    console.error("Error generating sitemap:", e);
-    res.status(500).json({ error: 'Failed to generate sitemap', details: e.message });
+    res.status(200).send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://yourwebsite.com/</loc><lastmod>' + new Date().toISOString() + '</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url></urlset>');
+  } catch (error) {
+    console.error("Error generating sitemap:", error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 }
