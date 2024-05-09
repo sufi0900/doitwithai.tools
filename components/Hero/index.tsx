@@ -15,11 +15,7 @@ const Hero = () => {
       AI Tool Trend
           </h1>
           <p className="mb-4 text-center text-base leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
-            Welcome to The website Website! We provide valuable insights, tips,
-            and resources on digital products, web development, SEO, online
-            earnings, and blogging. Whether you're a seasoned developer or just
-            getting started, we've got something for everyone.
-          </p>
+          Welcome to The AIToolTrend Website! We provide valuable insights, tips, and resources to help you understand the exciting world of Artificial Intelligence (AI) tools. Explore the best AI tools for productivity, resources on web development, SEO, online earnings, and blogging, and discover how AI can transform your workflow and empower you in various fields.          </p>
           <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
             <Link href="/pro-version">
               <button className="whitespace-nowrap rounded-sm bg-primary px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-primary/80">

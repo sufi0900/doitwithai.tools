@@ -52,10 +52,16 @@ const Header = () => {
           <div className="relative -mx-4 flex items-center justify-between">
             <div className=" w-30    max-w-full px-4 xl:mr-12">
             <Avatar
-          src="/7.png"
-          alt="Logo"
-          sx={{ width: 70, height: 70 ,}} 
+         
+          sx={{ width: 66, height: 66 , background:"transparent"}} 
+        >
+        <Image
+        src="/7.png"
+        alt="Logo"
+        width={500}
+        height={500}
         />
+        </Avatar>
             </div>
             <div className="flex w-full items-center justify-between px-4">
               <div>

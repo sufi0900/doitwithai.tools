@@ -77,6 +77,19 @@ module.exports = {
       dropShadow: {
         three: "0px 5px 15px rgba(6, 8, 15, 0.05)",
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            p: {
+              marginBottom: "1rem", // Adjust margin bottom
+              fontSize: "1.125rem", // Adjust font size
+              fontWeight: "medium", // Adjust font weight
+              lineHeight: "1.75", // Adjust line height
+              color: "#788293", // Adjust text color
+            },
+          },
+        },
+      },
     },
   },
   plugins: [],
