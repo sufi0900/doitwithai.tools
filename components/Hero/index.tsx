@@ -12,7 +12,7 @@ const Hero = () => {
       >
         <div className="container mx-auto flex flex-col items-center justify-center px-4 pb-8 lg:px-12 lg:pb-12">
           <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl md:text-5xl">
-      AI Tool Trend
+Toolsify Trend
           </h1>
           <p className="mb-4 text-center text-base leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
           Welcome to The AIToolTrend Website! We provide valuable insights, tips, and resources to help you understand the exciting world of Artificial Intelligence (AI) tools. Explore the best AI tools for productivity, resources on web development, SEO, online earnings, and blogging, and discover how AI can transform your workflow and empower you in various fields.          </p>
