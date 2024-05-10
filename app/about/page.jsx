@@ -1,4 +1,5 @@
-
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 const AboutPage = () => {
   return (
     <>
