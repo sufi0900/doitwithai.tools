@@ -44,7 +44,7 @@ const WebDev = () => {
           description="The future of coding is here! Explore how AI can become your powerful coding partner. Our blog teaches you to leverage tools like ChatGPT to generate website code (HTML, CSS, React, etc.) and build beautiful UI components.  Learn to optimize existing code (MERN Stack, Next.js), solve coding challenges, and streamline your development process.  We even offer free website templates built with AI!  Unlock the potential of AI and code like never before!"
           firstlinktext="Home"
           firstlink="/"
-          link="/code-with-ai" 
+          link="/coding" 
           linktext="code-with-ai"
         />
         <Grid container spacing={2}>

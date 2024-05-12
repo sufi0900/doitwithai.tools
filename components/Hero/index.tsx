@@ -12,10 +12,19 @@ const Hero = () => {
       >
         <div className="container mx-auto flex flex-col items-center justify-center px-4 pb-8 lg:px-12 lg:pb-12">
           <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl md:text-5xl">
-Toolsify Trend
+{/* Trendify Tools */}
+{/* Toolsify Digital */}
+{/* Toolsify Me */}
+
+{/* Try AI Tools */}
+Do It With AI Tools
           </h1>
-          <p className="mb-4 text-center text-base leading-relaxed text-body-color dark:text-body-color-dark sm:text-lg md:text-xl">
-          Welcome to The AIToolTrend Website! We provide valuable insights, tips, and resources to help you understand the exciting world of Artificial Intelligence (AI) tools. Explore the best AI tools for productivity, resources on web development, SEO, online earnings, and blogging, and discover how AI can transform your workflow and empower you in various fields.          </p>
+          <p className="first-line:uppercase first-line:tracking-widest first-letter:text-7xl first-letter:font-bold first-letter:text-gray-900 dark:first-letter:text-gray-100 first-letter:me-3 first-letter:float-start mb-4  text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+          {/* Welcome to The Do It With AI Tools! We provide valuable insights, tips, and resources to help you understand the exciting world of Artificial Intelligence (AI) tools. Explore the best AI tools for productivity, resources on web development, SEO, online earnings, and blogging, and discover how AI can transform your workflow and empower you in various fields.          </p> */}
+          Welcome to The <Link href="/" className="text  underline hover:no-underline font-bold text-primary">Do It With AI Tools!</Link>  We provide valuable insights, tips, and resources to help you understand the exciting world of Artificial Intelligence. Explore a comprehensive list of blogs on the Best AI Tools for Productivity (Freemium). Discover new ways to earn with AI, improve your coding skills with AI and Boost your SEO and digital marketing efforts with AI. Stay updated with the latest AI News & Trends and explore a wide array of Free AI Resources & Solutions.       
+          
+          
+            </p>
           <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
             <Link href="/pro-version">
               <button className="whitespace-nowrap rounded-sm bg-primary px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-primary/80">

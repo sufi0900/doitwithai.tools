@@ -159,14 +159,8 @@ export default  function Home() {
       <AIEarn />
       <AINews />
       <CodeWithAI /> 
- 
       <FreeAIResources />
       <AISEO />
-   
- 
-     
-  
-
       <RecentPost  />
       <MainCategory />
       <MBrands />

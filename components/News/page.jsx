@@ -53,7 +53,7 @@ const News = () => {
           description="Are you curious about the latest breakthroughs in artificial intelligence? Look no further! Our blog keeps you at the forefront of AI news and trends.  We deliver in-depth analysis of cutting-edge AI developments, from OpenAI's advancements to the impact of AI on various industries. Explore the exciting possibilities of AI and its potential to reshape our world!"
           firstlinktext="Home"
           firstlink="/"
-          link="/ai-trending-news" 
+          link="/news" 
           linktext="ai-trending-news"
         />
         <Grid container spacing={2}>
@@ -68,7 +68,7 @@ const News = () => {
           title={post.title}
           overview={post.overview}
           mainImage={urlForImage(post.mainImage).url()}
-          slug={`/ai-trending-news/${post.slug.current}`}
+          slug={`/news/${post.slug.current}`}
           publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
           ReadTime={post.readTime?.minutes}
           tags={post.tags}
@@ -92,7 +92,7 @@ const News = () => {
           title={post.title}
           overview={post.overview}
           mainImage={urlForImage(post.mainImage).url()}
-          slug={`/ai-trending-news/${post.slug.current}`}
+          slug={`/news/${post.slug.current}`}
           publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
           ReadTime={post.readTime?.minutes}
           tags={post.tags}
@@ -110,7 +110,7 @@ const News = () => {
           title={post.title}
           overview={post.overview}
           mainImage={urlForImage(post.mainImage).url()}
-          slug={`/ai-trending-news/${post.slug.current}`}
+          slug={`/news/${post.slug.current}`}
           publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
           ReadTime={post.readTime?.minutes}
           tags={post.tags}
@@ -121,7 +121,7 @@ const News = () => {
           </Grid>
         </Grid>
         <div className="mt-6 flex justify-center md:justify-end">
-          <Link href="/ai-trending-news">
+          <Link href="/news">
           <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
                      Explore More Blogs         
           </button>

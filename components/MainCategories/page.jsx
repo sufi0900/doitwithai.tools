@@ -18,7 +18,7 @@ const Categories = () => {
       imageUrl:
         "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587424/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_1_ju8jda.png",
       heading: "Make Money with AI 💸",
-      link: "/make-money-with-ai",
+      link: "/earning",
       gradientClass: "from-red to-green",
       hoverGradientClass: "from-green to-red ", // Define hover gradient class
       // hoverGradientClass: "from-blue-500 to-cyan-500 ", 
@@ -28,7 +28,7 @@ const Categories = () => {
       imageUrl:
         "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587675/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_2_aytyui.png",
       heading: "AI News & Trends 📰",
-      link: "/ai-trending-news",
+      link: "/news",
       gradientClass: "from-green to-blue",
       hoverGradientClass: "from-blue-600 to-green-400", // Define hover gradient class
 
@@ -37,7 +37,7 @@ const Categories = () => {
       imageUrl:
         "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587424/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_3_ixrqom.png",
       heading: "Code With AI 💻",
-      link: "/code-with-ai",
+      link: "/coding",
       gradientClass: "from-black to-brown ",
       hoverGradientClass: "from-brown to-purple-500", // Define hover gradient class
 
@@ -57,7 +57,7 @@ const Categories = () => {
       imageUrl:
         "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587424/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_5_z9bjvg.png",
       heading: "SEO with AI 📊",
-      link: "/seo-with-ai",
+      link: "/seo",
       gradientClass: "from-black to-blue-200",
       
       hoverGradientClass: "from-blue to-black", // Define hover gradient class

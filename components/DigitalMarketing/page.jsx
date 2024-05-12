@@ -55,7 +55,7 @@ const DigitalMarketing = () => {
           description="The digital marketing landscape is changing rapidly, and AI is leading the way!  Our blog equips you with the knowledge and tools to leverage AI for SEO and marketing success. Discover how AI can help you generate high-quality content, optimize your website, and craft data-driven marketing campaigns.  Explore expert tips on using AI tools like SEO AI and ChatGPT to write SEO-friendly blog posts, improve rankings, and  drive massive traffic.  Embrace the power of AI and take your digital marketing to the next level! "
           firstlinktext="Home"
           firstlink="/"
-          link="/seo-with-ai" 
+          link="/seo" 
           linktext="seo-with-ai" 
         />
 
@@ -73,7 +73,7 @@ const DigitalMarketing = () => {
                   title={post.title}
                   overview={post.overview}
                   mainImage={urlForImage(post.mainImage).url()}
-                  slug={`/seo-with-ai/${post.slug.current}`}
+                  slug={`/seo/${post.slug.current}`}
                   publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                   ReadTime={post.readTime?.minutes}
                   tags={post.tags}
@@ -90,7 +90,7 @@ const DigitalMarketing = () => {
                   title={post.title}
                   overview={post.overview}
                   mainImage={urlForImage(post.mainImage).url()}
-                  slug={`/seo-with-ai/${post.slug.current}`}
+                  slug={`/seo/${post.slug.current}`}
                   publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                   ReadTime={post.readTime?.minutes}
                   tags={post.tags}

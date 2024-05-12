@@ -54,9 +54,9 @@ const OnlineEarningPage = () => {
           description="Discover useful tips and tools to help you earn money online. From freelancing to affiliate marketing, explore valuable resources to start and grow your online income streams. Start making money online today!"
           firstlinktext="Home"
           firstlink="/"
-          link="/make-money-with-ai" 
+          link="/earning" 
       
-          linktext="make-money-with-ai"
+          linktext="earning"
          
   
         />
@@ -74,7 +74,7 @@ const OnlineEarningPage = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/make-money-with-ai/${post.slug.current}`}
+         slug={`/earning/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -94,7 +94,7 @@ const OnlineEarningPage = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/make-money-with-ai/${post.slug.current}`}
+         slug={`/earning/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -112,7 +112,7 @@ const OnlineEarningPage = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/make-money-with-ai/${post.slug.current}`}
+         slug={`/earning/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -122,7 +122,7 @@ const OnlineEarningPage = () => {
           ))}
         </Grid>
         <div className="mt-6 flex justify-center md:justify-end">
-          <Link                          href="/make-money-with-ai"
+          <Link                          href="/earning"
 >
           <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
           Explore All Blogs

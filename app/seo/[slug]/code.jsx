@@ -11,7 +11,6 @@ import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import SkelCard from "@/components/Blog/Skeleton/Card"
-
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
@@ -20,9 +19,6 @@ import { urlForImage } from "@/sanity/lib/image";
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 
-// Define a custom table component
-
-// Update the portableTextComponents object to include the custom table component
 import "@/styles/customanchor.css";
 import Link from "next/link";
 async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
@@ -33,7 +29,7 @@ async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
 }
 
 
-export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
+export default function BlogSidebarPage({ data }) {
   const imgdesc ={
     block: {  
       normal: ({ children }) => (
@@ -64,8 +60,8 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
     block: {
       normal: ({ children }) => (
         <p className="mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
-    {children}
-  </p>
+           {children}
+      </p>
       ),
       h1: ({ children }) => (
         <h1 className="mb-4 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
@@ -288,6 +284,7 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
                   <Image
                     className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                     src={imageUrl}
+             
                     layout="responsive"
                     width={500} 
                     height={500}
@@ -368,7 +365,6 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
     },
   };
   portableTextComponents.types.button = portableTextComponents.button;
-  
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -420,12 +416,12 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
 
       <li  className="mb-6 border-b border-black border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
    
-     <RelatedPost key={blog._id} 
-     title={blog.title}
+     <RelatedPost key={blog._id} title={blog.title}
     image={urlForImage(blog.mainImage).url()}
     slug={`/${schemaSlugMap[blog._type]}/${blog.slug.current}`}
     date={new Date(blog.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-/>
+ />
+
 </li>
 </ul>
 </div>
@@ -448,27 +444,20 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
   const schemaSlugMap = {
     makemoney: "make-money-with-ai",
     aitool: "ai-tools",
-    news: "news",
+    news: "ai-trending-news",
     coding: "code-with-ai",
     freeairesources : "free-ai-resources",
     seo: "seo-with-ai",
   };
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const query = `*[_type == "aitool" && category == $currentCategory][0...3]`;
-        const relatedPostsData = await client.fetch(query, {currentCategory});
+      const query = `*[_type == "seo"][0...50] | order(_createdAt desc)`;
+      const relatedPostsData = await client.fetch(query);
         setRelatedPosts(relatedPostsData);
-        setLoading(false); // Set loading to false after data is fetched
-      } catch (error) {
-        console.error("Failed to fetch data", error);
-        setLoading(false); // Ensure loading is set to false in case of error too
-      }
     };
-    if (currentCategory) {
       fetchData();
-    }
-  }, [currentCategory]);
+
+  }, []);
 
 
 
@@ -506,16 +495,15 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
     );
   };
   return (
-    <>  
-      <section className="overflow-hidden pb-[120px] pt-[40px]">
+    <section className="overflow-hidden pb-[120px] pt-[40px]">
         <div className="container">
         {loading ? (
          
-<BigSkeleton/>
-
-          
-        ) : (
-          <div className="lg:m-4  flex flex-wrap">
+         <BigSkeleton/>
+         
+                   
+                 ) : (
+          <div className=" lg:m-4  flex flex-wrap">
         <div className=" lg:-mx-5 w-full overflow-hidden rounded">
           <div className="lg:m-4 ">
         <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
@@ -526,7 +514,7 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
                         <div className="overflow-hidden lg:aspect-[40/16]">
                           <a href={urlForImage(data.mainImage).url()}>
                             <Image
-                              className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out  hover:scale-[1.5] dark:shadow-gray-800"
+                              className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
                               src={urlForImage(data.mainImage).url()}
                               alt=""
                               layout="responsive"
@@ -551,13 +539,16 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
                     </div>
                             </div>
                             <div className="customanchor mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-                     
+                      {/* <PortableText
+                        value={data.content}
+                        components={portableTextComponents}
+                      /> */}
                     </div>   
             <div className="w-full  lg:w-8/12 ">
                   <div className="mb-10 mt-4 w-full overflow-hidden rounded">
                   <div className="mb-10 flex flex-wrap items-center justify-between border-b border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="flex flex-wrap items-center">
-                      <div className="mb-5 mr-10 flex items-center">
+                    <div className="mb-5 mr-10 flex items-center">
                         <div className="mr-4">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full">
                           <Link href="/author/sufian-mustafa">
@@ -592,8 +583,6 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
                          
                           </span>
                           Read Time: {data.readTime?.minutes} min
-                        
-                       
                         </p>
                         <p className="flex items-center text-base font-medium text-body-color">
                           <span className="mr-3">
@@ -839,8 +828,7 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
               <NewsLatterBox />
             </div>
           </div>
-                  )}
-
+             )}
           <div className="container border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
         <h1 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
           <span className="relative  mr-2 inline-block">
@@ -875,12 +863,9 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
                     </div>
                     </div>
        <div className="border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-      
         <RecentPost  />
-     
         </div>
         </div>    
       </section>
-    </>
   );
 }

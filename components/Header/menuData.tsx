@@ -17,13 +17,13 @@ const menuData: Menu[] = [
   {
     id: 4,
     title: "Earn with AI",
-    path: "/make-money-with-ai",
+    path: "/earning",
     newTab: false,
   },
   {
     id: 5,
     title: "Code With AI",
-    path: "/code-with-ai",
+    path: "/coding",
     newTab: false,
   },
   {
@@ -35,13 +35,13 @@ const menuData: Menu[] = [
   {
     id: 7,
     title: "SEO with AI",
-    path: "/seo-with-ai",
+    path: "/seo",
     newTab: false,
   },
   {
     id: 8,
     title: "AI News",
-    path: "/ai-trending-news",
+    path: "/news",
     newTab: false,
   },
   
