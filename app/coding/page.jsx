@@ -32,7 +32,7 @@ export default function Page() {
       "@type": "CollectionPage",
       "name": "Code With AI",
       "description": "Unlock the power of AI to revolutionize your web development workflow! Discover how to leverage tools like ChatGPT to generate website code (HTML, CSS, React, React MUI, TailwindCSS, Next.js) and create stunning website templates and UI components.  Our blog features in-depth guides on using AI to improve existing code (MERN Stack, Next.js), solve coding problems, and optimize both frontend and backend code. Explore free website templates built with ChatGPT and learn how to code with AI by your side!",
-      "url": "https://sufi-blog-website.vercel.app/ai-tools",
+      "url": "https://sufi-blog-website.vercel.app/tools",
       "breadcrumb": {
         "@type": "BreadcrumbList",
         "itemListElement": [
@@ -71,18 +71,18 @@ export default function Page() {
 <meta property="og:image:height" content="630" />
 
   {/*  */}
-  <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools" />
+  <meta property="og:url" content="https://sufi-blog-website.vercel.app/tools" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={metadata.title} />
         <meta property="og:description" content={metadata.description} />
         <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
-        <meta property="twitter:url" content="https://sufi-blog-website.vercel.app/ai-tools" />
+        <meta property="twitter:url" content="https://sufi-blog-website.vercel.app/tools" />
         <meta name="twitter:title" content={metadata.title} />
         <meta name="twitter:description" content={metadata.description} />
         <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-  <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools"/>
+  <link rel="canonical" href="https://sufi-blog-website.vercel.app/tools"/>
         <NextSeo
          title={metadata.title}
          description={metadata.description}
@@ -91,11 +91,11 @@ export default function Page() {
           locale= 'en_IE'
           site_name= 'AiToolTrend'
 
-          canonical="https://sufi-blog-website.vercel.app/ai-tools"
+          canonical="https://sufi-blog-website.vercel.app/tools"
           openGraph={{
             title: metadata.title,
             description: metadata.description,
-            url: "https://sufi-blog-website.vercel.app/ai-tools",
+            url: "https://sufi-blog-website.vercel.app/tools",
             type: "ItemList",
             images: metadata.images
           }}

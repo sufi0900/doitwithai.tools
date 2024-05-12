@@ -51,7 +51,7 @@ const AiTools = () => {
           pageName2="AI Tools"
           description="Ready to take your work and creativity to the next level? The AI revolution is here, and it's changing the way we work!  Whether you're a seasoned pro or just curious to learn more Our blog explores Best AI Tools for Productivity. These tools free you from booring  tasks, boost  your skills, and supercharge  your creativity."
           // description="Stop struggling, start creating something new! Explore awesome AI tools designed to make your work easier, improve your skills, and get more done in a shorter amount of time."
-          link="/ai-tools" // Specify the link here
+          link="/tools" // Specify the link here
           linktext="ai-tools"
           firstlinktext="Home"
           firstlink="/"
@@ -70,7 +70,7 @@ const AiTools = () => {
              title={post.title}
              overview={post.overview}
              mainImage={urlForImage(post.mainImage).url()}
-             slug={`/ai-tools/${post.slug.current}`}
+             slug={`/tools/${post.slug.current}`}
              publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
              ReadTime={post.readTime?.minutes}
              tags={post.tags}
@@ -89,11 +89,11 @@ const AiTools = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/ai-tools/${post.slug.current}`}
+         slug={`/tools/${post.slug.current}`}
          publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          ReadTime={post.readTime?.minutes}
          tags={post.tags} />
-  {/* <Link      href={`/ai-tools/${post.slug.current}`}    key={post._id} className=" lg:h-[151px] transition duration-200 ease-in-out hover:scale-[1.03] flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow md:flex-row  hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+  {/* <Link      href={`/tools/${post.slug.current}`}    key={post._id} className=" lg:h-[151px] transition duration-200 ease-in-out hover:scale-[1.03] flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow md:flex-row  hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
                      <div className="rounded-md overflow-hidden ">
 
                      <Image     
@@ -125,7 +125,7 @@ Read Time: {post.readTime?.minutes} min
 </div>  
 <div>    
 <Link
-        href={`/ai-tools/${post.slug.current}`}
+        href={`/tools/${post.slug.current}`}
             className="my-2  inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                     >
                       Read more
@@ -166,7 +166,7 @@ Read Time: {post.readTime?.minutes} min
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/ai-tools/${post.slug.current}`}
+         slug={`/tools/${post.slug.current}`}
          publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          ReadTime={post.readTime?.minutes}
          tags={post.tags} />
@@ -183,7 +183,7 @@ Read Time: {post.readTime?.minutes} min
                 title={post.title}
                 overview={post.overview}
                 mainImage={urlForImage(post.mainImage).url()}
-                slug={`/ai-tools/${post.slug.current}`}
+                slug={`/tools/${post.slug.current}`}
                 publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                 ReadTime={post.readTime?.minutes}
                 tags={post.tags}

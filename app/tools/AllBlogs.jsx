@@ -105,7 +105,7 @@ export default function AllBlogs() {
    
     title={post.title}
     mainImage={urlForImage(post.mainImage).url()}
-    slug={`/ai-tools/${post.slug.current}`}
+    slug={`/tools/${post.slug.current}`}
     publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
     
    />);
@@ -117,8 +117,8 @@ export default function AllBlogs() {
           pageName="Best"
           pageName2="AI Tools"
           description="Ready to take your work and creativity to the next level? The AI revolution is here, and it's changing the way we work!  Whether you're a seasoned pro or just curious to learn more Our blog explores Best AI Tools for Productivity. These AI tools free you from booring  tasks, boost  your skills, and supercharge  your creativity."
-          link="/ai-tools" 
-          linktext="/ai-tools"
+          link="/tools" 
+          linktext="/tools"
           firstlinktext="Home"
           firstlink="/"
 
@@ -136,7 +136,7 @@ export default function AllBlogs() {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/ai-tools/${post.slug.current}`}
+         slug={`/tools/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -223,7 +223,7 @@ export default function AllBlogs() {
           title={post.title}
           tags={post.tags} 
           mainImage={urlForImage(post.mainImage).url()}
-          slug={`/ai-tools/${post.slug.current}`}
+          slug={`/tools/${post.slug.current}`}
           publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
          />)
         )}

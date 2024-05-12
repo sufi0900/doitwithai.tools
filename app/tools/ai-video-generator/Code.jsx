@@ -62,7 +62,7 @@ const Page = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/ai-tools/${post.slug.current}`}
+         slug={`/tools/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -95,7 +95,7 @@ const Page = () => {
      
       title={post.title}
       mainImage={urlForImage(post.mainImage).url()}
-      slug={`/ai-tools/${post.slug.current}`}
+      slug={`/tools/${post.slug.current}`}
       publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
        />
    

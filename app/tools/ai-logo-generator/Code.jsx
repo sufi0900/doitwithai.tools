@@ -3,36 +3,32 @@ import { client } from "@/sanity/lib/client";
 import React, { useEffect, useState } from "react";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import {
-
-  Grid,
-
+  Grid
 } from "@mui/material";
-
-
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
-import Breadcrumb from "../../../components/Common/Breadcrumb";
-
-
 import CardComponent from "@/components/Card/Page"
 import FeaturePost from "@/components/Blog/featurePost"
+import Breadcrumb from "../../../components/Common/Breadcrumb";
+
 const Page = () => {
 
   const [isLoading, setIsLoading] = useState(true); 
-    const [isAiExtensionBig, setIsAiExtensionBig] = useState([]);
-    const [isAiExtension, setIsAiExtension] = useState([]);
+
+    const [isFeature, setIsFeature] = useState([]);
+    const [isBlog, setIsBlog] = useState([]);
   
     useEffect(() => {
       const fetchData = async () => {
-        try {
-        const isAiExtensionBig = `*[_type == "aitool" && isAiExtensionBig == true]`;
-        const isAiExtension = `*[_type == "aitool" && isAiExtension == true]`;
+         try {
+        const isFeature = `*[_type == "aitool" && isAiLogoGenBig == true]`;
+        const isBlog = `*[_type == "aitool" && isAiLogoGen == true]`;
   
-        const isAiExtensionBigData = await client.fetch(isAiExtensionBig);
-        const isAiExtensionData = await client.fetch(isAiExtension);
+        const isFeatureData = await client.fetch(isFeature);
+        const isBlogData = await client.fetch(isBlog);
     
-        setIsAiExtensionBig(isAiExtensionBigData);
-        setIsAiExtension(isAiExtensionData);
+        setIsFeature(isFeatureData);
+        setIsBlog(isBlogData);
         setIsLoading(false); // Set loading to false after data is fetched
       } catch (error) {
         console.error("Failed to fetch data", error);
@@ -42,17 +38,18 @@ const Page = () => {
 
     fetchData();
   }, []); 
+
   return (
     <div className="container mt-8">
     <Breadcrumb
-      pageName="Best AI Chrome"
-      pageName2="Extension"
-      description="Enhance your digital experience with our selection of the best AI Extensions. With the help of these powerful tools, which can easily connect to Google Chrome and Microsoft Edge, you have access to intelligent functionality anywhere you need it.  AI Extensions simplify complicated tasks and increase productivity. They can be used for everything from language translation to productivity enhancements. Explore our comprehensive reviews to select the best AI extension for your requirements and start transforming your workflow instantly."
+      pageName="Best AI Logo"
+      pageName2="Generator"
+      description="Easily build your brand with an expert logo! Explore the ability of AI logo creation. Without any design experience, find the perfect logo for your company in just a couple of minutes. Discover how to select the most suitable AI-generated logo for your needs"
       link="/digital-marketing" // Specify the link here
       firstlinktext="Home"
       firstlink="/"
     />
-       <Grid container spacing={2}>
+ <Grid container spacing={2}>
 
 {isLoading ? (
                       <Grid item xs={12}  >
@@ -67,7 +64,7 @@ const Page = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/ai-tools/${post.slug.current}`}
+         slug={`/tools/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -100,7 +97,7 @@ const Page = () => {
      
       title={post.title}
       mainImage={urlForImage(post.mainImage).url()}
-      slug={`/ai-tools/${post.slug.current}`}
+      slug={`/tools/${post.slug.current}`}
       publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
        />
    
@@ -108,7 +105,7 @@ const Page = () => {
 )}
 </div>
 
-   
+  
    
     </Grid>
     <div className="mt-8 flex justify-center md:justify-end">
