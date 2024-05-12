@@ -103,7 +103,7 @@ export default function AllBlogs() {
    
     title={post.title}
     mainImage={urlForImage(post.mainImage).url()}
-    slug={`/free-ai-resources/${post.slug.current}`}
+    slug={`/free-resources/${post.slug.current}`}
     publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
     />);
   };
@@ -114,7 +114,7 @@ export default function AllBlogs() {
           pageName="Free AI Resources"
           pageName2="& Solution"
           description="Discover how AI can be applied to different fields to solve problems and enhance your work. Our blog provides an extensive collection of useful resources, including stunning, free, non-copyrighted AI-generated images and creative writing prompts for various tasks.  "
-          link="/free-ai-resources" 
+          link="/free-resources" 
           linktext="free-ai-resources"
           firstlinktext="Home"
           firstlink="/"
@@ -133,7 +133,7 @@ export default function AllBlogs() {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/free-ai-resources/${post.slug.current}`}
+         slug={`/free-resources/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -222,7 +222,7 @@ export default function AllBlogs() {
           title={post.title}
           tags={post.tags} 
           mainImage={urlForImage(post.mainImage).url()}
-          slug={`/free-ai-resources/${post.slug.current}`}
+          slug={`/free-resources/${post.slug.current}`}
           publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
          />)
         )}

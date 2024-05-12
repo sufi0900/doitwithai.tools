@@ -46,7 +46,7 @@ const Categories = () => {
       imageUrl:
         "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587423/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_4_h249te.png",
       heading: "Free AI Resources 🆓",
-      link: "/free-ai-resources",
+      link: "/free-resources",
  
       gradientClass: "from-brown to-blue",
 

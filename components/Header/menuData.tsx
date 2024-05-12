@@ -29,7 +29,7 @@ const menuData: Menu[] = [
   {
     id: 6,
     title: "Free AI Resources",
-    path: "/free-ai-resources",
+    path: "/free-resources",
     newTab: false,
   },
   {

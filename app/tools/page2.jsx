@@ -33,19 +33,19 @@ export default  function Page() {
       {
         name: "AI Image Generator",
         description: "Description of AI Image Generator.",
-        link: "ai-tools/ai-image-generator",
+        link: "tools/ai-image-generator",
       },
    
       {
         name: "AI Video Generator",
         description: "Description of AI Video Generator.",
-        link: "ai-tools/ai-video-generator",
+        link: "tools/ai-video-generator",
       },
    
       {
         name: "AI  Extension Generator",
         description: "Description of AI Extension .",
-        link: "ai-tools/ai-extension",
+        link: "tools/ai-extension",
       },
    
      

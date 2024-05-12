@@ -53,7 +53,7 @@ export default async function ParentPage({ params }) {
         "headline": "${data.schematitle}",
 
         "description": "${data.schemadesc}",
-        "url": "https://sufi-blog-website.vercel.app/free-ai-resources/${params.slug}",
+        "url": "https://sufi-blog-website.vercel.app/free-resources/${params.slug}",
 
         "author": {
           "@type": "Person",
@@ -89,7 +89,7 @@ export default async function ParentPage({ params }) {
             "@type": "ListItem",
             "position": 2,
             "item": {
-              "@id": "https://sufi-blog-website.vercel.app/free-ai-resources",
+              "@id": "https://sufi-blog-website.vercel.app/free-resources",
               "name": "AI Tools"
             }
           },
@@ -97,7 +97,7 @@ export default async function ParentPage({ params }) {
             "@type": "ListItem",
             "position": 3,
             "item": {
-              "@id": "https://sufi-blog-website.vercel.app/free-ai-resources/${params.slug}",
+              "@id": "https://sufi-blog-website.vercel.app/free-resources/${params.slug}",
               "name": "${data.schematitle}"
             }
           }
@@ -116,7 +116,7 @@ export default async function ParentPage({ params }) {
 
   const image = `${data.image}`;
   const author = `${data.author}`;
-  const canonicalUrl = `https://sufi-blog-website.vercel.app/free-ai-resources/${params.slug}`;
+  const canonicalUrl = `https://sufi-blog-website.vercel.app/free-resources/${params.slug}`;
 
   return (
     <>

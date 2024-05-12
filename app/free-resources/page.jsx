@@ -46,7 +46,7 @@ export default function Page() {
             "@type": "ListItem",
             "position": 2,
             "name": "Free AI Resources",
-            "item": "https://sufi-blog-website.vercel.app/free-ai-resources"
+            "item": "https://sufi-blog-website.vercel.app/free-resources"
           }
         ]
       }

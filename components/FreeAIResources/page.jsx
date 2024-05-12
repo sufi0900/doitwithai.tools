@@ -50,7 +50,7 @@ const FreeAIResources = () => {
           description="Supercharge your creativity and problem-solving skills with free AI resources! Our blog provides an extensive collection of useful resources, including stunning, free, non-copyrighted AI-generated images and creative writing prompts for various tasks. Discover how AI can be applied to different fields to solve problems and enhance your work. Explore the potential of AI and see how it can empower you in any domain!"
           firstlinktext="Home"
           firstlink="/"
-          link="/free-ai-resources" 
+          link="/free-resources" 
           linktext="free-ai-resources"     />
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>
@@ -61,7 +61,7 @@ const FreeAIResources = () => {
                   title={post.title}
                   overview={post.overview}
                   mainImage={urlForImage(post.mainImage).url()}
-                  slug={`/free-ai-resources/${post.slug.current}`}
+                  slug={`/free-resources/${post.slug.current}`}
                   publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                   ReadTime={post.readTime?.minutes}
                   tags={post.tags}
@@ -83,7 +83,7 @@ const FreeAIResources = () => {
              title={post.title}
              overview={post.overview}
              mainImage={urlForImage(post.mainImage).url()}
-             slug={`/free-ai-resources/${post.slug.current}`}
+             slug={`/free-resources/${post.slug.current}`}
              publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
              ReadTime={post.readTime?.minutes}
              tags={post.tags}
@@ -98,7 +98,7 @@ const FreeAIResources = () => {
            title={post.title}
            overview={post.overview}
            mainImage={urlForImage(post.mainImage).url()}
-           slug={`/free-ai-resources/${post.slug.current}`}
+           slug={`/free-resources/${post.slug.current}`}
            publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
            ReadTime={post.readTime?.minutes}
            tags={post.tags}
@@ -114,7 +114,7 @@ const FreeAIResources = () => {
                   title={post.title}
                   overview={post.overview}
                   mainImage={urlForImage(post.mainImage).url()}
-                  slug={`/free-ai-resources/${post.slug.current}`}
+                  slug={`/free-resources/${post.slug.current}`}
                   publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                   ReadTime={post.readTime?.minutes}
                   tags={post.tags}
@@ -123,7 +123,7 @@ const FreeAIResources = () => {
           ))}
         </Grid>
         <div className="mt-6 flex justify-center md:justify-end">
-          <Link href="/free-ai-resources">
+          <Link href="/free-resources">
           <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
           Explore All Blogs
           </button>

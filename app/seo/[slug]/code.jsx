@@ -777,7 +777,7 @@ export default function BlogSidebarPage({ data }) {
                   </li>
                   <li>
                     <Link
-                      href="/free-ai-resources"
+                      href="/free-resources"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
                    Free AI Resources
