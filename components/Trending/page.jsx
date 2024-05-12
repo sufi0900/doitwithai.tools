@@ -43,12 +43,12 @@ const TrendingPage = () => {
 
 
   const schemaSlugMap = {
-    makemoney: "make-money-with-ai",
-    aitool: "ai-tools",
-    news: "ai-trending-news",
-    coding: "code-with-ai",
-    freeairesources: "free-ai-resources",
-    seo: "seo-with-ai",
+    makemoney: "earning",
+    aitool: "tools",
+    news: "news",
+    coding: "coding",
+    freeairesources: "free-resources",
+    seo: "seo",
   };
 
   return (

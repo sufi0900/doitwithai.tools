@@ -115,7 +115,7 @@ export default function AllBlogs() {
           pageName2="& Solution"
           description="Discover how AI can be applied to different fields to solve problems and enhance your work. Our blog provides an extensive collection of useful resources, including stunning, free, non-copyrighted AI-generated images and creative writing prompts for various tasks.  "
           link="/free-resources" 
-          linktext="free-ai-resources"
+          linktext="free-resources"
           firstlinktext="Home"
           firstlink="/"
 

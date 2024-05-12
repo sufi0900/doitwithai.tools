@@ -51,7 +51,7 @@ const FreeAIResources = () => {
           firstlinktext="Home"
           firstlink="/"
           link="/free-resources" 
-          linktext="free-ai-resources"     />
+          linktext="free-resources"     />
         <Grid container spacing={2}>
           <Grid item xs={12} md={4}>
           {digitalTrendBigData.slice(0, 1).map((post) => (

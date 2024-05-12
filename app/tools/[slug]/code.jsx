@@ -446,12 +446,12 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
   const [relatedPosts, setRelatedPosts] = useState([]);
 
   const schemaSlugMap = {
-    makemoney: "make-money-with-ai",
-    aitool: "ai-tools",
-    news: "news",
-    coding: "code-with-ai",
-    freeairesources : "free-ai-resources",
-    seo: "seo-with-ai",
+    makemoney: "earning",
+        aitool: "tools",
+        news: "news",
+        coding: "coding",
+        freeairesources: "free-resources",
+        seo: "seo",
   };
   useEffect(() => {
     const fetchData = async () => {
