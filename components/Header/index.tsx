@@ -50,18 +50,36 @@ const Header = () => {
       >
         <div className="container">
           <div className="relative -mx-4 flex items-center justify-between">
-            <div className=" w-30    max-w-full px-4 xl:mr-12">
-            <Avatar
+            <div className=" w-30 mt-2   max-w-full px-4 xl:mr-12">
          
-          sx={{ width: 66, height: 66 , background:"transparent"}} 
+
+            <Avatar
+                     onClick={() => {
+                      window.location.href = "/";
+                    }}
+
+          sx={{ width: 96, height: 96, background: "transparent", cursor:"pointer" }}
         >
-        <Image
-        src="/7.png"
-        alt="Logo"
-        width={500}
-        height={500}
-        />
+      
+          <Image
+            
+
+            src="/logo33.png"
+            alt="Logo"
+            width={500}
+            height={500}
+            className="w-full dark:hidden"
+          />
+          {/* Dark mode logo */}
+          <Image
+            src="/logo66.png"
+            alt="Logo"
+            width={500}
+            height={500}
+            className="hidden w-full dark:block"
+          />
         </Avatar>
+       
             </div>
             <div className="flex w-full items-center justify-between px-4">
               <div>

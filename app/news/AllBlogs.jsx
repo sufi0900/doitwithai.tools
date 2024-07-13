@@ -111,7 +111,7 @@ export default function AllBlogs() {
   };
  
   return (
-    <div className="container mt-10 mr-4 ml-4">
+    <div className="container mt-10 ">
      <Breadcrumb
           pageName="AI News"
           pageName2="& Trends"
