@@ -640,7 +640,7 @@ export default function BlogSidebarPage({ data }) {
     </div>
 
     {/* FAQ Section */}
-    <div className="bs1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-6 mt-10">
+    <div  key={faq.question} className="bs1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-6 mt-10">
       <h2 className="text-3xl font-bold text-black dark:text-white mb-6">
         Frequently Asked Questions
       </h2>

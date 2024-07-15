@@ -641,7 +641,7 @@ export default function BlogSidebarPage({ data  }) {
       </h2>
      
        {data.faqs && data.faqs.slice(0, 1).map((faq) => (
-      <div className="space-y-4">
+      <div  key={faq.question} className="space-y-4">
         <details className="group" open>
           <summary className="cursor-pointer text-lg font-medium text-black dark:text-white bg-gray-100 dark:bg-gray-800 p-4 rounded-lg transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700">
          {faq.question}
