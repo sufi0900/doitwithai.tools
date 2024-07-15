@@ -16,16 +16,17 @@ import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 
-import { useRouter } from 'next/router';
 
-export const revalidate = false;
-export const dynamic = "force-dynamic";
+
+
 
 // Define a custom table component
 
 // Update the portableTextComponents object to include the custom table component
 import "@/styles/customanchor.css";
 import Link from "next/link";
+export const revalidate = false;
+export const dynamic = "force-dynamic";
 async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
   const start = (page - 1) * limit;
   const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
@@ -34,7 +35,7 @@ async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
 }
 
 
-export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
+export default function BlogSidebarPage({ data, }) {
   
   const imgdesc ={
     block: {  
