@@ -11,14 +11,14 @@ import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import SkelCard from "@/components/Blog/Skeleton/Card"
-import { useRouter } from 'next/navigation'; // Note: Next.js must use its adapted router hook
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 
+import { useRouter } from 'next/router';
 
-export const revalidate = 1;
+export const revalidate = false;
 export const dynamic = "force-dynamic";
 
 // Define a custom table component
@@ -34,18 +34,34 @@ async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
 }
 
 
-export default function BlogSidebarPage({ data, initialData, slug }) {
-  const [blogData, setBlogData] = useState(initialData);
-  const router = useRouter();
-  useEffect(() => {
-    const fetchData = async () => {
-      if (slug) {
-        const newData = await fetchBlogBySlug(slug);
-        setBlogData(newData);
-      }
-    };
-    fetchData();
-  }, [slug]);
+export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
+  
+  const imgdesc ={
+    block: {  
+      normal: ({ children }) => (
+        <p   className="dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400">
+    {children}
+  </p>
+      ),
+      link: ({ children }) => (
+        <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+          {children}
+        </a>
+      ),
+      a: ({ children }) => (
+        <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+          {children}
+        </a>
+      )
+    
+    },
+    link: ({ children }) => (
+      <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+        {children}
+      </a>
+    ),
+  }
+  
   const portableTextComponents = {
     block: {
       normal: ({ children }) => (
@@ -271,14 +287,15 @@ export default function BlogSidebarPage({ data, initialData, slug }) {
             <figure className=" relative my-8 ">
               <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
                 <a href={imageUrl}>
-                <Image
+                  <Image
+                  alt={value.alt}
                     className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                     src={imageUrl}
-             alt={value.alt}
                     layout="responsive"
                     width={500} 
                     height={500}
                   />
+           
                 </a>
               </div>
               <figcaption 
@@ -354,33 +371,6 @@ export default function BlogSidebarPage({ data, initialData, slug }) {
       );
     },
   };
-  const imgdesc ={
-    block: {  
-      normal: ({ children }) => (
-        <p   className="dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400">
-    {children}
-  </p>
-      ),
-      link: ({ children }) => (
-        <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
-          {children}
-        </a>
-      ),
-      a: ({ children }) => (
-        <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
-          {children}
-        </a>
-      )
-    
-    },
-    link: ({ children }) => (
-      <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
-        {children}
-      </a>
-    ),
-  }
-  
-
   portableTextComponents.types.button = portableTextComponents.button;
   
   const [searchText, setSearchText] = useState("");
