@@ -11,6 +11,7 @@ import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import SkelCard from "@/components/Blog/Skeleton/Card"
+import { useRouter } from 'next/navigation'; // Note: Next.js must use its adapted router hook
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
@@ -33,7 +34,18 @@ async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
 }
 
 
-export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
+export default function BlogSidebarPage({ data,  }) {
+  const [blogData, setBlogData] = useState(initialData);
+  const router = useRouter();
+  useEffect(() => {
+    const fetchData = async () => {
+      if (slug) {
+        const newData = await fetchBlogBySlug(slug);
+        setBlogData(newData);
+      }
+    };
+    fetchData();
+  }, [slug]);
   const imgdesc ={
     block: {  
       normal: ({ children }) => (
