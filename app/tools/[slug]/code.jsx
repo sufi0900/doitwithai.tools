@@ -455,21 +455,13 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
   };
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const query = `*[_type == "aitool" && category == $currentCategory][0...3]`;
-        const relatedPostsData = await client.fetch(query, {currentCategory});
+      const query = `*[_type == "aitool"][0...3] | order(_createdAt desc)`;
+      const relatedPostsData = await client.fetch(query);
         setRelatedPosts(relatedPostsData);
-        setLoading(false); // Set loading to false after data is fetched
-      } catch (error) {
-        console.error("Failed to fetch data", error);
-        setLoading(false); // Ensure loading is set to false in case of error too
-      }
     };
-    if (currentCategory) {
       fetchData();
-    }
-  }, [currentCategory]);
 
+  }, []);
 
 
 
