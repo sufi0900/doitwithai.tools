@@ -286,12 +286,14 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
               <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
                 <a href={imageUrl}>
                   <Image
+                  alt={value.alt}
                     className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                     src={imageUrl}
                     layout="responsive"
                     width={500} 
                     height={500}
                   />
+           
                 </a>
               </div>
               <figcaption 
@@ -520,7 +522,7 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
                             <Image
                               className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out  hover:scale-[1.05] dark:shadow-gray-800"
                               src={urlForImage(data.mainImage).url()}
-                              alt=""
+                              alt={data.mainImage.alt}
                               layout="responsive"
                               width={500} 
                               height={500}
@@ -530,6 +532,7 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
 
                             />
                           </a>
+
                         </div>
                         <figcaption className="imgdesc  my-2 text-center text-sm text-gray-500 dark:text-gray-400">
                           {/* Iteratively render descriptions and links from the imageDescription array */}
@@ -539,6 +542,7 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
 
                         </figcaption>
                       </figure>
+
                       </div>
                     </div>
                             </div>

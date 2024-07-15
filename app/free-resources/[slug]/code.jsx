@@ -284,7 +284,7 @@ export default function BlogSidebarPage({ data,   }) {
                 <Image
                     className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
                     src={imageUrl}
-             
+             alt={value.alt}
                     layout="responsive"
                     width={500} 
                     height={500}
@@ -515,7 +515,8 @@ export default function BlogSidebarPage({ data,   }) {
                         <Image
                           className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
                           src={urlForImage(data.mainImage).url()}
-                          alt=""
+                          alt={data.mainImage.alt}
+
                           layout="responsive"
                           width={500} 
                           height={500}
