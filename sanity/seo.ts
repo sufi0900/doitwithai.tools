@@ -55,7 +55,28 @@ export const seo = {
           },
         ],
       },
-      
+      {
+        name: "faqs",
+        title: "FAQ's",
+        type: "array",
+        of: [
+          {
+            type: "object",
+            fields: [
+              {
+                name: "question",
+                title: "Question",
+                type: "string",
+              },
+              {
+                name: "answer",
+                title: "Answer",
+                type: "string",
+              },
+            ],
+          },
+        ],
+      },
       {
         name: "readTime",
         title: "Read Time",

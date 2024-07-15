@@ -22,7 +22,7 @@ const AboutPage = () => {
                     <p className="mb-4 mt-1 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
                     I am the sole author and creator behind AiToolTrend. Handling every aspect of the website from development to content creation, I am filling the gap that exists between complex AI capabilities and actual professional needs. As a passionate web developer and AI enthusiast, my mission is to empower you with tools and insights that enhance productivity and creativity through innovative AI applications.                      </p>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg bs1 shadow-lg p-6 mb-6">
   <h2 className="text-2xl font-semibold mb-4 text-black dark:text-white">Our website is divided into several core areas, each tailored to different aspects of AI integration and application:</h2>
   <ul className="list-disc list-inside">
     <li className="text-lg text-gray-700 dark:text-gray-300 mb-2"> <Link className="text underline hover:no-underline font-bold text-primary" href="/">Best AI Tools</Link>  Explore an extensive collection of artificial intelligence tools and resources, all designed for boosting your productivity and creativity.</li>

@@ -628,7 +628,36 @@ export default function BlogSidebarPage({ data,   }) {
                     value={data.content}
                     components={portableTextComponents}
                   />
-                </div>             
+                </div>  
+                <div className="container   ">
+    {/* Existing Content */}
+    <div className="lg:m-4 flex flex-wrap">
+      {/* Your existing content here */}
+    </div>
+
+    {/* FAQ Section */}
+    <div className="bs1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-6 mt-10">
+      <h2 className="text-3xl font-bold text-black dark:text-white mb-6">
+        Frequently Asked Questions
+      </h2>
+     
+       {data.faqs && data.faqs.slice(0, 1).map((faq) => (
+      <div className="space-y-4">
+        <details className="group" open>
+          <summary className="cursor-pointer text-lg font-medium text-black dark:text-white bg-gray-100 dark:bg-gray-800 p-4 rounded-lg transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700">
+         {faq.question}
+          </summary>
+          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+            <p className="text-base text-gray-700 dark:text-gray-300">
+            {faq.answer}
+            </p>
+          </div>
+        </details>
+        
+      </div>
+        ))}
+    </div>
+  </div>                   
               </div>
               {/* {renderTableOfContents()} */}
               <div className="items-center justify-between sm:flex mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">

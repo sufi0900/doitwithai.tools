@@ -55,6 +55,28 @@ export const aitool = {
         },
       ],
     },
+    {
+      name: "faqs",
+      title: "FAQ's",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            {
+              name: "question",
+              title: "Question",
+              type: "string",
+            },
+            {
+              name: "answer",
+              title: "Answer",
+              type: "string",
+            },
+          ],
+        },
+      ],
+    },
     
     {
       name: "readTime",
@@ -184,8 +206,28 @@ export const aitool = {
       ],
     },
   
-  
-   
+    // {
+    //   name: "faqs",
+    //   title: "FAQs",
+    //   type: "array",
+    //   of: [
+    //     {
+    //       type: "object",
+    //       fields: [
+    //         {
+    //           name: "question",
+    //           title: "Question",
+    //           type: "string",
+    //         },
+    //         {
+    //           name: "answer",
+    //           title: "Answer",
+    //           type: "text",
+    //         },
+    //       ],
+    //     },
+    //   ],
+    // },
 
     {
       name: "isHomePageTrendBig",
@@ -303,6 +345,8 @@ export const aitool = {
           list: [
            {title: "AI Image Generator", value: "ai-image-gen"},
            {title: "AI Video Generator", value: "ai-video-gen"},
+           {title: "AI Chrome Extension", value: "ai-video-gen"},
+           {title: "AI Chrome Extension", value: "ai-video-gen"},
        
           ]
       },
