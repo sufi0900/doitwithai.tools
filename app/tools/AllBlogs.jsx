@@ -22,7 +22,7 @@ async function fetchAllBlogs(page = 1, limit = 2) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
     groq`*[_type == "aitool"] | order(publishedAt desc) {
-      _id, title, slug, mainImage, tags, overview, body, publishedAt
+      _id, title, slug, mainImage, readTime, tags, overview, body, publishedAt
     }[${start}...${start + limit}]`
   );
   return result;
@@ -218,7 +218,7 @@ export default function AllBlogs() {
           data.map((post) =>
         <CardComponent
           key={post._id}
-          ReadTime={post.readTime?.minutes} 
+          readTime={post.readTime?.minutes} 
           overview={post.overview}
           title={post.title}
           tags={post.tags} 

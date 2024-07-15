@@ -11,7 +11,7 @@ export default function SingleBlog({
   mainImage,
   title,
   overview,
-  ReadTime,
+  readTime,
   slug,
   tags
 }) {
@@ -55,7 +55,7 @@ export default function SingleBlog({
   component="div" // Use 'div' instead of 'img' to allow nesting of Next.js <Image> tag
   sx={{
     position: "relative", // Required for positioning Next.js <Image> within CardMedia
-    height: { xs: "auto", lg: 262 }, // Auto height for small devices and fixed height for large devices
+    height: { xs: "auto", lg: 222 }, // Auto height for small devices and fixed height for large devices
     overflow: "hidden", // Ensure content doesn't overflow
   }}
   className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
@@ -87,7 +87,7 @@ export default function SingleBlog({
               <div className="flex items-center">
                 <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
                 <p className="text-sm font-medium text-dark dark:text-white">
-                Read Time:  {ReadTime} min
+                Read Time:  {readTime} min
                 </p>
               </div>
               <div className="flex items-center">

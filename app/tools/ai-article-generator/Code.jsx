@@ -97,7 +97,7 @@ const Page = () => {
     isBlog.map((post) => 
       <CardComponent     key={post._id}
       tags={post.tags} 
-      ReadTime={post.readTime?.minutes} 
+      readTime={post.readTime?.minutes} 
       overview={post.overview}
      
       title={post.title}

@@ -9,42 +9,42 @@ const SubCategories = () => {
       imageUrl:
         "https://t3.ftcdn.net/jpg/05/71/06/76/360_F_571067620_JS5T5TkDtu3gf8Wqm78KoJRF1vobPvo6.jpg",
       heading: "AI Image Generator",
-      link: "ai-tools/ai-image-generator",
+      link: "tools/ai-image-generator",
       description:"Explore a comprehensive list of blogs on the top AI tools for generating images. Our detailed reviews help you find the perfect text-to-video creator for your projects.",
     },
     {
       imageUrl:
         "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
       heading: "AI Video Generator",
-      link: "ai-tools/ai-video-generator",
+      link: "tools/ai-video-generator",
       description:"Explore a comprehensive list of blogs on the top AI tools for generating and Editing videos. Our detailed reviews help you find the perfect text-to-video creator for your projects.",
     },
     {
       imageUrl:
         "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
       heading: "AI Extension",
-      link: "ai-tools/ai-extension",
+      link: "tools/ai-extension",
       description:"Get the best AI extensions for your needs by reading our comprehensive blogs! Boost your productivity with strong AI technologies that are all Chrome extensions",
     },
     {
       imageUrl:
         "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
       heading: "AI Website Builder",
-      link: "ai-tools/ai-website-builder",
+      link: "tools/ai-website-builder",
       description:"Explore comprehensive list of blogs to find the best AI website builder! Launch your dream website quickly and easily with the power of artificial intelligence.",
     },
     {
       imageUrl:
         "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
       heading: "AI Article Writer",
-      link: "ai-tools/ai-article-generator",
+      link: "tools/ai-article-generator",
       description:"Explore our huge blog collection to find the best AI writing tools for producing interesting blogs, articles, and more. This will help you produce more content.",
     },
     {
       imageUrl:
         "https://t3.ftcdn.net/jpg/05/29/29/82/360_F_529298244_DuxHOeHrixTHREpexOvLpAk6opmRXAP0.jpg",
       heading: "AI logo generator",
-      link: "ai-tools/ai-logo-generator",
+      link: "tools/ai-logo-generator",
       description:"Discover powerful AI tools to design your brand's logo! Find the perfect logo maker with in-depth reviews on our blog and get started for free.",
     },
 

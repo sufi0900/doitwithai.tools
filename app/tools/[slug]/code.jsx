@@ -523,10 +523,10 @@ export default function BlogSidebarPage({ data, metatitle, currentCategory  }) {
                 </h1>
         <div className="card4  rounded-xl">
         <figure className=" relative overflow-hidden rounded-lg">
-                        <div className="overflow-hidden lg:aspect-[40/16]">
+                        <div className="overflow-hidden lg:aspect-[28/16]">
                           <a href={urlForImage(data.mainImage).url()}>
                             <Image
-                              className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out  hover:scale-[1.5] dark:shadow-gray-800"
+                              className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out  hover:scale-[1.05] dark:shadow-gray-800"
                               src={urlForImage(data.mainImage).url()}
                               alt=""
                               layout="responsive"

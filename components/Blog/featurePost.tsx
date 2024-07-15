@@ -58,7 +58,7 @@ import Image from "next/image";
                        component="div" 
                         sx={{
                           position: "relative", // Required for positioning Next.js <Image> within CardMedia
-                          height: { xs: "auto", lg: 280 }, // Auto height for small devices and fixed height for large devices
+                          height: { xs: "auto", lg: 310 }, // Auto height for small devices and fixed height for large devices
                           width:{xs: "auto", lg: 540 },
                           overflow: "hidden",
                           borderRadius:"10px"
