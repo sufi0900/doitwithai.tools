@@ -118,7 +118,7 @@ export default async function ParentPage({  params }) {
 
   const image = `${data.image}`;
   const author = `${data.author}`;
-  const canonicalUrl = `https://sufi-blog-website.vercel.app/tools/${params.slug}`;
+  const canonicalUrl = `https://www.doitwithai.tools/tools/${params.slug}`;
 
   return (
     <>
