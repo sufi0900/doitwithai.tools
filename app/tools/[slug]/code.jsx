@@ -247,20 +247,26 @@ export default function BlogSidebarPage({ data, }) {
   
     list: {
       bullet: ({ children }) => (
-        <ul className="mb-10 list-inside list-disc text-body-color">
+        <ul className="mb-10 list-inside  custom-bullet-list">
           {children}
         </ul>
       ),
+  
+    
       number: ({ children }) => (
-        <ol className="list-inside list-decimal">{children}</ol>
+        <ol className="mb-10 list-inside text-body-color custom-number-list">
+        {children}
+      </ol>
       ),
     },
     listItem: {
       bullet: ({ children }) => (
-        <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
+        <li
+        className="mb-4 text-lg font-medium leading-relaxed  text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
           {children}
         </li>
       ),
+  
       number: ({ children }) => <li className="...">{children}</li>,
     },
     marks: {
