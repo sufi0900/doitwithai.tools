@@ -505,6 +505,7 @@ export default function BlogSidebarPage({ data, }) {
     <>  
       <section className="overflow-hidden pb-[120px] pt-[40px]">
         <div className="container">
+          
         {loading ? (
          
 <BigSkeleton/>
@@ -634,6 +635,9 @@ export default function BlogSidebarPage({ data, }) {
                       </>
                     )}
                   </button>
+               
+
+                  {renderTableOfContents()}
                  
                     <div className="customanchor mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                       <PortableText
@@ -653,7 +657,7 @@ export default function BlogSidebarPage({ data, }) {
         Frequently Asked Questions
       </h2>
      
-       {data.faqs && data.faqs.slice(0, 1).map((faq) => (
+       {data.faqs && data.faqs.map((faq) => (
       <div key={faq.question} className="space-y-4">
         <details className="group" open>
           <summary className="cursor-pointer text-lg font-medium text-black dark:text-white bg-gray-100 dark:bg-gray-800 p-4 rounded-lg transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700">
@@ -676,7 +680,7 @@ export default function BlogSidebarPage({ data, }) {
 
 
 
-                  {/* {renderTableOfContents()} */}
+                   {renderTableOfContents()} 
                   <div className="items-center justify-between sm:flex mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="mb-5">
                       <h4 className="mb-3 text-sm font-medium text-body-color">
