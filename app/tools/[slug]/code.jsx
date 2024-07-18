@@ -329,7 +329,7 @@ export default function BlogSidebarPage({ data, }) {
                     {row.cells.map((cell, cellIndex) => (
                       <td
                         key={cellIndex}
-                        className="px-6 py-4 font-medium dark:text-white"
+                        className="px-6 py-4  text-base font-medium text- dark:text-white"
                       >
                         {cell}
                       </td>
@@ -484,21 +484,22 @@ export default function BlogSidebarPage({ data, }) {
 
     return (
       <div
-        className={`transition-max-height mb-8 overflow-hidden ${
+        className={`transition-max-height mb-8 overflow-hidden bs1 ${
           isTableOfContentsOpen ? "max-h-full" : "max-h-0"
         }`}
       >
-        <div className="card rounded border border-gray-300 p-4">
-          <h3 className="mb-2 text-lg font-semibold">Table of Contents</h3>
-          <ul className="list-disc pl-4">
+        <div className=" rounded border border-gray-300 p-4">
+          <h3 className="text-lg font-semibold">Table of Contents</h3>
+          <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb]  custom-bullet-list">
             {data.tableOfContents.map((heading, index) => (
-              <li key={index}>
-                <a href={`#heading${index + 1}`}>{heading}</a>
+              <li className="mb-2" key={index}>
+                <a className=" text-black dark:text-white " >{heading}</a>
               </li>
             ))}
           </ul>
         </div>
       </div>
+
     );
   };
   return (
