@@ -11,6 +11,7 @@ import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import SkelCard from "@/components/Blog/Skeleton/Card"
+import classNames from 'classnames';
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
@@ -64,25 +65,25 @@ export default function BlogSidebarPage({ data, }) {
   </p>
       ),
       h1: ({ children }) => (
-        <h1 className="mb-4 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
+        <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white  transition-colors duration-300 hover:text-blue-600   dark:hover:text-blue-400 ">
           {children}
         </h1>
       ),
   
       h2: ({ children }) => (
-        <h2 className="font-xl mb-10 font-bold leading-tight text-black dark:text-white sm:text-2xl sm:leading-tight lg:text-xl lg:leading-tight xl:text-2xl xl:leading-tight">
+        <h2 className="mb-4 text-3xl font-extrabold leading-tight text-gray-800 dark:text-white  ">
           {children}
         </h2>
       ),
       h3: ({ children }) => (
-        <h3 className="mb-4 text-2xl font-semibold leading-tight text-gray-800 dark:text-gray-200 sm:text-3xl lg:text-2xl xl:text-3xl">
+        <h3 className="mb-4 text-2xl  font-bold leading-tight text-gray-800 dark:text-gray-200  ">
           {children}
         </h3>
       ),
     
       // Heading 4
       h4: ({ children }) => (
-        <h4 className="mb-4 text-xl font-semibold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
+        <h4 className="mb-4 text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
           {children}
         </h4>
       ),
@@ -271,7 +272,7 @@ export default function BlogSidebarPage({ data, }) {
     },
     marks: {
       strong: ({ children }) => (
-        <strong className="text-primary dark:text-white">{children}</strong>
+        <strong className="text-black dark:text-white">{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
     },
@@ -285,11 +286,11 @@ export default function BlogSidebarPage({ data, }) {
           <div className="card3 rounded-xl ">
   
             <figure className=" relative my-8 ">
-              <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
+              <div className="w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
                 <a href={imageUrl}>
                   <Image
                   alt={value.alt}
-                    className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+                    className=" h-full w-full object-cover transition-transform duration-500 ease-in-out  hover:scale-[1.1]"
                     src={imageUrl}
                     layout="responsive"
                     width={500} 
@@ -467,7 +468,16 @@ export default function BlogSidebarPage({ data, }) {
 
   }, []);
 
+  const bgColors = [
+    'bg-cyan-200',
+    'bg-green-200',
+    'bg-amber-200',
+    
+    'bg-red-200',
+    'bg-indigo-200'
 
+  ];
+  
 
   const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(true);
 
@@ -525,7 +535,7 @@ export default function BlogSidebarPage({ data, }) {
           <div className="lg:m-4  flex flex-wrap">
         <div className=" lg:-mx-5 w-full overflow-hidden rounded">
           <div className="lg:m-4 ">
-        <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
+        <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white  transition-colors duration-300 hover:text-blue-600   dark:hover:text-blue-400">
                 {data.title}
                 </h1>
                
@@ -670,21 +680,25 @@ export default function BlogSidebarPage({ data, }) {
         Frequently Asked Questions
       </h2>
      
-       {data.faqs && data.faqs.map((faq) => (
-      <div key={faq.question} className="space-y-4">
-        <details className="group" open>
-          <summary className="cursor-pointer text-lg font-medium text-black dark:text-white bg-gray-100 dark:bg-gray-800 p-4 rounded-lg transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700">
-         {faq.question}
-          </summary>
-          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <p className="text-base text-gray-700 dark:text-gray-300">
-            {faq.answer}
-            </p>
-          </div>
-        </details>
-        
+      {data.faqs && data.faqs.map((faq, index) => (
+  <div key={faq.question} className="space-y-4">
+    <details className="group" open>
+      <summary
+        className={classNames(
+          'cursor-pointer text-lg font-medium text-black    p-4 rounded-lg transition-all duration-300 hover:bg-gray-200 ',
+          bgColors[index % bgColors.length] // Apply different background color
+        )}
+      >
+        {faq.question}
+      </summary>
+      <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+        <p className="text-base text-gray-700 dark:text-gray-300">
+          {faq.answer}
+        </p>
       </div>
-        ))}
+    </details>
+  </div>
+))}
     </div>
   </div>        
                   </div>
