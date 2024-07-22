@@ -469,31 +469,40 @@ export default function BlogSidebarPage({ data, }) {
 
 
 
-  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
+  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(true);
 
   // Function to toggle the state of the table of contents box
   const toggleTableOfContents = () => {
     setIsTableOfContentsOpen(!isTableOfContentsOpen);
   };
-
+  
   // Function to render the table of contents
   const renderTableOfContents = () => {
     if (!data.tableOfContents || data.tableOfContents.length === 0) {
       return null; // Return null if table of contents is empty
     }
-
+  
     return (
       <div
         className={`transition-max-height mb-8 overflow-hidden bs1 ${
           isTableOfContentsOpen ? "max-h-full" : "max-h-0"
         }`}
       >
-        <div className=" rounded border border-gray-300 p-4">
+        <div className="rounded border border-gray-300 p-4">
           <h3 className="text-lg font-semibold">Table of Contents</h3>
-          <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb]  custom-bullet-list">
-            {data.tableOfContents.map((heading, index) => (
+          <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb] custom-bullet-list">
+            {data.tableOfContents.map((item, index) => (
               <li className="mb-2" key={index}>
-                <a className=" text-black dark:text-white " >{heading}</a>
+                <a className="text-black dark:text-white">{item.heading}</a>
+                {item.subheadings && item.subheadings.length > 0 && (
+                  <ul className="ml-4 list-inside list-disc">
+                    {item.subheadings.map((subheading, subIndex) => (
+                      <li className="mb-2 mt-2" key={subIndex}>
+                        <a className="text-black dark:text-white">{subheading}</a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>
@@ -519,6 +528,9 @@ export default function BlogSidebarPage({ data, }) {
         <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
                 {data.title}
                 </h1>
+               
+
+        
         <div className="card4  rounded-xl">
         <figure className=" relative overflow-hidden rounded-lg">
                         <div className="overflow-hidden lg:aspect-[28/16]">
@@ -879,13 +891,13 @@ export default function BlogSidebarPage({ data, }) {
                   )}
 
           <div className="container border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-        <h1 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+        <h2 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
           <span className="relative  mr-2 inline-block">
            Related
             <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
           </span>
           <span className="text-blue-500">Post</span>
-        </h1>
+        </h2>
         <div className="flex flex-wrap justify-start">
         {loading ? (
           // Display Skeleton components while loading

@@ -10,6 +10,14 @@ export const aitool = {
       description: "title of aitool",
     },
     {
+      name: "slug",
+      type: "slug",
+      title: "Slug",
+      options: {
+        source: "title",
+      },
+    },
+    {
       name: "metatitle",
       title: "Meta Title",
       type: "string",
@@ -55,28 +63,7 @@ export const aitool = {
         },
       ],
     },
-    {
-      name: "faqs",
-      title: "FAQ's",
-      type: "array",
-      of: [
-        {
-          type: "object",
-          fields: [
-            {
-              name: "question",
-              title: "Question",
-              type: "string",
-            },
-            {
-              name: "answer",
-              title: "Answer",
-              type: "string",
-            },
-          ],
-        },
-      ],
-    },
+   
     
     {
       name: "readTime",
@@ -97,22 +84,10 @@ export const aitool = {
       title: "overview",
       type: "string",
     },
-    {
-      name: "slug",
-      type: "slug",
-      title: "Slug",
-      options: {
-        source: "title",
-      },
-    },
    
-    {
-      name: "tableOfContents",
-      title: "Table of Contents",
-      type: "array",
-      
-      of: [{ type: "string" }],
-    },
+   
+    
+    
     {
       name: "mainImage",
       title: "Main Image",
@@ -143,6 +118,29 @@ export const aitool = {
       ]
     },
     
+    {
+      name: "tableOfContents",
+      title: "Table of Contents",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            {
+              name: "heading",
+              title: "Heading",
+              type: "string",
+            },
+            {
+              name: "subheadings",
+              title: "Subheadings",
+              type: "array",
+              of: [{ type: "string" }],
+            },
+          ],
+        },
+      ],
+    },
     
     {
       name: "content",
@@ -205,30 +203,29 @@ export const aitool = {
         },
       ],
     },
-  
-    // {
-    //   name: "faqs",
-    //   title: "FAQs",
-    //   type: "array",
-    //   of: [
-    //     {
-    //       type: "object",
-    //       fields: [
-    //         {
-    //           name: "question",
-    //           title: "Question",
-    //           type: "string",
-    //         },
-    //         {
-    //           name: "answer",
-    //           title: "Answer",
-    //           type: "text",
-    //         },
-    //       ],
-    //     },
-    //   ],
-    // },
-
+    {
+      name: "faqs",
+      title: "FAQ's",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            {
+              name: "question",
+              title: "Question",
+              type: "string",
+            },
+            {
+              name: "answer",
+              title: "Answer",
+              type: "string",
+            },
+          ],
+        },
+      ],
+    },
+   
     {
       name: "isHomePageTrendBig",
       title: "isHomePageTrendBig",

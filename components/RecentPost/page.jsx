@@ -40,13 +40,13 @@ export default  function RecentPosts() {
   return (
     <section className="pb-[20px] pt-[20px]">
       <div className="container">
-        <h1 className="mb-8  text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+        <h2 className="mb-8  text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
           <span className="relative mr-2 inline-block">
             Recent
             <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
           </span>
           <span className="text-blue-500">Post</span>
-        </h1>
+        </h2>
        
 
         <div className="flex  flex-wrap justify-start">
