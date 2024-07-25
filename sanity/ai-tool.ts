@@ -41,49 +41,12 @@ export const aitool = {
         type: "string",
         
       },
-    {
-      name: "tags",
-      title: "Tags",
-      type: "array",
-      of: [
-        {
-          type: "object",
-          fields: [
-            {
-              name: "name",
-              title: "Tag Name",
-              type: "string",
-            },
-            {
-              name: "link",
-              title: "Custom Link",
-              type: "url", 
-            },
-          ],
-        },
-      ],
-    },
+      {
+        name: "overview",
+        title: "overview",
+        type: "string",
+      },
    
-    
-    {
-      name: "readTime",
-      title: "Read Time",
-      type: "object",
-      fields: [
-       
-        {
-          name: "minutes",
-          title: "Minutes",
-          type: "number",
-        },
-       
-      ],
-    },
-    {
-      name: "overview",
-      title: "overview",
-      type: "string",
-    },
    
    
     
@@ -105,7 +68,7 @@ export const aitool = {
         {
           name: "imageDescription",
           title: "Image Description",
-          type: "array", // Rich text array for detailed description
+          type: "array", 
           of: [
             {
               type: "block",
@@ -333,21 +296,46 @@ export const aitool = {
       title: "isAiWebsiteBuilderBig",
       type: "boolean",
     },
+   
     {
-      name: "category",
-      title: "Category",
-      type: "string",
-      options
-    : {
-          list: [
-           {title: "AI Image Generator", value: "ai-image-gen"},
-           {title: "AI Video Generator", value: "ai-video-gen"},
-           {title: "AI Chrome Extension", value: "ai-video-gen"},
-           {title: "AI Chrome Extension", value: "ai-video-gen"},
-       
-          ]
-      },
+      name: "tags",
+      title: "Tags",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            {
+              name: "name",
+              title: "Tag Name",
+              type: "string",
+            },
+            {
+              name: "link",
+              title: "Custom Link",
+              type: "url", 
+            },
+          ],
+        },
+      ],
     },
+   
+    
+    {
+      name: "readTime",
+      title: "Read Time",
+      type: "object",
+      fields: [
+       
+        {
+          name: "minutes",
+          title: "Minutes",
+          type: "number",
+        },
+       
+      ],
+    },
+   
     {
       name: "publishedAt",
       title: "Published at",
