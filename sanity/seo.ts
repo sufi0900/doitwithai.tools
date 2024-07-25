@@ -10,6 +10,14 @@ export const seo = {
         description: "title of SEO",
       },
       {
+        name: "slug",
+        type: "slug",
+        title: "Slug",
+        options: {
+          source: "title",
+        },
+      },
+      {
         name: "metatitle",
         title: "Meta Title",
         type: "string",
@@ -33,85 +41,16 @@ export const seo = {
           type: "string",
           
         },
-      {
-        name: "tags",
-        title: "Tags",
-        type: "array",
-        of: [
-          {
-            type: "object",
-            fields: [
-              {
-                name: "name",
-                title: "Tag Name",
-                type: "string",
-              },
-              {
-                name: "link",
-                title: "Custom Link",
-                type: "url", 
-              },
-            ],
-          },
-        ],
-      },
-      {
-        name: "faqs",
-        title: "FAQ's",
-        type: "array",
-        of: [
-          {
-            type: "object",
-            fields: [
-              {
-                name: "question",
-                title: "Question",
-                type: "string",
-              },
-              {
-                name: "answer",
-                title: "Answer",
-                type: "string",
-              },
-            ],
-          },
-        ],
-      },
-      {
-        name: "readTime",
-        title: "Read Time",
-        type: "object",
-        fields: [
-         
-          {
-            name: "minutes",
-            title: "Minutes",
-            type: "number",
-          },
-         
-        ],
-      },
-      {
-        name: "overview",
-        title: "overview",
-        type: "string",
-      },
-      {
-        name: "slug",
-        type: "slug",
-        title: "Slug",
-        options: {
-          source: "title",
+        {
+          name: "overview",
+          title: "overview",
+          type: "string",
         },
-      },
      
-      {
-        name: "tableOfContents",
-        title: "Table of Contents",
-        type: "array",
-        
-        of: [{ type: "string" }],
-      },
+     
+     
+      
+      
       {
         name: "mainImage",
         title: "Main Image",
@@ -129,7 +68,7 @@ export const seo = {
           {
             name: "imageDescription",
             title: "Image Description",
-            type: "array", // Rich text array for detailed description
+            type: "array", 
             of: [
               {
                 type: "block",
@@ -142,6 +81,29 @@ export const seo = {
         ]
       },
       
+      {
+        name: "tableOfContents",
+        title: "Table of Contents",
+        type: "array",
+        of: [
+          {
+            type: "object",
+            fields: [
+              {
+                name: "heading",
+                title: "Heading",
+                type: "string",
+              },
+              {
+                name: "subheadings",
+                title: "Subheadings",
+                type: "array",
+                of: [{ type: "string" }],
+              },
+            ],
+          },
+        ],
+      },
       
       {
         name: "content",
@@ -204,7 +166,29 @@ export const seo = {
           },
         ],
       },
-    
+      {
+        name: "faqs",
+        title: "FAQ's",
+        type: "array",
+        of: [
+          {
+            type: "object",
+            fields: [
+              {
+                name: "question",
+                title: "Question",
+                type: "string",
+              },
+              {
+                name: "answer",
+                title: "Answer",
+                type: "string",
+              },
+            ],
+          },
+        ],
+      },
+     
   
       {
         name: "isHomePageTrendBig",
@@ -243,11 +227,50 @@ export const seo = {
       },
    
       {
+        name: "tags",
+        title: "Tags",
+        type: "array",
+        of: [
+          {
+            type: "object",
+            fields: [
+              {
+                name: "name",
+                title: "Tag Name",
+                type: "string",
+              },
+              {
+                name: "link",
+                title: "Custom Link",
+                type: "url", 
+              },
+            ],
+          },
+        ],
+      },
+     
+      
+      {
+        name: "readTime",
+        title: "Read Time",
+        type: "object",
+        fields: [
+         
+          {
+            name: "minutes",
+            title: "Minutes",
+            type: "number",
+          },
+         
+        ],
+      },
+     
+      {
         name: "publishedAt",
         title: "Published at",
         type: "datetime",
       },
-     
+      
     ],
   };
   

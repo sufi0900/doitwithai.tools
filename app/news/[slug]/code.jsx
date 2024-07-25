@@ -11,170 +11,155 @@ import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import SkelCard from "@/components/Blog/Skeleton/Card"
+import classNames from 'classnames';
+
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 
-
-export const revalidate = false;
-export const dynamic = "force-dynamic";
-
-// Define a custom table component
-
-// Update the portableTextComponents object to include the custom table component
 import "@/styles/customanchor.css";
 import Link from "next/link";
+export const revalidate = false;
+export const dynamic = "force-dynamic";
 async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
   const start = (page - 1) * limit;
   const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
   const result = await client.fetch(query, { categories });
   return result;
 }
-const imgdesc ={
-  block: {  
-    normal: ({ children }) => (
-      <p   className="dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400">
-  {children}
-</p>
-    ),
+
+
+export default function BlogSidebarPage({ data, }) {
+  
+  const imgdesc ={
+    block: {  
+      normal: ({ children }) => (
+        <p   className="dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400">
+    {children}
+  </p>
+      ),
+      link: ({ children }) => (
+        <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+          {children}
+        </a>
+      ),
+      a: ({ children }) => (
+        <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+          {children}
+        </a>
+      )
+    
+    },
     link: ({ children }) => (
       <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
         {children}
       </a>
     ),
-    a: ({ children }) => (
-      <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
-        {children}
-      </a>
-    )
+  }
   
-  },
-  link: ({ children }) => (
-    <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
-      {children}
-    </a>
-  ),
-}
-
-const portableTextComponents = {
-  block: {
-    normal: ({ children }) => (
-      <p className="mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
-  {children}
-</p>
-    ),
-    h1: ({ children }) => (
-      <h1 className="mb-4 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
-        {children}
-      </h1>
-    ),
-
-    h2: ({ children }) => (
-      <h2 className="font-xl mb-10 font-bold leading-tight text-black dark:text-white sm:text-2xl sm:leading-tight lg:text-xl lg:leading-tight xl:text-2xl xl:leading-tight">
-        {children}
-      </h2>
-    ),
-    h3: ({ children }) => (
-      <h3 className="mb-4 text-2xl font-semibold leading-tight text-gray-800 dark:text-gray-200 sm:text-3xl lg:text-2xl xl:text-3xl">
-        {children}
-      </h3>
-    ),
-  
-    // Heading 4
-    h4: ({ children }) => (
-      <h4 className="mb-4 text-xl font-semibold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
-        {children}
-      </h4>
-    ),
-  
-    // Heading 5
-    h5: ({ children }) => (
-      <h5 className="mb-4 text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
-        {children}
-      </h5>
-    ),
-    h6: ({ children }) => (
-      <div className="relative z-10 mb-10 overflow-hidden rounded-md bg-primary bg-opacity-10 p-8 md:p-9 lg:p-8 xl:p-9">
-        <h4 className="text-center text-base font-medium italic text-body-color">
-        <span className="absolute left-0 top-0 z-[-1]">
-                      <svg
-                        width="132"
-                        height="109"
-                        viewBox="0 0 132 109"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          opacity="0.5"
-                          d="M33.0354 90.11C19.9851 102.723 -3.75916 101.834 -14 99.8125V-15H132C131.456 -12.4396 127.759 -2.95278 117.318 14.5117C104.268 36.3422 78.7114 31.8952 63.2141 41.1934C47.7169 50.4916 49.3482 74.3435 33.0354 90.11Z"
-                          fill="url(#paint0_linear_111:606)"
-                        />
-                        <path
-                          opacity="0.5"
-                          d="M33.3654 85.0768C24.1476 98.7862 1.19876 106.079 -9.12343 108.011L-38.876 22.9988L100.816 -25.8905C100.959 -23.8126 99.8798 -15.5499 94.4164 0.87754C87.5871 21.4119 61.9822 26.677 49.5641 38.7512C37.146 50.8253 44.8877 67.9401 33.3654 85.0768Z"
-                          fill="url(#paint1_linear_111:606)"
-                        />
-                        <defs>
-                          <linearGradient
-                            id="paint0_linear_111:606"
-                            x1="94.7523"
-                            y1="82.0246"
-                            x2="8.40951"
-                            y2="52.0609"
-                            gradientUnits="userSpaceOnUse"
-                          >
-                            <stop stopColor="white" stopOpacity="0.06" />
-                            <stop
-                              offset="1"
-                              stopColor="white"
-                              stopOpacity="0"
-                            />
-                          </linearGradient>
-                          <linearGradient
-                            id="paint1_linear_111:606"
-                            x1="90.3206"
-                            y1="58.4236"
-                            x2="1.16149"
-                            y2="50.8365"
-                            gradientUnits="userSpaceOnUse"
-                          >
-                            <stop stopColor="white" stopOpacity="0.06" />
-                            <stop
-                              offset="1"
-                              stopColor="white"
-                              stopOpacity="0"
-                            />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                    </span>
-             
-                  
+  const portableTextComponents = {
+    block: {
+      normal: ({ children }) => (
+        <p className="mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+    {children}
+  </p>
+      ),
+      h1: ({ children }) => (
+        <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white  transition-colors duration-300 hover:text-blue-600   dark:hover:text-blue-400 ">
           {children}
-          <span className="absolute bottom-0 right-0 z-[-1]">
-              
-              <svg
-                width="53"
-                height="30"
-                viewBox="0 0 53 30"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle
-                  opacity="0.8"
-                  cx="37.5"
-                  cy="37.5"
-                  r="37.5"
-                  fill="#4A6CF7"
-                />
-                <mask
-                  id="mask0_111:596"
-                  style={{ maskType: "alpha" }}
-                  maskUnits="userSpaceOnUse"
-                  x="0"
-                  y="0"
-                  width="75"
-                  height="75"
+        </h1>
+      ),
+  
+      h2: ({ children }) => (
+        <h2 className="mb-4 text-3xl font-extrabold leading-tight text-gray-800 dark:text-white  ">
+          {children}
+        </h2>
+      ),
+      h3: ({ children }) => (
+        <h3 className="mb-4 text-2xl  font-bold leading-tight text-gray-800 dark:text-gray-200  ">
+          {children}
+        </h3>
+      ),
+    
+      // Heading 4
+      h4: ({ children }) => (
+        <h4 className="mb-4 text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
+          {children}
+        </h4>
+      ),
+    
+      // Heading 5
+      h5: ({ children }) => (
+        <h5 className="mb-4 text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+          {children}
+        </h5>
+      ),
+      h6: ({ children }) => (
+        <div className="relative z-10 mb-10 overflow-hidden rounded-md bg-primary bg-opacity-10 p-8 md:p-9 lg:p-8 xl:p-9">
+          <h4 className="text-center text-base font-medium italic text-body-color">
+          <span className="absolute left-0 top-0 z-[-1]">
+                        <svg
+                          width="132"
+                          height="109"
+                          viewBox="0 0 132 109"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            opacity="0.5"
+                            d="M33.0354 90.11C19.9851 102.723 -3.75916 101.834 -14 99.8125V-15H132C131.456 -12.4396 127.759 -2.95278 117.318 14.5117C104.268 36.3422 78.7114 31.8952 63.2141 41.1934C47.7169 50.4916 49.3482 74.3435 33.0354 90.11Z"
+                            fill="url(#paint0_linear_111:606)"
+                          />
+                          <path
+                            opacity="0.5"
+                            d="M33.3654 85.0768C24.1476 98.7862 1.19876 106.079 -9.12343 108.011L-38.876 22.9988L100.816 -25.8905C100.959 -23.8126 99.8798 -15.5499 94.4164 0.87754C87.5871 21.4119 61.9822 26.677 49.5641 38.7512C37.146 50.8253 44.8877 67.9401 33.3654 85.0768Z"
+                            fill="url(#paint1_linear_111:606)"
+                          />
+                          <defs>
+                            <linearGradient
+                              id="paint0_linear_111:606"
+                              x1="94.7523"
+                              y1="82.0246"
+                              x2="8.40951"
+                              y2="52.0609"
+                              gradientUnits="userSpaceOnUse"
+                            >
+                              <stop stopColor="white" stopOpacity="0.06" />
+                              <stop
+                                offset="1"
+                                stopColor="white"
+                                stopOpacity="0"
+                              />
+                            </linearGradient>
+                            <linearGradient
+                              id="paint1_linear_111:606"
+                              x1="90.3206"
+                              y1="58.4236"
+                              x2="1.16149"
+                              y2="50.8365"
+                              gradientUnits="userSpaceOnUse"
+                            >
+                              <stop stopColor="white" stopOpacity="0.06" />
+                              <stop
+                                offset="1"
+                                stopColor="white"
+                                stopOpacity="0"
+                              />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                      </span>
+               
+                    
+            {children}
+            <span className="absolute bottom-0 right-0 z-[-1]">
+                
+                <svg
+                  width="53"
+                  height="30"
+                  viewBox="0 0 53 30"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
                   <circle
                     opacity="0.8"
@@ -183,190 +168,212 @@ const portableTextComponents = {
                     r="37.5"
                     fill="#4A6CF7"
                   />
-                </mask>
-                <g mask="url(#mask0_111:596)">
-                  <circle
-                    opacity="0.8"
-                    cx="37.5"
-                    cy="37.5"
-                    r="37.5"
-                    fill="url(#paint0_radial_111:596)"
-                  />
-                  <g opacity="0.8" filter="url(#filter0_f_111:596)">
+                  <mask
+                    id="mask0_111:596"
+                    style={{ maskType: "alpha" }}
+                    maskUnits="userSpaceOnUse"
+                    x="0"
+                    y="0"
+                    width="75"
+                    height="75"
+                  >
                     <circle
-                      cx="40.8089"
-                      cy="19.853"
-                      r="15.4412"
-                      fill="white"
+                      opacity="0.8"
+                      cx="37.5"
+                      cy="37.5"
+                      r="37.5"
+                      fill="#4A6CF7"
                     />
+                  </mask>
+                  <g mask="url(#mask0_111:596)">
+                    <circle
+                      opacity="0.8"
+                      cx="37.5"
+                      cy="37.5"
+                      r="37.5"
+                      fill="url(#paint0_radial_111:596)"
+                    />
+                    <g opacity="0.8" filter="url(#filter0_f_111:596)">
+                      <circle
+                        cx="40.8089"
+                        cy="19.853"
+                        r="15.4412"
+                        fill="white"
+                      />
+                    </g>
                   </g>
-                </g>
-                <defs>
-                  <filter
-                    id="filter0_f_111:596"
-                    x="4.36768"
-                    y="-16.5881"
-                    width="72.8823"
-                    height="72.8823"
-                    filterUnits="userSpaceOnUse"
-                    colorInterpolationFilters="sRGB"
-                  >
-                    <feFlood
-                      floodOpacity="0"
-                      result="BackgroundImageFix"
-                    />
-                    <feBlend
-                      mode="normal"
-                      in="SourceGraphic"
-                      in2="BackgroundImageFix"
-                      result="shape"
-                    />
-                    <feGaussianBlur
-                      stdDeviation="10.5"
-                      result="effect1_foregroundBlur_111:596"
-                    />
-                  </filter>
-                  <radialGradient
-                    id="paint0_radial_111:596"
-                    cx="0"
-                    cy="0"
-                    r="1"
-                    gradientUnits="userSpaceOnUse"
-                    gradientTransform="translate(37.5 37.5) rotate(90) scale(40.2574)"
-                  >
-                    <stop stopOpacity="0.47" />
-                    <stop offset="1" stopOpacity="0" />
-                  </radialGradient>
-                </defs>
-              </svg>
-            </span>
-        </h4>
-      </div>
-    ),
-  },
-
-  list: {
-    bullet: ({ children }) => (
-      <ul className="mb-10 list-inside list-disc text-body-color">
+                  <defs>
+                    <filter
+                      id="filter0_f_111:596"
+                      x="4.36768"
+                      y="-16.5881"
+                      width="72.8823"
+                      height="72.8823"
+                      filterUnits="userSpaceOnUse"
+                      colorInterpolationFilters="sRGB"
+                    >
+                      <feFlood
+                        floodOpacity="0"
+                        result="BackgroundImageFix"
+                      />
+                      <feBlend
+                        mode="normal"
+                        in="SourceGraphic"
+                        in2="BackgroundImageFix"
+                        result="shape"
+                      />
+                      <feGaussianBlur
+                        stdDeviation="10.5"
+                        result="effect1_foregroundBlur_111:596"
+                      />
+                    </filter>
+                    <radialGradient
+                      id="paint0_radial_111:596"
+                      cx="0"
+                      cy="0"
+                      r="1"
+                      gradientUnits="userSpaceOnUse"
+                      gradientTransform="translate(37.5 37.5) rotate(90) scale(40.2574)"
+                    >
+                      <stop stopOpacity="0.47" />
+                      <stop offset="1" stopOpacity="0" />
+                    </radialGradient>
+                  </defs>
+                </svg>
+              </span>
+          </h4>
+        </div>
+      ),
+    },
+  
+    list: {
+      bullet: ({ children }) => (
+        <ul className="mb-10 list-inside  custom-bullet-list">
+          {children}
+        </ul>
+      ),
+  
+    
+      number: ({ children }) => (
+        <ol className="mb-10 list-inside text-body-color custom-number-list">
         {children}
-      </ul>
-    ),
-    number: ({ children }) => (
-      <ol className="list-inside list-decimal">{children}</ol>
-    ),
-  },
-  listItem: {
-    bullet: ({ children }) => (
-      <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
-        {children}
-      </li>
-    ),
-    number: ({ children }) => <li className="...">{children}</li>,
-  },
-  marks: {
-    strong: ({ children }) => (
-      <strong className="text-primary dark:text-white">{children}</strong>
-    ),
-    em: ({ children }) => <em>{children}</em>,
-  },
-
-  types: {
-    image: ({ value }) => {
-      const imageUrl = urlForImage(value.asset).url();
+      </ol>
+      ),
+    },
+    listItem: {
+      bullet: ({ children }) => (
+        <li
+        className="mb-4 text-lg font-medium leading-relaxed  text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+          {children}
+        </li>
+      ),
+  
+      number: ({ children }) => <li className="...">{children}</li>,
+    },
+    marks: {
+      strong: ({ children }) => (
+        <strong className="text-black dark:text-white">{children}</strong>
+      ),
+      em: ({ children }) => <em>{children}</em>,
+    },
+  
+    types: {
+      image: ({ value }) => {
+        const imageUrl = urlForImage(value.asset).url();
+        return (
+          <div className=" lg:-mx-2 w-full overflow-hidden rounded">
+          <div className="lg:m-4 ">
+          <div className="card3 rounded-xl ">
+  
+            <figure className=" relative my-8 ">
+              <div className="w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
+                <a href={imageUrl}>
+                  <Image
+                  alt={value.alt}
+                    className=" h-full w-full object-cover transition-transform duration-500 ease-in-out  hover:scale-[1.1]"
+                    src={imageUrl}
+                    layout="responsive"
+                    width={500} 
+                    height={500}
+                  />
+           
+                </a>
+              </div>
+              <figcaption 
+              
+              className=" imgdesc dark-bg-green-50 py-2 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400"            >
+            <PortableText value={value.imageDescriptionOfBlockImg} components={imgdesc} />
+              </figcaption>
+            </figure>
+          </div>
+          </div>
+          </div>
+        );
+      },
+      table: ({ value }) => (
+        <div className="card2 m-2 mb-4 mt-4 rounded-bl-xl rounded-br-xl rounded-tl-xl rounded-tr-xl shadow-md">
+          <div className="relative overflow-x-auto rounded-xl">
+            <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+              <tbody>
+                {value.rows.map((row, rowIndex) => (
+                  <tr
+                    key={rowIndex}
+                    className={`${
+                      rowIndex % 2 === 0
+                        ? "bg-green-100 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-900"
+                    } ${
+                      rowIndex % 4 === 0 ? "bg-green-100 dark:bg-gray-800" : ""
+                    } border-b hover:bg-gray-200 dark:hover:bg-gray-700`}
+                    style={{ borderRadius: "0.5rem" }} // Adjust border radius here
+                  >
+                    {row.cells.map((cell, cellIndex) => (
+                      <td
+                        key={cellIndex}
+                        className="px-6 py-4  text-base font-medium text- dark:text-white"
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ),
+    },
+    button: ({ value }) => {
+      const { text, link } = value;
       return (
-        <div className=" lg:-mx-2 w-full overflow-hidden rounded">
-        <div className="lg:m-4 ">
-        <div className="card3 rounded-xl ">
-
-          <figure className=" relative my-8 ">
-            <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
-              <a href={imageUrl}>
-              <Image
-                  className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
-                  src={imageUrl}
-           alt={value.alt}
-                  layout="responsive"
-                  width={500} 
-                  height={500}
-                />
-              </a>
-            </div>
-            <figcaption 
-            
-            className=" imgdesc dark-bg-green-50 py-2 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400"            >
-          <PortableText value={value.imageDescriptionOfBlockImg} components={imgdesc} />
-            </figcaption>
-          </figure>
-        </div>
-        </div>
+        <div className="btn1 mb-4 mt-4">
+          <a
+            href={link}
+            className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+          >
+            {text}
+            <svg
+              className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 14 10"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M1 5h12m0 0L9 1m4 4L9 9"
+              />
+            </svg>
+          </a>
         </div>
       );
     },
-    table: ({ value }) => (
-      <div className="card2 m-2 mb-4 mt-4 rounded-bl-xl rounded-br-xl rounded-tl-xl rounded-tr-xl shadow-md">
-        <div className="relative overflow-x-auto rounded-xl">
-          <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-            <tbody>
-              {value.rows.map((row, rowIndex) => (
-                <tr
-                  key={rowIndex}
-                  className={`${
-                    rowIndex % 2 === 0
-                      ? "bg-green-100 dark:bg-gray-800"
-                      : "bg-white dark:bg-gray-900"
-                  } ${
-                    rowIndex % 4 === 0 ? "bg-green-100 dark:bg-gray-800" : ""
-                  } border-b hover:bg-gray-200 dark:hover:bg-gray-700`}
-                  style={{ borderRadius: "0.5rem" }} // Adjust border radius here
-                >
-                  {row.cells.map((cell, cellIndex) => (
-                    <td
-                      key={cellIndex}
-                      className="px-6 py-4 font-medium dark:text-white"
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    ),
-  },
-  button: ({ value }) => {
-    const { text, link } = value;
-    return (
-      <div className="btn1 mb-4 mt-4">
-        <a
-          href={link}
-          className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-        >
-          {text}
-          <svg
-            className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 14 10"
-          >
-            <path
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M1 5h12m0 0L9 1m4 4L9 9"
-            />
-          </svg>
-        </a>
-      </div>
-    );
-  },
-};
-portableTextComponents.types.button = portableTextComponents.button;
-
-export default function BlogSidebarPage({ data  }) {
+  };
+  portableTextComponents.types.button = portableTextComponents.button;
+  
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -418,12 +425,12 @@ export default function BlogSidebarPage({ data  }) {
 
       <li  className="mb-6 border-b border-black border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
    
-     <RelatedPost key={blog._id} title={blog.title}
+     <RelatedPost key={blog._id} 
+     title={blog.title}
     image={urlForImage(blog.mainImage).url()}
     slug={`/${schemaSlugMap[blog._type]}/${blog.slug.current}`}
     date={new Date(blog.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
- />
-
+/>
 </li>
 </ul>
 </div>
@@ -444,79 +451,104 @@ export default function BlogSidebarPage({ data  }) {
   const [relatedPosts, setRelatedPosts] = useState([]);
 
   const schemaSlugMap = {
-    makemoney: "earning",
-        aitool: "tools",
+    makemoney: "makemoney",
+        aitool: "aitools",
         news: "news",
         coding: "coding",
-        freeairesources: "free-resources",
+        freeairesources: "freeairesources",
         seo: "seo",
   };
   useEffect(() => {
     const fetchData = async () => {
-      const query = `*[_type == "coding"] [0...50] | order(_createdAt desc)`;
+      const query = `*[_type == "news"][0...3] | order(_createdAt desc)`;
       const relatedPostsData = await client.fetch(query);
         setRelatedPosts(relatedPostsData);
     };
       fetchData();
 
   }, []);
-  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
+
+  const bgColors = [
+    'bg-cyan-200',
+    'bg-green-200',
+    'bg-amber-200',
+    
+    'bg-red-200',
+    'bg-indigo-200'
+
+  ];
+  
+
+  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(true);
 
   // Function to toggle the state of the table of contents box
   const toggleTableOfContents = () => {
     setIsTableOfContentsOpen(!isTableOfContentsOpen);
   };
-
+  
   // Function to render the table of contents
   const renderTableOfContents = () => {
     if (!data.tableOfContents || data.tableOfContents.length === 0) {
       return null; // Return null if table of contents is empty
     }
-
+  
     return (
       <div
-        className={`transition-max-height mb-8 overflow-hidden ${
+        className={`transition-max-height mb-8 overflow-hidden bs1 ${
           isTableOfContentsOpen ? "max-h-full" : "max-h-0"
         }`}
       >
-        <div className="card rounded border border-gray-300 p-4">
-          <h3 className="mb-2 text-lg font-semibold">Table of Contents</h3>
-          <ul className="list-disc pl-4">
-            {data.tableOfContents.map((heading, index) => (
-              <li key={index}>
-                <a href={`#heading${index + 1}`}>{heading}</a>
+        <div className="rounded border border-gray-300 p-4">
+          <h3 className="text-lg font-semibold">Table of Contents</h3>
+          <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb] custom-bullet-list">
+            {data.tableOfContents.map((item, index) => (
+              <li className="mb-2" key={index}>
+                <a className="text-black dark:text-white">{item.heading}</a>
+                {item.subheadings && item.subheadings.length > 0 && (
+                  <ul className="ml-4 list-inside list-disc">
+                    {item.subheadings.map((subheading, subIndex) => (
+                      <li className="mb-2 mt-2" key={subIndex}>
+                        <a className="text-black dark:text-white">{subheading}</a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>
         </div>
       </div>
+
     );
   };
   return (
     <>  
       <section className="overflow-hidden pb-[120px] pt-[40px]">
         <div className="container">
+          
         {loading ? (
          
-         <BigSkeleton/>
-         
-                   
-                 ) : (
-          <div className=" lg:m-4  flex flex-wrap">
+<BigSkeleton/>
+
+          
+        ) : (
+          <div className="lg:m-4  flex flex-wrap">
         <div className=" lg:-mx-5 w-full overflow-hidden rounded">
           <div className="lg:m-4 ">
-        <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
+        <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white  transition-colors duration-300 hover:text-blue-600   dark:hover:text-blue-400">
                 {data.title}
                 </h1>
+               
+
+        
         <div className="card4  rounded-xl">
         <figure className=" relative overflow-hidden rounded-lg">
-                        <div className="overflow-hidden lg:aspect-[40/16]">
+                        <div className="overflow-hidden lg:aspect-[28/16]">
                           <a href={urlForImage(data.mainImage).url()}>
                             <Image
-                              className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
+                              className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out  hover:scale-[1.05] dark:shadow-gray-800"
                               src={urlForImage(data.mainImage).url()}
                               alt={data.mainImage.alt}
-
                               layout="responsive"
                               width={500} 
                               height={500}
@@ -526,14 +558,17 @@ export default function BlogSidebarPage({ data  }) {
 
                             />
                           </a>
+
                         </div>
                         <figcaption className="imgdesc  my-2 text-center text-sm text-gray-500 dark:text-gray-400">
+                          {/* Iteratively render descriptions and links from the imageDescription array */}
    
               <PortableText value={data.mainImage.imageDescription} components={imgdesc}  />
 
 
                         </figcaption>
                       </figure>
+
                       </div>
                     </div>
                             </div>
@@ -544,7 +579,7 @@ export default function BlogSidebarPage({ data  }) {
                   <div className="mb-10 mt-4 w-full overflow-hidden rounded">
                   <div className="mb-10 flex flex-wrap items-center justify-between border-b border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="flex flex-wrap items-center">
-                    <div className="mb-5 mr-10 flex items-center">
+                      <div className="mb-5 mr-10 flex items-center">
                         <div className="mr-4">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full">
                           <Link href="/author/sufian-mustafa">
@@ -579,6 +614,8 @@ export default function BlogSidebarPage({ data  }) {
                          
                           </span>
                           Read Time: {data.readTime?.minutes} min
+                        
+                       
                         </p>
                         <p className="flex items-center text-base font-medium text-body-color">
                           <span className="mr-3">
@@ -621,13 +658,16 @@ export default function BlogSidebarPage({ data  }) {
                       </>
                     )}
                   </button>
+               
+
+                  {renderTableOfContents()}
                  
                     <div className="customanchor mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                       <PortableText
                         value={data.content}
                         components={portableTextComponents}
                       />
-                    </div>       
+                    </div>     
                     <div className="container   ">
     {/* Existing Content */}
     <div className="lg:m-4 flex flex-wrap">
@@ -640,25 +680,34 @@ export default function BlogSidebarPage({ data  }) {
         Frequently Asked Questions
       </h2>
      
-       {data.faqs && data.faqs.slice(0, 1).map((faq) => (
-      <div  key={faq.question} className="space-y-4">
-        <details className="group" open>
-          <summary className="cursor-pointer text-lg font-medium text-black dark:text-white bg-gray-100 dark:bg-gray-800 p-4 rounded-lg transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700">
-         {faq.question}
-          </summary>
-          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <p className="text-base text-gray-700 dark:text-gray-300">
-            {faq.answer}
-            </p>
-          </div>
-        </details>
-        
+      {data.faqs && data.faqs.map((faq, index) => (
+  <div key={faq.question} className="space-y-4">
+    <details className="group" open>
+      <summary
+        className={classNames(
+          'cursor-pointer text-lg font-medium text-black    p-4 rounded-lg transition-all duration-300 hover:bg-gray-200 ',
+          bgColors[index % bgColors.length] // Apply different background color
+        )}
+      >
+        {faq.question}
+      </summary>
+      <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+        <p className="text-base text-gray-700 dark:text-gray-300">
+          {faq.answer}
+        </p>
       </div>
-        ))}
+    </details>
+  </div>
+))}
     </div>
-  </div>              
+  </div>        
                   </div>
-                  {/* {renderTableOfContents()} */}
+ 
+
+
+
+
+                   {renderTableOfContents()} 
                   <div className="items-center justify-between sm:flex mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="mb-5">
                       <h4 className="mb-3 text-sm font-medium text-body-color">
@@ -853,15 +902,16 @@ export default function BlogSidebarPage({ data  }) {
               <NewsLatterBox />
             </div>
           </div>
-             )}
+                  )}
+
           <div className="container border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-        <h1 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+        <h2 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
           <span className="relative  mr-2 inline-block">
            Related
             <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
           </span>
           <span className="text-blue-500">Post</span>
-        </h1>
+        </h2>
         <div className="flex flex-wrap justify-start">
         {loading ? (
           // Display Skeleton components while loading
@@ -888,7 +938,9 @@ export default function BlogSidebarPage({ data  }) {
                     </div>
                     </div>
        <div className="border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+      
         <RecentPost  />
+     
         </div>
         </div>    
       </section>

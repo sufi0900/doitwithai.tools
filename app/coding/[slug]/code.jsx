@@ -451,11 +451,11 @@ export default function BlogSidebarPage({ data, }) {
   const [relatedPosts, setRelatedPosts] = useState([]);
 
   const schemaSlugMap = {
-    makemoney: "earning",
-        aitool: "tools",
+    makemoney: "makemoney",
+        aitool: "aitools",
         news: "news",
         coding: "coding",
-        freeairesources: "free-resources",
+        freeairesources: "freeairesources",
         seo: "seo",
   };
   useEffect(() => {

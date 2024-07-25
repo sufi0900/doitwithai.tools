@@ -11,16 +11,16 @@ import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import SkelCard from "@/components/Blog/Skeleton/Card"
+import classNames from 'classnames';
+
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 
-
-export const revalidate = false;
-export const dynamic = "force-dynamic";
-
 import "@/styles/customanchor.css";
 import Link from "next/link";
+export const revalidate = false;
+export const dynamic = "force-dynamic";
 async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
   const start = (page - 1) * limit;
   const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
@@ -29,7 +29,8 @@ async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
 }
 
 
-export default function BlogSidebarPage({ data }) {
+export default function BlogSidebarPage({ data, }) {
+  
   const imgdesc ={
     block: {  
       normal: ({ children }) => (
@@ -60,29 +61,29 @@ export default function BlogSidebarPage({ data }) {
     block: {
       normal: ({ children }) => (
         <p className="mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
-           {children}
-      </p>
+    {children}
+  </p>
       ),
       h1: ({ children }) => (
-        <h1 className="mb-4 text-3xl font-bold leading-tight text-black transition-colors duration-300 hover:text-blue-600  dark:text-white dark:hover:text-blue-400 sm:text-4xl sm:leading-tight">
+        <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white  transition-colors duration-300 hover:text-blue-600   dark:hover:text-blue-400 ">
           {children}
         </h1>
       ),
   
       h2: ({ children }) => (
-        <h2 className="font-xl mb-10 font-bold leading-tight text-black dark:text-white sm:text-2xl sm:leading-tight lg:text-xl lg:leading-tight xl:text-2xl xl:leading-tight">
+        <h2 className="mb-4 text-3xl font-extrabold leading-tight text-gray-800 dark:text-white  ">
           {children}
         </h2>
       ),
       h3: ({ children }) => (
-        <h3 className="mb-4 text-2xl font-semibold leading-tight text-gray-800 dark:text-gray-200 sm:text-3xl lg:text-2xl xl:text-3xl">
+        <h3 className="mb-4 text-2xl  font-bold leading-tight text-gray-800 dark:text-gray-200  ">
           {children}
         </h3>
       ),
     
       // Heading 4
       h4: ({ children }) => (
-        <h4 className="mb-4 text-xl font-semibold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
+        <h4 className="mb-4 text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
           {children}
         </h4>
       ),
@@ -247,25 +248,31 @@ export default function BlogSidebarPage({ data }) {
   
     list: {
       bullet: ({ children }) => (
-        <ul className="mb-10 list-inside list-disc text-body-color">
+        <ul className="mb-10 list-inside  custom-bullet-list">
           {children}
         </ul>
       ),
+  
+    
       number: ({ children }) => (
-        <ol className="list-inside list-decimal">{children}</ol>
+        <ol className="mb-10 list-inside text-body-color custom-number-list">
+        {children}
+      </ol>
       ),
     },
     listItem: {
       bullet: ({ children }) => (
-        <li className="mb-2 text-base font-medium text-body-color sm:text-lg lg:text-base xl:text-lg">
+        <li
+        className="mb-4 text-lg font-medium leading-relaxed  text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
           {children}
         </li>
       ),
+  
       number: ({ children }) => <li className="...">{children}</li>,
     },
     marks: {
       strong: ({ children }) => (
-        <strong className="text-primary dark:text-white">{children}</strong>
+        <strong className="text-black dark:text-white">{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
     },
@@ -279,16 +286,17 @@ export default function BlogSidebarPage({ data }) {
           <div className="card3 rounded-xl ">
   
             <figure className=" relative my-8 ">
-              <div className=" w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
+              <div className="w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
                 <a href={imageUrl}>
                   <Image
-                    className=" h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+                  alt={value.alt}
+                    className=" h-full w-full object-cover transition-transform duration-500 ease-in-out  hover:scale-[1.1]"
                     src={imageUrl}
-             alt={value.alt}
                     layout="responsive"
                     width={500} 
                     height={500}
                   />
+           
                 </a>
               </div>
               <figcaption 
@@ -322,7 +330,7 @@ export default function BlogSidebarPage({ data }) {
                     {row.cells.map((cell, cellIndex) => (
                       <td
                         key={cellIndex}
-                        className="px-6 py-4 font-medium dark:text-white"
+                        className="px-6 py-4  text-base font-medium text- dark:text-white"
                       >
                         {cell}
                       </td>
@@ -365,6 +373,7 @@ export default function BlogSidebarPage({ data }) {
     },
   };
   portableTextComponents.types.button = portableTextComponents.button;
+  
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -416,12 +425,12 @@ export default function BlogSidebarPage({ data }) {
 
       <li  className="mb-6 border-b border-black border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
    
-     <RelatedPost key={blog._id} title={blog.title}
+     <RelatedPost key={blog._id} 
+     title={blog.title}
     image={urlForImage(blog.mainImage).url()}
     slug={`/${schemaSlugMap[blog._type]}/${blog.slug.current}`}
     date={new Date(blog.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
- />
-
+/>
 </li>
 </ul>
 </div>
@@ -442,16 +451,16 @@ export default function BlogSidebarPage({ data }) {
   const [relatedPosts, setRelatedPosts] = useState([]);
 
   const schemaSlugMap = {
-    makemoney: "earning",
-        aitool: "tools",
+    makemoney: "makemoney",
+        aitool: "aitools",
         news: "news",
         coding: "coding",
-        freeairesources: "free-resources",
+        freeairesources: "freeairesources",
         seo: "seo",
   };
   useEffect(() => {
     const fetchData = async () => {
-      const query = `*[_type == "seo"][0...50] | order(_createdAt desc)`;
+      const query = `*[_type == "seo"][0...3] | order(_createdAt desc)`;
       const relatedPostsData = await client.fetch(query);
         setRelatedPosts(relatedPostsData);
     };
@@ -459,65 +468,87 @@ export default function BlogSidebarPage({ data }) {
 
   }, []);
 
+  const bgColors = [
+    'bg-cyan-200',
+    'bg-green-200',
+    'bg-amber-200',
+    
+    'bg-red-200',
+    'bg-indigo-200'
 
+  ];
+  
 
-
-  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(false);
+  const [isTableOfContentsOpen, setIsTableOfContentsOpen] = useState(true);
 
   // Function to toggle the state of the table of contents box
   const toggleTableOfContents = () => {
     setIsTableOfContentsOpen(!isTableOfContentsOpen);
   };
-
+  
   // Function to render the table of contents
   const renderTableOfContents = () => {
     if (!data.tableOfContents || data.tableOfContents.length === 0) {
       return null; // Return null if table of contents is empty
     }
-
+  
     return (
       <div
-        className={`transition-max-height mb-8 overflow-hidden ${
+        className={`transition-max-height mb-8 overflow-hidden bs1 ${
           isTableOfContentsOpen ? "max-h-full" : "max-h-0"
         }`}
       >
-        <div className="card rounded border border-gray-300 p-4">
-          <h3 className="mb-2 text-lg font-semibold">Table of Contents</h3>
-          <ul className="list-disc pl-4">
-            {data.tableOfContents.map((heading, index) => (
-              <li key={index}>
-                <a href={`#heading${index + 1}`}>{heading}</a>
+        <div className="rounded border border-gray-300 p-4">
+          <h3 className="text-lg font-semibold">Table of Contents</h3>
+          <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb] custom-bullet-list">
+            {data.tableOfContents.map((item, index) => (
+              <li className="mb-2" key={index}>
+                <a className="text-black dark:text-white">{item.heading}</a>
+                {item.subheadings && item.subheadings.length > 0 && (
+                  <ul className="ml-4 list-inside list-disc">
+                    {item.subheadings.map((subheading, subIndex) => (
+                      <li className="mb-2 mt-2" key={subIndex}>
+                        <a className="text-black dark:text-white">{subheading}</a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>
         </div>
       </div>
+
     );
   };
   return (
-    <section className="overflow-hidden pb-[120px] pt-[40px]">
+    <>  
+      <section className="overflow-hidden pb-[120px] pt-[40px]">
         <div className="container">
+          
         {loading ? (
          
-         <BigSkeleton/>
-         
-                   
-                 ) : (
-          <div className=" lg:m-4  flex flex-wrap">
+<BigSkeleton/>
+
+          
+        ) : (
+          <div className="lg:m-4  flex flex-wrap">
         <div className=" lg:-mx-5 w-full overflow-hidden rounded">
           <div className="lg:m-4 ">
-        <h1 className="mb-4 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
+        <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white  transition-colors duration-300 hover:text-blue-600   dark:hover:text-blue-400">
                 {data.title}
                 </h1>
+               
+
+        
         <div className="card4  rounded-xl">
         <figure className=" relative overflow-hidden rounded-lg">
-                        <div className="overflow-hidden lg:aspect-[40/16]">
+                        <div className="overflow-hidden lg:aspect-[28/16]">
                           <a href={urlForImage(data.mainImage).url()}>
                             <Image
-                              className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] dark:shadow-gray-800"
+                              className="h-full w-full object-cover shadow-xl transition-transform duration-200 ease-in-out  hover:scale-[1.05] dark:shadow-gray-800"
                               src={urlForImage(data.mainImage).url()}
                               alt={data.mainImage.alt}
-
                               layout="responsive"
                               width={500} 
                               height={500}
@@ -527,6 +558,7 @@ export default function BlogSidebarPage({ data }) {
 
                             />
                           </a>
+
                         </div>
                         <figcaption className="imgdesc  my-2 text-center text-sm text-gray-500 dark:text-gray-400">
                           {/* Iteratively render descriptions and links from the imageDescription array */}
@@ -536,20 +568,18 @@ export default function BlogSidebarPage({ data }) {
 
                         </figcaption>
                       </figure>
+
                       </div>
                     </div>
                             </div>
                             <div className="customanchor mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-                      {/* <PortableText
-                        value={data.content}
-                        components={portableTextComponents}
-                      /> */}
+                     
                     </div>   
             <div className="w-full  lg:w-8/12 ">
                   <div className="mb-10 mt-4 w-full overflow-hidden rounded">
                   <div className="mb-10 flex flex-wrap items-center justify-between border-b border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="flex flex-wrap items-center">
-                    <div className="mb-5 mr-10 flex items-center">
+                      <div className="mb-5 mr-10 flex items-center">
                         <div className="mr-4">
                           <div className="relative h-10 w-10 overflow-hidden rounded-full">
                           <Link href="/author/sufian-mustafa">
@@ -584,6 +614,8 @@ export default function BlogSidebarPage({ data }) {
                          
                           </span>
                           Read Time: {data.readTime?.minutes} min
+                        
+                       
                         </p>
                         <p className="flex items-center text-base font-medium text-body-color">
                           <span className="mr-3">
@@ -626,13 +658,16 @@ export default function BlogSidebarPage({ data }) {
                       </>
                     )}
                   </button>
+               
+
+                  {renderTableOfContents()}
                  
                     <div className="customanchor mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                       <PortableText
                         value={data.content}
                         components={portableTextComponents}
                       />
-                    </div>  
+                    </div>     
                     <div className="container   ">
     {/* Existing Content */}
     <div className="lg:m-4 flex flex-wrap">
@@ -640,30 +675,39 @@ export default function BlogSidebarPage({ data }) {
     </div>
 
     {/* FAQ Section */}
-    <div   className="bs1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-6 mt-10">
+    <div className="bs1 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-6 mt-10">
       <h2 className="text-3xl font-bold text-black dark:text-white mb-6">
         Frequently Asked Questions
       </h2>
      
-       {data.faqs && data.faqs.slice(0, 1).map((faq) => (
-      <div key={faq.question} className="space-y-4">
-        <details className="group" open>
-          <summary className="cursor-pointer text-lg font-medium text-black dark:text-white bg-gray-100 dark:bg-gray-800 p-4 rounded-lg transition-all duration-300 hover:bg-gray-200 dark:hover:bg-gray-700">
-         {faq.question}
-          </summary>
-          <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <p className="text-base text-gray-700 dark:text-gray-300">
-            {faq.answer}
-            </p>
-          </div>
-        </details>
-        
+      {data.faqs && data.faqs.map((faq, index) => (
+  <div key={faq.question} className="space-y-4">
+    <details className="group" open>
+      <summary
+        className={classNames(
+          'cursor-pointer text-lg font-medium text-black    p-4 rounded-lg transition-all duration-300 hover:bg-gray-200 ',
+          bgColors[index % bgColors.length] // Apply different background color
+        )}
+      >
+        {faq.question}
+      </summary>
+      <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+        <p className="text-base text-gray-700 dark:text-gray-300">
+          {faq.answer}
+        </p>
       </div>
-        ))}
+    </details>
+  </div>
+))}
     </div>
-  </div>                   
+  </div>        
                   </div>
-                  {/* {renderTableOfContents()} */}
+ 
+
+
+
+
+                   {renderTableOfContents()} 
                   <div className="items-center justify-between sm:flex mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="mb-5">
                       <h4 className="mb-3 text-sm font-medium text-body-color">
@@ -858,15 +902,16 @@ export default function BlogSidebarPage({ data }) {
               <NewsLatterBox />
             </div>
           </div>
-             )}
+                  )}
+
           <div className="container border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-        <h1 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+        <h2 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
           <span className="relative  mr-2 inline-block">
            Related
             <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
           </span>
           <span className="text-blue-500">Post</span>
-        </h1>
+        </h2>
         <div className="flex flex-wrap justify-start">
         {loading ? (
           // Display Skeleton components while loading
@@ -893,9 +938,12 @@ export default function BlogSidebarPage({ data }) {
                     </div>
                     </div>
        <div className="border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+      
         <RecentPost  />
+     
         </div>
         </div>    
       </section>
+    </>
   );
 }
