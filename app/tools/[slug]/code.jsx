@@ -71,12 +71,12 @@ export default function BlogSidebarPage({ data, }) {
       ),
   
       h2: ({ children }) => (
-        <h2 className="mb-4 text-3xl font-extrabold leading-tight text-gray-800 dark:text-white  ">
+        <h2 className="mb-4 text-4xl font-extrabold leading-tight text-gray-800 dark:text-white  ">
           {children}
         </h2>
       ),
       h3: ({ children }) => (
-        <h3 className="mb-4 text-2xl  font-bold leading-tight text-gray-800 dark:text-gray-200  ">
+        <h3 className="mb-4 text-2xl  font-extrabold leading-tight text-gray-800 dark:text-gray-200  ">
           {children}
         </h3>
       ),
@@ -90,7 +90,7 @@ export default function BlogSidebarPage({ data, }) {
     
       // Heading 5
       h5: ({ children }) => (
-        <h5 className="mb-4 text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+        <h5 className="mb-4 text-lg font-bold leading-tight text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
           {children}
         </h5>
       ),
@@ -703,11 +703,6 @@ export default function BlogSidebarPage({ data, }) {
   </div>        
                   </div>
  
-
-
-
-
-                   {renderTableOfContents()} 
                   <div className="items-center justify-between sm:flex mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="mb-5">
                       <h4 className="mb-3 text-sm font-medium text-body-color">
