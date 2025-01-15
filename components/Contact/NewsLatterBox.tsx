@@ -1,45 +1,94 @@
-"use client";
-
+import React from "react";
 import { useTheme } from "next-themes";
 
-const NewsLatterBox = () => {
+const NewsletterForm: React.FC = () => {
   const { theme } = useTheme();
 
   return (
-    <div
-      className="wow fadeInUp relative z-10 rounded-sm bg-white p-8 shadow-three dark:bg-gray-dark sm:p-11 lg:p-8 xl:p-11"
-      data-wow-delay=".2s"
-    >
-      <h3 className="mb-4 text-2xl font-bold leading-tight text-black dark:text-white">
-        Subscribe to receive future updates
-      </h3>
-      <p className="mb-11 border-b border-body-color border-opacity-25 pb-11 text-base leading-relaxed text-body-color dark:border-white dark:border-opacity-25">
-        Lorem ipsum dolor sited Sed ullam corper consectur adipiscing Mae ornare
-        massa quis lectus.
+    <div className="wow fadeInUp relative z-10 rounded-sm bg-white p-8 shadow-three dark:bg-gray-dark sm:p-11 lg:p-8 xl:p-11" data-wow-delay=".2s">
+      {/* Heading */}
+      <h2 className="mb-4 text-2xl font-bold text-black dark:text-white sm:text-3xl">
+        Join Our Newsletter
+      </h2>
+      <p className="mb-6 text-base font-medium text-body-color">
+        Stay ahead in the AI revolution! Get expert tips, tools, and resources delivered straight to your inbox.
       </p>
-      <div>
-        <input
-          type="text"
-          name="name"
-          placeholder="Enter your name"
-          className="mb-4 w-full rounded-sm border border-stroke bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Enter your email"
-          className="mb-4 w-full rounded-sm border border-stroke bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
-        />
-        <input
-          type="submit"
-          value="Subscribe"
-          className="mb-5 flex w-full cursor-pointer items-center justify-center rounded-sm bg-primary px-9 py-4 text-base font-medium text-white shadow-submit duration-300 hover:bg-primary/90 dark:shadow-submit-dark"
-        />
-        <p className="text-center text-base leading-relaxed text-body-color dark:text-body-color-dark">
-          No spam guaranteed, So please don’t send any spam mail.
-        </p>
-      </div>
 
+      {/* Form */}
+      <form
+        action="https://tools.us8.list-manage.com/subscribe/post?u=6b2d40e38465550ee4d7c03c1&amp;id=2fc05451cc&amp;f_id=003228e3f0"
+        method="post"
+        id="mc-embedded-subscribe-form"
+        name="mc-embedded-subscribe-form"
+        target="_blank"
+        className="space-y-4"
+      >
+        {/* Email Address */}
+        <div>
+          <label htmlFor="mce-EMAIL" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Email Address <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="email"
+            name="EMAIL"
+            id="mce-EMAIL"
+            required
+            className="mt-1 block w-full px-6 py-3 text-base text-body-color rounded-sm border border-stroke bg-[#f8f8f8] outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+            placeholder="Enter your email address (e.g., johndoe@example.com)"
+            />
+        </div>
+
+        {/* First Name */}
+        <div>
+          <label htmlFor="mce-FNAME" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            First Name
+          </label>
+          <input
+            type="text"
+            name="FNAME"
+            id="mce-FNAME"
+            className="mt-1 block w-full px-6 py-3 text-base text-body-color rounded-sm border border-stroke bg-[#f8f8f8] outline-none focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
+            placeholder="Enter your first name"
+          />
+        </div>
+
+        {/* Hidden Bot Field */}
+        <div className="hidden">
+          <input
+            type="text"
+            name="b_6b2d40e38465550ee4d7c03c1_2fc05451cc"
+            tabIndex={-1}
+            defaultValue=""
+          />
+        </div>
+
+        {/* Submit Button */}
+        <div>
+          <button
+            type="submit"
+            name="subscribe"
+            id="mc-embedded-subscribe"
+            className="rounded-sm bg-primary px-9 py-4 text-base font-medium text-white duration-300 hover:bg-primary/90"
+            >
+            Subscribe
+          </button>
+        </div>
+      </form>
+
+      {/* Footer */}
+      <p className="text-center text-base leading-relaxed text-body-color dark:text-body-color-dark mt-6">
+        No spam guaranteed, So please don’t send any spam mail.
+      </p>
+      <div className="text-center mt-6">
+        <a
+          href="http://eepurl.com/i6dXG6"
+          className="inline-block text-sm text-gray-500 hover:text-gray-700 transition dark:text-gray-300 dark:hover:text-gray-500"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Powered by Mailchimp
+        </a>
+      </div>
       <div>
         <span className="absolute left-2 top-7">
           <svg
@@ -257,7 +306,8 @@ const NewsLatterBox = () => {
         </span>
       </div>
     </div>
+    
   );
 };
 
-export default NewsLatterBox;
+export default NewsletterForm;

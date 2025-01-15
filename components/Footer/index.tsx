@@ -30,7 +30,7 @@ const Footer = () => {
                   />
                 </Link>
                 <p className="dark:text-body-color-dark mb-9 text-base leading-relaxed text-body-color">
-                Explore best AI tools for productivity, coding, & marketing. Unleash your potential in web dev, SEO, & online income. Learn & grow with AI at <a className="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline" href="https://www.doitwithai.tools/">doitwithai.tools</a>.
+                Learn how to leverage AI for SEO, productivity, and earning potential. Discover practical tips, tools, and strategies to enhance your digital journey with AI.                Learn & grow with AI at <a className="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline" href="https://www.doitwithai.tools/">doitwithai.tools</a>.
                 </p>
                 <div className="flex items-center">
                   <Link
@@ -101,7 +101,7 @@ const Footer = () => {
                 <ul>
                   <li>
                     <Link
-                      href="/all-posts"
+                      href="/blogs"
                       className="dark:text-body-color-dark mb-4 inline-block text-base text-body-color duration-300 hover:text-primary dark:hover:text-primary"
                     >
                       Blog

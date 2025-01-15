@@ -56,7 +56,7 @@ export default  function Page() {
       "@type": "ListItem",
       "name": category.name,
       "description": category.description,
-      "url": `https://sufi-blog-website.vercel.app/tools/${category.link}`,
+      "url": `https://www.doitwithai.tools/tools/${category.link}`,
     }));
     
     return {
@@ -66,7 +66,7 @@ export default  function Page() {
         "name": "Best AI Tools",
 
         "description": "A comprehensive list of the best AI tools for productivity and creativity, carefully curated to enhance your digital workflows.",
-        "url": "https://sufi-blog-website.vercel.app/tools",
+        "url": "https://www.doitwithai.tools/tools",
         "author": {
           "@type": "Organization",
           "name": "Sufian Mustafa"
@@ -74,7 +74,7 @@ export default  function Page() {
         "datePublished": "2024-04-24",
         "mainEntityOfPage": {
           "@type": "WebPage",
-          "@id": "https://sufi-blog-website.vercel.app/tools",
+          "@id": "https://www.doitwithai.tools/tools",
           "mainEntity": {
             "@type": "ItemList",
             "name": "Best AI Tools",
@@ -99,13 +99,13 @@ export default  function Page() {
             "@type": "ListItem",
             "position": 1,
             "name": "Home",
-            "item": "https://sufi-blog-website.vercel.app/"
+            "item": "https://www.doitwithai.tools/"
         },
         {
             "@type": "ListItem",
             "position": 2,
             "name": "AI Tools",
-            "item": "https://sufi-blog-website.vercel.app/tools"
+            "item": "https://www.doitwithai.tools/tools"
         }
     ]
       }`
@@ -131,32 +131,32 @@ export default  function Page() {
 
 
 
-  <meta property="og:url" content="https://sufi-blog-website.vercel.app/tools" />
+  <meta property="og:url" content="https://www.doitwithai.tools/tools" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Best AI Tools" />
         <meta property="og:description" content="Explore a comprehensive blog list of the best AI tools for productivity (Free & Paid), providing detailed reviews of the top artificial intelligence solutions" />
         <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
-        <meta property="twitter:url" content="https://sufi-blog-website.vercel.app/tools" />
+        <meta property="twitter:domain" content="doitwithai.tools" />
+        <meta property="twitter:url" content="https://www.doitwithai.tools/tools" />
         <meta name="twitter:title" content="Best AI Tools" />
         <meta name="twitter:description" content="Explore a comprehensive blog list of the best AI tools for productivity (Free & Paid), providing detailed reviews of the top artificial intelligence solutions" />
         <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
 
 
 
-  <link rel="canonical" href="https://sufi-blog-website.vercel.app/tools"/>
+  <link rel="canonical" href="https://www.doitwithai.tools/tools"/>
 
       
         <NextSeo
          title={metadata.title}
          description={metadata.description}
           author={metadata.author}
-          canonical="https://sufi-blog-website.vercel.app/tools"
+          canonical="https://www.doitwithai.tools/tools"
           openGraph={{
             title: metadata.title,
             description: metadata.description,
-            url: "https://sufi-blog-website.vercel.app/tools",
+            url: "https://www.doitwithai.tools/tools",
             type: "website",
             locale: 'en_IE',
             site_name: 'AiToolTrend',

@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 
 import AiCategory from "@/components/Categories/page";
-async function fetchAllBlogs(page = 1, limit = 2) {
+async function fetchAllBlogs(page = 1, limit = 10) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
     groq`*[_type == "aitool"] | order(publishedAt desc) {
@@ -42,27 +42,37 @@ export default function AllBlogs() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-      const isHomePageAIToolTrendBig = `*[_type == "aitool" && isOwnPageFeature == true]`;
-
-      const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
+        // Updated GROQ query to properly access displaySettings
+        const isHomePageAIToolTrendBig = `*[_type == "aitool" && displaySettings.isOwnPageFeature == true] {
+          _id,
+          title,
+          overview,
+          mainImage,
+          slug,
+          publishedAt,
+          readTime,
+          tags,
+          "displaySettings": displaySettings
+        }`;
   
-
-
-      setAiToolTrendBigData(isHomePageAIToolTrendBigData);
-      setIsLoading(false); // Set loading to false after data is fetched
-    } catch (error) {
-      console.error("Failed to fetch data", error);
-      setIsLoading(false); // Ensure loading is set to false in case of error too
-    }
-  };
-
-  fetchData();
-}, []); 
-
+        const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
+        console.log("Feature Post Data:", isHomePageAIToolTrendBigData); // Debug log
+  
+        setAiToolTrendBigData(isHomePageAIToolTrendBigData);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch feature post data:", error);
+        setIsLoading(false);
+      }
+    };
+  
+    fetchData();
+  }, []);
+  
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const newData = await fetchAllBlogs(currentPage, 2);
+      const newData = await fetchAllBlogs(currentPage, 10);
       setData(newData);
       setLoading(false);
     }
@@ -79,7 +89,7 @@ export default function AllBlogs() {
   };
   
   const handleSearch = async () => {
-    if (searchText.trim().length < 4) {
+    if (searchText.trim().length < 1) {
       console.log("Please enter at least 4 characters for search.");
       return;
     }
@@ -112,18 +122,20 @@ export default function AllBlogs() {
   };
  
   return (
-    <div className="container mt-10  ">
-      <Breadcrumb
-          pageName="Best"
-          pageName2="AI Tools"
-          description="Ready to take your work and creativity to the next level? The AI revolution is here, and it's changing the way we work!  Whether you're a seasoned pro or just curious to learn more Our blog explores Best AI Tools for Productivity. These AI tools free you from booring  tasks, boost  your skills, and supercharge  your creativity."
-          link="/tools" 
-          linktext="/tools"
+    <div className="container mt-10 ">
+        <Breadcrumb
+          pageName="AI in SEO"
+          pageName2="& Digital Marketing"
+          description="AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies. By leveraging AI technologies, including ChatGPT, you can generate high-quality content, optimize your website effortlessly, and craft data-driven marketing campaigns. As you explore these innovative techniques, you'll unlock the potential of AI to improve rankings, attract the right audience, and remain competitive in an ever-evolving online landscape. Join us on this journey to elevate your SEO game with the power of AI and the capabilities of ChatGPT!"
+          link="/seo" 
+          linktext="seo-with-ai"
           firstlinktext="Home"
           firstlink="/"
 
         />
-            {isLoading ? (
+
+
+{isLoading ? (
                       <Grid item xs={12}  >
 <FeatureSkeleton/>
 </Grid>
@@ -136,19 +148,62 @@ export default function AllBlogs() {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/tools/${post.slug.current}`}
+         slug={`/tool/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
-
          />
        
       
             </Grid>
           )) )}  
-      <AiCategory />
+
+<div className="container mt-10 px-20 mx-auto">
+  {/* Title */}
+  <div className="mb-8 text-center">
+        <h1 className="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"><span className="text-transparent bg-clip-text bg-gradient-to-r to-blue-500 from-primary">Sub Categories</span> of SEO</h1>
+        </div>
+
+  {/* Grid of cards */}
+  {/* <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {subcategories.map((subcategory) => (
+      <Link
+        href={`/seo/categories/${subcategory.slug.current}`}
+        key={subcategory.slug.current}
+        className="card hover:shadow-lg mt-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition duration-200 ease-in-out hover:scale-[1.03] max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow"
+      >
+        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+          {subcategory.title}
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-3">{subcategory.description}</p>
+        <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+          Read more
+          <svg
+            className="rtl:rotate-180 w-3.5 h-3.5 ms-2"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 14 10"
+          >
+            <path
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M1 5h12m0 0L9 1m4 4L9 9"
+            />
+          </svg>
+        </button>
+      </Link>
+    ))}
+  </div> */}
+</div>
+        <br/>
+        <br/>
+   
+   {/* category code start */}
       <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
-            <div className=" flex items-center justify-between">
+            <div className="  flex items-center justify-between">
               <input
                 type="text"
                 placeholder="Search here..."
@@ -195,6 +250,7 @@ export default function AllBlogs() {
               </button>
             </div>
           </div>
+   {/* category code end/}
 
           {/* Render search results if available */}
           {searchResults.length > 0 && (
@@ -207,26 +263,31 @@ export default function AllBlogs() {
           <div className="-mx-4 flex flex-wrap justify-center">
             {/* Conditionally render search results within the loop */}
             {loading ? (
-          // Display Skeleton components while loading
-          Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="mx-2 mb-4  flex flex-wrap justify-center">
-              <SkelCard />
-            </div>
-          ))
-        ) : (
-          // Render BlogCard components when data is available
-          data.map((post) =>
-        <CardComponent
-          key={post._id}
-          readTime={post.readTime?.minutes} 
-          overview={post.overview}
-          title={post.title}
-          tags={post.tags} 
-          mainImage={urlForImage(post.mainImage).url()}
-          slug={`/tools/${post.slug.current}`}
-          publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
-         />)
-        )}
+  // Display Skeleton components while loading
+  Array.from({ length: 6 }).map((_, index) => (
+    <div key={index} className="mx-2 mb-4 flex flex-wrap justify-center">
+      <SkelCard />
+    </div>
+  ))
+) : (
+  data.map((post) => (
+    <CardComponent
+      key={post._id}
+      ReadTime={post.readTime?.minutes} 
+      overview={post.overview}
+      title={post.title}
+      tags={post.tags} 
+      mainImage={urlForImage(post.mainImage).url()}
+      // Adjust the slug based on post type
+      slug={post._type === "aitool" ? `/tools/${post.slug.current}` : `/tools/${post.slug.current}`}
+      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      })}         
+    />
+  ))
+)}
           </div>
 
           <div
@@ -283,7 +344,6 @@ export default function AllBlogs() {
               </ul>
             </div>
           </div>
-
 
     </div>
   );

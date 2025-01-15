@@ -31,7 +31,7 @@ export default function Page() {
         "@type": "CollectionPage",
         "name": "Best AI Article Generator Tools",
         "description": "Unleash the power of AI for content creation! Explore our blog to uncover top AI writing tools and learn how they can help you generate high-quality articles, blog posts, and research papers effortlessly. Discover how AI can assist with research, rewriting, and content creation. Whether you're a seasoned writer or just starting out, explore the power of AI article writers, text generators, and SEO tools  to  supercharge your workflow.",
-        "url": "https://sufi-blog-website.vercel.app/tools/ai-image-generator",
+        "url": "https://www.doitwithai.tools/tools/ai-image-generator",
         "breadcrumb": {
           "@type": "BreadcrumbList",
           "itemListElement": [
@@ -39,19 +39,19 @@ export default function Page() {
               "@type": "ListItem",
               "position": 1,
               "name": "Home",
-              "item": "https://sufi-blog-website.vercel.app/"
+              "item": "https://www.doitwithai.tools/"
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": "AI Tools",
-              "item": "https://sufi-blog-website.vercel.app/tools"
+              "item": "https://www.doitwithai.tools/tools"
             },
             {
               "@type": "ListItem",
               "position": 3,
               "name": "AI Article Generators",
-              "item": "https://sufi-blog-website.vercel.app/tools/ai-article-builder"
+              "item": "https://www.doitwithai.tools/tools/ai-article-builder"
             }
           ]
         }
@@ -76,18 +76,18 @@ export default function Page() {
 <meta property="og:image:height" content="630" />
 
   {/*  */}
-  <meta property="og:url" content="https://sufi-blog-website.vercel.app/tools/ai-image-generator" />
+  <meta property="og:url" content="https://www.doitwithai.tools/tools/ai-image-generator" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={metadata.title} />
         <meta property="og:description" content={metadata.description} />
         <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
-        <meta property="twitter:url" content="https://sufi-blog-website.vercel.app/tools/ai-image-generator" />
+        <meta property="twitter:domain" content="doitwithai.tools" />
+        <meta property="twitter:url" content="https://www.doitwithai.tools/tools/ai-image-generator" />
         <meta name="twitter:title" content={metadata.title} />
         <meta name="twitter:description" content={metadata.description} />
         <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-  <link rel="canonical" href="https://sufi-blog-website.vercel.app/tools/ai-image-generator"/>
+  <link rel="canonical" href="https://www.doitwithai.tools/tools/ai-image-generator"/>
 
         <NextSeo
          title={metadata.title}
@@ -97,11 +97,11 @@ export default function Page() {
           locale= 'en_IE'
           site_name= 'AiToolTrend'
 
-          canonical="https://sufi-blog-website.vercel.app/tools/ai-image-generator"
+          canonical="https://www.doitwithai.tools/tools/ai-image-generator"
           openGraph={{
             title: metadata.title,
             description: metadata.description,
-            url: "https://sufi-blog-website.vercel.app/tools/ai-image-generator",
+            url: "https://www.doitwithai.tools/tools/ai-image-generator",
             type: "ItemList",
             images: metadata.images
           }}

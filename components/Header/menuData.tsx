@@ -26,24 +26,24 @@ const menuData: Menu[] = [
     path: "/coding",
     newTab: false,
   },
-  {
-    id: 6,
-    title: "Free AI Resources",
-    path: "/free-resources",
-    newTab: false,
-  },
+  // {
+  //   id: 6,
+  //   title: "Free AI Resources",
+  //   path: "/free-resources",
+  //   newTab: false,
+  // },
   {
     id: 7,
     title: "SEO with AI",
     path: "/seo",
     newTab: false,
   },
-  {
-    id: 8,
-    title: "AI News",
-    path: "/news",
-    newTab: false,
-  },
+  // {
+  //   id: 8,
+  //   title: "AI News",
+  //   path: "/news",
+  //   newTab: false,
+  // },
   
   {
     id: 5,
@@ -65,21 +65,21 @@ const menuData: Menu[] = [
       {
         id: 43,
         title: "All Blogs",
-        path: "/all-posts",
+        path: "/blogs",
         newTab: false,
       },
-      {
-        id: 44,
-        title: "Blog Sidebar Page",
-        path: "/blog-sidebar",
-        newTab: false,
-      },
-      {
-        id: 45,
-        title: "Blog Details Page",
-        path: "/blog-details",
-        newTab: false,
-      },
+      // {
+      //   id: 44,
+      //   title: "Blog Sidebar Page",
+      //   path: "/blog-sidebar",
+      //   newTab: false,
+      // },
+      // {
+      //   id: 45,
+      //   title: "Blog Details Page",
+      //   path: "/blog-details",
+      //   newTab: false,
+      // },
       {
         id: 46,
         title: "Category",
@@ -98,12 +98,12 @@ const menuData: Menu[] = [
         path: "/error",
         newTab: false,
       },
-      {
-        id: 43,
-        title: "Blog Grid Page",
-        path: "/blog",
-        newTab: false,
-      },
+      // {
+      //   id: 43,
+      //   title: "Blog Grid Page",
+      //   path: "/blog",
+      //   newTab: false,
+      // },
     ],
   },
 ];

@@ -1,4 +1,4 @@
-// export const siteUrl = 'https://sufi-blog-website.vercel.app';
+// export const siteUrl = 'https://www.doitwithai.tools';
 // export const generateRobotsTxt = true;
 // export const sitemapSize = 7000;
 // export const outDir = './public';

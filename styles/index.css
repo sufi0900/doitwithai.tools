@@ -118,18 +118,25 @@
     rgba(0, 0, 0, 0.2) 0px -3px 0px inset;
 }
 .card3 {
-  box-shadow:
-    rgba(0, 0, 0, 0.25) 0px 14px 28px,
-    rgba(0, 0, 0, 0.22) 0px 10px 10px;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
   border-radius: 15px; /* Adjust the value to change the roundness */
+  transition: 0.5s;
+  
+}
+.customClassName {
   transition: 0.3s;
 }
 
+.customClassName:hover{
+  scale: 1.1;
+
+}
 .card3:hover {
   box-shadow:
     rgba(0, 0, 0, 0.16) 0px 3px 6px,
     rgba(0, 0, 0, 0.23) 0px 3px 6px;
   border-radius: 10px;
+
 }
 .card4 {
   box-shadow:
@@ -184,13 +191,36 @@
 
 .custom-number-list > li::before {
   content: counter(custom-counter) '.'; /* Use the custom counter */
-  font-size: 1.4em; /* Increase the size of the number */
   position: absolute;
-  left: -2rem; /* Position the number to the left of the text */
+  left: -1.5rem; /* Position the number to the left of the text */
   transition: transform 0.3s ease, color 0.3s ease; /* Add transition for hover effect */
 }
 
 .custom-number-list > li:hover::before {
   transform: scale(1.3); 
 color: #2563eb;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.custom-bullet-list {
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+
+}
+
+
+.fixed.inset-0.z-50 {
+  z-index: 9999; /* Increase z-index to ensure it stays above the header */
+}
+.header {
+  z-index: 999; /* Ensure it's below the modal's z-index */
+}
+.header {
+  position: fixed;
+  z-index: 999; /* Lower than the modal */
 }

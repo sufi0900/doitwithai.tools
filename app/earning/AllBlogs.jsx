@@ -18,7 +18,7 @@ export const revalidate = false;
 export const dynamic = "force-dynamic";
 
 
-async function fetchAllBlogs(page = 1, limit = 2) {
+async function fetchAllBlogs(page = 1, limit = 10) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
     groq`*[_type == "makemoney"] | order(publishedAt desc) {
@@ -64,7 +64,7 @@ export default function AllBlogs() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const newData = await fetchAllBlogs(currentPage, 2);
+      const newData = await fetchAllBlogs(currentPage, 10);
       setData(newData);
       setLoading(false);
     }
@@ -115,17 +115,16 @@ export default function AllBlogs() {
        <Breadcrumb
           pageName="Make Money"
           pageName2="With AI"
-          description="Discover innovative ways to generate income using the power of artificial intelligence. Our blog explores the best ways to make money online with tools like ChatGPT, Midjourney, and OpenAI.  Learn how to use AI to generate passive income by using it for tasks like marketing, design, and content creation. Discover how AI money makers can help you turn your skills into a side hustle by reading through our comprehensive blogs."
+          description="Tap into the endless possibilities of AI to generate income and transform your financial future! In this category, we share actionable tips, tools, and strategies. These will help you earn online, whether through freelancing, affiliate marketing, or creative ventures. Explore how AI-powered tools like ChatGPT can simplify tasks, enhance productivity, and open up new revenue streams. Start your journey today and turn AI into your ultimate earning partner!"
           link="/earning" 
           linktext="make-money-with-ai"
           firstlinktext="Home"
           firstlink="/"
-
         />
                 {isLoading ? (
                       <Grid item xs={12}  >
-<FeatureSkeleton/>
-</Grid>
+            <FeatureSkeleton/>
+            </Grid>
  ) : (
   
         aiToolTrendBigData.map((post) => (

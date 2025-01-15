@@ -7,7 +7,7 @@
 //   posts.forEach(post => {
 //     sitemap += `
 //       <url>
-//         <loc>${`https://sufi-blog-website.vercel.app/${post._type}/${post.slug}`}</loc>
+//         <loc>${`https://www.doitwithai.tools/${post._type}/${post.slug}`}</loc>
 //         <changefreq>weekly</changefreq>
 //         <priority>0.9</priority>
 //       </url>

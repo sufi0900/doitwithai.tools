@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
-import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
 
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
@@ -15,113 +14,175 @@ import CardComponent from "@/components/Card/Page"
 import FeaturePost from "@/components/Blog/featurePost"
 import React, { useEffect, useState } from "react";
 import Breadcrumb from "@/components/Common/Breadcrumb";
+import Link from "next/link";
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 
 
-async function fetchAllBlogs(page = 1, limit = 2) {
+async function fetchAllBlogs(page = 1, limit = 10) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
-    groq`*[_type == "seo"] | order(publishedAt desc) {
-      _id, title, slug, tags, mainImage, overview, body, publishedAt
+    groq`*[
+      _type == "seo" || 
+      (_type == "aitool" && displaySettings.isSeoPageFeature == true)
+    ] | order(publishedAt desc) {
+      _id, 
+      title, 
+      slug, 
+      tags, 
+      mainImage, 
+      overview, 
+      body, 
+      publishedAt,
+      _type,
+      readTime,
+      "displaySettings": displaySettings,
+      subcategory->{
+        title,
+        slug
+      }
     }[${start}...${start + limit}]`
   );
+  console.log("Fetched blogs:", result); // Debug log
   return result;
 }
 
+// Separate function to fetch subcategories
+async function getSubcategories() {
+  const query = groq`*[_type == "seoSubcategory"] {
+    title,
+    slug,
+    description
+  }`;
+  return client.fetch(query);
+}
+
 export default function AllBlogs() {
-  const [isLoading, setIsLoading] = useState(true); 
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [subcategories, setSubcategories] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-
   const [data, setData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aiToolTrendBigData, setAiToolTrendBigData] = useState([]);
 
+  // Fetch subcategories and feature posts
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        // Fetch subcategories
+        const subcategoriesData = await getSubcategories();
+        setSubcategories(subcategoriesData);
+
+        // Fetch featured posts
+        const featuredQuery = groq`*[_type == "seo" && isOwnPageFeature == true]`;
+        const featuredPosts = await client.fetch(featuredQuery);
+        setAiToolTrendBigData(featuredPosts);
+      } catch (error) {
+        console.error("Failed to fetch initial data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
+  // Fetch blogs
   useEffect(() => {
     const fetchData = async () => {
-      try {
-      const isHomePageAIToolTrendBig = `*[_type == "seo" && isOwnPageFeature == true]`;
-
-      const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
-  
-
-
-      setAiToolTrendBigData(isHomePageAIToolTrendBigData);
-     
-      setIsLoading(false); // Set loading to false after data is fetched
-    } catch (error) {
-      console.error("Failed to fetch data", error);
-      setIsLoading(false); // Ensure loading is set to false in case of error too
-    }
-  };
-
-  fetchData();
-}, []); 
-
-  useEffect(() => {
-    async function fetchData() {
       setLoading(true);
-      const newData = await fetchAllBlogs(currentPage, 2);
-      setData(newData);
-      setLoading(false);
-    }
-    
+      try {
+        const newData = await fetchAllBlogs(currentPage, 10);
+        console.log('Fetched Data:', newData); // Debug log
+        setData(newData);
+      } catch (error) {
+        console.error("Failed to fetch blogs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
     fetchData();
   }, [currentPage]);
   
+  
+
   const handlePrevious = () => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   };
-  
+
   const handleNext = () => {
     setCurrentPage((prev) => prev + 1);
   };
-  
-  const handleSearch = async () => {
-    if (searchText.trim().length < 4) {
-      console.log("Please enter at least 4 characters for search.");
-      return;
-    }
-    const query = `*[_type == "seo" && (title match $searchText || content match $searchText)]`;
-    const searchResults = await client.fetch(query, {
-      searchText: `*${searchText}*`,
-    });
-    setSearchResults(searchResults);
-  };
 
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const searchQuery = groq`*[
+        (_type == "seo" || (_type == "aitool" && displaySettings.isSeoPageFeature == true)) &&
+        (title match $searchText || overview match $searchText)
+      ] | order(publishedAt desc) {
+        _id,
+        title,
+        slug,
+        tags,
+        mainImage,
+        overview,
+        publishedAt,
+        _type,
+        readTime,
+        "displaySettings": displaySettings
+      }`;
+      
+      const results = await client.fetch(searchQuery, { searchText: `*${searchText}*` });
+      setSearchResults(results);
+      setData(results);
+    } catch (error) {
+      console.error("Search failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const resetSearch = () => {
     setSearchText("");
     setSearchResults([]);
   };
 
   const renderSearchResults = () => {
-    return searchResults.map((post) => <CardComponent key={post._id}
-    tags={post.tags} 
-    ReadTime={post.readTime?.minutes} 
-    overview={post.overview}
-   
-    title={post.title}
-    mainImage={urlForImage(post.mainImage).url()}
-    slug={`/seo/${post.slug.current}`}
-    publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-    />);
+    return searchResults.map((post) => (
+      <CardComponent
+      key={post._id}
+      ReadTime={post.readTime?.minutes}
+      overview={post.overview}
+      title={post.title}
+      tags={post.tags}
+      mainImage={urlForImage(post.mainImage).url()}
+      slug={`/seo/${post.slug.current}`}
+      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })}
+    />
+    ));
   };
+
  
   return (
     <div className="container mt-10 ">
         <Breadcrumb
           pageName="AI in SEO"
           pageName2="& Digital Marketing"
-          description="The digital marketing landscape is changing rapidly, and AI is leading the way!  Our blog equips you with the knowledge and tools you need to successfully use AI for SEO and marketing. Discover how AI can help you generate high-quality content, optimize your website, and craft data-driven marketing campaigns.  Explore expert tips on using AI tools like ChatGPT to write SEO-friendly blog posts, improve rankings, and  drive massive traffic. Improve your digital marketing by utilizing AI's capabilities!"
+          description="AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies. By leveraging AI technologies, including ChatGPT, you can generate high-quality content, optimize your website effortlessly, and craft data-driven marketing campaigns. As you explore these innovative techniques, you'll unlock the potential of AI to improve rankings, attract the right audience, and remain competitive in an ever-evolving online landscape. Join us on this journey to elevate your SEO game with the power of AI and the capabilities of ChatGPT!"
           link="/seo" 
           linktext="seo-with-ai"
           firstlinktext="Home"
           firstlink="/"
 
         />
+
 
 {isLoading ? (
                       <Grid item xs={12}  >
@@ -146,10 +207,50 @@ export default function AllBlogs() {
             </Grid>
           )) )}  
 
-       
+<div className="container mt-10 px-20 mx-auto">
+  {/* Title */}
+  <div className="mb-8 text-center">
+        <h1 className="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"><span className="text-transparent bg-clip-text bg-gradient-to-r to-blue-500 from-primary">Sub Categories</span> of SEO</h1>
+        </div>
+
+  {/* Grid of cards */}
+  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {subcategories.map((subcategory) => (
+      <Link
+        href={`/seo/categories/${subcategory.slug.current}`}
+        key={subcategory.slug.current}
+        className="card hover:shadow-lg mt-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition duration-200 ease-in-out hover:scale-[1.03] max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow"
+      >
+        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+          {subcategory.title}
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-3">{subcategory.description}</p>
+        <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+          Read more
+          <svg
+            className="rtl:rotate-180 w-3.5 h-3.5 ms-2"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 14 10"
+          >
+            <path
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M1 5h12m0 0L9 1m4 4L9 9"
+            />
+          </svg>
+        </button>
+      </Link>
+    ))}
+  </div>
+</div>
         <br/>
         <br/>
-      {/* <AiCategory /> */}
+   
+   {/* category code start */}
       <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
             <div className="  flex items-center justify-between">
               <input
@@ -198,6 +299,7 @@ export default function AllBlogs() {
               </button>
             </div>
           </div>
+   {/* category code end/}
 
           {/* Render search results if available */}
           {searchResults.length > 0 && (
@@ -209,27 +311,35 @@ export default function AllBlogs() {
           {/* Render blog posts */}
           <div className="-mx-4 flex flex-wrap justify-center">
             {/* Conditionally render search results within the loop */}
-            {loading ? (
-          // Display Skeleton components while loading
-          Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="mx-2 mb-4  flex flex-wrap justify-center">
-            <SkelCard />
-          </div>
-          ))
-        ) : (
-          // Render BlogCard components when data is available
-          data.map((post) =>
-        <CardComponent
-          key={post._id}
-          ReadTime={post.readTime?.minutes} 
-          overview={post.overview}
-          title={post.title}
-          tags={post.tags} 
-          mainImage={urlForImage(post.mainImage).url()}
-          slug={`/seo/${post.slug.current}`}
-          publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
-         />)
-        )}
+            
+ {loading ? (
+  Array.from({ length: 6 }).map((_, index) => (
+    <div key={index} className="mx-2 mb-4 flex flex-wrap justify-center">
+      <SkelCard />
+    </div>
+  ))
+) : (
+  data.map((post) => {
+    console.log("Rendering post:", post); // Debug log
+    return (
+      <CardComponent
+        key={post._id}
+        ReadTime={post.readTime?.minutes} 
+        overview={post.overview}
+        title={post.title}
+        tags={post.tags} 
+        mainImage={post.mainImage ? urlForImage(post.mainImage).url() : '/default-image.jpg'}
+        slug={`/seo/${post.slug?.current}`}
+        publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { 
+          day: 'numeric', 
+          month: 'short', 
+          year: 'numeric' 
+        })}         
+      />
+    );
+  })
+)}
+
           </div>
 
           <div

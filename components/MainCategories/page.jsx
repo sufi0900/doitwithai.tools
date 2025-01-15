@@ -24,15 +24,15 @@ const Categories = () => {
       // hoverGradientClass: "from-blue-500 to-cyan-500 ", 
 
     },
-    {
-      imageUrl:
-        "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587675/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_2_aytyui.png",
-      heading: "AI News & Trends 📰",
-      link: "/news",
-      gradientClass: "from-green to-blue",
-      hoverGradientClass: "from-blue-600 to-green-400", // Define hover gradient class
+    // {
+    //   imageUrl:
+    //     "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587675/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_2_aytyui.png",
+    //   heading: "AI News & Trends 📰",
+    //   link: "/news",
+    //   gradientClass: "from-green to-blue",
+    //   hoverGradientClass: "from-blue-600 to-green-400", // Define hover gradient class
 
-    },
+    // },
     {
       imageUrl:
         "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587424/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_3_ixrqom.png",
@@ -42,17 +42,17 @@ const Categories = () => {
       hoverGradientClass: "from-brown to-purple-500", // Define hover gradient class
 
     },
-    {
-      imageUrl:
-        "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587423/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_4_h249te.png",
-      heading: "Free AI Resources 🆓",
-      link: "/free-resources",
+    // {
+    //   imageUrl:
+    //     "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587423/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_4_h249te.png",
+    //   heading: "Free AI Resources 🆓",
+    //   link: "/free-resources",
  
-      gradientClass: "from-brown to-blue",
+    //   gradientClass: "from-brown to-blue",
 
-      hoverGradientClass: "from-blue to-brown", // Define hover gradient class
+    //   hoverGradientClass: "from-blue to-brown", // Define hover gradient class
 
-    },
+    // },
     {
       imageUrl:
         "https://res.cloudinary.com/dtvtphhsc/image/upload/v1714587424/Blue_and_Pink_Modern_Tech_Electronics_and_Technology_Retractable_Exhibition_Banner_5_z9bjvg.png",

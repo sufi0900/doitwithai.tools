@@ -815,7 +815,7 @@ export default function BlogSidebarPage({ data, }) {
              
                   </li>
                        ))}
-                       <Link href="/allposts">
+                       <Link href="/blogs">
                       <h3 className=" cursor-pointer text-center border-b border-black border-opacity-10 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white dark:hover:text-primary hover:text-primary">
                Explore all Posts
                 </h3>

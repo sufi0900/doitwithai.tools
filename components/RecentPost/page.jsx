@@ -30,7 +30,7 @@ export default  function RecentPosts() {
 
   const schemaSlugMap = {
     makemoney: "earning",
-        aitool: "tools",
+        aitool: "aitools",
         news: "news",
         coding: "coding",
         freeairesources: "free-resources",
@@ -63,31 +63,39 @@ export default  function RecentPosts() {
             <div key={post._id} className="mt-4 mb-6 px-2 ">
         <div className="card transition duration-300 hover:scale-[1.05] max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow  hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
           {" "}
-          <Link
+          {post.slug?.current && schemaSlugMap[post._type] ? (
+        <Link
           href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-            className="relative block aspect-[37/22] w-full"
-          >
-             {post.tags && post.tags.length > 0 && (
-          <Link href={post.tags[0].link} className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
-            {post.tags[0].name} 
-          </Link>
-        )}
+          className="relative block aspect-[37/22] w-full"
+        >
+          {post.tags && post.tags.length > 0 && (
+            <Link
+              href={post.tags[0].link}
+              className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary"
+            >
+              {post.tags[0].name}
+            </Link>
+          )}
 
             {/* Image */}
-            <div className="relative aspect-[30/22] overflow-hidden">
-              <Image
-                className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform "
-                src={urlForImage(post.mainImage).url()}
-                alt={post.title}
-                fill
-              />
-            </div>
-          </Link>
-          {/* Content */}
+           {/* Image */}
+           <div className="relative aspect-[30/22] overflow-hidden">
+            <Image
+              className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform "
+              src={urlForImage(post.mainImage).url()}
+              alt={post.title}
+              fill
+            />
+          </div>
+        </Link>
+      ) : (
+        <div className="text-red-500">Slug not available</div>
+      )}
           <div className="p-5">
             {/* Title */}
-            <Link      href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}>
-              <h5 className="mb-2 line-clamp-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <Link
+          href={`/${schemaSlugMap[post._type]}/${post.slug?.current || "#"}`}
+        >              <h5 className="mb-2 line-clamp-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
               {post.title}
               </h5>
             </Link>
@@ -113,9 +121,9 @@ export default  function RecentPosts() {
             </div>
             {/* Read more link */}
             <Link
-               href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-              className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            >
+          href={`/${schemaSlugMap[post._type]}/${post.slug?.current || "#"}`}
+          className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+        >
               Read more
               <svg
                 className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
@@ -140,7 +148,7 @@ export default  function RecentPosts() {
          
         </div>
         <div className="mt-6 flex justify-center md:justify-center">
-          <Link href="/allposts">
+          <Link href="/blogs">
             <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
              Explore All Blogs
             </button>

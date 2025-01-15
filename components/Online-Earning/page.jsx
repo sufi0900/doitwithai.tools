@@ -8,11 +8,12 @@ import {
 
 
 } from "@mui/material";
+import SmallCard from "@/components/Blog/HomeSmallCard"
 
 
 import Link from "next/link";
 import FeaturePost from "@/components/Blog/featurePost"
-import SmallCard from "@/components/Blog/HomeSmallCard"
+
 import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
 import Breadcrumb from "../Common/Breadcrumb";
 
@@ -51,7 +52,7 @@ const OnlineEarningPage = () => {
         <Breadcrumb
           pageName="Make Money"
           pageName2="With AI"
-          description="Discover useful tips and tools to help you earn money online. From freelancing to affiliate marketing, explore valuable resources to start and grow your online income streams. Start making money online today!"
+          description="Tap into the endless possibilities of AI to generate income and transform your financial future! In this category, we share actionable tips, tools, and strategies. These will help you earn online, whether through freelancing, affiliate marketing, or creative ventures. Explore how AI-powered tools like ChatGPT can simplify tasks, enhance productivity, and open up new revenue streams. Start your journey today and turn AI into your ultimate earning partner!"
           firstlinktext="Home"
           firstlink="/"
           link="/earning" 
@@ -95,8 +96,8 @@ const OnlineEarningPage = () => {
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
          slug={`/earning/${post.slug.current}`}
-         date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-         readTime={post.readTime?.minutes}
+         publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+         ReadTime={post.readTime?.minutes}
          tags={post.tags}
 
          />

@@ -23,19 +23,45 @@ const TrendingPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-      const isHomePageTrendBig = `*[_type in [ "makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && isHomePageTrendBig == true]`;
-      const isHomePageTrendRelated =`*[_type in [ "makemoney", "freeairesources",  "news", "coding", "aitool", "seo", ] && isHomePageTrendRelated == true]`;
-      const isHomePageTrendBigData = await client.fetch(isHomePageTrendBig);
-      const isHomePageTrendRelatedData = await client.fetch(isHomePageTrendRelated);
-      setTrendBigData(isHomePageTrendBigData);
-      setTrendRelatedData(isHomePageTrendRelatedData);
-
-      setIsLoading(false); // Set loading to false after data is fetched
+        const isHomePageTrendBig = `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageTrendBig == true] {
+          _id,
+          title,
+          overview,
+          mainImage,
+          slug,
+          publishedAt,
+          readTime,
+          tags,
+          "displaySettings": displaySettings
+        }`;
+    
+        const isHomePageTrendRelated = `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageTrendRelated == true] {
+          _id,
+          title,
+          overview,
+          mainImage,
+          slug,
+          publishedAt,
+          readTime,
+          tags,
+          "displaySettings": displaySettings
+        }`;
+    
+        const isHomePageTrendBigData = await client.fetch(isHomePageTrendBig);
+        const isHomePageTrendRelatedData = await client.fetch(isHomePageTrendRelated);
+        
+        console.log("Trend Big Data:", isHomePageTrendBigData); // Debug
+        console.log("Trend Related Data:", isHomePageTrendRelatedData); // Debug
+        
+        setTrendBigData(isHomePageTrendBigData);
+        setTrendRelatedData(isHomePageTrendRelatedData);
+        setIsLoading(false);
       } catch (error) {
         console.error("Failed to fetch data", error);
-        setIsLoading(false); // Ensure loading is set to false in case of error too
+        setIsLoading(false);
       }
     };
+    
 
     fetchData();
   }, []); 
@@ -44,7 +70,7 @@ const TrendingPage = () => {
 
   const schemaSlugMap = {
     makemoney: "earning",
-    aitool: "tools",
+    aitool: "aitool",
     news: "news",
     coding: "coding",
     freeairesources: "free-resources",

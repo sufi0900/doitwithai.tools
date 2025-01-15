@@ -18,7 +18,7 @@ export const revalidate = false;
 export const dynamic = "force-dynamic";
 
 
-async function fetchAllBlogs(page = 1, limit = 2) {
+async function fetchAllBlogs(page = 1, limit = 10) {
   const start = (page - 1) * limit;
   const result = await client.fetch(
     groq`*[_type == "coding"] | order(publishedAt desc) {
@@ -58,7 +58,7 @@ export default function AllBlogs() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const newData = await fetchAllBlogs(currentPage, 2);
+      const newData = await fetchAllBlogs(currentPage, 10);
       setData(newData);
       setLoading(false);
     }

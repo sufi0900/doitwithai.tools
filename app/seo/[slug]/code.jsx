@@ -1,40 +1,88 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import RelatedPost from "@/components/Blog/RelatedPost";
-import SharePost from "@/components/Blog/SharePost";
+
 import TagButton from "@/components/Blog/TagButton";
-import NewsLatterBox from "@/components/Contact/NewsLatterBox";
 import Image from "next/image";
-import React, { useState, useEffect  } from "react";
+import React, { useState, useEffect, useMemo  } from 'react';
 import { ExpandMore, ExpandLess, AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
-import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
+import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import classNames from 'classnames';
-
+import OptimizedGif from "./OptimizedGif"
+import OptimizedImage from "./OptimizedImage"
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
-import { urlForImage } from "@/sanity/lib/image";
+import { urlForImage, getFileUrl } from "@/sanity/lib/image";
+import OptimizedVideo from "./OptimizedVideo"
+
 
 import "@/styles/customanchor.css";
 import Link from "next/link";
+import dynamic from 'next/dynamic';
 export const revalidate = false;
-export const dynamic = "force-dynamic";
-async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
+// export const dynamic = "force-dynamic";
+const RelatedPost = dynamic(() => import("@/components/Blog/RelatedPost"), {
+  loading: () => <p>Loading...</p>
+});
+
+const SharePost = dynamic(() => import("@/components/Blog/SharePost"));
+const NewsLatterBox = dynamic(() => import("@/components/Contact/NewsLatterBox"));
+
+
+const POSTS_PER_PAGE = 5;
+const SEARCH_MIN_LENGTH = 4;
+const CATEGORIES = ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"];
+const SCHEMA_SLUG_MAP = {
+  makemoney: "makemoney",
+  aitool: "aitools",
+  news: "news",
+  coding: "coding",
+  freeairesources: "freeairesources",
+  seo: "seo",
+};
+
+const fetchAllBlogs = async (page = 1, limit = POSTS_PER_PAGE) => {
   const start = (page - 1) * limit;
-  const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
-  const result = await client.fetch(query, { categories });
-  return result;
-}
+  const query = `*[_type in $categories] | order(publishedAt desc) {
+    formattedDate, 
+    readTime, 
+    _id, 
+    _type, 
+    title, 
+    slug, 
+    mainImage, 
+    overview, 
+     content[] {
+    ...,
+    _type == "video" => {
+      _type,
+      asset->,
+      alt,
+      caption
+    },
+    _type == "gif" => {
+      _type,
+      asset->,
+      alt,
+      caption
+    },
+    publishedAt 
+  }[${start}...${start + limit}]`;
+  
+  return client.fetch(query, { categories: CATEGORIES });
+};
 
 
 export default function BlogSidebarPage({ data, }) {
+
+ 
   
   const imgdesc ={
     block: {  
       normal: ({ children }) => (
-        <p   className="dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400">
+        <p className="mb-4 mt-1 text-lg  font-medium leading-relaxed text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out">
     {children}
   </p>
       ),
@@ -58,9 +106,137 @@ export default function BlogSidebarPage({ data, }) {
   }
   
   const portableTextComponents = {
+   
+  
+    types: {
+      gif: ({ value }) => {
+        const [fileUrl, setFileUrl] = useState(null);
+  
+        useEffect(() => {
+          const loadFileUrl = async () => {
+            const url = await getFileUrl(value);
+            setFileUrl(url);
+          };
+          loadFileUrl();
+        }, [value]);
+  
+        return (
+          <div className="w-full overflow-hidden rounded lg:-mx-2">
+            <div className="lg:m-4">
+              <div className="card3 rounded-xl">
+                <figure className="relative my-8">
+                  <OptimizedGif
+                    src={fileUrl}
+                    alt={value.alt}
+                    caption={value.caption}
+                    className="customClassName h-full w-full object-cover"
+                  />
+                </figure>
+              </div>
+            </div>
+          </div>
+        );
+      },
+      video: ({ value }) => {
+      const [fileUrl, setFileUrl] = useState(null);
+
+      useEffect(() => {
+        const loadFileUrl = async () => {
+          const url = await getFileUrl(value);
+          setFileUrl(url);
+        };
+        loadFileUrl();
+      }, [value]);
+
+      if (!fileUrl) return <div>Loading...</div>;
+
+      return (
+        <div className="w-full overflow-hidden rounded lg:-mx-2">
+        <div className="lg:m-4">
+          <div className="card3 rounded-xl">
+            <figure className="relative my-8">
+              <OptimizedVideo
+                src={fileUrl}
+                alt={value.alt}
+                className=" h-full w-full object-cover"
+              >
+                <figcaption className="imgdesc py-2 rounded-bl-xl rounded-br-xl text-center text-base text-gray-800 dark:text-gray-400">
+                  {value.caption}
+                </figcaption>
+              </OptimizedVideo>
+            </figure>
+          </div>
+        </div>
+      </div>
+      );
+    },
+    
+  
+ 
+      image: ({ value }) => {
+        const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
+        return (
+          <div className="w-full overflow-hidden rounded lg:-mx-2">
+            <div className="lg:m-4">
+              <div className="card3 rounded-xl">
+                <figure className="relative my-8">
+                  <OptimizedImage
+                    src={imageUrl}
+                    alt={value.alt}
+                    className="customClassName h-full w-full object-cover"
+                  >
+                    <figcaption className="py-2 rounded-bl-xl rounded-br-xl text-center  text-xs text-gray-800 dark:text-gray-400">
+                      <PortableText 
+                        value={value.imageDescriptionOfBlockImg} 
+                        components={imgdesc} 
+                      />
+                    </figcaption>
+                  </OptimizedImage>
+                </figure>
+              </div>
+            </div>
+          </div>
+        );
+        
+      },
+     
+      table: ({ value }) => (
+        <div className="card2 m-2 mb-4 mt-4 rounded-bl-xl rounded-br-xl rounded-tl-xl rounded-tr-xl shadow-md">
+          <div className="relative overflow-x-auto rounded-xl">
+            <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+              <tbody>
+                {value.rows.map((row, rowIndex) => (
+                  <tr
+                    key={rowIndex}
+                    className={`${
+                      rowIndex % 2 === 0
+                        ? "bg-green-100 dark:bg-gray-800"
+                        : "bg-white dark:bg-gray-900"
+                    } ${
+                      rowIndex % 4 === 0 ? "bg-green-100 dark:bg-gray-800" : ""
+                    } border-b hover:bg-gray-200 dark:hover:bg-gray-700`}
+                    style={{ borderRadius: "0.5rem" }} // Adjust border radius here
+                  >
+                    {row.cells.map((cell, cellIndex) => (
+                      <td
+                        key={cellIndex}
+                        className="px-6 py-4  text-base font-medium text- dark:text-white"
+                      >
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ),
+    },
+   
     block: {
       normal: ({ children }) => (
-        <p className="mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+        <p className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
     {children}
   </p>
       ),
@@ -71,19 +247,19 @@ export default function BlogSidebarPage({ data, }) {
       ),
   
       h2: ({ children }) => (
-        <h2 className="mb-4 text-4xl font-extrabold leading-tight text-gray-800 dark:text-white  ">
+        <h2 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-4xl font-extrabold leading-tight text-gray-800 dark:text-white  ">
           {children}
         </h2>
       ),
       h3: ({ children }) => (
-        <h3 className="mb-4 text-2xl  font-extrabold leading-tight text-gray-800 dark:text-gray-200  ">
+        <h3 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-2xl  font-extrabold leading-tight text-gray-800 dark:text-gray-200  ">
           {children}
         </h3>
       ),
     
       // Heading 4
       h4: ({ children }) => (
-        <h4 className="mb-4 text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
+        <h4 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
           {children}
         </h4>
       ),
@@ -96,7 +272,7 @@ export default function BlogSidebarPage({ data, }) {
       ),
       h6: ({ children }) => (
         <div className="relative z-10 mb-10 overflow-hidden rounded-md bg-primary bg-opacity-10 p-8 md:p-9 lg:p-8 xl:p-9">
-          <h4 className="text-center text-base font-medium italic text-body-color">
+          <h4 className="text-center  text-lg sm:text-xl lg:text-2xl font-medium leading-relaxed  dark:text-gray-400 text-body-color">
           <span className="absolute left-0 top-0 z-[-1]">
                         <svg
                           width="132"
@@ -248,14 +424,13 @@ export default function BlogSidebarPage({ data, }) {
   
     list: {
       bullet: ({ children }) => (
-        <ul className="mb-10 list-inside  custom-bullet-list">
-          {children}
-        </ul>
+        <ul className="mb-4  ml-4 mr-4 transform space-y-4 rounded-lg bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out list-inside custom-bullet-list">
+        {children}
+      
+      </ul>
       ),
-  
-    
       number: ({ children }) => (
-        <ol className="mb-10 list-inside text-body-color custom-number-list">
+        <ol className="mb-10 list-inside text-body-color custom-number-list  bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200">
         {children}
       </ol>
       ),
@@ -263,85 +438,18 @@ export default function BlogSidebarPage({ data, }) {
     listItem: {
       bullet: ({ children }) => (
         <li
-        className="mb-4 text-lg font-medium leading-relaxed  text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+        className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
           {children}
         </li>
       ),
   
-      number: ({ children }) => <li className="...">{children}</li>,
+      number: ({ children }) => <li className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">{children}</li>,
     },
     marks: {
       strong: ({ children }) => (
         <strong className="text-black dark:text-white">{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
-    },
-  
-    types: {
-      image: ({ value }) => {
-        const imageUrl = urlForImage(value.asset).url();
-        return (
-          <div className=" lg:-mx-2 w-full overflow-hidden rounded">
-          <div className="lg:m-4 ">
-          <div className="card3 rounded-xl ">
-  
-            <figure className=" relative my-8 ">
-              <div className="w-full overflow-hidden  rounded-tl-xl rounded-tr-xl ">
-                <a href={imageUrl}>
-                  <Image
-                  alt={value.alt}
-                    className=" h-full w-full object-cover transition-transform duration-500 ease-in-out  hover:scale-[1.1]"
-                    src={imageUrl}
-                    layout="responsive"
-                    width={500} 
-                    height={500}
-                  />
-           
-                </a>
-              </div>
-              <figcaption 
-              
-              className=" imgdesc dark-bg-green-50 py-2 rounded-bl-xl rounded-br-xl  text-center    text-base text-gray-800 dark:text-gray-400"            >
-            <PortableText value={value.imageDescriptionOfBlockImg} components={imgdesc} />
-              </figcaption>
-            </figure>
-          </div>
-          </div>
-          </div>
-        );
-      },
-      table: ({ value }) => (
-        <div className="card2 m-2 mb-4 mt-4 rounded-bl-xl rounded-br-xl rounded-tl-xl rounded-tr-xl shadow-md">
-          <div className="relative overflow-x-auto rounded-xl">
-            <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-              <tbody>
-                {value.rows.map((row, rowIndex) => (
-                  <tr
-                    key={rowIndex}
-                    className={`${
-                      rowIndex % 2 === 0
-                        ? "bg-green-100 dark:bg-gray-800"
-                        : "bg-white dark:bg-gray-900"
-                    } ${
-                      rowIndex % 4 === 0 ? "bg-green-100 dark:bg-gray-800" : ""
-                    } border-b hover:bg-gray-200 dark:hover:bg-gray-700`}
-                    style={{ borderRadius: "0.5rem" }} // Adjust border radius here
-                  >
-                    {row.cells.map((cell, cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        className="px-6 py-4  text-base font-medium text- dark:text-white"
-                      >
-                        {cell}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ),
     },
     button: ({ value }) => {
       const { text, link } = value;
@@ -352,21 +460,7 @@ export default function BlogSidebarPage({ data, }) {
             className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
           >
             {text}
-            <svg
-              className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 14 10"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M1 5h12m0 0L9 1m4 4L9 9"
-              />
-            </svg>
+           
           </a>
         </div>
       );
@@ -398,18 +492,49 @@ export default function BlogSidebarPage({ data, }) {
     fetchData();
     
   }, [currentPage]);
-  const handleSearch = async () => {
-    if (searchText.trim().length < 4) {
-      console.log("Please enter at least 4 characters for search.");
-      return;
-    }
-    const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"] && (title match $searchText || content match $searchText)] | order(publishedAt desc)`;
+  const handleSearch = useMemo(() => {
+    let timeoutId;
+    
+    return async () => {
+      if (searchText.trim().length < SEARCH_MIN_LENGTH) {
+        return;
+      }
 
-    const searchResults = await client.fetch(query, {
-      searchText: `*${searchText}*`,
-    });
-    setSearchResults(searchResults);
-  };
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(async () => {
+        const query = `*[_type in $categories && (title match $searchText || content match $searchText)] | order(publishedAt desc)`;
+        const results = await client.fetch(query, {
+          categories: CATEGORIES,
+          searchText: `*${searchText}*`,
+        });
+        setSearchResults(results);
+      }, 300);
+    };
+  }, [searchText]);
+
+  // Initial data fetching
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setLoading(true);
+      try {
+        const [blogData, recentPosts, relatedPostsData] = await Promise.all([
+          fetchAllBlogs(currentPage),
+          client.fetch(`*[_type in $categories]|order(publishedAt desc)[0...5]`, { categories: CATEGORIES }),
+          client.fetch(`*[_type == "seo"][0...3] | order(_createdAt desc)`),
+        ]);
+
+        setAllData(blogData);
+        setRecentData(recentPosts);
+        setRelatedPosts(relatedPostsData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [currentPage]);
    
   const resetSearch = () => {
     setSearchText("");
@@ -494,31 +619,42 @@ export default function BlogSidebarPage({ data, }) {
   
     return (
       <div
-        className={`transition-max-height mb-8 overflow-hidden bs1 ${
-          isTableOfContentsOpen ? "max-h-full" : "max-h-0"
-        }`}
-      >
-        <div className="rounded border border-gray-300 p-4">
-          <h3 className="text-lg font-semibold">Table of Contents</h3>
-          <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb] custom-bullet-list">
-            {data.tableOfContents.map((item, index) => (
-              <li className="mb-2" key={index}>
-                <a className="text-black dark:text-white">{item.heading}</a>
-                {item.subheadings && item.subheadings.length > 0 && (
-                  <ul className="ml-4 list-inside list-disc">
-                    {item.subheadings.map((subheading, subIndex) => (
-                      <li className="mb-2 mt-2" key={subIndex}>
-                        <a className="text-black dark:text-white">{subheading}</a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+      className={`transition-max-height mb-8 overflow-hidden bs1 ${
+        isTableOfContentsOpen ? "max-h-full" : "max-h-0"
+      }`}
+    >
+      <div className="rounded border border-gray-300 shadow-md p-6 bg-white dark:bg-gray-800 transition-colors duration-300">
+        <h1 className="text-3xl font-semibold text-gray-800 dark:text-white mb-4">
+          Table of Contents
+        </h1>
+        <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb]">
+          {data.tableOfContents.map((item, index) => (
+            <li key={index} className="mb-2">
+              <a
+                className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition duration-200"
+                href={`#${item.heading.replace(/\s+/g, '-').toLowerCase()}`}
+              >
+                {item.heading}
+              </a>
+              {item.subheadings && item.subheadings.length > 0 && (
+                <ul className="ml-4 list-inside list-disc">
+                  {item.subheadings.map((subheading, subIndex) => (
+                    <li key={subIndex} className="mb-2 mt-1">
+                      <a
+                        className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition duration-200"
+                        href={`#${subheading.replace(/\s+/g, '-').toLowerCase()}`}
+                      >
+                        {subheading}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
       </div>
-
+    </div>
     );
   };
   return (
@@ -528,7 +664,7 @@ export default function BlogSidebarPage({ data, }) {
           
         {loading ? (
          
-<BigSkeleton/>
+<SlugSkeleton/>
 
           
         ) : (
@@ -553,8 +689,8 @@ export default function BlogSidebarPage({ data, }) {
                               width={500} 
                               height={500}
                               placeholder="blur"
-                              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-                        
+                              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQrJiEkKic0Ly8vLy8xNzU6OjU3MzlFREVHS1BQW1xbN0djbWNkYXNbW1v/2wBDARUXFx4aHh0lJSE3LjctN1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1tbW1v/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+
 
                             />
                           </a>
@@ -692,7 +828,7 @@ export default function BlogSidebarPage({ data, }) {
         {faq.question}
       </summary>
       <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-        <p className="text-base text-gray-700 dark:text-gray-300">
+        <p className="mb-4 mt-1 text-lg  font-medium leading-relaxed text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out">
           {faq.answer}
         </p>
       </div>
@@ -803,20 +939,18 @@ export default function BlogSidebarPage({ data, }) {
                     <br/>
                           {recentData.slice(0, 3).map((post) => (
                             
-                  <li  key={post._id} className="mb-6 border-b border-black border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
-                    
-                    <RelatedPost
-                
-                      title={post.title}
-                      image={urlForImage(post.mainImage).url()}
-                      slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-                      date= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    />
-             
-             
-                  </li>
+                            <li key={post._id} className="mb-6 border-b border-black border-opacity-10 pb-6 dark:border-white dark:border-opacity-10">
+                            <RelatedPost
+                              title={post.title}
+                              image={post.mainImage ? urlForImage(post.mainImage).url() : "/path-to-placeholder-image.jpg"} // Add a fallback
+                              slug={`/${schemaSlugMap[post._type]}/${post.slug?.current || ""}`} // Ensure slug is defined
+                              date={post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : "Unknown Date"} // Fallback for date
+                            />
+                          </li>
+                          
+
                        ))}
-                       <Link href="/allposts">
+                       <Link href="/blogs">
                       <h3 className=" cursor-pointer text-center border-b border-black border-opacity-10 py-4 text-lg font-semibold text-black dark:border-white dark:border-opacity-10 dark:text-white dark:hover:text-primary hover:text-primary">
                Explore all Posts
                 </h3>

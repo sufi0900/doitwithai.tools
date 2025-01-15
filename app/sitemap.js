@@ -2,7 +2,7 @@
 import { fetchURLs } from '../app/lib/sanity';
 
 // Define the base URL of your website
-const baseURL = 'https://sufi-blog-website.vercel.app';
+const baseURL = 'https://www.doitwithai.tools/';
 
 // Function to generate the sitemap
 export default async function sitemap() {

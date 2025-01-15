@@ -2,4 +2,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://sufi-blog-website.vercel.app/api/sitemap.xml
+Sitemap: https://www.doitwithai.tools/api/sitemap.xml

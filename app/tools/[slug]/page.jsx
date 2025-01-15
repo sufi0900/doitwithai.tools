@@ -55,12 +55,12 @@ export default async function ParentPage({  params }) {
         "headline": "${data.schematitle}",
 
         "description": "${data.schemadesc}",
-        "url": "https://sufi-blog-website.vercel.app/tools/${params.slug}",
+        "url": "https://www.doitwithai.tools/tools/${params.slug}",
 
         "author": {
           "@type": "Person",
           "name": "Sufian Mustafa",
-          "url": "https://sufi-blog-website.vercel.app/author/sufian-mustafa"
+          "url": "https://www.doitwithai.tools/author/sufian-mustafa"
 
         },
         "image": {
@@ -83,7 +83,7 @@ export default async function ParentPage({  params }) {
             "@type": "ListItem",
             "position": 1,
             "item": {
-              "@id": "https://sufi-blog-website.vercel.app/",
+              "@id": "https://www.doitwithai.tools/",
               "name": "Home"
             }
           },
@@ -91,7 +91,7 @@ export default async function ParentPage({  params }) {
             "@type": "ListItem",
             "position": 2,
             "item": {
-              "@id": "https://sufi-blog-website.vercel.app/tools",
+              "@id": "https://www.doitwithai.tools/tools",
               "name": "AI Tools"
             }
           },
@@ -99,7 +99,7 @@ export default async function ParentPage({  params }) {
             "@type": "ListItem",
             "position": 3,
             "item": {
-              "@id": "https://sufi-blog-website.vercel.app/tools/${params.slug}",
+              "@id": "https://www.doitwithai.tools/tools/${params.slug}",
               "name": "${data.schematitle}"
             }
           }
@@ -143,7 +143,7 @@ export default async function ParentPage({  params }) {
         <meta property="og:description" content={overview} />
         <meta property="og:image" content={image}/>
         <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
+        <meta property="twitter:domain" content="doitwithai.tools" />
         <meta property="twitter:url" content={canonicalUrl} />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={overview} />

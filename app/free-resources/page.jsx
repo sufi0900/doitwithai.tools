@@ -32,7 +32,7 @@ export default function Page() {
       "@type": "CollectionPage",
       "name": "Free AI Resources and Solution",
       "description": "Unlock the power of AI for free! Discover a treasure trove of valuable resources, including free non-copyrighted AI-generated HD images and creative writing prompts for various needs.  Our blog offers practical solutions and guides on how AI can tackle challenges across different fields.  Explore how AI can enhance your work, creativity, and problem-solving in any domain! ",
-      "url": "https://sufi-blog-website.vercel.app/ai-tools",
+      "url": "https://www.doitwithai.tools/ai-tools",
       "breadcrumb": {
         "@type": "BreadcrumbList",
         "itemListElement": [
@@ -40,13 +40,13 @@ export default function Page() {
             "@type": "ListItem",
             "position": 1,
             "name": "Home",
-            "item": "https://sufi-blog-website.vercel.app/"
+            "item": "https://www.doitwithai.tools/"
           },
           {
             "@type": "ListItem",
             "position": 2,
             "name": "Free AI Resources",
-            "item": "https://sufi-blog-website.vercel.app/free-resources"
+            "item": "https://www.doitwithai.tools/free-resources"
           }
         ]
       }
@@ -71,18 +71,18 @@ export default function Page() {
 <meta property="og:image:height" content="630" />
 
   {/*  */}
-  <meta property="og:url" content="https://sufi-blog-website.vercel.app/ai-tools" />
+  <meta property="og:url" content="https://www.doitwithai.tools/ai-tools" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={metadata.title} />
         <meta property="og:description" content={metadata.description} />
         <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="sufi-blog-website.vercel.app" />
-        <meta property="twitter:url" content="https://sufi-blog-website.vercel.app/ai-tools" />
+        <meta property="twitter:domain" content="doitwithai.tools" />
+        <meta property="twitter:url" content="https://www.doitwithai.tools/ai-tools" />
         <meta name="twitter:title" content={metadata.title} />
         <meta name="twitter:description" content={metadata.description} />
         <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-  <link rel="canonical" href="https://sufi-blog-website.vercel.app/ai-tools"/>
+  <link rel="canonical" href="https://www.doitwithai.tools/ai-tools"/>
         <NextSeo
          title={metadata.title}
          description={metadata.description}
@@ -91,11 +91,11 @@ export default function Page() {
           locale= 'en_IE'
           site_name= 'AiToolTrend'
 
-          canonical="https://sufi-blog-website.vercel.app/ai-tools"
+          canonical="https://www.doitwithai.tools/ai-tools"
           openGraph={{
             title: metadata.title,
             description: metadata.description,
-            url: "https://sufi-blog-website.vercel.app/ai-tools",
+            url: "https://www.doitwithai.tools/ai-tools",
             type: "ItemList",
             images: metadata.images
           }}
