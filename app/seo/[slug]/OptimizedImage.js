@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+
 // OptimizedImage.jsx
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
