@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+
 import SharePost from "@/components/Blog/SharePost";
 import TagButton from "@/components/Blog/TagButton";
 import NewsLatterBox from "@/components/Contact/NewsLatterBox";
