@@ -53,7 +53,6 @@ const URL_SCHEMES = {
 const createUrlValidation = (requiredField = false) => (Rule: { uri: (arg0: { scheme: string[]; }) => any; }) => {
   const baseRule = Rule.uri({
     scheme: Object.keys(URL_SCHEMES),
-    allowRelative: true
   }).error(VALIDATION_MESSAGES.url);
   return requiredField ? baseRule.required().error(VALIDATION_MESSAGES.required) : baseRule;
 };
