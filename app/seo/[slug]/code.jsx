@@ -10,12 +10,12 @@ import Card from "@/components/Card/Page";
 import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import classNames from 'classnames';
-import OptimizedGif from "./OptimizedGif"
 import OptimizedImage from "./OptimizedImage"
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage, getFileUrl } from "@/sanity/lib/image";
 import OptimizedVideo from "./OptimizedVideo"
+import OptimizedGif from "./OptimizedGif"
 
 
 import "@/styles/customanchor.css";
@@ -623,10 +623,11 @@ export default function BlogSidebarPage({ data, }) {
   
     return (
       <div
-      className={`transition-max-height mb-8 overflow-hidden bs1 ${
-        isTableOfContentsOpen ? "max-h-full" : "max-h-0"
+       className={`transition-max-height mb-8 overflow-visible bs1 ${
+        isTableOfContentsOpen ? "max-h-full" : "max-h-0" 
       }`}
     >
+    
       <div className="rounded border border-gray-300 shadow-md p-6 bg-white dark:bg-gray-800 transition-colors duration-300">
         <h1 className="text-3xl font-semibold text-gray-800 dark:text-white mb-4">
           Table of Contents

@@ -18,6 +18,8 @@ import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
+import OptimizedVideo from "@/app/seo/[slug]/OptimizedVideo";
+import OptimizedGif from "@/app/seo/[slug]/OptimizedGif";
 
 import "@/styles/customanchor.css";
 import Link from "next/link";
@@ -546,30 +548,42 @@ export default function BlogSidebarPage({ data, }) {
   
     return (
       <div
-        className={`transition-max-height mb-8 overflow-hidden bs1 ${
-          isTableOfContentsOpen ? "max-h-full" : "max-h-0"
-        }`}
-      >
-        <div className="rounded border border-gray-300 p-4">
-          <h3 className="text-lg font-semibold">Table of Contents</h3>
-          <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb] custom-bullet-list">
-            {data.tableOfContents.map((item, index) => (
-              <li className="mb-2" key={index}>
-                <a className="text-black dark:text-white">{item.heading}</a>
-                {item.subheadings && item.subheadings.length > 0 && (
-                  <ul className="ml-4 list-inside list-disc">
-                    {item.subheadings.map((subheading, subIndex) => (
-                      <li className="mb-2 mt-2" key={subIndex}>
-                        <a className="text-black dark:text-white">{subheading}</a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+      className={`transition-max-height mb-8 overflow-y-auto bs1 ${
+        isTableOfContentsOpen ? "max-h-[800px]" : "max-h-0"
+      }`}
+    >
+      <div className="rounded border border-gray-300 shadow-md p-6 bg-white dark:bg-gray-800 transition-colors duration-300">
+        <h1 className="text-3xl font-semibold text-gray-800 dark:text-white mb-4">
+          Table of Contents
+        </h1>
+        <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb]">
+          {data.tableOfContents.map((item, index) => (
+            <li key={index} className="mb-2">
+              <a
+                className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition duration-200"
+                href={`#${item.heading.replace(/\s+/g, '-').toLowerCase()}`}
+              >
+                {item.heading}
+              </a>
+              {item.subheadings && item.subheadings.length > 0 && (
+                <ul className="ml-4 list-inside list-disc">
+                  {item.subheadings.map((subheading, subIndex) => (
+                    <li key={subIndex} className="mb-2 mt-1">
+                      <a
+                        className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition duration-200"
+                        href={`#${subheading.replace(/\s+/g, '-').toLowerCase()}`}
+                      >
+                        {subheading}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
       </div>
+    </div>
 
     );
   };

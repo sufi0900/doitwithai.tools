@@ -329,7 +329,7 @@ export default function AllBlogs() {
         title={post.title}
         tags={post.tags} 
         mainImage={post.mainImage ? urlForImage(post.mainImage).url() : '/default-image.jpg'}
-        slug={`/seo/${post.slug?.current}`}
+        slug={`/${post._type === "seo" ? "seo" : "tools"}/${post.slug.current}`}
         publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { 
           day: 'numeric', 
           month: 'short', 
