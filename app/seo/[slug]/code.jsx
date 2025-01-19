@@ -623,8 +623,8 @@ export default function BlogSidebarPage({ data, }) {
   
     return (
       <div
-       className={`transition-max-height mb-8 overflow-visible bs1 ${
-        isTableOfContentsOpen ? "max-h-full" : "max-h-0" 
+      className={`transition-max-height mb-8 overflow-y-auto bs1 ${
+        isTableOfContentsOpen ? "max-h-[800px]" : "max-h-0"
       }`}
     >
     
