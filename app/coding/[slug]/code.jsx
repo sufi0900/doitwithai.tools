@@ -11,13 +11,14 @@ import RecentPost from "@/components/RecentPost/page";
 import Card from "@/components/Card/Page";
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import classNames from 'classnames';
-import OptimizedImage from "@/app/seo/[slug]/OptimizedImage";
 import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
-
+import OptimizedVideo from "@/app/seo/[slug]/OptimizedVideo";
+import OptimizedGif from "@/app/seo/[slug]/OptimizedGif";
+import OptimizedImage from "@/app/seo/[slug]/OptimizedImage";
 import "@/styles/customanchor.css";
 import Link from "next/link";
 export const revalidate = false;
@@ -32,6 +33,71 @@ async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
 
 export default function BlogSidebarPage({ data, }) {
   
+  const GifComponent = ({ value }) => {
+    const [fileUrl, setFileUrl] = useState(null);
+  
+    useEffect(() => {
+      const loadFileUrl = async () => {
+        const url = await getFileUrl(value);
+        setFileUrl(url);
+      };
+      loadFileUrl();
+    }, [value]);
+  
+    if (!fileUrl) return <div>Loading...</div>;
+  
+    return (
+      <div className="w-full overflow-hidden rounded lg:-mx-2">
+        <div className="lg:m-4">
+          <div className="card3 rounded-xl">
+            <figure className="relative my-8">
+              <OptimizedGif
+                src={fileUrl}
+                alt={value.alt}
+                caption={value.caption}
+                className="customClassName h-full w-full object-cover"
+              />
+            </figure>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  const VideoComponent = ({ value }) => {
+    const [fileUrl, setFileUrl] = useState(null);
+  
+    useEffect(() => {
+      const loadFileUrl = async () => {
+        const url = await getFileUrl(value);
+        setFileUrl(url);
+      };
+      loadFileUrl();
+    }, [value]);
+  
+    if (!fileUrl) return <div>Loading...</div>;
+  
+    return (
+      <div className="w-full overflow-hidden rounded lg:-mx-2">
+        <div className="lg:m-4">
+          <div className="card3 rounded-xl">
+            <figure className="relative my-8">
+              <OptimizedVideo
+                src={fileUrl}
+                alt={value.alt}
+                className="h-full w-full object-cover"
+              >
+                <figcaption className="imgdesc py-2 rounded-bl-xl rounded-br-xl text-center text-base text-gray-800 dark:text-gray-400">
+                  {value.caption}
+                </figcaption>
+              </OptimizedVideo>
+            </figure>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
   const imgdesc ={
     block: {  
       normal: ({ children }) => (
@@ -59,11 +125,13 @@ export default function BlogSidebarPage({ data, }) {
   }
   
   const portableTextComponents = {
-   
+    gif: GifComponent,
+    video: VideoComponent,
+  
   
     types: {
       image: ({ value }) => {
-        const imageUrl = urlForImage(value.asset).url();
+        const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
         return (
           <div className="w-full overflow-hidden rounded lg:-mx-2">
             <div className="lg:m-4">
@@ -74,19 +142,23 @@ export default function BlogSidebarPage({ data, }) {
                     alt={value.alt}
                     className="customClassName h-full w-full object-cover"
                   >
-                    <figcaption className="imgdesc py-2 rounded-bl-xl rounded-br-xl text-center text-base text-gray-800 dark:text-gray-400">
-                      <PortableText 
-                        value={value.imageDescriptionOfBlockImg} 
-                        components={imgdesc} 
-                      />
-                    </figcaption>
+                    {value.imageDescription && (
+                  <figcaption className="py-2 rounded-bl-xl rounded-br-xl text-center text-xs text-gray-800 dark:text-gray-400">
+                    <PortableText 
+                      value={value.imageDescription} 
+                      components={imgdesc} 
+                    />
+                  </figcaption>
+                )}
                   </OptimizedImage>
                 </figure>
               </div>
             </div>
           </div>
         );
+        
       },
+     
       table: ({ value }) => (
         <div className="card2 m-2 mb-4 mt-4 rounded-bl-xl rounded-br-xl rounded-tl-xl rounded-tr-xl shadow-md">
           <div className="relative overflow-x-auto rounded-xl">

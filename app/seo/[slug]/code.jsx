@@ -56,6 +56,12 @@ const fetchAllBlogs = async (page = 1, limit = POSTS_PER_PAGE) => {
     overview, 
      content[] {
     ...,
+    _type == "image" => {
+      _type,
+      asset->,
+      alt,
+      imageDescription
+    },
     _type == "video" => {
       _type,
       asset->,
@@ -73,8 +79,6 @@ const fetchAllBlogs = async (page = 1, limit = POSTS_PER_PAGE) => {
   
   return client.fetch(query, { categories: CATEGORIES });
 };
-
-
 export default function BlogSidebarPage({ data, }) {
 
   const GifComponent = ({ value }) => {
@@ -189,12 +193,14 @@ export default function BlogSidebarPage({ data, }) {
                     alt={value.alt}
                     className="customClassName h-full w-full object-cover"
                   >
-                    <figcaption className="py-2 rounded-bl-xl rounded-br-xl text-center  text-xs text-gray-800 dark:text-gray-400">
-                      <PortableText 
-                        value={value.imageDescriptionOfBlockImg} 
-                        components={imgdesc} 
-                      />
-                    </figcaption>
+                    {value.imageDescription && (
+                  <figcaption className="py-2 rounded-bl-xl rounded-br-xl text-center text-xs text-gray-800 dark:text-gray-400">
+                    <PortableText 
+                      value={value.imageDescription} 
+                      components={imgdesc} 
+                    />
+                  </figcaption>
+                )}
                   </OptimizedImage>
                 </figure>
               </div>
@@ -645,12 +651,12 @@ export default function BlogSidebarPage({ data, }) {
                 <ul className="ml-4 list-inside list-disc">
                   {item.subheadings.map((subheading, subIndex) => (
                     <li key={subIndex} className="mb-2 mt-1">
-                      <a
+                      {/* <a
                         className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition duration-200"
                         href={`#${subheading.replace(/\s+/g, '-').toLowerCase()}`}
                       >
                         {subheading}
-                      </a>
+                      </a> */}
                     </li>
                   ))}
                 </ul>

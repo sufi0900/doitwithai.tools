@@ -6,10 +6,12 @@ import { visionTool } from "@sanity/vision";
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
 import { table } from "@sanity/table";
+import {theme as _theme} from './theme'
 
 // Go to https://www.sanity.io/docs/api-versioning to learn how API versioning works
 import { apiVersion, dataset, projectId } from "./sanity/env";
 import { schema } from "./sanity/schema";
+const theme = _theme as import('sanity').StudioTheme
 
 export default defineConfig({
   basePath: "/studio",
@@ -17,6 +19,8 @@ export default defineConfig({
   dataset,
   // Add and edit the content schema in the './sanity/schema' folder
   schema,
+    theme, // <-- 3. add the theme here
+
   plugins: [
     table({
       rowType: "my-custom-row-type",

@@ -23,9 +23,6 @@ export const brands = {
           
         },
         
-     
-    
-      
     ],
   };
   

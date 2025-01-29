@@ -134,18 +134,18 @@ export const aitool = {
         ...STYLE_CONFIGS.text,
       }
     },
-    {
-      name: 'subcategory',
-      title: 'Subcategory',
-      type: 'reference',
-      to: [{ type: 'seoSubcategory' }],
-      group: 'display',
-      validation: (Rule: { required: () => any; }) => Rule.required(),
-      description: 'Select a subcategory for better organization',
-      options: {
-        disableNew: true
-      }
-    },
+    // {
+    //   name: 'subcategory',
+    //   title: 'Subcategory',
+    //   type: 'reference',
+    //   to: [{ type: 'seoSubcategory' }],
+    //   group: 'display',
+    //   validation: (Rule: { required: () => any; }) => Rule.required(),
+    //   description: 'Select a subcategory for better organization',
+    //   options: {
+    //     disableNew: true
+    //   }
+    // },
     {
       name: "slug",
       type: "slug",
@@ -276,7 +276,7 @@ export const aitool = {
             name: "heading",
             title: "Heading",
             type: "string",
-            validation: (Rule: { required: () => any; }) => Rule.required(),
+            validation: (Rule) => Rule.required(),
             options: {
               ...STYLE_CONFIGS.text,
             }
@@ -285,16 +285,34 @@ export const aitool = {
             name: "subheadings",
             title: "Subheadings",
             type: "array",
-            of: [{ 
-              type: "string",
-              validation: (Rule: { max: (arg0: number) => any; }) => Rule.max(100)
+            of: [{
+              type: "object",
+              preview: {
+                select: {
+                  title: 'subheading',
+                },
+                prepare({ title }) {
+                  return {
+                    title: title || 'No subheading',
+                  };
+                }
+              },
+              fields: [
+                {
+                  name: "subheading",
+                  title: "Subheading",
+                  type: "string",
+                  validation: (Rule) => Rule.required(),
+                }
+              ]
             }],
             options: {
-              layout: 'tags'
+              sortable: true
             }
           }
         ]
       }],
+    
       options: {
         sortable: true
       }
@@ -369,13 +387,17 @@ export const aitool = {
         {
           type: "image",
           fields: [
-            ...commonImageFields,
             {
-              name: "url",
-              title: "Custom URL",
-              type: "url",
-              description: "Optional link for the image",
-              validation: createUrlValidation()
+              name: "alt",
+              title: "Alternative Text",
+              type: "text",
+              validation: (Rule: { required: () => { (): any; new(): any; max: { (arg0: number): any; new(): any; }; }; }) => Rule.required()
+            },
+            {
+              name: "imageDescription",
+              title: "Image Description",
+              type: "array",
+              of: [{ type: "block" }]
             }
           ],
           options: {
@@ -567,3 +589,6 @@ export const aitool = {
   ]
 }
 
+
+
+  
