@@ -127,7 +127,7 @@ export default function Home() {
       <Suspense fallback={<div>Loading footer content...</div>}>
         <>
           <MBrands />
-          <Contact />
+          {/* <Contact /> */}
         </>
       </Suspense>
     </>

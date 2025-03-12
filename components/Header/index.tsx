@@ -77,7 +77,7 @@ const Header = () => {
             </div>
 
             {/* Navigation - Center for LG, Hidden for SM */}
-            <div className="hidden lg:flex lg:flex-1 lg:justify-center">
+            <div className=" lg:flex lg:flex-1 lg:justify-center">
               <nav id="navbarCollapse" className="navbar">
                 <ul className="flex justify-center space-x-6">
                   {menuData.map((menuItem, index) => (

@@ -39,6 +39,7 @@
     "react-modal-video": "^2.0.1",
     "react-quill": "^2.0.0",
     "react-toastify": "^10.0.6",
+    "recharts": "^2.15.1",
     "sanity": "^3.36.2",
     "sanity-plugin-media": "^2.3.2",
     "sitemap": "^7.1.1",

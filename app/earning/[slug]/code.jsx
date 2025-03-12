@@ -24,26 +24,7 @@ export const revalidate = false;
 export const dynamic = "force-dynamic";
 async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
   const start = (page - 1) * limit;
-  const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body,  content[] {
-    ...,
-    _type == "image" => {
-      _type,
-      asset->,
-      alt,
-      imageDescription
-    },
-    _type == "video" => {
-      _type,
-      asset->,
-      alt,
-      caption
-    },
-    _type == "gif" => {
-      _type,
-      asset->,
-      alt,
-      caption
-    }, publishedAt }[${start}...${start + limit}]`;
+  const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
   const result = await client.fetch(query, { categories });
   return result;
 }
