@@ -12,6 +12,7 @@ import Card from "@/components/Card/Page";
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import classNames from 'classnames';
 import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
+import ReadingProgressCircle from "@/app/seo/[slug]/ReadingProgressCircle";
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
@@ -407,7 +408,7 @@ export default function BlogSidebarPage({ data, }) {
     },
     marks: {
       strong: ({ children }) => (
-        <strong className="text-black dark:text-white">{children}</strong>
+        <strong className=" text-primary  dark:text-blue-500">{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
     },
@@ -592,7 +593,7 @@ export default function BlogSidebarPage({ data, }) {
         <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white  transition-colors duration-300 hover:text-blue-600   dark:hover:text-blue-400">
                 {data.title}
                 </h1>
-               
+               <ReadingProgressCircle />
 
         
         <div className="card4  rounded-xl">
@@ -630,7 +631,7 @@ export default function BlogSidebarPage({ data, }) {
                      
                     </div>   
             <div className="w-full  lg:w-8/12 ">
-                  <div className="mb-10 mt-4 w-full overflow-hidden rounded">
+                  <div className="mb-10 mt-4 w-full overflow-hidden rounded  article-content">
                   <div className="mb-10 flex flex-wrap items-center justify-between border-b border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="flex flex-wrap items-center">
                       <div className="mb-5 mr-10 flex items-center">
@@ -961,7 +962,7 @@ export default function BlogSidebarPage({ data, }) {
            Related
             <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
           </span>
-          <span className="text-blue-500">Post</span>
+          <span className="text-blue-500">Posts</span>
         </h2>
         <div className="flex flex-wrap justify-start">
         {loading ? (

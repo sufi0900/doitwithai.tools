@@ -225,6 +225,27 @@ color: #2563eb;
   color: #2563eb;
   z-index: 999; /* Lower than the modal */
 }
-.asd {
+.asd,  {
   box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
 }
+.readingbar
+{
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px, rgba(0, 0, 0, 0.3) 0px 7px 13px -3px, rgba(0, 0, 0, 0.2) 0px -3px 0px inset;}
+
+  @keyframes gradient-move {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .animate-gradient-move {
+    background-size: 200% 200%;
+    animation: gradient-move 3s infinite linear;
+  }
+  @keyframes gradientPulse {
+    0% { background: linear-gradient(to right, #06b6d4, #3b82f6, #9333ea); }
+    25% { background: linear-gradient(to right, #3b82f6, #9333ea, #06b6d4); }
+    50% { background: linear-gradient(to right, #9333ea, #06b6d4, #3b82f6); }
+    75% { background: linear-gradient(to right, #06b6d4, #3b82f6, #9333ea); }
+    100% { background: linear-gradient(to right, #3b82f6, #9333ea, #06b6d4); }
+  }

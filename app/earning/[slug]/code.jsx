@@ -13,6 +13,7 @@ import SkelCard from "@/components/Blog/Skeleton/Card"
 import classNames from 'classnames';
 import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
 import OptimizedImage from "@/app/seo/[slug]/OptimizedImage";
+import ReadingProgressCircle from "@/app/seo/[slug]/ReadingProgressCircle";
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
@@ -336,22 +337,37 @@ export default function BlogSidebarPage({ data, }) {
     },
     marks: {
       strong: ({ children }) => (
-        <strong className="text-black dark:text-white">{children}</strong>
+        <strong className=" text-primary  dark:text-blue-500">{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
     },
     button: ({ value }) => {
       const { text, link } = value;
       return (
-        <div className="btn1 mb-4 mt-4">
-          <a
-            href={link}
-            className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          >
-            {text}
-           
-          </a>
-        </div>
+        <div className="btn1 mb-6 mt-6 flex justify-center">
+        <a
+          href={link}
+          className="relative  inline-flex items-center gap-2 rounded-xl border-2 border-white bg-blue-700 px-6 py-3 text-xl font-semibold text-black shadow-lg transition-all duration-500 ease-in-out hover:scale-105 hover:bg-gradient-to-r hover:from-red-500 hover:via-purple-500 hover:to-blue-500 focus:outline-none focus:ring-4 focus:ring-pink-300"
+        >
+          {text}
+          <span className="flex btn2 h-8 w-8 items-center justify-center rounded-full border border-white bg-white/20 p-2 shadow-md transition-all duration-300 hover:bg-white/30">
+            <ArrowRight className="h-5 w-5 text-white" />
+          </span>
+        </a>
+        <style jsx>{`
+          .btn1 a {
+            animation: pulse 1s infinite alternate;
+          }
+          @keyframes pulse {
+            0% {
+              box-shadow: 0 0 10px rgba(255, 105, 180, 0.4);
+            }
+            100% {
+              box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
+            }
+          }
+        `}</style>
+      </div>
       );
     },
   };
@@ -477,30 +493,43 @@ export default function BlogSidebarPage({ data, }) {
   
     return (
       <div
-        className={`transition-max-height mb-8 overflow-hidden bs1 ${
-          isTableOfContentsOpen ? "max-h-full" : "max-h-0"
-        }`}
-      >
-        <div className="rounded border border-gray-300 p-4">
-          <h3 className="text-lg font-semibold">Table of Contents</h3>
-          <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb] custom-bullet-list">
-            {data.tableOfContents.map((item, index) => (
-              <li className="mb-2" key={index}>
-                <a className="text-black dark:text-white">{item.heading}</a>
-                {item.subheadings && item.subheadings.length > 0 && (
-                  <ul className="ml-4 list-inside list-disc">
-                    {item.subheadings.map((subheading, subIndex) => (
-                      <li className="mb-2 mt-2" key={subIndex}>
-                        <a className="text-black dark:text-white">{subheading}</a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+      className={`transition-max-height mb-8 overflow-y-auto bs1 ${
+        isTableOfContentsOpen ? "max-h-[800px]" : "max-h-0"
+      }`}
+    >
+      <div className="rounded border border-gray-300 shadow-md p-6 bg-white dark:bg-gray-800 transition-colors duration-300">
+        <h1 className="text-3xl font-semibold text-gray-800 dark:text-white mb-4">
+          Table of Contents
+        </h1>
+        <ul className="mb-10 list-inside list-disc text-lg text-[#2563eb]">
+          {data.tableOfContents.map((item, index) => (
+            <li key={index} className="mb-2">
+              <a
+                className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition duration-200"
+                href={`#${item.heading.replace(/\s+/g, '-').toLowerCase()}`}
+              >
+                {item.heading}
+              </a>
+              {item.subheadings && item.subheadings.length > 0 && (
+                <ul className="ml-4 list-inside list-disc">
+                  {item.subheadings.map((subheading, subIndex) => (
+                    <li key={subIndex} className="mb-2 mt-1">
+                      <a
+                        className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition duration-200"
+                        href={`#${subheading.replace(/\s+/g, '-').toLowerCase()}`}
+                      >
+                        {subheading}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
       </div>
+    </div>
+
 
     );
   };
@@ -522,7 +551,7 @@ export default function BlogSidebarPage({ data, }) {
                 {data.title}
                 </h1>
                
-
+<ReadingProgressCircle/>
         
         <div className="card4  rounded-xl">
         <figure className=" relative overflow-hidden rounded-lg">
@@ -559,7 +588,7 @@ export default function BlogSidebarPage({ data, }) {
                      
                     </div>   
             <div className="w-full  lg:w-8/12 ">
-                  <div className="mb-10 mt-4 w-full overflow-hidden rounded">
+                  <div className="mb-10 mt-4 w-full overflow-hidden rounded  article-content">
                   <div className="mb-10 flex flex-wrap items-center justify-between border-b border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="flex flex-wrap items-center">
                       <div className="mb-5 mr-10 flex items-center">
@@ -884,7 +913,7 @@ export default function BlogSidebarPage({ data, }) {
            Related
             <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
           </span>
-          <span className="text-blue-500">Post</span>
+          <span className="text-blue-500">Posts</span>
         </h2>
         <div className="flex flex-wrap justify-start">
         {loading ? (

@@ -14,7 +14,7 @@
   font-weight: 500;
 
   padding: 2px 7px;
-  border-radius: 8px; /* Equivalent to 6px */
+  border-radius: 8px; 
   text-decoration: none !important; /* Use !important to override other styles */
   box-shadow:
     rgba(0, 0, 0, 0.19) 0px 10px 20px,
@@ -28,7 +28,7 @@
   font-weight: 500;
 
   padding: 5px 10px;
-  border-radius: 8px; /* Equivalent to 6px */
+  border-radius: 8px; 
   text-decoration: none !important; /* Use !important to override other styles */
   box-shadow:
     rgba(0, 0, 0, 0.19) 0px 10px 20px,
@@ -38,17 +38,49 @@
   color: #fff;
   background-color: #1e40af;
 }
-/* Target only <a> tags within buttons */
 
+.nonebtn a:hover, .nonebtn link:hover, .nonebtn:hover{
+  background-color: none;
+  background: none;
+}
 .btn1 a {
   color: white;
+  
 }
+.btn2,   {
+
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px; 
+
+}
+
 /* Override hover styles for btn1 */
 .btn1 a:hover {
   /* Remove padding and other hover effects */
   font-weight: none;
-  padding: 8px 12px; /* Set padding to 0 */
-  border-radius: none; /* Remove border-radius */
+ padding: 20px 32px;
+  /* border-radius: 23px;  */
   box-shadow: none; /* Remove box-shadow */
   outline: none; /* Remove outline */
+}
+@keyframes gradientAnimation {
+  0% { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+  25% { background: linear-gradient(90deg, #ec4899, #f43f5e); }
+  50% { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+  75% { background: linear-gradient(90deg, #10b981, #34d399); }
+  100% { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+}
+
+.animated-gradient {
+  animation: gradientAnimation 5s infinite linear;
+}
+/* styles/globals.css */
+@keyframes bgChange {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.btn-gradient {
+  background-size: 400% 400%;
+  animation: bgChange 10s ease infinite;
 }
