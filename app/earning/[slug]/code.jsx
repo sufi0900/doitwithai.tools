@@ -14,6 +14,7 @@ import classNames from 'classnames';
 import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
 import OptimizedImage from "@/app/seo/[slug]/OptimizedImage";
 import ReadingProgressCircle from "@/app/seo/[slug]/ReadingProgressCircle";
+import { ArrowRight } from "lucide-react";
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
@@ -337,7 +338,7 @@ export default function BlogSidebarPage({ data, }) {
     },
     marks: {
       strong: ({ children }) => (
-        <strong className=" text-primary  dark:text-blue-500">{children}</strong>
+        <strong className=" text-primary  dark:text-blue-400">{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
     },

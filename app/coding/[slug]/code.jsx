@@ -13,6 +13,7 @@ import SkelCard from "@/components/Blog/Skeleton/Card"
 import classNames from 'classnames';
 import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
 import ReadingProgressCircle from "@/app/seo/[slug]/ReadingProgressCircle";
+import { ArrowRight } from "lucide-react";
 
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
@@ -408,22 +409,37 @@ export default function BlogSidebarPage({ data, }) {
     },
     marks: {
       strong: ({ children }) => (
-        <strong className=" text-primary  dark:text-blue-500">{children}</strong>
+        <strong className=" text-primary  dark:text-blue-400">{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
     },
     button: ({ value }) => {
       const { text, link } = value;
       return (
-        <div className="btn1 mb-4 mt-4">
-          <a
-            href={link}
-            className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          >
-            {text}
-           
-          </a>
-        </div>
+          <div className="btn1 mb-6 mt-6 flex justify-center">
+              <a
+                href={link}
+                className="relative  inline-flex items-center gap-2 rounded-xl border-2 border-white bg-blue-700 px-6 py-3 text-xl font-semibold text-black shadow-lg transition-all duration-500 ease-in-out hover:scale-105 hover:bg-gradient-to-r hover:from-red-500 hover:via-purple-500 hover:to-blue-500 focus:outline-none focus:ring-4 focus:ring-pink-300"
+              >
+                {text}
+                <span className="flex btn2 h-8 w-8 items-center justify-center rounded-full border border-white bg-white/20 p-2 shadow-md transition-all duration-300 hover:bg-white/30">
+                  <ArrowRight className="h-5 w-5 text-white" />
+                </span>
+              </a>
+              <style jsx>{`
+                .btn1 a {
+                  animation: pulse 1s infinite alternate;
+                }
+                @keyframes pulse {
+                  0% {
+                    box-shadow: 0 0 10px rgba(255, 105, 180, 0.4);
+                  }
+                  100% {
+                    box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
+                  }
+                }
+              `}</style>
+            </div>
       );
     },
   };

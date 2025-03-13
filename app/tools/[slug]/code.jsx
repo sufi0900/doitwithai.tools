@@ -409,7 +409,7 @@ export default function BlogSidebarPage({ data, }) {
     },
     marks: {
       strong: ({ children }) => (
-        <strong className=" text-primary  dark:text-blue-500">{children}</strong>
+        <strong className=" text-primary  dark:text-blue-400">{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
     },

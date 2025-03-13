@@ -17,6 +17,7 @@ import { urlForImage, getFileUrl } from "@/sanity/lib/image";
 import OptimizedVideo from "./OptimizedVideo"
 import OptimizedGif from "./OptimizedGif"
 import ReadingProgressCircle from "./ReadingProgressCircle"
+import { ArrowRight } from "lucide-react";
 
 import "@/styles/customanchor.css";
 import Link from "next/link";
@@ -457,7 +458,7 @@ export default function BlogSidebarPage({ data, }) {
     },
     marks: {
       strong: ({ children }) => (
-        <strong className=" text-primary  dark:text-blue-500">{children}</strong>
+        <strong className=" text-primary   font-bold  dark:text-blue-400">{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
     },
