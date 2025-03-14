@@ -1,13 +1,35 @@
 /* eslint-disable @next/next/no-img-element */
-
+"use client"
 import Link from "next/link";
+import React, { useState, useEffect } from 'react';
 
 /* eslint-disable react/no-unescaped-entities */
 const AboutPage = () => {
+    const [animationPhase, setAnimationPhase] = useState(0);
+  
+    // Subtle animation for border pulsing
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setAnimationPhase(prev => (prev + 1) % 100);
+      }, 50);
+      
+      return () => clearInterval(interval);
+    }, []);
+    
+    // Calculate animation values
+    const pulseIntensity = Math.abs(Math.sin(animationPhase * 0.1)) * 0.5 + 0.5;
+    const borderWidth = 1 + pulseIntensity * 2;
+    
+
   return (
     <>
      <div className="container mt-8 flex flex-col md:flex-row">
             <div className="">
+          
+
+<br />
+<br />
+        
                 <h1 className="mb-6 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">About Us</h1>
                 <div className="mb-6">
     <h2 className="font-bold mb-4 text-xl sm:text-2xl lg:text-3xl text-gray-800 dark:text-white leading-tight transition-all duration-300 ease-in-out transform hover:scale-[1.03]">

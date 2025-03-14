@@ -59,7 +59,7 @@
   font-weight: none;
  padding: 20px 32px;
   /* border-radius: 23px;  */
-  box-shadow: none; /* Remove box-shadow */
+  box-shadow: none ; /* Remove box-shadow */
   outline: none; /* Remove outline */
 }
 @keyframes gradientAnimation {
@@ -83,4 +83,47 @@
 .btn-gradient {
   background-size: 400% 400%;
   animation: bgChange 10s ease infinite;
+}
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+  }
+}
+
+.pulse-animation {
+  animation: pulse-border 1.5s infinite;
+}
+
+.hover-text-shadow:hover {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3), -2px -2px 4px rgba(255, 255, 255, 0.1);
+}
+
+.h1-hover-effect:hover {
+  color: #2563eb; /* Vibrant blue for light mode */
+  text-shadow: 0px 5px 15px rgba(37, 99, 235, 0.7); /* Elevated glow effect */
+}
+
+.h2-hover-effect:hover {
+  color: #4ade80; /* Softer green for hover */
+  text-shadow: 0px 3px 10px rgba(74, 222, 128, 0.5);
+}
+
+.h3-hover-effect:hover {
+  color: #facc15; /* Golden yellow hover */
+  text-shadow: 0px 3px 6px rgba(250, 204, 21, 0.5);
+}
+
+.strong-border {
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.hover-border:hover {
+  border-color: #9333ea; /* Vibrant violet border when hovered */
 }

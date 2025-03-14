@@ -208,17 +208,76 @@ export default function BlogSidebarPage({ data, }) {
         </h1>
       ),
   
-      h2: ({ children }) => (
-        <h2 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-4xl font-extrabold leading-tight text-gray-800 dark:text-white  ">
-          {children}
-        </h2>
-      ),
-      h3: ({ children }) => (
-        <h3 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-2xl  font-extrabold leading-tight text-gray-800 dark:text-gray-200  ">
-          {children}
-        </h3>
-      ),
-    
+ // Modified h2 component
+ h2: ({ children }) => {
+   // Convert children to an array of elements
+   const childArray = React.Children.toArray(children);
+   
+   // Extract text from the first two children (words)
+   const words = childArray.map(child => typeof child === 'string' ? child : child.props.children).join(' ').trim().split(' ');
+   const firstTwoWords = words.slice(0, 2).join(' ');
+   const remainingWords = words.slice(2).join(' ');
+ 
+   return (
+     <h2 className="relative pl-4 mb-6 text-4xl font-bold leading-tight text-gray-800 dark:text-white 
+                   border-l-[4px] border-blue-500 dark:border-blue-400 
+                   group hover:pl-6 transition-all duration-300 ease-out 
+                   hover:text-blue-600 dark:hover:text-blue-500">
+       <span className="relative inline-block">
+         {/* Container for the border effect */}
+         <span className="absolute left-0 -bottom-1 w-full h-[2px] bg-blue-500 dark:bg-blue-400 transition-all duration-300 ease-out scale-x-0 group-hover:scale-x-100"></span>
+         <span className="pb-1"> {/* This maintains space for text without overlap */}
+           {firstTwoWords}
+         </span>{' '}
+         {/* Remaining words */}
+         {remainingWords}
+       </span>
+       <span
+         className="absolute left-0 top-0 h-full animate-pulse bg-gradient-to-b from-blue-500 to-blue-400
+                   group-hover:from-blue-400 group-hover:to-blue-500 transition-all duration-300 ease-out"
+         style={{
+           width: '4px',
+           boxShadow: '0 0 4px rgba(37, 99, 235, 0.5)', // Light blue glow
+         }}
+       ></span>
+     </h2>
+   );
+ },
+ 
+ // Modified h3 component
+ h3: ({ children }) => {
+   // Convert children to an array of elements
+   const childArray = React.Children.toArray(children);
+   
+   // Extract text from the first two children (words)
+   const words = childArray.map(child => typeof child === 'string' ? child : child.props.children).join(' ').trim().split(' ');
+   const firstTwoWords = words.slice(0, 2).join(' ');
+   const remainingWords = words.slice(2).join(' ');
+ 
+   return (
+     <h3 className="relative mb-6 text-2xl font-bold leading-snug text-gray-700 dark:text-gray-200 
+                    group hover:text-blue-600 dark:hover:text-blue-400 
+                    transition-all duration-300 ease-out">
+       <span className="relative inline-block pl-4">
+         {/* Container for the border effect */}
+         <span className="absolute left-0 -bottom-1 w-full h-[2px] bg-blue-500 dark:bg-blue-400 transition-all duration-300 ease-out scale-x-0 group-hover:scale-x-100"></span>
+         <span className="pb-1"> {/* This maintains space for text without overlap */}
+           {firstTwoWords}
+         </span>{' '}
+         {/* Remaining words */}
+         {remainingWords}
+       </span>
+       <span
+         className="absolute left-0 top-0 h-full animate-pulse bg-gradient-to-b from-blue-500 to-blue-400
+                   group-hover:from-blue-400 group-hover:to-blue-500 transition-all duration-300 ease-out"
+         style={{
+           width: '4px',
+           boxShadow: '0 0 4px rgba(37, 99, 235, 0.5)', // Light blue glow
+         }}
+       ></span>
+     </h3>
+       );
+ },
       // Heading 4
       h4: ({ children }) => (
         <h4 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
