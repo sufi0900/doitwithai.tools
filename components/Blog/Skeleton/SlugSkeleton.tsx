@@ -4,7 +4,7 @@ export default function SlugSkeleton() {
   return (
     <div
       role="status"
-      className="max-w-4xl mx-auto p-4 space-y-4 animate-skeletonPulse"
+      className="max-w-4xl mx-auto p-4 space-y-4 animate-skeleton-pulse"
     >
       {/* Header Section */}
       <div className="h-8 bg-gray-200 rounded-full dark:bg-gray-700 w-3/4 mb-4"></div>

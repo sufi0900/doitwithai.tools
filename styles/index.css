@@ -392,17 +392,16 @@ color: #2563eb;
   animation: bounceUp 0.6s ease-in-out;
 }
 
-
-
-@layer utilities {
-  @keyframes ping {
-    75%, 100% {
-      transform: scale(2);
-      opacity: 0;
-    }
+/* Add this to your global CSS file */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
   }
-
-  .animate-ping {
-    animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+  50% {
+    opacity: 0.5;
   }
+}
+
+.animate-skeleton-pulse {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

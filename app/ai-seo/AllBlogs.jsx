@@ -207,7 +207,7 @@ export default function AllBlogs() {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/seo/${post.slug.current}`}
+         slug={`/ai-seo/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
