@@ -182,10 +182,8 @@ export const makemoney = {
       group: 'content',
       options: {
         hotspot: true,
-        storeOriginalFilename: false,
-        metadata: ['palette', 'dimensions'],
-        accept: 'image/jpeg,image/png,image/webp',
-        sources: ['webcam', 'upload', 'url'],
+        metadata: ['palette'],
+        
       },
       fields: [
         ...commonImageFields.filter((field) => field.name !== 'alt'), // Remove duplicate "alt" if it exists
@@ -234,7 +232,7 @@ export const makemoney = {
     {
       name: "schematitle",
       title: "Schema Title",
-      type: "string",
+      type: "text",
       group: 'schema',
       // validation: (Rule: { max: (arg0: number) => any; }) => Rule.max(titleValidation.max),
       options: {

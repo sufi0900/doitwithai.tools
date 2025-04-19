@@ -248,10 +248,8 @@ export const seo = {
       group: 'content',
       options: {
         hotspot: true,
-        storeOriginalFilename: false,
-        metadata: ['palette', 'dimensions'],
-        accept: 'image/jpeg,image/png,image/webp',
-        sources: ['webcam', 'upload', 'url'],
+        metadata: ['palette'],
+        
       },
       fields: [
         ...commonImageFields.filter((field) => field.name !== 'alt'), // Remove duplicate "alt" if it exists
