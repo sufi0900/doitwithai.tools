@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 
 import { client } from "@/sanity/lib/client";
-import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
+import { urlForImage } from "@/sanity/lib/image"; 
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
 import MediumCard from "@/components/Blog/HomeMediumCard"
@@ -25,6 +25,7 @@ const TrendingPage = () => {
       try {
         const isHomePageTrendBig = `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageTrendBig == true] {
           _id,
+          _type,  
           title,
           overview,
           mainImage,
@@ -37,6 +38,7 @@ const TrendingPage = () => {
     
         const isHomePageTrendRelated = `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageTrendRelated == true] {
           _id,
+          _type,
           title,
           overview,
           mainImage,
@@ -69,12 +71,10 @@ const TrendingPage = () => {
 
 
   const schemaSlugMap = {
-    makemoney: "earning",
-    aitool: "aitool",
-    news: "news",
-    coding: "coding",
-    freeairesources: "free-resources",
-    seo: "seo",
+    makemoney: "ai-learn-earn",
+    aitool: "ai-tools",
+    coding: "ai-code",
+    seo: "ai-seo",
   };
 
   return (
@@ -125,7 +125,7 @@ const TrendingPage = () => {
           title={post.title}
           overview={post.overview}
           mainImage={urlForImage(post.mainImage).url()}
-          slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+          slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // <-- FIX HERE
           publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
           ReadTime={post.readTime?.minutes}
           tags={post.tags}

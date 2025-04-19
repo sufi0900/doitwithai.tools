@@ -18,26 +18,54 @@ const DigitalMarketing = () => {
   const [isLoading, setIsLoading] = useState(true); 
 
   useEffect(() => {
+   
     const fetchData = async () => {
-    try {
-      const isHomePageSeoTrendBig = `*[_type == "seo" && isHomePageSeoTrendBig == true]`;
-      const isHomePageSeoTrendRelated = `*[_type == "seo" && isHomePageSeoTrendRelated == true]`;
-      // 
-      const isHomePageSeoTrendBigData = await client.fetch(isHomePageSeoTrendBig);
-      const isHomePageSeoTrendRelatedData = await client.fetch(isHomePageSeoTrendRelated);
-      // 
+      try {
+        // Updated GROQ queries to include displaySettings and all necessary fields
+        const isHomePageSeoTrendBig = `*[_type == "seo" && displaySettings.isHomePageSeoTrendBig == true] {
+          _id,
+          title,
+          overview,
+          mainImage,
+          slug,
+          publishedAt,
+          readTime,
+          tags,
+          "displaySettings": displaySettings
+        }`;
 
-      setSeoTrendBigData(isHomePageSeoTrendBigData);
-      setSeoTrendRelatedData(isHomePageSeoTrendRelatedData);
-      setIsLoading(false); // Set loading to false after data is fetched
-    } catch (error) {
-      console.error("Failed to fetch data", error);
-      setIsLoading(false); // Ensure loading is set to false in case of error too
-    }
-  };
+        const isHomePageSeoTrendRelated = `*[_type == "seo" && displaySettings.isHomePageSeoTrendRelated == true] {
+          _id,
+          title,
+          overview,
+          mainImage,
+          slug,
+          publishedAt,
+          readTime,
+          tags,
+          "displaySettings": displaySettings
+        }`;
 
-  fetchData();
-}, []); 
+        // Fetch data in parallel
+        const [bigData, relatedData] = await Promise.all([
+          client.fetch(isHomePageSeoTrendBig),
+          client.fetch(isHomePageSeoTrendRelated)
+        ]);
+
+        console.log("Big Data:", bigData); // Debug log
+        console.log("Related Data:", relatedData); // Debug log
+
+        setSeoTrendBigData(bigData);
+        setSeoTrendRelatedData(relatedData);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <section>
@@ -48,7 +76,7 @@ const DigitalMarketing = () => {
         description="AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies. By leveraging AI technologies, including ChatGPT, you can generate high-quality content, optimize your website effortlessly, and craft data-driven marketing campaigns. As you explore these innovative techniques, you'll unlock the potential of AI to improve rankings, attract the right audience, and remain competitive in an ever-evolving online landscape. Join us on this journey to elevate your SEO game with the power of AI and the capabilities of ChatGPT!"
         firstlinktext="Home"
         firstlink="/"
-        link="/seo" 
+        link="/ai-seo" 
         linktext="ai-trending-news"
       /> 
       <Grid container spacing={2}>
@@ -63,7 +91,7 @@ const DigitalMarketing = () => {
         title={post.title}
         overview={post.overview}
         mainImage={urlForImage(post.mainImage).url()}
-        slug={`/seo/${post.slug.current}`}
+        slug={`/ai-seo/${post.slug.current}`}
         publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
         ReadTime={post.readTime?.minutes}
         tags={post.tags}
@@ -87,7 +115,7 @@ const DigitalMarketing = () => {
         title={post.title}
         overview={post.overview}
         mainImage={urlForImage(post.mainImage).url()}
-        slug={`/seo/${post.slug.current}`}
+        slug={`/ai-seo/${post.slug.current}`}
         publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
         ReadTime={post.readTime?.minutes}
         tags={post.tags}
@@ -105,7 +133,7 @@ const DigitalMarketing = () => {
         title={post.title}
         overview={post.overview}
         mainImage={urlForImage(post.mainImage).url()}
-        slug={`/seo/${post.slug.current}`}
+        slug={`/ai-seo/${post.slug.current}`}
         publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
         ReadTime={post.readTime?.minutes}
         tags={post.tags}
@@ -116,7 +144,7 @@ const DigitalMarketing = () => {
         </Grid>
       </Grid>
       <div className="mt-6 flex justify-center md:justify-end">
-        <Link href="/seo">
+        <Link href="/ai-seo">
         <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
                    Explore More Blogs         
         </button>

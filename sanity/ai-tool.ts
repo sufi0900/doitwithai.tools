@@ -146,24 +146,7 @@ export const aitool = {
     //     disableNew: true
     //   }
     // },
-    {
-      name: "slug",
-      type: "slug",
-      title: "URL Slug",
-      group: 'content',
-      options: {
-        source: "title",
-        maxLength: 196,
-        slugify: (input: string) => input
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^\w-]/g, '')
-          .slice(0, 196),
-    
-      },
-      validation: (Rule: { required: () => any; }) => Rule.required(),
-      description: 'Unique URL-friendly slug'
-    },
+   
     {
       name: "overview",
       title: "Overview",
@@ -216,6 +199,24 @@ export const aitool = {
       options: {
         ...STYLE_CONFIGS.text,
       }
+    },
+    {
+      name: "slug",
+      type: "slug",
+      title: "URL Slug",
+      group: 'meta',
+      options: {
+        source: "title",
+        maxLength: 196,
+        slugify: (input: string) => input
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^\w-]/g, '')
+          .slice(0, 196),
+    
+      },
+      validation: (Rule: { required: () => any; }) => Rule.required(),
+      description: 'Unique URL-friendly slug'
     },
     {
       name: "metadesc",

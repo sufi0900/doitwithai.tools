@@ -1,23 +1,23 @@
 "use client";
 
-
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { client } from "@/sanity/lib/client";
 import Grid from "@mui/material/Grid";
-
 // Dynamic imports for components
-const Hero = dynamic(() => import("@/components/Hero"), { ssr: true });
+// const Hero = dynamic(() => import("@/components/Hero"), { ssr: true });
+import Hero from "@/components/Hero";
 const Trending = dynamic(() => import("@/components/Trending/page"), { ssr: true });
+// import Trending from "@/components/Trending/page";
 const FeaturePost = dynamic(() => import("@/components/FeaturePost"), { ssr: true });
-const AISEO = dynamic(() => import("@/components/DigitalMarketing/page"), { ssr: false });
-const AiTools = dynamic(() => import("@/components/AITools/page"), { ssr: false });
-const AIEarn = dynamic(() => import("@/components/Online-Earning/page"), { ssr: false });
-const CodeWithAI = dynamic(() => import("@/components/Trending/WebDev"), { ssr: false });
+const AISEO = dynamic(() => import("@/components/DigitalMarketing/page"), { ssr: true });
+const AiTools = dynamic(() => import("@/components/AITools/page"), { ssr: true });
+const AIEarn = dynamic(() => import("@/components/Online-Earning/page"), { ssr: true });
+const CodeWithAI = dynamic(() => import("@/components/Trending/WebDev"), { ssr: true });
 const RecentPost = dynamic(() => import("@/components/RecentPost/page"), { ssr: true });
-const MainCategory = dynamic(() => import("@/components/MainCategories/page"), { ssr: true });
-const MBrands = dynamic(() => import("@/components/Marquee-Brands"), { ssr: false });
+const MainCategory = dynamic(() => import("@/components/MainCategories/page"), { ssr: false });
+const MBrands = dynamic(() => import("@/components/Marquee-Brands"), { ssr: true });
 const Contact = dynamic(() => import("@/components/Contact"), { ssr: false });
 
 // Centralized data fetching with React Query
@@ -75,9 +75,9 @@ export default function Home() {
 
   return (
     <>
-      <Suspense fallback={<div>Loading hero...</div>}>
+     
         <Hero />
-      </Suspense>
+  
       
       <section className="bg-gray-light py-16 dark:bg-bg-color-dark md:py-4 lg:py-4">
         <div className="container">

@@ -451,7 +451,7 @@ export default function BlogSidebarPage({ data, }) {
   const [relatedPosts, setRelatedPosts] = useState([]);
 
   const schemaSlugMap = {
-    makemoney: "makemoney",
+    makemoney: "ai-learn-earn",
         aitool: "aitools",
         news: "news",
         coding: "coding",
@@ -830,7 +830,7 @@ export default function BlogSidebarPage({ data, }) {
                 <ul className="px-8 py-6">
                   <li>
                     <Link
-                      href="/tools"
+                      href="/ai-tools"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
                      AI Tools
@@ -838,7 +838,7 @@ export default function BlogSidebarPage({ data, }) {
                   </li>
                   <li>
                     <Link
-                      href="/earning"
+                      href="/ai-learn-earn"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
                      Make Money With AI
@@ -855,7 +855,7 @@ export default function BlogSidebarPage({ data, }) {
                   
                   <li>
                     <Link
-                      href="/seo"
+                      href="/ai-seo"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
                 SEO With AI
@@ -863,7 +863,7 @@ export default function BlogSidebarPage({ data, }) {
                   </li>
                   <li>
                     <Link
-                      href="/coding"
+                      href="/ai-code"
                       className="mb-3 inline-block text-base font-medium text-body-color hover:text-primary"
                     >
                    Code With AI
@@ -885,12 +885,12 @@ export default function BlogSidebarPage({ data, }) {
                 </h3>
                 <div className="flex flex-wrap px-8 py-6">
                   
-                <TagButton text="AI Tools" href="/tools" /> 
-                  <TagButton text="AI Image Generator" href="/tools/ai-image-generator" />
-                  <TagButton text="AI Video Generator"  href="/tools/ai-video-generator" />
-                  <TagButton text="AI Extension" href="/tools/ai-extension" />
+                <TagButton text="AI Tools" href="/ai-tools" /> 
+                  <TagButton text="AI Image Generator" href="/ai-tools/ai-image-generator" />
+                  <TagButton text="AI Video Generator"  href="/ai-tools/ai-video-generator" />
+                  <TagButton text="AI Extension" href="/ai-tools/ai-extension" />
              
-                  <TagButton text="AI Article Writer"  href="/tools/ai-article-generator"/>
+                  <TagButton text="AI Article Writer"  href="/ai-tools/ai-article-generator"/>
                 </div>
               </div>
 

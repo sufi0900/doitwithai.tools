@@ -7,23 +7,28 @@ const menuData: Menu[] = [
     path: "/",
     newTab: false,
   },
-  
+  {
+    id: 2,
+    title: "SEO with AI",
+    path: "/ai-seo",
+    newTab: false,
+  },
   {
     id: 3,
     title: "AiTools",
-    path: "/tools",
+    path: "/ai-tools",
     newTab: false,
   },
   {
     id: 4,
     title: "Earn with AI",
-    path: "/earning",
+    path: "/ai-learn-earn",
     newTab: false,
   },
   {
     id: 5,
     title: "Code With AI",
-    path: "/coding",
+    path: "/ai-code",
     newTab: false,
   },
   // {
@@ -32,12 +37,7 @@ const menuData: Menu[] = [
   //   path: "/free-resources",
   //   newTab: false,
   // },
-  {
-    id: 7,
-    title: "SEO with AI",
-    path: "/seo",
-    newTab: false,
-  },
+  
   // {
   //   id: 8,
   //   title: "AI News",
@@ -46,7 +46,7 @@ const menuData: Menu[] = [
   // },
   
   {
-    id: 5,
+    id: 6,
     title: "Pages",
     newTab: false,
     submenu: [

@@ -12,28 +12,49 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import FeaturePost from "@/components/Blog/featurePost"
 
 const WebDev = () => {
-  // Define the static web dev blogs
-  const [codingData, setCodingData] = useState([]);
+  const [aiEarnTrendBigData, setAiEarnTrendBigData] = useState([]);
+    const [aiEarnTrendRelatedData, setAiEarnTrendRelatedData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true); 
+
+    useEffect(() => {
+     const fetchData = async () => {
+        try {
+          // Updated GROQ queries to include displaySettings and all necessary fields
+          const isHomePageAiEarnTrendBig = `*[_type == "coding" && displaySettings.isHomePageCoding == true] {
+            _id,
+            title,
+            overview,
+            mainImage,
+            slug,
+            publishedAt,
+            readTime,
+            tags,
+            "displaySettings": displaySettings
+          }`;
+  
+        
+          // Fetch data in parallel
+          const [bigData, relatedData] = await Promise.all([
+            client.fetch(isHomePageAiEarnTrendBig),
+          ]);
+  
+          console.log("Big Data:", bigData); // Debug log
+          console.log("Related Data:", relatedData); // Debug log
+  
+          setAiEarnTrendBigData(bigData);
+          setIsLoading(false);
+        } catch (error) {
+          console.error("Failed to fetch data:", error);
+          setIsLoading(false);
+        }
+      };
+  
+      fetchData();
+    }, []);
+  
 
 
-  useEffect(() => {
-    const fetchData = async () => {
-    
-      const isHomePageCoding = `*[_type == "coding" && isHomePageCoding == true]`;
 
-
-      const isHomePageCodingData = await client.fetch(isHomePageCoding);
-
-
-
-      setCodingData(isHomePageCodingData);
-
-     
-     
-    };
-
-    fetchData();
-  }, []);
 
   return (
     <section>
@@ -51,7 +72,7 @@ const WebDev = () => {
           {/* Blog Cards */}
           <Grid item lg={8} xl={8} md={8} sm={12} xs={12} sx={{zIndex:"5"}} className="overflow-visible">
             <Grid container spacing={3} paddingRight={1} className="overflow-visible">
-              {codingData.slice(0, 4).map((post) => (
+              {aiEarnTrendBigData.slice(0, 4).map((post) => (
                 <Grid key={post._id} item xs={12} className="overflow-visible">
                     <FeaturePost 
                     key={post}

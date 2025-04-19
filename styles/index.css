@@ -249,3 +249,160 @@ color: #2563eb;
     75% { background: linear-gradient(to right, #06b6d4, #3b82f6, #9333ea); }
     100% { background: linear-gradient(to right, #3b82f6, #9333ea, #06b6d4); }
   }
+  @keyframes twinkle {
+    0% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0.4; transform: scale(0.8); }
+  }
+  
+  .animate-pulse2 {
+    animation: twinkle 2s infinite ease-in-out;
+  }
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+  }
+  .high-quality{
+    animation-delay: 2.5s;
+  }
+.coding-challenges{
+  animation-delay: 4.5s;
+}
+.chatgpt{
+  animation-delay: 7s;
+}
+ .let-unlock{
+  animation-delay: 5.5s;}
+  .one-article{
+    animation-delay: 5.5s;
+  }
+@keyframes welcomePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-10deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.welcome-animate {
+  animation: welcomePop 1.2s ease-out forwards;
+}
+@keyframes wordFade {
+  from {
+    transform: translateY(15px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.animate-wordFade {
+  animation: wordFade 0.6s ease-out;
+}
+.chatgpt-glow {
+  text-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
+@keyframes floatY {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+.float-animation {
+  animation: floatY 3s ease-in-out infinite;
+}
+.glow-text {
+  text-shadow: 0 0 6px rgba(37, 99, 235, 0.4);
+}
+@keyframes glowing {
+  0% {
+    text-shadow: 0 0 5px #3b82f6, 0 0 10px #3b82f6, 0 0 20px #3b82f6, 0 0 40px #3b82f6;
+  }
+  50% {
+    text-shadow: 0 0 10px #3b82f6, 0 0 20px #3b82f6, 0 0 30px #3b82f6, 0 0 40px #3b82f6;
+  }
+  100% {
+    text-shadow: 0 0 5px #3b82f6, 0 0 10px #3b82f6, 0 0 20px #3b82f6, 0 0 40px #3b82f6;
+  }
+}
+.glowing-text {
+  animation: glowing 1.5s infinite alternate; /* unique glow effect for Artificial Intelligence */
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes pulse2 {
+  0%, 100% { transform: scale(1.5); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-pulse2 {
+  animation: pulse2 2s infinite;
+}
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes bounceUp {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  40% {
+    transform: translateY(-8px) scale(1.1);
+  }
+  60% {
+    transform: translateY(-4px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+.float-anim {
+  animation: float 3s ease-in-out infinite;
+}
+
+.hover\\:animate-bounceUp:hover {
+  animation: bounceUp 0.6s ease-in-out;
+}
+
+
+
+@layer utilities {
+  @keyframes ping {
+    75%, 100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  .animate-ping {
+    animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}

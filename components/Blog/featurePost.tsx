@@ -13,9 +13,8 @@ import {
   import Link from "next/link";
   import React from "react";
   
-  
-  import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
-  import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Image from "next/image";
   
   
@@ -75,21 +74,7 @@ import Image from "next/image";
 
   />
 </CardMedia>
-               
-{/* <CardMedia
-                        component="img"
-                        src={mainImage}
-                        alt={title}
-                        sx={{
-                          width: "100%",
-                          height: { xs: "auto", lg: 340 },
-                     
-                    
-                          borderRadius:"10px"
-                        }}
-                        className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
 
-                      /> */}
                        {tags && tags.length > 0 && (
             <Link href={tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
              <LocalOfferIcon  style={{fontSize:"14px"}} />   {tags[0].name}
@@ -116,10 +101,10 @@ import Image from "next/image";
   
                     {/* Content */}
                     <CardContent sx={{ flexGrow: 1, justifyContent:"center", alignItems:"center" }}>
-                      <h1 className="mb-2 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
+                      <h1 className="mb-2 line-clamp-2 text-3xl font-bold leading-tight text-black dark:text-white sm:text-4xl sm:leading-tight">
                     {title}
                       </h1>
-                      <p className="line-clamp-4 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
+                      <p className="line-clamp-3 dark-bg-green-50 rounded-bl-xl rounded-br-xl  text-base text-gray-800 dark:text-gray-400">
                   {overview}
                       </p>
                       <div className="mb-3 mt-3 flex items-center justify-start gap-2">

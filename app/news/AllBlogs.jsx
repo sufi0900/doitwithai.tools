@@ -116,7 +116,7 @@ export default function AllBlogs() {
           pageName="AI News"
           pageName2="& Trends"
           description="Get the latest insights on AI news & trends, ensuring you're equipped with the knowledge to take advantage of the the latest advancements."
-          link="/earning" 
+          link="/ai-learn-earn" 
           linktext="make-money-with-ai"
           firstlinktext="Home"
           firstlink="/"

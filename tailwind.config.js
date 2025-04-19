@@ -11,7 +11,25 @@ module.exports = {
       center: true,
       padding: "1rem",
     },
-
+    keyframes: {
+      skeletonPulse: {
+        '0%, 100%': { opacity: 1 },
+        '50%': { opacity: 0.4 },
+      },
+    },
+    animation: {
+      skeletonPulse: 'skeletonPulse 1.5s ease-in-out infinite',
+    },
+    keyframes: {
+      'ping-star': {
+        '0%, 100%': { transform: 'scale(1)', opacity: '0.6' },
+        '50%': { transform: 'scale(1.3)', opacity: '1' },
+      },
+    },
+    animation: {
+      'ping-star': 'ping-star 1.6s infinite ease-in-out',
+    },
+  
     screens: {
       xs: "450px",
       // => @media (min-width: 450px) { ... }

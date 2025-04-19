@@ -16,7 +16,7 @@ const NewsletterForm: React.FC = () => {
 
       {/* Form */}
       <form
-        action="https://tools.us8.list-manage.com/subscribe/post?u=6b2d40e38465550ee4d7c03c1&amp;id=2fc05451cc&amp;f_id=003228e3f0"
+        action="https://ai-tools.us8.list-manage.com/subscribe/post?u=6b2d40e38465550ee4d7c03c1&amp;id=2fc05451cc&amp;f_id=003228e3f0"
         method="post"
         id="mc-embedded-subscribe-form"
         name="mc-embedded-subscribe-form"

@@ -70,12 +70,10 @@ const FeaturePost = () => {
   }, []);
 
   const schemaSlugMap = {
-    makemoney: "earning",
-    aitool: "aitool",
-    news: "news",
-    coding: "coding",
-    freeairesources: "free-resources",
-    seo: "seo",
+    makemoney: "ai-learn-earn",
+    aitool: "ai-tools",
+    coding: "ai-code",
+    seo: "ai-seo",
   };
 
  

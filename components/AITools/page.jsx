@@ -79,7 +79,7 @@ const AiTools = () => {
         description="Unlock the power of AI to enhance productivity and creativity like never before! This category explores the best AI tools designed to streamline tasks. These tools can supercharge your efficiency and elevate your creative projects. Whether you are a professional looking for smart solutions or just starting your journey with AI, our reviews and insights will help you find the right tools. These tools can transform the way you work. Discover how AI can simplify your workload. It can also unleash your full potential!"
         firstlinktext="Home"
         firstlink="/"
-        link="/tools" 
+        link="/ai-tools" 
         linktext="aitools"     />
       <Grid container spacing={2}>
         <Grid item xs={12} md={4}>
@@ -90,7 +90,7 @@ const AiTools = () => {
                 title={post.title}
                 overview={post.overview}
                 mainImage={urlForImage(post.mainImage).url()}
-                slug={`/tools/${post.slug.current}`}
+                slug={`/ai-tools/${post.slug.current}`}
                 publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                 ReadTime={post.readTime?.minutes}
                 tags={post.tags}
@@ -112,7 +112,7 @@ const AiTools = () => {
            title={post.title}
            overview={post.overview}
            mainImage={urlForImage(post.mainImage).url()}
-           slug={`/tools/${post.slug.current}`}
+           slug={`/ai-tools/${post.slug.current}`}
            publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
            ReadTime={post.readTime?.minutes}
            tags={post.tags}
@@ -127,7 +127,7 @@ const AiTools = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/tools/${post.slug.current}`}
+         slug={`/ai-tools/${post.slug.current}`}
          publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          ReadTime={post.readTime?.minutes}
          tags={post.tags}
@@ -143,7 +143,7 @@ const AiTools = () => {
                 title={post.title}
                 overview={post.overview}
                 mainImage={urlForImage(post.mainImage).url()}
-                slug={`/tools/${post.slug.current}`}
+                slug={`/ai-tools/${post.slug.current}`}
                 publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                 ReadTime={post.readTime?.minutes}
                 tags={post.tags}
@@ -152,7 +152,7 @@ const AiTools = () => {
         ))}
       </Grid>
       <div className="mt-6 flex justify-center md:justify-end">
-        <Link href="/tools">
+        <Link href="/ai-tools">
         <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
         Explore All Blogs
         </button>

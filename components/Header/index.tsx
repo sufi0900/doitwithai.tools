@@ -57,17 +57,17 @@ const Header = () => {
                 onClick={() => {
                   window.location.href = "/";
                 }}
-                sx={{ width: 96, height: 96, background: "transparent", cursor: "pointer" }}
+                sx={{ width: 66, height: 66, background: "transparent", cursor: "pointer" }}
               >
                 <Image
-                  src="/logo33.png"
+                  src="/logoForHeader.png"
                   alt="Logo"
                   width={500}
                   height={500}
                   className="w-full dark:hidden"
                 />
                 <Image
-                  src="/logo66.png"
+                  src="/logoForHeader.png"
                   alt="Logo"
                   width={500}
                   height={500}
@@ -76,23 +76,31 @@ const Header = () => {
               </Avatar>
             </div>
 
-            {/* Navigation - Center for LG, Hidden for SM */}
-            <div className=" lg:flex lg:flex-1 lg:justify-center">
+         
+          {/* Navigation - Center for LG, Hidden for SM */}
+          <div className="hidden lg:flex lg:flex-1 lg:justify-center"> {/* Added 'hidden' class */}
               <nav id="navbarCollapse" className="navbar">
                 <ul className="flex justify-center space-x-6">
-                  {menuData.map((menuItem, index) => (
-                    <li key={index} className="group relative font-bold">
-                      {menuItem.path ? (
-                        <Link
-                          href={menuItem.path}
-                          className={`flex mt-6 mb-6 p-2 transition duration-200 ease-in-out items-center justify-center lg:mr-0 lg:inline-flex rounded-xl border border-transparent ${
-                            usePathName === menuItem.path
-                              ? "text-white bg-primary dark:bg-dark dark:text-blue-500"
-                              : "text-dark hover:text-white dark:text-white/70 dark:hover:text-blue-500 hover:bg-primary dark:hover:bg-dark"
-                          }`}
-                        >
-                          {menuItem.title}
-                        </Link>
+                {menuData.map((menuItem, index) => (
+  <li key={index} className="group relative font-bold">
+    {menuItem.path ? (
+      <Link
+        href={menuItem.path}
+        className={`relative flex mt-6 mb-6 p-2 transition duration-200 ease-in-out items-center justify-center lg:mr-0 lg:inline-flex rounded-xl border border-transparent ${
+          usePathName === menuItem.path
+            ? "text-white bg-primary dark:bg-dark dark:text-blue-500"
+            : "text-dark hover:text-white dark:text-white/70 dark:hover:text-blue-500 hover:bg-primary dark:hover:bg-dark"
+        }`}
+      >
+        {menuItem.title === "SEO with AI" && (
+          <>
+            <span className="absolute -top-1 -left-1 animate-ping-star text-yellow-400">&#10022;</span>
+            <span className="absolute -bottom-1 -right-1 animate-ping-star text-blue-400">&#10022;</span>
+
+          </>
+        )}
+        {menuItem.title}
+      </Link>
                       ) : (
                         <>
                           <p
@@ -102,12 +110,7 @@ const Header = () => {
                             {menuItem.title}
                             <span className="pl-3">
                               <svg width="25" height="24" viewBox="0 0 25 24">
-                                <path
-                                  fillRule="evenodd"
-                                  clipRule="evenodd"
-                                  d="M6.29289 8.8427C6.68342 8.45217 7.31658 8.45217 7.70711 8.8427L12 13.1356L16.2929 8.8427C16.6834 8.45217 17.3166 8.45217 17.7071 8.8427C18.0976 9.23322 18.0976 9.86639 17.7071 10.2569L12 15.964L6.29289 10.2569C5.90237 9.86639 5.90237 9.23322 6.29289 8.8427Z"
-                                  fill="currentColor"
-                                />
+
                               </svg>
                             </span>
                           </p>
@@ -146,7 +149,7 @@ const Header = () => {
                 onClick={navbarToggleHandler}
                 id="navbarToggler"
                 aria-label="Mobile Menu"
-                className="block lg:hidden rounded-lg px-3 py-[6px] ring-primary focus:ring-2"
+                className="block lg:hidden rounded-lg px-3 py-[6px] ring-primary focus:ring-2 "
               >
                 <span
                   className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
@@ -174,19 +177,25 @@ const Header = () => {
             >
               <nav>
                 <ul className="block">
-                  {menuData.map((menuItem, index) => (
-                    <li key={index} className="group relative font-bold">
-                      {menuItem.path ? (
-                        <Link
-                          href={menuItem.path}
-                          className={`flex py-2 text-base transition duration-200 ease-in-out ${
-                            usePathName === menuItem.path
-                              ? "text-primary"
-                              : "text-dark hover:text-primary dark:text-white/70 dark:hover:text-white"
-                          }`}
-                        >
-                          {menuItem.title}
-                        </Link>
+                {menuData.map((menuItem, index) => (
+  <li key={index} className="group relative font-bold">
+    {menuItem.path ? (
+      <Link
+        href={menuItem.path}
+        className={`relative flex mt-6 mb-6 p-2 transition duration-200 ease-in-out items-center justify-center lg:mr-0 lg:inline-flex rounded-xl border border-transparent ${
+          usePathName === menuItem.path
+            ? "text-white bg-primary dark:bg-dark dark:text-blue-500"
+            : "text-dark hover:text-white dark:text-white/70 dark:hover:text-blue-500 hover:bg-primary dark:hover:bg-dark"
+        }`}
+      >
+        {menuItem.title === "SEO with AI" && (
+          <>
+            <span className="absolute -top-2 -left-3 animate-ping-star text-yellow-400">&#10022;</span>
+            <span className="absolute -bottom-2 -right-3 animate-ping-star text-blue-400">&#10022;</span>
+          </>
+        )}
+        {menuItem.title}
+      </Link>
                       ) : (
                         <>
                           <p

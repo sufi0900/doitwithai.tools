@@ -26,26 +26,55 @@ const OnlineEarningPage = () => {
 
 
   useEffect(() => {
-    const fetchData = async () => {
+   const fetchData = async () => {
       try {
-      const isHomePageAiEarnTrendBig = `*[_type == "makemoney" && isHomePageAiEarnTrendBig == true]`;
-      const isHomePageAIEarnTrendRelated = `*[_type == "makemoney" && isHomePageAIEarnTrendRelated == true]`;
-      
-      const isHomePageAiEarnTrendBigData = await client.fetch(isHomePageAiEarnTrendBig);
-      const isHomePageAIEarnTrendRelatedData = await client.fetch(isHomePageAIEarnTrendRelated);
-   
+        // Updated GROQ queries to include displaySettings and all necessary fields
+        const isHomePageAiEarnTrendBig = `*[_type == "makemoney" && displaySettings.isHomePageAiEarnTrendBig == true] {
+          _id,
+          title,
+          overview,
+          mainImage,
+          slug,
+          publishedAt,
+          readTime,
+          tags,
+          "displaySettings": displaySettings
+        }`;
 
-      setAiEarnTrendBigData(isHomePageAiEarnTrendBigData);
-      setAiEarnTrendRelatedData(isHomePageAIEarnTrendRelatedData);
-      setIsLoading(false); // Set loading to false after data is fetched
-    } catch (error) {
-      console.error("Failed to fetch data", error);
-      setIsLoading(false); // Ensure loading is set to false in case of error too
-    }
-  };
+        const isHomePageAIEarnTrendRelated = `*[_type == "makemoney" && displaySettings.isHomePageAIEarnTrendRelated == true] {
+          _id,
+          title,
+          overview,
+          mainImage,
+          slug,
+          publishedAt,
+          readTime,
+          tags,
+          "displaySettings": displaySettings
+        }`;
 
-  fetchData();
-}, []); 
+        // Fetch data in parallel
+        const [bigData, relatedData] = await Promise.all([
+          client.fetch(isHomePageAiEarnTrendBig),
+          client.fetch(isHomePageAIEarnTrendRelated)
+        ]);
+
+        console.log("Big Data:", bigData); // Debug log
+        console.log("Related Data:", relatedData); // Debug log
+
+        setAiEarnTrendBigData(bigData);
+        setAiEarnTrendRelatedData(relatedData);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+
   return (
     <section>
       <div className="container">
@@ -55,7 +84,7 @@ const OnlineEarningPage = () => {
           description="Tap into the endless possibilities of AI to generate income and transform your financial future! In this category, we share actionable tips, tools, and strategies. These will help you earn online, whether through freelancing, affiliate marketing, or creative ventures. Explore how AI-powered tools like ChatGPT can simplify tasks, enhance productivity, and open up new revenue streams. Start your journey today and turn AI into your ultimate earning partner!"
           firstlinktext="Home"
           firstlink="/"
-          link="/earning" 
+          link="/ai-learn-earn" 
       
           linktext="earning"
          
@@ -75,7 +104,7 @@ const OnlineEarningPage = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/earning/${post.slug.current}`}
+         slug={`/ai-learn-earn/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -95,7 +124,7 @@ const OnlineEarningPage = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/earning/${post.slug.current}`}
+         slug={`/ai-learn-earn/${post.slug.current}`}
          publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          ReadTime={post.readTime?.minutes}
          tags={post.tags}
@@ -113,7 +142,7 @@ const OnlineEarningPage = () => {
          title={post.title}
          overview={post.overview}
          mainImage={urlForImage(post.mainImage).url()}
-         slug={`/earning/${post.slug.current}`}
+         slug={`/ai-learn-earn/${post.slug.current}`}
          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
          readTime={post.readTime?.minutes}
          tags={post.tags}
@@ -123,7 +152,7 @@ const OnlineEarningPage = () => {
           ))}
         </Grid>
         <div className="mt-6 flex justify-center md:justify-end">
-          <Link                          href="/earning"
+          <Link                          href="/ai-learn-earn"
 >
           <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
           Explore All Blogs
