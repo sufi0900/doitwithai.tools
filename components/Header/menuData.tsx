@@ -31,19 +31,6 @@ const menuData: Menu[] = [
     path: "/ai-code",
     newTab: false,
   },
-  // {
-  //   id: 6,
-  //   title: "Free AI Resources",
-  //   path: "/free-resources",
-  //   newTab: false,
-  // },
-  
-  // {
-  //   id: 8,
-  //   title: "AI News",
-  //   path: "/news",
-  //   newTab: false,
-  // },
   
   {
     id: 6,
@@ -68,18 +55,7 @@ const menuData: Menu[] = [
         path: "/blogs",
         newTab: false,
       },
-      // {
-      //   id: 44,
-      //   title: "Blog Sidebar Page",
-      //   path: "/blog-sidebar",
-      //   newTab: false,
-      // },
-      // {
-      //   id: 45,
-      //   title: "Blog Details Page",
-      //   path: "/blog-details",
-      //   newTab: false,
-      // },
+     
       {
         id: 46,
         title: "Category",
@@ -98,12 +74,7 @@ const menuData: Menu[] = [
         path: "/error",
         newTab: false,
       },
-      // {
-      //   id: 43,
-      //   title: "Blog Grid Page",
-      //   path: "/blog",
-      //   newTab: false,
-      // },
+     
     ],
   },
 ];

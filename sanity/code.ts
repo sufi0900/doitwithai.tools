@@ -188,7 +188,7 @@ export const coding = {
         ...commonImageFields.filter((field) => field.name !== 'alt'), // Remove duplicate "alt" if it exists
         {
           name: 'alt',
-          type: 'string',
+          type: 'text',
           title: 'Alt Text',
           description: 'Alternative text for accessibility',
           validation: (Rule) => Rule.required()
