@@ -25,16 +25,130 @@ import "@/styles/customanchor.css";
 import Link from "next/link";
 export const revalidate = false;
 export const dynamic = "force-dynamic";
-async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
+
+const POSTS_PER_PAGE = 5;
+const SEARCH_MIN_LENGTH = 4;
+const CATEGORIES = ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"];
+const SCHEMA_SLUG_MAP = {
+  makemoney: "ai-learn-earn",
+  aitool: "ai-tools",
+  news: "news",
+  coding: "ai-code",
+  freeairesources: "freeairesources",
+  seo: "ai-seo",
+};
+
+
+async function fetchAllBlogs(page = 1, limit = 5, categories = [], retries = 2) {
   const start = (page - 1) * limit;
-  const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
-  const result = await client.fetch(query, { categories });
-  return result;
+  const query = `*[_type in $categories] | order(publishedAt desc) {
+    formattedDate, 
+    readTime, 
+    _id, 
+    _type, 
+    title, 
+    slug, 
+    mainImage, 
+    overview, 
+     content[] {
+    ...,
+    _type == "image" => {
+      _type,
+      asset->,
+      alt,
+      imageDescription
+    },
+    _type == "video" => {
+      _type,
+      asset->,
+      alt,
+      caption
+    },
+    _type == "gif" => {
+      _type,
+      asset->,
+      alt,
+      caption
+    },
+    publishedAt 
+  }[${start}...${start + limit}]`;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await client.fetch(query, { categories });
+      return result;
+    } catch (error) {
+      console.error(`Attempt ${attempt + 1} failed to fetch blogs:`, error);
+      if (attempt === retries) return [];
+    }
+  }
 }
 
 
 export default function BlogSidebarPage({ data, }) {
-  
+    const GifComponent = ({ value }) => {
+      const [fileUrl, setFileUrl] = useState(null);
+    
+      useEffect(() => {
+        const loadFileUrl = async () => {
+          const url = await getFileUrl(value);
+          setFileUrl(url);
+        };
+        loadFileUrl();
+      }, [value]);
+    
+      if (!fileUrl) return <div>Loading...</div>;
+    
+      return (
+        <div className="w-full overflow-hidden rounded lg:-mx-2">
+          <div className="lg:m-4">
+            <div className="card3 rounded-xl">
+              <figure className="relative my-8">
+                <OptimizedGif
+                  src={fileUrl}
+                  alt={value.alt}
+                  caption={value.caption}
+                  className="customClassName h-full w-full object-cover"
+                />
+              </figure>
+            </div>
+          </div>
+        </div>
+      );
+    };
+    const VideoComponent = ({ value }) => {
+      const [fileUrl, setFileUrl] = useState(null);
+    
+      useEffect(() => {
+        const loadFileUrl = async () => {
+          const url = await getFileUrl(value);
+          setFileUrl(url);
+        };
+        loadFileUrl();
+      }, [value]);
+    
+      if (!fileUrl) return <div>Loading...</div>;
+    
+      return (
+        <div className="w-full overflow-hidden rounded lg:-mx-2">
+          <div className="lg:m-4">
+            <div className="card3 rounded-xl">
+              <figure className="relative my-8">
+                <OptimizedVideo
+                  src={fileUrl}
+                  alt={value.alt}
+                  className="h-full w-full object-cover"
+                >
+                  <figcaption className="imgdesc py-2 rounded-bl-xl rounded-br-xl text-center text-base text-gray-800 dark:text-gray-400">
+                    {value.caption}
+                  </figcaption>
+                </OptimizedVideo>
+              </figure>
+            </div>
+          </div>
+        </div>
+      );
+    };
   
   const imgdesc ={
     block: {  
@@ -65,9 +179,11 @@ export default function BlogSidebarPage({ data, }) {
   const portableTextComponents = {
    
   
+    gif: GifComponent,
+    video: VideoComponent,
     types: {
       image: ({ value }) => {
-        const imageUrl = urlForImage(value.asset).url();
+        const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
         return (
           <div className="w-full overflow-hidden rounded lg:-mx-2">
             <div className="lg:m-4">
@@ -78,18 +194,21 @@ export default function BlogSidebarPage({ data, }) {
                     alt={value.alt}
                     className="customClassName h-full w-full object-cover"
                   >
-                    <figcaption className="imgdesc py-2 rounded-bl-xl rounded-br-xl text-center text-base text-gray-800 dark:text-gray-400">
-                      <PortableText 
-                        value={value.imageDescriptionOfBlockImg} 
-                        components={imgdesc} 
-                      />
-                    </figcaption>
+                    {value.imageDescription && (
+                  <figcaption className="py-2 rounded-bl-xl rounded-br-xl text-center text-xs text-gray-800 dark:text-gray-400">
+                    <PortableText 
+                      value={value.imageDescription} 
+                      components={imgdesc} 
+                    />
+                  </figcaption>
+                )}
                   </OptimizedImage>
                 </figure>
               </div>
             </div>
           </div>
         );
+        
       },
       table: ({ value }) => (
         <div className="card2 m-2 mb-4 mt-4 rounded-bl-xl rounded-br-xl rounded-tl-xl rounded-tr-xl shadow-md">
@@ -433,6 +552,8 @@ export default function BlogSidebarPage({ data, }) {
       );
     },
   };
+
+  
   portableTextComponents.types.button = portableTextComponents.button;
   
   const [searchText, setSearchText] = useState("");

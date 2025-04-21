@@ -10,8 +10,10 @@ export const dynamic = "force-dynamic";
 import { urlForImage } from "@/sanity/lib/image";
 
 async function getData(slug) {
-  const query = `*[_type == "seo" && slug.current == "${slug}"][0]`;
-  const data = await client.fetch(query);
+const query = `*[_type == "seo" && slug.current == "${slug}"][0]`;
+  // Add cache-busting timestamp to ensure fresh data
+  const timestamp = new Date().getTime();
+  const data = await client.fetch(query, {}, { cache: 'no-store', next: { tags: ['makemoney', slug] } });
   return data;
 }
 export async function generateMetadata({ params }) {

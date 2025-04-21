@@ -37,11 +37,11 @@ const SEARCH_MIN_LENGTH = 4;
 const CATEGORIES = ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"];
 const SCHEMA_SLUG_MAP = {
   makemoney: "ai-learn-earn",
-  aitool: "aitools",
+  aitool: "ai-tools",
   news: "news",
-  coding: "coding",
+  coding: "ai-code",
   freeairesources: "freeairesources",
-  seo: "seo",
+  seo: "ai-seo",
 };
 
 const fetchAllBlogs = async (page = 1, limit = POSTS_PER_PAGE) => {
