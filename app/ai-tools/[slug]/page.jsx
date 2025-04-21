@@ -13,7 +13,9 @@ export const dynamic = "force-dynamic";
 
 async function getData(slug) {
   const query = `*[_type == "aitool" && slug.current == "${slug}"][0]`;
-  const data = await client.fetch(query);
+  // Add cache-busting timestamp to ensure fresh data
+  const timestamp = new Date().getTime();
+  const data = await client.fetch(query, {}, { cache: 'no-store', next: { tags: ['makemoney', slug] } });
   return data;
 }
 export async function generateMetadata({ params }) {
