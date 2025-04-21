@@ -16,7 +16,8 @@ import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
 import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
 import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
 import { ArrowRight } from "lucide-react";
-
+import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
+import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
