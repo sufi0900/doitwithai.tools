@@ -63,6 +63,7 @@ export default function Page() {
   <meta property="og:site_name" content="AiToolTrend" />
         <meta property="og:locale" content="en_US" />
   <title>{metadata.title}</title>
+
   <meta name="description" content={metadata.description}/>
   <meta name="author" content="sufian mustafa" />
   <meta property="og:title" content={metadata.title} />

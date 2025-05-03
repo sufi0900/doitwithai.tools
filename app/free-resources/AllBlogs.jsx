@@ -24,7 +24,9 @@ async function fetchFreeResources(page = 1, limit = 6) {
       resourceLink, resourceLinkType, previewSettings,
       "resourceFile": resourceFile.asset->,
       content, publishedAt, promptContent,
-      "relatedArticle": relatedArticle->{title, slug}
+      "relatedArticle": relatedArticle->{title, slug},
+      // SEO fields
+      seoTitle, seoDescription, seoKeywords, altText, structuredData
     }[${start}...${start + limit}]`
   );
   return result;
@@ -40,7 +42,9 @@ async function fetchResourcesByFormat(format, page = 1, limit = 6) {
       "resourceFile": resourceFile.asset->,
       content, publishedAt, promptContent,
       "relatedArticle": relatedArticle->{title, slug},
-      previewSettings
+      previewSettings,
+      // SEO fields
+      seoTitle, seoDescription, seoKeywords, altText, structuredData
     }[${start}...${start + limit}]`,
     { format }
   );
@@ -253,7 +257,7 @@ const handleSearch = async () => {
 {searchResults.length > 0 ? (
   <div className="mb-10">
     <h2 className="text-xl font-bold mb-4">
-      Search Results for "{searchText}"
+      Search Results for {searchText}
     </h2>
     <div className="flex flex-wrap -mx-3">
       {searchResults.map((resource) => (
