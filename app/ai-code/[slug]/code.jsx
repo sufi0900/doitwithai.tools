@@ -99,7 +99,6 @@ export default function BlogSidebarPage({ data, }) {
     );
   };
 
-
   const imgdesc ={
     block: {  
       normal: ({ children }) => (

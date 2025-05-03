@@ -3,7 +3,8 @@ import Allblogs from "./AllBlogs"
 import Script from "next/script";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
-
+import StructuredData from './StructuredData';
+import { generateResourceMeta } from './seoUtils';
 
 export const metadata = {
   title: "Free AI Resources & Solution",
@@ -103,6 +104,7 @@ export default function Page() {
       
 
     </Head>
+
     <Script
     id="BreadcrumbListSchema"
     type="application/ld+json"

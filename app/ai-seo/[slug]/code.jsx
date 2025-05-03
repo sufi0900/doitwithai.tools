@@ -163,7 +163,7 @@ export default function BlogSidebarPage({ data, }) {
   const imgdesc ={
     block: {  
       normal: ({ children }) => (
-        <p className="mb-4 mt-1 text-lg  font-medium leading-relaxed text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out">
+        <p className="mb-4 mt-1 text-lg  font-medium leading-relaxed text-gray-light dark:text-gray-400 hover:text-gray-dark dark:hover:text-gray-200  transition-all duration-300 ease-in-out">
     {children}
   </p>
       ),
@@ -187,8 +187,10 @@ export default function BlogSidebarPage({ data, }) {
   }
   const portableTextComponents = {
     types: {
+
       gif: GifComponent,
       video: VideoComponent,
+
       image: ({ value }) => {
         const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
         return (
@@ -254,10 +256,11 @@ export default function BlogSidebarPage({ data, }) {
    
     block: {
       normal: ({ children }) => (
-        <p className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+        <p className="hover:text-gray-950 dark:hover:text-gray-50 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed text-gray-700 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl">
     {children}
   </p>
       ),
+   
       h1: ({ children }) => (
         <h1 className="mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl dark:text-white  transition-colors duration-300 hover:text-blue-600   dark:hover:text-blue-400 ">
           {children}
@@ -499,40 +502,34 @@ h3: ({ children }) => {
       ),
     },
   
-    list: {
-      bullet: ({ children }) => (
-        <ul className="mb-4  ml-4 mr-4 transform space-y-4 rounded-lg bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out list-inside custom-bullet-list">
-        {children}
-      
-      </ul>
-      ),
-      number: ({ children }) => (
-        <ol className="mb-10 list-inside text-body-color custom-number-list  bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200">
-        {children}
-      </ol>
-      ),
-    },
-    listItem: {
-      bullet: ({ children }) => (
-        <li
-        className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
+      list: {
+        bullet: ({ children }) => (
+          <ul className="mb-4  ml-4 mr-4 transform space-y-4 rounded-lg bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out list-inside custom-bullet-list">
           {children}
-        </li>
-      ),
-  
-      number: ({ children }) => <li className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">{children}</li>,
-    },
+        
+        </ul>
+        ),
+        number: ({ children }) => (
+          <ol className="mb-10 list-decimal ml-6 custom-number-list bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200">
+          {children}
+        </ol>
+        ),
+      },
+      listItem: {
+        bullet: ({ children }) => (
+          <li
+          className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-700 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl">
+            {children}
+          </li>
+        ),
+    
+        number: ({ children }) => <li className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-700 dark:text-gray-300  sm:text-xl lg:text-lg xl:text-xl">
+          {children}</li>,
+      },
     marks: {
       strong: ({ children }) => (
-
-<strong className="relative font-bold text-primary transition-all duration-500 
-  before:absolute before:inset-0 before:bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 
-  dark:from-blue-300 dark:via-purple-400 dark:to-pink-400 
-  before:bg-clip-text before:text-transparent before:opacity-0 before:transition-opacity before:duration-500 
-  hover:scale-105 hover:shadow-lg hover:before:opacity-100">
-  {children}
-</strong>
-   ),
+        <strong className=" text-black  dark:text-white">{children}</strong>
+      ),
       em: ({ children }) => <em>{children}</em>,
     },
     button: ({ value }) => {
@@ -566,6 +563,7 @@ h3: ({ children }) => {
       );
     },
   };
+
   portableTextComponents.types.button = portableTextComponents.button;
   
   const [searchText, setSearchText] = useState("");
@@ -677,7 +675,7 @@ h3: ({ children }) => {
 
   const schemaSlugMap = {
     makemoney: "ai-learn-earn",
-        aitool: "aitools",
+        aitool: "ai-tools",
         news: "news",
         coding: "coding",
         freeairesources: "freeairesources",

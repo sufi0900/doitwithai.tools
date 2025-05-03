@@ -40,7 +40,7 @@ export default function RootLayout({
       />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
-    <body className={`bg-[#FCFCFC] dark:bg-black ${inter.className}`}>
+    <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
       <Providers>
         <Suspense fallback={<div>Loading...</div>}>
           <Header />

@@ -114,7 +114,7 @@ const Hero = () => {
       grow your digital presence
     </span> using 
     {/* ChatGPT with unique styling */}
-    <span className="relative font-bold text-blue-700 dark:text-blue-300 chatgpt chatgpt-glow mx-2 inline-block animate__animated animate__rotateIn ">
+    <span className="relative font-bold text-blue-700 dark:text-blue-300 chatgpt chatgpt-glow mx-2 inline-block  ">
   ChatGPT
   {/* Tailwind ping animation for glow effect */}
   <span className="pointer-events-none absolute inset-0 rounded-md opacity-20 bg-blue-400 dark:bg-blue-600 animate-ping z-[-1]"></span>
@@ -126,19 +126,19 @@ const Hero = () => {
     <br />
     
     {/* You'll also find insights on with styled animation */}
-    <span className="relative font-bold inline text-primary dark:text-primary px-2">
+ 
     <span className="inline w-[30px] h-[2px] bg-primary/40 rounded-full"></span> You’ll also find insights on:
     <span className="inline w-[30px] h-[2px] bg-primary/40 rounded-full"></span>
-  </span>
+
   <span className="inline-block px-2 py-[2px] mx-1 bg-primary/20 text-primary font-medium rounded animate__animated animate__fadeInUp animate__delay-4s">
     • boosting productivity
   </span>
   and creativity with the best AI tools,
-  <span className="inline-block px-2 py-1 mx-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-medium rounded animate__animated animate__fadeInUpBig animate__delay-4s">
+  <span className="inline-block px-2 py-1 mx-1 bg-purple-100 dark:bg-violet-900/30  text-purple-700 dark:text-purple-300 font-medium rounded animate__animated animate__fadeInUpBig animate__delay-4s">
     • earning online
   </span>
   and upskilling with AI, and
-  <span className="inline-block px-2 py-[2px] mx-1 bg-indigo-100 dark:bg-emerald-900/30 text-blue-900 dark:text-white font-medium rounded animate__animated animate__fadeInUpBig coding-challenges">
+  <span className="inline-block px-2 py-[2px] mx-1 bg-indigo-100 dark:bg-cyan-900/30   text-blue-900 dark:text-white font-medium rounded animate__animated animate__fadeInUpBig coding-challenges">
     • solving coding challenges
   </span> through AI-assisted development.
 </p>
