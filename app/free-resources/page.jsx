@@ -3,10 +3,9 @@ import Allblogs from "./AllBlogs"
 import Script from "next/script";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
-import StructuredData from './StructuredData';
-import { generateResourceMeta } from './seoUtils';
 
-export const metadata = {
+
+export const metadata = { 
   title: "Free AI Resources & Solution",
   description:
     "Explore free AI resources to boost your creativity & productivity. Discover AI solutions for various problems. Download free AI images and find prompts",
@@ -26,13 +25,15 @@ export const metadata = {
 
 export default function Page() {
   
- function schemaMarkup() {
+// Update your grandparent page schema to include hasOfferCatalog
+
+function schemaMarkup() {
   return {
     __html: `{
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       "name": "Free AI Resources and Solution",
-      "description": "Unlock the power of AI for free! Discover a treasure trove of valuable resources, including free non-copyrighted AI-generated HD images and creative writing prompts for various needs.  Our blog offers practical solutions and guides on how AI can tackle challenges across different fields.  Explore how AI can enhance your work, creativity, and problem-solving in any domain! ",
+      "description": "Unlock the power of AI for free! Discover a treasure trove of valuable resources, including free non-copyrighted AI-generated HD images and creative writing prompts for various needs. Our blog offers practical solutions and guides on how AI can tackle challenges across different fields. Explore how AI can enhance your work, creativity, and problem-solving in any domain!",
       "url": "https://www.doitwithai.tools/ai-tools",
       "breadcrumb": {
         "@type": "BreadcrumbList",
@@ -50,6 +51,28 @@ export default function Page() {
             "item": "https://www.doitwithai.tools/free-resources"
           }
         ]
+      },
+      "mainEntity": {
+        "@type": "ItemList",
+        "numberOfItems": 100,
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "item": {
+              "@type": "CreativeWork",
+              "name": "AI Resources Collection",
+              "description": "Collection of free AI resources including images, videos, prompts and documents"
+            }
+          }
+        ]
+      },
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "USD",
+        "price": "0",
+        "availability": "https://schema.org/InStock",
+        "offerCount": 100
       }
     }`
   };

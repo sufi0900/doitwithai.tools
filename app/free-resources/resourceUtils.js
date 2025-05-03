@@ -2,6 +2,37 @@
 import { urlForImage } from "@/sanity/lib/image";
  
 // Function to get file URL from Sanity file reference
+
+export const getResourceAltText = (resource) => {
+  if (!resource) return '';
+  
+  // Check for explicit alt text in different places
+  if (resource.mainImage && resource.mainImage.alt) {
+    return resource.mainImage.alt;
+  }
+  
+  if (resource.previewSettings && 
+      resource.previewSettings.previewImage && 
+      resource.previewSettings.previewImage.alt) {
+    return resource.previewSettings.previewImage.alt;
+  }
+  
+  // Create descriptive alt text based on resource details
+  let altText = resource.title || '';
+  
+  if (resource.resourceType) {
+    altText += ` - ${resource.resourceType}`;
+  }
+  
+  if (resource.tags && resource.tags.length > 0) {
+    altText += ` related to ${resource.tags.slice(0, 3).join(', ')}`;
+  }
+  
+  return altText;
+};
+
+
+
 export const getFileUrl = (resourceFile) => {
     if (!resourceFile) return null;
     
@@ -46,21 +77,7 @@ export const getFileUrl = (resourceFile) => {
     return `https://cdn.sanity.io/files/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET}/${finalPart}`;
   };
 
-  export const getResourceAlt = (resource) => {
-    if (!resource) return '';
-    
-    // Check sources in priority order
-    if (resource.altText) return resource.altText;
-    
-    if (resource.previewSettings?.previewImage?.alt) 
-      return resource.previewSettings.previewImage.alt;
-    
-    if (resource.mainImage?.alt) 
-      return resource.mainImage.alt;
-    
-    // Fallback to resource title with type
-    return `${resource.title} - ${resource.resourceType || 'Resource'}`;
-  };
+
 
 // Helper function for document preview
 export const renderDocumentPreview = (resourceType, resource,  fileExt) => {
@@ -264,7 +281,10 @@ export const getFileExtension = (url) => {
 
 // Helper function to render preview content
 export const renderPreviewContent = (resource) => {
-  const altText = getResourceAlt(resource);
+  if (!resource || typeof resource !== 'object') {
+    return null;
+  }
+  const altText = getResourceAltText(resource);
   
   // Check if we have custom preview settings
   if (resource.previewSettings && resource.previewSettings.useCustomPreview) {
@@ -272,9 +292,10 @@ export const renderPreviewContent = (resource) => {
     if (resource.previewSettings.previewImage) {
       return (
         <img 
-          src={urlForImage(resource.previewSettings.previewImage).url()} 
-          alt={resource.previewSettings.previewImage?.alt || altText}
-          className="absolute top-0 left-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+        src={urlForImage(resource.previewSettings.previewImage).url()} 
+        alt={resource.previewSettings.previewImage?.alt || altText}
+        className="absolute top-0 left-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+        itemProp="contentUrl"
           loading="lazy"
           width="400"
           height="300"
@@ -288,7 +309,10 @@ export const renderPreviewContent = (resource) => {
         case 'image':
           if (resource.resourceFile && getFileUrl(resource.resourceFile) &&
               getFileUrl(resource.resourceFile).match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+                const imageUrl = getFileUrl(resource.resourceFile);
+
             return (
+              <>
               <img 
                 src={getFileUrl(resource.resourceFile)} 
                 alt={altText}
@@ -297,9 +321,12 @@ export const renderPreviewContent = (resource) => {
                 width="400" 
                 height="300"
               />
+              <meta itemProp="encodingFormat" content={imageUrl.split('.').pop()} />
+              </>
             );
           } else if (resource.mainImage) {
             return (
+          
               <img 
                 src={urlForImage(resource.mainImage).url()} 
                 alt={resource.mainImage?.alt || altText}
@@ -307,7 +334,10 @@ export const renderPreviewContent = (resource) => {
                 loading="lazy"
                 width="400"
                 height="300"
+                       itemProp="contentUrl"
+          
               />
+             
             );
           }
           return renderResourceIcon('image', true);
@@ -315,7 +345,10 @@ export const renderPreviewContent = (resource) => {
           case 'video':
             if (resource.resourceFile && getFileUrl(resource.resourceFile) && 
                 getFileUrl(resource.resourceFile).match(/\.(mp4|webm|ogg|mov|avi)$/i)) {
+                  const videoUrl = getFileUrl(resource.resourceFile);
+
               return (
+                <>
                 <video 
                   src={getFileUrl(resource.resourceFile)} 
                   autoPlay={true}
@@ -324,8 +357,12 @@ export const renderPreviewContent = (resource) => {
                   controls
                   preload="metadata"
                   title={resource.title}
-                  aria-label={altText}
+               
+                  itemProp="contentUrl"
+
                 />
+                <meta itemProp="encodingFormat" content={videoUrl.split('.').pop()} />
+                </>
               );
             } else if (resource.resourceLink && 
                       (resource.resourceLink.includes('youtube.com') || 

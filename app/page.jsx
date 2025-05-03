@@ -10,6 +10,7 @@ import Grid from "@mui/material/Grid";
 import Hero from "@/components/Hero";
 const Trending = dynamic(() => import("@/components/Trending/page"), { ssr: true });
 // import Trending from "@/components/Trending/page";
+import FreeResourcesPage from "@/components/FreeAIResources/page";
 const FeaturePost = dynamic(() => import("@/components/FeaturePost"), { ssr: true });
 const AISEO = dynamic(() => import("@/components/DigitalMarketing/page"), { ssr: true });
 const AiTools = dynamic(() => import("@/components/AITools/page"), { ssr: true });
@@ -42,43 +43,20 @@ export default function Home() {
     trendBig: `*[_type == "aitool" && isHomePageTrendBig == true]`,
     featureRelated: `*[_type in ["makemoney", "aitool", "coding", "digital", "seo"] && isHomePageFeatureRelated == true]`,
     trendRelated: `*[_type == "aitool" && isHomePageTrendRelated == true]`,
-    aiToolTrendBig: `*[_type == "aitool" && isHomePageAIToolTrendBig == true]`,
-    aiToolTrendRelated: `*[_type == "aitool" && isHomePageAIToolTrendRelated == true]`,
-    aiEarnTrendBig: `*[_type == "aiearn" && isHomePageAiEarnTrendBig == true]`,
-    aiEarnTrendRelated: `*[_type == "aiearn" && isHomePageAIEarnTrendRelated == true]`,
-    newsTrendBig: `*[_type == "news" && isHomePageNewsTrendBig == true]`,
-    newsTrendRelated: `*[_type == "news" && isHomePageNewsTrendRelated == true]`,
-    digitalTrendBig: `*[_type == "digital" && isHomePageDigitalTrendBig == true]`,
-    digitalTrendRelated: `*[_type == "digital" && isHomePageDigitalTrendRelated == true]`,
-    seoTrendBig: `*[_type == "seo" && isHomePageSeoTrendBig == true]`,
-    seoTrendRelated: `*[_type == "seo" && isHomePageSeoTrendRelated == true]`,
-    coding: `*[_type == "coding" && isHomePageCoding == true]`
+   
   };
 
   // Complete data fetching using React Query
   const { data: recentData } = useSanityData('recent', queries.recent);
   const { data: featurePostBig } = useSanityData('featureBig', queries.featureBig);
-  const { data: trendBigData } = useSanityData('trendBig', queries.trendBig);
+ 
   const { data: featureRelatedData } = useSanityData('featureRelated', queries.featureRelated);
-  const { data: trendRelatedData } = useSanityData('trendRelated', queries.trendRelated);
-  const { data: aiToolTrendBigData } = useSanityData('aiToolTrendBig', queries.aiToolTrendBig);
-  const { data: aiToolTrendRelatedData } = useSanityData('aiToolTrendRelated', queries.aiToolTrendRelated);
-  const { data: aiEarnTrendBigData } = useSanityData('aiEarnTrendBig', queries.aiEarnTrendBig);
-  const { data: aiEarnTrendRelatedData } = useSanityData('aiEarnTrendRelated', queries.aiEarnTrendRelated);
-  const { data: newsTrendBigData } = useSanityData('newsTrendBig', queries.newsTrendBig);
-  const { data: newsTrendRelatedData } = useSanityData('newsTrendRelated', queries.newsTrendRelated);
-  const { data: digitalTrendBigData } = useSanityData('digitalTrendBig', queries.digitalTrendBig);
-  const { data: digitalTrendRelatedData } = useSanityData('digitalTrendRelated', queries.digitalTrendRelated);
-  const { data: seoTrendBigData } = useSanityData('seoTrendBig', queries.seoTrendBig);
-  const { data: seoTrendRelatedData } = useSanityData('seoTrendRelated', queries.seoTrendRelated);
-  const { data: codingData } = useSanityData('coding', queries.coding);
+ 
 
   return (
     <>
-     
         <Hero />
   
-      
       <section className="bg-gray-light py-16 dark:bg-bg-color-dark md:py-4 lg:py-4">
         <div className="container">
           <Grid container spacing={2}>
@@ -100,19 +78,21 @@ export default function Home() {
 
       <Suspense fallback={<div>Loading more content...</div>}>
         <>
+      
           <AISEO 
-            seoTrendBigData={seoTrendBigData}
-            seoTrendRelatedData={seoTrendRelatedData}
+            
           />
-          <AiTools 
-            aiToolTrendBigData={aiToolTrendBigData}
-            aiToolTrendRelatedData={aiToolTrendRelatedData}
+        
+           <AiTools 
+           
           />
+          <FreeResourcesPage 
+          />
+         
           <AIEarn 
-            aiEarnTrendBigData={aiEarnTrendBigData}
-            aiEarnTrendRelatedData={aiEarnTrendRelatedData}
+            
           />
-          <CodeWithAI codingData={codingData} />
+          <CodeWithAI  />
         </>
       </Suspense>
 

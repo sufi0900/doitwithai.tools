@@ -2,10 +2,14 @@
 import React, { useState } from 'react';
 import { getFileUrl, renderPreviewContent } from "./resourceUtils";
 import ResourceModal from './ResourceModal';
+import ResourceSchema from './ResourceSchema';
 
 const ResourceCardBase = ({ resource, renderUI }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const getResourceFileUrl = (fileObj) => {
+    if (fileObj && fileObj.url) return fileObj.url;
+    return getFileUrl(fileObj);
+  };
   // Handle download or resource access (your existing code)
   const handleResourceAccess = () => {
     // For prompt resources, open the modal
@@ -41,6 +45,8 @@ const ResourceCardBase = ({ resource, renderUI }) => {
 
   return (
     <>
+          <ResourceSchema resource={resource} />
+
       {renderUI({ 
         resource, 
         renderPreviewContent: () => renderPreviewContent(resource),

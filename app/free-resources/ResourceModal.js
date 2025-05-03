@@ -1,7 +1,7 @@
 // components/ResourceModal.js
 import React from 'react';
 import { urlForImage } from "@/sanity/lib/image";
-import { getFileUrl, renderPreviewContent, getResourceAlt } from "./resourceUtils";
+import { getFileUrl, renderPreviewContent,  } from "./resourceUtils";
 
 const ResourceModal = ({ resource, isOpen, onClose }) => {
   if (!isOpen || !resource) return null;
@@ -35,14 +35,18 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
   return (
     <div 
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
-      aria-labelledby="resource-modal-title"
-      role="dialog"
-      aria-modal="true"
+      itemScope 
+  itemType={`https://schema.org/${
+    resource.resourceFormat === 'image' ? 'ImageObject' :
+    resource.resourceFormat === 'video' ? 'VideoObject' :
+    resource.resourceFormat === 'text' ? 'TextDigitalDocument' : 'DigitalDocument'
+  }`}
     >
+      <meta itemProp="name" content={resource.title} />
+      {resource.overview && <meta itemProp="description" content={resource.overview} />}
+
       <div 
         className="bg-white dark:bg-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl"
-        itemScope={resource.structuredData !== 'none'}
-        itemType={resource.structuredData !== 'none' ? `https://schema.org/${resource.structuredData}` : undefined}
       >
         {/* Header */}
         <div className="p-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">

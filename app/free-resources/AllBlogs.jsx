@@ -11,6 +11,8 @@ import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard";
 import VerticalFeaturePost from "./FeatureResourcePost";
 import ResourceCard from "./ResourceCard"
 import HeroSection from "./HeroSection";
+import ResourceListSchema from "./ResourceListSchema";
+
 import "animate.css";
 export const revalidate = false;
 export const dynamic = "force-dynamic";
@@ -25,7 +27,7 @@ async function fetchFreeResources(page = 1, limit = 6) {
       "resourceFile": resourceFile.asset->,
       content, publishedAt, promptContent,
       "relatedArticle": relatedArticle->{title, slug},
-      // SEO fields
+   
       seoTitle, seoDescription, seoKeywords, altText, structuredData
     }[${start}...${start + limit}]`
   );
@@ -187,6 +189,7 @@ const handleSearch = async () => {
         </div>
       ) : null}
       {/* Search Section */}
+      
       <div className="card mb-10 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none">
     {/* Search Bar */}
     <div className="flex items-center w-full">
@@ -294,6 +297,7 @@ const handleSearch = async () => {
     )}
   </div>
 )}
+{data.length > 0 && <ResourceListSchema resources={data} baseUrl="https://www.doitwithai.tools/free-resources" />}
 
 {/* Pagination */}
 {!searchResults.length && data.length > 0 && (
