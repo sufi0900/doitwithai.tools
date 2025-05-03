@@ -1,6 +1,5 @@
 // components/Blog/FeatureResourcePost.js
 import React from 'react';
-import { Grid, Paper, Box, Typography, Button } from "@mui/material";
 import ResourceCardBase from './ResourceCardBase';
 import { urlForImage } from "@/sanity/lib/image";
 
