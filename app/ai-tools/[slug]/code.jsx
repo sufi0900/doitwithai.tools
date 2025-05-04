@@ -14,7 +14,9 @@ import SkelCard from "@/components/Blog/Skeleton/Card"
 import classNames from 'classnames';
 import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
 import { ArrowRight } from "lucide-react";
-
+import RelatedResources from "@/app/free-resources/RelatedResources";
+// import ResourceCard from "@/app/free-resources/ResourceCard";
+// import { fetchRelatedResources } from "@/app/free-resources/resourceHelpers";
 import { client } from "@/sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
@@ -32,7 +34,20 @@ async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
   const result = await client.fetch(query, { categories });
   return result;
 }
-
+async function fetchRelatedResources(articleId, articleType) {
+  // Query resources where relatedArticle._ref is the current article id
+  const query = `*[_type == "freeResources" && references($articleId)] {
+    _id, title, slug, tags, mainImage, overview, resourceType, resourceFormat,
+    resourceLink, resourceLinkType, previewSettings,
+    "resourceFile": resourceFile.asset->,
+    content, publishedAt, promptContent,
+    "relatedArticle": relatedArticle->{title, slug, _type},
+    seoTitle, seoDescription, seoKeywords, altText, structuredData
+  }`;
+  
+  const result = await client.fetch(query, { articleId });
+  return result;
+}
 export default function BlogSidebarPage({ data, }) {
   const GifComponent = ({ value }) => {
     const [fileUrl, setFileUrl] = useState(null);
@@ -549,7 +564,25 @@ export default function BlogSidebarPage({ data, }) {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [allData, setAllData] = useState([]);
-
+  const [relatedResources, setRelatedResources] = useState([]); // New state for related resources
+  const [resourcesLoading, setResourcesLoading] = useState(true); // New loading state for resources
+  useEffect(() => {
+    const fetchResources = async () => {
+      if (data && data._id) {
+        setResourcesLoading(true);
+        try {
+          const resources = await fetchRelatedResources(data._id, data._type);
+          setRelatedResources(resources);
+        } catch (error) {
+          console.error("Error fetching related resources:", error);
+        } finally {
+          setResourcesLoading(false);
+        }
+      }
+    };
+    
+    fetchResources();
+  }, [data]);
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -910,7 +943,7 @@ const renderTableOfContents = () => {
     </div>
   </div>        
                   </div>
- 
+                 
                   <div className="items-center justify-between sm:flex mb-4 mt-4     border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                     <div className="mb-5">
                       <h4 className="mb-3 text-sm font-medium text-body-color">
@@ -931,8 +964,12 @@ const renderTableOfContents = () => {
                       </div>
                     </div>
                   </div>
-               
+                <div >
+                
+</div>
+
             </div>
+         
             <div className="w-full px-4 lg:w-4/12">
               <div className="mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
                 <div className="flex items-center justify-between">
@@ -1104,7 +1141,11 @@ const renderTableOfContents = () => {
             </div>
           </div>
                   )}
-
+   {!resourcesLoading && (
+                    <RelatedResources 
+  resources={relatedResources} 
+  isLoading={resourcesLoading} 
+/>                  )}
           <div className="container border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
         <h2 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
           <span className="relative  mr-2 inline-block">

@@ -428,3 +428,204 @@
 .animate-bounce-slow {
   animation: bounce 3s infinite;
 }
+/* Feature Post Custom Styles */
+.feature-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Glass morphism effect for cards in dark mode */
+.dark .feature-card {
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Resource type indicators */
+.resource-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  z-index: 10;
+}
+
+.resource-badge.document {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.resource-badge.video {
+  background-color: #ef4444;
+  color: white;
+}
+
+.resource-badge.text {
+  background-color: #8b5cf6;
+  color: white;
+}
+
+.resource-badge.image {
+  background-color: #10b981;
+  color: white;
+}
+
+/* Content hover effects */
+.feature-card .card-content {
+  transform: translateY(0);
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover .card-content {
+  transform: translateY(-5px);
+}
+
+/* Animations for resource cards */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.feature-card {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Custom scroll bar for overflow content */
+.feature-card .description {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+.feature-card .description::-webkit-scrollbar {
+  width: 4px;
+}
+
+.feature-card .description::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.feature-card .description::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 20px;
+}
+
+/* Enhanced carousel styling */
+.custom-dots-container {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-align: center;
+}
+
+/* Fade transition for slides */
+.slick-slide {
+  opacity: 0.5;
+  transition: opacity 0.5s ease;
+}
+
+.slick-current {
+  opacity: 1;
+}
+
+/* Current slide subtle glow effect */
+.slick-current > div > div {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Fix for slick track height */
+.slick-track {
+  display: flex !important;
+  align-items: stretch !important;
+}
+
+.slick-slide {
+  height: auto !important;
+}
+
+.slick-slide > div {
+  height: 100%;
+}
+/* resourceCarousel.css - Add this to your global styles or import it */
+
+/* Custom indicator styling */
+.custom-dots {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.custom-dots li {
+  margin: 0 0.25rem;
+}
+
+.custom-dots li div {
+  transition: all 0.3s ease;
+}
+
+.custom-dots li.slick-active div {
+  background-color: #5271FF !important;
+  transform: scale(1.2);
+}
+
+/* Fix z-index issues with modals */
+.slick-slider {
+  position: relative;
+  z-index: 1;
+}
+
+/* Resource modal should appear above everything */
+div[class*='fixed inset-0'][class*='z-50'] {
+  z-index: 9999 !important;
+}
+
+/* Button animations */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(82, 113, 255, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(82, 113, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(82, 113, 255, 0); }
+}
+
+.slick-arrow:hover {
+  animation: pulse 1.5s infinite;
+}
+
+/* Improve slide transitions */
+.slick-slide {
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.slick-slide.slick-active {
+  opacity: 1;
+}
+
+/* Ensure modal contents are visible */
+.z-50 {
+  z-index: 9999 !important;
+}
+
+/* Fix modal close button */
+button[aria-label="Close modal"] {
+  z-index: 10000 !important;
+  opacity: 1 !important;
+}
+
+/* Add a subtle focus state to current slide */
+.slick-center .bg-white,
+.slick-center .dark\:bg-gray-800 {
+  box-shadow: 0 0 15px rgba(82, 113, 255, 0.3);
+  border: 1px solid rgba(82, 113, 255, 0.3);
+}

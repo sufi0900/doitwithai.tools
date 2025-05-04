@@ -1,7 +1,7 @@
 // components/ResourceModal.js
 import React from 'react';
 import { urlForImage } from "@/sanity/lib/image";
-import { getFileUrl, renderPreviewContent,  } from "./resourceUtils";
+import { getFileUrl, renderPreviewContent, getResourceAltText  } from "./resourceUtils";
 
 const ResourceModal = ({ resource, isOpen, onClose }) => {
   if (!isOpen || !resource) return null;
@@ -30,7 +30,7 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
     }
   };
 
-  const altText = getResourceAlt?.(resource) || resource.title;
+  const altText = getResourceAltText(resource);
 
   return (
     <div 

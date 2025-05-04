@@ -3,6 +3,9 @@ import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { Providers } from "./providers";
+
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import "../styles/index.css";
 
 

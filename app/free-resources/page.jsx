@@ -140,3 +140,22 @@ function schemaMarkup() {
   )
 }
 
+{process.env.NODE_ENV === 'development' && (
+  <button 
+    onClick={() => console.log(validateSchema(resource))}
+    style={{
+      position: 'absolute',
+      bottom: '5px',
+      right: '5px',
+      zIndex: 9999,
+      fontSize: '10px',
+      padding: '2px 5px',
+      background: '#ff4444',
+      color: 'white',
+      borderRadius: '3px',
+      opacity: 0.7
+    }}
+  >
+    Test Schema
+  </button>
+)}
