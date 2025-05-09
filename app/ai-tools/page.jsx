@@ -55,40 +55,6 @@ export default function Page() {
             }
           ]
         },
-        "mainEntity": {
-          "@type": "ItemList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "item": {
-                "@type": "Thing",
-                "name": "AI Image Generator",
-                "url": "https://www.doitwithai.tools/ai-tools/ai-image-generator"
-              }
-            },
-            
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "item": {
-                "@type": "Thing",
-                "name": "AI Video Generator",
-                "url": "https://www.doitwithai.tools/ai-tools/ai-video-generator"
-              }
-            },
-            {
-              "@type": "ListItem",
-              "position": 3,
-              "item": {
-                "@type": "Thing",
-                "name": "AI Extension",
-                "url": "https://www.doitwithai.tools/ai-tools/ai-extension"
-              }
-            }
-         
-          ]
-        }
       }`
     };
   }

@@ -16,8 +16,6 @@ import {
 import EventNoteIcon from "@mui/icons-material/EventNote"; // Import MUI icon for date
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Image from "next/image";
-  
-  
     export default function FeaturePost({
       date,
       mainImage,
