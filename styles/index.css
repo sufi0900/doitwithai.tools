@@ -1,0 +1,629 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: "Inter", sans-serif;
+    /* background: rgb(243, 110, 110); */
+  }
+}
+
+@layer components {
+  input[type="checkbox"]:checked ~ label span svg {
+    @apply inline-flex;
+  }
+
+  .sticky .header-logo {
+    @apply py-5 lg:py-2;
+  }
+
+  .sticky .menu-scroll.active {
+    @apply opacity-70;
+  }
+
+  input#togglePlan:checked ~ .dot {
+    @apply translate-x-full;
+  }
+
+  input#checkboxLabel:checked ~ .box span {
+    @apply opacity-100;
+  }
+}
+
+.card {
+  box-shadow:
+    rgba(60, 64, 67, 0.3) 0px 1px 2px 0px,
+    rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;
+}
+/* Tailwind CSS */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-marquee-reverse {
+  animation: marquee-reverse 30s linear infinite;
+}
+
+.animate-marquee-reverse:hover {
+  animation-play-state: paused;
+}
+
+.flex2 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+/* Define your color variables for light and dark themes */
+.transition-opacity {
+  transition: opacity 0.5s ease-in-out;
+}
+
+.transition-max-height {
+  transition: max-height 0.5s ease; /* Adjust the duration and easing as needed */
+}
+
+.max-h-full {
+  max-height: 1000px; /* Set a sufficiently large value */
+}
+
+.max-h-0 {
+  max-height: 0;
+}
+.card-content {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+.title-container {
+  height: 56px; /* Set a fixed height for the title container */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  /* color: rgb(82, 82, 247) */
+}
+
+.card2 {
+  box-shadow:
+    rgba(0, 0, 0, 0.4) 0px 2px 4px,
+    rgba(0, 0, 0, 0.3) 0px 7px 13px -3px,
+    rgba(0, 0, 0, 0.2) 0px -3px 0px inset;
+}
+.card3 {
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  border-radius: 15px; /* Adjust the value to change the roundness */
+  transition: 0.5s;
+  
+}
+.customClassName {
+  transition: 0.3s;
+}
+
+.customClassName:hover{
+  scale: 1.1;
+
+}
+.card3:hover {
+  box-shadow:
+    rgba(0, 0, 0, 0.16) 0px 3px 6px,
+    rgba(0, 0, 0, 0.23) 0px 3px 6px;
+  border-radius: 10px;
+
+}
+.card4 {
+  box-shadow:
+    rgba(0, 0, 0, 0.25) 0px 14px 28px,
+    rgba(0, 0, 0, 0.22) 0px 10px 10px;
+  transition: 0.3s;
+
+}
+
+
+.bs1{
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;}
+  
+/* Custom styling for bullet list */
+.custom-bullet-list {
+  list-style: none; /* Remove the default bullets */
+  padding-left: 1.5rem; /* Add left padding to create space for custom bullets */
+  position: relative;
+}
+
+.custom-bullet-list > li {
+  margin-left: 1.5rem; /* Ensure the text is aligned properly */
+  position: relative;
+}
+
+.custom-bullet-list > li::before {
+  content: '•'; /* Use a bullet character */
+  font-size: 1.5em; /* Increase the size of the bullet */
+  color: #2563eb; /* Change the bullet color to blue-600 */
+  position: absolute;
+  left: -1.5rem; /* Position the bullet to the left of the text */
+  transition: transform 0.3s ease, color 0.3s ease; /* Add transition for hover effect */
+}
+
+.custom-bullet-list > li:hover::before {
+  transform: scale(1.5); /* Scale the bullet on hover */
+  color: #1dd855; /* Change the bullet color on hover */
+}
+
+/* Custom styling for numbered list */
+.custom-number-list {
+  list-style: none; /* Remove the default numbers */
+  padding-left: 2rem; /* Add left padding to create space for custom numbers */
+  counter-reset: custom-counter; /* Initialize a custom counter */
+}
+
+.custom-number-list > li {
+  counter-increment: custom-counter; /* Increment the custom counter */
+  margin-left: 1.5rem; /* Ensure the text is aligned properly */
+  position: relative;
+}
+
+.custom-number-list > li::before {
+  content: counter(custom-counter) '.'; /* Use the custom counter */
+  position: absolute;
+  color: #2563eb; /* Change the bullet color to blue-600 */
+
+  left: -1.5rem; /* Position the number to the left of the text */
+  transition: transform 0.3s ease, color 0.3s ease; /* Add transition for hover effect */
+}
+
+.custom-number-list > li:hover::before {
+  transform: scale(1.3); 
+  color: #1dd855; /* Change the bullet color on hover */
+
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.custom-bullet-list {
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+
+}
+
+
+.fixed.inset-0.z-50 {
+  z-index: 9999; /* Increase z-index to ensure it stays above the header */
+}
+.header {
+  z-index: 999; /* Ensure it's below the modal's z-index */
+}
+.header {
+  position: fixed;
+  color: #2563eb;
+  z-index: 999; /* Lower than the modal */
+}
+.asd {
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+}
+.readingbar
+{
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px, rgba(0, 0, 0, 0.3) 0px 7px 13px -3px, rgba(0, 0, 0, 0.2) 0px -3px 0px inset;}
+
+  @keyframes gradient-move {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .animate-gradient-move {
+    background-size: 200% 200%;
+    animation: gradient-move 3s infinite linear;
+  }
+  @keyframes gradientPulse {
+    0% { background: linear-gradient(to right, #06b6d4, #3b82f6, #9333ea); }
+    25% { background: linear-gradient(to right, #3b82f6, #9333ea, #06b6d4); }
+    50% { background: linear-gradient(to right, #9333ea, #06b6d4, #3b82f6); }
+    75% { background: linear-gradient(to right, #06b6d4, #3b82f6, #9333ea); }
+    100% { background: linear-gradient(to right, #3b82f6, #9333ea, #06b6d4); }
+  }
+  @keyframes twinkle {
+    0% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0.4; transform: scale(0.8); }
+  }
+  
+  .animate-pulse2 {
+    animation: twinkle 2s infinite ease-in-out;
+  }
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+  }
+  .high-quality{
+    animation-delay: 2.5s;
+  }
+.coding-challenges{
+  animation-delay: 4.5s;
+}
+.chatgpt{
+  animation-delay: 7s;
+}
+ .let-unlock{
+  animation-delay: 5.5s;}
+  .one-article{
+    animation-delay: 5.5s;
+  }
+@keyframes welcomePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-10deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.welcome-animate {
+  animation: welcomePop 1.2s ease-out forwards;
+}
+@keyframes wordFade {
+  from {
+    transform: translateY(15px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.animate-wordFade {
+  animation: wordFade 0.6s ease-out;
+}
+.chatgpt-glow {
+  text-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
+@keyframes floatY {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+.float-animation {
+  animation: floatY 3s ease-in-out infinite;
+}
+.glow-text {
+  text-shadow: 0 0 6px rgba(37, 99, 235, 0.4);
+}
+@keyframes glowing {
+  0% {
+    text-shadow: 0 0 5px #3b82f6, 0 0 10px #3b82f6, 0 0 20px #3b82f6, 0 0 40px #3b82f6;
+  }
+  50% {
+    text-shadow: 0 0 10px #3b82f6, 0 0 20px #3b82f6, 0 0 30px #3b82f6, 0 0 40px #3b82f6;
+  }
+  100% {
+    text-shadow: 0 0 5px #3b82f6, 0 0 10px #3b82f6, 0 0 20px #3b82f6, 0 0 40px #3b82f6;
+  }
+}
+.glowing-text {
+  animation: glowing 1.5s infinite alternate; /* unique glow effect for Artificial Intelligence */
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes pulse2 {
+  0%, 100% { transform: scale(1.5); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-pulse2 {
+  animation: pulse2 2s infinite;
+}
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes bounceUp {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  40% {
+    transform: translateY(-8px) scale(1.1);
+  }
+  60% {
+    transform: translateY(-4px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+.float-anim {
+  animation: float 3s ease-in-out infinite;
+}
+
+.hover\\:animate-bounceUp:hover {
+  animation: bounceUp 0.6s ease-in-out;
+}
+
+/* Add this to your global CSS file */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-skeleton-pulse {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce-slow {
+  animation: bounce 3s infinite;
+}
+/* Feature Post Custom Styles */
+.feature-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Glass morphism effect for cards in dark mode */
+.dark .feature-card {
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Resource type indicators */
+.resource-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  z-index: 10;
+}
+
+.resource-badge.document {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.resource-badge.video {
+  background-color: #ef4444;
+  color: white;
+}
+
+.resource-badge.text {
+  background-color: #8b5cf6;
+  color: white;
+}
+
+.resource-badge.image {
+  background-color: #10b981;
+  color: white;
+}
+
+/* Content hover effects */
+.feature-card .card-content {
+  transform: translateY(0);
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover .card-content {
+  transform: translateY(-5px);
+}
+
+/* Animations for resource cards */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.feature-card {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Custom scroll bar for overflow content */
+.feature-card .description {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+.feature-card .description::-webkit-scrollbar {
+  width: 4px;
+}
+
+.feature-card .description::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.feature-card .description::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 20px;
+}
+
+/* Enhanced carousel styling */
+.custom-dots-container {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  text-align: center;
+}
+
+/* Fade transition for slides */
+.slick-slide {
+  opacity: 0.5;
+  transition: opacity 0.5s ease;
+}
+
+.slick-current {
+  opacity: 1;
+}
+
+/* Current slide subtle glow effect */
+.slick-current > div > div {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Fix for slick track height */
+.slick-track {
+  display: flex !important;
+  align-items: stretch !important;
+}
+
+.slick-slide {
+  height: auto !important;
+}
+
+.slick-slide > div {
+  height: 100%;
+}
+/* resourceCarousel.css - Add this to your global styles or import it */
+
+/* Custom indicator styling */
+.custom-dots {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.custom-dots li {
+  margin: 0 0.25rem;
+}
+
+.custom-dots li div {
+  transition: all 0.3s ease;
+}
+
+.custom-dots li.slick-active div {
+  background-color: #5271FF !important;
+  transform: scale(1.2);
+}
+
+/* Fix z-index issues with modals */
+.slick-slider {
+  position: relative;
+  z-index: 1;
+}
+
+/* Resource modal should appear above everything */
+div[class*='fixed inset-0'][class*='z-50'] {
+  z-index: 9999 !important;
+}
+
+/* Button animations */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(82, 113, 255, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(82, 113, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(82, 113, 255, 0); }
+}
+
+.slick-arrow:hover {
+  animation: pulse 1.5s infinite;
+}
+
+/* Improve slide transitions */
+.slick-slide {
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.slick-slide.slick-active {
+  opacity: 1;
+}
+
+/* Ensure modal contents are visible */
+.z-50 {
+  z-index: 9999 !important;
+}
+
+/* Fix modal close button */
+button[aria-label="Close modal"] {
+  z-index: 10000 !important;
+  opacity: 1 !important;
+}
+
+/* Add a subtle focus state to current slide */
+.slick-center .bg-white,
+.slick-center .dark\:bg-gray-800 {
+  box-shadow: 0 0 15px rgba(82, 113, 255, 0.3);
+  border: 1px solid rgba(82, 113, 255, 0.3);
+}

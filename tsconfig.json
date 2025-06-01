@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "target": "ES2017"
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "app/blog/[slug]/page.jsx",
+    "app/blog/page.jsx"
+, "app/page.jsx", "app/sitemap.xml/page.ts", "app/sitemap.js", "app/about/page.jsx", "sanitystudio/styles/theme.js", "app/ai-seo/[slug]/OptimizedGif.jsx", "app/ai-seo/[slug]/OptimizedVideo.jsx", "theme.js", "app/free-ai-resources/HeroSection.js", "components/Blog/FeatureResourcePost.jsx", "app/faq/page.jsx", "app/faq/FAQClient.jsx"  ],
+  "exclude": ["node_modules"]
+}

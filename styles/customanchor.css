@@ -1,0 +1,177 @@
+/* Light Mode Anchor Styles */
+.light .customanchor a {
+  font-weight: bold; /* Bold text for stronger emphasis */
+  color: #133efc; /* Strong blue color */
+  transition: 0.3s; /* Smooth transition */
+  text-decoration: none; /* Default no underline */
+  position: relative; /* Enable positioning for pseudo-element */
+  animation: pulseAnimation 2s infinite; /* Infinite animation */
+}
+
+/* Dark Mode Anchor Styles */
+.dark .customanchor a {
+  font-weight: bold; /* Bold text for stronger emphasis */
+  color: #3b82f6; /* Lighter blue for better visibility */
+  transition: 0.3s; /* Smooth transition */
+  text-decoration: none; /* Default no underline */
+  position: relative; /* Enable positioning for pseudo-element */
+  animation: pulseAnimation 2s infinite; /* Infinite animation */
+}
+
+/* Pulse Animation Keyframes */
+@keyframes pulseAnimation {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.80;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 2;
+  }
+}
+
+
+/* Underline Effect */
+.customanchor a::after {
+  content: ""; /* Pseudo-element for the underline */
+  position: absolute; /* Position it absolutely within the anchor */
+  left: 0; /* Align to the left */
+  right: 0; /* Stretch to the right */
+  bottom: -2px; /* Position it just below the text */
+  height: 2px; /* Set height of the underline */
+  background-color: currentColor; /* Use the text color */
+  transform: scaleX(0); /* Start with a scale of 0 (invisible) */
+  transition: transform 0.3s ease; /* Smooth transition */
+}
+
+/* Show underline on hover */
+.customanchor a:hover::after {
+  transform: scaleX(1); /* Scale to full width on hover */
+}
+
+/* Optional: Hover Styles (original styles) */
+.customanchor a:hover {
+  padding: 2px 5px;
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px,
+              rgba(0, 0, 0, 0.23) 0px 6px 6px;
+  outline: none;
+  color: #fff;
+  background-color: #1e40af;
+}
+
+
+ .imgdesc a,  .imgdesc link {
+  font-weight: 500;
+  color: #0331ff;
+  text-decoration: underline;
+  text-underline-position: under;
+  transition: 0.3s;
+}
+
+
+.imgdesc a:hover {
+  font-weight: 500;
+  padding: 2px 5px;
+  border-radius: 8px; 
+  text-decoration: none !important; /* Use !important to override other styles */
+  box-shadow:
+    rgba(0, 0, 0, 0.19) 0px 10px 20px,
+    rgba(0, 0, 0, 0.23) 0px 6px 6px;
+  outline: none;
+
+  color: #fff;
+  background-color: #1e40af;
+}
+.nonebtn a:hover, .nonebtn link:hover, .nonebtn:hover{
+  background-color: none;
+  background: none;
+}
+.btn1 a {
+  color: white;
+  
+}
+.btn2   {
+
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px; 
+
+}
+
+/* Override hover styles for btn1 */
+.btn1 a:hover {
+  /* Remove padding and other hover effects */
+  font-weight: none;
+ padding: 20px 32px;
+  /* border-radius: 23px;  */
+  box-shadow: none ; /* Remove box-shadow */
+  outline: none; /* Remove outline */
+}
+@keyframes gradientAnimation {
+  0% { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+  25% { background: linear-gradient(90deg, #ec4899, #f43f5e); }
+  50% { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+  75% { background: linear-gradient(90deg, #10b981, #34d399); }
+  100% { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+}
+
+.animated-gradient {
+  animation: gradientAnimation 5s infinite linear;
+}
+/* styles/globals.css */
+@keyframes bgChange {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.btn-gradient {
+  background-size: 400% 400%;
+  animation: bgChange 10s ease infinite;
+}
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+  }
+}
+
+.pulse-animation {
+  animation: pulse-border 1.5s infinite;
+}
+
+.hover-text-shadow:hover {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3), -2px -2px 4px rgba(255, 255, 255, 0.1);
+}
+
+.h1-hover-effect:hover {
+  color: #2563eb; /* Vibrant blue for light mode */
+  text-shadow: 0px 5px 15px rgba(37, 99, 235, 0.7); /* Elevated glow effect */
+}
+
+.h2-hover-effect:hover {
+  color: #4ade80; /* Softer green for hover */
+  text-shadow: 0px 3px 10px rgba(74, 222, 128, 0.5);
+}
+
+.h3-hover-effect:hover {
+  color: #facc15; /* Golden yellow hover */
+  text-shadow: 0px 3px 6px rgba(250, 204, 21, 0.5);
+}
+
+.strong-border {
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.hover-border:hover {
+  border-color: #9333ea; /* Vibrant violet border when hovered */
+}

@@ -1,0 +1,5 @@
+# public/robots.txt
+User-agent: *
+Disallow:
+
+Sitemap: https://www.doitwithai.tools/api/sitemap.xml
