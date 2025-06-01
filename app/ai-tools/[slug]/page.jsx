@@ -732,6 +732,18 @@ export default async function ParentPage({ params }) {
       <Script
         id="WebSiteSchema"
         type="application/ld+json"
+        dangerouslySetInnerHTML={generateHowToSchema()}
+        strategy="afterInteractive"
+      />
+      <Script
+        id="WebSiteSchema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={generateSoftwareApplicationSchema()}
+        strategy="afterInteractive"
+      />
+      <Script
+        id="WebSiteSchema"
+        type="application/ld+json"
         dangerouslySetInnerHTML={generateWebSiteSchema()}
         strategy="afterInteractive"
       />
