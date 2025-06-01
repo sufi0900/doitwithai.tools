@@ -38,7 +38,7 @@ export default function Page() {
         "@type": "WebSite",
         "name": "Do it with AI Tools",
         "url": "https://www.doitwithai.tools/",
-        "description": "Doitwithai.tools is your central platform to master SEO using cutting-edge AI insights and discover how artificial intelligence can revolutionize your daily tasks. We empower businesses, creators, and marketers double SEO performance and boost overall productivity by strategically automating repetitive tasks using our free AI resources. Explore our in-depth strategies and tools, designed for anyone looking to unlock the full potential of AI in real-world workflows.",
+        "description": "Do it with AI Tools is your central platform to master SEO using cutting-edge AI insights and discover how artificial intelligence can revolutionize your daily tasks. We empower businesses, creators, and marketers double SEO performance and boost overall productivity by strategically automating repetitive tasks using our free AI resources. Explore our in-depth strategies and tools, designed for anyone looking to unlock the full potential of AI in real-world workflows.",
         "publisher": {
           "@type": "Organization",
           "name": "Do it with AI Tools",
@@ -108,7 +108,7 @@ export default function Page() {
       "name": "Do it with AI Tools", 
       "url": "https://www.doitwithai.tools",
       "logo": "https://www.doitwithai.tools/logoForHeader.png", 
-      "description": "doitwithai.tools is an AI-focused content hub empowering creators, developers, marketers, and entrepreneurs with accessible, actionable AI knowledge and resources to boost productivity and SEO.", 
+      "description": "Do it with AI Tools is an AI-focused content hub empowering creators, developers, marketers, and entrepreneurs with accessible, actionable AI knowledge and resources to boost productivity and SEO.", 
       "contactPoint": {
         "@type": "ContactPoint",
         "contactType": "customer service", 
