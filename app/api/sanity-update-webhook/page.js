@@ -3,7 +3,7 @@
 
 import { CacheInvalidationService } from '@/components/Blog/cacheInvalidation';
 // Import the broadcastUpdate function from your new SSE stream route
-import { broadcastUpdate } from '../sanity-updates-stream/route'; // Adjust path if necessary
+import { broadcastUpdate } from '../sanity-updates-stream/page'; // Adjust path if necessary
 
 /**
  * Handles POST requests to the Sanity webhook endpoint.
