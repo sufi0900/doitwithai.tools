@@ -1,5 +1,5 @@
 
-import { CacheInvalidationService } from '@/components/Blog/CacheInvalidationService';
+import { CacheInvalidationService } from '@/components/Blog/cacheInvalidation';
 
 // For Pages Router (pages/api/sanity-update-webhook.js)
 export default async function handler(req, res) {
