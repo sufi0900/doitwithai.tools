@@ -40,41 +40,48 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
     dataSourceRef.current = dataSource;
   }, [isOffline, dataSource]);
 
-  const fetchFreshData = useCallback(async (showLoading = true) => {
-    if (showLoading) setIsLoading(true);
-    setError(null);
-    setIsOffline(false);
-    try {
-      const freshData = await client.fetch(query);
-      cacheService.set(cacheKey, freshData);
-      setData(freshData);
-      setDataSource('fresh');
-      // Register this as fresh data with refresh time tracking
-      registerDataSource(componentName || cacheKey, 'fresh', true);
-      setIsLoading(false);
-      if (onDataUpdate) {
-        onDataUpdate(freshData);
-      }
-      return freshData;
-    } catch (fetchError) {
-      console.error(`Failed to fetch ${cacheKey}:`, fetchError);
-      setError(fetchError);
-      const cachedResult = cacheService.get(cacheKey);
-      if (cachedResult) {
-        setData(cachedResult.data);
-        const fallbackSource = `${cachedResult.source}-fallback`;
-        setDataSource(fallbackSource);
-        registerDataSource(componentName || cacheKey, fallbackSource, false);
-        setIsOffline(true);
-      } else {
-        setIsOffline(true);
-        setDataSource('none');
-        registerDataSource(componentName || cacheKey, 'none', false);
-      }
-      setIsLoading(false);
-      throw fetchError;
+// In useCachedSanityData.js - Update the fetchFreshData function
+const fetchFreshData = useCallback(async (showLoading = true) => {
+  if (showLoading) setIsLoading(true);
+  setError(null);
+  setIsOffline(false);
+  
+  try {
+    const freshData = await client.fetch(query);
+    cacheService.set(cacheKey, freshData);
+    setData(freshData);
+    setDataSource('fresh');
+    
+    // Register this as fresh data with refresh time tracking
+    registerDataSource(componentName || cacheKey, 'fresh', true);
+    
+    // NEW: Store the current timestamp for this component
+    localStorage.setItem(`${componentName || cacheKey}_last_update`, Date.now().toString());
+    
+    setIsLoading(false);
+    if (onDataUpdate) {
+      onDataUpdate(freshData);
     }
-  }, [query, cacheKey, onDataUpdate, registerDataSource, componentName]);
+    return freshData;
+  } catch (fetchError) {
+    console.error(`Failed to fetch ${cacheKey}:`, fetchError);
+    setError(fetchError);
+    const cachedResult = cacheService.get(cacheKey);
+    if (cachedResult) {
+      setData(cachedResult.data);
+      const fallbackSource = `${cachedResult.source}-fallback`;
+      setDataSource(fallbackSource);
+      registerDataSource(componentName || cacheKey, fallbackSource, false);
+      setIsOffline(true);
+    } else {
+      setIsOffline(true);
+      setDataSource('none');
+      registerDataSource(componentName || cacheKey, 'none', false);
+    }
+    setIsLoading(false);
+    throw fetchError;
+  }
+}, [query, cacheKey, onDataUpdate, registerDataSource, componentName]);
 
   useEffect(() => {
     const loadData = async () => {

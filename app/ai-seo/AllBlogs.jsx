@@ -38,7 +38,7 @@ export default function AISEOPage() {
 // Replace this section in your AI-SEO page:
 const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategoriesError} = useCachedSanityData(
   CACHE_KEYS.SEO_SUBCATEGORIES,
-  groq`*[_type == "seoSubcategory"]{title, slug, description}`,
+  groq`*[_type == "seoSubcategory"]{title, slug, description, _updatedAt}`,
   {
     componentName: "SEO-Subcategories",
     usePageContext: true // This is already correct
