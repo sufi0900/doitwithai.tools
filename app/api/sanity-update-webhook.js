@@ -1,57 +1,76 @@
-// app/api/sanity-update-webhook/route.js
-// This file handles the Sanity webhook for content updates.
-
+// For Pages Router (pages/api/sanity-update-webhook.js)
 import { CacheInvalidationService } from '@/components/Blog/cacheInvalidation';
 
-// Define the POST handler for the webhook
-// This function will be called when a POST request is made to /api/sanity-update-webhook
-export async function POST(request) {
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  // Verify webhook secret
+  const receivedSecret = req.headers['sanity-webhook-secret'] || req.body.secret;
+  const expectedSecret = 'US3PE3jFjvyQ9Z6Y'; // Your secret key
+
+  if (receivedSecret !== expectedSecret) {
+    console.log('Webhook secret mismatch');
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
   try {
-    // Parse the request body as JSON
-    const body = await request.json();
-
-    // Retrieve the secret from headers or body
-    // The 'sanity-webhook-secret' header is the standard way Sanity sends it.
-    const receivedSecret = request.headers.get('sanity-webhook-secret') || body.secret;
-    const expectedSecret = 'US3PE3jFjvyQ9Z6Y'; // IMPORTANT: Use a secure environment variable for this in production!
-
-    // Verify the webhook secret to ensure the request is legitimate
-    if (receivedSecret !== expectedSecret) {
-      console.log('Webhook secret mismatch');
-      return new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
-    }
-
-    // Destructure the document type and operation from the webhook payload
-    const { _type, operation } = body;
-
+    const { _type, operation } = req.body;
     console.log('Webhook received:', { _type, operation });
 
-    // Invalidate the cache based on the document type
-    // This ensures that when content is updated in Sanity, Next.js rebuilds affected pages.
+    // Invalidate cache based on document type
     if (_type) {
       CacheInvalidationService.invalidateByDocumentType(_type);
-
-      // Special handling for 'seo' documents to invalidate specific page caches
+      // Also invalidate page-specific caches
       if (_type === 'seo') {
         CacheInvalidationService.invalidatePageCache('seo');
       }
     }
 
-    // Respond with success message
-    return new Response(JSON.stringify({
+    // Broadcast update to all clients (if you have a mechanism for this)
+    // Note: Broadcasting logic is moved to a separate file or system
+    return res.status(200).json({ 
       message: 'Webhook processed successfully',
       type: _type,
-      operation
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-
+      operation 
+    });
   } catch (error) {
-    // Log any errors during webhook processing
     console.error('Webhook processing error:', error);
-    // Respond with an internal server error status
-    return new Response(JSON.stringify({ message: 'Internal server error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 }
 
-// NOTE: The SSE (Server-Sent Events) endpoint previously defined in your snippet
-// (pages/api/sanity-updates-stream.js) should be a separate file/route if needed.
-// This webhook route is purely for receiving and processing Sanity updates.
+// For App Router (app/api/sanity-update-webhook/route.js)
+/*
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const receivedSecret = request.headers.get('sanity-webhook-secret') || body.secret;
+    const expectedSecret = 'US3PE3jFjvyQ9Z6Y';
+
+    if (receivedSecret !== expectedSecret) {
+      return Response.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { _type, operation } = body;
+    console.log('Webhook received:', { _type, operation });
+
+    if (_type) {
+      CacheInvalidationService.invalidateByDocumentType(_type);
+      if (_type === 'seo') {
+        CacheInvalidationService.invalidatePageCache('seo');
+      }
+    }
+
+    return Response.json({ 
+      message: 'Webhook processed successfully',
+      type: _type,
+      operation 
+    });
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    return Response.json({ message: 'Internal server error' }, { status: 500 });
+  }
+}
+*/
