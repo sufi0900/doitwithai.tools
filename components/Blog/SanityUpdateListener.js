@@ -1,178 +1,137 @@
+// components/Blog/SanityUpdateListener.js
 "use client";
 import { useEffect, useRef } from 'react';
 import { usePageRefresh } from './PageScopedRefreshContext';
 
 export const SanityUpdateListener = ({ pageType = 'default' }) => {
   const { notifyUpdatesAvailable } = usePageRefresh();
-  const pollingRef = useRef(null);
-  const lastCheckRef = useRef(Date.now());
-  const sseRef = useRef(null);
+  const eventSourceRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
+  const maxReconnectAttempts = 5;
+  const reconnectAttemptsRef = useRef(0);
 
-  useEffect(() => {
-    // Function to poll for updates from your webhook endpoint
-    const pollForUpdates = async () => {
-      try {
-        const response = await fetch('/api/check-updates', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            lastCheck: lastCheckRef.current,
-            pageType
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.hasUpdates) {
-            console.log('Updates detected for', pageType, ':', data);
-            
-            // Set the update flag in localStorage
-            const timestamp = Date.now().toString();
-            localStorage.setItem(`${pageType}_last_cms_update`, timestamp);
-            localStorage.setItem('global_last_cms_update', timestamp);
-            
-            // Notify the context about available updates
-            notifyUpdatesAvailable();
-            
-            // Show a toast notification (optional)
-            if (typeof window !== 'undefined' && window.toast) {
-              window.toast.info('New content available! Click refresh to update.');
-            }
-            
-            // Update our last check time
-            lastCheckRef.current = Math.max(data.lastWebhookUpdate, data.pageSpecificUpdate);
-          }
-        }
-      } catch (error) {
-        console.error('Error polling for updates:', error);
-      }
+  // Function to determine if update is relevant to current page
+  const isUpdateRelevantToPage = (documentType, currentPageType) => {
+    const documentToPageMap = {
+      'seo': ['seo', 'default'],
+      'aitool': ['ai-tools', 'default'],
+      'coding': ['coding', 'default'],
+      'makemoney': ['makemoney', 'default'],
+      'seoSubcategory': ['seo', 'default'],
+      'freeResources': ['default'],
+      'news': ['default']
     };
+    
+    const affectedPages = documentToPageMap[documentType] || ['default'];
+    return affectedPages.includes(currentPageType) || affectedPages.includes('default');
+  };
 
-    // Setup Server-Sent Events for real-time updates
-    const setupSSE = () => {
-      try {
-        const eventSource = new EventSource(`/api/sse?pageType=${pageType}`);
-        sseRef.current = eventSource;
+  const connectToSSE = () => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      // Close existing connection
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
 
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            
-            if (data.type === 'cms-update') {
-              console.log('Real-time update received:', data);
+      console.log(`Connecting to SSE for page type: ${pageType}`);
+      
+      // Create new EventSource connection
+      const eventSource = new EventSource(`/api/sse?pageType=${pageType}`);
+      eventSourceRef.current = eventSource;
+
+      eventSource.onopen = () => {
+        console.log(`SSE connected for page: ${pageType}`);
+        reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful connection
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('SSE message received:', data);
+
+          if (data.type === 'cms_update') {
+            // Check if this update is relevant to the current page
+            if (isUpdateRelevantToPage(data.documentType, pageType)) {
+              console.log(`Relevant update received for ${pageType} page:`, {
+                documentType: data.documentType,
+                timestamp: new Date(data.timestamp).toISOString()
+              });
               
-              // Set the update flag in localStorage
-              const timestamp = Date.now().toString();
-              localStorage.setItem(`${pageType}_last_cms_update`, timestamp);
-              localStorage.setItem('global_last_cms_update', timestamp);
-              
-              // Notify the context about available updates
+              // Notify the page refresh context about the update
               notifyUpdatesAvailable();
               
-              // Show a toast notification
-              if (typeof window !== 'undefined' && window.toast) {
-                window.toast.info('Fresh content has been published. Click refresh to get the latest updates.');
+              // Also show browser notification if supported
+              if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Content Updated', {
+                  body: data.message || 'Fresh content has been published. Click refresh to get the latest updates.',
+                  icon: '/favicon.ico',
+                  tag: 'content-update'
+                });
               }
+            } else {
+              console.log(`Update not relevant for ${pageType} page:`, data.documentType);
             }
-          } catch (parseError) {
-            console.error('Error parsing SSE data:', parseError);
+          } else if (data.type === 'connected') {
+            console.log(`SSE connection established for ${pageType}`);
+          } else if (data.type === 'ping') {
+            // Keep-alive ping, no action needed
+            console.log('SSE ping received');
           }
-        };
-
-        eventSource.onerror = (error) => {
-          console.error('SSE error:', error);
-          // Fallback to polling if SSE fails
-          if (!pollingRef.current) {
-            startPolling();
-          }
-        };
-
-        eventSource.onopen = () => {
-          console.log(`SSE connection opened for ${pageType}`);
-        };
-
-      } catch (error) {
-        console.error('Failed to setup SSE:', error);
-        // Fallback to polling
-        startPolling();
-      }
-    };
-
-    // Function to handle Sanity updates via custom events
-    const handleSanityUpdate = (event) => {
-      if (event.data && event.data.type === 'sanity-update') {
-        console.log('Sanity update received:', event.data);
-        
-        // Set the update flag in localStorage
-        const timestamp = Date.now().toString();
-        localStorage.setItem(`${pageType}_last_cms_update`, timestamp);
-        localStorage.setItem('global_last_cms_update', timestamp);
-        
-        // Notify the context about available updates
-        notifyUpdatesAvailable();
-        
-        // Show a toast notification
-        if (typeof window !== 'undefined' && window.toast) {
-          window.toast.info('Fresh content has been published. Click refresh to get the latest updates.');
+        } catch (error) {
+          console.error('Error parsing SSE message:', error, event.data);
         }
-      }
-    };
+      };
 
-    // Listen for custom events
-    if (typeof window !== 'undefined') {
-      window.addEventListener('sanity-update', handleSanityUpdate);
+      eventSource.onerror = (error) => {
+        console.error('SSE error:', error);
+        
+        // Attempt to reconnect if we haven't exceeded max attempts
+        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+          reconnectAttemptsRef.current++;
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 30000); // Exponential backoff, max 30s
+          
+          console.log(`SSE reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectToSSE();
+          }, delay);
+        } else {
+          console.error('Max SSE reconnection attempts reached');
+        }
+      };
+
+    } catch (error) {
+      console.error('Failed to create SSE connection:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
     }
 
-    // Start polling function
-    const startPolling = () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-      pollingRef.current = setInterval(pollForUpdates, 30000); // Poll every 30 seconds
-      // Also check immediately
-      pollForUpdates();
-    };
+    // Connect to SSE
+    connectToSSE();
 
-    // Try SSE first, fallback to polling
-    setupSSE();
-    
-    // Also start polling as backup
-    setTimeout(startPolling, 2000); // Start polling after 2 seconds
-
+    // Cleanup function
     return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('sanity-update', handleSanityUpdate);
+      if (eventSourceRef.current) {
+        console.log('Closing SSE connection');
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
       
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-      
-      if (sseRef.current) {
-        sseRef.current.close();
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
     };
-  }, [pageType, notifyUpdatesAvailable]);
+  }, [pageType]); // Re-connect if pageType changes
 
-  return null; // This component doesn't render anything
+  // This component doesn't render anything visible
+  return null;
 };
 
-// Utility function to trigger updates from anywhere in your app
-export const triggerSanityUpdate = (documentType, pageType = 'global') => {
-  const timestamp = Date.now().toString();
-  
-  if (typeof window !== 'undefined') {
-    // Setup update flags
-    localStorage.setItem(`${pageType}_last_cms_update`, timestamp);
-    localStorage.setItem('global_last_cms_update', timestamp);
-    
-    // Dispatch custom event
-    const event = new CustomEvent('sanity-update', {
-      detail: { documentType, pageType, timestamp }
-    });
-    window.dispatchEvent(event);
-  }
-};

@@ -1,20 +1,17 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
-
-import SkelCard from "@/components/Blog/Skeleton/Card";
-import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard";
 import groq from "groq";
 import { SanityUpdateListener } from '@/components/Blog/SanityUpdateListener';
 
 import { urlForImage } from "@/sanity/lib/image";
 import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";
+import WebhookDebugger from '@/components/Blog/WebhookDebugger'; // Temporary for testing
 
 import { client } from "@/sanity/lib/client"; // Keep if you still need direct client fetches for search
 import CardComponent from "@/components/Card/Page";
 
 import React, { useEffect, useState, useCallback } from "react"; // Import useCallback
 import Breadcrumb from "@/components/Common/Breadcrumb";
-import Link from "next/link";
 
 // Import the new caching system components
 import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
@@ -119,7 +116,7 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
   return (
     <PageRefreshProvider pageType="seo">
         <SanityUpdateListener pageType="seo" />
-
+    {/* <WebhookDebugger pageType="seo" />  */}
       <GlobalOfflineStatusProvider>
         <div className="container mt-10 ">
           <Breadcrumb
