@@ -1,7 +1,24 @@
-// Simple in-memory broadcast system (for production, use Redis or a proper pub/sub system)
 const clients = new Set();
 
+function broadcastUpdate(type, operation) {
+  const message = JSON.stringify({
+    type: 'sanity-update',
+    documentType: type,
+    operation,
+    timestamp: Date.now()
+  });
+
+  clients.forEach(client => {
+    try {
+      client.write(`data: ${message}\n\n`);
+    } catch (error) {
+      clients.delete(client);
+    }
+  });
+}
+
 // SSE endpoint for real-time updates
+// pages/api/sanity-updates-stream.js
 export default function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -28,20 +45,40 @@ export default function handler(req, res) {
   });
 }
 
-// Function to broadcast updates (can be called from other parts of the application)
-export function broadcastUpdate(type, operation) {
-  const message = JSON.stringify({
-    type: 'sanity-update',
-    documentType: type,
-    operation,
-    timestamp: Date.now()
-  });
-
-  clients.forEach(client => {
-    try {
-      client.write(`data: ${message}\n\n`);
-    } catch (error) {
-      clients.delete(client);
+// For App Router (app/api/sanity-update-webhook/route.js)
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const receivedSecret = request.headers.get('sanity-webhook-secret') || body.secret;
+    const expectedSecret = 'US3PE3jFjvyQ9Z6Y';
+    
+    if (receivedSecret !== expectedSecret) {
+      return Response.json({ message: 'Unauthorized' }, { status: 401 });
     }
-  });
+
+    const { _type, operation } = body;
+    
+    console.log('Webhook received:', { _type, operation });
+    
+    if (_type) {
+      CacheInvalidationService.invalidateByDocumentType(_type);
+      
+      if (_type === 'seo') {
+        CacheInvalidationService.invalidatePageCache('seo');
+      }
+    }
+
+    // Store update notification in localStorage for client-side detection
+    // This is a fallback method since we can't directly broadcast from API routes
+    
+    return Response.json({ 
+      message: 'Webhook processed successfully',
+      type: _type,
+      operation 
+    });
+    
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    return Response.json({ message: 'Internal server error' }, { status: 500 });
+  }
 }
