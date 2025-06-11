@@ -8,7 +8,7 @@ import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard";
 import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard";
 import MediumCard from "@/components/Blog/HomeMediumCard";
 import BigCard from "@/components/Blog/HomeBigCard";
-import { useCachedSanityData } from "@/components/blog/useSanityCache";
+import { useCachedSanityData } from "@/components/Blog/useSanityCache";
 import { CACHE_KEYS } from '@/components/Blog/cacheKeys'; // <-- IMPORT CACHE_KEYS
 
 const TrendingPage = () => {

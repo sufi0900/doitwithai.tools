@@ -14,8 +14,6 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import GroupIcon from '@mui/icons-material/Group';
 import SecurityIcon from '@mui/icons-material/Security';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
-import HomepageCategories from "@/components/Blog/HomepageCategories"
-const MixedCategoriesSection = dynamic(() => import("@/components/blog/MixedCategoriesSection"), { ssr: true });
 
 export default function AboutPageClient() {
 

@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import React, { useEffect, useState } from "react";
-import { useCachedSanityData  } from '@/components/blog/useSanityCache';
+import { useCachedSanityData  } from '@/components/Blog/useSanityCache';
 import Grid from "@mui/material/Grid";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"

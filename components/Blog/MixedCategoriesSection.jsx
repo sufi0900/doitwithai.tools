@@ -1,13 +1,12 @@
 /* eslint-disable react/jsx-key */
 "use client";
-
 import React from "react";
 import { urlForImage } from "@/sanity/lib/image";
 import { Grid,  } from "@mui/material";
 import Link from "next/link";
 import { TrendingUp, Code, DollarSign } from "lucide-react";
 import {   Wrench } from "lucide-react";
-import { useCachedSanityData } from '@/components/blog/useSanityCache'; // Already there
+import { useCachedSanityData } from '@/components/Blog/useSanityCache'; // Already there
 import { CACHE_KEYS } from '@/components/Blog/cacheKeys'; // <-- ADD this import
 
 import HomeBigCard from "@/components/Blog/HomeBigCard";

@@ -94,3 +94,7 @@ export default function RootLayout({
   </html>
   );
 }
+// git init
+// git add .
+// git commit -m "Added Sanity webhook and refresh button logic"
+// git push origin main

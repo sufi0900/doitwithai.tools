@@ -1,6 +1,6 @@
 import React from 'react';
 import { groq } from "next-sanity";
-import { useCachedSanityData } from '@/components/blog/useSanityCache'; 
+import { useCachedSanityData } from '@/components/Blog/useSanityCache'; 
 import { CACHE_KEYS } from '@/components/Blog/cacheKeys'; 
 
 import dynamic from 'next/dynamic';
