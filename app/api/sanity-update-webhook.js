@@ -1,135 +1,57 @@
-// 1. First, create the webhook API endpoint
-// pages/api/sanity-update-webhook.js (or app/api/sanity-update-webhook/route.js for App Router)
+// app/api/sanity-update-webhook/route.js
+// This file handles the Sanity webhook for content updates.
 
 import { CacheInvalidationService } from '@/components/Blog/cacheInvalidation';
 
-// For Pages Router (pages/api/sanity-update-webhook.js)
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  // Verify webhook secret
-  const receivedSecret = req.headers['sanity-webhook-secret'] || req.body.secret;
-  const expectedSecret = 'US3PE3jFjvyQ9Z6Y'; // Your secret key
-  
-  if (receivedSecret !== expectedSecret) {
-    console.log('Webhook secret mismatch');
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
-  try {
-    const { _type, operation } = req.body;
-    
-    console.log('Webhook received:', { _type, operation });
-    
-    // Invalidate cache based on document type
-    if (_type) {
-      CacheInvalidationService.invalidateByDocumentType(_type);
-      
-      // Also invalidate page-specific caches
-      if (_type === 'seo') {
-        CacheInvalidationService.invalidatePageCache('seo');
-      }
-    }
-
-    // Broadcast update to all clients
-    broadcastUpdate(_type, operation);
-    
-    return res.status(200).json({ 
-      message: 'Webhook processed successfully',
-      type: _type,
-      operation 
-    });
-    
-  } catch (error) {
-    console.error('Webhook processing error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-}
-
-// Simple in-memory broadcast system (for production, use Redis or a proper pub/sub system)
-const clients = new Set();
-
-function broadcastUpdate(type, operation) {
-  const message = JSON.stringify({
-    type: 'sanity-update',
-    documentType: type,
-    operation,
-    timestamp: Date.now()
-  });
-
-  clients.forEach(client => {
-    try {
-      client.write(`data: ${message}\n\n`);
-    } catch (error) {
-      clients.delete(client);
-    }
-  });
-}
-
-// SSE endpoint for real-time updates
-// pages/api/sanity-updates-stream.js
-export default function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  // Set up SSE headers
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control'
-  });
-
-  // Add client to broadcast list
-  clients.add(res);
-
-  // Send initial connection message
-  res.write(`data: ${JSON.stringify({ type: 'connected', timestamp: Date.now() })}\n\n`);
-
-  // Handle client disconnect
-  req.on('close', () => {
-    clients.delete(res);
-  });
-}
-
-// For App Router (app/api/sanity-update-webhook/route.js)
+// Define the POST handler for the webhook
+// This function will be called when a POST request is made to /api/sanity-update-webhook
 export async function POST(request) {
   try {
+    // Parse the request body as JSON
     const body = await request.json();
+
+    // Retrieve the secret from headers or body
+    // The 'sanity-webhook-secret' header is the standard way Sanity sends it.
     const receivedSecret = request.headers.get('sanity-webhook-secret') || body.secret;
-    const expectedSecret = 'US3PE3jFjvyQ9Z6Y';
-    
+    const expectedSecret = 'US3PE3jFjvyQ9Z6Y'; // IMPORTANT: Use a secure environment variable for this in production!
+
+    // Verify the webhook secret to ensure the request is legitimate
     if (receivedSecret !== expectedSecret) {
-      return Response.json({ message: 'Unauthorized' }, { status: 401 });
+      console.log('Webhook secret mismatch');
+      return new Response(JSON.stringify({ message: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
+    // Destructure the document type and operation from the webhook payload
     const { _type, operation } = body;
-    
+
     console.log('Webhook received:', { _type, operation });
-    
+
+    // Invalidate the cache based on the document type
+    // This ensures that when content is updated in Sanity, Next.js rebuilds affected pages.
     if (_type) {
       CacheInvalidationService.invalidateByDocumentType(_type);
-      
+
+      // Special handling for 'seo' documents to invalidate specific page caches
       if (_type === 'seo') {
         CacheInvalidationService.invalidatePageCache('seo');
       }
     }
 
-    // Store update notification in localStorage for client-side detection
-    // This is a fallback method since we can't directly broadcast from API routes
-    
-    return Response.json({ 
+    // Respond with success message
+    return new Response(JSON.stringify({
       message: 'Webhook processed successfully',
       type: _type,
-      operation 
-    });
-    
+      operation
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
   } catch (error) {
+    // Log any errors during webhook processing
     console.error('Webhook processing error:', error);
-    return Response.json({ message: 'Internal server error' }, { status: 500 });
+    // Respond with an internal server error status
+    return new Response(JSON.stringify({ message: 'Internal server error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 }
+
+// NOTE: The SSE (Server-Sent Events) endpoint previously defined in your snippet
+// (pages/api/sanity-updates-stream.js) should be a separate file/route if needed.
+// This webhook route is purely for receiving and processing Sanity updates.
