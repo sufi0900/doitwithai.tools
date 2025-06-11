@@ -6,7 +6,7 @@ import { CacheInvalidationService } from '@/components/Blog/cacheInvalidation';
 export default async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });   
   }
 
   try {
@@ -53,50 +53,5 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Webhook processing error:', error);
     res.status(500).json({ error: 'Internal server error' });
-  }
-}
-
-// Optional: Broadcast function for real-time updates
-function broadcastUpdate(documentType, timestamp) {
-  // You can implement Server-Sent Events here for real-time updates
-  // This is optional but provides instant updates without polling
-  console.log(`Broadcasting update for ${documentType} at ${timestamp}`);
-}
-
-// For App Router (app/api/sanity-update-webhook/route.js)
-export async function POST(request) {
-  try {
-    const body = await request.json();
-    const receivedSecret = request.headers.get('sanity-webhook-secret') || body.secret;
-    const expectedSecret = 'US3PE3jFjvyQ9Z6Y';
-    
-    if (receivedSecret !== expectedSecret) {
-      console.error('Invalid webhook secret');
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { _type: documentType, _id, action } = body;
-    
-    console.log('Sanity webhook received:', { documentType, _id, action });
-
-    if (documentType) {
-      CacheInvalidationService.invalidateByDocumentType(documentType);
-    }
-
-    const timestamp = Date.now().toString();
-    
-    // For App Router, we'll use a different approach since localStorage isn't available
-    // We'll store in a global variable or use a different state management solution
-    
-    return Response.json({ 
-      success: true, 
-      message: 'Webhook processed successfully',
-      documentType,
-      timestamp 
-    });
-
-  } catch (error) {
-    console.error('Webhook processing error:', error);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
