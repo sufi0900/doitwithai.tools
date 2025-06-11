@@ -1,35 +1,18 @@
+// app/api/check-updates/route.js
 import { NextResponse } from 'next/server';
-
-// In-memory store for webhook updates (in production, use Redis or database)
-let lastWebhookUpdate = 0;
-let webhookUpdates = [];
-
-// This will be called by your main webhook to record updates
-export function recordWebhookUpdate(documentType, timestamp) {
-  lastWebhookUpdate = Math.max(lastWebhookUpdate, timestamp);
-  webhookUpdates.push({
-    documentType,
-    timestamp,
-    id: Date.now() + Math.random()
-  });
-  
-  // Keep only last 100 updates to prevent memory issues
-  if (webhookUpdates.length > 100) {
-    webhookUpdates = webhookUpdates.slice(-100);
-  }
-}
+// Import from the new utility file
+import { getLatestWebhookTimestamp, getFilteredWebhookUpdates } from '../sanity-update-webhook/webhookTracker'; // Adjust path
 
 export async function POST(request) {
   try {
     const { lastCheck, pageType } = await request.json();
-    
+
+    // Get data using the utility functions
+    const lastWebhookUpdate = getLatestWebhookTimestamp();
+    const relevantUpdates = getFilteredWebhookUpdates(lastCheck);
+
     // Check if there have been updates since the last check
     const hasUpdates = lastWebhookUpdate > lastCheck;
-    
-    // Filter updates relevant to the page type
-    const relevantUpdates = webhookUpdates.filter(update => 
-      update.timestamp > lastCheck
-    );
 
     return NextResponse.json({
       hasUpdates,

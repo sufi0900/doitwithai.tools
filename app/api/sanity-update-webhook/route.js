@@ -1,11 +1,13 @@
+// app/api/sanity-update-webhook/route.js
 import { NextResponse } from 'next/server';
-import { recordWebhookUpdate } from '../check-updates/route';
+// Import from the new utility file
+import { recordWebhookUpdate } from './webhookTracker'; // Adjust path if not using @/lib alias
 
 export async function POST(request) {
   try {
     const body = await request.json();
     const receivedSecret = request.headers.get('sanity-webhook-secret') || body.secret;
-    const expectedSecret = 'US3PE3jFjvyQ9Z6Y';
+    const expectedSecret = 'US3PE3jFjvyQ9Z6Y'; // !!! IMPORTANT: Store this in an environment variable !!!
 
     if (receivedSecret !== expectedSecret) {
       console.error('Invalid webhook secret');
@@ -16,7 +18,7 @@ export async function POST(request) {
     console.log('Sanity webhook received:', { documentType, _id, action });
 
     const timestamp = Date.now();
-    
+
     // Record the update for the polling system
     recordWebhookUpdate(documentType, timestamp);
 
