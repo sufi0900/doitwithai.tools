@@ -1,65 +1,62 @@
-// lib/webhookTracker.js
-// In-memory store for webhook updates (in production, use Redis or database)
-let lastWebhookUpdate = 0;
-let webhookUpdates = [];
-let pageSpecificUpdates = new Map(); // NEW: Track page-specific updates
+// app/api/sanity-update-webhook/route.js
+import { NextResponse } from 'next/server';
+import { recordWebhookUpdate } from './webhookTracker';
+import { CacheInvalidationService } from '@/components/Blog/cacheInvalidation';
 
-// This will be called by your main webhook to record updates
-export function recordWebhookUpdate(documentType, timestamp) {
-  lastWebhookUpdate = Math.max(lastWebhookUpdate, timestamp);
-  
-  const updateRecord = {
-    documentType,
-    timestamp,
-    id: Date.now() + Math.random() // Simple unique ID
-  };
-  
-  webhookUpdates.push(updateRecord);
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    const receivedSecret = request.headers.get('sanity-webhook-secret') || body.secret;
+    const expectedSecret = process.env.SANITY_WEBHOOK_SECRET || 'US3PE3jFjvyQ9Z6Y';
 
-  // NEW: Track page-specific updates
-  const pageTypeMapping = {
-    'seo': ['seo', 'global'],
-    'aitool': ['ai-tools', 'global'],
-    'coding': ['coding', 'global'],
-    'makemoney': ['makemoney', 'global'],
-    'seoSubcategory': ['seo', 'global'],
-    'freeResources': ['global'],
-    'news': ['global']
-  };
+    if (receivedSecret !== expectedSecret) {
+      console.error('Invalid webhook secret');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-  const affectedPages = pageTypeMapping[documentType] || ['global'];
-  
-  affectedPages.forEach(pageType => {
-    pageSpecificUpdates.set(pageType, timestamp);
-    console.log(`Recorded update for page type: ${pageType} at ${timestamp}`);
-  });
+    const { _type: documentType, _id, action } = body;
+    console.log('Sanity webhook received:', { documentType, _id, action });
 
-  // Keep only last 100 updates to prevent memory issues
-  if (webhookUpdates.length > 100) {
-    webhookUpdates = webhookUpdates.slice(-100);
+    const timestamp = Date.now();
+
+    // Record the update for the polling system
+    recordWebhookUpdate(documentType, timestamp);
+
+    // Invalidate relevant caches based on document type
+    CacheInvalidationService.invalidateByDocumentType(documentType);
+
+    // Broadcast update to all connected clients via Server-Sent Events
+    // This is a more reliable method than localStorage for real-time updates
+    if (global.sseClients) {
+      const updateMessage = {
+        type: 'cms-update',
+        documentType,
+        timestamp,
+        action
+      };
+      
+      global.sseClients.forEach(client => {
+        try {
+          client.write(`data: ${JSON.stringify(updateMessage)}\n\n`);
+        } catch (error) {
+          console.error('Failed to send SSE update:', error);
+        }
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Webhook processed successfully',
+      documentType,
+      timestamp
+    });
+
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// Function to get the latest timestamp for polling
-export function getLatestWebhookTimestamp() {
-  return lastWebhookUpdate;
-}
-
-// NEW: Get page-specific update timestamp
-export function getPageSpecificUpdate(pageType) {
-  return pageSpecificUpdates.get(pageType) || 0;
-}
-
-// Function to get updates since a specific timestamp
-export function getFilteredWebhookUpdates(lastCheck) {
-  return webhookUpdates.filter(update => update.timestamp > lastCheck);
-}
-
-// NEW: Check if page has updates
-export function hasPageUpdates(pageType, lastCheck) {
-  const pageUpdate = pageSpecificUpdates.get(pageType) || 0;
-  const globalUpdate = pageSpecificUpdates.get('global') || 0;
-  const mostRecentUpdate = Math.max(pageUpdate, globalUpdate);
-  
-  return mostRecentUpdate > lastCheck;
+export async function GET() {
+  return NextResponse.json({ message: 'Webhook endpoint is working' });
 }
