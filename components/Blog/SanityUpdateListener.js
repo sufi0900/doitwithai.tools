@@ -9,46 +9,49 @@ export const SanityUpdateListener = ({ pageType = 'default' }) => {
 
   useEffect(() => {
     // Function to poll for updates from your webhook endpoint
-    const pollForUpdates = async () => {
-      try {
-        // Check if there have been any webhook calls since our last check
-        const response = await fetch('/api/check-updates', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            lastCheck: lastCheckRef.current,
-            pageType
-          })
-        });
+// In your SanityUpdateListener component, update the pollForUpdates function:
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.hasUpdates) {
-            console.log('Updates detected for', pageType, ':', data);
-            
-            // Set the update flag in localStorage
-            const timestamp = Date.now().toString();
-            localStorage.setItem(`${pageType}_last_cms_update`, timestamp);
-            localStorage.setItem('global_last_cms_update', timestamp);
-            
-            // Notify the context about available updates
-            notifyUpdatesAvailable();
-            
-            // Show a toast notification (optional)
-            if (typeof window !== 'undefined' && window.toast) {
-              window.toast.info('New content available! Click refresh to update.');
-            }
-            
-            // Update our last check time
-            lastCheckRef.current = Date.now();
-          }
+const pollForUpdates = async () => {
+  try {
+    // Check if there have been any webhook calls since our last check
+    const response = await fetch('/api/check-updates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lastCheck: lastCheckRef.current,
+        pageType
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      
+      if (data.hasUpdates) {
+        console.log('Updates detected for', pageType, ':', data);
+        
+        // Set the update flag in localStorage with the latest timestamp
+        const timestamp = (data.pageSpecificUpdate || data.lastWebhookUpdate || Date.now()).toString();
+        localStorage.setItem(`${pageType}_last_cms_update`, timestamp);
+        localStorage.setItem('global_last_cms_update', timestamp);
+
+        // Notify the context about available updates
+        notifyUpdatesAvailable();
+
+        // Show a toast notification (optional)
+        if (typeof window !== 'undefined' && window.toast) {
+          window.toast.info('New content available! Click refresh to update.');
         }
-      } catch (error) {
-        console.error('Error polling for updates:', error);
+
+        // Update our last check time
+        lastCheckRef.current = Math.max(data.lastWebhookUpdate, data.pageSpecificUpdate || 0);
       }
-    };
+    }
+  } catch (error) {
+    console.error('Error polling for updates:', error);
+  }
+};
 
     // Function to simulate webhook reception on client side
     const handleSanityUpdate = (event) => {
