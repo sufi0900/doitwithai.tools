@@ -16,8 +16,8 @@ import Breadcrumb from "../Common/Breadcrumb";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import {  CalendarMonthOutlined } from "@mui/icons-material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import SmallCard from "@/components/Blog/HomeSmallCard"
-export default function SingleBlog({ 
+import ImageOptimizer from "./ImageOptimizer"; // Import the new component
+export default function HomeBigCard({ 
     publishedAt,
     mainImage,
     title,
@@ -52,10 +52,9 @@ export default function SingleBlog({
   }}
   className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
 >
-  <Image
+  <ImageOptimizer
     src={mainImage}
     alt={title}
-    layout="responsive"
     width={500} 
     height={500}
   />
@@ -69,7 +68,7 @@ export default function SingleBlog({
                         </Box>
 
                <CardContent>
-               <h1 className="mb-4 line-clamp-2 text-3xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-3xl sm:leading-tight" >
+               <h1 className="mb-4 line-clamp-2 text-2xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-2xl sm:leading-tight" >
                {title}     
                   
 </h1>

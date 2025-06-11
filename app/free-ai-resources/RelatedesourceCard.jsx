@@ -1,8 +1,7 @@
-// components/ResourceCard.js - FIXED VERSION FOR CAROUSEL
+// components/ResourceCard.js
 import React from 'react';
 import { getFileUrl, renderPreviewContent,  } from "@/app/free-ai-resources/resourceUtils";
-import ResourceModal from '@/app/free-ai-resources/ResourceModal';
-import Link from 'next/link';
+
 
 // Global modal state tracking
 // In a production app, this could be moved to React Context

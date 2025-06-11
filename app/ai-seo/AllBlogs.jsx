@@ -1,122 +1,51 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
 
-import SkelCard from "@/components/Blog/Skeleton/Card"
-import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
+import SkelCard from "@/components/Blog/Skeleton/Card";
+import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard";
 import groq from "groq";
 
 import { urlForImage } from "@/sanity/lib/image";
+import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";
 
-import { client } from "@/sanity/lib/client";
-import {Grid} from "@mui/material";
-import CardComponent from "@/components/Card/Page"
+import { client } from "@/sanity/lib/client"; // Keep if you still need direct client fetches for search
+import CardComponent from "@/components/Card/Page";
 
-import FeaturePost from "@/components/Blog/featurePost"
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react"; // Import useCallback
 import Breadcrumb from "@/components/Common/Breadcrumb";
 import Link from "next/link";
+
+// Import the new caching system components
+import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
+import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
+import PageRefreshButton from "@/components/Blog/PageSpecificRefreshButton";
+import TestUpdateButton from "@/components/Blog/TestUpdateButton";
+
+// Import reusable components from the specified path
+import ReusableCachedFeaturePost from "@/app/ai-tools/CachedAIToolsFeaturePost";
+import ReusableCachedAllBlogs from "@/app/ai-tools/CachedAIToolsAllBlogs";
+import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
+import { useCachedSanityData } from '@/components/Blog/useSanityCache'; // Import useCachedSanityData for subcategories
+
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 
-
-async function fetchAllBlogs(page = 1, limit = 10) {
-  const start = (page - 1) * limit;
-  const result = await client.fetch(
-    groq`*[
-      _type == "seo" || 
-      (_type == "aitool" && displaySettings.isSeoPageFeature == true)
-    ] | order(publishedAt desc) {
-      _id, 
-      title, 
-      slug, 
-      tags, 
-      mainImage, 
-      overview, 
-      body, 
-      publishedAt,
-      _type,
-      readTime,
-      "displaySettings": displaySettings,
-      subcategory->{
-        title,
-        slug
-      }
-    }[${start}...${start + limit}]`
-  );
-  console.log("Fetched blogs:", result); // Debug log
-  return result;
-}
-
-// Separate function to fetch subcategories
-async function getSubcategories() {
-  const query = groq`*[_type == "seoSubcategory"] {
-    title,
-    slug,
-    description
-  }`;
-  return client.fetch(query);
-}
-
-export default function AllBlogs() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [subcategories, setSubcategories] = useState([]);
+export default function AISEOPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [data, setData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [aiToolTrendBigData, setAiToolTrendBigData] = useState([]);
+  const [hasMorePages, setHasMorePages] = useState(false); // State to track if there are more pages
 
-  // Fetch subcategories and feature posts
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        // Fetch subcategories
-        const subcategoriesData = await getSubcategories();
-        setSubcategories(subcategoriesData);
-
-        // Fetch featured posts
-        const featuredQuery = groq`*[_type == "seo" && displaySettings.isOwnPageFeature == true] {
-          _id,
-          title,
-          overview,
-          mainImage,
-          slug,
-          publishedAt,
-          readTime,
-          tags,
-          "displaySettings": displaySettings
-        }`;
-        const featuredPosts = await client.fetch(featuredQuery);
-        setAiToolTrendBigData(featuredPosts);
-      } catch (error) {
-        console.error("Failed to fetch initial data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchInitialData();
-  }, []);
-  // Fetch blogs
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const newData = await fetchAllBlogs(currentPage, 10);
-        console.log('Fetched Data:', newData); // Debug log
-        setData(newData);
-      } catch (error) {
-        console.error("Failed to fetch blogs:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchData();
-  }, [currentPage]);
-  
-  
+  // Fetch subcategories using the caching mechanism
+// Replace this section in your AI-SEO page:
+const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategoriesError} = useCachedSanityData(
+  CACHE_KEYS.SEO_SUBCATEGORIES,
+  groq`*[_type == "seoSubcategory"]{title, slug, description}`,
+  {
+    componentName: "SEO-Subcategories",
+    usePageContext: true // This is already correct
+  }
+);
 
   const handlePrevious = () => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
@@ -127,142 +56,111 @@ export default function AllBlogs() {
   };
 
   const handleSearch = async () => {
-    setLoading(true);
+    if (searchText.trim().length < 1) {
+      console.log("Please enter at least 1 character for search.");
+      return;
+    }
+    // Note: Search query combines 'seo' and 'aitool' types as per original logic
+    const searchQuery = groq`*[
+      (_type == "seo" || (_type == "aitool" && displaySettings.isSeoPageFeature == true)) &&
+      (title match $searchText || overview match $searchText || body match $searchText)
+    ] | order(publishedAt desc) {
+      _id,
+      title,
+      slug,
+      tags,
+      mainImage,
+      overview,
+      publishedAt,
+      _type,
+      readTime,
+      "displaySettings": displaySettings
+    }`;
+
     try {
-      const searchQuery = groq`*[
-        (_type == "seo" || (_type == "aitool" && displaySettings.isSeoPageFeature == true)) &&
-        (title match $searchText || overview match $searchText)
-      ] | order(publishedAt desc) {
-        _id,
-        title,
-        slug,
-        tags,
-        mainImage,
-        overview,
-        publishedAt,
-        _type,
-        readTime,
-        "displaySettings": displaySettings
-      }`;
-      
       const results = await client.fetch(searchQuery, { searchText: `*${searchText}*` });
       setSearchResults(results);
-      setData(results);
     } catch (error) {
       console.error("Search failed:", error);
-    } finally {
-      setLoading(false);
     }
   };
-  
+
   const resetSearch = () => {
     setSearchText("");
     setSearchResults([]);
   };
 
+  // Callback to receive hasMore status from ReusableCachedAllBlogs
+  const handleAllBlogsDataLoad = useCallback((hasMore) => {
+    setHasMorePages(hasMore);
+  }, []);
+
   const renderSearchResults = () => {
     return searchResults.map((post) => (
       <CardComponent
-      key={post._id}
-      ReadTime={post.readTime?.minutes}
-      overview={post.overview}
-      title={post.title}
-      tags={post.tags}
-      mainImage={urlForImage(post.mainImage).url()}
-      slug={`/seo/${post.slug.current}`}
-      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      })}
-    />
+        key={post._id}
+        ReadTime={post.readTime?.minutes}
+        overview={post.overview}
+        title={post.title}
+        tags={post.tags}
+        mainImage={urlForImage(post.mainImage).url()}
+        // Adjusted slug dynamically based on _type
+        slug={`/${post._type === "seo" ? "ai-seo" : "ai-tools"}/${post.slug.current}`}
+        publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        })}
+      />
     ));
   };
 
- 
   return (
-    <div className="container mt-10 ">
-        <Breadcrumb
-          pageName="AI in SEO"
-          pageName2="& Digital Marketing"
-          description="AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies. Learn how ChatGPT and other AI tools can help generate quality content, conduct keyword research, and craft data-driven campaigns. Our practical guides help you improve rankings, target the right audience, and navigate the evolving digital landscape with confidence."
-          link="/seo" 
-          linktext="seo-with-ai"
-          firstlinktext="Home"
-          firstlink="/"
+    <PageRefreshProvider pageType="seo">
+      <GlobalOfflineStatusProvider>
+        <div className="container mt-10 ">
+          <Breadcrumb
+            pageName="AI in SEO"
+            pageName2="& Digital Marketing"
+            description="AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies. Learn how ChatGPT and other AI tools can help generate quality content, conduct keyword research, and craft data-driven campaigns. Our practical guides help you improve rankings, target the right audience, and navigate the evolving digital landscape with confidence."
+            link="/ai-seo"
+            linktext="seo-with-ai"
+            firstlinktext="Home"
+            firstlink="/"
+          />
+          <TestUpdateButton/>
 
-        />
+          <div className="flex justify-end mb-4">
+            <PageRefreshButton />
+          </div>
 
+          {/* Using ReusableCachedFeaturePost for SEO feature posts */}
+          <ReusableCachedFeaturePost
+            documentType="seo"
+            pageSlugPrefix="ai-seo"
+            cacheKey={CACHE_KEYS.PAGE_FEATURE_POST('seo')}
+          />
 
-{isLoading ? (
-                      <Grid item xs={12}  >
-<FeatureSkeleton/>
-</Grid>
- ) : (
-  
-        aiToolTrendBigData.map((post) => (
-          <Grid        key={post} item xs={12}  >
-        <FeaturePost
-         key={post}
-         title={post.title}
-         overview={post.overview}
-         mainImage={urlForImage(post.mainImage).url()}
-         slug={`/ai-seo/${post.slug.current}`}
-         date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-         readTime={post.readTime?.minutes}
-         tags={post.tags}
-         />
-       
-      
-            </Grid>
-          )) )}  
+          <div className="container mt-10 px-20 mx-auto">
+            {/* Title */}
+            <div className="mb-8 text-center">
+              <h1 className="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r to-blue-500 from-primary">
+                  SubCategories
+                </span>{" "}
+                of SEO
+              </h1>
+            </div>
 
-<div className="container mt-10 px-20 mx-auto">
-  {/* Title */}
-  <div className="mb-8 text-center">
-        <h1 className="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl"><span className="text-transparent bg-clip-text bg-gradient-to-r to-blue-500 from-primary">Sub Categories</span> of SEO</h1>
-        </div>
+            {/* Grid of cards for subcategories */}
+          <ReusableCachedSEOSubcategories />
 
-  {/* Grid of cards */}
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-    {subcategories.map((subcategory) => (
-      <Link
-        href={`/seo/categories/${subcategory.slug.current}`}
-        key={subcategory.slug.current}
-        className="card hover:shadow-lg mt-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition duration-200 ease-in-out hover:scale-[1.03] max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow"
-      >
-        <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-          {subcategory.title}
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-3">{subcategory.description}</p>
-        <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-          Read more
-          <svg
-            className="rtl:rotate-180 w-3.5 h-3.5 ms-2"
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 14 10"
-          >
-            <path
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M1 5h12m0 0L9 1m4 4L9 9"
-            />
-          </svg>
-        </button>
-      </Link>
-    ))}
-  </div>
-</div>
-        <br/>
-        <br/>
-   
-   {/* category code start */}
-      <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
-            <div className="  flex items-center justify-between">
+          </div>
+          <br />
+          <br />
+
+          <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
+            <div className="flex items-center justify-between">
               <input
                 type="text"
                 placeholder="Search here..."
@@ -280,7 +178,6 @@ export default function AllBlogs() {
                 aria-label="search button"
                 className="flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-primary text-white"
                 onClick={() => {
-                  // Check if searchText is not empty before executing search
                   if (searchText.trim() !== "") {
                     handleSearch();
                   }
@@ -302,14 +199,13 @@ export default function AllBlogs() {
               </button>
               <button
                 aria-label="reset button"
-                className="ml-2 flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-gray-300   text-gray-700"
+                className="ml-2 flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-gray-300 text-gray-700"
                 onClick={resetSearch}
               >
                 Reset
               </button>
             </div>
           </div>
-   {/* category code end/}
 
           {/* Render search results if available */}
           {searchResults.length > 0 && (
@@ -318,39 +214,15 @@ export default function AllBlogs() {
             </div>
           )}
 
-          {/* Render blog posts */}
-          <div className="-mx-4 flex flex-wrap justify-center">
-            {/* Conditionally render search results within the loop */}
-            
- {loading ? (
-  Array.from({ length: 6 }).map((_, index) => (
-    <div key={index} className="mx-2 mb-4 flex flex-wrap justify-center">
-      <SkelCard />
-    </div>
-  ))
-) : (
-  data.map((post) => {
-    console.log("Rendering post:", post); // Debug log
-    return (
-      <CardComponent
-        key={post._id}
-        ReadTime={post.readTime?.minutes} 
-        overview={post.overview}
-        title={post.title}
-        tags={post.tags} 
-        mainImage={post.mainImage ? urlForImage(post.mainImage).url() : '/default-image.jpg'}
-        slug={`/${post._type === "seo" ? "ai-seo" : "ai-tools"}/${post.slug.current}`}
-        publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { 
-          day: 'numeric', 
-          month: 'short', 
-          year: 'numeric' 
-        })}         
-      />
-    );
-  })
-)}
-
-          </div>
+          {/* Using ReusableCachedAllBlogs for the main blog list */}
+          <ReusableCachedAllBlogs
+          currentPage={currentPage}
+                     limit={10}
+                     documentType="seo"
+                     pageSlugPrefix="ai-tools"
+                     cacheKeyPrefix={CACHE_KEYS.PAGE_ALL_BLOGS('seo')}
+                     onDataLoad={handleAllBlogsDataLoad} // Pass the callback
+          />
 
           <div
             className="wow fadeInUp -mx-4 flex flex-wrap"
@@ -358,57 +230,54 @@ export default function AllBlogs() {
           >
             <div className="w-full px-4 mb-4">
               <ul className="flex items-center justify-center pt-8">
- 
-<div className="my-8">
-  <nav aria-label="Page navigation example">
-    <ul className="inline-flex -space-x-px text-sm">
-      <li>
-        <button
-          onClick={handlePrevious}
-          disabled={currentPage === 1}
-          className={`flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${currentPage === 1 && 'cursor-not-allowed opacity-50'}`}
-        >
-          <svg class="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5H1m0 0 4 4M1 5l4-4"/>
-    </svg>
-          Previous
-          
-        </button>
-      </li>
-      
-        <li >
-          <button
-           
-            className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white  'text-blue-600 `}
-          >
-        {currentPage}
-          </button>
-        </li>
-   
-        <li>
-  <button
-    onClick={handleNext}
-    disabled={data.length === 0 || data.length < 2}
-    className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${data.length === 0 || data.length < 2 ? 'cursor-not-allowed opacity-50' : ''}`}
-  >
-    Next
-    <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
-    </svg>
-  </button>
-</li>
+                <div className="my-8">
+                  <nav aria-label="Page navigation example">
+                    <ul className="inline-flex -space-x-px text-sm">
+                      <li>
+                        <button
+                          onClick={handlePrevious}
+                          disabled={currentPage === 1}
+                          className={`flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
+                            currentPage === 1 && 'cursor-not-allowed opacity-50'
+                          }`}
+                        >
+                          <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4"/>
+                          </svg>
+                          Previous
+                        </button>
+                      </li>
 
+                      <li>
+                        <button
+                          className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white 'text-blue-600 `}
+                        >
+                          {currentPage}
+                        </button>
+                      </li>
 
-    </ul>
-  </nav>
-</div>
-
+                      <li>
+                        <button
+                          onClick={handleNext}
+                          disabled={!hasMorePages || searchResults.length > 0} // Use new hasMorePages state
+                          className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
+                            (!hasMorePages || searchResults.length > 0) ? 'cursor-not-allowed opacity-50' : ''
+                          }`}
+                        >
+                          Next
+                          <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                          </svg>
+                        </button>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
               </ul>
             </div>
           </div>
-
-    </div>
+        </div>
+      </GlobalOfflineStatusProvider>
+    </PageRefreshProvider>
   );
-};
-
-
+}

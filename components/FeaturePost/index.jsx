@@ -1,79 +1,83 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import React, { useEffect, useState } from "react";
-
-
-import { client } from "@/sanity/lib/client";
-
+import { useCachedSanityData  } from '@/components/blog/useSanityCache';
 import Grid from "@mui/material/Grid";
-
-
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
-
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
 import SmallCard from "@/components/Blog/HomeSmallCard"
 import BigCard from "@/components/Blog/HomeBigCard"
+import { CACHE_KEYS } from '@/components/Blog/cacheKeys'; 
+
 const FeaturePost = () => {
-  const [isLoading, setIsLoading] = useState(true); 
+   const queries = {
+    featureBig: `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageFeatureBig == true] {
+      _id,
+      _type,
+      title,
+      overview,
+      mainImage,
+      slug,
+      publishedAt,
+      readTime,
+      tags,
+      _updatedAt,
+      "displaySettings": displaySettings
+    }`,
+    featureRelated: `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageFeatureRelated == true] {
+      _id,
+      _type,
+      title,
+      overview,
+      mainImage,
+      slug,
+      publishedAt,
+      readTime,
+      tags,
+      _updatedAt, 
+      "displaySettings": displaySettings
+    }`
+  };
+  const {
+    data: featurePostBigData,
+    isLoading: isBigLoading,
+    refresh: refreshBig
+  } = useCachedSanityData('feature-post-big', queries.featureBig);
 
-  const [featurePostBig, setFeaturePostBig] = useState([]);
-  const [featureRelatedData, setFeatureRelatedData] = useState([]);  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Updated GROQ queries to properly access displaySettings
-        const isHomePageFeatureBig = `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageFeatureBig == true] {
-          _id,
-          _type,
-          title,
-          overview,
-          mainImage,
-          slug,
-          publishedAt,
-          readTime,
-          tags,
-          "displaySettings": displaySettings
-        }`;
+  const {
+    data: featureRelatedPostsData,
+    isLoading: isRelatedLoading,
+    refresh: refreshRelated
+  } = useCachedSanityData('feature-post-related', queries.featureRelated);
 
-        const isHomePageFeatureRelated = `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageFeatureRelated == true] {
-          _id,
-          _type,
-          title,
-          overview,
-          mainImage,
-          slug,
-          publishedAt,
-          readTime,
-          tags,
-          "displaySettings": displaySettings
-        }`;
+  const isLoading = isBigLoading || isRelatedLoading;
 
-        // Fetch data
-        const [featureBigData, featureRelatedData] = await Promise.all([
-          client.fetch(isHomePageFeatureBig),
-          client.fetch(isHomePageFeatureRelated)
-        ]);
-
-        console.log("Feature Big Data:", featureBigData); // Debug log
-        console.log("Feature Related Data:", featureRelatedData); // Debug log
-
-        setFeaturePostBig(featureBigData);
-        setFeatureRelatedData(featureRelatedData);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-        setIsLoading(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof window.globalRefreshFunctions !== 'undefined') {
+      const existingEntry = window.globalRefreshFunctions.find(item => item.name === 'feature');
+      if (!existingEntry) {
+        window.globalRefreshFunctions.push({
+          name: 'feature',
+          refresh: () => Promise.all([refreshBig(), refreshRelated()])
+        });
+      }
+    }
+    return () => {
+      if (typeof window !== 'undefined' && typeof window.globalRefreshFunctions !== 'undefined') {
+        window.globalRefreshFunctions = window.globalRefreshFunctions.filter(
+          item => item.name !== 'feature'
+        );
       }
     };
-
-    fetchData();
-  }, []);
-
+  }, [refreshBig, refreshRelated]); 
   const schemaSlugMap = {
     makemoney: "ai-learn-earn",
     aitool: "ai-tools",
     coding: "ai-code",
     seo: "ai-seo",
+    news: "ai-news", // Added 'news' if it's a possible type
+    freeairesources: "free-ai-resources", // Added 'freeairesources'
   };
 
  
@@ -115,20 +119,14 @@ const FeaturePost = () => {
        <MedSkeleton />
      </Grid>
    </Grid>
-       <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginRight: {lg:"20px"} , display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
-     <Grid item xs={12}  sx={{ display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
-       <MedSkeleton />
-     </Grid>
-     <Grid item xs={12} sx={{ display: 'inline-block' }}>
-       <MedSkeleton />
-     </Grid>
-   </Grid>
+     
+   
   
 
        </>
      ) : (
     
-       featureRelatedData.slice(0, 4).map((post) => (
+       featureRelatedPostsData.slice(0, 4).map((post) => (
          <Grid item key={post._id} xs={12} sm={12} md={12}  marginBottom={2}>
                    <SmallCard 
                           key={post}
@@ -152,7 +150,7 @@ const FeaturePost = () => {
         <BigSkeleton/>
           </Grid>
       ) : (
-        featurePostBig.slice(0, 1).map((post) => (
+        featurePostBigData.slice(0, 1).map((post) => (
       
           <BigCard        
           key={post}

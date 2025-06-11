@@ -627,3 +627,54 @@ button[aria-label="Close modal"] {
   box-shadow: 0 0 15px rgba(82, 113, 255, 0.3);
   border: 1px solid rgba(82, 113, 255, 0.3);
 }
+.carouselNav {
+  box-shadow: rgb(204, 219, 232) 3px 3px 6px 0px inset, 
+              rgba(255, 255, 255, 0.5) -3px -3px 6px 1px inset;
+}
+
+/* Dark mode - adjusted colors for dark backgrounds */
+.dark .carouselNav {
+  box-shadow: rgba(0, 0, 0, 0.6) 3px 3px 6px 0px inset, 
+              rgba(255, 255, 255, 0.1) -3px -3px 6px 1px inset;
+}
+
+/* Alternative dark mode option - more subtle */
+.dark .carouselNav.subtle {
+  box-shadow: rgba(0, 0, 0, 0.4) 2px 2px 4px 0px inset, 
+              rgba(255, 255, 255, 0.08) -2px -2px 4px 1px inset;
+}
+
+/* Alternative dark mode option - more pronounced */
+.dark .carouselNav.pronounced {
+  box-shadow: rgba(0, 0, 0, 0.8) 4px 4px 8px 0px inset, 
+              rgba(255, 255, 255, 0.15) -4px -4px 8px 1px inset;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out;
+}

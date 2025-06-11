@@ -1,32 +1,22 @@
 
-import React, { useEffect, useState } from "react";
-import { client } from "@/sanity/lib/client";
-import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
+import React from "react";
+import { useCachedSanityData } from '@/components/Blog/useSanityCache';
+import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
+import { urlForImage } from "@/sanity/lib/image"; 
 import Link from "next/link";
 import SkelCard from "@/components/Blog/Skeleton/Card"
-
-import Image from "next/image";
+import OptimizeImage from "@/components/Blog/ImageOptimizer"
 import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 export default  function RecentPosts() {
-  const [loading, setLoading] = useState(true);
+    const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]] | order(publishedAt desc)[0...5] {
+    _id, _type, title, overview, mainImage, slug, publishedAt, readTime, tags, _updatedAt 
+  }`;
 
-  const [recentData, setRecentData] = useState([]);
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-      const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]]|order(publishedAt desc)[0...5]`;
-
-      const recentData = await client.fetch(query);
-      setRecentData(recentData);
-      setLoading(false); // Set loading to false after data is fetched
-    } catch (error) {
-      console.error("Failed to fetch data", error);
-      setLoading(false); // Ensure loading is set to false in case of error too
-    }
-  };
-
-  fetchData();
-}, []); 
+  // Use useCachedSanityData hook
+  const {
+    data: recentData,
+    isLoading: loading, // Renamed from isLoading to loading to match your existing variable name
+  } = useCachedSanityData(CACHE_KEYS.RECENT_POSTS, query);
 
   const schemaSlugMap = {
     makemoney: "ai-learn-earn",
@@ -75,15 +65,16 @@ export default  function RecentPosts() {
             </Link>
           )}
 
-            {/* Image */}
            {/* Image */}
            <div className="relative aspect-[30/22] overflow-hidden">
-            <Image
-              className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform "
+           <div               className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform "
+>
+            <OptimizeImage
               src={urlForImage(post.mainImage).url()}
               alt={post.title}
               fill
             />
+            </div>
           </div>
         </Link>
       ) : (

@@ -1,17 +1,24 @@
 "use client";
+
 import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import { Providers } from "./providers";
-
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "../styles/index.css";
+import { Toaster } from 'react-hot-toast';
+import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
+import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
 
 
 // Dynamic imports for components that are not immediately needed
 const Header = dynamic(() => import("@/components/Header"), {
   ssr: true
+});
+const ConditionalGlobalHeader = dynamic(() => import("@/components/Header/ConditionalGlobalHeader"), {
+  ssr: false // Client-side only for scroll detection
 });
 const Footer = dynamic(() => import("@/components/Footer"), {
   ssr: true
@@ -32,6 +39,18 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  
+  // Check if current page is a slug page (article page)
+  const isSlugPage = pathname && (
+    pathname.startsWith('/ai-tools/') ||
+    pathname.startsWith('/ai-seo/') ||
+    pathname.startsWith('/ai-code/') ||
+    pathname.startsWith('/ai-learn-earn/') ||
+    pathname.startsWith('/free-ai-resources/') ||
+    pathname.startsWith('/ai-news/')
+  ) && pathname.split('/').length === 3;
+
   return (
     <html lang="en" suppressHydrationWarning>
     <head>
@@ -44,18 +63,33 @@ export default function RootLayout({
       <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
     <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
+                       <Toaster position="bottom-center" /> {/* Add this line */}
+   <PageRefreshProvider>
+      <GlobalOfflineStatusProvider>
+
       <Providers>
-        <Suspense fallback={<div>Loading...</div>}>
-          <Header />
-        </Suspense>
-        <main className="pt-24">
+        {/* Show conditional header for slug pages, regular header for others */}
+        {isSlugPage ? (
+          <ConditionalGlobalHeader />
+        ) : (
+          <Suspense fallback={<div>Loading...</div>}>
+            <Header />
+          </Suspense>
+        )}
+        
+        <main className={!isSlugPage ? "pt-24" : ""}>
+
           {children}
+                  
+
         </main>
         <Suspense fallback={<div>Loading...</div>}>
           <Footer />
           <ScrollToTop />
         </Suspense>
       </Providers>
+     </GlobalOfflineStatusProvider>
+     </PageRefreshProvider>
     </body>
   </html>
   );

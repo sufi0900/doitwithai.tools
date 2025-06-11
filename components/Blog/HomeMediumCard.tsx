@@ -1,7 +1,5 @@
 
 "use client";
-
-
 import {
   Card,
   CardContent,
@@ -16,6 +14,7 @@ import { CalendarMonth } from "@mui/icons-material";
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
 import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
+import ImageOptimizer from "./ImageOptimizer"; // Import the new component
 
 export default function SingleBlog({ 
     publishedAt,
@@ -41,15 +40,17 @@ export default function SingleBlog({
 
                         <Box position="relative">
                         <div className="relative aspect-[43/22] overflow-hidden">
-              <Image
-                className=" absolute rounded-lg inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
+<div                 className=" absolute rounded-lg inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]">
+
+            <ImageOptimizer
+
                 src={mainImage}
                 width={500} 
                 height={500} 
                 alt={title}
               />
             </div>
-                         
+                  </div>       
             {tags && tags.length > 0 && (
             <Link href={tags[0].link} className="  absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
              <LocalOfferIcon  style={{fontSize:"14px"}} />   {tags[0].name}

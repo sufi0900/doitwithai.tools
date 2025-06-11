@@ -1,3 +1,13 @@
+ .dark .customanchor a {
+          font-weight: bold;
+          color: #60A5FA; /* Existing color: Tailwind blue-400 */
+          transition: 0.3s;
+          text-decoration: none;
+          position: relative;
+          animation: subtlePulse 2s infinite ease-in-out; /* Apply the new animation */
+          display: inline-block; /* Ensure transform applies correctly */
+        }
+
 /* Light Mode Anchor Styles */
 .light .customanchor a {
   font-weight: bold; /* Bold text for stronger emphasis */
@@ -5,35 +15,72 @@
   transition: 0.3s; /* Smooth transition */
   text-decoration: none; /* Default no underline */
   position: relative; /* Enable positioning for pseudo-element */
-  animation: pulseAnimation 2s infinite; /* Infinite animation */
+  animation: lightSubtlePulse 2s infinite; /* Infinite animation */
 }
+ /* New pulse animation for interlinks */
+        @keyframes subtlePulse {
+          0% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 0px rgba(59, 130, 246, 0); /* Tailwind blue-500 */
+            filter: brightness(1);
+          }
+          50% {
+            opacity: 1; /* Keep opacity consistent or very slight fade */
+            transform: scale(1.003); /* Slightly more noticeable growth */
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6); /* More visible blue glow */
+            filter: brightness(1.15); /* Subtle text highlight */
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 0px rgba(59, 130, 246, 0);
+            filter: brightness(1);
+          }
+        }
 
-/* Dark Mode Anchor Styles */
-.dark .customanchor a {
-  font-weight: bold; /* Bold text for stronger emphasis */
-  color: #3b82f6; /* Lighter blue for better visibility */
-  transition: 0.3s; /* Smooth transition */
-  text-decoration: none; /* Default no underline */
-  position: relative; /* Enable positioning for pseudo-element */
-  animation: pulseAnimation 2s infinite; /* Infinite animation */
-}
+  /* Light Mode Pulse Animation Keyframes */
+        @keyframes lightSubtlePulse {
+          0% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 0px rgba(19, 62, 252, 0); /* Using #133efc for shadow */
+            text-shadow: 0 0 0px rgba(19, 62, 252, 0); /* Initial text shadow */
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.02); /* Keep consistent scale with dark mode */
+            box-shadow: 0 0 6px rgba(19, 62, 252, 0.5); /* Glow using the link color */
+            text-shadow: 0 0 5px rgba(19, 62, 252, 0.6); /* More noticeable text glow */
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+            box-shadow: 0 0 0px rgba(19, 62, 252, 0);
+            text-shadow: 0 0 0px rgba(19, 62, 252, 0);
+          }
+        }
 
-/* Pulse Animation Keyframes */
-@keyframes pulseAnimation {
+@keyframes lightSubtlePulse {
   0% {
-    transform: scale(1);
     opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0px rgba(19, 62, 252, 0); /* No glow at start */
+    filter: brightness(1);
   }
   50% {
-    transform: scale(1.5);
-    opacity: 0.80;
+    opacity: 1;                            /* Keep full opacity */
+    transform: scale(1.003);               /* Slight 0.3% “grow” */
+    box-shadow: 0 0 8px rgba(19, 62, 252, 0.6); /* Subtle bright‐blue halo */
+    filter: brightness(1.7);              /* Light highlight */
   }
   100% {
-    transform: scale(2);
-    opacity: 2;
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0px rgba(19, 62, 252, 0); /* Back to no glow */
+    filter: brightness(1);
   }
 }
-
 
 /* Underline Effect */
 .customanchor a::after {
@@ -91,8 +138,9 @@
   background-color: none;
   background: none;
 }
-.btn1 a {
+.btn1 a, .btn1 {
   color: white;
+  
   
 }
 .btn2   {

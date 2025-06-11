@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { client } from "@/sanity/lib/client";
+import React from 'react';
 import { groq } from "next-sanity";
+import { useCachedSanityData } from '@/components/blog/useSanityCache'; 
+import { CACHE_KEYS } from '@/components/Blog/cacheKeys'; 
 
 import dynamic from 'next/dynamic';
 
@@ -21,31 +22,19 @@ const DynamicResourceCarousel = dynamic(() => import('@/app/free-ai-resources/Re
   ),
 });
 const FeaturedResourcesHorizontal = ({ resource }) => {
-  const [featuredResources, setFeaturedResources] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Fetch featured resources on component mount
-  useEffect(() => {
-    const fetchFeatured = async () => {
-      try {
-        const query = groq`*[_type == "freeResources" && isHomePageFeature == true] | order(publishedAt desc) {
-          _id, title, slug, tags, mainImage, overview, resourceType, resourceFormat,
-          resourceLink, resourceLinkType, content, publishedAt,
-          "resourceFile": resourceFile.asset->,
-          promptContent, previewSettings
-        }`;
-        const featuredData = await client.fetch(query);
-        setFeaturedResources(featuredData);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Failed to fetch featured resources", error);
-        setIsLoading(false);
-      }
-    };
-  
-    fetchFeatured();
-  }, []);
+ const query = groq`*[_type == "freeResources" && isHomePageFeature == true] | order(publishedAt desc) {
+    _id, title, slug, tags, mainImage, overview, resourceType, resourceFormat,
+    resourceLink, resourceLinkType, content, publishedAt,
+    "resourceFile": resourceFile.asset->,
+    promptContent, previewSettings,
+    _updatedAt 
+  }`;
 
+  const {
+    data: featuredResources, // Renamed data to match your existing state variable name
+    isLoading, // Renamed isLoading to match your existing state variable name
+    // error, isOffline, dataSource, refresh are available but not strictly needed for rendering
+  } = useCachedSanityData(CACHE_KEYS.FEATURED_RESOURCES_HORIZONTAL, query);
 
  
   if (isLoading) {

@@ -3,6 +3,7 @@
 "use client"
 import Link from "next/link";
 import React, { useState, useEffect } from 'react';
+import dynamic from "next/dynamic";
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CodeIcon from '@mui/icons-material/Code';
 import SchoolIcon from '@mui/icons-material/School';
@@ -13,7 +14,8 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import GroupIcon from '@mui/icons-material/Group';
 import SecurityIcon from '@mui/icons-material/Security';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
-
+import HomepageCategories from "@/components/Blog/HomepageCategories"
+const MixedCategoriesSection = dynamic(() => import("@/components/blog/MixedCategoriesSection"), { ssr: true });
 
 export default function AboutPageClient() {
 
@@ -98,7 +100,9 @@ export default function AboutPageClient() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900/20">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        
+          <MixedCategoriesSection/>
+        <HomepageCategories/>
+     
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="relative inline-block mb-6">

@@ -1,103 +1,50 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
-import SkelCard from "@/components/Blog/Skeleton/Card"
-import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
-
-import groq from "groq";
-
+import SkelCard from "@/components/Blog/Skeleton/Card";
+import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard";
 import { urlForImage } from "@/sanity/lib/image";
-
-import { client } from "@/sanity/lib/client";
-import {Grid} from "@mui/material";
-import CardComponent from "@/components/Card/Page"
-
-import FeaturePost from "@/components/Blog/featurePost"
-import React, { useEffect, useState } from "react";
+import { client } from "@/sanity/lib/client"; // Keep if you still need direct client fetches for search
+import CardComponent from "@/components/Card/Page";
+import React, { useState, useCallback } from "react"; // Import useCallback
 import Breadcrumb from "@/components/Common/Breadcrumb";
+
+// Import the new caching system components
+import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
+import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
+import PageRefreshButton from "@/components/Blog/PageSpecificRefreshButton";
+
+// Import reusable components from the specified path
+import ReusableCachedFeaturePost from "@/app/ai-tools/CachedAIToolsFeaturePost";
+import ReusableCachedAllBlogs from "@/app/ai-tools/CachedAIToolsAllBlogs";
+import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
+
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 
-
-async function fetchAllBlogs(page = 1, limit = 10) {
-  const start = (page - 1) * limit;
-  const result = await client.fetch(
-    groq`*[_type == "coding"] | order(publishedAt desc) {
-      _id, title, slug, tags, mainImage, overview, body, publishedAt
-    }[${start}...${start + limit}]`
-  );
-  return result;
-}
-
-export default function AllBlogs() {
-  const [isLoading, setIsLoading] = useState(true); 
-
+export default function AICodingPage() {
   const [currentPage, setCurrentPage] = useState(1);
-
-  const [data, setData] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [aiToolTrendBigData, setAiToolTrendBigData] = useState([]);
+  const [hasMorePages, setHasMorePages] = useState(false); // State to track if there are more pages
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Updated GROQ query to properly access displaySettings
-        const isHomePageAIToolTrendBig = `*[_type == "coding" && displaySettings.isOwnPageFeature == true] {
-          _id,
-          title,
-          overview,
-          mainImage,
-          slug,
-          publishedAt,
-          readTime,
-          tags,
-          "displaySettings": displaySettings
-        }`;
-  
-        const isHomePageAIToolTrendBigData = await client.fetch(isHomePageAIToolTrendBig);
-        console.log("Feature Post Data:", isHomePageAIToolTrendBigData); // Debug log
-  
-        setAiToolTrendBigData(isHomePageAIToolTrendBigData);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Failed to fetch feature post data:", error);
-        setIsLoading(false);
-      }
-    };
-  
-    fetchData();
-  }, []);
-
-   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      const newData = await fetchAllBlogs(currentPage, 10);
-      setData(newData);
-      setLoading(false);
-    }
-    
-    fetchData();
-  }, [currentPage]);
-  
   const handlePrevious = () => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   };
-  
+
   const handleNext = () => {
     setCurrentPage((prev) => prev + 1);
   };
-  
+
   const handleSearch = async () => {
-    if (searchText.trim().length < 4) {
-      console.log("Please enter at least 4 characters for search.");
+    if (searchText.trim().length < 1) {
+      console.log("Please enter at least 1 character for search.");
       return;
     }
-    const query = `*[_type == "coding" && (title match $searchText || content match $searchText)]`;
-    const searchResults = await client.fetch(query, {
+    const query = `*[_type == "coding" && (title match $searchText || overview match $searchText || body match $searchText)]`; // Changed `content` to `overview` or `body` as per previous components
+    const results = await client.fetch(query, {
       searchText: `*${searchText}*`,
     });
-    setSearchResults(searchResults);
+    setSearchResults(results);
   };
 
   const resetSearch = () => {
@@ -105,59 +52,60 @@ export default function AllBlogs() {
     setSearchResults([]);
   };
 
-  const renderSearchResults = () => {
-    return searchResults.map((post) => <CardComponent key={post._id}
-    tags={post.tags} 
-    ReadTime={post.readTime?.minutes} 
-    overview={post.overview}
-   
-    title={post.title}
-    mainImage={urlForImage(post.mainImage).url()}
-    slug={`/ai-code/${post.slug.current}`}
-    publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-    />);
-  };
- 
-  return (
-    <div className="container mt-10 ">
-      <Breadcrumb
-          pageName="Code"
-          pageName2="With AI"
-          description="The future of coding is here! Explore how AI can become your powerful coding partner. In this category, we guide you through using AI tools like ChatGPT to solve complex coding problems and build websites with minimal technical knowledge. Learn how to transform ideas into functioning digital products quickly and efficiently."
-          link="/ai-learn-earn" 
-          linktext="make-money-with-ai"
-          firstlinktext="Home"
-          firstlink="/"
+  // Callback to receive hasMore status from ReusableCachedAllBlogs
+  const handleAllBlogsDataLoad = useCallback((hasMore) => {
+    setHasMorePages(hasMore);
+  }, []);
 
-        />
-                    {isLoading ? (
-                      <Grid item xs={12}  >
-<FeatureSkeleton/>
-</Grid>
- ) : (
-  
-        aiToolTrendBigData.map((post) => (
-          <Grid        key={post} item xs={12}  >
-        <FeaturePost
-         key={post}
-         title={post.title}
-         overview={post.overview}
-         mainImage={urlForImage(post.mainImage).url()}
-         slug={`/ai-code/${post.slug.current}`}
-         date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-         readTime={post.readTime?.minutes}
-         tags={post.tags}
-         />
-       
-      
-            </Grid>
-          )) )}  
-      
-        <br/>
-        <br/>
-      {/* <AiCategory /> */}
-      <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
-            <div className="  flex items-center justify-between">
+  const renderSearchResults = () => {
+    return searchResults.map((post) => (
+      <CardComponent
+        key={post._id}
+        tags={post.tags}
+        ReadTime={post.readTime?.minutes}
+        overview={post.overview}
+        title={post.title}
+        mainImage={urlForImage(post.mainImage).url()}
+        slug={`/ai-code/${post.slug.current}`}
+        publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        })}
+      />
+    ));
+  };
+
+  return (
+    <PageRefreshProvider pageType="coding">
+      <GlobalOfflineStatusProvider>
+        <div className="container mt-10 ">
+          <Breadcrumb
+            pageName="Code"
+            pageName2="With AI"
+            description="The future of coding is here! Explore how AI can become your powerful coding partner. In this category, we guide you through using AI tools like ChatGPT to solve complex coding problems and build websites with minimal technical knowledge. Learn how to transform ideas into functioning digital products quickly and efficiently."
+            firstlinktext="Home"
+            firstlink="/"
+            link="/ai-code"
+            linktext="code-with-ai"
+          />
+
+          <div className="flex justify-end mb-4">
+            <PageRefreshButton />
+          </div>
+
+          {/* Using ReusableCachedFeaturePost */}
+          <ReusableCachedFeaturePost
+            documentType="coding"
+            pageSlugPrefix="ai-code"
+            cacheKey={CACHE_KEYS.PAGE_FEATURE_POST('coding')}
+          />
+
+          <br />
+          <br />
+
+          <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
+            <div className="flex items-center justify-between">
               <input
                 type="text"
                 placeholder="Search here..."
@@ -175,7 +123,6 @@ export default function AllBlogs() {
                 aria-label="search button"
                 className="flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-primary text-white"
                 onClick={() => {
-                  // Check if searchText is not empty before executing search
                   if (searchText.trim() !== "") {
                     handleSearch();
                   }
@@ -197,7 +144,7 @@ export default function AllBlogs() {
               </button>
               <button
                 aria-label="reset button"
-                className="ml-2 flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-gray-300   text-gray-700"
+                className="ml-2 flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-gray-300 text-gray-700"
                 onClick={resetSearch}
               >
                 Reset
@@ -212,32 +159,15 @@ export default function AllBlogs() {
             </div>
           )}
 
-          {/* Render blog posts */}
-          <div className="-mx-4 flex flex-wrap justify-center">
-            {/* Conditionally render search results within the loop */}
-            {loading ? (
-          // Display Skeleton components while loading
-          Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="mx-2 mb-4  flex flex-wrap justify-center">
-              <SkelCard />
-            </div>
-          ))
-        ) : (
-          // Render BlogCard components when data is available
-          data.map((post) =>
-        <CardComponent
-          key={post._id}
-          ReadTime={post.readTime?.minutes} 
-          overview={post.overview}
-          title={post.title}
-          tags={post.tags} 
-          mainImage={urlForImage(post.mainImage).url()}
-          slug={`/ai-code/${post.slug.current}`}
-          publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}         
-         />
-        )
-        )}
-          </div>
+          {/* Using ReusableCachedAllBlogs */}
+          <ReusableCachedAllBlogs
+            currentPage={currentPage}
+            limit={10}
+            documentType="coding"
+            pageSlugPrefix="ai-code"
+            cacheKeyPrefix={CACHE_KEYS.PAGE_ALL_BLOGS('coding')}
+            onDataLoad={handleAllBlogsDataLoad} // Pass the callback
+          />
 
           <div
             className="wow fadeInUp -mx-4 flex flex-wrap"
@@ -245,57 +175,54 @@ export default function AllBlogs() {
           >
             <div className="w-full px-4 mb-4">
               <ul className="flex items-center justify-center pt-8">
- 
-<div className="my-8">
-  <nav aria-label="Page navigation example">
-    <ul className="inline-flex -space-x-px text-sm">
-      <li>
-        <button
-          onClick={handlePrevious}
-          disabled={currentPage === 1}
-          className={`flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${currentPage === 1 && 'cursor-not-allowed opacity-50'}`}
-        >
-          <svg class="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5H1m0 0 4 4M1 5l4-4"/>
-    </svg>
-          Previous
-          
-        </button>
-      </li>
-      
-        <li >
-          <button
-           
-            className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white  'text-blue-600 `}
-          >
-        {currentPage}
-          </button>
-        </li>
-   
-        <li>
-  <button
-    onClick={handleNext}
-    disabled={data.length === 0 || data.length < 2}
-    className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${data.length === 0 || data.length < 2 ? 'cursor-not-allowed opacity-50' : ''}`}
-  >
-    Next
-    <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
-    </svg>
-  </button>
-</li>
+                <div className="my-8">
+                  <nav aria-label="Page navigation example">
+                    <ul className="inline-flex -space-x-px text-sm">
+                      <li>
+                        <button
+                          onClick={handlePrevious}
+                          disabled={currentPage === 1}
+                          className={`flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
+                            currentPage === 1 && 'cursor-not-allowed opacity-50'
+                          }`}
+                        >
+                          <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4"/>
+                          </svg>
+                          Previous
+                        </button>
+                      </li>
 
+                      <li>
+                        <button
+                          className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white 'text-blue-600 `}
+                        >
+                          {currentPage}
+                        </button>
+                      </li>
 
-    </ul>
-  </nav>
-</div>
-
+                      <li>
+                        <button
+                          onClick={handleNext}
+                          disabled={!hasMorePages || searchResults.length > 0} // Use new hasMorePages state
+                          className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
+                            (!hasMorePages || searchResults.length > 0) ? 'cursor-not-allowed opacity-50' : ''
+                          }`}
+                        >
+                          Next
+                          <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                          </svg>
+                        </button>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
               </ul>
             </div>
           </div>
-
-    </div>
+        </div>
+      </GlobalOfflineStatusProvider>
+    </PageRefreshProvider>
   );
-};
-
-
+}

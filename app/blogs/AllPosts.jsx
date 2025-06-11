@@ -12,7 +12,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
-async function fetchAllBlogs(page = 1, limit = 12, categories = [], sortBy = 'publishedAt desc') {
+// Changed limit from 12 to 5
+async function fetchAllBlogs(page = 1, limit = 5, categories = [], sortBy = 'publishedAt desc') {
   const start = (page - 1) * limit;
   const categoryFilter = categories.length > 0 ? `_type in $categories` : `_type in ["makemoney", "aitool", "coding", "seo"]`;
   const query = `*[${categoryFilter}] | order(${sortBy}) {formattedDate, tags, readTime, _id, _type, title, slug, mainImage, overview, body, publishedAt}[${start}...${start + limit}]`;
@@ -51,22 +52,44 @@ export default function AllPosts() {
   const [sortBy, setSortBy] = useState('publishedAt desc');
   const [totalCount, setTotalCount] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+const [pageCache, setPageCache] = useState(new Map());
+const [visitedPages, setVisitedPages] = useState(new Set([1])); // Track visited pages
+  // Define the limit for cards per page
+  const cardsPerPage = 5; 
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const categories = selectedCategory === 'all' ? [] : [selectedCategory];
-      const [newData, count] = await Promise.all([
-        fetchAllBlogs(currentPage, 12, categories, sortBy),
-        getTotalCount(categories)
-      ]);
-      
-      setAllData(newData);
-      setTotalCount(count);
+useEffect(() => {
+  const fetchData = async () => {
+    const categories = selectedCategory === 'all' ? [] : [selectedCategory];
+    const cacheKey = `${currentPage}-${selectedCategory}-${sortBy}`;
+    
+    // Check if data is already cached
+    if (pageCache.has(cacheKey)) {
+      const cachedData = pageCache.get(cacheKey);
+      setAllData(cachedData.data);
+      setTotalCount(cachedData.totalCount);
       setLoading(false);
-    };
-    fetchData();
-  }, [currentPage, selectedCategory, sortBy]);
+      return;
+    }
+
+    setLoading(true);
+    
+    // Fetch new data
+    const [newData, count] = await Promise.all([
+      fetchAllBlogs(currentPage, cardsPerPage, categories, sortBy),
+      getTotalCount(categories)
+    ]);
+   
+    // Cache the fetched data
+    setPageCache(prev => new Map(prev).set(cacheKey, { data: newData, totalCount: count }));
+    setVisitedPages(prev => new Set(prev).add(currentPage));
+    
+    setAllData(newData);
+    setTotalCount(count);
+    setLoading(false);
+  };
+  
+  fetchData();
+}, [currentPage, selectedCategory, sortBy, pageCache]);
 
   const handlePrevious = () => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
@@ -74,7 +97,8 @@ export default function AllPosts() {
   };
 
   const handleNext = () => {
-    if (allData.length === 12) { // Only enable next if we have full page
+    // Changed condition to match new cardsPerPage limit
+    if (allData.length === cardsPerPage) { 
       setCurrentPage((prev) => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -98,17 +122,23 @@ export default function AllPosts() {
     setLoading(false);
   };
 
-  const handleCategoryFilter = (category) => {
-    setSelectedCategory(category);
-    setCurrentPage(1);
-    setSearchResults([]);
-    setSearchText("");
-  };
+ const handleCategoryFilter = (category) => {
+  setSelectedCategory(category);
+  setCurrentPage(1);
+  setSearchResults([]);
+  setSearchText("");
+  // Clear cache when category changes
+  setPageCache(new Map());
+  setVisitedPages(new Set([1]));
+};
 
   const handleSortChange = (newSortBy) => {
-    setSortBy(newSortBy);
-    setCurrentPage(1);
-  };
+  setSortBy(newSortBy);
+  setCurrentPage(1);
+  // Clear cache when sort changes
+  setPageCache(new Map());
+  setVisitedPages(new Set([1]));
+};
 
   const resetSearch = () => {
     setSearchText("");
@@ -152,8 +182,7 @@ export default function AllPosts() {
             </span>
           </h1>
           <p className="mx-auto max-w-3xl text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-Discover cutting-edge AI insights and articles across our AI-powered categories. Get the best AI tools, SEO strategies, coding techniques, and monetization opportunities. It's your complete resource for mastering AI in the digital world.
-
+            Discover cutting-edge AI insights and articles across our AI-powered categories. Get the best AI tools, SEO strategies, coding techniques, and monetization opportunities. It's your complete resource for mastering AI in the digital world.
           </p>
           
           {/* Stats Bar */}
@@ -298,7 +327,8 @@ Discover cutting-edge AI insights and articles across our AI-powered categories.
         {/* Articles Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8 mb-16">
           {loading ? (
-            Array.from({ length: 6 }).map((_, index) => (
+            // Changed length for skeleton cards to 5
+            Array.from({ length: 5 }).map((_, index) => ( 
               <div key={index} className="animate-pulse">
                 <SkelCard />
               </div>
@@ -356,9 +386,10 @@ Discover cutting-edge AI insights and articles across our AI-powered categories.
 
               <button
                 onClick={handleNext}
-                disabled={allData.length < 12}
+                // Changed condition to match new cardsPerPage limit
+                disabled={allData.length < cardsPerPage} 
                 className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-                  allData.length < 12
+                  allData.length < cardsPerPage
                     ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
                     : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-md hover:shadow-lg'
                 }`}

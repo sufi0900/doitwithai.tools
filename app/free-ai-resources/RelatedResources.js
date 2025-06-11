@@ -1,9 +1,8 @@
-// components/RelatedResources.js
+//components/RelatedResources.js
 import React from 'react';
-import ResourceCard from './RelatedesourceCard'; // Make sure this points to the correct file
+import ResourceCard from './RelatedesourceCard';
 import ResourceSkeleton from './ResourceSkeleton';
-import ResourceCarousel from './ResourceCarousel'; // Import the new carousel component
-import ResourceModalsProvider from './ResourceModalsProvider'; // Import our modals provider
+import ResourceModalsProvider from './ResourceModalsProvider';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
@@ -21,7 +20,11 @@ const DynamicResourceCarousel = dynamic(() => import('./ResourceCarousel'), {
   ),
 });
 
-const RelatedResources = ({ resources, isLoading = false }) => {
+const RelatedResources = ({ 
+  resources, 
+  isLoading = false, 
+  slidesToShow = 3 // Default to 3 slides, can be overridden
+}) => {
   // If loading, show skeletons
   if (isLoading) {
     return (
@@ -63,8 +66,8 @@ const RelatedResources = ({ resources, isLoading = false }) => {
             </p>
           </div>
           
-          {/* Carousel for resources */}
-          <DynamicResourceCarousel>
+          {/* Carousel for resources - pass slidesToShow prop */}
+          <DynamicResourceCarousel slidesToShow={slidesToShow}>
             {resources.map((resource) => (
               <ResourceCard 
                 key={resource._id} 
