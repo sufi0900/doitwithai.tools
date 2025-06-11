@@ -19,99 +19,75 @@ export const PageRefreshProvider = ({ children, pageType = 'default' }) => {
   const [pageLoadTime] = useState(Date.now());
 
   // Real-time updates using Server-Sent Events
-  useEffect(() => {
-    let eventSource;
-    
-    const connectToUpdates = () => {
-      try {
-        // Connect to SSE endpoint for real-time updates
-        eventSource = new EventSource('/api/sanity-updates-stream');
-        
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            
-            if (data.type === 'sanity-update') {
-              console.log('Real-time update received:', data);
-              
-              // Check if this update is relevant to current page
-              const isRelevantUpdate = checkIfUpdateIsRelevant(data.documentType, pageType);
-              
-              if (isRelevantUpdate) {
-                setHasUpdatesAvailable(true);
-                // Store timestamp for persistence
-                localStorage.setItem(`${pageType}_last_cms_update`, data.timestamp.toString());
-                
-                // Optional: Show toast notification
-                if (typeof window !== 'undefined' && window.toast) {
-                  window.toast.info('Fresh content available. Click refresh to update.');
-                }
-              }
-            }
-          } catch (error) {
-            console.error('Error parsing SSE data:', error);
-          }
-        };
-        
-        eventSource.onerror = (error) => {
-          console.error('SSE connection error:', error);
-          eventSource.close();
-          
-          // Reconnect after 5 seconds
-          setTimeout(connectToUpdates, 5000);
-        };
-        
-      } catch (error) {
-        console.error('Failed to connect to update stream:', error);
-        // Fallback to polling
-        setupPollingFallback();
-      }
-    };
-    
-    // Fallback polling method
-    const setupPollingFallback = () => {
-      const checkForUpdates = () => {
-        const lastUpdateTime = localStorage.getItem(`${pageType}_last_cms_update`);
-        if (lastUpdateTime && parseInt(lastUpdateTime) > pageLoadTime) {
-          setHasUpdatesAvailable(true);
-        }
-      };
 
-      const interval = setInterval(checkForUpdates, 10000); // Check every 10 seconds
-      checkForUpdates(); // Check immediately
+// Only the parts that need to be updated in PageRefreshContext
+
+// Replace the useEffect that handles update checking with this:
+useEffect(() => {
+  let interval;
+  
+  const checkForUpdates = () => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      // Check for updates in localStorage
+      const lastUpdateTime = localStorage.getItem(`${pageType}_last_cms_update`);
+      const globalUpdateTime = localStorage.getItem('global_last_cms_update');
       
-      return () => clearInterval(interval);
-    };
-
-    // Try SSE first, fallback to polling
-    if (typeof window !== 'undefined' && typeof EventSource !== 'undefined') {
-      connectToUpdates();
-    } else {
-      setupPollingFallback();
-    }
-
-    return () => {
-      if (eventSource) {
-        eventSource.close();
+      // Use the most recent update time
+      const mostRecentUpdate = Math.max(
+        lastUpdateTime ? parseInt(lastUpdateTime) : 0,
+        globalUpdateTime ? parseInt(globalUpdateTime) : 0
+      );
+      
+      if (mostRecentUpdate > pageLoadTime) {
+        console.log(`Updates detected for ${pageType} page:`, {
+          pageLoadTime: new Date(pageLoadTime),
+          lastUpdate: new Date(mostRecentUpdate),
+          pageType
+        });
+        setHasUpdatesAvailable(true);
       }
-    };
-  }, [pageType, pageLoadTime]);
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+    }
+  };
+
+  // Check immediately when component mounts
+  checkForUpdates();
+  
+  // Set up polling interval (every 15 seconds for more responsive updates)
+  interval = setInterval(checkForUpdates, 15000);
+  
+  // Listen for storage events (when localStorage is updated by webhook)
+  const handleStorageChange = (e) => {
+    if (e.key === `${pageType}_last_cms_update` || e.key === 'global_last_cms_update') {
+      console.log('Storage change detected:', e.key, e.newValue);
+      checkForUpdates();
+    }
+  };
+  
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', handleStorageChange);
+  }
+  
+  return () => {
+    if (interval) clearInterval(interval);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('storage', handleStorageChange);
+    }
+  };
+}, [pageType, pageLoadTime]);
+
 
   // Check if update is relevant to current page
-  const checkIfUpdateIsRelevant = (documentType, currentPageType) => {
-    const relevanceMap = {
-      'seo': ['seo', 'default'],
-      'aitool': ['ai-tools', 'default'],
-      'coding': ['coding', 'default'],
-      'makemoney': ['makemoney', 'default'],
-      'seoSubcategory': ['seo', 'default'],
-      'freeResources': ['default'],
-      'news': ['default']
-    };
-    
-    const relevantPages = relevanceMap[documentType] || ['default'];
-    return relevantPages.includes(currentPageType) || currentPageType === 'default';
-  };
+const clearUpdateNotification = useCallback(() => {
+  setHasUpdatesAvailable(false);
+  // Optionally clear the localStorage flag
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(`${pageType}_last_cms_update`);
+  }
+}, [pageType]);
 
   const registerRefresh = useCallback((componentName, refreshFn) => {
     setRefreshFunctions(prev => new Map(prev.set(componentName, refreshFn)));
@@ -144,52 +120,56 @@ export const PageRefreshProvider = ({ children, pageType = 'default' }) => {
   }, []);
 
   const refreshAll = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      const refreshPromises = Array.from(refreshFunctions.values()).map(fn => 
-        fn().catch(err => {
-          console.error('Component refresh failed:', err);
-          return null;
-        })
-      );
+  setIsRefreshing(true);
+  try {
+    const refreshPromises = Array.from(refreshFunctions.values()).map(fn =>
+      fn().catch(err => {
+        console.error('Component refresh failed:', err);
+        return null;
+      })
+    );
+    
+    const results = await Promise.allSettled(refreshPromises);
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+
+    // Clear updates available flag after successful refresh
+    if (successful > 0) {
+      setHasUpdatesAvailable(false);
       
-      const results = await Promise.allSettled(refreshPromises);
-      const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-
-      // Clear updates available flag after successful refresh
-      if (successful > 0) {
-        setHasUpdatesAvailable(false);
-        // Clear the stored timestamp
+      // Clear the update timestamps after successful refresh
+      if (typeof window !== 'undefined') {
         localStorage.removeItem(`${pageType}_last_cms_update`);
-        
-        // Update all component refresh times
-        const currentTime = Date.now();
-        setComponentLastRefresh(prev => {
-          const newMap = new Map(prev);
-          Array.from(refreshFunctions.keys()).forEach(componentName => {
-            newMap.set(componentName, currentTime);
-          });
-          return newMap;
+        localStorage.removeItem('global_last_cms_update');
+      }
+      
+      // Update all component refresh times
+      const currentTime = Date.now();
+      setComponentLastRefresh(prev => {
+        const newMap = new Map(prev);
+        Array.from(refreshFunctions.keys()).forEach(componentName => {
+          newMap.set(componentName, currentTime);
         });
-      }
-
-      if (typeof window !== 'undefined' && window.toast) {
-        if (failed === 0) {
-          window.toast.success(`${pageType} page refreshed successfully!`);
-        } else {
-          window.toast.warning(`${successful} components refreshed, ${failed} failed.`);
-        }
-      }
-    } catch (error) {
-      console.error(`${pageType} page refresh failed:`, error);
-      if (typeof window !== 'undefined' && window.toast) {
-        window.toast.error(`${pageType} page refresh failed`);
-      }
-    } finally {
-      setIsRefreshing(false);
+        return newMap;
+      });
     }
-  }, [refreshFunctions, pageType]);
+
+    if (typeof window !== 'undefined' && window.toast) {
+      if (failed === 0) {
+        window.toast.success(`${pageType} page refreshed successfully!`);
+      } else {
+        window.toast.warning(`${successful} components refreshed, ${failed} failed.`);
+      }
+    }
+  } catch (error) {
+    console.error(`${pageType} page refresh failed:`, error);
+    if (typeof window !== 'undefined' && window.toast) {
+      window.toast.error(`${pageType} page refresh failed`);
+    }
+  } finally {
+    setIsRefreshing(false);
+  }
+}, [refreshFunctions, pageType]);
 
   const getDataSourceStats = useCallback(() => {
     const sources = Array.from(componentDataSources.values());
@@ -246,23 +226,24 @@ export const PageRefreshProvider = ({ children, pageType = 'default' }) => {
 
   return (
     <PageRefreshContext.Provider value={{
-      isRefreshing,
-      refreshFunctions,
-      componentDataSources,
-      componentLastRefresh,
-      hasUpdatesAvailable,
-      registerRefresh,
-      registerDataSource,
-      unregisterRefresh,
-      refreshAll,
-      getDataSourceStats,
-      notifyUpdatesAvailable,
-      hasRecentlyFreshData,
-      refreshCount: refreshFunctions.size,
-      pageType,
-      pageLoadTime
-    }}>
-      {children}
-    </PageRefreshContext.Provider>
+    isRefreshing,
+    refreshFunctions,
+    componentDataSources,
+    componentLastRefresh,
+    hasUpdatesAvailable,
+    registerRefresh,
+    registerDataSource,
+    unregisterRefresh,
+    refreshAll,
+    getDataSourceStats,
+    notifyUpdatesAvailable,
+    hasRecentlyFreshData,
+    clearUpdateNotification, // Add this line
+    refreshCount: refreshFunctions.size,
+    pageType,
+    pageLoadTime
+  }}>
+    {children}
+  </PageRefreshContext.Provider>
   );
 };

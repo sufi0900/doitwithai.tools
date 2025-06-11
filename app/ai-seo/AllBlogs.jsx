@@ -4,6 +4,7 @@
 import SkelCard from "@/components/Blog/Skeleton/Card";
 import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard";
 import groq from "groq";
+import { SanityUpdateListener } from '@/components/Blog/SanityUpdateListener';
 
 import { urlForImage } from "@/sanity/lib/image";
 import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";
@@ -117,6 +118,8 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
 
   return (
     <PageRefreshProvider pageType="seo">
+        <SanityUpdateListener pageType="seo" />
+
       <GlobalOfflineStatusProvider>
         <div className="container mt-10 ">
           <Breadcrumb
@@ -278,6 +281,7 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
           </div>
         </div>
       </GlobalOfflineStatusProvider>
+  
     </PageRefreshProvider>
   );
 }
