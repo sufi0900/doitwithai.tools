@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { recordWebhookUpdate } from '../check-updates/page';
+import { recordWebhookUpdate } from '../check-updates/route';
 
 export async function POST(request) {
   try {
