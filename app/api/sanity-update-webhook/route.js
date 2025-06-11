@@ -48,7 +48,7 @@ export async function POST(request) {
     }
 
     // Call the broadcastUpdate function to push real-time updates to connected SSE clients.
-    broadcastUpdate(documentType, action);
+    broadcastUpdate(clients, documentType, action); // <--- MODIFIED CALL
 
     // A simple timestamp is sufficient for server-side logging or for the client to poll.
     const timestamp = Date.now().toString();
