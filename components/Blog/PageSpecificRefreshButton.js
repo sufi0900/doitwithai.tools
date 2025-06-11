@@ -1,4 +1,6 @@
 // components/Blog/PageRefreshButton.js
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 import React, { useState } from 'react';
 import { usePageRefresh } from './PageScopedRefreshContext';
 import { useGlobalOfflineStatus } from './GlobalOfflineStatusContext';

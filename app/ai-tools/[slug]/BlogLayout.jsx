@@ -17,6 +17,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
+import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
 
 const BlogLayout = ({
   data,

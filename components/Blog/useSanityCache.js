@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { client } from "@/sanity/lib/client";
 import { cacheService } from './useCache';
@@ -13,15 +14,9 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
   const [isOffline, setIsOffline] = useState(false);
   const [dataSource, setDataSource] = useState(null);
 
-  // Try to get page-specific context first, fallback to global context
-  let refreshContext;
-  try {
-    refreshContext = usePageRefresh();
-  } catch {
-    refreshContext = useGlobalRefresh();
-  }
-
-  const { registerRefresh, unregisterRefresh, registerDataSource } = refreshContext;
+  // Call both hooks unconditionally at the top level
+  const pageRefreshContext = usePageRefresh();
+  const globalRefreshContext = useGlobalRefresh();
   const { registerComponent } = useGlobalOfflineStatus();
 
   const {
@@ -31,6 +26,10 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
     componentName,
     usePageContext = false
   } = options;
+
+  // Determine which refresh context to use based on the option
+  const refreshContext = usePageContext ? pageRefreshContext : globalRefreshContext;
+  const { registerRefresh, unregisterRefresh, registerDataSource } = refreshContext;
 
   // Use refs to hold the latest values for callbacks
   const isOfflineRef = useRef(isOffline);
@@ -45,27 +44,21 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
     if (showLoading) setIsLoading(true);
     setError(null);
     setIsOffline(false);
-
     try {
       const freshData = await client.fetch(query);
       cacheService.set(cacheKey, freshData);
       setData(freshData);
       setDataSource('fresh');
-      
       // Register this as fresh data with refresh time tracking
       registerDataSource(componentName || cacheKey, 'fresh', true);
-      
       setIsLoading(false);
-
       if (onDataUpdate) {
         onDataUpdate(freshData);
       }
-
       return freshData;
     } catch (fetchError) {
       console.error(`Failed to fetch ${cacheKey}:`, fetchError);
       setError(fetchError);
-
       const cachedResult = cacheService.get(cacheKey);
       if (cachedResult) {
         setData(cachedResult.data);
@@ -78,7 +71,6 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
         setDataSource('none');
         registerDataSource(componentName || cacheKey, 'none', false);
       }
-
       setIsLoading(false);
       throw fetchError;
     }
@@ -87,7 +79,6 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
   useEffect(() => {
     const loadData = async () => {
       const cachedResult = cacheService.get(cacheKey);
-
       if (cachedResult && !forceRefresh) {
         setData(cachedResult.data);
         setDataSource(cachedResult.source);
@@ -95,7 +86,6 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
         registerDataSource(componentName || cacheKey, cachedResult.source, false);
         setIsLoading(false);
         setIsOffline(false);
-
         // Background refresh if needed and online
         if (cachedResult.shouldRevalidate && navigator.onLine) {
           try {
@@ -135,7 +125,6 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
         }
       }
     };
-
     loadData();
   }, [cacheKey, query, forceRefresh, enableOffline, fetchFreshData, registerDataSource, componentName]);
 
@@ -149,21 +138,17 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
         setIsOffline(false);
       }
     };
-
     const handleOffline = () => {
       setIsOffline(true);
       console.log(`Component ${cacheKey} is offline.`);
     };
-
     if (typeof window !== 'undefined') {
       window.addEventListener('online', handleOnline);
       window.addEventListener('offline', handleOffline);
     }
-
     if (typeof navigator !== 'undefined') {
       setIsOffline(!navigator.onLine);
     }
-
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('online', handleOnline);
@@ -179,7 +164,6 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
   useEffect(() => {
     const name = componentName || cacheKey;
     registerRefresh(name, refresh);
-
     return () => {
       unregisterRefresh(name);
     };
@@ -194,7 +178,6 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
       refreshFn: refresh,
       scope: usePageContext ? 'page' : 'global'
     });
-    
     return () => {
       unregister();
     };

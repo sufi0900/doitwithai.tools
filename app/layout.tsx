@@ -11,6 +11,7 @@ import "../styles/index.css";
 import { Toaster } from 'react-hot-toast';
 import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
 import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
+import { GlobalRefreshProvider } from "@/components/Blog/GlobalRefreshContext";
 
 
 // Dynamic imports for components that are not immediately needed
@@ -65,6 +66,8 @@ export default function RootLayout({
     <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
                        <Toaster position="bottom-center" /> {/* Add this line */}
    <PageRefreshProvider>
+        <GlobalRefreshProvider>
+    
       <GlobalOfflineStatusProvider>
 
       <Providers>
@@ -89,6 +92,7 @@ export default function RootLayout({
         </Suspense>
       </Providers>
      </GlobalOfflineStatusProvider>
+     </GlobalRefreshProvider>
      </PageRefreshProvider>
     </body>
   </html>

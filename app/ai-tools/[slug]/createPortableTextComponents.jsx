@@ -4,6 +4,7 @@ import { urlForImage } from "@/sanity/lib/image";
 import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
 import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
 import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
+import { ArrowRight } from 'lucide-react';
 
 const PortableTextComponents = () => {
   const GifComponent = ({ value }) => {

@@ -1,4 +1,6 @@
-// GlobalRefreshButton.js
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
+"use client"
 import React, { useState } from 'react';
 import { useGlobalRefresh } from './GlobalRefreshContext';
 import { useGlobalOfflineStatus } from './GlobalOfflineStatusContext';

@@ -1,5 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 "use client";
-
 import { useState, useEffect } from 'react';
 import { X, Star, Sparkles, Heart, Trophy, Gift, Zap, Crown, Gem } from 'lucide-react';
 
