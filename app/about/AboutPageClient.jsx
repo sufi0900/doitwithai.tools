@@ -100,9 +100,7 @@ export default function AboutPageClient() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900/20">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-          <MixedCategoriesSection/>
-        <HomepageCategories/>
-     
+         
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="relative inline-block mb-6">

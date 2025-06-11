@@ -6,7 +6,7 @@ import HomeMediumCard from "@/components/Blog/HomeMediumCard";
 import Breadcrumb from "../Common/Breadcrumb";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard";
 import BigCard from "@/components/Blog/HomeBigCard";
-import { useCachedSanityData  } from '@/components/blog/useSanityCache';
+import { useCachedSanityData  } from '@/components/Blog/useSanityCache';
 import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
 import Link from "next/link";
 

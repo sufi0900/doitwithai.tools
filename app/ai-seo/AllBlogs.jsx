@@ -128,7 +128,7 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
             firstlinktext="Home"
             firstlink="/"
           />
-          <TestUpdateButton/>
+          {/* <TestUpdateButton/> */}
 
           <div className="flex justify-end mb-4">
             <PageRefreshButton />

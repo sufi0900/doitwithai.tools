@@ -24,7 +24,7 @@ const CodeWithAI = dynamic(() => import("@/components/Trending/WebDev"), { ssr: 
 const RecentPost = dynamic(() => import("@/components/RecentPost/page"), { ssr: true });
 const MainCategory = dynamic(() => import("@/components/MainCategories/page"), { ssr: false });
 const MBrands = dynamic(() => import("@/components/Marquee-Brands"), { ssr: true });
-const MixedCategoriesSection = dynamic(() => import("@/components/blog/MixedCategoriesSection"), { ssr: true });
+const MixedCategoriesSection = dynamic(() => import("@/components/Blog/MixedCategoriesSection"), { ssr: true });
 const Contact = dynamic(() => import("@/components/Contact"), { ssr: false });
 
 // Dynamically import GlobalRefreshButton
