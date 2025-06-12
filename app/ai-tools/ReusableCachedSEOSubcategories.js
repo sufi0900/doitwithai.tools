@@ -1,29 +1,60 @@
 "use client";
 
 import { useCachedSanityData } from '@/components/Blog/useSanityCache';
-import React from 'react';
+import React, { useEffect } from 'react'; // Import useEffect
 import Link from "next/link";
 import groq from "groq";
 import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
 
-const ReusableCachedSEOSubcategories = () => {
+// Add pagination props: currentPage, limit, and onDataLoad callback
+const ReusableCachedSEOSubcategories = ({ currentPage = 1, limit = 9, onDataLoad }) => { // Default limit to 9 for 3x3 grid
+  const start = (currentPage - 1) * limit;
+
+  // Modify the query to include pagination and order
+  const queryToUse = groq`
+    *[_type == "seoSubcategory"] | order(title asc) { // Example: order by title
+      title, 
+      slug, 
+      description,
+      _updatedAt // Include _updatedAt if you use it for staleness checks
+    }[${start}...${start + limit + 1}] // Fetch one extra item to check for next page
+  `;
+
+  // Define a pagination group specific to SEO subcategories
+  const paginationGroup = 'seoSubcategories-all-items'; 
+
   const {
     data: subcategories,
     isLoading: isLoadingSubcategories,
     error: subcategoriesError,
+    totalPages, // Destructure totalPages from the hook
   } = useCachedSanityData(
-    CACHE_KEYS.SEO_SUBCATEGORIES,
-    groq`*[_type == "seoSubcategory"]{title, slug, description}`,
+    // Generate a unique cache key for each page of subcategories
+    `${CACHE_KEYS.SEO_SUBCATEGORIES}-page-${currentPage}`, 
+    queryToUse,
     {
-      componentName: "SEO-Subcategories",
-      usePageContext: true
+      componentName: `SEO-Subcategories-Page${currentPage}`, // Unique name for each page instance
+      usePageContext: true,
+      enableOffline: true, // Enable offline caching
+      isPaginated: true, // Mark this as a paginated component
+      paginationGroup: paginationGroup, // Assign to the defined group
+      currentPage: currentPage,
+      limit: limit,
     }
   );
+
+  // Use useEffect to report totalPages and currentPage back to the parent
+  useEffect(() => {
+    if (onDataLoad) {
+      onDataLoad(currentPage, totalPages);
+    }
+  }, [currentPage, totalPages, onDataLoad]);
+
 
   if (isLoadingSubcategories) {
     return (
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, index) => (
+        {Array.from({ length: limit }).map((_, index) => ( // Render skeletons based on limit
           <div
             key={index}
             className="card p-6 bg-white border border-gray-200 rounded-lg shadow animate-pulse dark:bg-gray-800 dark:border-gray-700"
@@ -38,17 +69,30 @@ const ReusableCachedSEOSubcategories = () => {
     );
   }
 
-  if (subcategoriesError) {
+  // Handle error case, perhaps with a retry button specific to subcategories if error is from fresh fetch
+  if (subcategoriesError && !subcategories) { // Only show error if no data (even cached)
     return (
       <div className="text-center py-8">
         <p className="text-red-500">Failed to load subcategories.</p>
+        {/* Optional: Add a retry button for subcategories, similar to ReusableCachedAllBlogs */}
+      </div>
+    );
+  }
+
+  // Slice data to only display the 'limit' number of items
+  const itemsToDisplay = subcategories ? subcategories.slice(0, limit) : [];
+
+  if (itemsToDisplay.length === 0 && !isLoadingSubcategories) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500 dark:text-gray-400">No subcategories found.</p>
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {subcategories?.map((subcategory) => (
+      {itemsToDisplay?.map((subcategory) => (
         <Link
           href={`/ai-seo/categories/${subcategory.slug.current}`}
           key={subcategory.slug.current}

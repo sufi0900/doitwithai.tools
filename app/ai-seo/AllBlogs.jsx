@@ -1,29 +1,24 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
 import groq from "groq";
-import { SanityUpdateListener } from '@/components/Blog/SanityUpdateListener';
 
 import { urlForImage } from "@/sanity/lib/image";
 import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";
-import WebhookDebugger from '@/components/Blog/WebhookDebugger'; // Temporary for testing
 
-import { client } from "@/sanity/lib/client"; // Keep if you still need direct client fetches for search
+import { client } from "@/sanity/lib/client";
 import CardComponent from "@/components/Card/Page";
 
-import React, { useEffect, useState, useCallback } from "react"; // Import useCallback
+import React, {  useState, useCallback } from "react";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 
-// Import the new caching system components
 import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
 import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
 import PageRefreshButton from "@/components/Blog/PageSpecificRefreshButton";
-import TestUpdateButton from "@/components/Blog/TestUpdateButton";
 
-// Import reusable components from the specified path
 import ReusableCachedFeaturePost from "@/app/ai-tools/CachedAIToolsFeaturePost";
 import ReusableCachedAllBlogs from "@/app/ai-tools/CachedAIToolsAllBlogs";
 import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
-import { useCachedSanityData } from '@/components/Blog/useSanityCache'; // Import useCachedSanityData for subcategories
+import { useGlobalOfflineStatus } from '@/components/Blog/GlobalOfflineStatusContext'; // Import this to use isBrowserOnline
 
 export const revalidate = false;
 export const dynamic = "force-dynamic";
@@ -32,19 +27,14 @@ export default function AISEOPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [hasMorePages, setHasMorePages] = useState(false); // State to track if there are more pages
+  // ✨ NEW: State to store totalPages from the child component
+ const [currentPageSubcategories, setCurrentPageSubcategories] = useState(1);
+  const [subcategoriesTotalPages, setSubcategoriesTotalPages] = useState(1);
+  const SUBCATEGORIES_LIMIT = 2; // Define limit for subcategories (e.g., for a 3x3 grid)
 
-  // Fetch subcategories using the caching mechanism
-// Replace this section in your AI-SEO page:
-const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategoriesError} = useCachedSanityData(
-  CACHE_KEYS.SEO_SUBCATEGORIES,
-  groq`*[_type == "seoSubcategory"]{title, slug, description, _updatedAt}`,
-  {
-    componentName: "SEO-Subcategories",
-    usePageContext: true // This is already correct
-  }
-);
-
+const { isBrowserOnline } = useGlobalOfflineStatus();
+  const isOffline = !isBrowserOnline;
+  const [allBlogsTotalPages, setAllBlogsTotalPages] = useState(1);
   const handlePrevious = () => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   };
@@ -52,13 +42,27 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
   const handleNext = () => {
     setCurrentPage((prev) => prev + 1);
   };
+  const handleNextSubcategories = () => {
+    setCurrentPageSubcategories((prev) => prev + 1);
+  };
+  const handleSubcategoriesDataLoad = useCallback((currentPg, totalPgs) => {
+    setCurrentPageSubcategories(currentPg);
+    setSubcategoriesTotalPages(totalPgs);
+  }, []);
+   // --- Pagination Handlers for SUBCATEGORIES ---
+  const handlePreviousSubcategories = () => {
+    setCurrentPageSubcategories((prev) => (prev > 1 ? prev - 1 : prev));
+  };
+  const isNextButtonDisabledSubcategories = 
+    currentPageSubcategories >= subcategoriesTotalPages || 
+    (isOffline && subcategoriesTotalPages === 0 && currentPageSubcategories === 1); // Disable if offline and no total count found and on first page
+  const isPreviousButtonDisabledSubcategories = currentPageSubcategories === 1;
 
   const handleSearch = async () => {
     if (searchText.trim().length < 1) {
       console.log("Please enter at least 1 character for search.");
       return;
     }
-    // Note: Search query combines 'seo' and 'aitool' types as per original logic
     const searchQuery = groq`*[
       (_type == "seo" || (_type == "aitool" && displaySettings.isSeoPageFeature == true)) &&
       (title match $searchText || overview match $searchText || body match $searchText)
@@ -88,9 +92,10 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
     setSearchResults([]);
   };
 
-  // Callback to receive hasMore status from ReusableCachedAllBlogs
-  const handleAllBlogsDataLoad = useCallback((hasMore) => {
-    setHasMorePages(hasMore);
+  // ✨ UPDATED: Callback to receive currentPage and totalPages
+  const handleAllBlogsDataLoad = useCallback((currentPg, totalPgs) => {
+    setCurrentPage(currentPg); // Ensure currentPage is in sync if it changes due to redirects/logic
+    setAllBlogsTotalPages(totalPgs);
   }, []);
 
   const renderSearchResults = () => {
@@ -102,7 +107,6 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
         title={post.title}
         tags={post.tags}
         mainImage={urlForImage(post.mainImage).url()}
-        // Adjusted slug dynamically based on _type
         slug={`/${post._type === "seo" ? "ai-seo" : "ai-tools"}/${post.slug.current}`}
         publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
           day: 'numeric',
@@ -113,10 +117,11 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
     ));
   };
 
+  // ✨ NEW: Condition for the next button
+  const isNextButtonDisabled = currentPage >= allBlogsTotalPages || searchResults.length > 0;
+
   return (
     <PageRefreshProvider pageType="seo">
-        <SanityUpdateListener pageType="seo" />
-    {/* <WebhookDebugger pageType="seo" />  */}
       <GlobalOfflineStatusProvider>
         <div className="container mt-10 ">
           <Breadcrumb
@@ -128,33 +133,74 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
             firstlinktext="Home"
             firstlink="/"
           />
-          {/* <TestUpdateButton/> */}
 
           <div className="flex justify-end mb-4">
             <PageRefreshButton />
           </div>
 
-          {/* Using ReusableCachedFeaturePost for SEO feature posts */}
           <ReusableCachedFeaturePost
             documentType="seo"
             pageSlugPrefix="ai-seo"
             cacheKey={CACHE_KEYS.PAGE_FEATURE_POST('seo')}
           />
 
-          <div className="container mt-10 px-20 mx-auto">
-            {/* Title */}
+           <div className="container mt-10 px-20 mx-auto">
             <div className="mb-8 text-center">
               <h1 className="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r to-blue-500 from-primary">
-                  SubCategories
-                </span>{" "}
-                of SEO
+                <span className="text-transparent bg-clip-text bg-gradient-to-r to-blue-500 from-primary">SubCategories</span>{" "}of SEO
               </h1>
             </div>
-
-            {/* Grid of cards for subcategories */}
-          <ReusableCachedSEOSubcategories />
-
+            <ReusableCachedSEOSubcategories
+              currentPage={currentPageSubcategories}
+              limit={SUBCATEGORIES_LIMIT}
+              onDataLoad={handleSubcategoriesDataLoad}
+            />
+            {/* Pagination controls for Subcategories */}
+            {searchResults.length === 0 && ( // Only show pagination if not searching
+              <div className="wow fadeInUp -mx-4 flex flex-wrap" data-wow-delay=".15s">
+                <div className="w-full px-4 mb-4">
+                  <ul className="flex items-center justify-center pt-8">
+                    <div className="my-8">
+                      <nav aria-label="Subcategory page navigation">
+                        <ul className="inline-flex -space-x-px text-sm">
+                          <li>
+                            <button
+                              onClick={handlePreviousSubcategories}
+                              disabled={isPreviousButtonDisabledSubcategories}
+                              className={`flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${isPreviousButtonDisabledSubcategories ? 'cursor-not-allowed opacity-50' : ''}`}
+                            >
+                              <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4"/>
+                              </svg>
+                              Previous
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white 'text-blue-600'`}
+                            >
+                              {currentPageSubcategories}
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              onClick={handleNextSubcategories}
+                              disabled={isNextButtonDisabledSubcategories}
+                              className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${isNextButtonDisabledSubcategories ? 'cursor-not-allowed opacity-50' : ''}`}
+                            >
+                              Next
+                              <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                              </svg>
+                            </button>
+                          </li>
+                        </ul>
+                      </nav>
+                    </div>
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
           <br />
           <br />
@@ -207,21 +253,18 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
             </div>
           </div>
 
-          {/* Render search results if available */}
           {searchResults.length > 0 && (
             <div className="-mx-4 flex flex-wrap justify-center">
               {renderSearchResults()}
             </div>
           )}
-
-          {/* Using ReusableCachedAllBlogs for the main blog list */}
           <ReusableCachedAllBlogs
-          currentPage={currentPage}
-                     limit={10}
-                     documentType="seo"
-                     pageSlugPrefix="ai-tools"
-                     cacheKeyPrefix={CACHE_KEYS.PAGE_ALL_BLOGS('seo')}
-                     onDataLoad={handleAllBlogsDataLoad} // Pass the callback
+            currentPage={currentPage}
+            limit={4}
+            documentType="seo"
+            pageSlugPrefix="ai-tools"
+            cacheKeyPrefix={CACHE_KEYS.PAGE_ALL_BLOGS('seo')}
+            onDataLoad={handleAllBlogsDataLoad}
           />
 
           <div
@@ -259,9 +302,9 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
                       <li>
                         <button
                           onClick={handleNext}
-                          disabled={!hasMorePages || searchResults.length > 0} // Use new hasMorePages state
+                          disabled={isNextButtonDisabled} // ✨ UPDATED: Use the new disabled condition
                           className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
-                            (!hasMorePages || searchResults.length > 0) ? 'cursor-not-allowed opacity-50' : ''
+                            isNextButtonDisabled ? 'cursor-not-allowed opacity-50' : ''
                           }`}
                         >
                           Next
@@ -278,7 +321,6 @@ const {data: subcategories, isLoading: isLoadingSubcategories, error: subcategor
           </div>
         </div>
       </GlobalOfflineStatusProvider>
-  
     </PageRefreshProvider>
   );
 }
