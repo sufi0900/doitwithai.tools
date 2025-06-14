@@ -8,32 +8,16 @@ import SkelCard from "@/components/Blog/Skeleton/Card"
 import OptimizeImage from "@/components/Blog/ImageOptimizer"
 import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 export default  function RecentPosts() {
-   const query = `*[_type in ["makemoney","aitool","news","coding","freeairesources","seo"]] | order(publishedAt desc)[0...5] {
-    _id,
-    _type,
-    title,
-    overview,
-    mainImage,
-    slug,
-    publishedAt,
-    readTime,
-    tags,
-    _updatedAt
+    const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]] | order(publishedAt desc)[0...5] {
+    _id, _type, title, overview, mainImage, slug, publishedAt, readTime, tags, _updatedAt 
   }`;
 
-  // Use useCachedSanityData hook with page context integration
+  // Use useCachedSanityData hook
   const {
     data: recentData,
-    isLoading: loading,
-    isOffline,
-    dataSource,
-    refresh
-  } = useCachedSanityData(CACHE_KEYS.RECENT_POSTS, query, {
-    componentName: 'RecentPosts-Article-Page',
-    usePageContext: true, // Important: Use page context for refresh integration
-    enableOffline: true,
-    forceRefresh: false
-  });
+    isLoading: loading, // Renamed from isLoading to loading to match your existing variable name
+  } = useCachedSanityData(CACHE_KEYS.RECENT_POSTS, query);
+
   const schemaSlugMap = {
     makemoney: "ai-learn-earn",
     aitool: "ai-tools",

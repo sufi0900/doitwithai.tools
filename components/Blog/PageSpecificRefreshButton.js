@@ -200,30 +200,6 @@ const PageRefreshButton = ({ className = "" }) => {
       {showDetails && (
         <div className="absolute bottom-full right-0 mb-3 w-80 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-2xl p-5 text-sm animate-fadeInUp backdrop-blur-lg">
           {/* Header */}
-          <div className="flex items-center space-x-3 mb-4">
-            <div className={`p-2 rounded-lg ${
-              buttonState.status === 'updates-available' ? 'bg-emerald-100 dark:bg-emerald-900/30' :
-              buttonState.status === 'fresh' ? 'bg-green-100 dark:bg-green-900/30' :
-              buttonState.status === 'cached' ? 'bg-purple-100 dark:bg-purple-900/30' : 
-              'bg-blue-100 dark:bg-blue-900/30'
-            }`}>
-              {buttonState.icon}
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-gray-900 dark:text-white">{pageType} Page Status</h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{refreshCount} components active</p>
-            </div>
-            {/* Status Badge */}
-            <div className={`px-2 py-1 rounded-full text-xs font-semibold ${
-              buttonState.status === 'updates-available' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
-              buttonState.status === 'fresh' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-              buttonState.status === 'cached' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
-              'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-            }`}>
-              {buttonState.statusText}
-            </div>
-          </div>
-
           {/* Special message for updates available */}
           {hasUpdatesAvailable && (
             <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800">

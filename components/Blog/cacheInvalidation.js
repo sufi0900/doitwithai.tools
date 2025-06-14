@@ -35,6 +35,7 @@ export class CacheInvalidationService {
         CACHE_KEYS.TRENDING_RELATED,
         CACHE_KEYS.PAGE_ALL_BLOGS('seo'),
         CACHE_KEYS.PAGE_FEATURE_POST('seo')
+
       ],
       'aitool': [
         CACHE_KEYS.PAGE_FEATURE_POST('ai-tools'),
@@ -64,10 +65,7 @@ export class CacheInvalidationService {
         CACHE_KEYS.FEATURE_RELATED,
       ],
       'seoSubcategory': [
-        // When a seoSubcategory document itself changes, we need to invalidate the whole pagination group.
-        // We don't need to explicitly clear CACHE_KEYS.SEO_SUBCATEGORIES here if it's only used as a prefix for pagination.
-        // Instead, directly clear the pagination group.
-        // CACHE_KEYS.SEO_SUBCATEGORIES, // Removed, as we'll use clearPaginationGroup instead.
+     
         CACHE_KEYS.SEO_TREND_BIG, // These might still be affected by subcategory changes
         CACHE_KEYS.SEO_TREND_RELATED,
         CACHE_KEYS.PAGE_ALL_BLOGS('seo'), // If subcategory changes affect blog listings
@@ -80,12 +78,14 @@ export class CacheInvalidationService {
         CACHE_KEYS.FEATURE_BIG,
         CACHE_KEYS.FEATURE_RELATED,
       ],
-      'news': [
-        CACHE_KEYS.TRENDING_BIG,
-        CACHE_KEYS.TRENDING_RELATED,
-        CACHE_KEYS.FEATURE_BIG,
-        CACHE_KEYS.FEATURE_RELATED,
-      ]
+      // Add these entries to your existing invalidationMap in invalidateByDocumentType method
+'mixed-blogs': [
+  CACHE_KEYS.ALL_BLOGS_MIXED,
+  CACHE_KEYS.ALL_BLOGS_MIXED_CATEGORY('aitool'),
+  CACHE_KEYS.ALL_BLOGS_MIXED_CATEGORY('seo'), 
+  CACHE_KEYS.ALL_BLOGS_MIXED_CATEGORY('coding'),
+  CACHE_KEYS.ALL_BLOGS_MIXED_CATEGORY('makemoney'),
+],
     };
 
     const keysToInvalidate = invalidationMap[documentType];
@@ -136,7 +136,71 @@ export class CacheInvalidationService {
 
     console.log(`${pageType} page caches invalidated.`);
   }
+// Add this method to your existing CacheInvalidationService class
+static invalidateAllBlogsPage() {
+  const allBlogsKeys = [
+    CACHE_KEYS.ALL_BLOGS_MIXED,
+    CACHE_KEYS.ALL_BLOGS_MIXED_SEARCH,
+  ];
+  
+  // Clear main keys
+  allBlogsKeys.forEach(key => {
+    cacheService.clear(key);
+  });
+  
+  // Clear category-specific keys
+  ['aitool', 'seo', 'coding', 'makemoney'].forEach(category => {
+    const categoryKey = CACHE_KEYS.ALL_BLOGS_MIXED_CATEGORY(category);
+    this.clearPaginationCache(categoryKey);
+  });
+  
+  // Clear mixed pagination cache
+  this.clearPaginationCache(CACHE_KEYS.ALL_BLOGS_MIXED);
+  this.setPaginationRefreshTimestamp('all-blogs-mixed');
+  
+  console.log("All blogs page caches invalidated.");
+}
 
+
+static invalidateArticleCache(type, slug = null) {
+  if (slug) {
+    // Invalidate specific article cache
+    const articleKey = CACHE_KEYS.ARTICLE_SINGLE(type, slug); // This will now use the updated key
+    const relatedPostsKey = CACHE_KEYS.ARTICLE_RELATED_POSTS(type, slug);
+    const relatedResourcesKey = CACHE_KEYS.ARTICLE_RELATED_RESOURCES(type, slug);
+    
+    cacheService.clear(articleKey);
+    cacheService.clear(relatedPostsKey);
+    cacheService.clear(relatedResourcesKey);
+    cacheService.clear(CACHE_KEYS.RECENT_POSTS);
+    cacheService.clear(CACHE_KEYS.RELATED_RESOURCES_GLOBAL);
+    
+    console.log(`Cleared cache for specific ${type} article: ${slug}`);
+  } else {
+    // Invalidate all articles of this type
+    const groupName = CACHE_KEYS.ARTICLES_GROUP(type);
+    this.setPaginationRefreshTimestamp(groupName);
+    
+    // Also clear global caches
+    cacheService.clear(CACHE_KEYS.RECENT_POSTS);
+    cacheService.clear(CACHE_KEYS.RELATED_RESOURCES_GLOBAL);
+    
+    console.log(`Invalidated all ${type} articles cache group`);
+  }
+}
+// Add this method to invalidate article-specific resource cache
+static invalidateArticleResourceCache(type, slug = null) {
+  if (slug) {
+    // Clear specific article's related resources cache
+    const relatedResourcesKey = CACHE_KEYS.ARTICLE_RELATED_RESOURCES(type, slug);
+    cacheService.clear(relatedResourcesKey);
+    console.log(`Cleared related resources cache for ${type} article: ${slug}`);
+  }
+  
+  // Always clear global related resources cache
+  cacheService.clear(CACHE_KEYS.RELATED_RESOURCES_GLOBAL);
+  console.log('Cleared global related resources cache');
+}
   static invalidateHomepage() {
     const homepageKeys = [
       CACHE_KEYS.TRENDING_BIG,
@@ -158,10 +222,20 @@ export class CacheInvalidationService {
       } else if (key.includes('MIXED_CATEGORIES')) {
         // You'll need to define clearPaginationGroup for each mixed category type
         // For example:
+
         if (key === CACHE_KEYS.MIXED_CATEGORIES_AI_TOOLS) this.clearPaginationGroup('ai-tools-mixed-categories');
         if (key === CACHE_KEYS.MIXED_CATEGORIES_AI_CODE) this.clearPaginationGroup('ai-code-mixed-categories');
         if (key === CACHE_KEYS.MIXED_CATEGORIES_AI_EARN) this.clearPaginationGroup('ai-earn-mixed-categories');
-      } else if (key === CACHE_KEYS.SEO_SUBCATEGORIES) { // If SEO_SUBCATEGORIES is still used as a non-paginated part on homepage
+      }
+// Add these to your existing clearPaginationGroup method mappings
+else if (groupName === 'all-blogs-mixed-blogs') {
+  baseKeyForClearCache = CACHE_KEYS.ALL_BLOGS_MIXED;
+}
+else if (groupName.includes('all-blogs-mixed-') && groupName.endsWith('-blogs')) {
+  const category = groupName.replace('all-blogs-mixed-', '').replace('-blogs', '');
+  baseKeyForClearCache = CACHE_KEYS.ALL_BLOGS_MIXED_CATEGORY(category);
+}
+else if (key === CACHE_KEYS.SEO_SUBCATEGORIES) { // If SEO_SUBCATEGORIES is still used as a non-paginated part on homepage
         this.clearPaginationGroup('seoSubcategories-all-items'); // Clear its paginated form
       }
     });

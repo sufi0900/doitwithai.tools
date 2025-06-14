@@ -34,7 +34,6 @@ async function fetchFreeResources(page = 1, limit = 6, sortBy = 'publishedAt') {
       "resourceFile": resourceFile.asset->,
       content, publishedAt, promptContent,
       "relatedArticle": relatedArticle->{title, slug},
-      // AI Tool specific fields
       aiToolDetails,
       seoTitle, seoDescription, seoKeywords, altText, structuredData
     }[${start}...${start + limit}]`

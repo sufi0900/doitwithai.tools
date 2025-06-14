@@ -28,4 +28,18 @@ export const CACHE_KEYS = {
 // Add this to your existing CACHE_KEYS object in cacheKeys.js
 SEO_SUBCATEGORIES: 'seo-subcategories',
 SEO_SUBCATEGORY_POSTS: (subcategorySlug) => `seo-subcategory-${subcategorySlug}`,
+// Add these to your existing CACHE_KEYS object
+ALL_BLOGS_MIXED: 'all-blogs-mixed',
+ALL_BLOGS_MIXED_CATEGORY: (category) => `all-blogs-mixed-${category}`,
+ALL_BLOGS_MIXED_SEARCH: 'all-blogs-mixed-search',
+
+
+// Add these to your existing CACHE_KEYS object
+ARTICLE_SINGLE: (type, slug) => `${type}-article-${slug}`,
+ARTICLE_RELATED_POSTS: (type, slug) => `${type}-related-posts-${slug}`,
+ARTICLE_RELATED_RESOURCES: (type, slug) => `${type}-related-resources-${slug}`,
+
+ARTICLES_GROUP: (type) => `${type}-articles-group`,
+RELATED_RESOURCES_GLOBAL: 'related-resources-global'
+
 };

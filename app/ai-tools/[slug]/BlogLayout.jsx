@@ -15,13 +15,15 @@ import ArticleHeader from './ArticleHeader';
 import StickyArticleNavbar from './StickyArticleNavbar';
 import Link from 'next/link';
 import Image from 'next/image';
-
+import { useCachedSanityData } from '@/components/Blog/useSanityCache';
+import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
 import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
 import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
 
 const BlogLayout = ({
   data,
   loading,
+
   relatedPosts,
   relatedPostsLoading,
   relatedResources,
@@ -29,6 +31,21 @@ const BlogLayout = ({
   schemaSlugMap,
   imgdesc
 }) => {
+const { data: globalRelatedResources, isLoading: globalResourcesLoading } = useCachedSanityData(
+  CACHE_KEYS.RELATED_RESOURCES_GLOBAL,
+  `*[_type == "freeResources"] | order(_createdAt desc)[0...6]{
+    _id, _type, title, slug, mainImage{
+      asset->{_id, url}, alt
+    }, overview, publishedAt
+  }`,
+  {
+    componentName: 'BlogLayout-GlobalResources',
+    usePageContext: true,
+    enableOffline: true,
+    forceRefresh: false
+  }
+);
+
   const [showGlobalHeader, setShowGlobalHeader] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -116,7 +133,7 @@ const BlogLayout = ({
                     data._type === "makemoney" ? "AI Learn & Earn" :
                       data._type === "coding" ? "AI Code" :
                         data._type === "seo" ? "AI SEO" :
-                          data._type === "freeairesources" ? "Free AI Resources" : "AI News"}
+                          data._type === "freeResources" ? "Free AI Resources" : "AI News"}
                 </Link>
               </li>
               <li className="flex items-center">
@@ -206,24 +223,22 @@ const BlogLayout = ({
                 </div>
 
                 <FAQSection faqs={data.faqs} />
-
-                <RelatedResources
-                  resources={relatedResources}
-                  isLoading={resourcesLoading}
-                  slidesToShow={2}
-                />
-              </div>
+<RelatedResources 
+  resources={relatedResources && relatedResources.length > 0 ? relatedResources : globalRelatedResources}
+  isLoading={resourcesLoading || globalResourcesLoading}
+  slidesToShow={2}
+/>         </div>
 
               <TagsAndShare tags={data.tags} />
             </div>
             
-            <BlogSidebar
-              relatedPosts={relatedPosts}
-              relatedPostsLoading={relatedPostsLoading}
-              relatedResources={relatedResources}
-              resourcesLoading={resourcesLoading}
-              schemaSlugMap={schemaSlugMap}
-            />
+           <BlogSidebar
+  relatedPosts={relatedPosts}
+  relatedPostsLoading={relatedPostsLoading}
+  relatedResources={relatedResources && relatedResources.length > 0 ? relatedResources : globalRelatedResources}
+  resourcesLoading={resourcesLoading || globalResourcesLoading}
+  schemaSlugMap={schemaSlugMap}
+/>
           </article>
 
           <RelatedPostsSection
@@ -237,10 +252,7 @@ const BlogLayout = ({
           </div>
         </div>
         
-        {/* <CongratsPopup
-          showAfter={5000} 
-          onClose={() => setShowCongratsPopup(false)}
-        /> */}
+     
       </section>
     </>
   );

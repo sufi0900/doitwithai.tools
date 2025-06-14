@@ -20,11 +20,8 @@ const DynamicResourceCarousel = dynamic(() => import('./ResourceCarousel'), {
   ),
 });
 
-const RelatedResources = ({ 
-  resources, 
-  isLoading = false, 
-  slidesToShow = 3 // Default to 3 slides, can be overridden
-}) => {
+const RelatedResources = ({ resources, isLoading = false, slidesToShow = 2 }) => {
+
   // If loading, show skeletons
   if (isLoading) {
     return (

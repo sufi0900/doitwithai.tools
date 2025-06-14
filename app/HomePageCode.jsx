@@ -21,7 +21,7 @@ const AISEO = dynamic(() => import("@/components/DigitalMarketing/page"), { ssr:
 const AiTools = dynamic(() => import("@/components/AITools/page"), { ssr: true });
 const AIEarn = dynamic(() => import("@/components/Online-Earning/page"), { ssr: true });
 const CodeWithAI = dynamic(() => import("@/components/Trending/WebDev"), { ssr: true });
-const RecentPost = dynamic(() => import("@/components/RecentPost/page"), { ssr: true });
+const RecentPost = dynamic(() => import("@/components/RecentPost/RecentHome"), { ssr: true });
 const MainCategory = dynamic(() => import("@/components/MainCategories/page"), { ssr: false });
 const MBrands = dynamic(() => import("@/components/Marquee-Brands"), { ssr: true });
 const MixedCategoriesSection = dynamic(() => import("@/components/Blog/MixedCategoriesSection"), { ssr: true });

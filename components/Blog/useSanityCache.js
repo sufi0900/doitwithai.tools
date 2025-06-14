@@ -31,7 +31,9 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
     isPaginated = false,
     paginationGroup = null, // e.g., 'seo-all-blogs', 'ai-tools-all-blogs'
     currentPage = 1, // Keep this prop as it's useful for the consumer
-    limit = 10
+    limit = 10,
+      fallbackData = null // Add this line
+
   } = options;
 
   // Determine which refresh context to use based on the option
@@ -65,95 +67,95 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
     return `${groupName}-total-count`;
   }, []);
 
-  // Enhanced fetch function with pagination awareness
-// In useCachedSanityData.js, inside the fetchFreshData useCallback:
+
 
 const fetchFreshData = useCallback(async (showLoading = true, refreshAllPages = false) => {
-    if (showLoading) setIsLoading(true);
-    setError(null); // Clear previous errors
-    setIsOffline(false); // Assume online initially
+  if (showLoading) setIsLoading(true);
+  setError(null);
+  
+  // Don't immediately set isOffline to false, wait for actual fetch result
+  
+  try {
+    const queryParams = options.queryParams || {};
+    const result = await client.fetch(query, queryParams);
+    const freshData = Array.isArray(result) ? result : result.data;
+    const fetchedTotalCount = result?.total || freshData.length;
 
-    try {
-        const result = await client.fetch(query);
-        const freshData = Array.isArray(result) ? result : result.data;
-        const fetchedTotalCount = result?.total || freshData.length;
+    cacheService.set(cacheKey, freshData, 'network');
+    setData(freshData);
+    setDataSource('network');
+    setIsOffline(false); // Only set offline to false after successful fetch
+    registerContextDataSource(componentName || cacheKey, 'network', true);
+    
+    localStorage.setItem(`${componentName || cacheKey}_last_update`, Date.now().toString());
 
-        cacheService.set(cacheKey, freshData, 'network');
-        setData(freshData);
-        setDataSource('network');
-        registerContextDataSource(componentName || cacheKey, 'network', true);
-        localStorage.setItem(`${componentName || cacheKey}_last_update`, Date.now().toString());
+    if (isPaginated && paginationGroup) {
+      cacheService.set(getGroupTotalCountCacheKey(paginationGroup), fetchedTotalCount, 'network');
+      console.log(`📊 Stored total count ${fetchedTotalCount} for group: ${paginationGroup}`);
+      setTotalCount(fetchedTotalCount);
+      setTotalPages(Math.ceil(fetchedTotalCount / limit));
 
-        if (isPaginated && paginationGroup) {
-            cacheService.set(getGroupTotalCountCacheKey(paginationGroup), fetchedTotalCount, 'network');
-            console.log(`📊Stored total count ${fetchedTotalCount} for group: ${paginationGroup}`);
-            setTotalCount(fetchedTotalCount);
-            setTotalPages(Math.ceil(fetchedTotalCount / limit));
-
-            if (refreshAllPages) {
-                const allPaginationKeys = getPaginationCacheKeys(paginationGroup);
-                allPaginationKeys.forEach(key => {
-                    if (key !== cacheKey) {
-                        cacheService.clear(key);
-                    }
-                });
-                localStorage.setItem(`${paginationGroup}_pagination_refresh`, Date.now().toString());
-                console.log(`🔄Cleared all pagination cache for group: ${paginationGroup}`);
-            }
-        } else {
-            setTotalCount(freshData.length);
-            setTotalPages(1);
-        }
-        setIsLoading(false);
-        if (onDataUpdate) {
-            onDataUpdate(freshData, fetchedTotalCount);
-        }
-        return { data: freshData, total: fetchedTotalCount };
-    } catch (fetchError) {
-        console.error(`Failed to fetch ${cacheKey}:`, fetchError);
-        // Only set error if no cached data can be found
-        const cachedResult = cacheService.get(cacheKey);
-
-        if (isPaginated && paginationGroup) {
-            const cachedTotal = cacheService.get(getGroupTotalCountCacheKey(paginationGroup));
-            if (cachedTotal) {
-                setTotalCount(cachedTotal.data);
-                setTotalPages(Math.ceil(cachedTotal.data / limit));
-            } else {
-                // If total count is not cached offline, but we are offline,
-                // we can't reliably determine total pages. Set to 0 to disable next.
-                setTotalCount(0);
-                setTotalPages(0);
-            }
-        }
-
-        if (cachedResult) {
-            setData(cachedResult.data);
-            const fallbackSource = `${cachedResult.source}-fallback`;
-            setDataSource(fallbackSource);
-            registerContextDataSource(componentName || cacheKey, fallbackSource, false);
-            setIsOffline(true);
-            // DO NOT set error here if cached data is available, as it's not a "failure to load" visually
-            // setError(null); // Ensure error is null if cached data is served
-        } else {
-            // ONLY set error and no data if absolutely nothing is available (neither network nor cache)
-            setError(fetchError); // Set the actual fetch error
-            setIsOffline(true);
-            setDataSource('none');
-        }
-        setIsLoading(false);
-        // Do not re-throw if cached data was served.
-        // If an error was set (meaning no cached data), the consumer can handle it.
-        // if (error) { // This check is problematic as error is state.
-        //     throw fetchError;
-        // }
-        // More robust:
-        if (!cachedResult) { // If no cached result was found, propagate the error.
-             throw fetchError;
-        }
+      if (refreshAllPages) {
+        const allPaginationKeys = getPaginationCacheKeys(paginationGroup);
+        allPaginationKeys.forEach(key => {
+          if (key !== cacheKey) {
+            cacheService.clear(key);
+          }
+        });
+        localStorage.setItem(`${paginationGroup}_pagination_refresh`, Date.now().toString());
+        console.log(`🔄 Cleared all pagination cache for group: ${paginationGroup}`);
+      }
+    } else {
+      setTotalCount(freshData.length);
+      setTotalPages(1);
     }
-}, [query, cacheKey, onDataUpdate, registerContextDataSource, componentName, isPaginated, paginationGroup, getPaginationCacheKeys, getGroupTotalCountCacheKey, limit]);
-  // Check if pagination cache is stale (or if total count is missing/stale)
+
+    setIsLoading(false);
+    if (onDataUpdate) {
+      onDataUpdate(freshData, fetchedTotalCount);
+    }
+    return { data: freshData, total: fetchedTotalCount };
+    
+  } catch (fetchError) {
+    console.error(`Failed to fetch ${cacheKey}:`, fetchError);
+    
+    // Handle offline state more carefully
+    const cachedResult = cacheService.get(cacheKey);
+    
+    if (isPaginated && paginationGroup) {
+      const cachedTotal = cacheService.get(getGroupTotalCountCacheKey(paginationGroup));
+      if (cachedTotal) {
+        setTotalCount(cachedTotal.data);
+        setTotalPages(Math.ceil(cachedTotal.data / limit));
+      } else {
+        setTotalCount(0);
+        setTotalPages(0);
+      }
+    }
+
+    if (cachedResult) {
+      setData(cachedResult.data);
+      const fallbackSource = `${cachedResult.source}-fallback`;
+      setDataSource(fallbackSource);
+      registerContextDataSource(componentName || cacheKey, fallbackSource, false);
+      
+      // Only set offline if we're actually offline or if this is a network error
+      const isActuallyOffline = !navigator.onLine || fetchError.message.includes('NetworkError') || fetchError.message.includes('fetch');
+      setIsOffline(isActuallyOffline);
+    } else {
+      setError(fetchError);
+      setIsOffline(true);
+      setDataSource('none');
+    }
+
+    setIsLoading(false);
+    
+    if (!cachedResult) {
+      throw fetchError;
+    }
+  }
+}, [query, cacheKey, onDataUpdate, registerContextDataSource, componentName, isPaginated, paginationGroup, getPaginationCacheKeys, getGroupTotalCountCacheKey, limit, options.queryParams]);
+// Check if pagination cache is stale (or if total count is missing/stale)
   const isPaginationCacheStale = useCallback(() => {
     if (!isPaginated || !paginationGroup) return false;
 
@@ -276,42 +278,45 @@ const fetchFreshData = useCallback(async (showLoading = true, refreshAllPages = 
     getGroupTotalCountCacheKey, limit, isBrowserOnline // Added isBrowserOnline
   ]);
 
-  useEffect(() => {
-    const handleOnline = () => {
-      const cachedResult = cacheService.get(cacheKey);
-      const isPaginationStale = isPaginationCacheStale();
+// In useCachedSanityData hook, replace the existing useEffect for online/offline detection:
+useEffect(() => {
+  const handleOnline = () => {
+    console.log(`Component ${cacheKey} detected online, setting offline to false`);
+    setIsOffline(false); // Always set to false when online
+    
+    const cachedResult = cacheService.get(cacheKey);
+    const isPaginationStale = isPaginationCacheStale();
+    
+    if (isOfflineRef.current || (cachedResult && cachedResult.shouldRevalidate) || isPaginationStale) {
+      console.log(`Component ${cacheKey} attempting refresh after coming online.`);
+      fetchFreshData(false, isPaginationStale);
+    }
+  };
 
-      if (isOfflineRef.current || (cachedResult && cachedResult.shouldRevalidate) || isPaginationStale) {
-        console.log(`Component ${cacheKey} detected online, attempting refresh.`);
-        fetchFreshData(false, isPaginationStale);
-      } else {
-        setIsOffline(false);
-      }
-    };
+  const handleOffline = () => {
+    console.log(`Component ${cacheKey} detected offline`);
+    setIsOffline(true);
+  };
 
-    const handleOffline = () => {
-      setIsOffline(true);
-      console.log(`Component ${cacheKey} is offline.`);
-    };
+  // Initial online status check
+  if (typeof navigator !== 'undefined') {
+    const initialOnlineStatus = navigator.onLine;
+    setIsOffline(!initialOnlineStatus);
+    console.log(`Initial online status for ${cacheKey}: ${initialOnlineStatus ? 'online' : 'offline'}`);
+  }
 
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+  }
+
+  return () => {
     if (typeof window !== 'undefined') {
-      window.addEventListener('online', handleOnline);
-      window.addEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     }
-
-    // Initial check for online status
-    if (typeof navigator !== 'undefined') {
-      setIsOffline(!navigator.onLine);
-    }
-
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('online', handleOnline);
-        window.removeEventListener('offline', handleOffline);
-      }
-    };
-  }, [cacheKey, fetchFreshData, isPaginationCacheStale]);
-
+  };
+}, [cacheKey, fetchFreshData, isPaginationCacheStale]);
   // Enhanced refresh function with pagination support
   const refresh = useCallback((refreshAllPages = false) => {
     return fetchFreshData(true, refreshAllPages);
@@ -341,7 +346,15 @@ const fetchFreshData = useCallback(async (showLoading = true, refreshAllPages = 
       unregister();
     };
   }, [registerComponent, isOffline, dataSource, refresh, cacheKey, componentName, usePageContext, isPaginated, paginationGroup]);
-
+// In your useCachedSanityData hook, add this useEffect for initial data:
+useEffect(() => {
+  if (fallbackData && !data) {
+    setData(fallbackData);
+    setDataSource('server-fallback');
+    setIsLoading(false);
+    registerContextDataSource(componentName || cacheKey, 'server-fallback', true);
+  }
+}, [fallbackData, data, setData, setDataSource, setIsLoading, registerContextDataSource, componentName, cacheKey]);
   return {
     data,
     isLoading,
@@ -353,5 +366,6 @@ const fetchFreshData = useCallback(async (showLoading = true, refreshAllPages = 
     isPaginationStale: isPaginationCacheStale(),
     totalCount,
     totalPages,
+
   };
 };

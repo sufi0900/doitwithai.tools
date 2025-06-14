@@ -19,6 +19,9 @@ export const PageRefreshProvider = ({ children, pageType = 'default' }) => {
   const [hasUpdatesAvailable, setHasUpdatesAvailable] = useState(false);
   const [pageLoadTime] = useState(Date.now());
 
+
+
+  
   // Enhanced update checking with multiple sources
   useEffect(() => {
     let interval;
@@ -244,49 +247,59 @@ export const PageRefreshProvider = ({ children, pageType = 'default' }) => {
     }, [refreshFunctions, paginationGroups, pageType]);
 
   // Enhanced data source stats with pagination awareness
-  const getDataSourceStats = useCallback(() => {
-    const sources = Array.from(componentDataSources.values());
-    const refreshTimes = Array.from(componentLastRefresh.values());
-    const currentTime = Date.now();
-    
-    const stats = {
-      total: sources.length,
-      fresh: 0,
-      cache: 0,
-      offline: 0,
-      error: 0,
-      hasUpdates: hasUpdatesAvailable,
-      paginationGroups: paginationGroups.size,
-      totalPaginatedComponents: Array.from(paginationGroups.values()).reduce((acc, set) => acc + set.size, 0)
-    };
-
-    sources.forEach((source, index) => {
-      if (!source) {
-        stats.error++;
-        return;
-      }
-      
-      const sourceStr = String(source).toLowerCase();
-      const componentRefreshTime = refreshTimes[index];
-      const timeSinceRefresh = componentRefreshTime ? currentTime - componentRefreshTime : Infinity;
-      
-      if ((sourceStr === 'fresh' || sourceStr === 'server') && timeSinceRefresh < 5 * 60 * 1000) {
-        stats.fresh++;
-      } else if (sourceStr === 'cache' || sourceStr.includes('cache') || 
-                 (sourceStr === 'fresh' && timeSinceRefresh >= 5 * 60 * 1000)) {
-        stats.cache++;
-      } else if (sourceStr === 'offline' || sourceStr.includes('offline')) {
-        stats.offline++;
-      } else if (sourceStr === 'error' || sourceStr.includes('error') || sourceStr.includes('fallback')) {
-        stats.error++;
-      } else {
-        stats.cache++;
-      }
-    });
-
-    return stats;
-  }, [componentDataSources, componentLastRefresh, hasUpdatesAvailable, paginationGroups]);
-
+// PageRefreshContext.js
+const getDataSourceStats = useCallback(() => {
+  const sources = Array.from(componentDataSources.values());
+  const refreshTimes = Array.from(componentLastRefresh.values());
+  const currentTime = Date.now();
+  const stats = {
+    total: sources.length, // Already counts all sources
+    fresh: 0,
+    cache: 0,
+    offline: 0,
+    error: 0,
+    hasUpdates: hasUpdatesAvailable,
+    paginationGroups: paginationGroups.size,
+    totalPaginatedComponents: Array.from(paginationGroups.values()).reduce(
+      (acc, set) => acc + set.size,
+      0
+    ),
+  };
+  sources.forEach((source, index) => {
+    if (!source) {
+      stats.error++;
+      return;
+    }
+    const sourceStr = String(source).toLowerCase();
+    const componentRefreshTime = refreshTimes[index];
+    const timeSinceRefresh = componentRefreshTime
+      ? currentTime - componentRefreshTime
+      : Infinity;
+    if (
+      (sourceStr === "fresh" || sourceStr === "server") &&
+      timeSinceRefresh < 5 * 60 * 1000
+    ) {
+      stats.fresh++;
+    } else if (
+      sourceStr === "cache" ||
+      sourceStr.includes("cache") ||
+      (sourceStr === "fresh" && timeSinceRefresh >= 5 * 60 * 1000)
+    ) {
+      stats.cache++;
+    } else if (sourceStr === "offline" || sourceStr.includes("offline")) {
+      stats.offline++;
+    } else if (
+      sourceStr === "error" ||
+      sourceStr.includes("error") ||
+      sourceStr.includes("fallback")
+    ) {
+      stats.error++;
+    } else {
+      stats.cache++;
+    }
+  });
+  return stats;
+}, [componentDataSources, componentLastRefresh, hasUpdatesAvailable, paginationGroups]);
   // Enhanced update detection with document type filtering
   useEffect(() => {
     // Define document types that this page should monitor

@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
+
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,6 +10,9 @@ import { urlForImage } from "@/sanity/lib/image"; // Import image URL helper
 import SidebarRelatedResources from "@/app/free-ai-resources/SidebarRelatedResources"; // Re-import related resources component
 import NewsLatterBox from "@/components/Contact/NewsLatterBox"; // Re-import newsletter box
 import RelatedPost from "./RelatedPost"; // Assuming this path is correct for your RelatedPost component
+import { useCachedSanityData } from '@/components/Blog/useSanityCache';
+import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
+// import SidebarRelatedResources from './ssSidebarRelatedResources'; // Adjust path as needed
 
 // --- New SidebarLoader Component ---
 const SidebarLoader = ({ count = 3 }) => {
@@ -34,22 +38,46 @@ const SidebarLoader = ({ count = 3 }) => {
 // --- End SidebarLoader Component ---
 
 const BlogSidebar = ({
-  relatedPosts,
+ relatedPosts,
   relatedPostsLoading,
-  relatedResources,
-  resourcesLoading,
+  relatedResources, // Use this from props instead of separate hook
+  resourcesLoading, // Use this from props instead of separate hook
   schemaSlugMap,
 }) => {
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [recentData, setRecentData] = useState([]);
-  const [recentLoading, setRecentLoading] = useState(true);
+  
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false); // Track if a search has been initiated
 
   // Internal loading states to ensure loaders show immediately
   const [internalRelatedPostsLoading, setInternalRelatedPostsLoading] = useState(true);
   const [internalResourcesLoading, setInternalResourcesLoading] = useState(true);
+// Replace the existing useEffect for fetchRecentPosts with this:
+const { data: recentData, isLoading: recentLoading } = useCachedSanityData(
+  CACHE_KEYS.RECENT_POSTS,
+  `*[_type in ["aitool", "makemoney", "coding", "seo", "freeairesources", "ainews"]] | order(publishedAt desc)[0...3] {
+    _id,
+    title,
+    slug,
+    mainImage {
+      asset -> {
+        _id,
+        url
+      },
+      alt
+    },
+    publishedAt,
+    _type
+  }`,
+  {
+    componentName: 'BlogSidebar-RecentPosts',
+    usePageContext: true,
+    enableOffline: true,
+    forceRefresh: false
+  }
+);
+// Add this hook at the top of your BlogSidebar component, after the recentData hook
 
   // Handle internal loading states
   useEffect(() => {
@@ -65,36 +93,7 @@ const BlogSidebar = ({
   }, [relatedResources, resourcesLoading]);
 
   // Fetch recent posts on component mount
-  useEffect(() => {
-    const fetchRecentPosts = async () => {
-      setRecentLoading(true);
-      try {
-        const query = `*[_type in ["aitool", "makemoney", "coding", "seo", "freeairesources", "ainews"]] | order(publishedAt desc) [0...3]{
-          _id,
-          title,
-          slug,
-          mainImage{
-            asset->{
-              _id,
-              url
-            },
-            alt
-          },
-          publishedAt,
-          _type
-        }`;
-        const data = await client.fetch(query);
-        setRecentData(data);
-      } catch (error) {
-        console.error("Failed to fetch recent posts:", error);
-        setRecentData([]);
-      } finally {
-        setRecentLoading(false);
-      }
-    };
 
-    fetchRecentPosts();
-  }, []);
 
   // Handle search functionality - now only triggers on explicit action
   const handleSearch = useCallback(async () => {
@@ -292,8 +291,9 @@ const BlogSidebar = ({
                     <div className="pl-4 group-hover/item:pl-6 transition-all duration-300">
                       <RelatedPost
                         title={post.title}
-                        image={urlForImage(post.mainImage).url()}
-                        slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                        image={post.mainImage ? urlForImage(post.mainImage).url() : "/path-to-placeholder-image.jpg"}
+  slug={`/<span class="math-inline">\{schemaSlugMap\[post\.\_type\]\}/</span>{post.slug.current}`}
+  
                         date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       />
                     </div>
@@ -323,15 +323,15 @@ const BlogSidebar = ({
                 Related Resources
               </h3>
             </div>
-            {(resourcesLoading || internalResourcesLoading) ? (
-              <SidebarLoader />
-            ) : (
-              <SidebarRelatedResources
-                resources={relatedResources}
-                isLoading={resourcesLoading}
-                maxItems={3}
-              />
-            )}
+        {(resourcesLoading || internalResourcesLoading) ? (
+      <SidebarLoader />
+    ) : (
+      <SidebarRelatedResources 
+        resources={relatedResources}
+        isLoading={resourcesLoading}
+        maxItems={3}
+      />
+    )}
           </div>
         </div>
 

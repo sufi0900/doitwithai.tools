@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
 "use client"
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image";
 import SkelCard from "@/components/Blog/Skeleton/Card";
@@ -11,6 +11,14 @@ import SortIcon from '@mui/icons-material/Sort';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
+import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
+import PageRefreshButton from "@/components/Blog/PageSpecificRefreshButton";
+import ReusableCachedMixedBlogs from "./ReusableCachedAllBlogsGeneral"
+import ReusableCachedFeaturePost from "@/app/ai-tools/CachedAIToolsFeaturePost";
+import ReusableCachedAllBlogs from "@/app/ai-tools/CachedAIToolsAllBlogs";
+import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
+import { useGlobalOfflineStatus } from '@/components/Blog/GlobalOfflineStatusContext'; // Import this to use isBrowserOnline
 
 // Changed limit from 12 to 5
 async function fetchAllBlogs(page = 1, limit = 5, categories = [], sortBy = 'publishedAt desc') {
@@ -43,20 +51,32 @@ export default function AllPosts() {
     makemoney: "AI Learn & Earn"
   };
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchText, setSearchText] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [allData, setAllData] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('publishedAt desc');
-  const [totalCount, setTotalCount] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
+  
 const [pageCache, setPageCache] = useState(new Map());
 const [visitedPages, setVisitedPages] = useState(new Set([1])); // Track visited pages
-  // Define the limit for cards per page
-  const cardsPerPage = 5; 
+ 
 
+ const [currentPage, setCurrentPage] = useState(1);
+  const [searchText, setSearchText] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('publishedAt desc');
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const { isBrowserOnline } = useGlobalOfflineStatus();
+  const isOffline = !isBrowserOnline;
+
+  const cardsPerPage = 5; 
+const handleMixedBlogsDataLoad = useCallback((currentPg, totalPgs, totalCnt) => {
+    setCurrentPage(currentPg);
+    setTotalPages(totalPgs);
+    setTotalCount(totalCnt);
+  }, []);
 useEffect(() => {
   const fetchData = async () => {
     const categories = selectedCategory === 'all' ? [] : [selectedCategory];
@@ -168,6 +188,11 @@ useEffect(() => {
   const displayCount = searchResults.length > 0 ? searchResults.length : totalCount;
 
   return (
+    <PageRefreshProvider pageType="blogs">
+      <GlobalOfflineStatusProvider>
+          <div className="flex justify-end mb-4">
+              <PageRefreshButton />
+            </div>
     <section className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-20 pt-16">
       <div className="container mx-auto px-4">
         {/* Hero Section */}
@@ -325,40 +350,13 @@ useEffect(() => {
         </div>
 
         {/* Articles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8 mb-16">
-          {loading ? (
-            // Changed length for skeleton cards to 5
-            Array.from({ length: 5 }).map((_, index) => ( 
-              <div key={index} className="animate-pulse">
-                <SkelCard />
-              </div>
-            ))
-          ) : currentData.length > 0 ? (
-            currentData.map((post) => (
-              <CardComponent
-                key={post._id}
-                ReadTime={post.readTime?.minutes}
-                overview={post.overview}
-                title={post.title}
-                tags={post.tags}
-                mainImage={urlForImage(post.mainImage).url()}
-                slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-                publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric'
-                })}
-              />
-            ))
-          ) : (
-            <div className="col-span-full text-center py-16">
-              <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">No articles found</h3>
-              <p className="text-gray-500 dark:text-gray-400">Try adjusting your search or filter criteria</p>
-            </div>
-          )}
-        </div>
-
+        <ReusableCachedMixedBlogs
+                  currentPage={currentPage}
+                  limit={cardsPerPage}
+                  selectedCategory={selectedCategory}
+                  sortBy={sortBy}
+                  onDataLoad={handleMixedBlogsDataLoad}
+                />
         {/* Pagination */}
         {!searchResults.length && (
           <div className="flex justify-center">
@@ -404,5 +402,7 @@ useEffect(() => {
         )}
       </div>
     </section>
+    </GlobalOfflineStatusProvider>
+    </PageRefreshProvider>
   );
 }
