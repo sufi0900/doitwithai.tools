@@ -49,18 +49,6 @@ const { data: globalRelatedResources, isLoading: globalResourcesLoading } = useC
     forceRefresh: false
   }
 );
-
-  const [showGlobalHeader, setShowGlobalHeader] = useState(true);
-  const [mounted, setMounted] = useState(false);
-
-  const portableTextComponents = PortableTextComponents();
-  portableTextComponents.types.button = portableTextComponents.button;
-
-// Handle case when no data is available at all (initial load failure)
-if (!data && !loading && !articleLoading) {
-    return <SlugSkeleton/>;
-}
-
   useEffect(() => {
     setMounted(true);
     
@@ -98,6 +86,18 @@ if (!data && !loading && !articleLoading) {
       window.removeEventListener('load', handleLoad);
     };
   }, []);
+
+  const [showGlobalHeader, setShowGlobalHeader] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  const portableTextComponents = PortableTextComponents();
+  portableTextComponents.types.button = portableTextComponents.button;
+
+// Handle case when no data is available at all (initial load failure)
+if (!data && !loading && !articleLoading) {
+    return <SlugSkeleton/>;
+}
+
 
 
   return (
