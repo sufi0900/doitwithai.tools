@@ -76,9 +76,10 @@ const PageRefreshButton = ({ className = "" }) => {
         pulse: true
       };
     }
-
+    const freshDataRatio = stats.total > 0 ? stats.fresh / stats.total : 0;
+    const recentRefresh = hasRecentlyFreshData();
     // Priority 3: Recently refreshed (truly fresh data)
-    if (hasRecentlyFreshData()) {
+    if (recentRefresh && freshDataRatio > 0.5) {
       return {
         status: 'fresh',
         bgClass: 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 dark:from-green-600 dark:to-emerald-700 dark:hover:from-green-700 dark:hover:to-emerald-800',

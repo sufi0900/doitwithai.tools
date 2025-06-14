@@ -19,10 +19,12 @@ import { useCachedSanityData } from '@/components/Blog/useSanityCache';
 import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
 import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
 import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
+import { usePageRefresh } from '@/components/Blog/PageScopedRefreshContext';
 
 const BlogLayout = ({
   data,
   loading,
+  articleLoading, // Add this prop
 
   relatedPosts,
   relatedPostsLoading,
@@ -31,6 +33,8 @@ const BlogLayout = ({
   schemaSlugMap,
   imgdesc
 }) => {
+    const { isRefreshing } = usePageRefresh();
+
 const { data: globalRelatedResources, isLoading: globalResourcesLoading } = useCachedSanityData(
   CACHE_KEYS.RELATED_RESOURCES_GLOBAL,
   `*[_type == "freeResources"] | order(_createdAt desc)[0...6]{
@@ -51,6 +55,11 @@ const { data: globalRelatedResources, isLoading: globalResourcesLoading } = useC
 
   const portableTextComponents = PortableTextComponents();
   portableTextComponents.types.button = portableTextComponents.button;
+
+// Handle case when no data is available at all (initial load failure)
+if (!data && !loading && !articleLoading) {
+    return <SlugSkeleton/>;
+}
 
   useEffect(() => {
     setMounted(true);
@@ -90,9 +99,6 @@ const { data: globalRelatedResources, isLoading: globalResourcesLoading } = useC
     };
   }, []);
 
-  if (loading && !data) {
-    return <SlugSkeleton />; // Assuming SlugSkeleton is defined elsewhere
-  }
 
   return (
     <>
@@ -147,9 +153,9 @@ const { data: globalRelatedResources, isLoading: globalResourcesLoading } = useC
             </ol>
           </nav>
           
-          <article id="main-content" className="lg:m-4 flex flex-wrap">
-            <BlogHeader data={data} imgdesc={imgdesc} />
+          <article id="main-content" className="lg:m-4 flex flex-wrap" >
 
+<BlogHeader data={data} imgdesc={imgdesc} articleLoading={articleLoading} />
             <div className="customanchor mb-4 mt-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
 
             <div className="w-full lg:w-8/12">
@@ -213,6 +219,22 @@ const { data: globalRelatedResources, isLoading: globalResourcesLoading } = useC
                 </div>
 
                 <ReadingProgressCircle />
+                {/* Add this right before the <div className="relative w-full"> */}
+{(articleLoading || (isRefreshing && data)) && (
+  <div className="flex items-center justify-center py-4 mb-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+    <span className="text-sm text-blue-600 dark:text-blue-400">Refreshing article content...</span>
+  </div>
+)}
+                <div className="relative w-full">
+              {/* Show skeleton overlay when article is loading during refresh */}
+  {(articleLoading || (isRefreshing && data)) && (
+                <div className="absolute inset-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+                  <SlugSkeleton />
+                </div>
+              )}
+                            <div className={articleLoading ? 'opacity-20' : 'opacity-100'}>
+
                 <TableOfContents tableOfContents={data.tableOfContents} />
 
                 <div className="customanchor mb-4 mt-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
@@ -223,6 +245,9 @@ const { data: globalRelatedResources, isLoading: globalResourcesLoading } = useC
                 </div>
 
                 <FAQSection faqs={data.faqs} />
+                </div>
+            </div>
+            
 <RelatedResources 
   resources={relatedResources && relatedResources.length > 0 ? relatedResources : globalRelatedResources}
   isLoading={resourcesLoading || globalResourcesLoading}

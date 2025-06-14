@@ -165,7 +165,7 @@ static invalidateAllBlogsPage() {
 static invalidateArticleCache(type, slug = null) {
   if (slug) {
     // Invalidate specific article cache
-    const articleKey = CACHE_KEYS.ARTICLE_SINGLE(type, slug); // This will now use the updated key
+    const articleKey = CACHE_KEYS.ARTICLE_SINGLE(type, slug);
     const relatedPostsKey = CACHE_KEYS.ARTICLE_RELATED_POSTS(type, slug);
     const relatedResourcesKey = CACHE_KEYS.ARTICLE_RELATED_RESOURCES(type, slug);
     
@@ -174,13 +174,14 @@ static invalidateArticleCache(type, slug = null) {
     cacheService.clear(relatedResourcesKey);
     cacheService.clear(CACHE_KEYS.RECENT_POSTS);
     cacheService.clear(CACHE_KEYS.RELATED_RESOURCES_GLOBAL);
-    
+
     console.log(`Cleared cache for specific ${type} article: ${slug}`);
   } else {
     // Invalidate all articles of this type
     const groupName = CACHE_KEYS.ARTICLES_GROUP(type);
     this.setPaginationRefreshTimestamp(groupName);
     
+  
     // Also clear global caches
     cacheService.clear(CACHE_KEYS.RECENT_POSTS);
     cacheService.clear(CACHE_KEYS.RELATED_RESOURCES_GLOBAL);

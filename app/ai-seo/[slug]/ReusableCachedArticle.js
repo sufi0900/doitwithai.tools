@@ -4,35 +4,56 @@ import { useCachedSanityData } from '@/components/Blog/useSanityCache';
 import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
 import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout";
 import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
+import { usePageRefresh } from '@/components/Blog/PageScopedRefreshContext';
 // components/Blog/CachedArticleComponent.jsx
 
 const CachedArticleComponent = ({ slug, documentType = "seo", serverData = null }) => {
   // Main article query
-    const articleQuery = `*[_type=="${documentType}" && slug.current=="${slug}"][0]{
-    _id,_type,title,slug,mainImage,overview,content,body,publishedAt,readTime,tags,tableOfContents,faqs,metatitle,metadesc,author,
-    "categories": _type
-  }`;
-  
+
+  const { isRefreshing } = usePageRefresh();
+
+  const articleQuery = `*[_type == "${documentType}" && slug.current == "${slug}"][0]{
+        _id,
+        _type,
+        title,
+        slug,
+        mainImage,
+        overview,
+        content,
+        body,
+        publishedAt,
+        readTime,
+        tags,
+        tableOfContents,
+        faqs,
+        metatitle,
+        metadesc,
+        author,
+        "categories": _type
+    }`;
+
 
   // Related posts query
  const relatedPostsQuery = `*[_type in ["aitool", "makemoney", "news", "coding", "seo"] && slug.current != "${slug}"] | order(_createdAt desc) [0...3] {_id, _type, title, slug, mainImage, overview, publishedAt, readTime, tags}`;
 
   // Main article data with server data as fallback
+// Main article data with server data as fallback
   const {
     data: articleData,
     isLoading: articleLoading,
     error: articleError,
-    refresh: refreshArticle
+    refresh: refreshArticle,
+    dataSource: articleDataSource,
+    isOffline: articleIsOffline
   } = useCachedSanityData(
     CACHE_KEYS.ARTICLE_SINGLE(documentType, slug),
     articleQuery,
     {
-      componentName: `Article-${documentType}-${slug}`,
-      usePageContext: true, // Use page-scoped context for article
+      componentName: `Article-${documentType}-${slug}`, // This is the key fix
+      usePageContext: true,
       enableOffline: true,
-      
       forceRefresh: false,
-      fallbackData: serverData // Use server data as fallback
+      fallbackData: serverData
     }
   );
 // Replace the commented out related resources section with this:
@@ -72,22 +93,32 @@ const { data: relatedResources, isLoading: relatedResourcesLoading, refresh: ref
       forceRefresh: false
     }
   );
+// Only show full page skeleton on initial load when no data is available
+const shouldShowFullPageSkeleton = articleLoading && (!articleData && !serverData);
+const shouldPassArticleLoading = articleLoading; // Pass loading state even with fallback data
 
-  // Handle loading state - useserverdata if available
-  if (articleLoading && !articleData && !serverData) {
-    return <SlugSkeleton />;
-  }
+// Handle initial loading state - show full skeleton only when no data at all
+if (shouldShowFullPageSkeleton) {
+    return (
+        <>
+            <SlugSkeleton/>
+        </>
+    );
+}
 
-  // Handle error state - useserverdata as fallback
-  if (articleError && !articleData && !serverData) {
+ if (articleError && !articleData && !serverData) {
     return (
       <div className="text-center py-8">
         <p className="text-red-500 mb-4">Failed to load article</p>
-        <button onClick={() => refreshArticle(true)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Retry</button>
+        <button 
+          onClick={() => refreshArticle(true)} 
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          Retry
+        </button>
       </div>
     );
   }
-
   const schemaSlugMap = {
     makemoney: "ai-learn-earn",
     aitool: "ai-tools",
@@ -100,7 +131,8 @@ const { data: relatedResources, isLoading: relatedResourcesLoading, refresh: ref
   return (
     <BlogLayout
       data={articleData || serverData}
-    loading={articleLoading && !serverData}
+      loading={shouldPassArticleLoading} // Pass the actual loading state
+      articleLoading={shouldPassArticleLoading} // Keep this for granular control
     relatedPosts={relatedPosts || []}
     relatedPostsLoading={relatedPostsLoading}
     relatedResources={relatedResources || []} // Add this line
