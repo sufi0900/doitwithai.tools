@@ -5,10 +5,11 @@ import { urlForImage } from "@/sanity/lib/image";
 import { PortableText } from "@portabletext/react";
 import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
 import { useInView } from "react-intersection-observer";
-import { usePageRefresh } from '@/components/Blog/PageScopedRefreshContext';
+import { useArticleCache } from "@/app/ai-learn-earn/[slug]/ArticleCacheContext";
+// import { usePageRefresh } from '@/components/Blog/PageScopedRefreshContext';
 
 const BlogHeader = ({ data, imgdesc, articleLoading = false }) => {
- const { isRefreshing } = usePageRefresh();
+ const { isRefreshing } = useArticleCache();
 
   // Title loading states
   const [titleLoading, setTitleLoading] = useState(true);

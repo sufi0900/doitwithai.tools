@@ -24,7 +24,7 @@ async function fetchRelatedPostsData(currentPostId) {
 
   // Sanity GROQ query to fetch "seo" type posts, ordered by creation date,
   // EXCLUDING the post with the given _id, and limiting to 3 results.
-  const query = `*[_type == "aitool" && _id != $excludeId] | order(_createdAt desc) [0...3]`;
+  const query = `*[_type == "coding" && _id != $excludeId] | order(_createdAt desc) [0...3]`;
   return await client.fetch(query, { excludeId });
 }
 
@@ -126,10 +126,10 @@ export default function BlogSidebarPage({ data }) {
 
   return (
     <>
-      <CacheStatusIndicator
+      {/* <CacheStatusIndicator
         isFromCache={relatedPostsFromCache || resourcesFromCache}
         onRefresh={handleRefreshAll}
-      />
+      /> */}
       <BlogLayout
         data={data}
         loading={loading}

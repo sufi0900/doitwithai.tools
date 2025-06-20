@@ -35,11 +35,19 @@ ALL_BLOGS_MIXED_SEARCH: 'all-blogs-mixed-search',
 
 
 // Add these to your existing CACHE_KEYS object
-ARTICLE_SINGLE: (type, slug) => `${type}-article-${slug}`,
-ARTICLE_RELATED_POSTS: (type, slug) => `${type}-related-posts-${slug}`,
-ARTICLE_RELATED_RESOURCES: (type, slug) => `${type}-related-resources-${slug}`,
+// ARTICLE_SINGLE: (type, slug) => `${type}-article-${slug}`,
+// ARTICLE_RELATED_POSTS: (type, slug) => `${type}-related-posts-${slug}`,
+// ARTICLE_RELATED_RESOURCES: (type, slug) => `${type}-related-resources-${slug}`,
 
-ARTICLES_GROUP: (type) => `${type}-articles-group`,
-RELATED_RESOURCES_GLOBAL: 'related-resources-global'
+// ARTICLES_GROUP: (type) => `${type}-articles-group`,
+// RELATED_RESOURCES_GLOBAL: 'related-resources-global',
+
+
+  // Article slug specific cache keys
+  ARTICLE_CONTENT: (type, slug) => `article-content-${type}-${slug}`,
+  ARTICLE_RELATED_POSTS: (type, articleId) => `article-related-posts-${type}-${articleId}`,
+  ARTICLE_RELATED_RESOURCES: (articleId) => `article-related-resources-${articleId}`,
+  ARTICLE_ALL_BLOGS: (currentPage) => `article-all-blogs-page-${currentPage}`,
+  
 
 };

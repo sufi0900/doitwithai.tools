@@ -26,6 +26,29 @@ const PageRefreshButton = ({ className = "" }) => {
   const hasCachedComponents = isAnyComponentCurrentlyCached;
   const isCompletelyOffline = !isBrowserOnline;
 
+const handleRefreshClick = async () => {
+  try {
+    // Check if we're on an article page
+    const isArticlePage = window.location.pathname.includes('/article/') || 
+                         window.location.pathname.includes('/blog/') ||
+                         // Add other article path patterns as needed
+                         document.querySelector('[data-article-page]');
+    
+    if (isArticlePage) {
+      console.log('🔄 Refreshing current article...');
+      await refreshCurrentArticle();
+    } else {
+      console.log('🔄 Refreshing all page content...');
+      await refreshAll(false);
+    }
+  } catch (error) {
+    console.error('Refresh failed:', error);
+    if (typeof window !== 'undefined' && window.toast) {
+      window.toast.error('Refresh failed. Please try again.');
+    }
+  }
+};
+
   // Handle offline retry
   const handleOfflineRetry = async () => {
     setIsOfflineRetrying(true);

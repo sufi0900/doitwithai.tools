@@ -32,7 +32,11 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
     paginationGroup = null, // e.g., 'seo-all-blogs', 'ai-tools-all-blogs'
     currentPage = 1, // Keep this prop as it's useful for the consumer
     limit = 10,
-      fallbackData = null // Add this line
+      fallbackData = null, // Add this line
+        enableForceRefreshDetection = false,  // Add this new option
+ // ADD THESE NEW OPTIONS:
+  enableImmediateRefresh = false,
+  enableCustomEventListening = false
 
   } = options;
 
@@ -69,35 +73,40 @@ export const useCachedSanityData = (cacheKey, query, options = {}) => {
 
 
 
-const fetchFreshData = useCallback(async (showLoading = true, refreshAllPages = false) => {
-  // CRITICAL FIX: Always show loading during explicit refresh, clear current data
-  if (showLoading) {
-    setIsLoading(true);
-    // Clear current data during refresh to show skeleton/loading state
-    setData(null);
-    setDataSource('refreshing');
-  }
-  
+const fetchFreshData = useCallback(async (showLoading = true, refreshAllPages = false, forceIgnoreCache = false) => {
+  if (showLoading) setIsLoading(true);
   setError(null);
-
+  
   try {
     const queryParams = options.queryParams || {};
     const result = await client.fetch(query, queryParams);
     const freshData = Array.isArray(result) ? result : result.data;
     const fetchedTotalCount = result?.total || freshData.length;
-
+    
     // SUCCESS: Cache and update state
+    // If forceIgnoreCache is true, clear the cache first
+    if (forceIgnoreCache) {
+      cacheService.clear(cacheKey);
+      console.log(`🗑️ Force cleared cache for: ${cacheKey}`);
+    }
+    
     cacheService.set(cacheKey, freshData, 'network');
-    setData(freshData);
+    setData(freshData); // This should immediately update the UI
     setDataSource('network');
     setIsOffline(false);
-    
     registerContextDataSource(componentName || cacheKey, 'network', true);
     localStorage.setItem(`${componentName || cacheKey}_last_update`, Date.now().toString());
-
+    
+    // Clear any force refresh flags after successful update
+    if (forceIgnoreCache && typeof window !== 'undefined') {
+      localStorage.removeItem(`${componentName || cacheKey}_force_refresh`);
+      console.log(`✅ Cleared force refresh flag for: ${componentName || cacheKey}`);
+    }
+    
     // Handle pagination data
     if (isPaginated && paginationGroup) {
       cacheService.set(getGroupTotalCountCacheKey(paginationGroup), fetchedTotalCount, 'network');
+      console.log(`📊 Stored total count ${fetchedTotalCount} for group: ${paginationGroup}`);
       setTotalCount(fetchedTotalCount);
       setTotalPages(Math.ceil(fetchedTotalCount / limit));
       
@@ -109,6 +118,7 @@ const fetchFreshData = useCallback(async (showLoading = true, refreshAllPages = 
           }
         });
         localStorage.setItem(`${paginationGroup}_pagination_refresh`, Date.now().toString());
+        console.log(`🔄 Cleared all pagination cache for group: ${paginationGroup}`);
       }
     } else {
       setTotalCount(freshData.length);
@@ -122,28 +132,67 @@ const fetchFreshData = useCallback(async (showLoading = true, refreshAllPages = 
     }
     
     return { data: freshData, total: fetchedTotalCount };
-    
   } catch (fetchError) {
     console.error(`Failed to fetch ${cacheKey}:`, fetchError);
     
-    // Only use cached data as fallback if we're not doing an explicit refresh
-    if (!showLoading) {
-      const cachedResult = cacheService.get(cacheKey);
-      if (cachedResult) {
-        setData(cachedResult.data);
-        setDataSource(`${cachedResult.source}-fallback`);
-        registerContextDataSource(componentName || cacheKey, `${cachedResult.source}-fallback`, false);
+    // Handle error state more carefully
+    const cachedResult = cacheService.get(cacheKey);
+    
+    // Handle pagination total count for error cases
+    if (isPaginated && paginationGroup) {
+      const cachedTotal = cacheService.get(getGroupTotalCountCacheKey(paginationGroup));
+      if (cachedTotal) {
+        setTotalCount(cachedTotal.data);
+        setTotalPages(Math.ceil(cachedTotal.data / limit));
+      } else {
+        setTotalCount(0);
+        setTotalPages(0);
       }
     }
     
-    setError(fetchError);
+    if (cachedResult) {
+      // We have cached data, use it
+      setData(cachedResult.data);
+      const fallbackSource = `${cachedResult.source}-fallback`;
+      setDataSource(fallbackSource);
+      registerContextDataSource(componentName || cacheKey, fallbackSource, false);
+      
+      // Determine if we should show offline status
+      const isActuallyOffline = !navigator.onLine || 
+                                fetchError.message.includes('NetworkError') || 
+                                fetchError.message.includes('fetch') || 
+                                fetchError.name === 'TypeError';
+      setIsOffline(isActuallyOffline);
+    } else if (fallbackData) {
+      // No cached data but we have fallback data
+      setData(fallbackData);
+      setDataSource('fallback');
+      registerContextDataSource(componentName || cacheKey, 'fallback', false);
+      setIsOffline(!navigator.onLine);
+    } else {
+      // No cached data and no fallback
+      setError(fetchError);
+      setIsOffline(true);
+      setDataSource('none');
+      registerContextDataSource(componentName || cacheKey, 'none', false);
+    }
+    
     setIsLoading(false);
     
-    if (!cachedResult && showLoading) {
+    // Only throw error if we have no data to show
+    if (!cachedResult && !fallbackData) {
       throw fetchError;
     }
   }
-}, [query, cacheKey, onDataUpdate, registerContextDataSource, componentName, isPaginated, paginationGroup, getPaginationCacheKeys, getGroupTotalCountCacheKey, limit, options.queryParams]);
+}, [query, cacheKey, onDataUpdate, registerContextDataSource, componentName, isPaginated, paginationGroup, getPaginationCacheKeys, getGroupTotalCountCacheKey, limit, options.queryParams, fallbackData]);
+const handleImmediateRefresh = useCallback(async () => {
+  console.log(`🔄 Immediate refresh triggered for ${componentName || cacheKey}`);
+  try {
+    await fetchFreshData(true, false, true); // Force ignore cache
+  } catch (error) {
+    console.error(`Immediate refresh failed for ${componentName || cacheKey}:`, error);
+  }
+}, [componentName, cacheKey, fetchFreshData]);
 
 // Check if pagination cache is stale (or if total count is missing/stale)
   const isPaginationCacheStale = useCallback(() => {
@@ -166,127 +215,171 @@ const fetchFreshData = useCallback(async (showLoading = true, refreshAllPages = 
     return parseInt(groupRefreshTime) > parseInt(componentUpdateTime);
   }, [isPaginated, paginationGroup, componentName, cacheKey, getGroupTotalCountCacheKey]);
 
+const checkForceRefreshFlag = useCallback(() => {
+  if (typeof window === 'undefined') return false;
+  
+  const forceRefreshKey = `${componentName || cacheKey}_force_refresh`;
+  const forceRefreshTime = localStorage.getItem(forceRefreshKey);
+  const lastUpdateTime = localStorage.getItem(`${componentName || cacheKey}_last_update`);
+  
+  if (forceRefreshTime) {
+    console.log(`🔄 Force refresh flag found for ${componentName || cacheKey}`, {
+      forceRefreshTime,
+      lastUpdateTime
+    });
+    
+    // Always return true if force refresh flag exists, regardless of last update time
+    return true;
+  }
+  
+  return false;
+}, [componentName, cacheKey]);
 useEffect(() => {
-    const loadData = async () => {
-        const cachedResult = cacheService.get(cacheKey);
-        const isPaginationStaleFlag = isPaginationCacheStale();
+  if (!enableCustomEventListening || !componentName) return;
 
-        if (cachedResult && !forceRefresh && !isPaginationStaleFlag) {
-            // We have valid cached data
-            setData(cachedResult.data);
-            setDataSource(cachedResult.source);
-            registerContextDataSource(componentName || cacheKey, cachedResult.source, false);
-            setIsLoading(false);
-            setIsOffline(false); // We have data, so don't show offline initially
+  const handleCustomRefresh = (event) => {
+    const { componentName: eventComponentName } = event.detail || {};
+    if (eventComponentName === componentName) {
+      console.log(`🎯 Custom refresh event received for ${componentName}`);
+      handleImmediateRefresh();
+    }
+  };
 
-            // Handle pagination data from cache
-            if (isPaginated && paginationGroup) {
-                const totalCountKey = getGroupTotalCountCacheKey(paginationGroup);
-                const cachedTotalEntry = cacheService.get(totalCountKey);
-                if (cachedTotalEntry) {
-                    setTotalCount(cachedTotalEntry.data);
-                    setTotalPages(Math.ceil(cachedTotalEntry.data / limit));
-                } else {
-                    setTotalCount(cachedResult.data ? cachedResult.data.length : 0);
-                    setTotalPages(cachedResult.data && limit > 0 ? Math.ceil(cachedResult.data.length / limit) : 0);
-                }
-            } else {
-                setTotalCount(cachedResult.data ? cachedResult.data.length : 0);
-                setTotalPages(1);
-            }
+  const handleArticleUpdate = (event) => {
+    const { documentType, slug } = event.detail || {};
+    if (componentName.includes(documentType) && componentName.includes(slug)) {
+      console.log(`📰 Article update event received for ${componentName}`);
+      handleImmediateRefresh();
+    }
+  };
 
-            // Background refresh if needed and online
-            if (cachedResult.shouldRevalidate && isBrowserOnline) {
-                try {
-                    await fetchFreshData(false);
-                } catch (error) {
-                    console.warn('Background refresh failed:', error);
-                }
-            }
-            
-        } else {
-            // No valid cached data, or force refresh, or stale pagination
-            
-            // Check online status before fetching
-            if (isBrowserOnline) {
-                try {
-                    await fetchFreshData(true, isPaginationStaleFlag);
-                } catch (error) {
-                    // Error is handled in fetchFreshData
-                    console.warn('Initial fetch failed:', error);
-                }
-            } else if (enableOffline) {
-                // Offline, try to serve whatever is available in cache
-                const offlineCachedResult = cacheService.get(cacheKey);
-                
-                if (offlineCachedResult) {
-                    setData(offlineCachedResult.data);
-                    setDataSource('offline');
-                    registerContextDataSource(componentName || cacheKey, 'offline', false);
-                    setIsOffline(true);
-                    setIsLoading(false);
+  if (typeof window !== 'undefined') {
+    window.addEventListener('force-component-refresh', handleCustomRefresh);
+    window.addEventListener('article-update', handleArticleUpdate);
+  }
 
-                    // Handle pagination data for offline display
-                    if (isPaginated && paginationGroup) {
-                        const totalCountKey = getGroupTotalCountCacheKey(paginationGroup);
-                        const cachedTotalEntry = cacheService.get(totalCountKey);
-                        if (cachedTotalEntry) {
-                            setTotalCount(cachedTotalEntry.data);
-                            setTotalPages(Math.ceil(cachedTotalEntry.data / limit));
-                        } else {
-                            setTotalCount(0);
-                            setTotalPages(0);
-                        }
-                    } else {
-                        setTotalCount(offlineCachedResult.data ? offlineCachedResult.data.length : 0);
-                        setTotalPages(1);
-                    }
-                    
-                } else if (fallbackData) {
-                    // No cached data but we have fallback data
-                    setData(fallbackData);
-                    setDataSource('server-fallback');
-                    registerContextDataSource(componentName || cacheKey, 'server-fallback', false);
-                    setIsOffline(false); // Don't show offline if we have fallback data
-                    setIsLoading(false);
-                    
-                } else {
-                    // No cached data and no fallback available offline
-                    setError(new Error('No cached data available offline'));
-                    setIsOffline(true);
-                    setDataSource('none');
-                    registerContextDataSource(componentName || cacheKey, 'none', false);
-                    setIsLoading(false);
-                }
-            } else {
-                // Not online and offline mode disabled
-                setError(new Error('Not online and offline mode disabled.'));
-                setIsOffline(true);
-                setDataSource('none');
-                registerContextDataSource(componentName || cacheKey, 'none', false);
-                setIsLoading(false);
-            }
+  return () => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('force-component-refresh', handleCustomRefresh);
+      window.removeEventListener('article-update', handleArticleUpdate);
+    }
+  };
+}, [enableCustomEventListening, componentName, handleImmediateRefresh])
+
+useEffect(() => {
+  const loadData = async () => {
+    const shouldForceRefresh = checkForceRefreshFlag();
+    const isPaginationStaleFlag = isPaginationCacheStale();
+    const cachedResult = cacheService.get(cacheKey);
+    
+    // Force refresh takes highest priority
+    if (shouldForceRefresh) {
+      console.log(`🔄 Force refreshing ${componentName || cacheKey}`);
+      if (isBrowserOnline) {
+        try {
+          await fetchFreshData(true, isPaginationStaleFlag, true); // forceIgnoreCache = true
+          // Clear the force refresh flag after successful refresh
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(`${componentName || cacheKey}_force_refresh`);
+          }
+        } catch (error) {
+          console.warn('Force refresh failed:', error);
         }
-    };
-
-    loadData();
-}, [
-    cacheKey, 
-    query, 
-    forceRefresh, 
-    enableOffline, 
-    fetchFreshData, 
-    registerContextDataSource,
-    componentName, 
-    isPaginationCacheStale, 
-    isPaginated, 
-    paginationGroup, 
-    getGroupTotalCountCacheKey, 
-    limit, 
-    isBrowserOnline,
-    fallbackData
-]);
-
+      }
+      return;
+    }
+    
+    if (cachedResult && !forceRefresh && !isPaginationStaleFlag) {
+      // We have valid cached data
+      setData(cachedResult.data);
+      const initialSource = cachedResult.source === 'network' ? 'cache' : cachedResult.source;
+      setDataSource(initialSource);
+      registerContextDataSource(componentName || cacheKey, initialSource, false);
+      setIsLoading(false);
+      setIsOffline(false);
+      
+      // Handle pagination data from cache
+      if (isPaginated && paginationGroup) {
+        const totalCountKey = getGroupTotalCountCacheKey(paginationGroup);
+        const cachedTotalEntry = cacheService.get(totalCountKey);
+        if (cachedTotalEntry) {
+          setTotalCount(cachedTotalEntry.data);
+          setTotalPages(Math.ceil(cachedTotalEntry.data / limit));
+        } else {
+          setTotalCount(cachedResult.data ? cachedResult.data.length : 0);
+          setTotalPages(cachedResult.data && limit > 0 ? Math.ceil(cachedResult.data.length / limit) : 0);
+        }
+      } else {
+        setTotalCount(cachedResult.data ? cachedResult.data.length : 0);
+        setTotalPages(1);
+      }
+      
+      // Background refresh if needed and online
+      if (cachedResult.shouldRevalidate && isBrowserOnline) {
+        try {
+          await fetchFreshData(false);
+        } catch (error) {
+          console.warn('Background refresh failed:', error);
+        }
+      }
+    } else {
+      // No valid cached data, or force refresh, or stale pagination
+      if (isBrowserOnline) {
+        try {
+          await fetchFreshData(true, isPaginationStaleFlag, shouldForceRefresh);
+        } catch (error) {
+          console.warn('Initial fetch failed:', error);
+        }
+      } else if (enableOffline) {
+        // Offline handling
+        const offlineCachedResult = cacheService.get(cacheKey);
+        if (offlineCachedResult) {
+          setData(offlineCachedResult.data);
+          setDataSource('offline');
+          registerContextDataSource(componentName || cacheKey, 'offline', false);
+          setIsOffline(true);
+          setIsLoading(false);
+          
+          // Handle pagination data for offline display
+          if (isPaginated && paginationGroup) {
+            const totalCountKey = getGroupTotalCountCacheKey(paginationGroup);
+            const cachedTotalEntry = cacheService.get(totalCountKey);
+            if (cachedTotalEntry) {
+              setTotalCount(cachedTotalEntry.data);
+              setTotalPages(Math.ceil(cachedTotalEntry.data / limit));
+            } else {
+              setTotalCount(0);
+              setTotalPages(0);
+            }
+          } else {
+            setTotalCount(offlineCachedResult.data ? offlineCachedResult.data.length : 0);
+            setTotalPages(1);
+          }
+        } else if (fallbackData) {
+          setData(fallbackData);
+          setDataSource('server-fallback');
+          registerContextDataSource(componentName || cacheKey, 'server-fallback', false);
+          setIsOffline(false);
+          setIsLoading(false);
+        } else {
+          setError(new Error('No cached data available offline'));
+          setIsOffline(true);
+          setDataSource('none');
+          registerContextDataSource(componentName || cacheKey, 'none', false);
+          setIsLoading(false);
+        }
+      } else {
+        setError(new Error('Not online and offline mode disabled.'));
+        setIsOffline(true);
+        setDataSource('none');
+        registerContextDataSource(componentName || cacheKey, 'none', false);
+        setIsLoading(false);
+      }
+    }
+  };
+  
+  loadData();
+}, [cacheKey, query, forceRefresh, enableOffline, fetchFreshData, registerContextDataSource, componentName, isPaginationCacheStale, isPaginated, paginationGroup, getGroupTotalCountCacheKey, limit, isBrowserOnline, fallbackData, checkForceRefreshFlag]);
 // In useCachedSanityData hook, replace the existing useEffect for online/offline detection:
 // Replace the existing online/offline useEffect in useCachedSanityData with this:
 useEffect(() => {
@@ -354,9 +447,30 @@ useEffect(() => {
     };
 }, [cacheKey, fetchFreshData, isPaginationCacheStale, fallbackData]);
   // Enhanced refresh function with pagination support
-  const refresh = useCallback((refreshAllPages = false) => {
-    return fetchFreshData(true, refreshAllPages);
-  }, [fetchFreshData]);
+// Enhanced refresh function with pagination support
+// Replace the existing refresh function
+// Add this function in useCachedSanityData hook
+const clearCacheAndRefresh = useCallback(async () => {
+  console.log(`🧹 Force clearing cache and refreshing for: ${componentName || cacheKey}`);
+  
+  // Clear cache first
+  cacheService.clear(cacheKey);
+  
+  // Clear any localStorage flags
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(`${componentName || cacheKey}_force_refresh`);
+    localStorage.removeItem(`${componentName || cacheKey}_last_update`);
+  }
+  
+  // Fetch fresh data with force ignore cache
+  return await fetchFreshData(true, false, true);
+}, [cacheKey, componentName, fetchFreshData]);
+const refresh = useCallback((refreshAllPages = false, forceIgnoreCache = false) => {
+  if (forceIgnoreCache) {
+    return clearCacheAndRefresh();
+  }
+  return fetchFreshData(true, refreshAllPages, forceIgnoreCache);
+}, [fetchFreshData, clearCacheAndRefresh]);
 
   useEffect(() => {
     const name = componentName || cacheKey;
@@ -400,6 +514,38 @@ useEffect(() => {
     usePageContext
   });
 }, [componentName, cacheKey, usePageContext]);
+// ADD this new useEffect to your useCachedSanityData hook
+useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleForceRefresh = async (event) => {
+        const expectedComponentName = componentName || cacheKey;
+        
+        // Check if this event is for our component
+        if (event.detail?.componentName === expectedComponentName) {
+            console.log(`🚀 Processing force refresh for ${expectedComponentName}`);
+            
+            // Clear cache first
+            cacheService.clear(cacheKey);
+            
+            // Then fetch fresh data with force ignore cache
+            try {
+                await fetchFreshData(true, false, true); // showLoading, refreshAllPages, forceIgnoreCache
+                console.log(`✅ Force refresh completed for ${expectedComponentName}`);
+            } catch (error) {
+                console.error(`❌ Force refresh failed for ${expectedComponentName}:`, error);
+            }
+        }
+    };
+
+    window.addEventListener('force-article-refresh', handleForceRefresh);
+    
+    return () => {
+        window.removeEventListener('force-article-refresh', handleForceRefresh);
+    };
+}, [componentName, cacheKey, fetchFreshData]);
+
+
 return {
     data,
     isLoading,

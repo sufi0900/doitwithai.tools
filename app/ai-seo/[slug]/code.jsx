@@ -21,16 +21,15 @@ export default function ChildComp({ data, params }) {
   return (
     <PageRefreshProvider pageType="seo-article">
       <GlobalOfflineStatusProvider>
-        {/* Refresh Button */}
+       
         <div className="fixed bottom-6 right-6 z-50">
           <PageRefreshButton />
         </div>
-        
-        {/* Main Article Content */}
+      
         <CachedArticleComponent 
           slug={params.slug} 
           documentType="seo"
-          serverData={data} // Pass server data as fallback
+          // serverData={data} // Pass server data as fallback
         />
       </GlobalOfflineStatusProvider>
     </PageRefreshProvider>

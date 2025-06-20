@@ -1,42 +1,229 @@
-import React, { useState, useEffect } from 'react';
+// CacheStatusIndicator.js
+"use client";
 
-const CacheStatusIndicator = ({ isFromCache, onRefresh }) => {
-  const [isVisible, setIsVisible] = useState(false);
+import React, { useState, useEffect, useRef } from 'react';
+import { articleCacheUtils } from './articleCacheUtils';
+import { useArticleRefresh } from './ArticleRefreshContext';
 
+const CacheStatusIndicator = ({
+  isFromCache = false,
+  onRefresh = null,
+  articleType = null,
+  articleSlug = null,
+  componentName = "Article",
+  status = "loading",
+  // showTooltip = true, // This prop controls initial state, not the state itself
+  showRefreshButton = true,
+  className = ""
+}) => {
+  const [cacheInfo, setCacheInfo] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState(null);
+  // NEW: State for controlling the tooltip visibility internally
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false); // Initialize with false or based on a prop
+
+  const tooltipRef = useRef(null);
+  const indicatorRef = useRef(null);
+
+  // Get article refresh context if available
+  const articleRefreshContext = useArticleRefresh ? useArticleRefresh() : null;
+
+  // Update cache info when component mounts or props change
   useEffect(() => {
-    if (isFromCache) {
-      setIsVisible(true);
-      // Auto-hide after 3 seconds
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-      }, 3000);
-      
-      return () => clearTimeout(timer);
+    if (articleType && articleSlug) {
+      const info = articleCacheUtils.getArticleCacheInfo(articleType, articleSlug);
+      setCacheInfo(info);
     }
-  }, [isFromCache]);
+  }, [articleType, articleSlug, status, isFromCache]);
 
-  if (!isVisible) return null;
+  // Handle refresh action
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+    setLastRefreshTime(Date.now());
+
+    try {
+      if (articleRefreshContext && articleRefreshContext.refreshAllComponents) {
+        // Use article refresh context if available
+        await articleRefreshContext.refreshAllComponents(true);
+      } else if (onRefresh) {
+        // Fall back to provided refresh function
+        await onRefresh();
+      }
+
+      // Update cache info after refresh
+      if (articleType && articleSlug) {
+        const info = articleCacheUtils.getArticleCacheInfo(articleType, articleSlug);
+        setCacheInfo(info);
+      }
+    } catch (error) {
+      console.error('Error during refresh:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Get current status info
+  const getStatusInfo = () => {
+    const statusColor = articleCacheUtils.getStatusColor(status);
+    const statusIcon = articleCacheUtils.getStatusIcon(status);
+    const statusText = articleCacheUtils.getStatusText(status);
+
+    return { statusColor, statusIcon, statusText };
+  };
+
+  // Close tooltip when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isTooltipVisible && tooltipRef.current && !tooltipRef.current.contains(event.target) &&
+          indicatorRef.current && !indicatorRef.current.contains(event.target)) {
+        setIsTooltipVisible(false); // Use the new setter
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isTooltipVisible]); // Add isTooltipVisible to dependencies
+
+  const { statusColor, statusIcon, statusText } = getStatusInfo();
+
+  // Create tooltip content
+  const renderTooltipContent = () => {
+    if (!cacheInfo) {
+      return (
+        <div className="p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg border text-sm">
+          <div className="font-semibold mb-2">Cache Status: {statusText}</div>
+          <div className="text-gray-600 dark:text-gray-400">Component: {componentName}</div>
+        </div>
+      );
+    }
+
+    const { components, summary } = cacheInfo;
+
+    return (
+      <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg border max-w-sm">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="font-semibold">Cache Status</div>
+          <div className={`px-2 py-1 rounded text-xs ${statusColor}`}>
+            {statusIcon} {statusText}
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div className="mb-3 p-2 bg-gray-50 dark:bg-gray-700 rounded text-xs">
+          <div className="grid grid-cols-2 gap-2">
+            <div>Components: {summary.cachedComponents}/{summary.totalComponents}</div>
+            <div>Size: {summary.formattedTotalSize}</div>
+            <div>Health: {summary.overallHealth}</div>
+            <div>Last Refresh: {articleCacheUtils.formatDuration(lastRefreshTime)}</div>
+          </div>
+        </div>
+
+        {/* Component Details */}
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-gray-700 dark:text-gray-300">Components:</div>
+          {components.slice(0, 5).map((component, index) => (
+            <div key={index} className="flex items-center justify-between text-xs">
+              <span className="truncate flex-1">{component.componentName}</span>
+              <div className="flex items-center space-x-2">
+                <span className={`px-1 py-0.5 rounded ${articleCacheUtils.getStatusColor(component.health)}`}>
+                  {articleCacheUtils.getStatusIcon(component.health)}
+                </span>
+                <span className="text-gray-500">{component.formattedSize}</span>
+              </div>
+            </div>
+          ))}
+          {components.length > 5 && (
+            <div className="text-xs text-gray-500">+{components.length - 5} more...</div>
+          )}
+        </div>
+
+        {/* Actions */}
+        {showRefreshButton && (
+          <div className="mt-3 pt-3 border-t">
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="w-full px-3 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white rounded transition-colors"
+            >
+              {isRefreshing ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Refreshing...
+                </span>
+              ) : (
+                '🔄 Refresh All'
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className="fixed top-4 right-4 z-50 bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 animate-fade-in">
-      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-      </svg>
-      <span className="text-sm font-medium">Loaded from cache</span>
-      <button
-        onClick={onRefresh}
-        className="ml-2 text-xs bg-green-200 hover:bg-green-300 px-2 py-1 rounded transition-colors"
+    <div className={`relative inline-flex items-center ${className}`}>
+      {/* Main Status Indicator */}
+      <div
+        ref={indicatorRef}
+        className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-all hover:shadow-md ${statusColor}`}
+        onClick={() => setIsTooltipVisible(!isTooltipVisible)} // Use the new setter
       >
-        Refresh
-      </button>
-      <button
-        onClick={() => setIsVisible(false)}
-        className="ml-1 text-green-600 hover:text-green-800"
-      >
-        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-        </svg>
-      </button>
+        <span>{statusIcon}</span>
+        <span>{statusText}</span>
+
+        {/* Component count badge */}
+        {cacheInfo && (
+          <span className="ml-1 px-1.5 py-0.5 bg-white bg-opacity-20 rounded-full text-xs">
+            {cacheInfo.summary.cachedComponents}/{cacheInfo.summary.totalComponents}
+          </span>
+        )}
+
+        {/* Refresh button */}
+        {showRefreshButton && onRefresh && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRefresh();
+            }}
+            disabled={isRefreshing}
+            className="ml-2 p-1 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
+            title="Refresh data"
+          >
+            {isRefreshing ? (
+              <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              '🔄'
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* Tooltip */}
+      {isTooltipVisible && ( // Use the new state variable
+        <div
+          ref={tooltipRef}
+          className="absolute top-full left-0 mt-2 z-50 animate-in slide-in-from-top-2 duration-200"
+        >
+          {renderTooltipContent()}
+        </div>
+      )}
+
+      {/* Backdrop for mobile */}
+      {isTooltipVisible && ( // Use the new state variable
+        <div
+          className="fixed inset-0 z-40 bg-black bg-opacity-10 md:hidden"
+          onClick={() => setIsTooltipVisible(false)} // Use the new setter
+        />
+      )}
     </div>
   );
 };

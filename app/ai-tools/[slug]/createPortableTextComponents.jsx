@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useMemo  } from 'react';
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
 import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
 import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
+import SimplifiedOptimizedImage from "@/app/ai-seo/[slug]/SimplifiedOptimizedImage";
 import { ArrowRight } from 'lucide-react';
 
 const PortableTextComponents = () => {
@@ -204,13 +205,12 @@ image: ({ value }) => {
               
               {/* Image with enhanced styling */}
               <div className="relative overflow-hidden rounded-xl">
-                <OptimizedImage
-                  src={imageUrl}
-                  alt={value.alt}
-                                    showStaticPlaceholder={true} // Enable static placeholder
-
-                  className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
-                />
+                <SimplifiedOptimizedImage
+                src={imageUrl}
+                      alt={value.alt || "Article image"}
+                      className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+              
+              />
                 
                 {/* Subtle overlay gradient - Added pointer-events-none */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />

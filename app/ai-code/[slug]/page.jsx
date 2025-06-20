@@ -8,6 +8,8 @@ import { NextSeo } from "next-seo";
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 import { urlForImage } from "@/sanity/lib/image";
+import { ArticleCacheProvider } from "@/app/ai-learn-earn/[slug]/ArticleCacheContext";
+import { CacheStatusProvider } from "@/app/ai-learn-earn/[slug]/CacheStatusProvider";
 
 
 async function getData(slug) {
@@ -16,7 +18,7 @@ async function getData(slug) {
  const data = await client.fetch(query, {}, { 
     cache: 'force-cache', // Changed from 'no-store' to enable caching
     next: { 
-      tags: ['seo', slug],
+      tags: ['coding', slug],
       revalidate: 300 // Revalidate every 5 minutes
     } 
   });
@@ -50,6 +52,7 @@ export async function generateMetadata({ params }) {
   
 }
 export default async function ParentPage({ params }) {
+  
   function schemaBlogPostingMarkup() {
     return {
       __html: `
@@ -115,7 +118,19 @@ export default async function ParentPage({ params }) {
 
   const metadata = await generateMetadata({ params });
 
-  const data = await getData(params.slug);
+  const slug = params.slug;
+    const data = await getData(slug);
+
+    if (!data) {
+        return (
+            <section className="min-h-screen flex items-center justify-center">
+                <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">Article Not Found</h1>
+            </section>
+        );
+    }
+
+    // Determine the schemaType from the fetched data
+    const currentPostType = data?._type || 'defaultSchemaType'; // Fallback to a default if _type is not available immediately
   const title = `${data.metatitle}`;
   const overview = `${data.metadesc}`;
 
@@ -186,9 +201,13 @@ export default async function ParentPage({ params }) {
         dangerouslySetInnerHTML={schemaBlogPostingMarkup()}
         key="BlogPosting-jsonld"
       />
-      <section>
-        <ChildComp data={data} params={params} />
-      </section>
+       <CacheStatusProvider>
+                  <ArticleCacheProvider schemaType={currentPostType}>
+                      <section>
+                          <ChildComp data={data} params={params} />
+                      </section>
+                  </ArticleCacheProvider>
+              </CacheStatusProvider>
     </>
   );
 }

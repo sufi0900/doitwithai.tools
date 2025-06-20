@@ -19,9 +19,6 @@ export const PageRefreshProvider = ({ children, pageType = 'default' }) => {
   const [hasUpdatesAvailable, setHasUpdatesAvailable] = useState(false);
   const [pageLoadTime] = useState(Date.now());
 
-
-
-  
   // Enhanced update checking with multiple sources
   useEffect(() => {
     let interval;
@@ -247,59 +244,49 @@ export const PageRefreshProvider = ({ children, pageType = 'default' }) => {
     }, [refreshFunctions, paginationGroups, pageType]);
 
   // Enhanced data source stats with pagination awareness
-// PageRefreshContext.js
-const getDataSourceStats = useCallback(() => {
-  const sources = Array.from(componentDataSources.values());
-  const refreshTimes = Array.from(componentLastRefresh.values());
-  const currentTime = Date.now();
-  const stats = {
-    total: sources.length, // Already counts all sources
-    fresh: 0,
-    cache: 0,
-    offline: 0,
-    error: 0,
-    hasUpdates: hasUpdatesAvailable,
-    paginationGroups: paginationGroups.size,
-    totalPaginatedComponents: Array.from(paginationGroups.values()).reduce(
-      (acc, set) => acc + set.size,
-      0
-    ),
-  };
-  sources.forEach((source, index) => {
-    if (!source) {
-      stats.error++;
-      return;
-    }
-    const sourceStr = String(source).toLowerCase();
-    const componentRefreshTime = refreshTimes[index];
-    const timeSinceRefresh = componentRefreshTime
-      ? currentTime - componentRefreshTime
-      : Infinity;
-    if (
-      (sourceStr === "fresh" || sourceStr === "server") &&
-      timeSinceRefresh < 5 * 60 * 1000
-    ) {
-      stats.fresh++;
-    } else if (
-      sourceStr === "cache" ||
-      sourceStr.includes("cache") ||
-      (sourceStr === "fresh" && timeSinceRefresh >= 5 * 60 * 1000)
-    ) {
-      stats.cache++;
-    } else if (sourceStr === "offline" || sourceStr.includes("offline")) {
-      stats.offline++;
-    } else if (
-      sourceStr === "error" ||
-      sourceStr.includes("error") ||
-      sourceStr.includes("fallback")
-    ) {
-      stats.error++;
-    } else {
-      stats.cache++;
-    }
-  });
-  return stats;
-}, [componentDataSources, componentLastRefresh, hasUpdatesAvailable, paginationGroups]);
+  const getDataSourceStats = useCallback(() => {
+    const sources = Array.from(componentDataSources.values());
+    const refreshTimes = Array.from(componentLastRefresh.values());
+    const currentTime = Date.now();
+    
+    const stats = {
+      total: sources.length,
+      fresh: 0,
+      cache: 0,
+      offline: 0,
+      error: 0,
+      hasUpdates: hasUpdatesAvailable,
+      paginationGroups: paginationGroups.size,
+      totalPaginatedComponents: Array.from(paginationGroups.values()).reduce((acc, set) => acc + set.size, 0)
+    };
+
+    sources.forEach((source, index) => {
+      if (!source) {
+        stats.error++;
+        return;
+      }
+      
+      const sourceStr = String(source).toLowerCase();
+      const componentRefreshTime = refreshTimes[index];
+      const timeSinceRefresh = componentRefreshTime ? currentTime - componentRefreshTime : Infinity;
+      
+      if ((sourceStr === 'fresh' || sourceStr === 'server') && timeSinceRefresh < 5 * 60 * 1000) {
+        stats.fresh++;
+      } else if (sourceStr === 'cache' || sourceStr.includes('cache') || 
+                 (sourceStr === 'fresh' && timeSinceRefresh >= 5 * 60 * 1000)) {
+        stats.cache++;
+      } else if (sourceStr === 'offline' || sourceStr.includes('offline')) {
+        stats.offline++;
+      } else if (sourceStr === 'error' || sourceStr.includes('error') || sourceStr.includes('fallback')) {
+        stats.error++;
+      } else {
+        stats.cache++;
+      }
+    });
+
+    return stats;
+  }, [componentDataSources, componentLastRefresh, hasUpdatesAvailable, paginationGroups]);
+
   // Enhanced update detection with document type filtering
   useEffect(() => {
     // Define document types that this page should monitor
@@ -317,6 +304,9 @@ const getDataSourceStats = useCallback(() => {
           return ['seo', 'aitool', 'coding', 'makemoney']; // Homepage monitors all
       }
     };
+
+
+
 
     const documentTypes = getDocumentTypesForPage(pageType);
 
@@ -354,6 +344,7 @@ const getDataSourceStats = useCallback(() => {
       }
     };
   }, [pageType]);
+
 
   const hasRecentlyFreshData = useCallback(() => {
     const refreshTimes = Array.from(componentLastRefresh.values());
@@ -434,31 +425,141 @@ const getDataSourceStats = useCallback(() => {
       setIsRefreshing(false);
     }
   }, [paginationGroups, refreshFunctions]);
+const refreshArticleSpecific = useCallback(async (documentType, slug) => {
+  const componentName = `Article-${documentType}-${slug}`;
+  const refreshFn = refreshFunctions.get(componentName);
+  
+  if (refreshFn) {
+    setIsRefreshing(true);
+    try {
+      // Set force refresh flag BEFORE calling refresh
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`${componentName}_force_refresh`, Date.now().toString());
+        console.log(`🔄 Set force refresh flag for ${componentName}`);
+      }
+      
+      // Force ignore cache for article refresh - IMPORTANT: Use true as first parameter
+      await refreshFn(true); // Changed from refreshFn(false, true) to refreshFn(true)
+      
+      // Clear article-specific update flags after successful refresh
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(`article-${documentType}-${slug}_cms_update`);
+        localStorage.removeItem(`article-${documentType}-${slug}_last_update`);
+      }
+      
+      if (typeof window !== 'undefined' && window.toast) {
+        window.toast.success('Article refreshed successfully!');
+      }
+    } catch (error) {
+      console.error(`Article refresh failed for ${componentName}:`, error);
+      if (typeof window !== 'undefined' && window.toast) {
+        window.toast.error('Article refresh failed');
+      }
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+}, [refreshFunctions]);
 
-  return (
-    <PageRefreshContext.Provider
-      value={{
-        isRefreshing,
-        refreshFunctions,
-        componentDataSources,
-        componentLastRefresh,
-        paginationGroups, // New: Expose pagination groups
-        hasUpdatesAvailable,
-        registerRefresh,
-        registerDataSource,
-        unregisterRefresh,
-        refreshAll,
-        refreshPaginationGroup, // New: Function to refresh specific pagination group
-        getDataSourceStats,
-        checkForUpdatesNow,
-        hasRecentlyFreshData,
-        clearUpdateNotification,
-        refreshCount: refreshFunctions.size,
-        pageType,
-        pageLoadTime
-      }}
-    >
-      {children}
-    </PageRefreshContext.Provider>
+   // Replace your existing refreshCurrentArticle function with this enhanced version
+
+ const refreshCurrentArticle = useCallback(async () => {
+  // Find the current article component
+  const articleComponents = Array.from(refreshFunctions.keys()).filter(name => 
+    name.startsWith('Article-')
   );
+  
+  if (articleComponents.length > 0) {
+    const componentName = articleComponents[0];
+    const refreshFn = refreshFunctions.get(componentName);
+    
+    if (refreshFn) {
+      setIsRefreshing(true);
+      try {
+        // Extract document type and slug from component name
+        const parts = componentName.replace('Article-', '').split('-');
+        const documentType = parts[0];
+        const slug = parts.slice(1).join('-');
+
+        console.log(`🚀 Force refreshing article: ${componentName}`);
+
+        // Import cache utilities
+        const { cacheService } = await import('./useCache');
+        const { CACHE_KEYS } = await import('./cacheKeys');
+        
+        // Clear cache completely
+        cacheService.clear(CACHE_KEYS.ARTICLE_SINGLE(documentType, slug));
+        
+        // Clear all localStorage flags
+        if (typeof window !== 'undefined') {
+          const timestamp = Date.now().toString();
+          localStorage.removeItem(`${componentName}_force_refresh`);
+          localStorage.removeItem(`${componentName}_last_update`);
+          localStorage.removeItem(`article-${documentType}-${slug}_cms_update`);
+          
+          console.log(`🧹 Cleared all cache and flags for: ${componentName}`);
+        }
+
+        // Call refresh with force parameters
+        await refreshFn(true, true); // refreshAllPages=true, forceIgnoreCache=true
+
+        // Dispatch custom event for immediate refresh
+        if (typeof window !== 'undefined') {
+          const event = new CustomEvent('page-refresh-triggered', {
+            detail: { componentName, documentType, slug }
+          });
+          window.dispatchEvent(event);
+        }
+
+        // Clear update notifications
+        clearUpdateNotification();
+
+        if (typeof window !== 'undefined' && window.toast) {
+          window.toast.success('Article content updated successfully!');
+        }
+
+      } catch (error) {
+        console.error(`Current article refresh failed:`, error);
+        if (typeof window !== 'undefined' && window.toast) {
+          window.toast.error('Article refresh failed');
+        }
+      } finally {
+        setIsRefreshing(false);
+      }
+    }
+  } else {
+    // Fallback to refreshAll if no article component found
+    await refreshAll(false);
+  }
+}, [refreshFunctions, clearUpdateNotification, refreshAll]);
+
+
+return (
+ <PageRefreshContext.Provider
+        value={{
+            isRefreshing,
+            refreshFunctions,
+            componentDataSources,
+            componentLastRefresh,
+            paginationGroups,
+            hasUpdatesAvailable,
+            registerRefresh,
+            registerDataSource,
+            unregisterRefresh,
+            refreshAll,
+            refreshPaginationGroup,
+            refreshArticleSpecific, // Keep existing function
+            refreshCurrentArticle, // Add new function
+            getDataSourceStats,
+            checkForUpdatesNow,
+            hasRecentlyFreshData,
+            clearUpdateNotification,
+            refreshCount: refreshFunctions.size,
+            pageType,
+            pageLoadTime
+        }}
+    >
+        {children}
+    </PageRefreshContext.Provider>
+);
 };

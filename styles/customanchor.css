@@ -27,9 +27,9 @@
           }
           50% {
             opacity: 1; /* Keep opacity consistent or very slight fade */
-            transform: scale(1.003); /* Slightly more noticeable growth */
+            transform: scale(1.002); /* Slightly more noticeable growth */
             box-shadow: 0 0 8px rgba(59, 130, 246, 0.6); /* More visible blue glow */
-            filter: brightness(1.15); /* Subtle text highlight */
+            filter: brightness(1.10); /* Subtle text highlight */
           }
           100% {
             opacity: 1;
@@ -70,9 +70,9 @@
   }
   50% {
     opacity: 1;                            /* Keep full opacity */
-    transform: scale(1.003);               /* Slight 0.3% “grow” */
+    transform: scale(1.002);               /* Slight 0.3% “grow” */
     box-shadow: 0 0 8px rgba(19, 62, 252, 0.6); /* Subtle bright‐blue halo */
-    filter: brightness(1.7);              /* Light highlight */
+    filter: brightness(1.4);              /* Light highlight */
   }
   100% {
     opacity: 1;

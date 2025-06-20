@@ -35,9 +35,8 @@ const RelatedPostsSection = ({
                    ReadTime={post.readTime?.minutes} 
                    overview={post.overview}
                    title={post.title}
-                   mainImage={post.mainImage ? urlForImage(post.mainImage).url() : "/images/placeholder.jpg"} // Make sure this path is correct for your project
-              slug={`/${schemaSlugMap[post._type]}/${post.slug?.current || ""}`} // Also ensure slug has fallback, as discussed previously
-              
+                   mainImage={urlForImage(post.mainImage).url()}
+                   slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
                    publishedAt= {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                    
                  />

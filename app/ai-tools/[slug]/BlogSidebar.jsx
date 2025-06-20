@@ -10,9 +10,7 @@ import { urlForImage } from "@/sanity/lib/image"; // Import image URL helper
 import SidebarRelatedResources from "@/app/free-ai-resources/SidebarRelatedResources"; // Re-import related resources component
 import NewsLatterBox from "@/components/Contact/NewsLatterBox"; // Re-import newsletter box
 import RelatedPost from "./RelatedPost"; // Assuming this path is correct for your RelatedPost component
-import { useCachedSanityData } from '@/components/Blog/useSanityCache';
-import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
-// import SidebarRelatedResources from './ssSidebarRelatedResources'; // Adjust path as needed
+import ComponentTracker from '@/app/ai-learn-earn/[slug]/ComponentTracker'; // Adjust path if necessary
 
 // --- New SidebarLoader Component ---
 const SidebarLoader = ({ count = 3 }) => {
@@ -38,46 +36,34 @@ const SidebarLoader = ({ count = 3 }) => {
 // --- End SidebarLoader Component ---
 
 const BlogSidebar = ({
- relatedPosts,
+  relatedPosts,
   relatedPostsLoading,
-  relatedResources, // Use this from props instead of separate hook
-  resourcesLoading, // Use this from props instead of separate hook
+  relatedResources,
+  resourcesLoading,
   schemaSlugMap,
+  // NEW REQUIRED PROPS:
+  currentPostId,
+  currentPostType,
+  // Cache status props
+  relatedPostsCacheStatus,
+  relatedPostsIsFromCache,
+  relatedPostsHasUpdatesAvailable,
+  relatedPostsIsRefreshing,
+  relatedResourcesCacheStatus,
+  relatedResourcesIsFromCache,
+  relatedResourcesHasUpdatesAvailable,
+  relatedResourcesIsRefreshing,
 }) => {
   const [searchText, setSearchText] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  
+  const [recentData, setRecentData] = useState([]);
+  const [recentLoading, setRecentLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchPerformed, setSearchPerformed] = useState(false); // Track if a search has been initiated
 
   // Internal loading states to ensure loaders show immediately
   const [internalRelatedPostsLoading, setInternalRelatedPostsLoading] = useState(true);
   const [internalResourcesLoading, setInternalResourcesLoading] = useState(true);
-// Replace the existing useEffect for fetchRecentPosts with this:
-const { data: recentData, isLoading: recentLoading } = useCachedSanityData(
-  CACHE_KEYS.RECENT_POSTS,
-  `*[_type in ["aitool", "makemoney", "coding", "seo", "freeairesources", "ainews"]] | order(publishedAt desc)[0...3] {
-    _id,
-    title,
-    slug,
-    mainImage {
-      asset -> {
-        _id,
-        url
-      },
-      alt
-    },
-    publishedAt,
-    _type
-  }`,
-  {
-    componentName: 'BlogSidebar-RecentPosts',
-    usePageContext: true,
-    enableOffline: true,
-    forceRefresh: false
-  }
-);
-// Add this hook at the top of your BlogSidebar component, after the recentData hook
 
   // Handle internal loading states
   useEffect(() => {
@@ -93,7 +79,36 @@ const { data: recentData, isLoading: recentLoading } = useCachedSanityData(
   }, [relatedResources, resourcesLoading]);
 
   // Fetch recent posts on component mount
+  useEffect(() => {
+    const fetchRecentPosts = async () => {
+      setRecentLoading(true);
+      try {
+        const query = `*[_type in ["aitool", "makemoney", "coding", "seo", "freeairesources", "ainews"]] | order(publishedAt desc) [0...3]{
+          _id,
+          title,
+          slug,
+          mainImage{
+            asset->{
+              _id,
+              url
+            },
+            alt
+          },
+          publishedAt,
+          _type
+        }`;
+        const data = await client.fetch(query);
+        setRecentData(data);
+      } catch (error) {
+        console.error("Failed to fetch recent posts:", error);
+        setRecentData([]);
+      } finally {
+        setRecentLoading(false);
+      }
+    };
 
+    fetchRecentPosts();
+  }, []);
 
   // Handle search functionality - now only triggers on explicit action
   const handleSearch = useCallback(async () => {
@@ -265,75 +280,107 @@ const { data: recentData, isLoading: recentLoading } = useCachedSanityData(
 
       <div className="space-y-8">
         {/* Related Posts Section */}
-        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-gray-50/30 shadow-lg hover:shadow-xl dark:from-gray-800 dark:via-gray-800 dark:to-gray-900/50 dark:shadow-gray-900/20 transition-all duration-500">
-          {/* Decorative gradient border */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        {/* Wrapped with ComponentTracker */}
+        <ComponentTracker
+  componentId="related-posts-sidebar"
+        schemaType="makemoney"
+        status={relatedPostsCacheStatus}
+        isFromCache={relatedPostsIsFromCache}
+        source={relatedPostsIsFromCache ? 'cache' : 'api'}
+        hasUpdatesAvailable={relatedPostsHasUpdatesAvailable}
+        cacheKey={`related_posts_makemoney_${currentPostId}`}
+        itemCount={relatedPosts?.length || 0}
+        >
+          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-gray-50/30 shadow-lg hover:shadow-xl dark:from-gray-800 dark:via-gray-800 dark:to-gray-900/50 dark:shadow-gray-900/20 transition-all duration-500">
+            {/* Decorative gradient border */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-          <div className="relative">
-            <div className="flex items-center gap-3 border-b border-gray-200/50 dark:border-gray-700/50 px-8 py-5 bg-gradient-to-r from-blue-50/50 to-purple-50/30 dark:from-blue-900/20 dark:to-purple-900/20">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
-                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m0 0l4-4a4 4 0 105.656-5.656l-4 4m-4 4l4-4m0 0l-1.102 1.102" />
-                </svg>
+            <div className="relative">
+              <div className="flex items-center gap-3 border-b border-gray-200/50 dark:border-gray-700/50 px-8 py-5 bg-gradient-to-r from-blue-50/50 to-purple-50/30 dark:from-blue-900/20 dark:to-purple-900/20">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
+                  <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m0 0l4-4a4 4 0 105.656-5.656l-4 4m-4 4l4-4m0 0l-1.102 1.102" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">
+                  Related Posts
+                </h3>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">
-                Related Posts
-              </h3>
-            </div>
 
-            {(relatedPostsLoading || internalRelatedPostsLoading) ? (
-              <SidebarLoader />
-            ) : relatedPosts && relatedPosts.length > 0 ? (
-              <ul className="p-6 space-y-4">
-                {relatedPosts.map((post, index) => (
-                  <li key={post._id} className="group/item relative">
-                    <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-500 to-purple-600 scale-y-0 group-hover/item:scale-y-100 transition-transform duration-300 origin-top rounded-full"></div>
-                    <div className="pl-4 group-hover/item:pl-6 transition-all duration-300">
-                      <RelatedPost
-                        title={post.title}
-                        image={post.mainImage ? urlForImage(post.mainImage).url() : "/path-to-placeholder-image.jpg"}
-  slug={`/<span class="math-inline">\{schemaSlugMap\[post\.\_type\]\}/</span>{post.slug.current}`}
-  
-                        date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      />
-                    </div>
-                    {index < relatedPosts.length - 1 && (
-                      <div className="mt-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-center text-gray-500 dark:text-gray-400 py-4">No related posts found.</p>
-            )}
+              {(relatedPostsLoading || internalRelatedPostsLoading) ? (
+                <SidebarLoader />
+              ) : relatedPosts && relatedPosts.length > 0 ? (
+                <ul className="p-6 space-y-4">
+                  {relatedPosts.map((post, index) => (
+                    <li key={post._id} className="group/item relative">
+                      <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-500 to-purple-600 scale-y-0 group-hover/item:scale-y-100 transition-transform duration-300 origin-top rounded-full"></div>
+                      <div className="pl-4 group-hover/item:pl-6 transition-all duration-300">
+                        <RelatedPost
+                          title={post.title}
+                          image={urlForImage(post.mainImage).url()}
+                          slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                          date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        />
+                      </div>
+                      {index < relatedPosts.length - 1 && (
+                        <div className="mt-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700"></div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-center text-gray-500 dark:text-gray-400 py-4">No related posts found.</p>
+              )}
+            </div>
           </div>
-        </div>
+        </ComponentTracker>
+
+
+        
 
         {/* Related Resources Section - NEW */}
-        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-gray-50/30 shadow-lg hover:shadow-xl dark:from-gray-800 dark:via-gray-800 dark:to-gray-900/50 dark:shadow-gray-900/20 transition-all duration-500">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="relative">
-            <div className="flex items-center gap-3 border-b border-gray-200/50 dark:border-gray-700/50 px-8 py-5 bg-gradient-to-r from-blue-50/50 to-purple-50/30 dark:from-blue-900/20 dark:to-purple-900/20">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
-                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m0 0l4-4a4 4 0 105.656-5.656l-4 4m-4 4l4-4m0 0l-1.102 1.102" />
-                </svg>
+        {/* Wrapped with ComponentTracker */}
+
+
+
+        
+        <ComponentTracker
+          componentId="sidebar-related-resources" // Unique ID for this specific section
+          schemaType="freeResources" // Adjust this based on the actual schema type of related resources
+          status={relatedResourcesCacheStatus}
+          isFromCache={relatedResourcesIsFromCache}
+          source={relatedResourcesIsFromCache ? 'cache' : 'api'}
+          hasUpdatesAvailable={relatedResourcesHasUpdatesAvailable}
+          isRefreshing={relatedResourcesIsRefreshing}
+          // Assuming a generic cache key for related resources if not tied to current article slug directly
+          cacheKey={`related_resources_sidebar_global`} // Consider if this needs to be more specific
+          itemCount={relatedResources?.length || 0}
+        >
+          <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-gray-50/30 shadow-lg hover:shadow-xl dark:from-gray-800 dark:via-gray-800 dark:to-gray-900/50 dark:shadow-gray-900/20 transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative">
+              <div className="flex items-center gap-3 border-b border-gray-200/50 dark:border-gray-700/50 px-8 py-5 bg-gradient-to-r from-blue-50/50 to-purple-50/30 dark:from-blue-900/20 dark:to-purple-900/20">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
+                  <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m0 0l4-4a4 4 0 105.656-5.656l-4 4m-4 4l4-4m0 0l-1.102 1.102" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">
+                  Related Resources
+                </h3>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">
-                Related Resources
-              </h3>
+              {(resourcesLoading || internalResourcesLoading) ? (
+                <SidebarLoader />
+              ) : (
+                <SidebarRelatedResources
+                  resources={relatedResources}
+                  isLoading={resourcesLoading}
+                  maxItems={3}
+                />
+              )}
             </div>
-        {(resourcesLoading || internalResourcesLoading) ? (
-      <SidebarLoader />
-    ) : (
-      <SidebarRelatedResources 
-        resources={relatedResources}
-        isLoading={resourcesLoading}
-        maxItems={3}
-      />
-    )}
           </div>
-        </div>
+        </ComponentTracker>
 
         {/* Recent Posts Section */}
         <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-gray-50/30 shadow-lg hover:shadow-xl dark:from-gray-800 dark:via-gray-800 dark:to-gray-900/50 dark:shadow-gray-900/20 transition-all duration-500">

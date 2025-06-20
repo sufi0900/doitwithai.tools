@@ -189,6 +189,31 @@ static invalidateArticleCache(type, slug = null) {
     console.log(`Invalidated all ${type} articles cache group`);
   }
 }
+
+static invalidateArticleForRefresh(documentType, slug) {
+  // Clear specific article cache
+  const articleKey = CACHE_KEYS.ARTICLE_SINGLE(documentType, slug);
+  const relatedPostsKey = CACHE_KEYS.ARTICLE_RELATED_POSTS(documentType, slug);
+  const relatedResourcesKey = CACHE_KEYS.ARTICLE_RELATED_RESOURCES(documentType, slug);
+  
+  cacheService.clear(articleKey);
+  cacheService.clear(relatedPostsKey);
+  cacheService.clear(relatedResourcesKey);
+  
+  // Set force refresh flags for all article components
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(`Article-${documentType}-${slug}_force_refresh`, Date.now().toString());
+    localStorage.setItem(`RelatedPosts-${documentType}-${slug}_force_refresh`, Date.now().toString());
+    localStorage.setItem(`RelatedResources-${documentType}-${slug}_force_refresh`, Date.now().toString());
+    
+    // Also set article-specific update flag
+    localStorage.setItem(`article-${documentType}-${slug}_cms_update`, Date.now().toString());
+  }
+  
+  console.log(`Set force refresh flags for article: ${documentType}/${slug}`);
+}
+
+
 // Add this method to invalidate article-specific resource cache
 static invalidateArticleResourceCache(type, slug = null) {
   if (slug) {
@@ -290,4 +315,106 @@ else if (key === CACHE_KEYS.SEO_SUBCATEGORIES) { // If SEO_SUBCATEGORIES is stil
 
     return parseInt(groupRefreshTime) > parseInt(componentUpdateTime);
   }
+// Replace your existing invalidateArticleSpecific method with this enhanced version
+static invalidateArticleSpecific(documentType, slug) {
+    // Clear the specific article cache
+    const articleKey = CACHE_KEYS.ARTICLE_SINGLE(documentType, slug);
+    const relatedPostsKey = CACHE_KEYS.ARTICLE_RELATED_POSTS(documentType, slug);
+    const relatedResourcesKey = CACHE_KEYS.ARTICLE_RELATED_RESOURCES(documentType, slug);
+    
+    cacheService.clear(articleKey);
+    cacheService.clear(relatedPostsKey);
+    cacheService.clear(relatedResourcesKey);
+
+    // Set multiple flags to ensure refresh detection
+    if (typeof window !== 'undefined') {
+        const componentName = `Article-${documentType}-${slug}`;
+        const timestamp = Date.now().toString();
+
+        // Set force refresh flag for immediate refresh
+        localStorage.setItem(`${componentName}_force_refresh`, timestamp);
+        
+        // Set article-specific update flag for update detection
+        localStorage.setItem(`article-${documentType}-${slug}_cms_update`, timestamp);
+        
+        // Update last update time
+        localStorage.setItem(`${componentName}_last_update`, timestamp);
+
+        // Dispatch custom event for immediate detection - use 'article-update' event
+        const event = new CustomEvent('article-update', {
+            detail: {
+                documentType,
+                slug,
+                timestamp: parseInt(timestamp)
+            }
+        });
+        window.dispatchEvent(event);
+        
+        console.log(`🔄 Set all refresh flags for article: ${componentName}`);
+    }
+
+    console.log(`Invalidated cache for article: ${documentType}/${slug}`);
 }
+// Add this new method for immediate article refresh
+// Enhanced forceArticleRefresh method in your CacheInvalidationService
+ static invalidateArticlePage(documentType, slug, articleId) {
+    const articleKeys = [
+      CACHE_KEYS.ARTICLE_CONTENT(documentType, slug),
+      CACHE_KEYS.ARTICLE_RELATED_POSTS(documentType, articleId),
+      CACHE_KEYS.ARTICLE_RELATED_RESOURCES(articleId),
+    ];
+
+    articleKeys.forEach(key => {
+      cacheService.clear(key);
+    });
+
+    // Clear pagination cache for article all blogs
+    this.clearPaginationCache(CACHE_KEYS.ARTICLE_ALL_BLOGS(''));
+    
+    console.log(`Article page cache invalidated for ${documentType}/${slug}`);
+  }
+
+  // New method: Invalidate when any article of specific type is updated
+  static invalidateByArticleType(documentType) {
+    // Clear all related posts cache for this document type
+    if (typeof window !== 'undefined') {
+      const allKeys = Object.keys(localStorage);
+      const articleKeys = allKeys.filter(key => 
+        key.includes(`article-related-posts-${documentType}`) ||
+        key.includes(`article-content-${documentType}`)
+      );
+      
+      articleKeys.forEach(key => {
+        localStorage.removeItem(key);
+      });
+    }
+    
+    console.log(`All ${documentType} article caches invalidated`);
+  }
+
+  // Enhanced method for article resource cache invalidation
+  static invalidateArticleResourceCache(type, slug = null, articleId = null) {
+    if (slug && articleId) {
+      // Clear specific article resources
+      cacheService.clear(CACHE_KEYS.ARTICLE_RELATED_RESOURCES(articleId));
+      cacheService.clear(CACHE_KEYS.ARTICLE_RELATED_POSTS(type, articleId));
+    } else {
+      // Clear all article resource caches for the type
+      if (typeof window !== 'undefined') {
+        const allKeys = Object.keys(localStorage);
+        const resourceKeys = allKeys.filter(key => 
+          key.includes('article-related-resources') ||
+          key.includes(`article-related-posts-${type}`)
+        );
+        
+        resourceKeys.forEach(key => {
+          localStorage.removeItem(key);
+        });
+      }
+    }
+    
+    console.log(`Article resource cache invalidated for ${type}${slug ? `/${slug}` : ''}`);
+  }
+}
+
+

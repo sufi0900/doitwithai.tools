@@ -12,6 +12,7 @@ import { Toaster } from 'react-hot-toast';
 import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
 import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
 import { GlobalRefreshProvider } from "@/components/Blog/GlobalRefreshContext";
+// import { ArticleRefreshProvider } from "@/app/ai-learn-earn/s";
 
 
 // Dynamic imports for components that are not immediately needed
@@ -98,3 +99,7 @@ export default function RootLayout({
   </html>
   );
 }
+// git init
+// git add .
+// git commit -m "Added Sanity webhook and refresh button logic"
+// git push origin main

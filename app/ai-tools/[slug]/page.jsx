@@ -8,6 +8,7 @@ import Script from "next/script";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
 import { urlForImage } from "@/sanity/lib/image";
+import { GlobalArticleCacheProvider } from './GlobalArticleCacheContext';
 
 export const revalidate = false;
 export const dynamic = "force-dynamic";
