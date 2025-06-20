@@ -12,21 +12,19 @@ const CacheStatusIndicator = ({
   articleSlug = null,
   componentName = "Article",
   status = "loading",
-  // showTooltip = true, // This prop controls initial state, not the state itself
   showRefreshButton = true,
   className = ""
 }) => {
   const [cacheInfo, setCacheInfo] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(useState(false)); // Corrected initialization
   const [lastRefreshTime, setLastRefreshTime] = useState(null);
-  // NEW: State for controlling the tooltip visibility internally
-  const [isTooltipVisible, setIsTooltipVisible] = useState(false); // Initialize with false or based on a prop
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
   const tooltipRef = useRef(null);
   const indicatorRef = useRef(null);
 
-  // Get article refresh context if available
-  const articleRefreshContext = useArticleRefresh ? useArticleRefresh() : null;
+  // CORRECTED: Call useArticleRefresh unconditionally
+  const articleRefreshContext = useArticleRefresh(); // This must be called every render
 
   // Update cache info when component mounts or props change
   useEffect(() => {
@@ -44,11 +42,10 @@ const CacheStatusIndicator = ({
     setLastRefreshTime(Date.now());
 
     try {
+      // Now you can safely check if articleRefreshContext is available (i.e., not null/undefined)
       if (articleRefreshContext && articleRefreshContext.refreshAllComponents) {
-        // Use article refresh context if available
         await articleRefreshContext.refreshAllComponents(true);
       } else if (onRefresh) {
-        // Fall back to provided refresh function
         await onRefresh();
       }
 
@@ -78,13 +75,13 @@ const CacheStatusIndicator = ({
     const handleClickOutside = (event) => {
       if (isTooltipVisible && tooltipRef.current && !tooltipRef.current.contains(event.target) &&
           indicatorRef.current && !indicatorRef.current.contains(event.target)) {
-        setIsTooltipVisible(false); // Use the new setter
+        setIsTooltipVisible(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isTooltipVisible]); // Add isTooltipVisible to dependencies
+  }, [isTooltipVisible]);
 
   const { statusColor, statusIcon, statusText } = getStatusInfo();
 
@@ -172,7 +169,7 @@ const CacheStatusIndicator = ({
       <div
         ref={indicatorRef}
         className={`flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-all hover:shadow-md ${statusColor}`}
-        onClick={() => setIsTooltipVisible(!isTooltipVisible)} // Use the new setter
+        onClick={() => setIsTooltipVisible(!isTooltipVisible)}
       >
         <span>{statusIcon}</span>
         <span>{statusText}</span>
@@ -208,7 +205,7 @@ const CacheStatusIndicator = ({
       </div>
 
       {/* Tooltip */}
-      {isTooltipVisible && ( // Use the new state variable
+      {isTooltipVisible && (
         <div
           ref={tooltipRef}
           className="absolute top-full left-0 mt-2 z-50 animate-in slide-in-from-top-2 duration-200"
@@ -218,10 +215,10 @@ const CacheStatusIndicator = ({
       )}
 
       {/* Backdrop for mobile */}
-      {isTooltipVisible && ( // Use the new state variable
+      {isTooltipVisible && (
         <div
           className="fixed inset-0 z-40 bg-black bg-opacity-10 md:hidden"
-          onClick={() => setIsTooltipVisible(false)} // Use the new setter
+          onClick={() => setIsTooltipVisible(false)}
         />
       )}
     </div>
