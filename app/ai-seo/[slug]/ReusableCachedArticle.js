@@ -6,7 +6,8 @@ import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout";
 import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
 import { usePageRefresh } from '@/components/Blog/PageScopedRefreshContext';
 import { useEffect } from 'react';
-// components/Blog/CachedArticleComponent.jsx
+import { cacheService } from './useCache';
+
 
 const CachedArticleComponent = ({ slug, documentType = "seo", serverData = null }) => {
   // --- ALL REACT HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP LEVEL ---
@@ -112,7 +113,7 @@ const CachedArticleComponent = ({ slug, documentType = "seo", serverData = null 
 
     // Dynamic import for cacheService to ensure it's only loaded client-side
     let cacheService;
-    import('@/utils/cacheService').then(module => {
+    import('@/components/Blog/useCache').then(module => {
       cacheService = module.cacheService;
 
       const handleArticleUpdate = (event) => {
