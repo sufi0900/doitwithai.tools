@@ -6,7 +6,6 @@ import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout";
 import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
 import { usePageRefresh } from '@/components/Blog/PageScopedRefreshContext';
 import { useEffect } from 'react';
-import { cacheService } from './useCache';
 
 
 const CachedArticleComponent = ({ slug, documentType = "seo", serverData = null }) => {
