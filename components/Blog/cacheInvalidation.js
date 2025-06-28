@@ -229,8 +229,7 @@ static invalidateArticleResourceCache(type, slug = null) {
 }
   static invalidateHomepage() {
     const homepageKeys = [
-      CACHE_KEYS.TRENDING_BIG,
-      CACHE_KEYS.TRENDING_RELATED,
+   
       CACHE_KEYS.FEATURE_BIG,
       CACHE_KEYS.FEATURE_RELATED,
       CACHE_KEYS.RECENT_POSTS,

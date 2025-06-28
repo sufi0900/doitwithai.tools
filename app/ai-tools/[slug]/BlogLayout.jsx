@@ -18,10 +18,6 @@ import Image from 'next/image';
 
 import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
 import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
-import ArticleRefreshButton from '@/app/ai-learn-earn/[slug]/ArticleRefreshButton'; // Adjust path
-import ComponentTracker from '@/app/ai-learn-earn/[slug]/ComponentTracker'; // Adjust path
-import { useArticleCache } from '@/app/ai-learn-earn/[slug]/ArticleCacheContext'; // Adjust path
-import { useCacheStatus } from '@/app/ai-learn-earn/[slug]/CacheStatusProvider'; // Global network status
 
 
 const BlogLayout = ({
@@ -33,21 +29,7 @@ const BlogLayout = ({
     resourcesLoading,
     schemaSlugMap,
     imgdesc,
-    // NEW PROPS FOR CACHE STATUS TRACKING
-    articleCacheStatus,
-    articleIsFromCache,
-    articleHasUpdatesAvailable,
-    articleIsRefreshing,
 
-    relatedPostsCacheStatus,
-    relatedPostsIsFromCache,
-    relatedPostsHasUpdatesAvailable,
-    relatedPostsIsRefreshing,
-
-    relatedResourcesCacheStatus,
-    relatedResourcesIsFromCache,
-    relatedResourcesHasUpdatesAvailable,
-    relatedResourcesIsRefreshing,
 }) => {
     const [showGlobalHeader, setShowGlobalHeader] = useState(true);
     const [mounted, setMounted] = useState(false);
@@ -136,7 +118,7 @@ const BlogLayout = ({
                                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
                                 </svg>
                                 <Link
-                                    href={`/${schemaSlugMap[data._type] === 'ai-learn-earn' ? 'ai-learn-earn' : schemaSlugMap[data._type]}`}
+                                    href={`/${schemaSlugMap[data?._type] === 'ai-learn-earn' ? 'ai-learn-earn' : schemaSlugMap[data._type]}`}
                                     className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
                                 >
                                     {data._type === "aitool" ? "AI Tools" :
@@ -236,7 +218,7 @@ const BlogLayout = ({
 
                                     <ReadingProgressCircle />
 
-                                    {(loading || (articleIsRefreshing && data)) && (
+                                    {loading  && (
                                         <div className="flex items-center justify-center py-4 mb-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
                                             <span className="text-sm text-blue-600 dark:text-blue-400">Refreshing article content...</span>
@@ -244,7 +226,7 @@ const BlogLayout = ({
                                     )}
                                     <div className="relative w-full">
                                         {/* Show skeleton overlay when article is loading during refresh */}
-                                        {(loading || (articleIsRefreshing && data)) && (
+                                        {loading  && (
                                             <div className="absolute inset-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
                                                 <SlugSkeleton />
                                             </div>
@@ -263,28 +245,16 @@ const BlogLayout = ({
                                             <FAQSection faqs={data.faqs} />
                                         </div>
                                     </div>
-                                  <ComponentTracker
-  componentId="related-resources-standalone"
-  schemaType="freeResources"
-  status={relatedResourcesCacheStatus}
-  isFromCache={relatedResourcesIsFromCache}
-  source={relatedResourcesIsFromCache ? 'cache' : 'api'}
-  hasUpdatesAvailable={relatedResourcesHasUpdatesAvailable}
-  // FIXED: Match the exact cache key format from useAdvancedPageCache
-  cacheKey={`related_resources_freeResources_${currentPostId}`}
-  itemCount={relatedResources?.length || 0}
->
+                          
   <RelatedResources
     resources={relatedResources}
     isLoading={resourcesLoading}
     slidesToShow={2}
   />
-</ComponentTracker>
                                 </div>
 
                                 <TagsAndShare tags={data.tags} />
                             </div>
-                        {/* </ComponentTracker> */}
                       <BlogSidebar
   relatedPosts={relatedPosts}
   relatedPostsLoading={relatedPostsLoading}
@@ -294,45 +264,22 @@ const BlogLayout = ({
   // ADD THESE CRITICAL PROPS:
   currentPostId={currentPostId}
   currentPostType={currentPostType}
-  // Cache status props
-  relatedPostsCacheStatus={relatedPostsCacheStatus}
-  relatedPostsIsFromCache={relatedPostsIsFromCache}
-  relatedPostsHasUpdatesAvailable={relatedPostsHasUpdatesAvailable}
-  relatedPostsIsRefreshing={relatedPostsIsRefreshing}
-  relatedResourcesCacheStatus={relatedResourcesCacheStatus}
-  relatedResourcesIsFromCache={relatedResourcesIsFromCache}
-  relatedResourcesHasUpdatesAvailable={relatedResourcesHasUpdatesAvailable}
-  relatedResourcesIsRefreshing={relatedResourcesIsRefreshing}
+  
 />
                     </article>
 
-<ComponentTracker
-  componentId="related-posts"  // Remove '-standalone' to match useAdvancedPageCache
-  schemaType="makemoney"
-  status={relatedPostsCacheStatus}
-  isFromCache={relatedPostsIsFromCache}
-  source={relatedPostsIsFromCache ? 'cache' : 'api'}
-  hasUpdatesAvailable={relatedPostsHasUpdatesAvailable}
-  cacheKey={`related_posts_makemoney_${currentPostId}_${data?.slug.current}`} // Updated to match new generation
-  itemCount={relatedPosts?.length || 0}
->
+
   <RelatedPostsSection
     relatedPosts={relatedPosts}
     loading={relatedPostsLoading}
     schemaSlugMap={schemaSlugMap}
   />
-</ComponentTracker>
 
                     <div className="border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                         <RecentPost />
                     </div>
                 </div>
-            <div className='container bg-black' > button here <ArticleRefreshButton /></div>    
 
-                {/* <CongratsPopup
-            showAfter={5000}
-            onClose={() => setShowCongratsPopup(false)}
-        /> */}
             </section>
         </>
     );

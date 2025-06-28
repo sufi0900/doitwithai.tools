@@ -1,17 +1,16 @@
 // components/Blog/FeatureResourcePost.js
 import React from 'react';
 import ResourceCardBase from './ResourceCardBase';
-import { urlForImage } from "@/sanity/lib/image";
 
 const VerticalFeaturePost = ({ resource }) => {
   return (
     <ResourceCardBase
   resource={resource}
   renderUI={({ resource, renderPreviewContent, handleResourceAccess, openModal }) => (
-<div className="w-full overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform-gpu mb-8">
-<div className="grid grid-cols-1 md:grid-cols-2 min-h-[24rem] relative">
-{/* Left side: Preview */}
-<div className="relative h-96 md:h-auto overflow-hidden">
+  <div className="w-full overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-black dark:text-white shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform-gpu mb-8">
+  <div className="grid grid-cols-1 md:grid-cols-2 min-h-[24rem] relative">
+        {/* Left side: Preview */}
+  <div className="relative h-96 md:h-auto overflow-hidden">
       <div className="absolute inset-0 z-0 transition-transform duration-300 ease-in-out hover:scale-110 hover:rotate-1">
         {renderPreviewContent()}
       </div>

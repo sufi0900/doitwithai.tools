@@ -16,7 +16,7 @@ import Breadcrumb from "../Common/Breadcrumb";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import {  CalendarMonthOutlined } from "@mui/icons-material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import ImageOptimizer from "./ImageOptimizer"; // Import the new component
+// import ImageOptimizer from "./ImageOptimizer"; // Import the new component
 export default function HomeBigCard({ 
     publishedAt,
     mainImage,
@@ -52,7 +52,7 @@ export default function HomeBigCard({
   }}
   className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
 >
-  <ImageOptimizer
+  <Image
     src={mainImage}
     alt={title}
     width={500} 

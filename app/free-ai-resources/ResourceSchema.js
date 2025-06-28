@@ -68,7 +68,7 @@ const ResourceSchema = ({ resource }) => {
     baseSchema.isPartOf = {
       "@type": "Article",
       "name": resource.relatedArticle.title,
-      "url": `https://www.doitwithai.tools/${resource.relatedArticle.slug.current}`
+      "url": `https://www.doitwithai.tools/${resource.relatedArticle.slug?.current}`
     };
   }
 

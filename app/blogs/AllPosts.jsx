@@ -1,408 +1,359 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
-"use client"
-import React, { useEffect, useState, useCallback } from "react";
-import { client } from "@/sanity/lib/client";
-import { urlForImage } from "@/sanity/lib/image";
-import SkelCard from "@/components/Blog/Skeleton/Card";
-import CardComponent from "@/components/Card/Page";
+"use client";
+import React, { useState, useCallback, useMemo } from "react";
+
+// Components
+import Breadcrumb from "@/components/Common/Breadcrumb"; 
 import FilterIcon from '@mui/icons-material/FilterList';
 import SortIcon from '@mui/icons-material/Sort';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
-import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
-import PageRefreshButton from "@/components/Blog/PageSpecificRefreshButton";
-import ReusableCachedMixedBlogs from "./ReusableCachedAllBlogsGeneral"
-import ReusableCachedFeaturePost from "@/app/ai-tools/CachedAIToolsFeaturePost";
-import ReusableCachedAllBlogs from "@/app/ai-tools/CachedAIToolsAllBlogs";
-import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
-import { useGlobalOfflineStatus } from '@/components/Blog/GlobalOfflineStatusContext'; // Import this to use isBrowserOnline
 
-// Changed limit from 12 to 5
-async function fetchAllBlogs(page = 1, limit = 5, categories = [], sortBy = 'publishedAt desc') {
-  const start = (page - 1) * limit;
-  const categoryFilter = categories.length > 0 ? `_type in $categories` : `_type in ["makemoney", "aitool", "coding", "seo"]`;
-  const query = `*[${categoryFilter}] | order(${sortBy}) {formattedDate, tags, readTime, _id, _type, title, slug, mainImage, overview, body, publishedAt}[${start}...${start + limit}]`;
-  const result = await client.fetch(query, { categories: categories.length > 0 ? categories : ["makemoney", "aitool", "coding", "seo"] });
-  return result;
-}
+// Reusable Blog/Caching Components
+import ReusableCachedMixedBlogs from "./ReusableCachedAllBlogsGeneral"; // This is the component for the main mixed blog list
+import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
+import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
+import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
+import SearchResults from '@/React_Query_Caching/SearchResults';
 
-async function getTotalCount(categories = []) {
-  const categoryFilter = categories.length > 0 ? `_type in $categories` : `_type in ["makemoney", "aitool", "coding", "seo"]`;
-  const query = `count(*[${categoryFilter}])`;
-  const result = await client.fetch(query, { categories: categories.length > 0 ? categories : ["makemoney", "aitool", "coding", "seo"] });
-  return result;
-}
 
-export default function AllPosts() {
+export const revalidate = false;
+export const dynamic = "force-dynamic";
+
+export default function AllBlogsPage() {
   const schemaSlugMap = {
     makemoney: "ai-learn-earn",
     aitool: "ai-tools",
     coding: "ai-code",
     seo: "ai-seo",
+    // Add any other document types and their corresponding slug prefixes
   };
 
   const categoryDisplayNames = {
     aitool: "AI Tools",
     seo: "AI SEO",
-    coding: "AI Code", 
+    coding: "AI Code",
     makemoney: "AI Learn & Earn"
   };
 
-  const [loading, setLoading] = useState(true);
-  const [allData, setAllData] = useState([]);
-  
-const [pageCache, setPageCache] = useState(new Map());
-const [visitedPages, setVisitedPages] = useState(new Set([1])); // Track visited pages
- 
-
- const [currentPage, setCurrentPage] = useState(1);
-  const [searchText, setSearchText] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('publishedAt desc');
+  // State for pagination and filters (managed by parent, but updated by child via onDataLoad)
+  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
 
-  const { isBrowserOnline } = useGlobalOfflineStatus();
-  const isOffline = !isBrowserOnline;
+  // Filter & Sort states
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('publishedAt desc');
+  const [showFilters, setShowFilters] = useState(false); // For mobile filter toggle
 
-  const cardsPerPage = 5; 
-const handleMixedBlogsDataLoad = useCallback((currentPg, totalPgs, totalCnt) => {
-    setCurrentPage(currentPg);
-    setTotalPages(totalPgs);
-    setTotalCount(totalCnt);
+  const cardsPerPage = 5; // Matches the limit passed to ReusableCachedMixedBlogs
+
+  // Initialize useCachedSearch for searching across ALL blog schemas
+  const searchHookOptions = useMemo(() => ({
+    documentType: ["makemoney", "aitool", "coding", "seo"], // Document types to search across ALL blogs
+    searchFields: ['title', 'overview', 'body'], // Fields to search within
+    pageSlugPrefix: 'all-blogs', // A generic prefix for search result links on this page
+    componentName: 'AllBlogsPageSearch', // Unique scope identifier for this page's search cache
+    minSearchLength: 1,
+  }), []);
+
+  const searchHook = useCachedSearch(searchHookOptions);
+
+  // Callback to receive pagination data from ReusableCachedMixedBlogs
+  const handleMixedBlogsDataLoad = useCallback((fetchedCurrentPg, fetchedTotalPgs, fetchedTotalCnt) => {
+    setCurrentPage(fetchedCurrentPg);
+    setTotalPages(fetchedTotalPgs);
+    setTotalCount(fetchedTotalCnt);
   }, []);
-useEffect(() => {
-  const fetchData = async () => {
-    const categories = selectedCategory === 'all' ? [] : [selectedCategory];
-    const cacheKey = `${currentPage}-${selectedCategory}-${sortBy}`;
-    
-    // Check if data is already cached
-    if (pageCache.has(cacheKey)) {
-      const cachedData = pageCache.get(cacheKey);
-      setAllData(cachedData.data);
-      setTotalCount(cachedData.totalCount);
-      setLoading(false);
-      return;
-    }
 
-    setLoading(true);
-    
-    // Fetch new data
-    const [newData, count] = await Promise.all([
-      fetchAllBlogs(currentPage, cardsPerPage, categories, sortBy),
-      getTotalCount(categories)
-    ]);
-   
-    // Cache the fetched data
-    setPageCache(prev => new Map(prev).set(cacheKey, { data: newData, totalCount: count }));
-    setVisitedPages(prev => new Set(prev).add(currentPage));
-    
-    setAllData(newData);
-    setTotalCount(count);
-    setLoading(false);
+  // Handle Search function - now uses the hook's performSearch
+  // This function is now just a wrapper for the search hook's functionality
+// CRITICAL FIX: Simplified search handler
+const handleInitiateSearch = useCallback(() => {
+  const trimmedText = searchHook.searchText.trim();
+  if (trimmedText.length > 0) {
+    searchHook.handleSearch();
+    setCurrentPage(1);
+  } else {
+    searchHook.resetSearch();
+    setCurrentPage(1);
+  }
+}, [searchHook.searchText, searchHook.handleSearch, searchHook.resetSearch]); // FIXED: More specific dependencies
+  // Handle category filter change
+  const handleCategoryFilter = (category) => {
+    setSelectedCategory(category);
+    setCurrentPage(1); // Reset to first page on filter change
+    searchHook.resetSearch(); // Clear search results as filters affect the main list
   };
-  
-  fetchData();
-}, [currentPage, selectedCategory, sortBy, pageCache]);
 
+  // Handle sort order change
+  const handleSortChange = (newSortBy) => {
+    setSortBy(newSortBy);
+    setCurrentPage(1); // Reset to first page on sort change
+    searchHook.resetSearch(); // Clear search results as sort affects the main list
+  };
+
+  // Pagination handlers (controlled by parent's state, updated by child)
   const handlePrevious = () => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleNext = () => {
-    // Changed condition to match new cardsPerPage limit
-    if (allData.length === cardsPerPage) { 
-      setCurrentPage((prev) => prev + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    setCurrentPage((prev) => (prev < totalPages ? prev + 1 : prev));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSearch = async () => {
-    if (searchText.trim().length < 3) {
-      console.log("Please enter at least 3 characters for search.");
-      return;
-    }
-    
-    setLoading(true);
-    const categories = selectedCategory === 'all' ? ["makemoney", "aitool", "coding", "seo"] : [selectedCategory];
-    const query = `*[_type in $categories && (title match $searchText || overview match $searchText)] | order(${sortBy})`;
-    
-    const searchResults = await client.fetch(query, {
-      searchText: `*${searchText}*`,
-      categories
-    });
-    setSearchResults(searchResults);
-    setLoading(false);
-  };
-
- const handleCategoryFilter = (category) => {
-  setSelectedCategory(category);
-  setCurrentPage(1);
-  setSearchResults([]);
-  setSearchText("");
-  // Clear cache when category changes
-  setPageCache(new Map());
-  setVisitedPages(new Set([1]));
-};
-
-  const handleSortChange = (newSortBy) => {
-  setSortBy(newSortBy);
-  setCurrentPage(1);
-  // Clear cache when sort changes
-  setPageCache(new Map());
-  setVisitedPages(new Set([1]));
-};
-
-  const resetSearch = () => {
-    setSearchText("");
-    setSearchResults([]);
-  };
-
-  const renderSearchResults = () => {
-    return searchResults.map((post) => (
-      <CardComponent
-        key={post._id}
-        ReadTime={post.readTime?.minutes}
-        overview={post.overview}
-        title={post.title}
-        tags={post.tags}
-        mainImage={urlForImage(post.mainImage).url()}
-        slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-        publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { 
-          day: 'numeric', 
-          month: 'short', 
-          year: 'numeric' 
-        })}
-      />
-    ));
-  };
-
-  const currentData = searchResults.length > 0 ? searchResults : allData;
-  const displayCount = searchResults.length > 0 ? searchResults.length : totalCount;
+  // Determine current count for display in Hero Section Stats Bar
+  const currentDisplayCount = searchHook.isSearchActive ? searchHook.searchResults.length : totalCount;
 
   return (
-    <PageRefreshProvider pageType="blogs">
-      <GlobalOfflineStatusProvider>
-          <div className="flex justify-end mb-4">
-              <PageRefreshButton />
-            </div>
-    <section className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-20 pt-16">
-      <div className="container mx-auto px-4">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h1 className="mb-6 text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 dark:text-white">
-            <span className="relative inline-block mr-3">
-              AI-Powered
-              <span className="absolute bottom-0 left-0 h-2 w-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></span>
-            </span>
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Blog Hub
-            </span>
-          </h1>
-          <p className="mx-auto max-w-3xl text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
-            Discover cutting-edge AI insights and articles across our AI-powered categories. Get the best AI tools, SEO strategies, coding techniques, and monetization opportunities. It's your complete resource for mastering AI in the digital world.
-          </p>
-          
-          {/* Stats Bar */}
-          <div className="mt-10 flex flex-wrap justify-center gap-8">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{displayCount}+</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Articles</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">4</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Categories</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 dark:text-green-400">Weekly</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Updates</div>
+    <PageCacheProvider pageType="blogs" pageId="all-posts">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900/30">
+
+        {/* Breadcrumb Section - New Styling */}
+        <Breadcrumb
+          pageName="AI-Powered"
+          pageName2="Blog Hub"
+          description="Discover cutting-edge AI insights and articles across our AI-powered categories. Get the best AI tools, SEO strategies, coding techniques, and monetization opportunities. It's your complete resource for mastering AI in the digital world."
+          firstlinktext="Home"
+          firstlink="/"
+          link="/all-blogs"
+          linktext="all-blogs"
+        />
+
+        {/* Main Content Container */}
+        <div className="container mx-auto px-4 py-12">
+
+          {/* Cache Status Button - New Styling */}
+          <div className="mb-8 flex justify-end">
+            <div className="rounded-lg bg-white p-2 shadow-lg dark:bg-gray-800">
+              {/* <PageCacheStatusButton /> */}
             </div>
           </div>
-        </div>
 
-        {/* Search and Filter Section */}
-        <div className="mb-12">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 border border-gray-200 dark:border-gray-700">
-            {/* Search Bar */}
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-              <div className="flex-1 relative">
-                <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search articles, topics, or keywords..."
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && searchText.trim() !== "") {
-                      handleSearch();
-                    }
-                  }}
-                />
+          {/* Hero Section - New Styling */}
+          <section className="text-center mb-16">
+            <h1 className="mb-6 text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 dark:text-white">
+              <span className="relative inline-block mr-3">
+                AI-Powered
+                <span className="absolute bottom-0 left-0 h-2 w-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></span>
+              </span>
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Blog Hub
+              </span>
+            </h1>
+            <p className="mx-auto max-w-3xl text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
+              Discover cutting-edge AI insights and articles across our AI-powered categories. Get the best AI tools, SEO strategies, coding techniques, and monetization opportunities. It's your complete resource for mastering AI in the digital world.
+            </p>
+
+            {/* Stats Bar */}
+            <div className="mt-10 flex flex-wrap justify-center gap-8">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{currentDisplayCount}+</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Articles</div>
               </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    if (searchText.trim() !== "") {
-                      handleSearch();
-                    }
-                  }}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
-                >
-                  Search
-                </button>
-                {searchText && (
-                  <button
-                    onClick={resetSearch}
-                    className="px-6 py-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-all duration-300"
-                  >
-                    <ClearIcon />
-                  </button>
-                )}
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">4</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Categories</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400">Weekly</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Updates</div>
               </div>
             </div>
+          </section>
 
-            {/* Filter Toggle Button (Mobile) */}
-            <div className="md:hidden mb-4">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-all duration-300"
-              >
-                <FilterIcon />
-                {showFilters ? 'Hide Filters' : 'Show Filters'}
-              </button>
-            </div>
-
-            {/* Filters */}
-            <div className={`${showFilters ? 'block' : 'hidden'} md:block`}>
-              <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between">
-                {/* Category Filters */}
-                <div className="flex flex-wrap gap-2">
+          {/* Search and Filter Section - New Styling */}
+          <section className="mb-12">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 border border-gray-200 dark:border-gray-700">
+              {/* Search Bar */}
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="flex-1 relative">
+                  <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search articles, topics, or keywords..."
+                    className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                    value={searchHook.searchText}
+                    onChange={(e) => searchHook.updateSearchText(e.target.value)}
+                    onKeyDown={searchHook.handleKeyDown}
+                  />
+                </div>
+                <div className="flex gap-3">
                   <button
-                    onClick={() => handleCategoryFilter('all')}
-                    className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
-                      selectedCategory === 'all'
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    }`}
+                    onClick={handleInitiateSearch}
+                    className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
                   >
-                    All Categories
+                    Search
                   </button>
-                  {Object.entries(categoryDisplayNames).map(([key, name]) => (
+                  {searchHook.isSearchActive && ( // Show clear button only when a search is active
                     <button
-                      key={key}
-                      onClick={() => handleCategoryFilter(key)}
+                      onClick={searchHook.resetSearch} // Directly use searchHook's reset
+                      className="px-6 py-4 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-all duration-300"
+                    >
+                      <ClearIcon />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filter Toggle Button (Mobile) */}
+              <div className="md:hidden mb-4">
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-all duration-300"
+                >
+                  <FilterIcon />
+                  {showFilters ? 'Hide Filters' : 'Show Filters'}
+                </button>
+              </div>
+
+              {/* Filters (conditionally hidden on mobile) */}
+              <div className={`${showFilters ? 'block' : 'hidden'} md:block`}>
+                <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between">
+                  {/* Category Filters */}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleCategoryFilter('all')}
+                      disabled={searchHook.isSearchActive} // Disable filters when search is active
                       className={`px-6 py-3 rounded-full font-medium transition-all duration-300 whitespace-nowrap ${
-                        selectedCategory === key
+                        selectedCategory === 'all'
                           ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                      }`}
+                      } ${searchHook.isSearchActive ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      {name}
+                      All Categories
                     </button>
-                  ))}
-                </div>
+                    {Object.entries(categoryDisplayNames).map(([key, name]) => (
+                      <button
+                        key={key}
+                        onClick={() => handleCategoryFilter(key)}
+                        disabled={searchHook.isSearchActive} // Disable filters when search is active
+                        className={`px-6 py-3 rounded-full font-medium transition-all duration-300 whitespace-nowrap ${
+                          selectedCategory === key
+                            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        } ${searchHook.isSearchActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
 
-                {/* Sort Options */}
-                <div className="flex items-center gap-3">
-                  <SortIcon className="text-gray-500" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => handleSortChange(e.target.value)}
-                    className="px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-                  >
-                    <option value="publishedAt desc">Latest First</option>
-                    <option value="publishedAt asc">Oldest First</option>
-                    <option value="title asc">A-Z</option>
-                    <option value="title desc">Z-A</option>
-                  </select>
+                  {/* Sort Options */}
+                  <div className="flex items-center gap-3">
+                    <SortIcon className="text-gray-500" />
+                    <select
+                      value={sortBy}
+                      onChange={(e) => handleSortChange(e.target.value)}
+                      disabled={searchHook.isSearchActive} // Disable sort when search is active
+                      className={`px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${searchHook.isSearchActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <option value="publishedAt desc">Latest First</option>
+                      <option value="publishedAt asc">Oldest First</option>
+                      <option value="title asc">A-Z</option>
+                      <option value="title desc">Z-A</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </section>
 
-        {/* Results Count */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <p className="text-lg text-gray-600 dark:text-gray-400">
-              {searchResults.length > 0 ? (
-                <>Showing <span className="font-semibold text-blue-600">{searchResults.length}</span> search results</>
-              ) : (
-                <>Showing <span className="font-semibold text-blue-600">{allData.length}</span> of <span className="font-semibold text-blue-600">{totalCount}</span> articles
-                {selectedCategory !== 'all' && (
-                  <span className="ml-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
-                    {categoryDisplayNames[selectedCategory]}
-                  </span>
+          {/* Results Count - Updated to reflect search status */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                {searchHook.isSearchActive ? ( // Use searchHook.isSearchActive to control count display
+                  <>Showing <span className="font-semibold text-blue-600">{searchHook.searchResults.length}</span> search results</>
+                ) : (
+                  <>Showing <span className="font-semibold text-blue-600">{Math.min(cardsPerPage, totalCount)}</span> of <span className="font-semibold text-blue-600">{totalCount}</span> articles
+                    {selectedCategory !== 'all' && (
+                      <span className="ml-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
+                        {categoryDisplayNames[selectedCategory]}
+                      </span>
+                    )}
+                  </>
                 )}
-                </>
-              )}
-            </p>
-            <CalendarTodayIcon className="text-gray-400" />
+              </p>
+              <CalendarTodayIcon className="text-gray-400" />
+            </div>
           </div>
+
+          {/* Articles Grid / Search Results */}
+          {searchHook.isSearchActive ? ( // Display search results if search is active
+            <SearchResults
+              searchResults={searchHook.searchResults}
+              isLoading={searchHook.isSearchLoading}
+              error={searchHook.searchError}
+              isSearchActive={searchHook.isSearchActive}
+              searchText={searchHook.searchText}
+              pageSlugPrefix={searchHook.pageSlugPrefix}
+              showNoResults={searchHook.showNoResults}
+              cacheSource={searchHook.cacheSource}
+              isStale={searchHook.isStale}
+              onResetSearch={searchHook.resetSearch}
+              onRefreshSearch={searchHook.refreshSearch}
+              className="mb-16" // Ensures spacing consistent with AISEOPage
+            />
+          ) : ( // Otherwise display the main mixed blog list
+            <ReusableCachedMixedBlogs
+              currentPage={currentPage}
+              limit={cardsPerPage}
+              selectedCategory={selectedCategory}
+              sortBy={sortBy}
+              onDataLoad={handleMixedBlogsDataLoad}
+              schemaSlugMap={schemaSlugMap}
+            />
+          )}
+
+          {/* Pagination - Only show if NOT in search results view */}
+          {!searchHook.isSearchActive && (
+            <div className="flex justify-center mt-12"> {/* Added mt-12 for spacing */}
+              <nav className="flex items-center space-x-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-700"> {/* Consistent styling */}
+                <button
+                  onClick={handlePrevious}
+                  disabled={currentPage === 1}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                    currentPage === 1
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-md hover:shadow-lg'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Previous
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg">
+                    {currentPage}
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleNext}
+                  disabled={currentPage >= totalPages}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                    currentPage >= totalPages
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
+                      : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-md hover:shadow-lg'
+                  }`}
+                >
+                  Next
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </nav>
+            </div>
+          )}
         </div>
-
-        {/* Articles Grid */}
-        <ReusableCachedMixedBlogs
-                  currentPage={currentPage}
-                  limit={cardsPerPage}
-                  selectedCategory={selectedCategory}
-                  sortBy={sortBy}
-                  onDataLoad={handleMixedBlogsDataLoad}
-                />
-        {/* Pagination */}
-        {!searchResults.length && (
-          <div className="flex justify-center">
-            <nav className="flex items-center gap-2">
-              <button
-                onClick={handlePrevious}
-                disabled={currentPage === 1}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-                  currentPage === 1
-                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-md hover:shadow-lg'
-                }`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Previous
-              </button>
-
-              <div className="flex items-center gap-2">
-                <span className="px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg">
-                  {currentPage}
-                </span>
-              </div>
-
-              <button
-                onClick={handleNext}
-                // Changed condition to match new cardsPerPage limit
-                disabled={allData.length < cardsPerPage} 
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
-                  allData.length < cardsPerPage
-                    ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
-                    : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-md hover:shadow-lg'
-                }`}
-              >
-                Next
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </nav>
-          </div>
-        )}
       </div>
-    </section>
-    </GlobalOfflineStatusProvider>
-    </PageRefreshProvider>
+    </PageCacheProvider>
   );
 }

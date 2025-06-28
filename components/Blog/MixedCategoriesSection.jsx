@@ -4,55 +4,84 @@ import React from "react";
 import { urlForImage } from "@/sanity/lib/image";
 import { Grid,  } from "@mui/material";
 import Link from "next/link";
-import { TrendingUp, Code, DollarSign } from "lucide-react";
+import {  Code, DollarSign } from "lucide-react";
 import {   Wrench } from "lucide-react";
-import { useCachedSanityData } from '@/components/Blog/useSanityCache'; // Already there
-import { CACHE_KEYS } from '@/components/Blog/cacheKeys'; // <-- ADD this import
+
 
 import HomeBigCard from "@/components/Blog/HomeBigCard";
 import HomeSmallCard from "@/components/Blog/CategoryRightSideCards"; // This is your existing small card
 import SingleBlog from "@/components/Blog/HomeSmallCard"; // Your new second small card for AI Tools
-
+import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
+import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
+import { usePageCache } from '@/React_Query_Caching/usePageCache';
 const MixedCategoriesSection = () => {
- 
   const queries = {
     aiToolsQuery: `*[_type == "aitool" && displaySettings.isHomePageAIToolTrendRelated == true][0...2] {
-      _id, _type, title, overview, mainImage, slug, publishedAt, readTime, tags, _updatedAt // <-- ADD _updatedAt
+      _id, _type, title, overview, mainImage, slug, publishedAt, readTime, tags, _updatedAt
     }`,
     aiCodeQuery: `*[_type == "coding" && displaySettings.isHomePageCoding == true][0...2] {
-      _id, _type, title, overview, mainImage, slug, publishedAt, readTime, tags, _updatedAt // <-- ADD _updatedAt
+      _id, _type, title, overview, mainImage, slug, publishedAt, readTime, tags, _updatedAt
     }`,
     aiEarnQuery: `*[_type == "makemoney" && displaySettings.isHomePageAiEarnTrendBig == true][0...2] {
-      _id, _type, title, overview, mainImage, slug, publishedAt, readTime, tags, _updatedAt // <-- ADD _updatedAt
+      _id, _type, title, overview, mainImage, slug, publishedAt, readTime, tags, _updatedAt
     }`,
   };
 
-  // Replace useEffect for data fetching with useCachedSanityData hooks
   // --- USE CACHED DATA HOOKS ---
   const {
     data: aiToolsData,
-    isLoading: isAiToolsLoading
-  } = useCachedSanityData(CACHE_KEYS.MIXED_CATEGORIES_AI_TOOLS, queries.aiToolsQuery);
+    isLoading: isAiToolsLoading,
+    error: aiToolsError,
+    isStale: isAiToolsStale,
+    refresh: refreshAiTools,
+  } = useSanityCache(
+    CACHE_KEYS.HOMEPAGE.MIXED_AI_TOOLS, // Use new specific cache key
+    queries.aiToolsQuery,
+    { componentName: 'Mixed-AITools', staleTime: 3 * 60 * 1000, maxAge: 15 * 60 * 1000, enableOffline: true }
+  );
 
   const {
     data: aiCodeData,
-    isLoading: isAiCodeLoading
-  } = useCachedSanityData(CACHE_KEYS.MIXED_CATEGORIES_AI_CODE, queries.aiCodeQuery);
+    isLoading: isAiCodeLoading,
+    error: aiCodeError,
+    isStale: isAiCodeStale,
+    refresh: refreshAiCode,
+  } = useSanityCache(
+    CACHE_KEYS.HOMEPAGE.MIXED_AI_CODE, // Use new specific cache key
+    queries.aiCodeQuery,
+    { componentName: 'Mixed-AICode', staleTime: 3 * 60 * 1000, maxAge: 15 * 60 * 1000, enableOffline: true }
+  );
 
   const {
     data: aiEarnData,
-    isLoading: isAiEarnLoading
-  } = useCachedSanityData(CACHE_KEYS.MIXED_CATEGORIES_AI_EARN, queries.aiEarnQuery);
+    isLoading: isAiEarnLoading,
+    error: aiEarnError,
+    isStale: isAiEarnStale,
+    refresh: refreshAiEarn,
+  } = useSanityCache(
+    CACHE_KEYS.HOMEPAGE.MIXED_AI_EARN, // Use new specific cache key
+    queries.aiEarnQuery,
+    { componentName: 'Mixed-AIEarn', staleTime: 3 * 60 * 1000, maxAge: 15 * 60 * 1000, enableOffline: true }
+  );
+
+  // NEW: Register cache keys and their refresh functions with the PageCacheProvider
+  usePageCache(CACHE_KEYS.HOMEPAGE.MIXED_AI_TOOLS, refreshAiTools, queries.aiToolsQuery, 'Mixed AI Tools');
+  usePageCache(CACHE_KEYS.HOMEPAGE.MIXED_AI_CODE, refreshAiCode, queries.aiCodeQuery, 'Mixed AI Code');
+  usePageCache(CACHE_KEYS.HOMEPAGE.MIXED_AI_EARN, refreshAiEarn, queries.aiEarnQuery, 'Mixed AI Earn');
+
 
   const isLoading = isAiToolsLoading || isAiCodeLoading || isAiEarnLoading; // Combined loading state
+  const hasError = aiToolsError || aiCodeError || aiEarnError; // Combined error state
+  const isStale = isAiToolsStale || isAiCodeStale || isAiEarnStale; // Combined stale state
+
 
   const getCategoryProps = (type) => {
     switch (type) {
       case 'aitool':
-        return { categoryColor: 'bg-blue-500', CategoryIcon: TrendingUp, categoryType: 'AI Tool' };
+        return { categoryColor: 'bg-blue-500', CategoryIcon: Wrench, categoryType: 'AI Tool' }; // Changed to Wrench for consistency
       case 'coding':
         return { categoryColor: 'bg-green-500', CategoryIcon: Code, categoryType: 'Code' };
-     case 'makemoney':
+      case 'makemoney':
         return { categoryColor: 'bg-yellow-600', CategoryIcon: DollarSign, categoryType: 'Earn' };
       default:
         return { categoryColor: 'bg-gray-500', CategoryIcon: null, categoryType: 'Post' };
@@ -69,8 +98,8 @@ const MixedCategoriesSection = () => {
     </div>
   );
 
- const firstAiTool = aiToolsData && aiToolsData.length > 0 ? aiToolsData[0] : null; // UPDATED LINE
-  const secondAiTool = aiToolsData && aiToolsData.length > 1 ? aiToolsData[1] : null; // UPDATED LINE
+  const firstAiTool = aiToolsData && aiToolsData.length > 0 ? aiToolsData[0] : null;
+  const secondAiTool = aiToolsData && aiToolsData.length > 1 ? aiToolsData[1] : null;
 
 
   return (
@@ -85,18 +114,27 @@ const MixedCategoriesSection = () => {
           </p>
         </div>
 
-        {/*
-          Removed lg:min-h-[652px] from here.
-          The `h-full` on the Grid items and `flex-1` within will now dynamically
-          adjust heights based on the content of the two columns.
-        */}
+        {/* NEW: Stale Data Warning */}
+        {isStale && (<div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <div className="flex items-center space-x-2 text-sm text-yellow-800 dark:text-yellow-200">
+            <span>⚠️</span><span>Mixed categories content may be outdated.</span>
+          </div>
+        </div>)}
+
+        {/* NEW: Error Display */}
+        {hasError && !isLoading && !(aiToolsData || aiCodeData || aiEarnData) && (<div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div className="text-red-800 dark:text-red-200">
+            <h3 className="font-semibold mb-2">Failed to load mixed categories content</h3>
+            <p className="text-sm mb-3">{aiToolsError?.message || aiCodeError?.message || aiEarnError?.message || 'Unable to fetch data'}</p>
+          </div>
+        </div>)}
+
         <Grid container spacing={4} alignItems="stretch">
           {/* Left Column: Big AI Tool Card + Second Small AI Tool Card */}
           <Grid item xs={12} lg={6}>
-            {/* This div needs to be a flex container with column direction and gap */}
             <div className="h-full flex flex-col gap-4">
               {/* First AI Tool (Big Card) */}
-              <div className="flex-grow"> {/* Use flex-grow for the big card to ensure it grows to take its space */}
+              <div className="flex-grow">
                 {isLoading || !firstAiTool ? (
                   <LoadingSkeleton type="big" />
                 ) : (
@@ -114,11 +152,11 @@ const MixedCategoriesSection = () => {
               </div>
 
               {/* Second AI Tool (Small Card - using SingleBlog) */}
-              <div className="flex-grow"> {/* Use flex-grow here as well */}
+              <div className="flex-grow">
                 {isLoading || !secondAiTool ? (
                   <LoadingSkeleton type="small" />
                 ) : (
-                  <SingleBlog
+                  <SingleBlog // Assuming SingleBlog is HomeSmallCard
                     key={secondAiTool._id}
                     title={secondAiTool.title}
                     overview={secondAiTool.overview}
@@ -141,12 +179,12 @@ const MixedCategoriesSection = () => {
                 {isLoading ? (
                   <LoadingSkeleton type="small" />
                 ) : (
-                  aiCodeData.map((post) => {
+                  aiCodeData?.map((post) => { // Use optional chaining
                     const { categoryColor, CategoryIcon, categoryType } = getCategoryProps(post._type);
                     return (
                       <HomeSmallCard
                         key={post._id}
-                        post={post}
+                        post={post} // Assuming HomeSmallCard takes a 'post' prop
                         categoryType={categoryType}
                         categoryColor={categoryColor}
                         CategoryIcon={CategoryIcon}
@@ -161,12 +199,12 @@ const MixedCategoriesSection = () => {
                 {isLoading ? (
                   <LoadingSkeleton type="small" />
                 ) : (
-                  aiEarnData.map((post) => {
+                  aiEarnData?.map((post) => { // Use optional chaining
                     const { categoryColor, CategoryIcon, categoryType } = getCategoryProps(post._type);
                     return (
                       <HomeSmallCard
                         key={post._id}
-                        post={post}
+                        post={post} // Assuming HomeSmallCard takes a 'post' prop
                         categoryType={categoryType}
                         categoryColor={categoryColor}
                         CategoryIcon={CategoryIcon}
@@ -180,7 +218,7 @@ const MixedCategoriesSection = () => {
         </Grid>
 
         {/* Bottom CTA Buttons */}
-      <div className="text-center mt-12">
+        <div className="text-center mt-12">
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/ai-tools">
               <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
@@ -202,7 +240,7 @@ const MixedCategoriesSection = () => {
             </Link>
           </div>
         </div>
-        </div>
+      </div>
     </section>
   );
 };

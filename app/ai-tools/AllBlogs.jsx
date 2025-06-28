@@ -1,36 +1,39 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
-import groq from "groq";
-import SkelCard from "@/components/Blog/Skeleton/Card"
-import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard"
-import { urlForImage } from "@/sanity/lib/image";
-import CardComponent from "@/components/Card/Page"
-import { client } from "@/sanity/lib/client";
-import { Grid } from "@mui/material";
-import FeaturePost from "@/components/Blog/featurePost"
-import React, { useEffect, useState, useCallback } from "react"; // Import useCallback
+
+import React, { useState, useCallback, useMemo } from "react";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 
-// Import the new caching system components
-import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
-import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
-import PageRefreshButton from "@/components/Blog/PageSpecificRefreshButton";
-
-// Import reusable components
+import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
+import SearchResults from '@/React_Query_Caching/SearchResults';
 import ReusableCachedFeaturePost from "@/app/ai-tools/CachedAIToolsFeaturePost";
 import ReusableCachedAllBlogs from "@/app/ai-tools/CachedAIToolsAllBlogs";
-import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
-
+import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
+import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
+import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
 
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 
-export default function AllBlogs() {
+export default function AIToolPage() { // This component name might be confusing if it's ai-tools/page.jsx
+  // State for main blog pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchText, setSearchText] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [hasMorePages, setHasMorePages] = useState(false); // New state for pagination
+  const [allBlogsTotalPages, setAllBlogsTotalPages] = useState(1);
+  // Removed redundant states: searchResults, hasMorePages, totalItems,
+  // as their functionality is now handled by searchHook or by allBlogsTotalPages.
 
+  // Initialize search hook
+  const searchHookOptions = useMemo(() => ({
+    documentType: 'aitool', // Correct document type for this page
+    searchFields: ['title', 'overview', 'body'],
+    pageSlugPrefix: 'ai-tools',
+    componentName: 'AIToolsPageSearch', // Specific component name for this page's search
+    minSearchLength: 1,
+  }), []);
+
+  const searchHook = useCachedSearch(searchHookOptions);
+
+  // Main blog pagination handlers
   const handlePrevious = () => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   };
@@ -39,181 +42,191 @@ export default function AllBlogs() {
     setCurrentPage((prev) => prev + 1);
   };
 
-  const handleSearch = async () => {
-    if (searchText.trim().length < 1) {
-      console.log("Please enter at least 1 character for search.");
-      return;
-    }
-    const query = `*[_type=="aitool" && (title match $searchText || overview match $searchText || body match $searchText)]`;
-    const results = await client.fetch(query, {
-      searchText: `*${searchText}*`,
-    });
-    setSearchResults(results);
-  };
-
-  const resetSearch = () => {
-    setSearchText("");
-    setSearchResults([]);
-  };
-
-  // Callback to receive hasMore status from ReusableCachedAllBlogs
-  const handleAllBlogsDataLoad = useCallback((hasMore) => {
-    setHasMorePages(hasMore);
+  // Callback to receive pagination status from ReusableCachedAllBlogs
+  const handleAllBlogsDataLoad = useCallback((hasMore, fetchedTotalPages, fetchedTotalItems) => {
+    // Only set total pages here; hasMore and totalItems are primarily for ReusableCachedAllBlogs's internal logic/debugging
+    setAllBlogsTotalPages(fetchedTotalPages);
   }, []);
 
-  const renderSearchResults = () => {
-    return searchResults.map((post) => (
-      <CardComponent
-        key={post._id}
-        tags={post.tags}
-        ReadTime={post.readTime?.minutes}
-        overview={post.overview}
-        title={post.title}
-        mainImage={urlForImage(post.mainImage).url()}
-        slug={`/ai-tools/${post.slug.current}`}
-        publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric'
-        })}
-      />
-    ));
-  };
+  // Main blog next button disabled logic:
+  // Disabled if search is active OR if on the last page of main blogs
+  const isNextButtonDisabled = searchHook.isSearchActive || currentPage >= allBlogsTotalPages;
+
 
   return (
-    <PageRefreshProvider pageType="ai-tools">
-      <GlobalOfflineStatusProvider>
-        <div className="container mt-10">
+    <PageCacheProvider pageType="ai-tools" pageId="main">
+      {/* Outer wrapper with gradient background matching AISEOPage */}
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900/30">
+
+        {/* Breadcrumb Section */}
+        <section className="pt-8">
           <Breadcrumb
             pageName="Best AI Tools"
             pageName2="for Productivity"
-            description="Unlock the power of AI to enhance productivity and creativity like never before!! In this category, we review the best freemium AI tools designed to streamline tasks and boost SEO. Discover smart solutions that transform your workflow, whether you're a digital marketer, SEO professional, or curious beginner. Our insights help you work smarter, save time, and elevate your projects with cutting-edge AI technology."
+            description="Unlock the power of AI to enhance productivity and creativity like never before!! In this category, we review the best freemium AI tools designed to streamline tasks and boost SEO. Discover smart solutions that transform your workflow, whether you're a digital marketer, SEO professional, or curious beginner. Our insights help you work smarter, save time, and elevate your project with cutting-edge AI technology."
             firstlinktext="Home"
             firstlink="/"
             link="/ai-tools"
             linktext="ai-tools"
           />
+        </section>
 
-          <div className="flex justify-end mb-4">
-            <PageRefreshButton />
-          </div>
+        {/* Main Content Container */}
+        <div className="container mx-auto px-4 py-12">
 
-          <ReusableCachedFeaturePost
-            documentType="aitool"
-            pageSlugPrefix="ai-tools"
-            cacheKey={CACHE_KEYS.PAGE_FEATURE_POST('ai-tools')}
-          />
-
-          <div className="container mt-10 px-20 mx-auto">
-            <div className="mb-8 text-center">
-              <h1 className="mb-4 text-3xl font-extrabold text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r to-blue-500 from-primary">
-                  SubCategories
-                </span>
-                of SEO
-              </h1>
+          {/* Cache Status Button */}
+          <div className="mb-8 flex justify-end">
+            <div className="rounded-lg bg-white p-2 shadow-lg dark:bg-gray-800">
+              <PageCacheStatusButton />
             </div>
           </div>
-          <br /><br />
 
-          <div className="card mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
-            <div className="flex items-center justify-between">
-              <input
-                type="text"
-                placeholder="Search here..."
-                className="mr-4 w-full rounded-sm border border-stroke bg-[#f8f8f8] px-6 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && searchText.trim() !== "") {
-                    handleSearch();
-                  }
-                }}
+          {/* Feature Post Section */}
+          <section className="mb-16">
+            <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-800">
+              <ReusableCachedFeaturePost
+                documentType="aitool"
+                pageSlugPrefix="ai-tools"
+                cacheKey={CACHE_KEYS.PAGE.FEATURE_POST('ai-tools')}
               />
-              <button
-                aria-label="search button"
-                className="flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-primary text-white"
-                onClick={() => {
-                  if (searchText.trim() !== "") {
-                    handleSearch();
-                  }
-                }}
-              >
-                {""}
-              </button>
-              <button
-                aria-label="reset button"
-                className="ml-2 flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-gray-300 text-gray-700"
-                onClick={resetSearch}
-              >
-                Reset
-              </button>
             </div>
-          </div>
+          </section>
 
-          {searchResults.length > 0 && (
-            <div className="-mx-4 flex flex-wrap justify-center">
-              {renderSearchResults()}
+          {/* Search Section - Styled to match AISEOPage */}
+          <section className="mb-16">
+            <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 p-8 shadow-xl">
+              <div className="mb-6 text-center">
+                <h3 className="text-2xl font-bold text-white">Search Our AI Tools</h3>
+                <p className="mt-2 text-blue-100">Find exactly what you're looking for</p>
+              </div>
+
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search for AI tools, categories, features..."
+                    className="w-full rounded-xl border-0 bg-white/10 px-6 py-4 text-white placeholder-blue-200 backdrop-blur-sm transition-all duration-300 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 dark:bg-gray-800/50 dark:text-white dark:placeholder-gray-400"
+                    value={searchHook.searchText}
+                    onChange={(e) => searchHook.updateSearchText(e.target.value)}
+                    onKeyDown={searchHook.handleKeyDown}
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <svg className="h-5 w-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={searchHook.handleSearch}
+                    className="flex items-center justify-center rounded-xl bg-white px-6 py-4 font-medium text-blue-600 shadow-lg transition-all duration-200 hover:bg-blue-50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50"
+                  >
+                    <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Search
+                  </button>
+
+                  <button
+                    onClick={searchHook.resetSearch}
+                    className="flex items-center justify-center rounded-xl bg-white/20 px-6 py-4 font-medium text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  >
+                    <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Reset
+                  </button>
+                </div>
+              </div>
             </div>
-          )}
+          </section>
 
-          {/* Pass the callback to ReusableCachedAllBlogs */}
-          <ReusableCachedAllBlogs
-            currentPage={currentPage}
-            limit={10}
-            documentType="aitool"
-            pageSlugPrefix="ai-tools"
-            cacheKeyPrefix={CACHE_KEYS.PAGE_ALL_BLOGS('ai-tools')}
-            onDataLoad={handleAllBlogsDataLoad} // Pass the callback
+          {/* Search Results */}
+          <SearchResults
+            searchResults={searchHook.searchResults}
+            isLoading={searchHook.isSearchLoading}
+            error={searchHook.searchError}
+            isSearchActive={searchHook.isSearchActive}
+            searchText={searchHook.searchText}
+            pageSlugPrefix={searchHook.pageSlugPrefix}
+            showNoResults={searchHook.showNoResults}
+            cacheSource={searchHook.cacheSource}
+            isStale={searchHook.isStale}
+            onResetSearch={searchHook.resetSearch}
+            onRefreshSearch={searchHook.refreshSearch}
+            className="mb-16" // Added mb-16 for consistent spacing
           />
 
-          <div className="wow fadeInUp -mx-4 flex flex-wrap" data-wow-delay=".15s">
-            <div className="w-full px-4 mb-4">
-              <ul className="flex items-center justify-center pt-8">
-                <div className="my-8">
-                  <nav aria-label="Page navigation example">
-                    <ul className="inline-flex -space-x-px text-sm">
-                      <li>
-                        <button
-                          onClick={handlePrevious}
-                          disabled={currentPage === 1}
-                          className={`flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
-                            currentPage === 1 && 'cursor-not-allowed opacity-50'
-                          }`}
-                        >
-                          <svg className="w-3.5 h-3.5 me-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5H1m0 0 4 4M1 5l4-4"/>
-                          </svg>
-                          Previous
-                        </button>
-                      </li>
-                      <li>
-                        <button className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white text-blue-600">
-                          {currentPage}
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          onClick={handleNext}
-                          disabled={!hasMorePages || searchResults.length > 0} // Use new hasMorePages state
-                          className={`flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
-                            (!hasMorePages || searchResults.length > 0) ? 'cursor-not-allowed opacity-50' : ''
-                          }`}
-                        >
-                          Next
-                          <svg className="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
-                          </svg>
-                        </button>
-                      </li>
-                    </ul>
+          {/* Main Blog Section */}
+          {!searchHook.isSearchActive && (
+            <section className="mb-16">
+              <div className="mb-12 text-center">
+                <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl">
+                  Latest <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">AI Tools</span>
+                </h2>
+                <p className="mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-300">
+                  Explore the newest and most effective AI tools to boost your productivity.
+                </p>
+                <div className="mx-auto mt-4 h-1 w-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+              </div>
+
+              <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-800">
+                <ReusableCachedAllBlogs
+                  currentPage={currentPage}
+                  limit={10} // Keeping limit as 10 as per original
+                  documentType="aitool" // Correct document type for this page
+                  pageSlugPrefix="ai-tools"
+                  onDataLoad={handleAllBlogsDataLoad}
+                />
+
+                {/* Main Blog Pagination Controls */}
+                <div className="mt-12 flex justify-center">
+                  <nav className="flex items-center space-x-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-700">
+                    <button
+                      onClick={handlePrevious}
+                      disabled={currentPage === 1}
+                      className={`
+                        flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200
+                        ${currentPage === 1
+                          ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500'
+                          : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'
+                        }
+                      `}
+                    >
+                      <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Previous
+                    </button>
+
+                    <div className="flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm">
+                      {currentPage}
+                    </div>
+
+                    <button
+                      onClick={handleNext}
+                      disabled={isNextButtonDisabled}
+                      className={`
+                        flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200
+                        ${isNextButtonDisabled
+                          ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500'
+                          : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'
+                        }
+                      `}
+                    >
+                      Next
+                      <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
                   </nav>
                 </div>
-              </ul>
-            </div>
-          </div>
+              </div>
+            </section>
+          )}
         </div>
-      </GlobalOfflineStatusProvider>
-    </PageRefreshProvider>
+      </div>
+    </PageCacheProvider>
   );
-};
+}

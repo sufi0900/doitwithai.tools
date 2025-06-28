@@ -1,75 +1,126 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
-import React, { useState, useEffect  } from "react";
-import BlogLayout from "./BlogLayout"
-import { usePageCache } from "./usePageCache"; // Add this import
-import CacheStatusIndicator from "./CacheStatusIndicator"; // Add this import
-import { fetchRelatedResources } from "@/app/free-ai-resources/resourceHelpers";
+import React from "react";
+import BlogLayout from "./BlogLayout";
 import { client } from "@/sanity/lib/client";
-import RelatedPost from "@/components/Blog/RelatedPost";
 
-import { useCallback } from 'react';
-import { debounce } from 'lodash';
-import SharePost from "@/components/Blog/SharePost";
-import TagButton from "@/components/Blog/TagButton";
-import NewsLatterBox from "@/components/Contact/NewsLatterBox";
-import Image from "next/image";
-import { ExpandMore, ExpandLess, AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
-import RecentPost from "@/components/RecentPost/page";
-import Card from "@/components/Card/Page";
-import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
-import SkelCard from "@/components/Blog/Skeleton/Card"
-import classNames from 'classnames';
-import SlugSkeleton from "@/components/Blog/Skeleton/SlugSkeleton"
-import { ArrowRight } from "lucide-react";
-import RelatedResources from "@/app/free-ai-resources/RelatedResources";
-import SidebarRelatedResources from "@/app/free-ai-resources/SidebarRelatedResources";
+import { useSanityCache } from "@/React_Query_Caching/useSanityCache";
+import { CACHE_KEYS } from "@/React_Query_Caching/cacheKeys";
+import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
+import { usePageCache } from "@/React_Query_Caching/usePageCache";
 
-import { PortableText } from "@portabletext/react";
-import { urlForImage } from "@/sanity/lib/image";
-import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
-import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
-import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
-import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
-import CongratsPopup from "./CongratsPopup"
-import "@/styles/customanchor.css";
-import Link from "next/link";
-export const revalidate = false;
-export const dynamic = "force-dynamic";
+import { fetchRelatedResources } from "@/app/free-ai-resources/resourceHelpers";
 
-async function fetchAllBlogs(page = 1, limit = 5, categories = []) {
-  const start = (page - 1) * limit;
-  const query = `*[_type in $categories] | order(publishedAt desc) {formattedDate, readTime , _id, _type, title, slug, mainImage, overview, body, publishedAt }[${start}...${start + limit}]`;
-  const result = await client.fetch(query, { categories });
-  return result;
+
+// --- CORRECTED fetchMainArticleData ---
+async function fetchMainArticleData(slug, type) {
+  if (!slug || !type) return null;
+  // This query is for fetching a SINGLE article by its slug and type
+  const query = `*[_type == "${type}" && slug.current == "${slug}"][0]`;
+  const data = await client.fetch(query); // No params needed if variables are interpolated directly
+  return data;
 }
+// --- END CORRECTED fetchMainArticleData ---
 
-// MODIFIED: Add a parameter for the current post's ID to exclude it
-async function fetchRelatedPostsData(currentPostId) {
-  // Ensure currentPostId is provided and is a string, otherwise fall back to an empty string to avoid errors
+async function fetchRelatedPostsData(currentPostId, postType) {
+  if (!currentPostId || !postType) return [];
   const excludeId = currentPostId ? currentPostId : '';
-
-  // Sanity GROQ query to fetch "seo" type posts, ordered by creation date,
-  // EXCLUDING the post with the given _id, and limiting to 3 results.
-  const query = `*[_type == "aitool" && _id != $excludeId] | order(_createdAt desc) [0...3]`;
+  // Your query was `*[_type == "aitool" && _id != $excludeId]`.
+  // To make it more dynamic based on the current post's type:
+  const query = `*[_type == "${postType}" && _id != $excludeId] | order(publishedAt desc) [0...3]`; // Changed _createdAt to publishedAt for consistency
   return await client.fetch(query, { excludeId });
 }
 
-export default function BlogSidebarPage({ data }) {
-  // `data` is the current blog post object
-  const currentPostId = data?._id; // Get the ID of the current open article
+export default function AiToolSlugPageCode({ data: initialData, params }) {
+  const currentSlug = params.slug;
+  const currentPostType = initialData?._type;
+  const currentPostId = initialData?._id;
+
+  const {
+    data: articleData,
+    isLoading: articleLoading,
+    error: articleError,
+    refresh: refreshArticle,
+    isStale: isArticleStale,
+    cacheSource: articleCacheSource,
+  } = useSanityCache(
+    CACHE_KEYS.ARTICLE.CONTENT(currentSlug, currentPostType),
+    // Pass slug and type directly to fetchMainArticleData
+    () => fetchMainArticleData(currentSlug, currentPostType),
+    {
+      initialData: initialData,
+      componentName: `Article_${currentPostType}_${currentSlug}`,
+      enableOffline: true,
+      group: `article-content-group-${currentPostType}`,
+    }
+  );
+  usePageCache(CACHE_KEYS.ARTICLE.CONTENT(currentSlug, currentPostType), refreshArticle, `MainArticle:${currentPostType}/${currentSlug}`);
+
 
   const {
     data: relatedPosts,
-    loading: relatedPostsLoading,
-    isFromCache: relatedPostsFromCache,
-    refreshData: refreshRelatedPosts
-  } = usePageCache(
-    `related_posts_${data?._type}_${currentPostId}`, // Make cache key unique to the current post
-    () => fetchRelatedPostsData(currentPostId), // Pass the current post's ID to the fetch function
-    [data?._type, currentPostId] // Add currentPostId to dependencies for cache refresh
+    isLoading: relatedPostsLoading,
+    error: relatedPostsError,
+    refresh: refreshRelatedPosts,
+    isStale: isRelatedPostsStale,
+    cacheSource: relatedPostsCacheSource,
+  } = useSanityCache(
+    CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId, currentPostType),
+    // Pass currentPostId and currentPostType to fetchRelatedPostsData
+    () => fetchRelatedPostsData(currentPostId, currentPostType),
+    {
+      componentName: `RelatedPosts_${currentPostType}_${currentPostId}`,
+      enableOffline: true,
+      group: `article-related-group-${currentPostType}`,
+    }
   );
+  usePageCache(CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId, currentPostType), refreshRelatedPosts, `RelatedPosts:${currentPostType}/${currentPostId}`);
 
+
+  const {
+    data: relatedResources,
+    isLoading: resourcesLoading,
+    error: resourcesError,
+    refresh: refreshResources,
+    isStale: isResourcesStale,
+    cacheSource: resourcesCacheSource,
+  } = useSanityCache(
+    CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId),
+    // Pass currentPostId and currentPostType to fetchRelatedResources
+    () => fetchRelatedResources(currentPostId, currentPostType),
+    {
+      componentName: `RelatedResources_${currentPostId}`,
+      enableOffline: true,
+      group: `article-related-group-${currentPostType}`,
+    }
+  );
+  usePageCache(CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId), refreshResources, `RelatedResources:${currentPostId}`);
+
+
+  const isPageContentLoading = articleLoading && !articleData; // Simplified logic
+
+  // Consolidate all errors for display
+  const hasErrors = articleError || relatedPostsError || resourcesError;
+
+  // If there's an error and no main article data, we should show an error state instead of skeleton
+  if (!articleData && hasErrors) {
+      return (
+          <div className="container mx-auto px-4 py-16 text-center">
+              <h1 className="text-4xl font-bold mb-4 text-red-600">Error Loading Content</h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                  {articleError?.message || relatedPostsError?.message || resourcesError?.message || "An unexpected error occurred."}
+              </p>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                  Please try refreshing the page or check your internet connection.
+              </p>
+              <div className="flex justify-center p-4">
+                  <PageCacheStatusButton />
+              </div>
+          </div>
+      );
+  }
+
+  // --- Sanity PortableText components (unchanged) ---
   const imgdesc = {
     block: {
       normal: ({ children }) => (
@@ -81,34 +132,9 @@ export default function BlogSidebarPage({ data }) {
         <a className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
           {children}
         </a>
-      )
+      ),
     },
   };
-
-  const [loading, setLoading] = useState(!data);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [allData, setAllData] = useState([]); // Initialize allData state
-
-  // No separate loading state for related posts section needed if usePageCache handles it.
-  // const [relatedPostsSectionLoading, setRelatedPostsSectionLoading] = useState(true);
-
-  const {
-    data: relatedResources,
-    loading: resourcesLoading,
-    isFromCache: resourcesFromCache,
-    refreshData: refreshResources
-  } = usePageCache(
-    `related_resources_${data?._id}`,
-    async () => {
-      if (data && data._id) {
-        // MODIFIED: Assuming fetchRelatedResources also needs to exclude the current post.
-        // You'll need to modify fetchRelatedResources in resourceHelpers.js similarly.
-        return await fetchRelatedResources(data._id, data._type, currentPostId);
-      }
-      return [];
-    },
-    [data?._id, data?._type, currentPostId] // Add currentPostId to dependencies
-  );
 
   const schemaSlugMap = {
     makemoney: "ai-learn-earn",
@@ -119,47 +145,14 @@ export default function BlogSidebarPage({ data }) {
     seo: "ai-seo",
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!data) {
-        setLoading(true);
-      }
-      try {
-        const newData = await fetchAllBlogs(currentPage, 5, [
-          "makemoney",
-          "aitool",
-          "news",
-          "coding",
-          "freeairesources",
-          "seo",
-        ]);
-        setAllData(newData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (currentPage > 1 || !data) {
-      fetchData();
-    }
-  }, [currentPage, data]); // Ensure `data` is in dependency array if it changes
-
-  const handleRefreshAll = () => {
-    refreshRelatedPosts();
-    refreshResources();
-  };
-
   return (
     <>
-      <CacheStatusIndicator
-        isFromCache={relatedPostsFromCache || resourcesFromCache}
-        onRefresh={handleRefreshAll}
-      />
+      <div className="flex justify-end p-4">
+        <PageCacheStatusButton />
+      </div>
       <BlogLayout
-        data={data}
-        loading={loading}
+        data={articleData} // Pass the data from useSanityCache
+        loading={isPageContentLoading}
         relatedPosts={relatedPosts || []}
         relatedPostsLoading={relatedPostsLoading}
         relatedResources={relatedResources || []}

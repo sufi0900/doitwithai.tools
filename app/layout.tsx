@@ -9,16 +9,11 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "../styles/index.css";
 import { Toaster } from 'react-hot-toast';
-import { PageRefreshProvider } from "@/components/Blog/PageScopedRefreshContext";
-import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
-import { GlobalRefreshProvider } from "@/components/Blog/GlobalRefreshContext";
-// import { ArticleRefreshProvider } from "@/app/ai-learn-earn/s";
+import Header from "@/components/Header"
+// import { queryClient } from "@/React_Query_Caching/QueryProvider";
 
+import   { CacheProvider }   from "@/React_Query_Caching/CacheProvider"
 
-// Dynamic imports for components that are not immediately needed
-const Header = dynamic(() => import("@/components/Header"), {
-  ssr: true
-});
 const ConditionalGlobalHeader = dynamic(() => import("@/components/Header/ConditionalGlobalHeader"), {
   ssr: false // Client-side only for scroll detection
 });
@@ -66,13 +61,10 @@ export default function RootLayout({
     </head>
     <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
                        <Toaster position="bottom-center" /> {/* Add this line */}
-   <PageRefreshProvider>
-        <GlobalRefreshProvider>
-    
-      <GlobalOfflineStatusProvider>
+  <CacheProvider>
 
-      <Providers>
-        {/* Show conditional header for slug pages, regular header for others */}
+<Providers>
+ 
         {isSlugPage ? (
           <ConditionalGlobalHeader />
         ) : (
@@ -91,15 +83,10 @@ export default function RootLayout({
           <Footer />
           <ScrollToTop />
         </Suspense>
-      </Providers>
-     </GlobalOfflineStatusProvider>
-     </GlobalRefreshProvider>
-     </PageRefreshProvider>
+       
+     </Providers>
+       </CacheProvider>
     </body>
   </html>
   );
 }
-// git init
-// git add .
-// git commit -m "Added Sanity webhook and refresh button logic"
-// git push origin main

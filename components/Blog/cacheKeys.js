@@ -1,6 +1,5 @@
 export const CACHE_KEYS = {
-  TRENDING_BIG: 'trending-big',
-  TRENDING_RELATED: 'trending-related',
+
   FEATURE_BIG: 'feature-big',
   FEATURE_RELATED: 'feature-related',
 

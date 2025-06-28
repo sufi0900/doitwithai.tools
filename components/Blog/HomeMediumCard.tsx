@@ -11,10 +11,8 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import Image from "next/image";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { CalendarMonth } from "@mui/icons-material";
-import { client } from "@/sanity/lib/client";
-import { urlForImage } from "@/sanity/lib/image"; // Update path if needed
-import { Skeleton } from "@mui/material"; // Import Skeleton component from Material-UI
-import ImageOptimizer from "./ImageOptimizer"; // Import the new component
+
+// import ImageOptimizer from "./ImageOptimizer"; // Import the new component
 
 export default function SingleBlog({ 
     publishedAt,
@@ -42,7 +40,7 @@ export default function SingleBlog({
                         <div className="relative aspect-[43/22] overflow-hidden">
 <div                 className=" absolute rounded-lg inset-0 h-full w-full object-cover transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]">
 
-            <ImageOptimizer
+            <Image
 
                 src={mainImage}
                 width={500} 

@@ -1,64 +1,155 @@
+// components/Blog/ReusableCachedSEOSubcategories.js (or wherever it resides)
 "use client";
+import React, { useEffect, useState, useCallback } from "react"; // Import useCallback
+import Link from "next/link"; // Assuming Link is used for navigation
 
-import { useCachedSanityData } from '@/components/Blog/useSanityCache';
-import React, { useEffect } from 'react'; // Import useEffect
-import Link from "next/link";
-import groq from "groq";
-import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
+import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
+import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
+import { usePageCache } from '@/React_Query_Caching/usePageCache'; // <--- Ensure this is imported!
 
-// Add pagination props: currentPage, limit, and onDataLoad callback
-const ReusableCachedSEOSubcategories = ({ currentPage = 1, limit = 9, onDataLoad }) => { // Default limit to 9 for 3x3 grid
+const ReusableCachedSEOSubcategories = ({
+  currentPage = 1,
+  limit = 2, // Default limit matching parent's SUBCATEGORIES_LIMIT
+  onDataLoad, // Callback: onDataLoad(currentPage, totalPages, hasMore)
+}) => {
+  const [paginationStaleWarning, setPaginationStaleWarning] = useState(false);
+  const [subcategoriesToDisplay, setSubcategoriesToDisplay] = useState([]); // State to hold the sliced data
+  // Flag to indicate initial data has been loaded (from network or cache)
+  const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);
+
+
   const start = (currentPage - 1) * limit;
 
-  // Modify the query to include pagination and order
-  const queryToUse = groq`
-    *[_type == "seoSubcategory"] | order(title asc) { // Example: order by title
-      title, 
-      slug, 
-      description,
-      _updatedAt // Include _updatedAt if you use it for staleness checks
-    }[${start}...${start + limit + 1}] // Fetch one extra item to check for next page
-  `;
+  // Query for paginated subcategories
+  const subcategoryQuery = `*[_type=="seoSubcategory"]|order(orderRank asc){_id,title,count,slug,description}[${start}...${start + limit + 1}]`; // Fetch one more than limit to check hasMore
 
-  // Define a pagination group specific to SEO subcategories
-  const paginationGroup = 'seoSubcategories-all-items'; 
+  // Query for total count of subcategories
+  const totalSubcategoryCountQuery = `count(*[_type=="seoSubcategory"])`;
 
+  // Cache key for the current page of subcategories
+  const pageCacheKey = CACHE_KEYS.PAGE.SEO_SUBCATEGORIES_PAGINATED(currentPage);
+
+  // Cache key for the total count of subcategories
+  const totalCountCacheKey = CACHE_KEYS.PAGE.SEO_SUBCATEGORIES_TOTAL;
+
+  // Define a group identifier for SEO subcategories
+  const subcategoriesGroup = 'seo-subcategories-all-items';
+
+  // Fetch paginated subcategory data
   const {
-    data: subcategories,
-    isLoading: isLoadingSubcategories,
-    error: subcategoriesError,
-    totalPages, // Destructure totalPages from the hook
-  } = useCachedSanityData(
-    // Generate a unique cache key for each page of subcategories
-    `${CACHE_KEYS.SEO_SUBCATEGORIES}-page-${currentPage}`, 
-    queryToUse,
+    data: subcategoryData,
+    isLoading: isSubcategoryLoading,
+    error: subcategoryError,
+    refresh: refreshSubcategories,
+    isStale: isSubcategoryStale,
+  } = useSanityCache(
+    pageCacheKey,
+    subcategoryQuery,
+    {}, // No specific params needed for this query
     {
-      componentName: `SEO-Subcategories-Page${currentPage}`, // Unique name for each page instance
-      usePageContext: true,
-      enableOffline: true, // Enable offline caching
-      isPaginated: true, // Mark this as a paginated component
-      paginationGroup: paginationGroup, // Assign to the defined group
-      currentPage: currentPage,
-      limit: limit,
+      componentName: `SEO_Subcategories_Page_${currentPage}`,
+      enableOffline: true,
+      group: subcategoriesGroup, // Pass the group identifier
     }
   );
 
-  // Use useEffect to report totalPages and currentPage back to the parent
-  useEffect(() => {
-    if (onDataLoad) {
-      onDataLoad(currentPage, totalPages);
+  // Fetch total count of subcategories
+  const {
+    data: totalCountData,
+    isLoading: isTotalCountLoading,
+    error: totalCountError,
+    refresh: refreshTotalCount,
+    isStale: isTotalCountStale,
+  } = useSanityCache(
+    totalCountCacheKey,
+    totalSubcategoryCountQuery,
+    {}, // No specific params
+    {
+      componentName: `SEO_Subcategories_TotalCount`,
+      enableOffline: true,
+      group: subcategoriesGroup, // Pass the group identifier (same group as paginated data)
     }
-  }, [currentPage, totalPages, onDataLoad]);
+  );
+
+  // Calculate pagination details
+  const totalSubcategories = typeof totalCountData === 'number' ? totalCountData : 0;
+  const subcategoriesTotalPages = Math.ceil(totalSubcategories / limit);
+  const hasMoreSubcategories = (subcategoryData?.length || 0) > limit;
+
+  // Effect to slice data and update local state for display
+  useEffect(() => {
+    if (subcategoryData) {
+      setSubcategoriesToDisplay(subcategoryData.slice(0, limit));
+      // Set flag once data is initially available (from cache or network)
+      // This ensures that `onDataLoad` is not called until data has rendered at least once.
+      if (!hasInitialDataLoaded && subcategoryData !== null && totalCountData !== null) {
+        setHasInitialDataLoaded(true);
+      }
+    }
+  }, [subcategoryData, limit, hasInitialDataLoaded, totalCountData]);
 
 
-  if (isLoadingSubcategories) {
+  // Handle stale warning for pagination data
+  useEffect(() => {
+    if (isSubcategoryStale || isTotalCountStale) {
+      setPaginationStaleWarning(true);
+      refreshSubcategories();
+      refreshTotalCount();
+    } else if ((subcategoryData && !isSubcategoryStale) && (totalCountData && !isTotalCountStale) && paginationStaleWarning) {
+      setPaginationStaleWarning(false);
+    }
+  }, [isSubcategoryStale, isTotalCountStale, subcategoryData, totalCountData, paginationStaleWarning, refreshSubcategories, refreshTotalCount]);
+
+  // Pass total pages and hasMore back to parent
+  useEffect(() => {
+    // Only call onDataLoad if loading is complete AND initial data has been set.
+    if (onDataLoad && hasInitialDataLoaded && !isSubcategoryLoading && !isTotalCountLoading) {
+      onDataLoad(currentPage, subcategoriesTotalPages, hasMoreSubcategories);
+    }
+  }, [onDataLoad, currentPage, subcategoriesTotalPages, hasMoreSubcategories, isSubcategoryLoading, isTotalCountLoading, hasInitialDataLoaded]);
+
+  // NEW: Register this component's cache keys and refresh functions with the PageCacheProvider
+  usePageCache(
+    pageCacheKey,
+    refreshSubcategories,
+    subcategoryQuery,
+    `SEO Subcategories Page ${currentPage}` // Label for cache status button
+  );
+
+  usePageCache(
+    totalCountCacheKey,
+    refreshTotalCount,
+    totalSubcategoryCountQuery,
+    `SEO Subcategories Total Count` // Label for cache status button
+  );
+
+  const handleRefresh = useCallback(async (refreshAllGroup = false) => {
+    try {
+      if (refreshAllGroup) {
+        // Assuming cacheSystem is globally available or imported in a higher scope
+        if (typeof cacheSystem !== 'undefined' && cacheSystem.refreshGroup) {
+          await cacheSystem.refreshGroup(subcategoriesGroup);
+        } else {
+          console.warn("cacheSystem is not defined or refreshGroup method is missing. Cannot refresh group.");
+          await refreshSubcategories();
+          await refreshTotalCount();
+        }
+      } else {
+        await refreshSubcategories();
+        await refreshTotalCount();
+      }
+    } catch (error) {
+      console.error('Subcategories refresh failed:', error);
+    }
+  }, [subcategoriesGroup, refreshSubcategories, refreshTotalCount]);
+
+  const hasError = subcategoryError || totalCountError;
+
+  if (isSubcategoryLoading || isTotalCountLoading) {
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: limit }).map((_, index) => ( // Render skeletons based on limit
-          <div
-            key={index}
-            className="card p-6 bg-white border border-gray-200 rounded-lg shadow animate-pulse dark:bg-gray-800 dark:border-gray-700"
-          >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.from({ length: limit }).map((_, index) => (
+          <div key={index} className="card p-6 bg-white border border-gray-200 rounded-lg shadow animate-pulse dark:bg-gray-800 dark:border-gray-700">
             <div className="h-6 bg-gray-300 rounded w-3/4 mb-4 dark:bg-gray-700"></div>
             <div className="h-4 bg-gray-300 rounded w-full mb-3 dark:bg-gray-700"></div>
             <div className="h-4 bg-gray-300 rounded w-2/3 mb-4 dark:bg-gray-700"></div>
@@ -69,49 +160,50 @@ const ReusableCachedSEOSubcategories = ({ currentPage = 1, limit = 9, onDataLoad
     );
   }
 
-  // Handle error case, perhaps with a retry button specific to subcategories if error is from fresh fetch
-  if (subcategoriesError && !subcategories) { // Only show error if no data (even cached)
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-500">Failed to load subcategories.</p>
-        {/* Optional: Add a retry button for subcategories, similar to ReusableCachedAllBlogs */}
-      </div>
-    );
-  }
-
-  // Slice data to only display the 'limit' number of items
-  const itemsToDisplay = subcategories ? subcategories.slice(0, limit) : [];
-
-  if (itemsToDisplay.length === 0 && !isLoadingSubcategories) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-gray-500 dark:text-gray-400">No subcategories found.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {itemsToDisplay?.map((subcategory) => (
-        <Link
-          href={`/ai-seo/categories/${subcategory.slug.current}`}
-          key={subcategory.slug.current}
-          className="card hover:shadow-lg mt-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition duration-200 ease-in-out hover:scale-[1.03] max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow"
-        >
-          <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-            {subcategory.title}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-3">
-            {subcategory.description}
-          </p>
-          <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-            Read more
-            <svg className="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
-            </svg>
-          </button>
-        </Link>
-      ))}
+    <div className="space-y-4">
+      {paginationStaleWarning && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-900/20 dark:border-yellow-800">
+          <div className="flex items-center space-x-2">
+            <svg className="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" /></svg>
+            <span className="text-yellow-800 dark:text-yellow-200 font-medium">Updating subcategory data...</span>
+          </div>
+        </div>
+      )}
+      {hasError && subcategoriesToDisplay.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-4">Failed to load subcategories.</p>
+          <button onClick={() => handleRefresh(false)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Retry Current Page</button>
+          <button onClick={() => handleRefresh(true)} className="ml-2 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">Refresh All Subcategories</button>
+        </div>
+      )}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {subcategoriesToDisplay.map((subcategory) => (
+          <Link
+            href={`/ai-seo/category/${subcategory.slug.current}`}
+            key={subcategory.slug.current}
+            className="card hover:shadow-lg mt-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition duration-200 ease-in-out hover:scale-[1.03] max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow"
+          >
+            <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">{subcategory.title}</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-3">{subcategory.description}</p>
+            <button className="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+              Read more
+              <svg className="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 5h12m0 0L9 1m4 4L9 9" /></svg>
+            </button>
+          </Link>
+        ))}
+      </div>
+      {subcategoriesToDisplay.length === 0 && !isSubcategoryLoading && !isTotalCountLoading && !hasError && (
+        <div className="text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400">No subcategories found.</p>
+          <button onClick={() => handleRefresh(true)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Refresh All Subcategories</button>
+        </div>
+      )}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded dark:bg-gray-800 mt-4">
+          SubcatPage: {currentPage} | PageCacheKey: {pageCacheKey} | TotalCountCacheKey: {totalCountCacheKey} | Group: {subcategoriesGroup} | PageStale: {isSubcategoryStale ? 'Yes' : 'No'} | TotalStale: {isTotalCountStale ? 'Yes' : 'No'} | TotalSubcategories: {totalSubcategories} | SubcategoriesTotalPages: {subcategoriesTotalPages} | Has More: {hasMoreSubcategories ? 'Yes' : 'No'}
+        </div>
+      )}
     </div>
   );
 };
