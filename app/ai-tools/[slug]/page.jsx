@@ -1,4 +1,5 @@
-// app/ai-tools/[slug]/page.jsx
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 
 import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import AiToolSlugPageCode from "./code";
