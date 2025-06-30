@@ -1,115 +1,161 @@
-import React from 'react'
-import Allblogs from "./AllBlogs"
+
+import React from 'react';
 import Script from "next/script";
-import Head from "next/head";
-import { NextSeo } from "next-seo";
+import Head from "next/head"; // Note: For App Router, `metadata` export is preferred.
+import { NextSeo } from "next-seo"; // NextSeo is for Pages Router, ensure it's still needed/used with App Router.
+
+import BlogListingPageContent from "@/app/ai-tools/AllBlogs"; // Import the new reusable component
+import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories"; // Keep this specific import
+
+// --- Next.js Server-Side Configuration ---
+export const revalidate = 3600; // Revalidate every 1 hour
+
+// --- SEO Metadata (Next.js App Router Standard) ---
 
 
+// --- SEO Metadata (Next.js App Router Standard) ---
 export const metadata = {
-  title: "AI in SEO & Digital Marketing",
-  description:
-    "Master AI tools to write SEO blogs, optimize content & dominate digital marketing. Get expert tips & strategies to win in the AI-powered future.",
+  title: "AI in SEO & Digital Marketing - DoItWithAI.Tools",
+  description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
   author: "Sufian Mustafa",
   openGraph: {
-    images: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
+    title: "AI in SEO & Digital Marketing - DoItWithAI.Tools",
+    description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
+    url: "https://www.doitwithai.tools/ai-seo",
+    type: "website",
+    images: [{
+      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg', // Use a relevant image for SEO
+      width: 1200,
+      height: 630,
+      alt: 'AI in SEO & Digital Marketing',
+    }],
+    siteName: "AiToolTrend",
+    locale: 'en_US',
   },
-  images: [
-    {
-      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
-      width: 800,
-      height: 600,
-    },
-    
-  ],
+  twitter: {
+    card: "summary_large_image",
+    domain: "doitwithai.tools",
+    url: "https://www.doitwithai.tools/ai-seo",
+    title: "AI in SEO & Digital Marketing - DoItWithAI.Tools",
+    description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
+    image: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg', // Use a relevant image for SEO
+  },
+  alternates: {
+    canonical: "https://www.doitwithai.tools/ai-seo",
+  },
 };
 
 export default function Page() {
-  
- function schemaMarkup() {
-  return {
-    __html: `{
-      "@context": "https://schema.org",
-      "@type": "CollectionPage",
-      "name": "AI in SEO & Digital Marketing",
-      "description": "Unlock the cutting-edge of digital marketing! Explore how to leverage AI (SEO AI, AI SEO software, SEO GPT, SEO writing AI, ChatGPT) to optimize your content, generate high-quality blog posts, and craft winning digital marketing campaigns. Discover expert tips and tricks to supercharge your SEO, streamline content creation, and boost website traffic.  Learn how AI is transforming the future of SEO and digital marketing.",
-      "url": "https://www.doitwithai.tools/ai-seo",
-      "breadcrumb": {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://www.doitwithai.tools/"
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "SEO With AI",
-            "item": "https://www.doitwithai.tools/ai-seo"
-          }
-        ]
-      }
-    }`
+  // Define schema-specific data for the AI SEO page
+  const schemaType = "seo"; // Sanity schema type
+  const pageSlugPrefix = "ai-seo"; // URL prefix for this category
+  const pageTitle = "SEO Insights";
+  const pageTitleHighlight = "SEO Insights";
+  const pageDescription = "Stay ahead of the curve with our latest AI-powered SEO strategies and insights.";
+
+  const breadcrumbProps = {
+    pageName: "AI in SEO",
+    pageName2: "& Digital Marketing",
+    description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies. Learn how ChatGPT and other AI tools can help generate quality content, conduct keyword research, and craft data-driven campaigns. Our practical guides help you improve rankings, target the right audience, and navigate the evolving digital landscape with confidence.",
+    firstlinktext: "Home",
+    firstlink: "/",
+    link: "/ai-seo",
+    linktext: "seo-with-ai",
   };
-}
+
+  // Schema Markup for AI SEO CollectionPage
+  function schemaMarkup() {
+    return {
+      __html: `
+        {
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          "name": "${metadata.title}",
+          "description": "${metadata.description}",
+          "url": "${metadata.openGraph.url}",
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://www.doitwithai.tools/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "${breadcrumbProps.pageName}",
+                "item": "${breadcrumbProps.link}"
+              }
+            ]
+          }
+        }
+      `
+    };
+  }
 
   return (
     <>
-    <Head>
-        <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta property="og:site_name" content="AiToolTrend" />
-        <meta property="og:locale" content="en_US" />
-  <title>{metadata.title}</title>
-  <meta name="description" content={metadata.description}/>
-  <meta name="author" content="sufian mustafa" />
-  <meta property="og:title" content={metadata.title} />
-  <meta property="og:description" content={metadata.description} />
-  <meta property="og:image" content={metadata.images} />
-  <meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-
-  {/*  */}
-  <meta property="og:url" content="https://www.doitwithai.tools/ai-seo" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content={metadata.title} />
-        <meta property="og:description" content={metadata.description} />
-        <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="doitwithai.tools" />
-        <meta property="twitter:url" content="https://www.doitwithai.tools/ai-tools" />
-        <meta name="twitter:title" content={metadata.title} />
-        <meta name="twitter:description" content={metadata.description} />
-        <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-  <link rel="canonical" href="https://www.doitwithai.tools/ai-seo"/>
+      <Head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:site_name" content={metadata.openGraph.siteName} />
+        <meta property="og:locale" content={metadata.openGraph.locale} />
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
+        <meta name="author" content={metadata.author} />
+        <meta property="og:title" content={metadata.openGraph.title} />
+        <meta property="og:description" content={metadata.openGraph.description} />
+        <meta property="og:image" content={metadata.openGraph.images[0].url} />
+        <meta property="og:image:width" content={metadata.openGraph.images[0].width} />
+        <meta property="og:image:height" content={metadata.openGraph.images[0].height} />
+        <meta property="og:url" content={metadata.openGraph.url} />
+        <meta property="og:type" content={metadata.openGraph.type} />
+        <meta name="twitter:card" content={metadata.twitter.card} />
+        <meta property="twitter:domain" content={metadata.twitter.domain} />
+        <meta property="twitter:url" content={metadata.twitter.url} />
+        <meta name="twitter:title" content={metadata.twitter.title} />
+        <meta name="twitter:description" content={metadata.twitter.description} />
+        <meta name="twitter:image" content={metadata.twitter.image} />
+        <link rel="canonical" href={metadata.alternates.canonical} />
         <NextSeo
-         title={metadata.title}
-         description={metadata.description}
+          title={metadata.title}
+          description={metadata.description}
           author={metadata.author}
-          type= "website"
-          locale= 'en_IE'
-          site_name= 'AiToolTrend'
-
-          canonical="https://www.doitwithai.tools/ai-seo"
+          type="website"
+          locale='en_IE'
+          site_name={metadata.openGraph.siteName}
+          canonical={metadata.alternates.canonical}
           openGraph={{
-            title: metadata.title,
-            description: metadata.description,
-            url: "https://www.doitwithai.tools/ai-seo",
+            title: metadata.openGraph.title,
+            description: metadata.openGraph.description,
+            url: metadata.openGraph.url,
             type: "ItemList",
-            images: metadata.images
+            images: metadata.openGraph.images
           }}
         />
-      
-
-    </Head>
-    <Script
-    id="BreadcrumbListSchema"
-    type="application/ld+json"
-     dangerouslySetInnerHTML={schemaMarkup()}
-     key="AiTools-jsonld"
-   />
-   <Allblogs/> 
-   </>
-  )
+      </Head>
+      <Script
+        id="BreadcrumbListSchema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={schemaMarkup()}
+        key={`${pageSlugPrefix}-jsonld`}
+      />
+      <BlogListingPageContent
+        schemaType={schemaType}
+        pageSlugPrefix={pageSlugPrefix}
+        pageTitle={pageTitle}
+        pageTitleHighlight={pageTitleHighlight}
+        pageDescription={pageDescription}
+        breadcrumbProps={breadcrumbProps}
+        // Props for the unique subcategories section
+        showSubcategoriesSection={true} // Enable the section
+        subcategoriesSectionTitle="SubCategories"
+        subcategoriesSectionDescription="of SEO"
+        SubcategoriesComponent={ReusableCachedSEOSubcategories} // Pass the specific component
+        subcategoriesLimit={2} // Pass the limit as a prop
+      />
+    </>
+  );
 }

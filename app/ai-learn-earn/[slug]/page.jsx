@@ -9,11 +9,11 @@ export const revalidate = 3600; // Revalidate every 1 hour
 
 async function getData(slug) {
   // The schema type is now 'coding' for this specific page
-  const query = `*[_type=="seo"&&slug.current=="${slug}"][0]`;
+  const query = `*[_type=="makemoney"&&slug.current=="${slug}"][0]`;
   try {
     const data = await client.fetch(query, {}, {
       next: {
-        tags: ['seo', slug] // Keep tags for on-demand revalidation
+        tags: ['makemoney', slug] // Keep tags for on-demand revalidation
       }
     });
     return data;
@@ -27,11 +27,11 @@ export default async function ParentPage({ params }) {
   const serverData = await getData(params.slug);
 
   return (
-    <PageCacheProvider pageType="ai-seo-article" pageId={params.slug}>
+    <PageCacheProvider pageType="ai-makemoney-article" pageId={params.slug}>
       <PageCacheStatusButton />
       <section>
         {/* Pass the specific schemaType for this page */}
-        <ArticleChildComp serverData={serverData} params={params} schemaType="seo" />
+        <ArticleChildComp serverData={serverData} params={params} schemaType="makemoney" />
       </section>
     </PageCacheProvider>
   );

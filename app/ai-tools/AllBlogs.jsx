@@ -7,69 +7,113 @@ import Breadcrumb from "@/components/Common/Breadcrumb";
 
 import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
 import SearchResults from '@/React_Query_Caching/SearchResults';
-import ReusableCachedFeaturePost from "@/app/ai-tools/CachedAIToolsFeaturePost";
-import ReusableCachedAllBlogs from "@/app/ai-tools/CachedAIToolsAllBlogs";
+import ReusableCachedFeaturePost from "@/app/ai-tools/CachedAIToolsFeaturePost"; // Adjust path if these are truly generic
+import ReusableCachedAllBlogs from "@/app/ai-tools/CachedAIToolsAllBlogs"; // Adjust path if these are truly generic
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
 
-export const revalidate = false;
-export const dynamic = "force-dynamic";
-
-export default function AIToolPage() { // This component name might be confusing if it's ai-tools/page.jsx
+/**
+ * Reusable client component for displaying a blog listing page with search,
+ * featured post, and pagination for various Sanity schema types.
+ *
+ * @param {object} props - Component props.
+ * @param {string} props.schemaType - The Sanity schema type (e.g., 'coding', 'aitool').
+ * @param {string} props.pageSlugPrefix - The URL prefix for this blog category (e.g., 'ai-tools', 'ai-code').
+ * @param {string} props.pageTitle - The main title for the 'Latest X' section.
+ * @param {string} props.pageTitleHighlight - The highlighted part of the main title.
+ * @param {string} props.pageDescription - The description for the 'Latest X' section.
+ * @param {object} props.breadcrumbProps - Props for the Breadcrumb component.
+ * @param {string} props.breadcrumbProps.pageName - Breadcrumb page name.
+ * @param {string} props.breadcrumbProps.pageName2 - Secondary breadcrumb page name.
+ * @param {string} props.breadcrumbProps.description - Breadcrumb description.
+ * @param {string} props.breadcrumbProps.firstlinktext - Text for the first link.
+ * @param {string} props.breadcrumbProps.firstlink - URL for the first link.
+ * @param {string} props.breadcrumbProps.link - URL for the current link.
+ * @param {string} props.breadcrumbProps.linktext - Text for the current link.
+ * @param {boolean} [props.showSubcategoriesSection=false] - Whether to show the subcategories section.
+ * @param {string} [props.subcategoriesSectionTitle] - Title for the subcategories section.
+ * @param {string} [props.subcategoriesSectionDescription] - Description for the subcategories section.
+ * @param {React.ElementType} [props.SubcategoriesComponent] - The component to render for subcategories (e.g., ReusableCachedSEOSubcategories).
+ * @param {number} [props.subcategoriesLimit] - Limit per page for subcategories.
+ */
+export default function BlogListingPageContent({
+  schemaType,
+  pageSlugPrefix,
+  pageTitle,
+  pageTitleHighlight,
+  pageDescription,
+  breadcrumbProps,
+  // New props for subcategories section
+  showSubcategoriesSection = false,
+  subcategoriesSectionTitle,
+  subcategoriesSectionDescription,
+  SubcategoriesComponent, // Component to render for subcategories
+  subcategoriesLimit = 2, // Default limit for subcategories
+}) {
   // State for main blog pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [allBlogsTotalPages, setAllBlogsTotalPages] = useState(1);
-  // Removed redundant states: searchResults, hasMorePages, totalItems,
-  // as their functionality is now handled by searchHook or by allBlogsTotalPages.
 
-  // Initialize search hook
+  // State for subcategories pagination (MANAGED INTERNALLY HERE)
+  const [currentPageSubcategories, setCurrentPageSubcategories] = useState(1);
+  const [subcategoriesTotalPages, setSubcategoriesTotalPages] = useState(1);
+
+  // Initialize search hook with dynamic properties
   const searchHookOptions = useMemo(() => ({
-    documentType: 'aitool', // Correct document type for this page
-    searchFields: ['title', 'overview', 'body'],
-    pageSlugPrefix: 'ai-tools',
-    componentName: 'AIToolsPageSearch', // Specific component name for this page's search
-    minSearchLength: 1,
-  }), []);
+    documentType: schemaType, // Dynamic document type
+    searchFields: ['title', 'overview', 'body'], // Common search fields
+    pageSlugPrefix: pageSlugPrefix, // Dynamic page slug prefix
+    componentName: `${schemaType}PageSearch`, // Dynamic component name for cache
+    minSearchLength: 3,
+  }), [schemaType, pageSlugPrefix]);
 
   const searchHook = useCachedSearch(searchHookOptions);
 
   // Main blog pagination handlers
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
-  };
+  }, []);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     setCurrentPage((prev) => prev + 1);
-  };
+  }, []);
 
   // Callback to receive pagination status from ReusableCachedAllBlogs
   const handleAllBlogsDataLoad = useCallback((hasMore, fetchedTotalPages, fetchedTotalItems) => {
-    // Only set total pages here; hasMore and totalItems are primarily for ReusableCachedAllBlogs's internal logic/debugging
     setAllBlogsTotalPages(fetchedTotalPages);
   }, []);
 
   // Main blog next button disabled logic:
-  // Disabled if search is active OR if on the last page of main blogs
   const isNextButtonDisabled = searchHook.isSearchActive || currentPage >= allBlogsTotalPages;
+
+  // Subcategories pagination handlers (MANAGED INTERNALLY HERE)
+  const handlePreviousSubcategories = useCallback(() => {
+    setCurrentPageSubcategories((prev) => (prev > 1 ? prev - 1 : prev));
+  }, []);
+
+  const handleNextSubcategories = useCallback(() => {
+    setCurrentPageSubcategories((prev) => prev + 1);
+  }, []);
+
+  const handleSubcategoriesDataLoad = useCallback((fetchedCurrentPg, fetchedTotalPgs, fetchedHasMore) => {
+    setCurrentPageSubcategories(fetchedCurrentPg);
+    setSubcategoriesTotalPages(fetchedTotalPgs);
+  }, []);
+
+  // Subcategories pagination disabled logic
+  const isNextButtonDisabledSubcategories = searchHook.isSearchActive || currentPageSubcategories >= subcategoriesTotalPages;
+  const isPreviousButtonDisabledSubcategories = currentPageSubcategories === 1;
 
 
   return (
-    <PageCacheProvider pageType="ai-tools" pageId="main">
+    <PageCacheProvider pageType={pageSlugPrefix} pageId="main"> {/* Dynamic pageType */}
       {/* Outer wrapper with gradient background matching AISEOPage */}
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900/30">
 
         {/* Breadcrumb Section */}
         <section className="pt-8">
-          <Breadcrumb
-            pageName="Best AI Tools"
-            pageName2="for Productivity"
-            description="Unlock the power of AI to enhance productivity and creativity like never before!! In this category, we review the best freemium AI tools designed to streamline tasks and boost SEO. Discover smart solutions that transform your workflow, whether you're a digital marketer, SEO professional, or curious beginner. Our insights help you work smarter, save time, and elevate your project with cutting-edge AI technology."
-            firstlinktext="Home"
-            firstlink="/"
-            link="/ai-tools"
-            linktext="ai-tools"
-          />
+          <Breadcrumb {...breadcrumbProps} /> {/* Use dynamic breadcrumb props */}
         </section>
 
         {/* Main Content Container */}
@@ -86,18 +130,89 @@ export default function AIToolPage() { // This component name might be confusing
           <section className="mb-16">
             <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-800">
               <ReusableCachedFeaturePost
-                documentType="aitool"
-                pageSlugPrefix="ai-tools"
-                cacheKey={CACHE_KEYS.PAGE.FEATURE_POST('ai-tools')}
+                documentType={schemaType} // Dynamic document type
+                pageSlugPrefix={pageSlugPrefix} // Dynamic page slug prefix
+                cacheKey={CACHE_KEYS.PAGE.FEATURE_POST(pageSlugPrefix)} // Dynamic cache key
               />
             </div>
           </section>
+
+          {/* Subcategories Section - Conditionally rendered */}
+          {showSubcategoriesSection && (
+            <section className="mb-16">
+              <div className="mb-12 text-center">
+                <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl lg:text-6xl">
+                  <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                    {subcategoriesSectionTitle}
+                  </span>{" "}
+                  {subcategoriesSectionDescription}
+                </h2>
+                <div className="mx-auto mt-4 h-1 w-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+              </div>
+
+              <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-800">
+                {/* Render the passed SubcategoriesComponent */}
+                {SubcategoriesComponent && (
+                  <SubcategoriesComponent
+                    currentPage={currentPageSubcategories}
+                    limit={subcategoriesLimit} // Use the prop for limit
+                    onDataLoad={handleSubcategoriesDataLoad} // Pass internal handler
+                  />
+                )}
+
+                {/* Subcategories Pagination */}
+                {!searchHook.isSearchActive && (
+                  <div className="mt-12 flex justify-center">
+                    <nav className="flex items-center space-x-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-700">
+                      <button
+                        onClick={handlePreviousSubcategories}
+                        disabled={isPreviousButtonDisabledSubcategories}
+                        className={`
+                          flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200
+                          ${isPreviousButtonDisabledSubcategories
+                            ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500'
+                            : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'
+                          }
+                        `}
+                      >
+                        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Previous
+                      </button>
+
+                      <div className="flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm">
+                        {currentPageSubcategories}
+                      </div>
+
+                      <button
+                        onClick={handleNextSubcategories}
+                        disabled={isNextButtonDisabledSubcategories}
+                        className={`
+                          flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200
+                          ${isNextButtonDisabledSubcategories
+                            ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500'
+                            : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'
+                          }
+                        `}
+                      >
+                        Next
+                        <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </nav>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
 
           {/* Search Section - Styled to match AISEOPage */}
           <section className="mb-16">
             <div className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 p-8 shadow-xl">
               <div className="mb-6 text-center">
-                <h3 className="text-2xl font-bold text-white">Search Our AI Tools</h3>
+                <h3 className="text-2xl font-bold text-white">Search Our {pageTitleHighlight}</h3> {/* Dynamic title */}
                 <p className="mt-2 text-blue-100">Find exactly what you're looking for</p>
               </div>
 
@@ -105,7 +220,7 @@ export default function AIToolPage() { // This component name might be confusing
                 <div className="relative flex-1">
                   <input
                     type="text"
-                    placeholder="Search for AI tools, categories, features..."
+                    placeholder={`Search for ${pageTitle.toLowerCase()}...`} // Dynamic placeholder
                     className="w-full rounded-xl border-0 bg-white/10 px-6 py-4 text-white placeholder-blue-200 backdrop-blur-sm transition-all duration-300 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 dark:bg-gray-800/50 dark:text-white dark:placeholder-gray-400"
                     value={searchHook.searchText}
                     onChange={(e) => searchHook.updateSearchText(e.target.value)}
@@ -150,13 +265,13 @@ export default function AIToolPage() { // This component name might be confusing
             error={searchHook.searchError}
             isSearchActive={searchHook.isSearchActive}
             searchText={searchHook.searchText}
-            pageSlugPrefix={searchHook.pageSlugPrefix}
+            pageSlugPrefix={pageSlugPrefix} // Dynamic pageSlugPrefix
             showNoResults={searchHook.showNoResults}
             cacheSource={searchHook.cacheSource}
             isStale={searchHook.isStale}
             onResetSearch={searchHook.resetSearch}
             onRefreshSearch={searchHook.refreshSearch}
-            className="mb-16" // Added mb-16 for consistent spacing
+            className="mb-16"
           />
 
           {/* Main Blog Section */}
@@ -164,10 +279,10 @@ export default function AIToolPage() { // This component name might be confusing
             <section className="mb-16">
               <div className="mb-12 text-center">
                 <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl">
-                  Latest <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">AI Tools</span>
+                  Latest <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{pageTitleHighlight}</span> {/* Dynamic title */}
                 </h2>
                 <p className="mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-300">
-                  Explore the newest and most effective AI tools to boost your productivity.
+                  {pageDescription} {/* Dynamic description */}
                 </p>
                 <div className="mx-auto mt-4 h-1 w-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
               </div>
@@ -175,9 +290,9 @@ export default function AIToolPage() { // This component name might be confusing
               <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-800">
                 <ReusableCachedAllBlogs
                   currentPage={currentPage}
-                  limit={10} // Keeping limit as 10 as per original
-                  documentType="aitool" // Correct document type for this page
-                  pageSlugPrefix="ai-tools"
+                  limit={5}
+                  documentType={schemaType} // Dynamic document type
+                  pageSlugPrefix={pageSlugPrefix} // Dynamic page slug prefix
                   onDataLoad={handleAllBlogsDataLoad}
                 />
 
