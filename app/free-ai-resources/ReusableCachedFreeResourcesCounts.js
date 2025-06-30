@@ -1,7 +1,7 @@
 // components/Resources/ReusableCachedFreeResourcesCounts.jsx
 "use client";
 
-import React from "react"; // Import useCallback
+import React, { useMemo, useCallback } from "react"; // Import useMemo and useCallback
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
@@ -9,47 +9,57 @@ import { usePageCache } from '@/React_Query_Caching/usePageCache';
 
 const ReusableCachedFreeResourcesCounts = ({
   resourceFormats, // Prop: array of { label, value } for formats
-  selectedFormat, // Prop: currently selected format value
-  getCountForFormat, // Prop: callback from parent to get count from state (will remove soon)
+  selectedFormat, // Prop: currently selected format value (used for styling)
   handleFormatChange, // Prop: callback from parent for filter change
   handleCountsLoad, // Prop: callback from parent to set counts
 }) => {
-  // Query to get resource counts for all formats
-  const countsQuery = `{
+  // Memoize the query to get resource counts for all formats
+  const memoizedCountsQuery = useMemo(() => `{
     "all": count(*[_type == "freeResources"]),
     "image": count(*[_type == "freeResources" && resourceFormat == "image"]),
     "video": count(*[_type == "freeResources" && resourceFormat == "video"]),
     "text": count(*[_type == "freeResources" && resourceFormat == "text"]),
     "document": count(*[_type == "freeResources" && resourceFormat == "document"]),
     "aitool": count(*[_type == "freeResources" && resourceFormat == "aitool"])
-  }`;
+  }`, []); // Empty dependency array as this query is static
+
+  // Memoize an empty params object
+  const memoizedParams = useMemo(() => ({}), []);
+
+  // Memoize the options object for useSanityCache
+  const stableOptions = useMemo(() => ({
+    componentName: 'FreeResourcesCounts',
+    enableOffline: true,
+    group: 'free-resources', // Assign to the same group as other free resources data
+  }), []); // Empty dependency array as these options are stable
 
   const { data: resourceCounts, isLoading, error, refresh, isStale } = useSanityCache(
     CACHE_KEYS.PAGE.FREERESOURCES_COUNTS, // Use the new specific cache key
-    countsQuery,
-    {},
-    {
-      componentName: 'FreeResourcesCounts',
-      enableOffline: true,
-      group: 'free-resources', // Assign to the same group as other free resources data
-    }
+    memoizedCountsQuery, // Use the memoized query
+    memoizedParams,      // Use the memoized params
+    stableOptions        // Use the stable options
   );
 
-  // --- NEW: Register this component's cache key with usePageCache ---
+  // Register this component's cache key with usePageCache
   usePageCache(
     CACHE_KEYS.PAGE.FREERESOURCES_COUNTS, // The cache key for this data
-    refresh,                              // The refresh function provided by useSanityCache
-    countsQuery,                          // The query string associated
-    'Free Resources Counts'               // A descriptive label
+    refresh,                             // The refresh function provided by useSanityCache
+    memoizedCountsQuery,                 // The memoized query string associated
+    'Free Resources Counts'              // A descriptive label
   );
-  // --- END NEW ---
 
   // This effect ensures the parent component receives the updated counts.
+  // handleCountsLoad is assumed to be a useCallback from the parent.
   React.useEffect(() => {
     if (resourceCounts && typeof handleCountsLoad === 'function') {
       handleCountsLoad(resourceCounts); // Pass the raw data back to the parent
     }
   }, [resourceCounts, handleCountsLoad]); // Only trigger when resourceCounts changes
+
+  // Memoize the refresh handler for the Retry button
+  const handleRefresh = useCallback(() => {
+    refresh(true); // Force refresh
+  }, [refresh]);
 
   // Display a loading state or error for the counts section itself
   if (isLoading) {
@@ -72,7 +82,7 @@ const ReusableCachedFreeResourcesCounts = ({
   if (error && !resourceCounts) { // If there's an error and no cached data to fall back on
     return (
       <div className="text-center py-4 text-red-500">
-        Failed to load resource counts. <button onClick={refresh} className="text-blue-500 hover:underline">Retry</button>
+        Failed to load resource counts. <button onClick={handleRefresh} className="text-blue-500 hover:underline">Retry</button>
       </div>
     );
   }

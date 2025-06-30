@@ -1,19 +1,22 @@
-/* eslint-disable @next/next/no-img-element */
-/* eslint-disable react/no-unescaped-entities */
+/*eslint-disable @next/next/no-img-element*/
+/*eslint-disable react/no-unescaped-entities*/
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'; // Added useMemo
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
-import { client } from "@/sanity/lib/client"; // Import Sanity client
-import { urlForImage } from "@/sanity/lib/image"; // Import image URL helper
-import SidebarRelatedResources from "@/app/free-ai-resources/SidebarRelatedResources"; // Re-import related resources component
-import NewsLatterBox from "@/components/Contact/NewsLatterBox"; // Re-import newsletter box
-import RelatedPost from "./RelatedPost"; // Assuming this path is correct for your RelatedPost component
+import { client } from "@/sanity/lib/client"; // Keep if needed for other non-cached fetches
+import { urlForImage } from "@/sanity/lib/image";
+import SidebarRelatedResources from "@/app/free-ai-resources/SidebarRelatedResources";
+import NewsLatterBox from "@/components/Contact/NewsLatterBox";
+import RelatedPost from "./RelatedPost";
 import SearchResults from '@/React_Query_Caching/SearchResults';
-
-// Import the useCachedSearch hook
 import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
+import Link from 'next/link';
+
+// Caching System Imports for Recent Posts
+import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
+import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
+import { usePageCache } from '@/React_Query_Caching/usePageCache';
 
 // --- New SidebarLoader Component ---
 const SidebarLoader = ({ count = 3 }) => {
@@ -29,8 +32,7 @@ const SidebarLoader = ({ count = 3 }) => {
             <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
           </div>
           {/* Shimmer effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"
-               style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite linear' }}></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite linear' }}></div>
         </li>
       ))}
     </ul>
@@ -44,39 +46,33 @@ const BlogSidebar = ({
   relatedResources,
   resourcesLoading,
   schemaSlugMap,
-   currentPostId, // Add this
-  currentPostType, // Add this
+  currentPostId,
+  currentPostType,
 }) => {
- 
-const [isMounted, setIsMounted] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Initialize mounted state
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Initialize useCachedSearch for sidebar search
-  // Update searchHookOptions with better dependency management
+  // Memoize searchHookOptions with better dependency management
   const searchHookOptions = useMemo(() => ({
     documentType: ["makemoney", "aitool", "coding", "seo"],
     searchFields: ['title', 'overview', 'body'],
     pageSlugPrefix: 'article-sidebar',
     componentName: `ArticleSidebarSearch-${currentPostId || 'default'}`,
     minSearchLength: 5,
-    // Add these options to ensure proper initialization
-    enabled: isMounted, // Only enable after component is mounted
+    enabled: isMounted,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
+    maxAge: 10 * 60 * 1000, // 10 minutes
   }), [currentPostId, isMounted]);
 
   const searchHook = useCachedSearch(searchHookOptions);
 
-  // Update handleInitiateSearch with better error handling
+  // Memoize handleInitiateSearch
   const handleInitiateSearch = useCallback(() => {
     const trimmedText = searchHook.searchText.trim();
-    
     if (trimmedText.length >= 5) {
-      // Add a small delay to ensure the search hook is ready
       setTimeout(() => {
         searchHook.handleSearch();
       }, 100);
@@ -85,15 +81,47 @@ const [isMounted, setIsMounted] = useState(false);
     }
   }, [searchHook]);
 
-  // Add a key handler that doesn't conflict with the button click
+  // Memoize handleKeyDown
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleInitiateSearch();
     }
   }, [handleInitiateSearch]);
-  const [recentData, setRecentData] = useState([]);
-  const [recentLoading, setRecentLoading] = useState(true);
+
+
+  // Refactor Recent Posts section to use useSanityCache with HOMEPAGE.RECENT_POSTS
+  const recentPostsQuery = useMemo(() =>
+    `*[_type in ["aitool","makemoney","coding","seo","freeairesources","ainews"]]|order(publishedAt desc)[0...3]{_id,title,slug,mainImage{asset->{_id,url},alt},publishedAt,_type}`
+    , []); // Query is static
+
+  const recentPostsCacheOptions = useMemo(() => ({
+    componentName: 'BlogSidebarRecentPosts',
+    staleTime: 3 * 60 * 1000, // Consistent with homepage recent posts
+    maxAge: 15 * 60 * 1000,
+    enableOffline: true,
+  }), []);
+
+  const {
+    data: recentData,
+    isLoading: recentLoading,
+    error: recentError,
+    refresh: refreshRecentPosts,
+    isStale: recentIsStale,
+  } = useSanityCache(
+    CACHE_KEYS.HOMEPAGE.RECENT_POSTS, // <<< Use the SAME cache key
+    recentPostsQuery,
+    {}, // No params for this query
+    recentPostsCacheOptions
+  );
+
+  // Register with PageCache for status button
+  usePageCache(
+    CACHE_KEYS.HOMEPAGE.RECENT_POSTS,
+    refreshRecentPosts,
+    recentPostsQuery,
+    'Sidebar Recent Posts' // Label for the cache status button
+  );
 
   // Internal loading states to ensure loaders show immediately for related posts/resources
   const [internalRelatedPostsLoading, setInternalRelatedPostsLoading] = useState(true);
@@ -112,45 +140,11 @@ const [isMounted, setIsMounted] = useState(false);
     }
   }, [relatedResources, resourcesLoading]);
 
-  // Fetch recent posts on component mount
-  useEffect(() => {
-    const fetchRecentPosts = async () => {
-      setRecentLoading(true);
-      try {
-        const query = `*[_type in ["aitool", "makemoney", "coding", "seo", "freeairesources", "ainews"]] | order(publishedAt desc) [0...3]{
-          _id,
-          title,
-          slug,
-          mainImage{
-            asset->{
-              _id,
-              url
-            },
-            alt
-          },
-          publishedAt,
-          _type
-        }`;
-        const data = await client.fetch(query);
-        setRecentData(data);
-      } catch (error) {
-        console.error("Failed to fetch recent posts:", error);
-        setRecentData([]);
-      } finally {
-        setRecentLoading(false);
-      }
-    };
-
-    fetchRecentPosts();
-  }, []);
-
   // Render search results using data from searchHook
- 
   return (
     <div className="w-full px-4 mt-4 lg:w-4/12">
       {/* Search Section */}
- {/* Search Section */}
-<div className="mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
+     <div className="mb-10 mt-12 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none lg:mt-0">
   <div className="flex items-center justify-between">
     <input
       type="text"
@@ -186,15 +180,15 @@ const [isMounted, setIsMounted] = useState(false);
         </div>
       </div>
 
-{/* Search Results - Replace renderSearchResults() with this */}
- {searchHook.searchText.trim().length > 0 && (
+      {/* Search Results */}
+      {searchHook.searchText.trim().length > 0 && (
         <SearchResults
           searchResults={searchHook.searchResults}
           isLoading={searchHook.isSearchLoading}
           error={searchHook.searchError}
           isSearchActive={searchHook.isSearchActive}
           searchText={searchHook.searchText}
-          pageSlugPrefix={schemaSlugMap[currentPostType] || 'article-sidebar'} // Use dynamic prefix
+          pageSlugPrefix={schemaSlugMap[currentPostType] || 'article-sidebar'}
           showNoResults={searchHook.showNoResults}
           cacheSource={searchHook.cacheSource}
           isStale={searchHook.isStale}
@@ -207,21 +201,14 @@ const [isMounted, setIsMounted] = useState(false);
       <div className="space-y-8">
         {/* Related Posts Section */}
         <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-gray-50/30 shadow-lg hover:shadow-xl dark:from-gray-800 dark:via-gray-800 dark:to-gray-900/50 dark:shadow-gray-900/20 transition-all duration-500">
-          {/* Decorative gradient border */}
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
           <div className="relative">
             <div className="flex items-center gap-3 border-b border-gray-200/50 dark:border-gray-700/50 px-8 py-5 bg-gradient-to-r from-blue-50/50 to-purple-50/30 dark:from-blue-900/20 dark:to-purple-900/20">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
-                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m0 0l4-4a4 4 0 105.656-5.656l-4 4m-4 4l4-4m0 0l-1.102 1.102" />
-                </svg>
+                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m0 0l4-4a4 4 0 105.656-5.656l-4-4m-4 4l4-4m0 0l-1.102 1.102" /></svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">
-                Related Posts
-              </h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">Related Posts</h3>
             </div>
-
             {(relatedPostsLoading || internalRelatedPostsLoading) ? (
               <SidebarLoader />
             ) : relatedPosts && relatedPosts.length > 0 ? (
@@ -248,52 +235,36 @@ const [isMounted, setIsMounted] = useState(false);
             )}
           </div>
         </div>
-
         {/* Related Resources Section - NEW */}
         <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-gray-50/30 shadow-lg hover:shadow-xl dark:from-gray-800 dark:via-gray-800 dark:to-gray-900/50 dark:shadow-gray-900/20 transition-all duration-500">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div className="relative">
             <div className="flex items-center gap-3 border-b border-gray-200/50 dark:border-gray-700/50 px-8 py-5 bg-gradient-to-r from-blue-50/50 to-purple-50/30 dark:from-blue-900/20 dark:to-purple-900/20">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
-                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m0 0l4-4a4 4 0 105.656-5.656l-4 4m-4 4l4-4m0 0l-1.102 1.102" />
-                </svg>
+                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m0 0l4-4a4 4 0 105.656-5.656l-4-4m-4 4l4-4m0 0l-1.102 1.102" /></svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">
-                Related Resources
-              </h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">Related Resources</h3>
             </div>
             {(resourcesLoading || internalResourcesLoading) ? (
               <SidebarLoader />
             ) : (
-              <SidebarRelatedResources
-                resources={relatedResources}
-                isLoading={resourcesLoading}
-                maxItems={3}
-              />
+              <SidebarRelatedResources resources={relatedResources} isLoading={resourcesLoading} maxItems={3} />
             )}
           </div>
         </div>
-
         {/* Recent Posts Section */}
         <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-gray-50/30 shadow-lg hover:shadow-xl dark:from-gray-800 dark:via-gray-800 dark:to-gray-900/50 dark:shadow-gray-900/20 transition-all duration-500">
           <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-teal-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
           <div className="relative">
             <div className="flex items-center gap-3 border-b border-gray-200/50 dark:border-gray-700/50 px-8 py-5 bg-gradient-to-r from-green-50/50 to-emerald-50/30 dark:from-green-900/20 dark:to-emerald-900/20">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-emerald-600 shadow-lg">
-                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">
-                Recent Posts
-              </h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">Recent Posts</h3>
             </div>
-
             {recentLoading ? (
               <SidebarLoader />
-            ) : recentData.length > 0 ? (
+            ) : recentData && recentData.length > 0 ? ( // Added check for recentData
               <ul className="p-6 space-y-4">
                 {recentData.slice(0, 3).map((post, index) => (
                   <li key={post._id} className="group/item relative">
@@ -315,37 +286,25 @@ const [isMounted, setIsMounted] = useState(false);
             ) : (
               <p className="text-center text-gray-500 dark:text-gray-400 py-4">No recent posts found.</p>
             )}
-
             {/* Explore All Posts Link */}
             <Link href="/blogs" className="block mt-6">
               <div className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-center transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <span className="relative flex items-center justify-center gap-2 text-lg font-semibold text-white">
-                  <span className="text-xl">🚀</span>
-                  Explore All Posts
-                  <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
+                  <span className="text-xl">🚀</span>Explore All Posts<span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
                 </span>
               </div>
             </Link>
           </div>
         </div>
-
         {/* Popular Categories Section */}
         <div className="group mb-4 relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-white to-gray-50/30 shadow-lg hover:shadow-xl dark:from-gray-800 dark:via-gray-800 dark:to-gray-900/50 dark:shadow-gray-900/20 transition-all duration-500">
           <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-
           <div className="relative">
             <div className="flex items-center gap-3 border-b border-gray-200/50 dark:border-gray-700/50 px-8 py-5 bg-gradient-to-r from-purple-50/50 to-pink-50/30 dark:from-purple-900/20 dark:to-pink-900/20">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-600 shadow-lg">
-                <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">
-                Popular Categories
-              </h3>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-600 shadow-lg"></div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white tracking-wide">Popular Categories</h3>
             </div>
-
             <ul className="p-6 space-y-3">
               {[
                 { href: "/ai-tools", icon: "⚙️", label: "AI Tools", gradient: "from-blue-500 to-cyan-500" },
@@ -355,21 +314,14 @@ const [isMounted, setIsMounted] = useState(false);
                 { href: "/ai-code", icon: "💻", label: "Code With AI", gradient: "from-indigo-500 to-purple-500" }
               ].map((category, index) => (
                 <li key={category.href} className="group/cat">
-                  <Link
-                    href={category.href}
-                    className="flex items-center gap-4 rounded-xl p-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100/50 dark:hover:from-gray-700/50 dark:hover:to-gray-600/30 transition-all duration-300 group-hover/cat:scale-[1.02] group-hover/cat:shadow-md"
-                  >
+                  <Link href={category.href} className="flex items-center gap-4 rounded-xl p-4 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100/50 dark:hover:from-gray-700/50 dark:hover:to-gray-600/30 transition-all duration-300 group-hover/cat:scale-[1.02] group-hover/cat:shadow-md">
                     <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r ${category.gradient} shadow-lg text-white text-lg group-hover/cat:scale-110 transition-transform duration-300`}>
                       {category.icon}
                     </div>
                     <div className="flex-1">
-                      <span className="text-base font-semibold text-gray-700 dark:text-gray-300 group-hover/cat:text-primary transition-colors duration-300">
-                        {category.label}
-                      </span>
+                      <span className="text-base font-semibold text-gray-700 dark:text-gray-300 group-hover/cat:text-primary transition-colors duration-300">{category.label}</span>
                     </div>
-                    <svg className="h-5 w-5 text-gray-400 group-hover/cat:text-primary group-hover/cat:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                    <svg className="h-5 w-5 text-gray-400 group-hover/cat:text-primary group-hover/cat:translate-x-1 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </Link>
                 </li>
               ))}
@@ -377,16 +329,17 @@ const [isMounted, setIsMounted] = useState(false);
           </div>
         </div>
       </div>
-      <br/>
-      <br/>
+      <br /><br />
       <NewsLatterBox />
-
-
       {/* Tailwind CSS keyframes for shimmer effect */}
       <style jsx>{`
         @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
         }
         .animate-shimmer {
           animation: shimmer 1.5s infinite linear;

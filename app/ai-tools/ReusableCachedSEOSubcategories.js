@@ -1,11 +1,13 @@
 // components/Blog/ReusableCachedSEOSubcategories.js (or wherever it resides)
 "use client";
-import React, { useEffect, useState, useCallback } from "react"; // Import useCallback
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link"; // Assuming Link is used for navigation
+// Removed SkelCard and CacheStatusIndicator imports as they are no longer needed here
 
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
-import { usePageCache } from '@/React_Query_Caching/usePageCache'; // <--- Ensure this is imported!
+import { usePageCache } from '@/React_Query_Caching/usePageCache'; // Ensure this is imported!
+import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Import cacheSystem for refreshGroup
 
 const ReusableCachedSEOSubcategories = ({
   currentPage = 1,
@@ -17,23 +19,44 @@ const ReusableCachedSEOSubcategories = ({
   // Flag to indicate initial data has been loaded (from network or cache)
   const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);
 
+  const start = useMemo(() => (currentPage - 1) * limit, [currentPage, limit]);
 
-  const start = (currentPage - 1) * limit;
+  // Memoize the query for paginated subcategories
+  const subcategoryQuery = useMemo(() => `*[_type=="seoSubcategory"]|order(orderRank asc){_id,title,
+    "slug": slug.current, // Ensure slug is flattened for direct use
+    description,
+    "blogCount": count(*[_type == "seo" && references(^._id)]) // Count related 'seo' blogs
+  }[${start}...${start + limit + 1}]`, [start, limit]); // Changed _type to seoSubcategory
 
-  // Query for paginated subcategories
-  const subcategoryQuery = `*[_type=="seoSubcategory"]|order(orderRank asc){_id,title,count,slug,description}[${start}...${start + limit + 1}]`; // Fetch one more than limit to check hasMore
-
-  // Query for total count of subcategories
-  const totalSubcategoryCountQuery = `count(*[_type=="seoSubcategory"])`;
+  // Memoize the query for total count of subcategories
+  const totalSubcategoryCountQuery = useMemo(() => `count(*[_type=="seoSubcategory"])`, []); // Changed _type to seoSubcategory
 
   // Cache key for the current page of subcategories
-  const pageCacheKey = CACHE_KEYS.PAGE.SEO_SUBCATEGORIES_PAGINATED(currentPage);
+  const pageCacheKey = useMemo(() => CACHE_KEYS.PAGE.SEO_SUBCATEGORIES_PAGINATED(currentPage), [currentPage]);
 
   // Cache key for the total count of subcategories
-  const totalCountCacheKey = CACHE_KEYS.PAGE.SEO_SUBCATEGORIES_TOTAL;
+  const totalCountCacheKey = useMemo(() => CACHE_KEYS.PAGE.SEO_SUBCATEGORIES_TOTAL, []);
 
   // Define a group identifier for SEO subcategories
   const subcategoriesGroup = 'seo-subcategories-all-items';
+
+  // Memoized empty params object for useSanityCache
+  const memoizedParams = useMemo(() => ({}), []);
+
+  // Memoize options object for useSanityCache paginated data
+  const stableOptionsPaginated = useMemo(() => ({
+    componentName: `SEO_Subcategories_Page_${currentPage}`,
+    enableOffline: true,
+    group: subcategoriesGroup,
+  }), [currentPage, subcategoriesGroup]);
+
+  // Memoize options object for useSanityCache total count data
+  const stableOptionsTotalCount = useMemo(() => ({
+    componentName: `SEO_Subcategories_TotalCount`,
+    enableOffline: true,
+    group: subcategoriesGroup,
+  }), [subcategoriesGroup]);
+
 
   // Fetch paginated subcategory data
   const {
@@ -45,12 +68,8 @@ const ReusableCachedSEOSubcategories = ({
   } = useSanityCache(
     pageCacheKey,
     subcategoryQuery,
-    {}, // No specific params needed for this query
-    {
-      componentName: `SEO_Subcategories_Page_${currentPage}`,
-      enableOffline: true,
-      group: subcategoriesGroup, // Pass the group identifier
-    }
+    memoizedParams, // Use memoized params
+    stableOptionsPaginated // Use stable options
   );
 
   // Fetch total count of subcategories
@@ -63,12 +82,8 @@ const ReusableCachedSEOSubcategories = ({
   } = useSanityCache(
     totalCountCacheKey,
     totalSubcategoryCountQuery,
-    {}, // No specific params
-    {
-      componentName: `SEO_Subcategories_TotalCount`,
-      enableOffline: true,
-      group: subcategoriesGroup, // Pass the group identifier (same group as paginated data)
-    }
+    memoizedParams, // Use memoized params
+    stableOptionsTotalCount // Use stable options
   );
 
   // Calculate pagination details
@@ -81,7 +96,6 @@ const ReusableCachedSEOSubcategories = ({
     if (subcategoryData) {
       setSubcategoriesToDisplay(subcategoryData.slice(0, limit));
       // Set flag once data is initially available (from cache or network)
-      // This ensures that `onDataLoad` is not called until data has rendered at least once.
       if (!hasInitialDataLoaded && subcategoryData !== null && totalCountData !== null) {
         setHasInitialDataLoaded(true);
       }
@@ -93,9 +107,13 @@ const ReusableCachedSEOSubcategories = ({
   useEffect(() => {
     if (isSubcategoryStale || isTotalCountStale) {
       setPaginationStaleWarning(true);
-      refreshSubcategories();
-      refreshTotalCount();
+      // Trigger background refresh for current page and total count if online
+      if (typeof window !== 'undefined' && window.navigator.onLine) {
+        refreshSubcategories(false); // background refresh
+        refreshTotalCount(false);   // background refresh
+      }
     } else if ((subcategoryData && !isSubcategoryStale) && (totalCountData && !isTotalCountStale) && paginationStaleWarning) {
+      // If data is fresh and warning was active, dismiss it
       setPaginationStaleWarning(false);
     }
   }, [isSubcategoryStale, isTotalCountStale, subcategoryData, totalCountData, paginationStaleWarning, refreshSubcategories, refreshTotalCount]);
@@ -128,15 +146,16 @@ const ReusableCachedSEOSubcategories = ({
       if (refreshAllGroup) {
         // Assuming cacheSystem is globally available or imported in a higher scope
         if (typeof cacheSystem !== 'undefined' && cacheSystem.refreshGroup) {
+          console.log(`Manually refreshing entire group: ${subcategoriesGroup}`);
           await cacheSystem.refreshGroup(subcategoriesGroup);
         } else {
           console.warn("cacheSystem is not defined or refreshGroup method is missing. Cannot refresh group.");
-          await refreshSubcategories();
-          await refreshTotalCount();
+          await refreshSubcategories(true); // Fallback to force refresh current page
+          await refreshTotalCount(true);
         }
       } else {
-        await refreshSubcategories();
-        await refreshTotalCount();
+        await refreshSubcategories(true); // Force refresh for current page
+        await refreshTotalCount(true);
       }
     } catch (error) {
       console.error('Subcategories refresh failed:', error);
@@ -147,13 +166,13 @@ const ReusableCachedSEOSubcategories = ({
 
   if (isSubcategoryLoading || isTotalCountLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: limit }).map((_, index) => (
-          <div key={index} className="card p-6 bg-white border border-gray-200 rounded-lg shadow animate-pulse dark:bg-gray-800 dark:border-gray-700">
+          <div key={index} className="flex flex-col p-6 bg-white border border-gray-200 rounded-lg shadow animate-pulse dark:bg-gray-800 dark:border-gray-700 h-48">
             <div className="h-6 bg-gray-300 rounded w-3/4 mb-4 dark:bg-gray-700"></div>
             <div className="h-4 bg-gray-300 rounded w-full mb-3 dark:bg-gray-700"></div>
             <div className="h-4 bg-gray-300 rounded w-2/3 mb-4 dark:bg-gray-700"></div>
-            <div className="h-8 bg-blue-300 rounded w-1/3 dark:bg-blue-700"></div>
+            <div className="mt-auto h-8 bg-blue-300 rounded w-1/3 dark:bg-blue-700"></div>
           </div>
         ))}
       </div>
@@ -180,8 +199,8 @@ const ReusableCachedSEOSubcategories = ({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {subcategoriesToDisplay.map((subcategory) => (
           <Link
-            href={`/ai-seo/category/${subcategory.slug.current}`}
-            key={subcategory.slug.current}
+            href={`/ai-seo/category/${subcategory.slug}`} // Use subcategory.slug directly
+            key={subcategory.slug} // Use subcategory.slug for key
             className="card hover:shadow-lg mt-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 transition duration-200 ease-in-out hover:scale-[1.03] max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow"
           >
             <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">{subcategory.title}</h2>

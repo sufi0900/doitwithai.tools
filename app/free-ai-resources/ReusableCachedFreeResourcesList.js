@@ -1,7 +1,7 @@
 // components/Resources/ReusableCachedFreeResourcesList.jsx
 "use client";
 
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useMemo } from 'react'; // Import useMemo
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import SkelCard from "@/components/Blog/Skeleton/Card";
@@ -18,12 +18,13 @@ const ReusableCachedFreeResourcesList = ({
   currentPage = 1,
   selectedFormat = "all",
   sortBy = "publishedAt",
-  searchText = "", // NEW: Accept searchText prop
-  onDataLoad,
+  searchText = "", // Accept searchText prop from parent
+  onDataLoad, // Callback to send pagination info and resources list to parent
 }) => {
   const [listStaleWarning, setListStaleWarning] = useState(false);
-  const start = (currentPage - 1) * RESOURCE_LIMIT;
-  const isSearchMode = searchText && searchText.trim().length > 0; // Determine if search is active based on searchText
+  const start = useMemo(() => (currentPage - 1) * RESOURCE_LIMIT, [currentPage, RESOURCE_LIMIT]);
+  // Determine if search is active based on searchText being non-empty
+  const isSearchMode = useMemo(() => searchText && searchText.trim().length > 0, [searchText]);
 
   // Helper to format sort order for GROQ
   const getOrderBy = useCallback((sortByValue) => {
@@ -35,9 +36,9 @@ const ReusableCachedFreeResourcesList = ({
       default:
         return 'publishedAt desc';
     }
-  }, []);
+  }, []); // This function itself is stable
 
-  // --- REFACTOR: Use a single function to generate query and parameters ---
+  // --- REFACTOR: Use a single memoized function to generate query and parameters ---
   const getDynamicQueryConfig = useCallback(() => {
     const orderBy = getOrderBy(sortBy);
     let filters = `_type == $docType`;
@@ -47,7 +48,6 @@ const ReusableCachedFreeResourcesList = ({
 
     if (isSearchMode) {
       // Prioritize search: format and sort filters apply AFTER search
-      // Assuming 'title', 'overview', 'content', 'resourceType', 'aiToolDetails' are searchable fields
       searchFilter = ` && (title match $searchText || overview match $searchText || content match $searchText || resourceType match $searchText || aiToolDetails.toolCategory match $searchText || aiToolDetails.functionality match $searchText)`;
       queryParams.searchText = `*${trimmedSearchText}*`; // Wildcard search
     } else if (selectedFormat !== "all") {
@@ -76,21 +76,39 @@ const ReusableCachedFreeResourcesList = ({
     };
   }, [selectedFormat, sortBy, getOrderBy, start, searchText, isSearchMode]);
 
-  // Extract query and params
+  // Extract memoized query and params by calling the memoized function
   const { listQuery, totalCountQuery, queryParams, orderBy } = getDynamicQueryConfig();
 
   // Determine the typeIdentifier for cache keys based on search or format/sort
-  // This is crucial for distinguishing cached results!
-  const typeIdentifier = isSearchMode
-    ? `search-${btoa(searchText).slice(0, 50).replace(/=/g, '')}` // Hash of search text for unique key
-    : `${selectedFormat}-${sortBy}`; // Format-sort for non-search mode
+  const typeIdentifier = useMemo(() => 
+    isSearchMode
+      ? `search-${btoa(searchText).slice(0, 50).replace(/=/g, '')}` // Hash of search text for unique key
+      : `${selectedFormat}-${sortBy}`, // Format-sort for non-search mode
+  [isSearchMode, searchText, selectedFormat, sortBy]);
 
   // CacheKey for the paginated list
-  const listCacheKey = CACHE_KEYS.PAGE.LIST_FREERESOURCES(currentPage, selectedFormat, sortBy, typeIdentifier);
+  const listCacheKey = useMemo(() => CACHE_KEYS.PAGE.LIST_FREERESOURCES(currentPage, selectedFormat, sortBy, typeIdentifier), 
+  [currentPage, selectedFormat, sortBy, typeIdentifier]);
+  
   // CacheKey for the total items
-  const totalItemsCacheKey = CACHE_KEYS.PAGE.TOTAL_FREERESOURCES_ITEMS(selectedFormat, typeIdentifier);
+  const totalItemsCacheKey = useMemo(() => CACHE_KEYS.PAGE.TOTAL_FREERESOURCES_ITEMS(selectedFormat, typeIdentifier), 
+  [selectedFormat, typeIdentifier]);
 
-  const freeResourcesGroup = 'free-resources'; // Group for all free resource data
+  const freeResourcesGroup = useMemo(() => 'free-resources', []); // Memoized group name
+
+  // Memoize options objects for useSanityCache calls
+  const stableListOptions = useMemo(() => ({
+    componentName: `FreeResourcesList_P${currentPage}_F${selectedFormat}_S${sortBy}${isSearchMode ? '_Search' : ''}`,
+    enableOffline: true,
+    group: freeResourcesGroup,
+  }), [currentPage, selectedFormat, sortBy, isSearchMode, freeResourcesGroup]);
+
+  const stableTotalOptions = useMemo(() => ({
+    componentName: `FreeResourcesTotal_F${selectedFormat}${isSearchMode ? '_Search' : ''}`,
+    enableOffline: true,
+    group: freeResourcesGroup,
+  }), [selectedFormat, isSearchMode, freeResourcesGroup]);
+
 
   // Fetch paginated resources
   const {
@@ -104,11 +122,7 @@ const ReusableCachedFreeResourcesList = ({
     listCacheKey,
     listQuery,
     queryParams,
-    {
-      componentName: `FreeResourcesList_P${currentPage}_F${selectedFormat}_S${sortBy}${isSearchMode ? '_Search' : ''}`,
-      enableOffline: true,
-      group: freeResourcesGroup,
-    }
+    stableListOptions
   );
 
   // Fetch total items count
@@ -123,11 +137,7 @@ const ReusableCachedFreeResourcesList = ({
     totalItemsCacheKey,
     totalCountQuery,
     queryParams,
-    {
-      componentName: `FreeResourcesTotal_F${selectedFormat}${isSearchMode ? '_Search' : ''}`,
-      enableOffline: true,
-      group: freeResourcesGroup,
-    }
+    stableTotalOptions
   );
 
   // Register this component's cache keys with usePageCache
@@ -154,8 +164,11 @@ const ReusableCachedFreeResourcesList = ({
   useEffect(() => {
     if (isListStale || isTotalItemsStale) {
       setListStaleWarning(true);
-      refreshList();
-      refreshTotalItems();
+      // Trigger background refresh for current page and total count if online
+      if (typeof window !== 'undefined' && window.navigator.onLine) {
+        refreshList(false);
+        refreshTotalItems(false);
+      }
     } else if ((resourcesData && !isListStale) && (totalItemsData && !isTotalItemsStale) && listStaleWarning) {
       setListStaleWarning(false);
     }
@@ -179,12 +192,12 @@ const ReusableCachedFreeResourcesList = ({
           await cacheSystem.refreshGroup(freeResourcesGroup);
         } else {
           console.warn("cacheSystem.refreshGroup is not available. Performing individual refreshes.");
-          await refreshList();
-          await refreshTotalItems();
+          await refreshList(true);
+          await refreshTotalItems(true);
         }
       } else {
-        await refreshList();
-        await refreshTotalItems();
+        await refreshList(true);
+        await refreshTotalItems(true);
       }
     } catch (error) {
       console.error('FreeResources list refresh failed:', error);
@@ -194,7 +207,8 @@ const ReusableCachedFreeResourcesList = ({
   const hasError = resourcesError || totalItemsError;
 
   // Render loading state for the list
-  if (isResourcesLoading || isTotalItemsLoading) {
+  // Only show skeleton if loading AND no data is currently available
+  if (isResourcesLoading && !resourcesData) {
     return (
       <div className="flex flex-wrap -mx-3">
         {Array.from({ length: RESOURCE_LIMIT }).map((_, index) => (
@@ -217,7 +231,7 @@ const ReusableCachedFreeResourcesList = ({
           </div>
         </div>
       )}
-      {hasError && !itemsToDisplay.length ? (
+      {hasError && !itemsToDisplay.length ? ( // Show error if error AND no data fallback
         <div className="text-center py-8">
           <p className="text-red-500 mb-4">Failed to load resources.</p>
           <button onClick={() => handleRefresh(false)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Retry Current View</button>
@@ -229,7 +243,7 @@ const ReusableCachedFreeResourcesList = ({
             <ResourceCard key={resource._id} resource={resource} />
           ))}
         </div>
-      ) : (
+      ) : ( // No resources found (not loading, no error)
         <div className="text-center py-8">
           <p className="text-gray-500 dark:text-gray-400">
             {isSearchMode && searchText.trim().length > 0

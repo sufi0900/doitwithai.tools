@@ -1,7 +1,7 @@
 // components/Resources/ReusableCachedFeaturedFreeResources.jsx
 "use client";
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react'; // Import useMemo and useCallback
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
@@ -10,11 +10,9 @@ import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard";
 import VerticalFeaturePost from "./FeatureResourcePost"; // Assuming this path for rendering
 
 
-
-
 const ReusableCachedFeaturedFreeResources = () => {
-  // Query to fetch featured free resources
-  const query = `*[_type == "freeResources" && isOwnPageFeature == true] | order(publishedAt desc) {
+  // Memoize the query string itself for stability
+  const memoizedQuery = useMemo(() => `*[_type == "freeResources" && isOwnPageFeature == true] | order(publishedAt desc) {
     _id, title, slug, tags, mainImage, overview, resourceType, resourceFormat,
     resourceLink, resourceLinkType, previewSettings,
     "resourceFile": resourceFile.asset->,
@@ -22,27 +20,37 @@ const ReusableCachedFeaturedFreeResources = () => {
     "relatedArticle": relatedArticle->{title, slug},
     aiToolDetails,
     seoTitle, seoDescription, seoKeywords, altText, structuredData
-  }`;
+  }`, []); // Empty dependency array means query is stable and won't re-create
+
+  // Memoize the options object for useSanityCache for stability
+  const stableOptions = useMemo(() => ({
+    componentName: 'FeaturedFreeResources',
+    enableOffline: true,
+    group: 'free-resources', // Assign to a group for easy invalidation
+  }), []); // Empty dependency array means options are stable and won't re-create
+
+  // Memoize an empty params object if your query doesn't use params
+  const memoizedParams = useMemo(() => ({}), []);
 
   const { data: featuredResources, isLoading, error, refresh, isStale } = useSanityCache(
     CACHE_KEYS.PAGE.FREERESOURCES_FEATURED, // Use the new specific cache key
-    query,
-    {}, // No params for this query
-    {
-      componentName: 'FeaturedFreeResources',
-      enableOffline: true,
-      group: 'free-resources', // Assign to a group for easy invalidation
-    }
+    memoizedQuery, // Use the memoized query
+    memoizedParams, // Use the memoized params
+    stableOptions // Use the stable options
   );
 
-  // --- NEW: Register this component's cache key with usePageCache ---
+  // Register this component's cache key with usePageCache
   usePageCache(
     CACHE_KEYS.PAGE.FREERESOURCES_FEATURED, // The cache key for this data
     refresh,                               // The refresh function provided by useSanityCache
-    query,                                 // The query string associated
+    memoizedQuery,                         // The memoized query string associated
     'Featured Free Resources'              // A descriptive label for debugging/status button
   );
-  // --- END NEW ---
+
+  // Memoize the refresh handler for the Retry button
+  const handleRefresh = useCallback(() => {
+    refresh(true); // Force refresh
+  }, [refresh]);
 
   if (isLoading) {
     return <FeatureSkeleton />;
@@ -53,7 +61,7 @@ const ReusableCachedFeaturedFreeResources = () => {
       <div className="text-center py-8">
         <p className="text-red-500">Failed to load featured resources.</p>
         <button
-          onClick={refresh}
+          onClick={handleRefresh} // Use the memoized handleRefresh
           className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Retry

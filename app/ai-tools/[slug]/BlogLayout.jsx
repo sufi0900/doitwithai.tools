@@ -8,7 +8,7 @@ import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
 import RelatedResources from "@/app/free-ai-resources/RelatedResources";
 import { PortableText } from "@portabletext/react";
 import PortableTextComponents from './createPortableTextComponents';
-import RecentPost from "@/components/RecentPost/page";
+import RecentPost from "@/components/RecentPost/RecentHome";
 import BlogSidebar from "./BlogSidebar"
 import CongratsPopup from "./CongratsPopup"
 import ArticleHeader from './ArticleHeader';

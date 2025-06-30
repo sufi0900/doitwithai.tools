@@ -1,5 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
-/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable react-hooks/rules-of-hooks */
 "use client";
 import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";
 import Breadcrumb from "@/components/Common/Breadcrumb";
@@ -10,6 +9,8 @@ import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton"
 import React, { useState, useCallback, useMemo } from "react";
 
+import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
+import SearchResults from '@/React_Query_Caching/SearchResults';
 
 export const revalidate = false;
 export const dynamic = "force-dynamic";
@@ -24,7 +25,16 @@ export default function AISEOPage() {
   const [subcategoriesTotalPages, setSubcategoriesTotalPages] = useState(1);
   const SUBCATEGORIES_LIMIT = 2;
 
-  
+  // Initialize search hook
+  const searchHookOptions = useMemo(() => ({
+    documentType: "seo",
+    searchFields: ['title', 'overview', 'body'],
+    pageSlugPrefix: 'ai-seo',
+    componentName: 'AISEOPageSearch',
+    minSearchLength: 1,
+  }), []); 
+
+  const searchHook = useCachedSearch(searchHookOptions);
 
   // Main blog pagination handlers
   const handlePrevious = () => {
@@ -40,7 +50,7 @@ export default function AISEOPage() {
   }, []);
 
   // Main blog next button disabled logic
-  const isNextButtonDisabled =  currentPage >= allBlogsTotalPages;
+  const isNextButtonDisabled = searchHook.isSearchActive || currentPage >= allBlogsTotalPages;
 
   // Subcategories pagination handlers
   const handlePreviousSubcategories = () => {
@@ -55,7 +65,7 @@ export default function AISEOPage() {
   }, []);
 
   // Subcategories pagination disabled logic
-  const isNextButtonDisabledSubcategories = currentPageSubcategories >= subcategoriesTotalPages;
+  const isNextButtonDisabledSubcategories = searchHook.isSearchActive || currentPageSubcategories >= subcategoriesTotalPages;
   const isPreviousButtonDisabledSubcategories = currentPageSubcategories === 1;
 
   return (
@@ -114,7 +124,7 @@ export default function AISEOPage() {
               />
               
               {/* Subcategories Pagination */}
-        
+              {!searchHook.isSearchActive && (
                 <div className="mt-12 flex justify-center">
                   <nav className="flex items-center space-x-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-700">
                     <button
@@ -156,8 +166,7 @@ export default function AISEOPage() {
                     </button>
                   </nav>
                 </div>
-             
-
+              )}
             </div>
           </section>
 
@@ -171,14 +180,14 @@ export default function AISEOPage() {
               
               <div className="flex flex-col gap-4 sm:flex-row">
                 <div className="relative flex-1">
-                  {/* <input
+                  <input
                     type="text"
                     placeholder="Search for SEO tools, guides, tips..."
                     className="w-full rounded-xl border-0 bg-white/10 px-6 py-4 text-white placeholder-blue-200 backdrop-blur-sm transition-all duration-300 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 dark:bg-gray-800/50 dark:text-white dark:placeholder-gray-400"
                     value={searchHook.searchText}
                     onChange={(e) => searchHook.updateSearchText(e.target.value)}
                     onKeyDown={searchHook.handleKeyDown}
-                  /> */}
+                  />
                   <div className="absolute right-4 top-1/2 -translate-y-1/2">
                     <svg className="h-5 w-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -188,7 +197,7 @@ export default function AISEOPage() {
                 
                 <div className="flex gap-2">
                   <button
-                    // onClick={searchHook.handleSearch}
+                    onClick={searchHook.handleSearch}
                     className="flex items-center justify-center rounded-xl bg-white px-6 py-4 font-medium text-blue-600 shadow-lg transition-all duration-200 hover:bg-blue-50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50"
                   >
                     <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -198,7 +207,7 @@ export default function AISEOPage() {
                   </button>
                   
                   <button
-                    // onClick={searchHook.resetSearch}
+                    onClick={searchHook.resetSearch}
                     className="flex items-center justify-center rounded-xl bg-white/20 px-6 py-4 font-medium text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
                   >
                     <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,9 +220,24 @@ export default function AISEOPage() {
             </div>
           </section>
 
-     
+          {/* Search Results */}
+          <SearchResults
+            searchResults={searchHook.searchResults}
+            isLoading={searchHook.isSearchLoading}
+            error={searchHook.searchError}
+            isSearchActive={searchHook.isSearchActive}
+            searchText={searchHook.searchText}
+            pageSlugPrefix={searchHook.pageSlugPrefix}
+            showNoResults={searchHook.showNoResults}
+            cacheSource={searchHook.cacheSource}
+            isStale={searchHook.isStale}
+            onResetSearch={searchHook.resetSearch}
+            onRefreshSearch={searchHook.refreshSearch}
+            className="mb-16"
+          />
+
           {/* Main Blog Section */}
-    
+          {!searchHook.isSearchActive && (
             <section className="mb-16">
               <div className="mb-12 text-center">
                 <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl">
@@ -279,7 +303,7 @@ export default function AISEOPage() {
                 </div>
               </div>
             </section>
-
+          )}
         </div>
       </div>
     </PageCacheProvider>

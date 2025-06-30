@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { cacheSystem } from './cacheSystem';
 
 // --- Cache Context ---
@@ -14,20 +14,18 @@ export const CacheProvider = ({ children }) => {
     subscribers: 0,
     isOnline: true,
   });
+  const [globalOperationInProgress, setGlobalOperationInProgress] = useState(false);
 
+const setGlobalOperation = useCallback((inProgress) => {
+  setGlobalOperationInProgress(inProgress);
+}, []);
   // Global state for keys currently being refreshed
   const [refreshingKeys, setRefreshingKeys] = useState(new Set());
 
   useEffect(() => {
     // Update online status
-    const handleOnline = () => {
-      console.log('[CacheProvider] Connection restored');
-      setIsOnline(true);
-    };
-    const handleOffline = () => {
-      console.log('[CacheProvider] Connection lost');
-      setIsOnline(false);
-    };
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -43,7 +41,7 @@ export const CacheProvider = ({ children }) => {
     const updateStats = () => {
       setCacheStats(cacheSystem.getCacheStats());
     };
-    
+
     updateStats();
     const statsInterval = setInterval(updateStats, 5000); // Update every 5 seconds
 
@@ -84,16 +82,17 @@ export const CacheProvider = ({ children }) => {
     return refreshingKeys.has(key);
   }, [refreshingKeys]);
 
-  const contextValue = {
-    isOnline,
-    cacheStats,
-    refreshCache,
-    addRefreshingKey,
-    removeRefreshingKey,
-    isKeyRefreshing,
-    cacheSystem,
-  };
-
+ const contextValue = {
+  isOnline,
+  cacheStats,
+  refreshCache,
+  addRefreshingKey,
+  removeRefreshingKey,
+  isKeyRefreshing,
+  cacheSystem,
+  globalOperationInProgress, // NEW
+  setGlobalOperation, // NEW
+};
   return <CacheContext.Provider value={contextValue}>{children}</CacheContext.Provider>;
 };
 
@@ -112,34 +111,47 @@ export const PageCacheProvider = ({ children, pageType, pageId }) => {
 
   // Store page-specific cache keys and their refresh functions
   const [pageCacheKeys, setPageCacheKeys] = useState(new Map());
-  const pageRefreshFunctionsRef = useRef(new Map());
+  const [pageRefreshFunctions, setPageRefreshFunctions] = useState(new Map());
 
-  // Register a cache key with its refresh function
+  // FIXED: Use useCallback to prevent unnecessary re-renders
   const registerCacheKey = useCallback((cacheKey, refreshFn, query, label) => {
-    setPageCacheKeys((prev) => new Map(prev.set(cacheKey, { query, label, refreshFn })));
-    pageRefreshFunctionsRef.current.set(cacheKey, refreshFn);
+    setPageCacheKeys((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(cacheKey, { query, label, refreshFn });
+      return newMap;
+    });
+    setPageRefreshFunctions((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(cacheKey, refreshFn);
+      return newMap;
+    });
   }, []);
 
-  // Unregister a cache key
+  // FIXED: Use useCallback to prevent unnecessary re-renders
   const unregisterCacheKey = useCallback((cacheKey) => {
     setPageCacheKeys((prev) => {
       const newMap = new Map(prev);
       newMap.delete(cacheKey);
       return newMap;
     });
-    pageRefreshFunctionsRef.current.delete(cacheKey);
+    setPageRefreshFunctions((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(cacheKey);
+      return newMap;
+    });
   }, []);
 
   // Refresh all page-specific cache
   const refreshPageCache = useCallback(async () => {
-    const refreshPromises = Array.from(pageRefreshFunctionsRef.current.values()).map((refreshFn) =>
+    const refreshPromises = Array.from(pageRefreshFunctions.values()).map((refreshFn) =>
       refreshFn().catch((error) => {
         console.error('Failed to refresh cache key:', error);
         return null;
       })
     );
+
     await Promise.allSettled(refreshPromises);
-  }, []);
+  }, [pageRefreshFunctions]);
 
   // Invalidate all page-specific cache
   const invalidatePageCache = useCallback(async () => {

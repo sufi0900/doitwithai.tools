@@ -50,16 +50,16 @@ export const CACHE_KEYS = {
 
   // Article Keys
   ARTICLE: {
- 
-  CONTENT: (slug, type) => `article_${type}_${slug}`,
-  RELATED_POSTS: (postId, type) => `related_posts_${type}_${postId}`,
-  RELATED_RESOURCES: (postId) => `related_resources_${postId}`,
+        CONTENT: (slug, type) => `article_content_${type}_${slug}`, // Key for the main article content
+    RELATED_POSTS: (articleId, articleType) => `article_related_posts_${articleType}_${articleId}`, // Key for related posts
+    RELATED_RESOURCES: (articleId) => `article_related_resources_${articleId}`, // Key for related resources
+   
   },
 
   // Global Keys (for data that might be truly global and less frequently updated)
   GLOBAL: {
     ALL_POSTS: (page, category, sort) => `global_all_posts_${page}_${category}_${sort}`,
-    MIXED_BLOGS: (page, category, sort) => `global_mixed_blogs_${page}_${category}_${sort}`
+    // MIXED_BLOGS: (page, category, sort) => `global_mixed_blogs_${page}_${category}_${sort}`
   },
 
   // Schema-specific Keys (for very granular control, or if a schema has unique caching requirements)
@@ -139,17 +139,8 @@ export const CACHE_CONFIG = {
   PAGE_FREERESOURCES_LIST: { staleTime: 1 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true, },
   PAGE_FREERESOURCES_TOTAL_ITEMS: { staleTime: 2 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true, },
 
-ARTICLE_CONTENT: {
-  staleTime:  1 * 60 * 1000, // 1 hour - articles don't change frequently
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  enableOffline: true
-},
-
-RELATED_CONTENT: {
-  staleTime: 30 * 60 * 1000, // 30 minutes - related content can change more often
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days  
-  enableOffline: true
-},
+  ARTICLE_CONTENT: { staleTime: 60 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true },
+  RELATED_CONTENT: { staleTime: 30 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true },
 
   PAGINATION: { staleTime: 2 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true },
 
@@ -201,15 +192,8 @@ export const getCacheConfig = (cacheKey) => {
   if (cacheKey.startsWith('homepage_')) { return CACHE_CONFIG.HOMEPAGE; }
 
   // Article & Related Content
-
-if (cacheKey.startsWith('article_') && !cacheKey.includes('related')) {
-  return CACHE_CONFIG.ARTICLE_CONTENT;
-}
-
-if (cacheKey.includes('related_posts_') || cacheKey.includes('related_resources_')) {
-  return CACHE_CONFIG.RELATED_CONTENT;
-}
-
+  if (cacheKey.startsWith('article_') && !cacheKey.includes('related')) { return CACHE_CONFIG.ARTICLE_CONTENT; }
+  if (cacheKey.includes('related_posts_') || cacheKey.includes('related_resources_')) { return CACHE_CONFIG.RELATED_CONTENT; }
 
   // SEO Subcategories
   if (cacheKey.startsWith('page_seo_subcategories_')) {
@@ -245,6 +229,6 @@ export const INVALIDATION_PATTERNS = {
   SEARCH_ALL: 'page_.*_search_.*',
   
   ALL_DOCS_FOR_OFFLINE_SEARCH_ALL: 'page_all_docs_offline_.*',
-    // ARTICLE_FULL_REFRESH: (slugs, id, type) => `(article_content_${type}_${slug}|article_related_posts_${type}_${id}|article_related_resources_${id})`
+    ARTICLE_FULL_REFRESH: (slug, id, type) => `(article_content_${type}_${slug}|article_related_posts_${type}_${id}|article_related_resources_${id})`
 
 };

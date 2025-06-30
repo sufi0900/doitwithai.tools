@@ -90,3 +90,7 @@ export default function RootLayout({
   </html>
   );
 }
+// git init
+// git add .
+// git commit -m "Your commit message"
+// git push -u origin main

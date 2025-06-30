@@ -1,6 +1,7 @@
 // components/TrendingPage.jsx
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useMemo, useCallback } from "react"; // Added useMemo, useCallback
 import { Grid } from "@mui/material";
 import { urlForImage } from "@/sanity/lib/image";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard";
@@ -10,36 +11,31 @@ import BigCard from "@/components/Blog/HomeBigCard";
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
+import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for refreshGroup
 
 const TrendingPage = () => {
-const queries = {
-    trendBig: `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageTrendBig == true]{
-      _id,
-      _type,
-      title,
-      overview,
-      mainImage,
-      slug,
-      publishedAt,
-      readTime,
-      tags,
-      _updatedAt,
-      "displaySettings": displaySettings
-    }`,
-    trendRelated: `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageTrendRelated == true]{
-      _id,
-      _type,
-      title,
-      overview,
-      mainImage,
-      slug,
-      publishedAt,
-      readTime,
-      tags,
-      _updatedAt,
-      "displaySettings": displaySettings
-    }`
-  };
+  // Memoize queries for stability
+  const queries = useMemo(() => ({
+    trendBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendBig==true]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+    trendRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendRelated==true]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+  }), []); // Empty dependency array as these queries are static
+
+  // Memoize options for useSanityCache calls
+  const bigCardOptions = useMemo(() => ({
+    componentName: 'TrendingBig',
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    maxAge: 15 * 60 * 1000,   // 15 minutes
+    enableOffline: true,
+    group: 'homepage-trending', // Assign to a group for homepage trending content
+  }), []);
+
+  const relatedCardOptions = useMemo(() => ({
+    componentName: 'TrendingRelated',
+    staleTime: 3 * 60 * 1000, // 3 minutes
+    maxAge: 15 * 60 * 1000,   // 15 minutes
+    enableOffline: true,
+    group: 'homepage-trending', // Same group
+  }), []);
 
   // Use the new caching system
   const {
@@ -53,12 +49,8 @@ const queries = {
   } = useSanityCache(
     CACHE_KEYS.HOMEPAGE.TRENDING_BIG,
     queries.trendBig,
-    {
-      componentName: 'TrendingBig',
-      staleTime: 3 * 60 * 1000, // 3 minutes
-      maxAge: 15 * 60 * 1000,   // 15 minutes
-      enableOffline: true
-    }
+    {}, // No params
+    bigCardOptions
   );
 
   const {
@@ -72,36 +64,45 @@ const queries = {
   } = useSanityCache(
     CACHE_KEYS.HOMEPAGE.TRENDING_RELATED,
     queries.trendRelated,
-    {
-      componentName: 'TrendingRelated',
-      staleTime: 3 * 60 * 1000, // 3 minutes
-      maxAge: 15 * 60 * 1000,   // 15 minutes
-      enableOffline: true
-    }
-  );
-  
- usePageCache(
-    CACHE_KEYS.HOMEPAGE.TRENDING_BIG, 
-    refreshBig, 
-    queries.trendBig, 
-    'Trending Big'
-  );
-  
-  usePageCache(
-    CACHE_KEYS.HOMEPAGE.TRENDING_RELATED, 
-    refreshRelated, 
-    queries.trendRelated, 
-    'Trending Related'
+    {}, // No params
+    relatedCardOptions
   );
 
-  const schemaSlugMap = {
+  // Register with PageCacheProvider
+  usePageCache(CACHE_KEYS.HOMEPAGE.TRENDING_BIG, refreshBig, queries.trendBig, 'TrendingBig');
+  usePageCache(CACHE_KEYS.HOMEPAGE.TRENDING_RELATED, refreshRelated, queries.trendRelated, 'TrendingRelated');
+
+  const schemaSlugMap = useMemo(() => ({
     makemoney: "ai-learn-earn",
     aitool: "ai-tools",
     coding: "ai-code",
     seo: "ai-seo",
-  };
+    news: "ai-news", // Added 'news' if it's a possible type
+    freeairesources: "free-ai-resources", // Added 'freeairesources'
+  }), []); // Stable map
 
- 
+  const isLoading = isBigLoading || isRelatedLoading;
+  const hasError = bigError || relatedError;
+  const isStale = isBigStale || isRelatedStale;
+
+  // Memoize the combined refresh handler
+  const handleRefresh = useCallback(async () => {
+    try {
+      if (typeof cacheSystem !== 'undefined' && cacheSystem.refreshGroup) {
+        console.log("Manually refreshing homepage-trending group.");
+        await cacheSystem.refreshGroup('homepage-trending');
+      } else {
+        console.warn("cacheSystem.refreshGroup is not available. Performing individual refreshes.");
+        await refreshBig(true);
+        await refreshRelated(true);
+      }
+    } catch (error) {
+      console.error('TrendingPage refresh failed:', error);
+    }
+  }, [refreshBig, refreshRelated]);
+
+  const bigPost = trendBigData?.slice(0, 1)[0];
+  const relatedPosts = trendRelatedData || [];
 
   return (
     <section className="pb-[20px] pt-[20px]">
@@ -109,71 +110,76 @@ const queries = {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
             <span className="group inline-block cursor-pointer">
-              <span className="relative text-blue-500">
-                Trending
+              <span className="relative text-blue-500">Trending
                 <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
               </span>
               {" "}
-              <span className="relative inline-block">
-                Posts
+              <span className="relative inline-block">Posts
                 <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
               </span>
             </span>
           </h1>
-          
-        
-   
-</div>
+        </div>
+
+        {/* Stale Data Warning */}
+        {isStale && (trendBigData?.length > 0 || trendRelatedData?.length > 0) && (
+          <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-center">
+            <div className="flex items-center justify-center space-x-2 text-sm text-yellow-800 dark:text-yellow-200">
+              <span>⚠️</span><span>Trending content may be outdated.</span>
+            </div>
+          </div>
+        )}
+
+        {/* Error Display */}
+        {hasError && (!bigPost && relatedPosts.length === 0) && (
+          <div className="text-center py-8">
+            <p className="text-red-500 mb-4">Failed to load trending posts.</p>
+            <button
+              onClick={handleRefresh}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         <Grid container spacing={2}>
-          {/* Main Trending Post (Big Card) */}
+          {/* Main Trending Post (BigCard) */}
           <Grid item xs={12} lg={6}>
-            {isBigLoading ? (
+            {isLoading && !bigPost ? ( // Show skeleton if loading AND no data
               <BigSkeleton />
-            ) : (
-              trendBigData?.slice(0, 1).map((post) => (
-                <BigCard
-                  key={post._id}
-                  title={post.title}
-                  overview={post.overview}
-                  mainImage={urlForImage(post.mainImage).url()}
-                  slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-                  publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
-                  })}
-                  ReadTime={post.readTime?.minutes}
-                  tags={post.tags}
-                />
-              ))
-            )}
+            ) : bigPost ? ( // Show content if data exists
+              <BigCard
+                key={bigPost._id}
+                title={bigPost.title}
+                overview={bigPost.overview}
+                mainImage={urlForImage(bigPost.mainImage).url()}
+                slug={`/${schemaSlugMap[bigPost._type]}/${bigPost.slug.current}`}
+                publishedAt={new Date(bigPost.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                ReadTime={bigPost.readTime?.minutes}
+                tags={bigPost.tags}
+              />
+            ) : null /* Or a "No big post found" message if desired */
+            }
           </Grid>
 
           {/* Related Trending Posts */}
           <Grid item xs={12} sm={12} lg={3} xl={3}>
             <Grid container spacing={2}>
-              {isRelatedLoading ? (
+              {isLoading && relatedPosts.length === 0 ? ( // Show skeletons if loading AND no data
                 <>
-                  <Grid item xs={12}>
-                    <MedSkeleton />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <MedSkeleton />
-                  </Grid>
+                  <Grid item xs={12}><MedSkeleton /></Grid>
+                  <Grid item xs={12}><MedSkeleton /></Grid>
                 </>
-              ) : (
-                trendRelatedData?.slice(0, 2).map((post) => (
+              ) : ( // Show content if data exists
+                relatedPosts.slice(0, 2).map((post) => (
                   <Grid key={post._id} item xs={12}>
                     <MediumCard
                       title={post.title}
                       overview={post.overview}
                       mainImage={urlForImage(post.mainImage).url()}
                       slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-                      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       ReadTime={post.readTime?.minutes}
                       tags={post.tags}
                     />
@@ -185,28 +191,20 @@ const queries = {
 
           <Grid item xs={12} sm={12} lg={3} xl={3}>
             <Grid container spacing={2}>
-              {isRelatedLoading ? (
+              {isLoading && relatedPosts.length === 0 ? ( // Show skeletons if loading AND no data
                 <>
-                  <Grid item xs={12}>
-                    <MedSkeleton />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <MedSkeleton />
-                  </Grid>
+                  <Grid item xs={12}><MedSkeleton /></Grid>
+                  <Grid item xs={12}><MedSkeleton /></Grid>
                 </>
-              ) : (
-                trendRelatedData?.slice(2, 4).map((post) => (
+              ) : ( // Show content if data exists
+                relatedPosts.slice(2, 4).map((post) => (
                   <Grid key={post._id} item xs={12}>
                     <MediumCard
                       title={post.title}
                       overview={post.overview}
                       mainImage={urlForImage(post.mainImage).url()}
                       slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-                      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       ReadTime={post.readTime?.minutes}
                       tags={post.tags}
                     />
@@ -216,6 +214,18 @@ const queries = {
             </Grid>
           </Grid>
         </Grid>
+        {/* No posts found message, only if not loading, no error, and no data at all */}
+        {!isLoading && !hasError && !bigPost && relatedPosts.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400">No trending posts found at this time.</p>
+            <button
+              onClick={handleRefresh}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mt-4"
+            >
+              Refresh Trending Content
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

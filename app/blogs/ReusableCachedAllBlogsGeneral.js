@@ -2,13 +2,14 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import CardComponent from "@/components/Card/Page";
 import SkelCard from "@/components/Blog/Skeleton/Card";
 import { urlForImage } from "@/sanity/lib/image";
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
-import { usePageCache } from '@/React_Query_Caching/usePageCache';
+// Corrected usePageCache import path
+import { usePageCache } from '@/React_Query_Caching/usePageCache'; 
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for clearGroup/refreshGroup
 
 const ReusableCachedMixedBlogs = ({
@@ -25,31 +26,25 @@ const ReusableCachedMixedBlogs = ({
   }
 }) => {
   const [paginationStaleWarning, setPaginationStaleWarning] = useState(false);
-  const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);
 
-  // We no longer need these refs to clear cache on filter/sort change,
-  // as we want to *retain* cached data across filter changes.
-  // const prevSelectedCategoryRef = useRef(selectedCategory);
-  // const prevSortByRef = useRef(sortBy);
-
-  const start = (currentPage - 1) * limit;
+  const start = useMemo(() => (currentPage - 1) * limit, [currentPage, limit]);
 
   // Function to build the category filter string for GROQ
   const getCategoryFilter = useCallback((category) => {
     return category === 'all'
       ? `_type in ["makemoney", "aitool", "coding", "seo"]`
       : `_type == "${category}"`;
-  }, []);
+  }, []); // Dependencies are stable, so useCallback is fine.
 
-  // Function to get the query parameters based on category (if your backend needs them)
+  // Function to get the query parameters (if your backend needs them)
   const getQueryParams = useCallback((category) => {
     return category === 'all'
       ? { categories: ["makemoney", "aitool", "coding", "seo"] }
       : { categories: [category] };
-  }, []);
+  }, []); // Dependencies are stable, so useCallback is fine.
 
-  // 1. Query for the current page's data
-  const pageQuery = `*[${getCategoryFilter(selectedCategory)}] | order(${sortBy}) {
+  // Memoize the pageQuery string
+  const pageQuery = useMemo(() => `*[${getCategoryFilter(selectedCategory)}] | order(${sortBy}) {
     formattedDate,
     tags,
     readTime,
@@ -61,19 +56,30 @@ const ReusableCachedMixedBlogs = ({
     overview,
     body,
     publishedAt
-  }[${start}...${start + limit}]`;
+  }[${start}...${start + limit}]`, [getCategoryFilter, selectedCategory, sortBy, start, limit]);
 
-  // 2. Query for the total count of items (for pagination calculation)
-  const totalCountQuery = `count(*[${getCategoryFilter(selectedCategory)}])`;
+  // Memoize the totalCountQuery string
+  const totalCountQuery = useMemo(() => `count(*[${getCategoryFilter(selectedCategory)}])`, [getCategoryFilter, selectedCategory]);
 
   // Define a distinct group for all mixed blogs for cache invalidation
-  // This group should encompass ALL fetched data by this component, regardless of filter.
-  // It's used for a full "Refresh All" or if external content changes require it.
-  const allBlogsGroup = 'all-blogs-mixed-content-group'; // Renamed for clarity on its purpose
+  const allBlogsGroup = useMemo(() => 'all-blogs-mixed-content-group', []); // Memoized to be stable
 
   // Use unique cache keys based on the NEW CACHE_KEYS definitions
-  const pageCacheKey = CACHE_KEYS.PAGE.MIXED_BLOGS_PAGINATED(currentPage, selectedCategory, sortBy);
-  const totalCountCacheKey = CACHE_KEYS.PAGE.MIXED_BLOGS_TOTAL_COUNT(selectedCategory, sortBy);
+  const pageCacheKey = useMemo(() => CACHE_KEYS.PAGE.MIXED_BLOGS_PAGINATED(currentPage, selectedCategory, sortBy), [currentPage, selectedCategory, sortBy]);
+  const totalCountCacheKey = useMemo(() => CACHE_KEYS.PAGE.MIXED_BLOGS_TOTAL_COUNT(selectedCategory, sortBy), [selectedCategory, sortBy]);
+
+  // Memoize options objects for useSanityCache calls
+  const stablePageOptions = useMemo(() => ({
+    componentName: `MixedBlogsPage_${currentPage}_${selectedCategory}_${sortBy}`,
+    enableOffline: true,
+    group: allBlogsGroup,
+  }), [currentPage, selectedCategory, sortBy, allBlogsGroup]);
+
+  const stableTotalOptions = useMemo(() => ({
+    componentName: `MixedBlogsTotal_${selectedCategory}_${sortBy}`,
+    enableOffline: true,
+    group: allBlogsGroup,
+  }), [selectedCategory, sortBy, allBlogsGroup]);
 
 
   // FIRST useSanityCache call: Fetch paginated data
@@ -83,16 +89,12 @@ const ReusableCachedMixedBlogs = ({
     error: postsError,
     refresh: refreshPosts,
     isStale: isPostsStale,
-    cacheSource: postsCacheSource, // Added for debugging
+    cacheSource: postsCacheSource,
   } = useSanityCache(
     pageCacheKey,
     pageQuery,
     getQueryParams(selectedCategory),
-    {
-      componentName: `MixedBlogsPage_${currentPage}_${selectedCategory}_${sortBy}`,
-      enableOffline: true,
-      group: allBlogsGroup, // All data for mixed blogs belongs to this group
-    }
+    stablePageOptions
   );
 
   // SECOND useSanityCache call: Fetch total count
@@ -102,16 +104,12 @@ const ReusableCachedMixedBlogs = ({
     error: totalError,
     refresh: refreshTotal,
     isStale: isTotalStale,
-    cacheSource: totalCacheSource, // Added for debugging
+    cacheSource: totalCacheSource,
   } = useSanityCache(
     totalCountCacheKey,
     totalCountQuery,
     getQueryParams(selectedCategory),
-    {
-      componentName: `MixedBlogsTotal_${selectedCategory}_${sortBy}`,
-      enableOffline: true,
-      group: allBlogsGroup, // Total count data also belongs to this group
-    }
+    stableTotalOptions
   );
 
   // Register the cache keys with usePageCache hook for UI status
@@ -128,8 +126,6 @@ const ReusableCachedMixedBlogs = ({
     totalCountQuery,
     `Mixed Blogs Total Count (${selectedCategory}, ${sortBy})`
   );
-  // --- END CRITICAL FIX FOR usePageCache ---
-
 
   // Combine loading states
   const isLoading = isPostsLoading || isTotalLoading;
@@ -144,8 +140,8 @@ const ReusableCachedMixedBlogs = ({
       setPaginationStaleWarning(true);
       // Trigger background refresh for current page and total count
       // This will update the cache in the background.
-      refreshPosts();
-      refreshTotal();
+      refreshPosts(false); // Pass false for background refresh
+      refreshTotal(false); // Pass false for background refresh
     } else if ((postsData && !isPostsStale) && (totalData && !isTotalStale) && paginationStaleWarning) {
       setPaginationStaleWarning(false);
     }
@@ -154,56 +150,33 @@ const ReusableCachedMixedBlogs = ({
   // Effect to notify parent about loaded data and pagination details
   useEffect(() => {
     // Only call onDataLoad if data is stable and not currently loading.
-    // Check if postsData is not null/undefined and totalData is a number.
     if (onDataLoad && postsData !== null && typeof totalData === 'number' && !isLoading) {
-      // console.log("Child sending data to parent:", { currentPage, totalPages, totalCount }); // Debugging
       onDataLoad(currentPage, totalPages, totalCount);
     }
   }, [currentPage, totalPages, totalCount, onDataLoad, postsData, totalData, isLoading]);
 
-  // --- REMOVED THE USEFFECT THAT CLEARS CACHE ON FILTER/SORT CHANGE ---
-  // The problem was here: it was clearing the entire group, deleting previously cached data.
-  // We want to *retain* cached data for other filters/sorts.
-  // Instead, useSanityCache should just look for the specific key in cache.
-  /*
-  useEffect(() => {
-    if (prevSelectedCategoryRef.current !== selectedCategory || prevSortByRef.current !== sortBy) {
-        if (typeof cacheSystem !== 'undefined' && cacheSystem.clearGroup) {
-            cacheSystem.clearGroup(allBlogsGroup);
-        } else {
-            console.warn("cacheSystem is not defined or clearGroup method is missing. Cannot clear cache group.");
-        }
-    }
-    prevSelectedCategoryRef.current = selectedCategory;
-    prevSortByRef.current = sortBy;
-  }, [selectedCategory, sortBy, allBlogsGroup]);
-  */
-  // --- END REMOVAL ---
-
-
   const handleRefresh = useCallback(async (refreshAll = false) => {
     try {
       if (refreshAll) {
-        // Refresh the entire group if requested. This is for a full re-sync.
         if (typeof cacheSystem !== 'undefined' && cacheSystem.refreshGroup) {
-            await cacheSystem.refreshGroup(allBlogsGroup);
+          console.log("Refreshing entire group:", allBlogsGroup);
+          await cacheSystem.refreshGroup(allBlogsGroup);
         } else {
-            console.warn("cacheSystem is not defined or refreshGroup method is missing. Cannot refresh cache group.");
-            // Fallback to individual refresh if global cacheSystem isn't available
-            await refreshPosts();
-            await refreshTotal();
+          console.warn("cacheSystem is not defined or refreshGroup method is missing. Cannot refresh cache group.");
+          await refreshPosts(true); // Fallback to individual force refresh
+          await refreshTotal(true);
         }
       } else {
-        // Only refresh the current page and its total count
-        await refreshPosts();
-        await refreshTotal();
+        await refreshPosts(true); // Force refresh current page
+        await refreshTotal(true); // Force refresh current page's total count
       }
     } catch (error) {
       console.error('Refresh failed:', error);
     }
   }, [allBlogsGroup, refreshPosts, refreshTotal]);
 
-  const hasError = (postsError || totalError) && (!postsData || postsData.length === 0);
+  // Determine if there's an error and NO data to display as a fallback
+  const hasErrorAndNoData = (postsError || totalError) && (!postsData || postsData.length === 0);
 
   const postsToDisplay = postsData || [];
 
@@ -227,15 +200,15 @@ const ReusableCachedMixedBlogs = ({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8 mb-16">
-        {isLoading ? (
+        {isLoading && postsToDisplay.length === 0 ? ( // Show skeleton only if loading AND no data is present yet
           Array.from({ length: limit }).map((_, index) => (
             <div key={index} className="animate-pulse">
               <SkelCard />
             </div>
           ))
-        ) : hasError ? (
+        ) : hasErrorAndNoData ? ( // Show error message if there's an error AND no data
           <div className="col-span-full text-center py-8">
-            <p className="text-red-500 mb-4">Failed to load blog posts.</p>
+            <p className="text-red-500 mb-4">Failed to load blog posts. {postsError?.message || totalError?.message || ''}</p>
             <div className="space-x-2">
               <button
                 onClick={() => handleRefresh(false)}
@@ -251,7 +224,7 @@ const ReusableCachedMixedBlogs = ({
               </button>
             </div>
           </div>
-        ) : postsToDisplay.length > 0 ? (
+        ) : postsToDisplay.length > 0 ? ( // If data exists, display posts
           postsToDisplay.map((post) => (
             <CardComponent
               key={post._id}
@@ -259,7 +232,7 @@ const ReusableCachedMixedBlogs = ({
               overview={post.overview}
               title={post.title}
               tags={post.tags}
-              mainImage={urlForImage(post.mainImage).url()}
+              mainImage={post.mainImage ? urlForImage(post.mainImage).url() : "https://placehold.co/600x400/cccccc/000000?text=No+Image"}
               slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
               publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
                 day: 'numeric',
@@ -268,7 +241,7 @@ const ReusableCachedMixedBlogs = ({
               })}
             />
           ))
-        ) : (
+        ) : ( // If no data, no loading, and no error, show "No posts found"
           <div className="col-span-full text-center py-8">
             <p className="text-gray-500 dark:text-gray-400 mb-4">No posts found for this selection.</p>
             <button
