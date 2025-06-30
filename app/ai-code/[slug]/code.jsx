@@ -1,25 +1,29 @@
-/*eslint-disable @next/next/no-img-element*/
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout";
+import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout"; // Assuming BlogLayout is truly reusable and its path is fixed
 import "@/styles/customanchor.css";
 
+// Caching System Imports
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 
+/**
+ * Reusable component for fetching and displaying article content, related posts,
+ * and related resources for any specified Sanity schema type.
+ *
+ * @param {object} props - Component props.
+ * @param {object} props.serverData - Initial data fetched from the server.
+ * @param {object} props.params - Next.js route parameters, containing the 'slug'.
+ * @param {string} props.schemaType - The Sanity schema type (e.g., 'coding', 'aitool', 'makemoney', 'seo').
+ */
 export default function ArticleChildComp({ serverData, params, schemaType }) {
   const currentSlug = params.slug;
 
-  // Initialize finalArticleData with serverData directly, this will make currentPostId stable from the start
-  // This assumes serverData might contain a partial or initial article if available.
-  const [finalArticleData, setFinalArticleData] = useState(serverData);
-
-  // Derive currentPostId from the state
-  const currentPostId = finalArticleData?._id;
-
-  // Memoize the schema slug mapping as it's static
+  // Memoize static mappings and configurations at the top level
   const schemaSlugMap = useMemo(() => ({
     makemoney: "ai-learn-earn",
     aitool: "ai-tools",
@@ -29,22 +33,36 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     freeairesources: "free-ai-resources",
   }), []);
 
-  // All useMemo and useSanityCache calls remain at the top level
-  // and their 'enabled' properties will be based on the initial 'currentPostId' derived from serverData,
-  // and then update React appropriately on re-renders when useSanityCache provides new data.
+  // Memoize imgdesc to prevent re-creation - MOVED TO TOP
+  const imgdesc = useMemo(() => ({
+    block: {
+      normal: ({ children }) => (
+        <p className="hover:text-gray-950 dark:hover:text-gray-50 mb-4 mt-1 text-lg font-medium leading-relaxed text-gray-800 dark:text-gray-300 transition-all duration-300 ease-in-out">
+          {children}
+        </p>
+      ),
+      a: ({ children }) => (
+        <a className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+          {children}
+        </a>
+      ),
+    },
+  }), []);
 
+  // Memoize options for article content cache
   const articleCacheOptions = useMemo(() => ({
-    componentName: `${schemaType}ArticleContent`,
+    componentName: `${schemaType}ArticleContent`, // Dynamic component name
     enableOffline: true,
-    initialData: serverData, // Still use serverData as initial data for this specific cache
-    forceRefresh: false,
-    staleTime: 5 * 60 * 1000,
-    maxAge: 30 * 60 * 1000,
+    initialData: serverData, // Use server data as initial data
+    forceRefresh: false, // Always allow cache-first behavior
+    staleTime: 5 * 60 * 1000, // Example: 5 minutes stale
+    maxAge: 30 * 60 * 1000, // Example: 30 minutes max age
   }), [serverData, schemaType]);
 
+  // Dynamic article query based on schemaType and currentSlug
   const articleQuery = useMemo(() =>
-    `*[_type==$schemaType&&slug.current==$currentSlug][0]`,
-  [schemaType]);
+    `*[_type==$schemaType&&slug.current==$currentSlug][0]`
+    , [schemaType]); // Only depends on schemaType for the query string itself
 
   const articleQueryParams = useMemo(() => ({
     schemaType: schemaType,
@@ -58,32 +76,29 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     refresh: refreshArticle,
     isStale: articleIsStale
   } = useSanityCache(
-    CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType),
+    CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType), // Dynamic cache key
     articleQuery,
-    articleQueryParams,
+    articleQueryParams, // Pass dynamic params
     articleCacheOptions
   );
 
-  // Update finalArticleData when cached data becomes available
-  React.useEffect(() => {
-    if (cachedArticleData) {
-      setFinalArticleData(cachedArticleData);
-    }
-  }, [cachedArticleData]);
-
+  // Determine final article data - prioritize cached data over server data
+  const finalArticleData = cachedArticleData || serverData;
+  const currentPostId = finalArticleData?._id;
 
   // Memoize options for related posts cache
   const relatedPostsOptions = useMemo(() => ({
-    componentName: `${schemaType}RelatedPosts`,
+    componentName: `${schemaType}RelatedPosts`, // Dynamic component name
     enableOffline: true,
-    enabled: !!currentPostId, // This is now based on a state variable, more stable
+    enabled: !!currentPostId, // Only enable if we have a post ID
     staleTime: 5 * 60 * 1000,
     maxAge: 30 * 60 * 1000,
   }), [currentPostId, schemaType]);
 
+  // Dynamic related posts query based on schemaType and currentPostId
   const relatedPostsQuery = useMemo(() =>
-    `*[_type==$schemaType&&_id!=$currentPostId]|order(_createdAt desc)[0...3]`,
-  [schemaType]);
+    `*[_type==$schemaType&&_id!=$currentPostId]|order(_createdAt desc)[0...3]`
+    , [schemaType]); // Only depends on schemaType for the query string itself
 
   const relatedPostsQueryParams = useMemo(() => ({
     schemaType: schemaType,
@@ -97,24 +112,25 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     refresh: refreshRelatedPosts,
     isStale: relatedPostsStale
   } = useSanityCache(
-    CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType),
+    CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType), // Dynamic cache key
     relatedPostsQuery,
-    relatedPostsQueryParams,
+    relatedPostsQueryParams, // Pass dynamic params
     relatedPostsOptions
   );
 
   // Memoize options for related resources cache
   const relatedResourcesOptions = useMemo(() => ({
-    componentName: `${schemaType}RelatedResources`,
+    componentName: `${schemaType}RelatedResources`, // Dynamic component name
     enableOffline: true,
-    enabled: !!currentPostId, // This is now based on a state variable, more stable
+    enabled: !!currentPostId, // Only enable if we have a post ID
     staleTime: 5 * 60 * 1000,
     maxAge: 30 * 60 * 1000,
   }), [currentPostId, schemaType]);
 
+  // Related resources query string is static, but params are dynamic
   const correctRelatedResourcesQuery = useMemo(() =>
-    `*[_type=="freeResources"&&references($articleId)]{_id,title,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,"relatedArticle":relatedArticle->{title,slug,_id,_type},seoTitle,seoDescription,seoKeywords,altText,structuredData}`,
-  []);
+    `*[_type=="freeResources"&&references($articleId)]{_id,title,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,"relatedArticle":relatedArticle->{title,slug,_id,_type},seoTitle,seoDescription,seoKeywords,altText,structuredData}`
+    , []);
 
   const relatedResourcesQueryParams = useMemo(() => ({
     articleId: currentPostId
@@ -129,18 +145,22 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
   } = useSanityCache(
     CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
     correctRelatedResourcesQuery,
-    relatedResourcesQueryParams,
+    relatedResourcesQueryParams, // Pass dynamic params
     relatedResourcesOptions
   );
 
+  // Register all cache operations with usePageCache for the status button
   usePageCache(CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType), refreshArticle, articleQuery, `${schemaType} ArticleContent`);
   usePageCache(CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType), refreshRelatedPosts, relatedPostsQuery, `${schemaType} RelatedPosts`);
   usePageCache(CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'), refreshRelatedResources, correctRelatedResourcesQuery, `${schemaType} RelatedResources`);
 
+  // Loading logic - show loading only if we have no data at all AND we're actually loading
   const isMainContentLoading = articleLoading && !finalArticleData;
 
+  // Memoize refresh callback for error state
   const handleRefreshArticle = useCallback(() => refreshArticle(true), [refreshArticle]);
 
+  // Handle loading states
   if (isMainContentLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -150,6 +170,7 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     );
   }
 
+  // Handle error states - improved offline handling
   if (articleError && !finalArticleData) {
     const isOfflineError = !navigator.onLine || articleError.message.includes('offline') || articleError.message.includes('network');
     return (
@@ -169,6 +190,7 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     );
   }
 
+  // If we still don't have any article data, show a message
   if (!finalArticleData) {
     return (
       <div className="text-center py-8">
@@ -178,23 +200,9 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     );
   }
 
-  const imgdesc = useMemo(() => ({
-    block: {
-      normal: ({ children }) => (
-        <p className="hover:text-gray-950 dark:hover:text-gray-50 mb-4 mt-1 text-lg font-medium leading-relaxed text-gray-800 dark:text-gray-300 transition-all duration-300 ease-in-out">
-          {children}
-        </p>
-      ),
-      a: ({ children }) => (
-        <a className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
-          {children}
-        </a>
-      ),
-    },
-  }), []);
-
   return (
     <>
+      {/* Stale content warnings */}
       {articleIsStale && (
         <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <span>⚠️</span><span className="ml-2">Article content may be outdated.</span>
@@ -214,7 +222,7 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
         resourcesLoading={resourcesLoading}
         schemaSlugMap={schemaSlugMap}
         imgdesc={imgdesc}
-        onRefreshArticle={handleRefreshArticle}
+        onRefreshArticle={handleRefreshArticle} // Pass a stable callback for refresh
       />
     </>
   );
