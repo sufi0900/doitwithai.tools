@@ -256,7 +256,7 @@ export default function FreeResourcesPage() {
               <div className="flex flex-wrap -mx-3">
                 {Array.from({ length: RESOURCE_LIMIT }).map((_, index) => (
                   <div key={index} className="w-full sm:w-1/2 lg:w-1/3 p-3">
-                    <SkelCard />
+                    loading..
                   </div>
                 ))}
               </div>

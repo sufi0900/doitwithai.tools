@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 // app/ai-code/[slug]/page.jsx
 import { client } from "@/sanity/lib/client";
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';

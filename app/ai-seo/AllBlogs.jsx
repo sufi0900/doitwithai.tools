@@ -1,5 +1,5 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-"use client";
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */"use client";
 import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 import ReusableCachedFeaturePost from "@/app/ai-tools/CachedAIToolsFeaturePost";

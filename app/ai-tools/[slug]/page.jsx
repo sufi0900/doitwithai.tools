@@ -1,4 +1,6 @@
 // app/ai-tools/[slug]/page.jsx
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 import { client } from "@/sanity/lib/client";
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider'; // Re-added!
 import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton"; // Re-added!
