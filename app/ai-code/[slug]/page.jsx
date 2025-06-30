@@ -2,7 +2,7 @@
 import { client } from "@/sanity/lib/client";
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
-import ArticleChildComp from "@/components/Article/ArticleChildComp"; // Corrected import path for reusable component
+import ArticleChildComp from "@/app/ai-code/[slug]/code"; // Import the new reusable component
 import { urlForImage } from "@/sanity/lib/image"; // For image URLs in metadata/schema
 import Script from "next/script"; // For JSON-LD schema scripts
 import Head from "next/head"; // For additional meta tags not covered by `metadata` export
