@@ -199,6 +199,8 @@ export default async function ParentPage({ params }) {
     <>
       <PageCacheProvider>
         <main>
+                  <PageCacheStatusButton />
+          
           <ArticleChildComp serverData={data} params={params} schemaType="aitool" />
         </main>
       </PageCacheProvider>
