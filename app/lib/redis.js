@@ -28,8 +28,45 @@ if (process.env.NODE_ENV === 'production') {
   redisClient = global.redisClient;
 }
 
-// With @upstash/redis, you don't typically add .on('connect'), .on('error') etc.
-// directly to the client instance like with ioredis, as it's making HTTP calls.
-// Errors will be thrown directly from the async operations (get, set, del).
+// Helper functions to handle data consistently
+export const redisHelpers = {
+  async get(key) {
+    try {
+      // Upstash Redis automatically handles JSON parsing
+      const data = await redisClient.get(key);
+      console.log(`[Redis Cache Hit] for ${key}`);
+      return data; // This is already parsed by Upstash
+    } catch (error) {
+      console.error(`Error getting Redis key ${key}:`, error);
+      throw error;
+    }
+  },
 
+  async set(key, value, options = {}) {
+    try {
+      // Upstash Redis automatically handles JSON stringification
+      if (options.ex) {
+        await redisClient.set(key, value, { ex: options.ex });
+      } else {
+        await redisClient.set(key, value);
+      }
+      console.log(`[Redis Cache Set] for ${key}`);
+    } catch (error) {
+      console.error(`Error setting Redis key ${key}:`, error);
+      throw error;
+    }
+  },
+
+  async del(key) {
+    try {
+      await redisClient.del(key);
+      console.log(`[Redis Cache Deleted] for ${key}`);
+    } catch (error) {
+      console.error(`Error deleting Redis key ${key}:`, error);
+      throw error;
+    }
+  }
+};
+
+// Export both the client and helpers
 export { redisClient };
