@@ -139,7 +139,7 @@ export const CACHE_CONFIG = {
   PAGE_FREERESOURCES_LIST: { staleTime: 1 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true, },
   PAGE_FREERESOURCES_TOTAL_ITEMS: { staleTime: 2 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true, },
 
-  ARTICLE_CONTENT: { staleTime: 60 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true },
+  ARTICLE_CONTENT: { staleTime:  1 * 60 * 1000,  maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true },
   RELATED_CONTENT: { staleTime: 30 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true },
 
   PAGINATION: { staleTime: 2 * 60 * 1000, maxAge: 7 * 24 * 60 * 60 * 1000, enableOffline: true },

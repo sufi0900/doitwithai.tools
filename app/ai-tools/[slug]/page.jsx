@@ -9,69 +9,102 @@ import { urlForImage } from "@/sanity/lib/image"; // For image URLs in metadata/
 import Script from "next/script"; // For JSON-LD schema scripts
 import Head from "next/head"; // For additional meta tags not covered by `metadata` export
 import { NextSeo } from "next-seo"; // For NextSeo component (if still desired, though `metadata` is preferred in App Router)
+import { redisClient } from '@/app/lib/redis'; // <--- NEW IMPORT: Import your Redis client utility
 
 // Enable Incremental Static Regeneration (ISR)
 export const revalidate = 3600; // Revalidate every 1 hour
 
+
 async function getData(slug) {
-  // IMPORTANT: Fetch ALL necessary fields for metadata and schema generation
-  const query = `*[_type == "aitool" && slug.current == "${slug}"][0]{
+  // Define a unique cache key for this specific article
+  // It's good practice to include the schema type and slug to avoid key collisions
+  const cacheKey = `article:aitool:${slug}`;
+
+  // --- Redis Caching Logic ---
+  // 1. Try to get data from Redis cache first
+  try {
+    const cachedData = await redisClient.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for ${cacheKey}`);
+      // Parse the JSON string back into an object
+      return JSON.parse(cachedData);
+    }
+  } catch (redisError) {
+    // Log the error but don't prevent the application from fetching from Sanity
+    console.error(`Error accessing Redis for ${cacheKey}:`, redisError);
+    // Continue to fetch from Sanity if Redis has an error
+  }
+  // --- End Redis Caching Logic ---
+
+  // 2. If no cache hit (or Redis error), fetch data from Sanity
+  console.log(`[Sanity Fetch] for ${cacheKey}`); // Log that we're hitting Sanity
+
+  
+ const query = `*[_type=="aitool"&&slug.current=="${slug}"][0]{
     _id,
     title,
     slug,
-    mainImage{
-      asset->{
-        _id,
-        url
-      },
-      alt
-    },
+    mainImage{asset->{_id,url},alt},
     publishedAt,
     _updatedAt,
     _createdAt,
     _type,
-    metatitle, // Custom SEO title
-    metadesc, // Custom SEO description
-    schematitle, // Schema-specific title
-    schemadesc, // Schema-specific description
-    overview, // For abstract in schema
-    body, // Assuming 'body' contains the main content for word count/text extraction
-    content[]{ // Ensure content is fetched for headings, word count, and articleBody
-      ...,
-      _type == "block" => {
-        children[]{
-          ...,
-          _type == "span" => {
-            marks[]->{
-              _type,
-              _key,
-              href,
-              // Add other properties if your marks have them
-            }
-          }
-        }
-      }
+    metatitle,
+    metadesc,
+    schematitle,
+    schemadesc,
+    overview,
+    // Fetch content as a whole array. PortableText will parse its internal structure.
+    content[]{
+      ..., // Fetch all fields for each block/type
+      _type == "image" => { // Explicitly fetch image details if needed
+        asset->{_id,url},
+        alt,
+        caption, // Assuming you have a caption field for images
+        imageDescription[]{...} // If imageDescription is PortableText itself
+      },
+      _type == "gif" => { // Explicitly fetch gif details
+        asset->{_id,url},
+        alt,
+        caption
+      },
+      _type == "video" => { // Explicitly fetch video details
+        asset->{_id,url},
+        alt,
+        caption
+      },
+      // Add other custom types (like 'table', 'button') if they have specific nested fields
+      // that are not covered by '...'
     },
     "wordCount": length(pt::text(content)),
-    "estimatedReadingTime": round(length(pt::text(content)) / 250), // Assuming 250 words per minute
-    "headings": content[_type == "block" && style in ["h1", "h2", "h3", "h4", "h5", "h6"]]{
-      "text": pt::text(@),
-      "level": style,
-      "anchor": lower(pt::text(@)) // Generate anchor from text
-    },
-    faqs[]{ // Fetch FAQs for FAQ schema
-      question,
-      answer
-    },
-    articleType, // e.g., 'howto', 'tutorial' for HowTo schema
-    displaySettings // For conditional SoftwareApplication schema
+    "estimatedReadingTime": round(length(pt::text(content))/250),
+    "headings": content[_type=="block"&&style in ["h1","h2","h3","h4","h5","h6"]]{"text":pt::text(@),"level":style,"anchor":lower(pt::text(@))},
+    faqs[]{question,answer},
+    articleType,
+    displaySettings
   }`;
+
   try {
     const data = await client.fetch(query, {}, {
       next: {
-        tags: ['aitool', slug] // Keep tags for on-demand revalidation
+        tags: ['aitool', slug] // Keep tags for Next.js internal cache revalidation
       }
     });
+
+    // --- Redis Caching Logic ---
+    // 3. If data was successfully fetched from Sanity, store it in Redis
+    if (data) {
+      try {
+        // 'EX' sets an expiration time in seconds. Here, 3600 seconds = 1 hour.
+        // You can adjust this TTL (Time To Live) based on how frequently your content changes.
+        await redisClient.set(cacheKey, JSON.stringify(data), 'EX', 3600);
+        console.log(`[Redis Cache Set] for ${cacheKey}`);
+      } catch (redisSetError) {
+        console.error(`Error setting Redis cache for ${cacheKey}:`, redisSetError);
+      }
+    }
+    // --- End Redis Caching Logic ---
+
     return data;
   } catch (error) {
     console.error(`Server-side fetch for slug ${slug} failed:`, error.message);
@@ -81,6 +114,7 @@ async function getData(slug) {
 
 // Next.js `generateMetadata` function for SEO
 export async function generateMetadata({ params }) {
+  // This will now also benefit from Redis caching via the getData call
   const data = await getData(params.slug);
 
   if (!data) {
@@ -133,16 +167,16 @@ export async function generateMetadata({ params }) {
     },
     twitter: {
       card: 'summary_large_image',
-      site: '@doitwithai', // Replace with your actual Twitter handle
-      creator: '@sufianmustafa', // Replace with your actual Twitter handle
+      site: '@doitwithai',
+      creator: '@sufianmustafa',
       title: data.metatitle,
       description: data.metadesc,
       images: imageUrl ? [imageUrl] : [],
     },
     verification: {
-      google: 'your-google-verification-code', // Replace with your actual code
-      yandex: 'your-yandex-verification-code', // Replace with your actual code
-      yahoo: 'your-yahoo-verification-code', // Replace with your actual code
+      google: 'your-google-verification-code',
+      yandex: 'your-yandex-verification-code',
+      yahoo: 'your-yahoo-verification-code',
     },
   };
 }
@@ -162,7 +196,7 @@ export default async function ParentPage({ params }) {
 
   const canonicalUrl = `https://www.doitwithai.tools/ai-tools/${params.slug}`;
   const imageUrl = data.mainImage ? urlForImage(data.mainImage).url() : null;
-  const readingTime = Math.ceil((data.wordCount || 1000) / 250); // Fallback if wordCount is missing
+  const readingTime = Math.ceil((data.wordCount || 1000) / 250);
 
   // --- Schema Markup Functions (now defined within the component for data access) ---
 
@@ -171,16 +205,14 @@ export default async function ParentPage({ params }) {
       "@type": "WebPageElement",
       "@id": `${canonicalUrl}#heading-${index + 1}`,
       "name": heading.text,
-      "cssSelector": heading.level // More robust
+      "cssSelector": heading.level
     })) || [];
 
-    // Flatten content blocks and truncate for schema
     const articleContentText = data.content ?
       data.content.map(block =>
         block._type === 'block' ? block.children?.map(child => child.text).join(' ') : ''
       ).join(' ') : '';
 
-    // Truncate to desired length (e.g., ~750 characters) for schema
     const truncatedArticleBody = articleContentText.length > 750 ?
       articleContentText.substring(0, 750) + '...' :
       articleContentText;
@@ -188,19 +220,19 @@ export default async function ParentPage({ params }) {
     return {
       __html: JSON.stringify({
         "@context": "https://schema.org",
-        "@type": ["Article", "TechArticle"], // TechArticle is good for AI tools
+        "@type": ["Article", "TechArticle"],
         "@id": `${canonicalUrl}#article`,
         "mainEntityOfPage": {
           "@type": "WebPage",
           "@id": canonicalUrl,
           "url": canonicalUrl
         },
-        "headline": data.metatitle, // Use headline as primary title
-        "name": data.schematitle || data.metatitle, // Redundant if same as headline, but harmless
+        "headline": data.metatitle,
+        "name": data.schematitle || data.metatitle,
         "description": data.schemadesc || data.metadesc,
-        "abstract": data.overview, // Good to include if you have an abstract
-        "articleSection": "AI Tools", // Consistent with your category
-        "articleBody": truncatedArticleBody, // Use the truncated version
+        "abstract": data.overview,
+        "articleSection": "AI Tools",
+        "articleBody": truncatedArticleBody,
         "wordCount": data.wordCount || Math.round((data.estimatedReadingTime || 0) * 250),
         "datePublished": data.publishedAt,
         "dateModified": data._updatedAt || data.publishedAt,
@@ -211,20 +243,20 @@ export default async function ParentPage({ params }) {
           "name": "Sufian Mustafa",
           "url": "https://www.doitwithai.tools/author/sufian-mustafa",
           "jobTitle": "AI Technology Expert",
-          "knowsAbout": ["Artificial Intelligence", "AI Tools", "SEO", "Content Marketing", "Digital Marketing"], // Expanded
+          "knowsAbout": ["Artificial Intelligence", "AI Tools", "SEO", "Content Marketing", "Digital Marketing"],
           "sameAs": [
-            "https://twitter.com/sufianmustafa", // Replace with actual Twitter
-            "https://linkedin.com/in/sufianmustafa" // Replace with actual LinkedIn
+            "https://twitter.com/sufianmustafa",
+            "https://linkedin.com/in/sufianmustafa"
           ]
         },
         "publisher": {
           "@type": "Organization",
           "@id": "https://www.doitwithai.tools#organization",
-          "name": "Do It With AI Tools", // Consistent brand name
+          "name": "Do It With AI Tools",
           "url": "https://www.doitwithai.tools",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://www.doitwithai.tools/logoForHeader.png", // Ensure this is 512x512
+            "url": "https://www.doitwithai.tools/logoForHeader.png",
             "width": 512,
             "height": 512
           },
@@ -244,7 +276,7 @@ export default async function ParentPage({ params }) {
           "thumbnailUrl": imageUrl
         } : undefined,
         "url": canonicalUrl,
-        "mainEntity": { // This part might be slightly redundant with Article as main entity, but harmless
+        "mainEntity": {
           "@type": "Thing",
           "name": data.title,
           "description": data.overview
@@ -307,7 +339,6 @@ export default async function ParentPage({ params }) {
     let position = 1;
 
     data.tableOfContents.forEach((item) => {
-      // Add main heading
       tocItems.push({
         "@type": "ListItem",
         "position": position++,
@@ -320,7 +351,6 @@ export default async function ParentPage({ params }) {
         }
       });
 
-      // Add subheadings if they exist
       if (item.subheadings && item.subheadings.length > 0) {
         item.subheadings.forEach((sub) => {
           tocItems.push({
@@ -510,9 +540,9 @@ export default async function ParentPage({ params }) {
           }
         ],
         "sameAs": [
-          "https://twitter.com/doitwithai", // Replace with actual Twitter
-          "https://facebook.com/doitwithai", // Replace with actual Facebook
-          "https://linkedin.com/company/doitwithai" // Replace with actual LinkedIn
+          "https://twitter.com/doitwithai",
+          "https://facebook.com/doitwithai",
+          "https://linkedin.com/company/doitwithai"
         ]
       })
     };
@@ -560,9 +590,9 @@ export default async function ParentPage({ params }) {
           }
         ],
         "sameAs": [
-          "https://twitter.com/doitwithai", // Replace with actual Twitter
-          "https://facebook.com/doitwithai", // Replace with actual Facebook
-          "https://linkedin.com/company/doitwithai" // Replace with actual LinkedIn
+          "https://twitter.com/doitwithai",
+          "https://facebook.com/doitwithai",
+          "https://linkedin.com/company/doitwithai"
         ],
         "knowsAbout": [
           "Artificial Intelligence",
@@ -577,9 +607,7 @@ export default async function ParentPage({ params }) {
     };
   }
 
-  // New: How-to Schema for instructional content
   function generateHowToSchema() {
-    // Only generate HowTo schema for how-to guides and tutorials
     if (!data.articleType || !['howto', 'tutorial'].includes(data.articleType)) {
       return null;
     }
@@ -636,9 +664,7 @@ export default async function ParentPage({ params }) {
     };
   }
 
-  // New: Software Application Schema for AI tools
   function generateSoftwareApplicationSchema() {
-    // Check if displaySettings and isSoftwareReview are true
     if (!data.displaySettings?.isSoftwareReview) {
       return null;
     }
@@ -657,7 +683,7 @@ export default async function ParentPage({ params }) {
         "browserRequirements": "Requires JavaScript. Requires HTML5.",
         "countriesSupported": "Worldwide",
         "inLanguage": "en-US",
-        "isAccessibleForFree": true, // Adjust based on your tool's pricing
+        "isAccessibleForFree": true,
         "creator": {
           "@type": "Organization",
           "@id": "https://www.doitwithai.tools#organization"
@@ -676,24 +702,14 @@ export default async function ParentPage({ params }) {
       })
     };
   }
-  // --- End Schema Markup Functions ---
 
   return (
     <>
-      {/*
-        Note: In Next.js App Router, the `metadata` export is the primary way
-        to manage head tags. `next/head` and `next-seo` are generally for
-        Pages Router. If you're using App Router, you might be able to simplify
-        this section by relying more on the `metadata` export.
-        However, for comprehensive control and specific tags not covered by `metadata`,
-        `next/head` can still be used.
-      */}
       <Head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
 
-        {/* Enhanced Basic Meta Tags (redundant with metadata export, but kept for completeness based on your old code) */}
         <title>{data.metatitle} | DoItWithAI.tools</title>
         <meta name="description" content={data.metadesc} />
         <meta name="keywords" content={data.tags?.map(tag => tag.name).join(', ') || ''} />
@@ -701,19 +717,16 @@ export default async function ParentPage({ params }) {
         <meta name="creator" content="Sufian Mustafa" />
         <meta name="publisher" content="DoItWithAI.tools" />
 
-        {/* Enhanced Robots Meta (redundant with metadata export, but kept for completeness) */}
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
         <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
         <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 
-        {/* Article-Specific Meta Tags (redundant with metadata.openGraph, but kept for completeness) */}
         <meta name="article:published_time" content={data.publishedAt} />
         <meta name="article:modified_time" content={data._updatedAt || data.publishedAt} />
         <meta name="article:author" content="Sufian Mustafa" />
         <meta name="article:section" content="AI Tools" />
         <meta name="article:tag" content={data.tags?.map(tag => tag.name).join(', ') || ''} />
 
-        {/* Content Classification */}
         <meta name="classification" content="Technology" />
         <meta name="category" content="AI Tools" />
         <meta name="coverage" content="Worldwide" />
@@ -722,11 +735,9 @@ export default async function ParentPage({ params }) {
         <meta name="subject" content="Artificial Intelligence Tools" />
         <meta name="topic" content="AI Technology" />
 
-        {/* Reading Time and Content Info */}
         <meta name="reading-time" content={`${readingTime} minutes`} />
         <meta name="word-count" content={data.wordCount || Math.round((data.estimatedReadingTime || 0) * 250)} />
 
-        {/* Enhanced Open Graph Meta Tags (redundant with metadata.openGraph, but kept for completeness) */}
         <meta property="og:type" content="article" />
         <meta property="og:site_name" content="DoItWithAI.tools" />
         <meta property="og:locale" content="en_US" />
@@ -751,7 +762,6 @@ export default async function ParentPage({ params }) {
           <meta key={`og-tag-${index}`} property="article:tag" content={tag.name} />
         ))}
 
-        {/* Enhanced Twitter Card Meta Tags (redundant with metadata.twitter, but kept for completeness) */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@doitwithai" />
         <meta name="twitter:creator" content="@sufianmustafa" />
@@ -765,42 +775,30 @@ export default async function ParentPage({ params }) {
         <meta name="twitter:label2" content="Written by" />
         <meta name="twitter:data2" content="Sufian Mustafa" />
 
-        {/* Canonical and Alternate Links (redundant with metadata.alternates, but kept for completeness) */}
         <link rel="canonical" href={canonicalUrl} />
         <link rel="alternate" type="application/rss+xml" title="DoItWithAI.tools RSS Feed" href="https://www.doitwithai.tools/rss.xml" />
 
-        {/* Theme and Performance */}
         <meta name="theme-color" content="#3b82f6" />
         <meta name="color-scheme" content="light dark" />
 
-        {/* Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link rel="dns-prefetch" href="//www.google-analytics.com" />
 
-        {/* Favicon */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-        {/* Additional SEO Meta Tags */}
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
-        {/* Content Security and Cache Control */}
         <meta httpEquiv="cache-control" content="public, max-age=31536000, immutable" />
         <meta name="referrer" content="strict-origin-when-cross-origin" />
-        {/* NextSeo Component - Note: This is primarily for Pages Router.
-            In App Router, `metadata` export handles most of this.
-            Keep if you have specific reasons or are transitioning. */}
         <NextSeo
           title={`${data.metatitle} | DoItWithAI.tools`}
           description={data.metadesc}
           canonical={canonicalUrl}
-          // The `metadata` export already handles openGraph and twitter.
-          // Passing them again here might be redundant or cause conflicts.
-          // Consider removing these if `metadata` is fully sufficient.
           openGraph={{
             type: 'article',
             title: data.metatitle,
@@ -840,8 +838,6 @@ export default async function ParentPage({ params }) {
           ]}
         />
       </Head>
-
-      {/* Enhanced Schema Markup Scripts - Prioritizing Article Elements */}
 
       <Script
         id="WebSiteSchema"
@@ -895,7 +891,6 @@ export default async function ParentPage({ params }) {
         />
       )}
 
-      {/* Only render SoftwareApplication schema if displaySettings.isSoftwareReview is true */}
       {data.displaySettings?.isSoftwareReview && (
         <Script
           id="SoftwareApplicationSchema"
@@ -914,10 +909,8 @@ export default async function ParentPage({ params }) {
         />
       )}
 
-      {/* Wrap the main content with PageCacheProvider and include PageCacheStatusButton */}
       <PageCacheProvider pageType={data._type} pageId={data.slug.current}>
-        <PageCacheStatusButton /> {/* Re-added! */}
-        {/* Main Content with Enhanced Semantic Structure */}
+        <PageCacheStatusButton />
         <main role="main" itemScope itemType="https://schema.org/Article">
           <meta itemProp="headline" content={data.metatitle} />
           <meta itemProp="description" content={data.metadesc} />
@@ -938,7 +931,6 @@ export default async function ParentPage({ params }) {
             </div>
           )}
 
-          {/* The actual client component that renders the article content */}
           <ArticleChildComp serverData={data} params={params} schemaType="aitool" />
         </main>
       </PageCacheProvider>

@@ -59,7 +59,7 @@ const PortableTextComponents = () => {
   
   const loadFileUrl = async () => {
     try {
-      const url = await getFileUrl(value);
+      const url = await setFileUrl(value);
       if (isMounted) {
         setFileUrl(url);
       }

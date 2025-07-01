@@ -51,12 +51,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
     <head>
-      <link 
+      {/* <link 
         rel="preload" 
         href="/modal-video.css" 
         as="style" 
         onLoad={(e) => { e.currentTarget.onload = null; e.currentTarget.rel = 'stylesheet'; }}
-      />
+      /> */}
       <meta name="viewport" content="width=device-width, initial-scale=1" />
     </head>
     <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
