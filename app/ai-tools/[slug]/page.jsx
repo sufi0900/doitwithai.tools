@@ -14,33 +14,22 @@ import { redisClient } from '@/app/lib/redis'; // <--- NEW IMPORT: Import your R
 // Enable Incremental Static Regeneration (ISR)
 export const revalidate = 3600; // Revalidate every 1 hour
 
-
 async function getData(slug) {
-  // Define a unique cache key for this specific article
-  // It's good practice to include the schema type and slug to avoid key collisions
   const cacheKey = `article:aitool:${slug}`;
 
-  // --- Redis Caching Logic ---
-  // 1. Try to get data from Redis cache first
   try {
     const cachedData = await redisClient.get(cacheKey);
     if (cachedData) {
       console.log(`[Redis Cache Hit] for ${cacheKey}`);
-      // Parse the JSON string back into an object
       return JSON.parse(cachedData);
     }
   } catch (redisError) {
-    // Log the error but don't prevent the application from fetching from Sanity
     console.error(`Error accessing Redis for ${cacheKey}:`, redisError);
-    // Continue to fetch from Sanity if Redis has an error
   }
-  // --- End Redis Caching Logic ---
 
-  // 2. If no cache hit (or Redis error), fetch data from Sanity
-  console.log(`[Sanity Fetch] for ${cacheKey}`); // Log that we're hitting Sanity
+  console.log(`[Sanity Fetch] for ${cacheKey}`);
 
-  
- const query = `*[_type=="aitool"&&slug.current=="${slug}"][0]{
+  const query = `*[_type=="aitool"&&slug.current=="${slug}"][0]{
     _id,
     title,
     slug,
@@ -54,27 +43,24 @@ async function getData(slug) {
     schematitle,
     schemadesc,
     overview,
-    // Fetch content as a whole array. PortableText will parse its internal structure.
     content[]{
-      ..., // Fetch all fields for each block/type
-      _type == "image" => { // Explicitly fetch image details if needed
+      ...,
+      _type == "image" => {
         asset->{_id,url},
         alt,
-        caption, // Assuming you have a caption field for images
-        imageDescription[]{...} // If imageDescription is PortableText itself
+        caption,
+        imageDescription[]{...}
       },
-      _type == "gif" => { // Explicitly fetch gif details
-        asset->{_id,url},
-        alt,
-        caption
-      },
-      _type == "video" => { // Explicitly fetch video details
+      _type == "gif" => {
         asset->{_id,url},
         alt,
         caption
       },
-      // Add other custom types (like 'table', 'button') if they have specific nested fields
-      // that are not covered by '...'
+      _type == "video" => {
+        asset->{_id,url},
+        alt,
+        caption
+      },
     },
     "wordCount": length(pt::text(content)),
     "estimatedReadingTime": round(length(pt::text(content))/250),
@@ -87,24 +73,19 @@ async function getData(slug) {
   try {
     const data = await client.fetch(query, {}, {
       next: {
-        tags: ['aitool', slug] // Keep tags for Next.js internal cache revalidation
+        tags: ['aitool', slug]
       }
     });
 
-    // --- Redis Caching Logic ---
-    // 3. If data was successfully fetched from Sanity, store it in Redis
     if (data) {
       try {
-        // 'EX' sets an expiration time in seconds. Here, 3600 seconds = 1 hour.
-        // You can adjust this TTL (Time To Live) based on how frequently your content changes.
-        await redisClient.set(cacheKey, JSON.stringify(data), 'EX', 3600);
+        // --- FIX IS HERE: Changed 'EX', 3600 to { ex: 3600 } ---
+        await redisClient.set(cacheKey, JSON.stringify(data), { ex: 3600 });
         console.log(`[Redis Cache Set] for ${cacheKey}`);
       } catch (redisSetError) {
         console.error(`Error setting Redis cache for ${cacheKey}:`, redisSetError);
       }
     }
-    // --- End Redis Caching Logic ---
-
     return data;
   } catch (error) {
     console.error(`Server-side fetch for slug ${slug} failed:`, error.message);
@@ -112,9 +93,7 @@ async function getData(slug) {
   }
 }
 
-// Next.js `generateMetadata` function for SEO
 export async function generateMetadata({ params }) {
-  // This will now also benefit from Redis caching via the getData call
   const data = await getData(params.slug);
 
   if (!data) {
@@ -130,7 +109,7 @@ export async function generateMetadata({ params }) {
   return {
     title: `${data.metatitle}`,
     description: data.metadesc,
-    keywords: data.tags?.map(tag => tag.name).join(', ') || '',
+    keywords: data.tags?.map(tag => tag.name).join(',') || '',
     authors: [{ name: "Sufian Mustafa", url: "https://www.doitwithai.tools/author/sufian-mustafa" }],
     creator: "Sufian Mustafa",
     publisher: "DoItWithAI.tools",
@@ -181,7 +160,6 @@ export async function generateMetadata({ params }) {
   };
 }
 
-
 export default async function ParentPage({ params }) {
   const data = await getData(params.slug);
 
@@ -198,8 +176,6 @@ export default async function ParentPage({ params }) {
   const imageUrl = data.mainImage ? urlForImage(data.mainImage).url() : null;
   const readingTime = Math.ceil((data.wordCount || 1000) / 250);
 
-  // --- Schema Markup Functions (now defined within the component for data access) ---
-
   function generateArticleSchema() {
     const headingStructure = data.headings?.map((heading, index) => ({
       "@type": "WebPageElement",
@@ -208,14 +184,8 @@ export default async function ParentPage({ params }) {
       "cssSelector": heading.level
     })) || [];
 
-    const articleContentText = data.content ?
-      data.content.map(block =>
-        block._type === 'block' ? block.children?.map(child => child.text).join(' ') : ''
-      ).join(' ') : '';
-
-    const truncatedArticleBody = articleContentText.length > 750 ?
-      articleContentText.substring(0, 750) + '...' :
-      articleContentText;
+    const articleContentText = data.content ? data.content.map(block => block._type === 'block' ? block.children?.map(child => child.text).join('') : '').join('') : '';
+    const truncatedArticleBody = articleContentText.length > 750 ? articleContentText.substring(0, 750) + '...' : articleContentText;
 
     return {
       __html: JSON.stringify({
@@ -229,7 +199,7 @@ export default async function ParentPage({ params }) {
         },
         "headline": data.metatitle,
         "name": data.schematitle || data.metatitle,
-        "description": data.schemadesc || data.metadesc,
+        "description": data.metadesc,
         "abstract": data.overview,
         "articleSection": "AI Tools",
         "articleBody": truncatedArticleBody,
@@ -244,15 +214,12 @@ export default async function ParentPage({ params }) {
           "url": "https://www.doitwithai.tools/author/sufian-mustafa",
           "jobTitle": "AI Technology Expert",
           "knowsAbout": ["Artificial Intelligence", "AI Tools", "SEO", "Content Marketing", "Digital Marketing"],
-          "sameAs": [
-            "https://twitter.com/sufianmustafa",
-            "https://linkedin.com/in/sufianmustafa"
-          ]
+          "sameAs": ["https://twitter.com/sufianmustafa", "https://linkedin.com/in/sufianmustafa"]
         },
         "publisher": {
           "@type": "Organization",
           "@id": "https://www.doitwithai.tools#organization",
-          "name": "Do It With AI Tools",
+          "name": "DoItWithAITools",
           "url": "https://www.doitwithai.tools",
           "logo": {
             "@type": "ImageObject",
@@ -261,10 +228,7 @@ export default async function ParentPage({ params }) {
             "height": 512
           },
           "foundingDate": "2024",
-          "founder": {
-            "@type": "Person",
-            "name": "Sufian Mustafa"
-          }
+          "founder": { "@type": "Person", "name": "Sufian Mustafa" }
         },
         "image": imageUrl ? {
           "@type": "ImageObject",
@@ -276,56 +240,22 @@ export default async function ParentPage({ params }) {
           "thumbnailUrl": imageUrl
         } : undefined,
         "url": canonicalUrl,
-        "mainEntity": {
-          "@type": "Thing",
-          "name": data.title,
-          "description": data.overview
-        },
-        "isPartOf": {
-          "@type": "WebSite",
-          "@id": "https://www.doitwithai.tools#website"
-        },
+        "mainEntity": { "@type": "Thing", "name": data.title, "description": data.overview },
+        "isPartOf": { "@type": "WebSite", "@id": "https://www.doitwithai.tools#website" },
         "hasPart": headingStructure,
-        "keywords": data.tags?.map(tag => tag.name).join(", ") || "",
-        "about": {
-          "@type": "Thing",
-          "name": "Artificial Intelligence Tools",
-          "sameAs": "https://en.wikipedia.org/wiki/Artificial_intelligence"
-        },
-        "mentions": data.tags?.map(tag => ({
-          "@type": "Thing",
-          "name": tag.name
-        })) || [],
+        "keywords": data.tags?.map(tag => tag.name).join(",") || "",
+        "about": { "@type": "Thing", "name": "ArtificialIntelligenceTools", "sameAs": "https://en.wikipedia.org/wiki/Artificial_intelligence" },
+        "mentions": data.tags?.map(tag => ({ "@type": "Thing", "name": tag.name })) || [],
         "inLanguage": "en-US",
         "copyrightYear": new Date().getFullYear(),
-        "copyrightHolder": {
-          "@type": "Organization",
-          "@id": "https://www.doitwithai.tools#organization"
-        },
+        "copyrightHolder": { "@type": "Organization", "@id": "https://www.doitwithai.tools#organization" },
         "license": "https://creativecommons.org/licenses/by/4.0/",
-        "accessibilityFeature": [
-          "alternativeText",
-          "readingOrder",
-          "structuralNavigation",
-          "tableOfContents"
-        ],
+        "accessibilityFeature": ["alternativeText", "readingOrder", "structuralNavigation", "tableOfContents"],
         "accessibilityHazard": "none",
-        "accessibilityControl": [
-          "fullKeyboardControl",
-          "fullMouseControl"
-        ],
+        "accessibilityControl": ["fullKeyboardControl", "fullMouseControl"],
         "educationalLevel": "beginner",
         "learningResourceType": "article",
-        "potentialAction": [
-          {
-            "@type": "ReadAction",
-            "target": [canonicalUrl]
-          },
-          {
-            "@type": "ShareAction",
-            "target": [canonicalUrl]
-          }
-        ]
+        "potentialAction": [{ "@type": "ReadAction", "target": [canonicalUrl] }, { "@type": "ShareAction", "target": [canonicalUrl] }]
       })
     };
   }
@@ -334,10 +264,8 @@ export default async function ParentPage({ params }) {
     if (!data.tableOfContents || data.tableOfContents.length === 0) {
       return null;
     }
-
     const tocItems = [];
     let position = 1;
-
     data.tableOfContents.forEach((item) => {
       tocItems.push({
         "@type": "ListItem",
@@ -350,7 +278,6 @@ export default async function ParentPage({ params }) {
           "url": `${canonicalUrl}#${item.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`
         }
       });
-
       if (item.subheadings && item.subheadings.length > 0) {
         item.subheadings.forEach((sub) => {
           tocItems.push({
@@ -388,38 +315,22 @@ export default async function ParentPage({ params }) {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "@id": `${canonicalUrl}#breadcrumb`,
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": {
-              "@type": "WebPage",
-              "@id": "https://www.doitwithai.tools/",
-              "url": "https://www.doitwithai.tools/"
-            }
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "AI Tools",
-            "item": {
-              "@type": "WebPage",
-              "@id": "https://www.doitwithai.tools/ai-tools",
-              "url": "https://www.doitwithai.tools/ai-tools"
-            }
-          },
-          {
-            "@type": "ListItem",
-            "position": 3,
-            "name": data.schematitle || data.metatitle,
-            "item": {
-              "@type": "WebPage",
-              "@id": canonicalUrl,
-              "url": canonicalUrl
-            }
-          }
-        ]
+        "itemListElement": [{
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": { "@type": "WebPage", "@id": "https://www.doitwithai.tools/", "url": "https://www.doitwithai.tools/" }
+        }, {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "AI Tools",
+          "item": { "@type": "WebPage", "@id": "https://www.doitwithai.tools/ai-tools", "url": "https://www.doitwithai.tools/ai-tools" }
+        }, {
+          "@type": "ListItem",
+          "position": 3,
+          "name": data.schematitle || data.metatitle,
+          "item": { "@type": "WebPage", "@id": canonicalUrl, "url": canonicalUrl }
+        }]
       })
     };
   }
@@ -428,7 +339,6 @@ export default async function ParentPage({ params }) {
     if (!data.faqs || data.faqs.length === 0) {
       return null;
     }
-
     return {
       __html: JSON.stringify({
         "@context": "https://schema.org",
@@ -447,10 +357,7 @@ export default async function ParentPage({ params }) {
             "dateCreated": data.publishedAt,
             "upvoteCount": 0,
             "url": `${canonicalUrl}#faq-${index + 1}`,
-            "author": {
-              "@type": "Person",
-              "name": "Sufian Mustafa"
-            }
+            "author": { "@type": "Person", "name": "Sufian Mustafa" }
           }
         }))
       })
@@ -467,36 +374,15 @@ export default async function ParentPage({ params }) {
         "name": data.metatitle,
         "description": data.metadesc,
         "inLanguage": "en-US",
-        "isPartOf": {
-          "@type": "WebSite",
-          "@id": "https://www.doitwithai.tools#website"
-        },
-        "primaryImageOfPage": imageUrl ? {
-          "@type": "ImageObject",
-          "url": imageUrl
-        } : undefined,
+        "isPartOf": { "@type": "WebSite", "@id": "https://www.doitwithai.tools#website" },
+        "primaryImageOfPage": imageUrl ? { "@type": "ImageObject", "url": imageUrl } : undefined,
         "datePublished": data.publishedAt,
         "dateModified": data._updatedAt || data.publishedAt,
-        "author": {
-          "@type": "Person",
-          "name": "Sufian Mustafa"
-        },
-        "publisher": {
-          "@type": "Organization",
-          "@id": "https://www.doitwithai.tools#organization"
-        },
-        "mainContentOfPage": {
-          "@type": "WebPageElement",
-          "cssSelector": "main"
-        },
-        "breadcrumb": {
-          "@type": "BreadcrumbList",
-          "@id": `${canonicalUrl}#breadcrumb`
-        },
-        "speakable": {
-          "@type": "SpeakableSpecification",
-          "cssSelector": ["h1", "h2", ".overview"]
-        }
+        "author": { "@type": "Person", "name": "Sufian Mustafa" },
+        "publisher": { "@type": "Organization", "@id": "https://www.doitwithai.tools#organization" },
+        "mainContentOfPage": { "@type": "WebPageElement", "cssSelector": "main" },
+        "breadcrumb": { "@type": "BreadcrumbList", "@id": `${canonicalUrl}#breadcrumb` },
+        "speakable": { "@type": "SpeakableSpecification", "cssSelector": ["h1", "h2", ".overview"] }
       })
     };
   }
@@ -508,42 +394,16 @@ export default async function ParentPage({ params }) {
         "@type": "WebSite",
         "@id": "https://www.doitwithai.tools#website",
         "url": "https://www.doitwithai.tools",
-        "name": "Do It With AI Tools",
-        "alternateName": ["DoItWithAI.tools", "DIWAI Tools"],
-        "description": "Do It With AI Tools is an AI-focused content hub empowering creators, developers, marketers, and entrepreneurs with accessible, actionable AI knowledge and resources to boost productivity and SEO.",
+        "name": "DoItWithAITools",
+        "alternateName": ["DoItWithAI.tools", "DIWAITools"],
+        "description": "DoItWithAIToolsisanAI-focusedcontenthubempoweringcreators,developers,marketers,andentrepreneurswithaccessible,actionableAIknowledgeandresourcestoboostproductivityandSEO.",
         "inLanguage": "en-US",
-        "isPartOf": {
-          "@type": "WebSite",
-          "@id": "https://www.doitwithai.tools#website"
-        },
-        "about": {
-          "@type": "Thing",
-          "name": "Artificial Intelligence",
-          "description": "AI tools, resources, and educational content"
-        },
-        "audience": {
-          "@type": "Audience",
-          "audienceType": "AI enthusiasts, developers, marketers, entrepreneurs"
-        },
-        "publisher": {
-          "@type": "Organization",
-          "@id": "https://www.doitwithai.tools#organization"
-        },
-        "potentialAction": [
-          {
-            "@type": "SearchAction",
-            "target": {
-              "@type": "EntryPoint",
-              "urlTemplate": "https://www.doitwithai.tools/search?q={search_term_string}"
-            },
-            "query-input": "required name=search_term_string"
-          }
-        ],
-        "sameAs": [
-          "https://twitter.com/doitwithai",
-          "https://facebook.com/doitwithai",
-          "https://linkedin.com/company/doitwithai"
-        ]
+        "isPartOf": { "@type": "WebSite", "@id": "https://www.doitwithai.tools#website" },
+        "about": { "@type": "Thing", "name": "ArtificialIntelligence", "description": "AI tools, resources, and educational content" },
+        "audience": { "@type": "Audience", "audienceType": "AI enthusiasts, developers, marketers, entrepreneurs" },
+        "publisher": { "@type": "Organization", "@id": "https://www.doitwithai.tools#organization" },
+        "potentialAction": [{ "@type": "SearchAction", "target": { "@type": "EntryPoint", "urlTemplate": "https://www.doitwithai.tools/search?q={search_term_string}" }, "query-input": "required name=search_term_string" }],
+        "sameAs": ["https://twitter.com/doitwithai", "https://facebook.com/doitwithai", "https://linkedin.com/company/doitwithai"]
       })
     };
   }
@@ -554,55 +414,25 @@ export default async function ParentPage({ params }) {
         "@context": "https://schema.org",
         "@type": "Organization",
         "@id": "https://www.doitwithai.tools#organization",
-        "name": "Do It With AI Tools",
-        "legalName": "Do It With AI Tools",
-        "alternateName": ["DoItWithAI.tools", "DIWAI Tools"],
+        "name": "DoItWithAITools",
+        "legalName": "DoItWithAITools",
+        "alternateName": ["DoItWithAI.tools", "DIWAITools"],
         "url": "https://www.doitwithai.tools",
         "logo": {
           "@type": "ImageObject",
           "url": "https://www.doitwithai.tools/logoForHeader.png",
           "width": 512,
           "height": 512,
-          "caption": "Do It With AI Tools Logo"
+          "caption": "DoItWithAITools Logo"
         },
-        "image": {
-          "@type": "ImageObject",
-          "url": "https://www.doitwithai.tools/logoForHeader.png"
-        },
-        "description": "Do it with AI Tools is your central platform to master SEO using cutting-edge AI insights and discover how artificial intelligence can revolutionize your daily tasks. We empower businesses, creators, and marketers double SEO performance and boost overall productivity by strategically automating repetitive tasks using our free AI resources. Explore our in-depth strategies and tools, designed for anyone looking to unlock the full potential of AI in real-world workflows.",
+        "image": { "@type": "ImageObject", "url": "https://www.doitwithai.tools/logoForHeader.png" },
+        "description": "DoitwithAIToolsisyourcentralplatformtomasterSEOusingcutting-edgeAIinsightsanddiscoverhowartificialintelligencecanrevolutionizeyourdailytasks.Weempowerbusinesses,creators,andmarketersdoubleSEOperformanceandboostoverallproductivitybystrategicallyautomatingrepetitivetasksusingourfreeAIresources.Exploreourin-depthstrategiesandtools,designedforanyonelookingtounlockthefullpotentialofAIinreal-worldworkflows.",
         "foundingDate": "2024",
-        "founder": {
-          "@type": "Person",
-          "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person",
-          "name": "Sufian Mustafa"
-        },
-        "address": {
-          "@type": "PostalAddress",
-          "addressCountry": "PK",
-          "addressRegion": "Khyber Pakhtunkhwa"
-        },
-        "contactPoint": [
-          {
-            "@type": "ContactPoint",
-            "contactType": "customer service",
-            "email": "contact@doitwithai.tools",
-            "availableLanguage": "English"
-          }
-        ],
-        "sameAs": [
-          "https://twitter.com/doitwithai",
-          "https://facebook.com/doitwithai",
-          "https://linkedin.com/company/doitwithai"
-        ],
-        "knowsAbout": [
-          "Artificial Intelligence",
-          "AI Tools",
-          "Machine Learning",
-          "Productivity Software",
-          "SEO Optimization",
-          "Content Creation",
-          "Automation"
-        ]
+        "founder": { "@type": "Person", "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person", "name": "Sufian Mustafa" },
+        "address": { "@type": "PostalAddress", "addressCountry": "PK", "addressRegion": "Khyber Pakhtunkhwa" },
+        "contactPoint": [{ "@type": "ContactPoint", "contactType": "customer service", "email": "contact@doitwithai.tools", "availableLanguage": "English" }],
+        "sameAs": ["https://twitter.com/doitwithai", "https://facebook.com/doitwithai", "https://linkedin.com/company/doitwithai"],
+        "knowsAbout": ["Artificial Intelligence", "AI Tools", "Machine Learning", "Productivity Software", "SEO Optimization", "Content Creation", "Automation"]
       })
     };
   }
@@ -611,11 +441,9 @@ export default async function ParentPage({ params }) {
     if (!data.articleType || !['howto', 'tutorial'].includes(data.articleType)) {
       return null;
     }
-
     if (!data.tableOfContents || data.tableOfContents.length === 0) {
       return null;
     }
-
     return {
       __html: JSON.stringify({
         "@context": "https://schema.org",
@@ -623,31 +451,10 @@ export default async function ParentPage({ params }) {
         "@id": `${canonicalUrl}#howto`,
         "name": `How to use ${data.title}`,
         "description": data.metadesc,
-        "image": imageUrl ? {
-          "@type": "ImageObject",
-          "url": imageUrl
-        } : undefined,
-        "estimatedCost": {
-          "@type": "MonetaryAmount",
-          "currency": "USD",
-          "value": "0"
-        },
-        "supply": [
-          {
-            "@type": "HowToSupply",
-            "name": "Computer or mobile device"
-          },
-          {
-            "@type": "HowToSupply",
-            "name": "Internet connection"
-          }
-        ],
-        "tool": [
-          {
-            "@type": "HowToTool",
-            "name": data.title
-          }
-        ],
+        "image": imageUrl ? { "@type": "ImageObject", "url": imageUrl } : undefined,
+        "estimatedCost": { "@type": "MonetaryAmount", "currency": "USD", "value": "0" },
+        "supply": [{ "@type": "HowToSupply", "name": "Computer or mobile device" }, { "@type": "HowToSupply", "name": "Internet connection" }],
+        "tool": [{ "@type": "HowToTool", "name": data.title }],
         "step": data.tableOfContents.map((item, index) => ({
           "@type": "HowToStep",
           "name": item.heading,
@@ -656,10 +463,7 @@ export default async function ParentPage({ params }) {
           "url": `${canonicalUrl}#${item.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
         })),
         "totalTime": `PT${readingTime}M`,
-        "author": {
-          "@type": "Person",
-          "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person"
-        }
+        "author": { "@type": "Person", "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person" }
       })
     };
   }
@@ -668,7 +472,6 @@ export default async function ParentPage({ params }) {
     if (!data.displaySettings?.isSoftwareReview) {
       return null;
     }
-
     return {
       __html: JSON.stringify({
         "@context": "https://schema.org",
@@ -677,23 +480,17 @@ export default async function ParentPage({ params }) {
         "name": data.title,
         "description": data.metadesc,
         "url": canonicalUrl,
-        "applicationCategory": "AI Tool",
-        "applicationSubCategory": "Productivity Software",
-        "operatingSystem": "Web Browser",
+        "applicationCategory": "AITool",
+        "applicationSubCategory": "ProductivitySoftware",
+        "operatingSystem": "WebBrowser",
         "browserRequirements": "Requires JavaScript. Requires HTML5.",
         "countriesSupported": "Worldwide",
         "inLanguage": "en-US",
         "isAccessibleForFree": true,
-        "creator": {
-          "@type": "Organization",
-          "@id": "https://www.doitwithai.tools#organization"
-        },
+        "creator": { "@type": "Organization", "@id": "https://www.doitwithai.tools#organization" },
         "datePublished": data.publishedAt,
         "dateModified": data._updatedAt || data.publishedAt,
-        "screenshot": imageUrl ? {
-          "@type": "ImageObject",
-          "url": imageUrl
-        } : undefined,
+        "screenshot": imageUrl ? { "@type": "ImageObject", "url": imageUrl } : undefined,
         "featureList": data.tags?.map(tag => tag.name) || ["AI Tools", "Productivity", "Automation"],
         "softwareRequirements": "Web Browser",
         "memoryRequirements": "1GB RAM",
@@ -707,26 +504,22 @@ export default async function ParentPage({ params }) {
     <>
       <Head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-
         <title>{data.metatitle} | DoItWithAI.tools</title>
         <meta name="description" content={data.metadesc} />
-        <meta name="keywords" content={data.tags?.map(tag => tag.name).join(', ') || ''} />
+        <meta name="keywords" content={data.tags?.map(tag => tag.name).join(',') || ''} />
         <meta name="author" content="Sufian Mustafa" />
         <meta name="creator" content="Sufian Mustafa" />
         <meta name="publisher" content="DoItWithAI.tools" />
-
-        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-        <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-        <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-
+        <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+        <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+        <meta name="bingbot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
         <meta name="article:published_time" content={data.publishedAt} />
         <meta name="article:modified_time" content={data._updatedAt || data.publishedAt} />
         <meta name="article:author" content="Sufian Mustafa" />
         <meta name="article:section" content="AI Tools" />
-        <meta name="article:tag" content={data.tags?.map(tag => tag.name).join(', ') || ''} />
-
+        <meta name="article:tag" content={data.tags?.map(tag => tag.name).join(',') || ''} />
         <meta name="classification" content="Technology" />
         <meta name="category" content="AI Tools" />
         <meta name="coverage" content="Worldwide" />
@@ -734,7 +527,6 @@ export default async function ParentPage({ params }) {
         <meta name="rating" content="General" />
         <meta name="subject" content="Artificial Intelligence Tools" />
         <meta name="topic" content="AI Technology" />
-
         <meta name="reading-time" content={`${readingTime} minutes`} />
         <meta name="word-count" content={data.wordCount || Math.round((data.estimatedReadingTime || 0) * 250)} />
 
@@ -780,21 +572,18 @@ export default async function ParentPage({ params }) {
 
         <meta name="theme-color" content="#3b82f6" />
         <meta name="color-scheme" content="light dark" />
-
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link rel="dns-prefetch" href="//www.google-analytics.com" />
-
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-
-        <meta httpEquiv="cache-control" content="public, max-age=31536000, immutable" />
+        <meta httpEquiv="cache-control" content="public,max-age=31536000,immutable" />
         <meta name="referrer" content="strict-origin-when-cross-origin" />
+
         <NextSeo
           title={`${data.metatitle} | DoItWithAI.tools`}
           description={data.metadesc}
@@ -826,88 +615,19 @@ export default async function ParentPage({ params }) {
             description: data.metadesc,
             images: imageUrl ? [imageUrl] : [],
           }}
-          additionalMetaTags={[
-            {
-              name: 'keywords',
-              content: data.tags?.map(tag => tag.name).join(', ') || ''
-            },
-            {
-              name: 'author',
-              content: 'Sufian Mustafa'
-            }
-          ]}
+          additionalMetaTags={[{ name: 'keywords', content: data.tags?.map(tag => tag.name).join(',') || '' }, { name: 'author', content: 'Sufian Mustafa' }]}
         />
       </Head>
 
-      <Script
-        id="WebSiteSchema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={generateWebSiteSchema()}
-        strategy="beforeInteractive"
-      />
-
-      <Script
-        id="OrganizationSchema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={generateOrganizationSchema()}
-        strategy="beforeInteractive"
-      />
-
-      <Script
-        id="WebPageSchema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={generateWebPageSchema()}
-        strategy="beforeInteractive"
-      />
-
-      <Script
-        id="ArticleSchema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={generateArticleSchema()}
-        strategy="afterInteractive"
-      />
-
-      <Script
-        id="BreadcrumbListSchema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={generateBreadcrumbSchema()}
-        strategy="afterInteractive"
-      />
-
-      {generateCorrectTableOfContentsSchema() && (
-        <Script
-          id="TableOfContentsSchema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={generateCorrectTableOfContentsSchema()}
-          strategy="afterInteractive"
-        />
-      )}
-      {generateHowToSchema() && (
-        <Script
-          id="HowToSchema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={generateHowToSchema()}
-          strategy="afterInteractive"
-        />
-      )}
-
-      {data.displaySettings?.isSoftwareReview && (
-        <Script
-          id="SoftwareApplicationSchema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={generateSoftwareApplicationSchema()}
-          strategy="afterInteractive"
-        />
-      )}
-
-      {generateFAQSchema() && (
-        <Script
-          id="FAQSchema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={generateFAQSchema()}
-          strategy="afterInteractive"
-        />
-      )}
+      <Script id="WebSiteSchema" type="application/ld+json" dangerouslySetInnerHTML={generateWebSiteSchema()} strategy="beforeInteractive" />
+      <Script id="OrganizationSchema" type="application/ld+json" dangerouslySetInnerHTML={generateOrganizationSchema()} strategy="beforeInteractive" />
+      <Script id="WebPageSchema" type="application/ld+json" dangerouslySetInnerHTML={generateWebPageSchema()} strategy="beforeInteractive" />
+      <Script id="ArticleSchema" type="application/ld+json" dangerouslySetInnerHTML={generateArticleSchema()} strategy="afterInteractive" />
+      <Script id="BreadcrumbListSchema" type="application/ld+json" dangerouslySetInnerHTML={generateBreadcrumbSchema()} strategy="afterInteractive" />
+      {generateCorrectTableOfContentsSchema() && (<Script id="TableOfContentsSchema" type="application/ld+json" dangerouslySetInnerHTML={generateCorrectTableOfContentsSchema()} strategy="afterInteractive" />)}
+      {generateHowToSchema() && (<Script id="HowToSchema" type="application/ld+json" dangerouslySetInnerHTML={generateHowToSchema()} strategy="afterInteractive" />)}
+      {data.displaySettings?.isSoftwareReview && (<Script id="SoftwareApplicationSchema" type="application/ld+json" dangerouslySetInnerHTML={generateSoftwareApplicationSchema()} strategy="afterInteractive" />)}
+      {generateFAQSchema() && (<Script id="FAQSchema" type="application/ld+json" dangerouslySetInnerHTML={generateFAQSchema()} strategy="afterInteractive" />)}
 
       <PageCacheProvider pageType={data._type} pageId={data.slug.current}>
         <PageCacheStatusButton />
@@ -930,7 +650,6 @@ export default async function ParentPage({ params }) {
               <meta itemProp="height" content="630" />
             </div>
           )}
-
           <ArticleChildComp serverData={data} params={params} schemaType="aitool" />
         </main>
       </PageCacheProvider>
