@@ -28,7 +28,7 @@ const commonRedisOptions = {
   // is lost. Set to null for infinite retries (common in serverless for resilience).
   // Or set a specific number like 5. Infinite retries can cause timeouts if the issue persists.
   // Let's try `null` for now, but be aware it can contribute to timeouts if the connection is truly broken.
-  maxRetriesPerRequest: null,
+  maxRetriesPerRequest: 3,
 
   // `retryStrategy`: A function that returns the delay before the next retry.
   // This implements exponential backoff.
