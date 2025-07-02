@@ -3,15 +3,79 @@ import React from 'react';
 import Script from "next/script";
 import Head from "next/head"; // Note: For App Router, `metadata` export is preferred.
 import { NextSeo } from "next-seo"; // NextSeo is for Pages Router, ensure it's still needed/used with App Router.
-import BlogListingPageContent from "./AllBlogs"; // Import the new reusable component
+
+import BlogListingPageContent from "@/app/ai-tools/AllBlogs"; // Import the new reusable component
+import { client } from "@/sanity/lib/client"; // Import Sanity client
+import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
+import { urlForImage } from "@/sanity/lib/image"; // For images in metadata
 
 // --- Next.js Server-Side Configuration ---
-// Enable Incremental Static Regeneration (ISR) for this page.
-// The page will be revalidated at most every 3600 seconds (1 hour).
-// Remove `export const dynamic = "force-dynamic";` to allow ISR.
 export const revalidate = 3600; // Revalidate every 1 hour
 
+/**
+ * Fetches the list of AI Tools articles, leveraging Redis cache.
+ * This function acts as the "Chef" getting the "Ingredients List" from the "Pantry" (Redis)
+ * or the "Supplier" (Sanity).
+ */
+async function getAiToolsListData() {
+  const cacheKey = 'list:aitools'; // A unique key for this specific list
+
+  try {
+    const cachedData = await redisHelpers.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for listing page: ${cacheKey}`);
+      return cachedData; // Data is already parsed by Upstash SDK
+    }
+  } catch (redisError) {
+    console.error(`Error accessing Redis for listing page ${cacheKey}:`, redisError);
+    // Continue to fetch from Sanity if Redis fails
+  }
+
+  console.log(`[Sanity Fetch] for listing page: ${cacheKey}`);
+  // Sanity query to fetch all necessary data for the AI Tools listing cards
+  const query = `*[_type == "aitool"] | order(publishedAt desc) {
+    _id,
+    title,
+    slug,
+    mainImage{asset->{_id,url},alt},
+    publishedAt,
+    overview,
+    _updatedAt,
+    _createdAt,
+    _type,
+    metatitle,
+    metadesc,
+    schematitle,
+    schemadesc,
+    // Add any other fields needed for your listing cards
+  }`;
+
+  try {
+    const data = await client.fetch(query, {}, {
+      // Use the 'aitool' tag so that when individual 'aitool' documents are updated,
+      // this list cache can also be revalidated by the webhook.
+      next: { tags: ['aitool'] }
+    });
+
+    if (data) {
+      try {
+        await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
+        console.log(`[Redis Cache Set] for listing page: ${cacheKey}`);
+      } catch (redisSetError) {
+        console.error(`Error setting Redis cache for listing page ${cacheKey}:`, redisSetError);
+      }
+    }
+    return data;
+  } catch (error) {
+    console.error(`Server-side fetch for AI Tools listing failed:`, error.message);
+    return []; // Return empty array on error to prevent page crash
+  }
+}
+
+
 // --- SEO Metadata (Next.js App Router Standard) ---
+// This metadata object is directly used by Next.js for head tags.
+// It is NOT directly accessible as a variable within the component's scope.
 export const metadata = {
   title: "Best AI Tools for Productivity - DoItWithAI.Tools",
   description: "Explore a comprehensive list of blogs on the Best AI Tools for Productivity (Freemium), providing detailed reviews of the top artificial intelligence solutions.",
@@ -43,7 +107,9 @@ export const metadata = {
   },
 };
 
-export default function Page() {
+export default async function Page() {
+  const aiToolsData = await getAiToolsListData(); // Fetch data here
+
   // Define schema-specific data for the AI Tools page
   const schemaType = "aitool"; // Sanity schema type
   const pageSlugPrefix = "ai-tools"; // URL prefix for this category
@@ -62,15 +128,16 @@ export default function Page() {
   };
 
   // Schema Markup for AI Tools CollectionPage
-  function schemaMarkup() {
+  // --- FIX: Pass the metadata object as an argument ---
+  function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
       __html: `
         {
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": "${metadata.title}",
-          "description": "${metadata.description}",
-          "url": "${metadata.openGraph.url}",
+          "name": "${pageMetadata.title}",
+          "description": "${pageMetadata.description}",
+          "url": "${pageMetadata.openGraph.url}",
           "breadcrumb": {
             "@type": "BreadcrumbList",
             "itemListElement": [
@@ -144,7 +211,8 @@ export default function Page() {
       <Script
         id="BreadcrumbListSchema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup()}
+        // --- FIX: Pass the metadata object here ---
+        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
         key={`${pageSlugPrefix}-jsonld`} // Dynamic key
       />
       <BlogListingPageContent
@@ -154,6 +222,7 @@ export default function Page() {
         pageTitleHighlight={pageTitleHighlight}
         pageDescription={pageDescription}
         breadcrumbProps={breadcrumbProps}
+        serverData={aiToolsData} 
       />
     </>
   );

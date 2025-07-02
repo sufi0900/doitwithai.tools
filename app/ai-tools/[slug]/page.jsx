@@ -194,16 +194,613 @@ export default async function ParentPage({ params }) {
   const canonicalUrl = `https://www.doitwithai.tools/ai-tools/${params.slug}`;
   const imageUrl = data.mainImage ? urlForImage(data.mainImage).url() : null;
   const readingTime = Math.ceil((data.wordCount || 1000) / 250);
-  
+  // Enhanced Schema Markup Functions
+  function generateArticleSchema() {
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "@id": `${canonicalUrl}#article`,
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": canonicalUrl
+        },
+        "headline": data.metatitle,
+        "name": data.schematitle || data.metatitle,
+        "description": data.schemadesc || data.metadesc,
+        "image": imageUrl ? {
+          "@type": "ImageObject",
+          "@id": `${canonicalUrl}#primaryimage`,
+          "url": imageUrl,
+          "contentUrl": imageUrl,
+          "width": 1200,
+          "height": 630,
+          "caption": data.mainImage?.alt || data.metatitle
+        } : undefined,
+        "datePublished": data.publishedAt,
+        "dateModified": data._updatedAt || data.publishedAt,
+        "dateCreated": data.publishedAt,
+        "author": {
+          "@type": "Person",
+          "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person",
+          "name": "Sufian Mustafa",
+          "url": "https://www.doitwithai.tools/author/sufian-mustafa",
+          "image": {
+            "@type": "ImageObject",
+            "url": "https://www.doitwithai.tools/author-image.jpg",
+            "width": 400,
+            "height": 400
+          },
+          "sameAs": [
+            "https://twitter.com/sufianmustafa",
+            "https://linkedin.com/in/sufianmustafa"
+          ],
+          "jobTitle": "AI Tools Expert",
+          "worksFor": {
+            "@type": "Organization",
+            "@id": "https://www.doitwithai.tools#organization"
+          }
+        },
+        "publisher": {
+          "@type": "Organization",
+          "@id": "https://www.doitwithai.tools#organization",
+          "name": "Do It With AI Tools",
+          "url": "https://www.doitwithai.tools",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://www.doitwithai.tools/logoForHeader.png",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "url": canonicalUrl,
+        "isPartOf": {
+          "@type": "WebSite",
+          "@id": "https://www.doitwithai.tools#website"
+        },
+        "wordCount": data.wordCount || Math.round(readingTime * 250),
+        "keywords": data.tags?.map(tag => tag.name).join(", ") || "AI tools, artificial intelligence, productivity",
+        "articleSection": "AI Tools",
+        "articleBody": data.overview || data.metadesc,
+        "inLanguage": "en-US",
+        "copyrightYear": new Date(data.publishedAt).getFullYear(),
+        "copyrightHolder": {
+          "@type": "Organization",
+          "@id": "https://www.doitwithai.tools#organization"
+        },
+        "license": "https://creativecommons.org/licenses/by/4.0/",
+        "acquireLicensePage": "https://www.doitwithai.tools/license",
+        "potentialAction": [
+          {
+            "@type": "ReadAction",
+            "target": [canonicalUrl]
+          },
+          {
+            "@type": "ShareAction",
+            "target": [canonicalUrl]
+          }
+        ],
+        "speakable": {
+          "@type": "SpeakableSpecification",
+          "cssSelector": ["h1", ".overview", ".content"]
+        },
+        "about": {
+          "@type": "Thing",
+          "name": "Artificial Intelligence Tools",
+          "description": "AI tools and resources for productivity and automation"
+        },
+        "mentions": data.tags?.map(tag => ({
+          "@type": "Thing",
+          "name": tag.name
+        })) || []
+      })
+    };
+  }
+
+  function generateBreadcrumbSchema() {
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "@id": `${canonicalUrl}#breadcrumb`,
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": {
+              "@type": "WebPage",
+              "@id": "https://www.doitwithai.tools/",
+              "url": "https://www.doitwithai.tools/"
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "AI Tools",
+            "item": {
+              "@type": "CollectionPage",
+              "@id": "https://www.doitwithai.tools/ai-tools",
+              "url": "https://www.doitwithai.tools/ai-tools"
+            }
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": data.schematitle || data.metatitle,
+            "item": {
+              "@type": "WebPage",
+              "@id": canonicalUrl,
+              "url": canonicalUrl
+            }
+          }
+        ]
+      })
+    };
+  }
+
+  // FIXED: Table of Contents Schema
+  function generateTableOfContentsSchema() {
+    if (!data.tableOfContents || data.tableOfContents.length === 0) {
+      return null;
+    }
+
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "@id": `${canonicalUrl}#tableofcontents`,
+        "headline": data.metatitle,
+        "hasPart": data.tableOfContents.map((item, index) => ({
+          "@type": "WebPageElement",
+          "@id": `${canonicalUrl}#section-${index + 1}`,
+          "name": item.heading,
+          "description": `Section ${index + 1}: ${item.heading}`,
+          "url": `${canonicalUrl}#${item.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
+          "position": index + 1,
+          "isPartOf": {
+            "@type": "Article",
+            "@id": `${canonicalUrl}#article`
+          }
+        }))
+      })
+    };
+  }
+
+  function generateFAQSchema() {
+    if (!data.faqs || data.faqs.length === 0) {
+      return null;
+    }
+
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "@id": `${canonicalUrl}#faq`,
+        "mainEntity": data.faqs.map((faq, index) => ({
+          "@type": "Question",
+          "@id": `${canonicalUrl}#faq-${index + 1}`,
+          "name": faq.question,
+          "text": faq.question,
+          "answerCount": 1,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "@id": `${canonicalUrl}#faq-answer-${index + 1}`,
+            "text": faq.answer,
+            "author": {
+              "@type": "Person",
+              "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person"
+            },
+            "dateCreated": data.publishedAt,
+            "upvoteCount": 0,
+            "url": `${canonicalUrl}#faq-${index + 1}`
+          },
+          "dateCreated": data.publishedAt,
+          "author": {
+            "@type": "Person",
+            "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person"
+          }
+        }))
+      })
+    };
+  }
+
+  function generateWebSiteSchema() {
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://www.doitwithai.tools#website",
+        "url": "https://www.doitwithai.tools",
+        "name": "Do It With AI Tools",
+        "alternateName": ["DoItWithAI.tools", "DIWAI Tools"],
+        "description": "Do It With AI Tools is an AI-focused content hub empowering creators, developers, marketers, and entrepreneurs with accessible, actionable AI knowledge and resources to boost productivity and SEO.",
+        "inLanguage": "en-US",
+        "isPartOf": {
+          "@type": "WebSite",
+          "@id": "https://www.doitwithai.tools#website"
+        },
+        "about": {
+          "@type": "Thing",
+          "name": "Artificial Intelligence",
+          "description": "AI tools, resources, and educational content"
+        },
+        "audience": {
+          "@type": "Audience",
+          "audienceType": "AI enthusiasts, developers, marketers, entrepreneurs"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "@id": "https://www.doitwithai.tools#organization"
+        },
+        "potentialAction": [
+          {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://www.doitwithai.tools/search?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        ],
+        "sameAs": [
+          "https://twitter.com/doitwithai",
+          "https://facebook.com/doitwithai",
+          "https://linkedin.com/company/doitwithai"
+        ]
+      })
+    };
+  }
+
+  function generateOrganizationSchema() {
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://www.doitwithai.tools#organization",
+        "name": "Do It With AI Tools",
+        "legalName": "Do It With AI Tools",
+        "alternateName": ["DoItWithAI.tools", "DIWAI Tools"],
+        "url": "https://www.doitwithai.tools",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.doitwithai.tools/logoForHeader.png",
+          "width": 512,
+          "height": 512,
+          "caption": "Do It With AI Tools Logo"
+        },
+        "image": {
+          "@type": "ImageObject",
+          "url": "https://www.doitwithai.tools/logoForHeader.png"
+        },
+        "description": "Do It With AI Tools is an AI-focused content hub empowering creators, developers, marketers, and entrepreneurs with accessible, actionable AI knowledge and resources to boost productivity and SEO.",
+        "foundingDate": "2024",
+        "founder": {
+          "@type": "Person",
+          "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person",
+          "name": "Sufian Mustafa"
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "PK",
+          "addressRegion": "Khyber Pakhtunkhwa"
+        },
+        "contactPoint": [
+          {
+            "@type": "ContactPoint",
+            "contactType": "customer service",
+            "email": "contact@doitwithai.tools",
+            "availableLanguage": "English"
+          }
+        ],
+        "sameAs": [
+          "https://twitter.com/doitwithai",
+          "https://facebook.com/doitwithai",
+          "https://linkedin.com/company/doitwithai"
+        ],
+        "knowsAbout": [
+          "Artificial Intelligence",
+          "AI Tools",
+          "Machine Learning",
+          "Productivity Software",
+          "SEO Optimization",
+          "Content Creation",
+          "Automation"
+        ]
+      })
+    };
+  }
+
+  // New: How-to Schema for instructional content
+  function generateHowToSchema() {
+    if (!data.tableOfContents || data.tableOfContents.length === 0) {
+      return null;
+    }
+
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "@id": `${canonicalUrl}#howto`,
+        "name": `How to use ${data.title}`,
+        "description": data.metadesc,
+        "image": imageUrl ? {
+          "@type": "ImageObject",
+          "url": imageUrl
+        } : undefined,
+        "estimatedCost": {
+          "@type": "MonetaryAmount",
+          "currency": "USD",
+          "value": "0"
+        },
+        "supply": [
+          {
+            "@type": "HowToSupply",
+            "name": "Computer or mobile device"
+          },
+          {
+            "@type": "HowToSupply", 
+            "name": "Internet connection"
+          }
+        ],
+        "tool": [
+          {
+            "@type": "HowToTool",
+            "name": data.title
+          }
+        ],
+        "step": data.tableOfContents.map((item, index) => ({
+          "@type": "HowToStep",
+          "name": item.heading,
+          "text": item.heading,
+          "position": index + 1,
+          "url": `${canonicalUrl}#${item.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
+        })),
+        "totalTime": `PT${readingTime}M`,
+        "author": {
+          "@type": "Person",
+          "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person"
+        }
+      })
+    };
+  }
+
+  // New: Software Application Schema for AI tools
+  function generateSoftwareApplicationSchema() {
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "@id": `${canonicalUrl}#software`,
+        "name": data.title,
+        "description": data.metadesc,
+        "url": canonicalUrl,
+        "applicationCategory": "AI Tool",
+        "applicationSubCategory": "Productivity Software",
+        "operatingSystem": "Web Browser",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "countriesSupported": "Worldwide",
+        "inLanguage": "en-US",
+        "isAccessibleForFree": true,
+        "creator": {
+          "@type": "Organization",
+          "@id": "https://www.doitwithai.tools#organization"
+        },
+        "datePublished": data.publishedAt,
+        "dateModified": data._updatedAt || data.publishedAt,
+        "screenshot": imageUrl ? {
+          "@type": "ImageObject",
+          "url": imageUrl
+        } : undefined,
+        "featureList": data.tags?.map(tag => tag.name) || ["AI Tools", "Productivity", "Automation"],
+        "softwareRequirements": "Web Browser",
+        "memoryRequirements": "1GB RAM",
+        "processorRequirements": "Any modern processor",
+        "storageRequirements": "No local storage required"
+      })
+    };
+  }
+
   return (
     <>
-      <PageCacheProvider>
-        <main>
-                  <PageCacheStatusButton />
+      <Head>
+             <meta charSet="utf-8" />
+             <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+             <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+             <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
+             
+             {/* Enhanced Basic Meta Tags */}
+             <title>{data.metatitle} | Do It With AI Tools</title>
+             <meta name="description" content={data.metadesc} />
+             <meta name="keywords" content={data.tags?.map(tag => tag.name).join(', ') || 'AI tools, artificial intelligence, productivity, automation'} />
+             <meta name="author" content="Sufian Mustafa" />
+             <meta name="creator" content="Sufian Mustafa" />
+             <meta name="publisher" content="Do It With AI Tools" />
+             
+             {/* Enhanced Robots Meta */}
+             <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+             <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+             <meta name="bingbot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+             <meta name="slurp" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+             
+             {/* Content Classification */}
+             <meta name="classification" content="Technology" />
+             <meta name="category" content="AI Tools" />
+             <meta name="coverage" content="Worldwide" />
+             <meta name="distribution" content="Global" />
+             <meta name="rating" content="General" />
+             <meta name="revisit-after" content="1 day" />
+             <meta name="language" content="English" />
+             <meta name="geo.region" content="PK-KP" />
+             <meta name="geo.country" content="PK" />
+             
+             {/* Enhanced Reading Time & Content Info */}
+             <meta name="reading-time" content={`${readingTime} minutes`} />
+             <meta name="word-count" content={data.wordCount || Math.round(readingTime * 250)} />
+             <meta name="article-author" content="Sufian Mustafa" />
+             <meta name="article-published-time" content={data.publishedAt} />
+             <meta name="article-modified-time" content={data._updatedAt || data.publishedAt} />
+             
+             {/* Enhanced Open Graph Meta Tags */}
+             <meta property="og:type" content="article" />
+             <meta property="og:site_name" content="Do It With AI Tools" />
+             <meta property="og:locale" content="en_US" />
+             <meta property="og:title" content={data.metatitle} />
+             <meta property="og:description" content={data.metadesc} />
+             <meta property="og:url" content={canonicalUrl} />
+             {imageUrl && (
+               <>
+                 <meta property="og:image" content={imageUrl} />
+                 <meta property="og:image:secure_url" content={imageUrl} />
+                 <meta property="og:image:width" content="1200" />
+                 <meta property="og:image:height" content="630" />
+                 <meta property="og:image:alt" content={data.mainImage?.alt || data.metatitle} />
+                 <meta property="og:image:type" content="image/jpeg" />
+               </>
+             )}
+             <meta property="article:published_time" content={data.publishedAt} />
+             <meta property="article:modified_time" content={data._updatedAt || data.publishedAt} />
+             <meta property="article:author" content="Sufian Mustafa" />
+             <meta property="article:section" content="AI Tools" />
+             <meta property="article:reading_time" content={readingTime} />
+             {data.tags?.map((tag, index) => (
+               <meta key={index} property="article:tag" content={tag.name} />
+             ))}
+     
+             {/* Enhanced Twitter Card Meta Tags */}
+             <meta name="twitter:card" content="summary_large_image" />
+             <meta name="twitter:site" content="@doitwithai" />
+             <meta name="twitter:creator" content="@sufianmustafa" />
+             <meta name="twitter:title" content={data.metatitle} />
+             <meta name="twitter:description" content={data.metadesc} />
+             {imageUrl && <meta name="twitter:image" content={imageUrl} />}
+             <meta name="twitter:image:alt" content={data.mainImage?.alt || data.metatitle} />
+             <meta property="twitter:domain" content="doitwithai.tools" />
+             <meta property="twitter:url" content={canonicalUrl} />
+             <meta name="twitter:label1" content="Reading time" />
+             <meta name="twitter:data1" content={`${readingTime} min read`} />
+             <meta name="twitter:label2" content="Category" />
+             <meta name="twitter:data2" content="AI Tools" />
+     
+             {/* Enhanced Link Relations */}
+             <link rel="canonical" href={canonicalUrl} />
+             <link rel="alternate" type="application/rss+xml" title="Do It With AI Tools RSS Feed" href="https://www.doitwithai.tools/rss.xml" />
+             <link rel="alternate" type="application/atom+xml" title="Do It With AI Tools Atom Feed" href="https://www.doitwithai.tools/atom.xml" />
+             <link rel="sitemap" type="application/xml" href="https://www.doitwithai.tools/sitemap.xml" />
+             
+             {/* Theme and Color */}
+             <meta name="theme-color" content="#3b82f6" />
+             <meta name="msapplication-TileColor" content="#3b82f6" />
+             <meta name="color-scheme" content="light dark" />
+             
+             {/* Performance Optimizations */}
+             <link rel="preconnect" href="https://fonts.googleapis.com" />
+             <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+             <link rel="dns-prefetch" href="//www.google-analytics.com" />
+             <link rel="dns-prefetch" href="//cdn.sanity.io" />
+             <link rel="preload" href={imageUrl} as="image" />
+             
+             {/* Security Headers */}
+             <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+             <meta httpEquiv="X-Frame-Options" content="DENY" />
+             <meta httpEquiv="X-XSS-Protection" content="1; mode=block" />
+             <meta httpEquiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+             
+             {/* Favicon */}
+             <link rel="icon" href="/favicon.ico" />
+             <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+             <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+             <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+             <link rel="manifest" href="/site.webmanifest" />
+             
+             {/* Apple-specific meta tags */}
+             <meta name="apple-mobile-web-app-capable" content="yes" />
+             <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+             <meta name="apple-mobile-web-app-title" content="Do It With AI Tools" />
+             
+             {/* Microsoft-specific meta tags */}
+             <meta name="msapplication-config" content="/browserconfig.xml" />
+             <meta name="msapplication-tooltip" content="Do It With AI Tools - AI Resources Hub" />
+             <meta name="msapplication-starturl" content="/" />
+             
+             {/* NextSeo Component */}
+             <NextSeo
+               title={`${data.metatitle} | Do It With AI Tools`}
+               description={data.metadesc}
+               canonical={canonicalUrl}
+               openGraph={metadata.openGraph}
+               twitter={metadata.twitter}
+               additionalMetaTags={[
+                 {
+                   name: 'keywords',
+                   content: data.tags?.map(tag => tag.name).join(', ') || 'AI tools, artificial intelligence, productivity, automation'
+                 },
+                 {
+                   name: 'author',
+                   content: 'Sufian Mustafa'
+                 },
+                 {
+                   name: 'reading-time',
+                   content: `${readingTime} minutes`
+                 }
+               ]}
+             />
+           </Head>
+     
+           {/* Enhanced Schema Markup Scripts */}
           
-          <ArticleChildComp serverData={data} params={params} schemaType="aitool" />
-        </main>
-      </PageCacheProvider>
-    </>
-  );
-}
+     
+           {/* Enhanced Schema Markup Scripts */}
+           <Script
+             id="WebSiteSchema"
+             type="application/ld+json"
+             dangerouslySetInnerHTML={generateWebSiteSchema()}
+             strategy="afterInteractive"
+           />
+     
+           <Script
+             id="OrganizationSchema"
+             type="application/ld+json"
+             dangerouslySetInnerHTML={generateOrganizationSchema()}
+             strategy="afterInteractive"
+           />
+     
+           <Script
+             id="BreadcrumbListSchema"
+             type="application/ld+json"
+             dangerouslySetInnerHTML={generateBreadcrumbSchema()}
+             strategy="afterInteractive"
+           />
+     
+           <Script
+             id="BlogPostingSchema"
+             type="application/ld+json"
+             dangerouslySetInnerHTML={generateArticleSchema()}
+             strategy="afterInteractive"
+           />
+     
+           {generateTableOfContentsSchema() && (
+             <Script
+               id="TableOfContentsSchema"
+               type="application/ld+json"
+               dangerouslySetInnerHTML={generateTableOfContentsSchema()}
+               strategy="afterInteractive"
+             />
+           )}
+     
+           {generateFAQSchema() && (
+             <Script
+               id="FAQSchema"
+               type="application/ld+json"
+               dangerouslySetInnerHTML={generateFAQSchema()}
+               strategy="afterInteractive"
+             />
+           )}
+     
+           {/* Main Content */}
+           <main role="main">
+             <AiToolSlugPageCode data={data} params={params} />
+           </main>
+         </>
+       );
+     }

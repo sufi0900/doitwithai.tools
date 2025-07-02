@@ -9,11 +9,25 @@ import { urlForImage } from "@/sanity/lib/image"; // For image URLs in metadata/
 import Script from "next/script"; // For JSON-LD schema scripts
 import Head from "next/head"; // For additional meta tags not covered by `metadata` export
 import { NextSeo } from "next-seo"; // For NextSeo component (if still desired, though `metadata` is preferred in App Router)
+import { redisHelpers } from '@/app/lib/redis'; // <--- UPDATED IMPORT: Use the helpers
 
 // Enable Incremental Static Regeneration (ISR)
 export const revalidate = 3600; // Revalidate every 1 hour
 
 async function getData(slug) {
+   const cacheKey = `article:makemoney:${slug}`;
+    
+    try {
+      // Use the helper function instead of manual JSON.parse
+      const cachedData = await redisHelpers.get(cacheKey);
+      if (cachedData) {
+        return cachedData; // Already parsed by Upstash
+      }
+    } catch (redisError) {
+      console.error(`Error accessing Redis for ${cacheKey}:`, redisError);
+    }
+  
+    console.log(`[Sanity Fetch] for ${cacheKey}`);
   // IMPORTANT: Fetch ALL necessary fields for metadata and schema generation
   const query = `*[_type == "makemoney" && slug.current == "${slug}"][0]{
     _id,
@@ -67,17 +81,23 @@ async function getData(slug) {
     displaySettings // For conditional SoftwareApplication schema (if applicable to 'makemoney' schema)
   }`;
   try {
-    const data = await client.fetch(query, {}, {
-      next: {
-        tags: ['makemoney', slug] // Keep tags for on-demand revalidation
-      }
-    });
-    return data;
-  } catch (error) {
-    console.error(`Server-side fetch for slug ${slug} failed:`, error.message);
-    return null;
-  }
-}
+     const data = await client.fetch(query, {}, { next: { tags: ['makemoney', slug] } });
+     
+     if (data) {
+       try {
+         // Use the helper function instead of manual JSON.stringify
+         await redisHelpers.set(cacheKey, data, { ex: 3600 });
+       } catch (redisSetError) {
+         console.error(`Error setting Redis cache for ${cacheKey}:`, redisSetError);
+       }
+     }
+     
+     return data;
+   } catch (error) {
+     console.error(`Server-side fetch for slug ${slug} failed:`, error.message);
+     return null;
+   }
+ }
 
 // Next.js `generateMetadata` function for SEO
 export async function generateMetadata({ params }) {

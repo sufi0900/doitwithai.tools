@@ -9,14 +9,28 @@ import { urlForImage } from "@/sanity/lib/image"; // For image URLs in metadata/
 import Script from "next/script"; // For JSON-LD schema scripts
 import Head from "next/head"; // For additional meta tags not covered by `metadata` export
 import { NextSeo } from "next-seo"; // For NextSeo component (if still desired, though `metadata` is preferred in App Router)
+import { redisHelpers } from '@/app/lib/redis'; // <--- UPDATED IMPORT: Use the helpers
 
 // Enable Incremental Static Regeneration (ISR)
 export const revalidate = 3600; // Revalidate every 1 hour
 
 async function getData(slug) {
+   const cacheKey = `article:coding:${slug}`;
+    
+    try {
+      // Use the helper function instead of manual JSON.parse
+      const cachedData = await redisHelpers.get(cacheKey);
+      if (cachedData) {
+        return cachedData; // Already parsed by Upstash
+      }
+    } catch (redisError) {
+      console.error(`Error accessing Redis for ${cacheKey}:`, redisError);
+    }
+  
+    console.log(`[Sanity Fetch] for ${cacheKey}`);
   // IMPORTANT: Fetch ALL necessary fields for metadata and schema generation
   const query = `*[_type == "coding" && slug.current == "${slug}"][0]{
-    _id,
+     _id,
     title,
     slug,
     mainImage{
@@ -30,54 +44,73 @@ async function getData(slug) {
     _updatedAt,
     _createdAt,
     _type,
-    metatitle, // Custom SEO title
-    metadesc, // Custom SEO description
-    schematitle, // Schema-specific title
-    schemadesc, // Schema-specific description
-    overview, // For abstract in schema
-    body, // Assuming 'body' contains the main content for word count/text extraction
-    content[]{ // Ensure content is fetched for headings, word count, and articleBody
+    metatitle,
+    metadesc,
+    schematitle,
+    schemadesc,
+    overview,
+    content[]{
       ...,
-      _type == "block" => {
-        children[]{
-          ...,
-          _type == "span" => {
-            marks[]->{
-              _type,
-              _key,
-              href,
-              // Add other properties if your marks have them
-            }
-          }
+      _type == "image" => {
+        asset->{
+          _id,
+          url
+        },
+        alt,
+        caption,
+        imageDescription[]{
+          ...
         }
-      }
+      },
+      _type == "gif" => {
+        asset->{
+          _id,
+          url
+        },
+        alt,
+        caption
+      },
+      _type == "video" => {
+        asset->{
+          _id,
+          url
+        },
+        alt,
+        caption
+      },
     },
     "wordCount": length(pt::text(content)),
-    "estimatedReadingTime": round(length(pt::text(content)) / 250), // Assuming 250 words per minute
+    "estimatedReadingTime": round(length(pt::text(content)) / 250),
     "headings": content[_type == "block" && style in ["h1", "h2", "h3", "h4", "h5", "h6"]]{
       "text": pt::text(@),
       "level": style,
-      "anchor": lower(pt::text(@)) // Generate anchor from text
+      "anchor": lower(pt::text(@))
     },
-    faqs[]{ // Fetch FAQs for FAQ schema
+    faqs[]{
       question,
       answer
     },
-    articleType, // e.g., 'howto', 'tutorial' for HowTo schema
-    displaySettings // For conditional SoftwareApplication schema (if applicable to 'coding' schema)
+    articleType,
+    displaySettings
   }`;
   try {
-    const data = await client.fetch(query, {}, {
-      next: {
-        tags: ['coding', slug] // Keep tags for on-demand revalidation
-      }
-    });
-    return data;
-  } catch (error) {
-    console.error(`Server-side fetch for slug ${slug} failed:`, error.message);
-    return null;
-  }
-}
+     const data = await client.fetch(query, {}, { next: { tags: ['coding', slug] } });
+     
+     if (data) {
+       try {
+         // Use the helper function instead of manual JSON.stringify
+         await redisHelpers.set(cacheKey, data, { ex: 3600 });
+       } catch (redisSetError) {
+         console.error(`Error setting Redis cache for ${cacheKey}:`, redisSetError);
+       }
+     }
+     
+     return data;
+   } catch (error) {
+     console.error(`Server-side fetch for slug ${slug} failed:`, error.message);
+     return null;
+   }
+ }
 
 // Next.js `generateMetadata` function for SEO
 export async function generateMetadata({ params }) {
