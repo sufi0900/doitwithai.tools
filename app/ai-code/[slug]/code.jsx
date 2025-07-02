@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react"; // Import useEffect
 import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout"; // Assuming BlogLayout is truly reusable and its path is fixed
 import "@/styles/customanchor.css";
 
@@ -57,7 +57,11 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     forceRefresh: false, // Always allow cache-first behavior
     staleTime: 5 * 60 * 1000, // Example: 5 minutes stale
     maxAge: 30 * 60 * 1000, // Example: 30 minutes max age
-  }), [serverData, schemaType]);
+    // Add tags for server-side revalidation if this fetch is ever direct to Sanity
+    // (though with the API proxy, the API route will handle tags)
+    tags: [schemaType, currentSlug], 
+    ex: 3600 // Expiration for Redis (1 hour)
+  }), [serverData, schemaType, currentSlug]);
 
   // Dynamic article query based on schemaType and currentSlug
   const articleQuery = useMemo(() =>
@@ -74,7 +78,9 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     isLoading: articleLoading,
     error: articleError,
     refresh: refreshArticle,
-    isStale: articleIsStale
+    isStale: articleIsStale,
+    cacheSource: articleCacheSource, // <-- ADDED
+    lastUpdated: articleLastUpdated // <-- ADDED
   } = useSanityCache(
     CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType), // Dynamic cache key
     articleQuery,
@@ -86,6 +92,15 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
   const finalArticleData = cachedArticleData || serverData;
   const currentPostId = finalArticleData?._id;
 
+  // --- LOGGING FOR ARTICLE DATA SOURCE ---
+  useEffect(() => {
+    if (!articleLoading) {
+      console.log(`[ArticleChildComp] Main Article (${currentSlug}): Source: ${articleCacheSource}, Stale: ${articleIsStale}, Last Updated: ${articleLastUpdated ? articleLastUpdated.toLocaleString() : 'N/A'}`);
+    }
+  }, [articleLoading, articleCacheSource, articleIsStale, articleLastUpdated, currentSlug]);
+  // --- END LOGGING ---
+
+
   // Memoize options for related posts cache
   const relatedPostsOptions = useMemo(() => ({
     componentName: `${schemaType}RelatedPosts`, // Dynamic component name
@@ -93,6 +108,8 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     enabled: !!currentPostId, // Only enable if we have a post ID
     staleTime: 5 * 60 * 1000,
     maxAge: 30 * 60 * 1000,
+    tags: [schemaType], // Tag for related posts
+    ex: 3600
   }), [currentPostId, schemaType]);
 
   // Dynamic related posts query based on schemaType and currentPostId
@@ -110,13 +127,24 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     isLoading: relatedPostsLoading,
     error: relatedPostsError,
     refresh: refreshRelatedPosts,
-    isStale: relatedPostsStale
+    isStale: relatedPostsStale,
+    cacheSource: relatedPostsCacheSource, // <-- ADDED
+    lastUpdated: relatedPostsLastUpdated // <-- ADDED
   } = useSanityCache(
     CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType), // Dynamic cache key
     relatedPostsQuery,
     relatedPostsQueryParams, // Pass dynamic params
     relatedPostsOptions
   );
+
+  // --- LOGGING FOR RELATED POSTS DATA SOURCE ---
+  useEffect(() => {
+    if (!relatedPostsLoading && currentPostId) {
+      console.log(`[ArticleChildComp] Related Posts (${currentSlug}): Source: ${relatedPostsCacheSource}, Stale: ${relatedPostsStale}, Last Updated: ${relatedPostsLastUpdated ? relatedPostsLastUpdated.toLocaleString() : 'N/A'}`);
+    }
+  }, [relatedPostsLoading, relatedPostsCacheSource, relatedPostsStale, relatedPostsLastUpdated, currentSlug, currentPostId]);
+  // --- END LOGGING ---
+
 
   // Memoize options for related resources cache
   const relatedResourcesOptions = useMemo(() => ({
@@ -125,6 +153,8 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     enabled: !!currentPostId, // Only enable if we have a post ID
     staleTime: 5 * 60 * 1000,
     maxAge: 30 * 60 * 1000,
+    tags: ['freeResource'], // Tag for free resources
+    ex: 3600
   }), [currentPostId, schemaType]);
 
   // Related resources query string is static, but params are dynamic
@@ -141,13 +171,24 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     isLoading: resourcesLoading,
     error: resourcesError,
     refresh: refreshRelatedResources,
-    isStale: resourcesStale
+    isStale: resourcesStale,
+    cacheSource: resourcesCacheSource, // <-- ADDED
+    lastUpdated: resourcesLastUpdated // <-- ADDED
   } = useSanityCache(
     CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
     correctRelatedResourcesQuery,
     relatedResourcesQueryParams, // Pass dynamic params
     relatedResourcesOptions
   );
+
+  // --- LOGGING FOR RELATED RESOURCES DATA SOURCE ---
+  useEffect(() => {
+    if (!resourcesLoading && currentPostId) {
+      console.log(`[ArticleChildComp] Related Resources (${currentSlug}): Source: ${resourcesCacheSource}, Stale: ${resourcesStale}, Last Updated: ${resourcesLastUpdated ? resourcesLastUpdated.toLocaleString() : 'N/A'}`);
+    }
+  }, [resourcesLoading, resourcesCacheSource, resourcesStale, resourcesLastUpdated, currentSlug, currentPostId]);
+  // --- END LOGGING ---
+
 
   // Register all cache operations with usePageCache for the status button
   usePageCache(CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType), refreshArticle, articleQuery, `${schemaType} ArticleContent`);

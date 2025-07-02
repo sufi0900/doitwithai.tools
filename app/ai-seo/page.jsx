@@ -1,4 +1,4 @@
-
+// app/ai-seo/page.jsx
 import React from 'react';
 import Script from "next/script";
 import Head from "next/head"; // Note: For App Router, `metadata` export is preferred.
@@ -7,10 +7,70 @@ import { NextSeo } from "next-seo"; // NextSeo is for Pages Router, ensure it's 
 import BlogListingPageContent from "@/app/ai-tools/AllBlogs"; // Import the new reusable component
 import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories"; // Keep this specific import
 
+// --- NEW IMPORTS ---
+import { client } from "@/sanity/lib/client"; // Import Sanity client
+import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
+// --- END NEW IMPORTS ---
+
 // --- Next.js Server-Side Configuration ---
 export const revalidate = 3600; // Revalidate every 1 hour
 
-// --- SEO Metadata (Next.js App Router Standard) ---
+async function getSeoListData() {
+  const cacheKey = 'list:seo'; // A unique key for this specific list
+
+  try {
+    const cachedData = await redisHelpers.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for listing page: ${cacheKey}`);
+      return cachedData; // Data is already parsed by Upstash SDK
+    }
+  } catch (redisError) {
+    console.error(`Error accessing Redis for listing page ${cacheKey}:`, redisError);
+    // Continue to fetch from Sanity if Redis fails
+  }
+
+  console.log(`[Sanity Fetch] for listing page: ${cacheKey}`);
+  // Sanity query to fetch all necessary data for the SEO listing cards
+  // --- CORRECTED SANITY QUERY _TYPE ---
+  const query = `*[_type == "seo"] | order(publishedAt desc) {
+    _id,
+    title,
+    slug,
+    mainImage{asset->{_id,url},alt},
+    publishedAt,
+    overview,
+    _updatedAt,
+    _createdAt,
+    _type,
+    metatitle,
+    metadesc,
+    schematitle,
+    schemadesc,
+    // Add any other fields needed for your listing cards
+  }`;
+
+  try {
+    const data = await client.fetch(query, {}, {
+      // Use the 'seo' tag so that when individual 'seo' documents are updated,
+      // this list cache can also be revalidated by the webhook.
+      // --- CORRECTED NEXT.JS CACHE TAG ---
+      next: { tags: ['seo'] }
+    });
+
+    if (data) {
+      try {
+        await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
+        console.log(`[Redis Cache Set] for listing page: ${cacheKey}`);
+      } catch (redisSetError) {
+        console.error(`Error setting Redis cache for listing page ${cacheKey}:`, redisSetError);
+      }
+    }
+    return data;
+  } catch (error) {
+    console.error(`Server-side fetch for AI SEO listing failed:`, error.message); // Adjusted log message
+    return []; // Return empty array on error to prevent page crash
+  }
+}
 
 
 // --- SEO Metadata (Next.js App Router Standard) ---
@@ -21,7 +81,7 @@ export const metadata = {
   openGraph: {
     title: "AI in SEO & Digital Marketing - DoItWithAI.Tools",
     description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
-    url: "https://www.doitwithai.tools/ai-seo",
+    url: "https://www.doitwithai.tools/ai-seo", // Correct URL for this page
     type: "website",
     images: [{
       url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg', // Use a relevant image for SEO
@@ -35,7 +95,7 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     domain: "doitwithai.tools",
-    url: "https://www.doitwithai.tools/ai-seo",
+    url: "https://www.doitwithai.tools/ai-seo", // Correct URL for this page
     title: "AI in SEO & Digital Marketing - DoItWithAI.Tools",
     description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
     image: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg', // Use a relevant image for SEO
@@ -45,7 +105,9 @@ export const metadata = {
   },
 };
 
-export default function Page() {
+export default async function Page() { // Make this an async component to await data
+  const seoListData = await getSeoListData(); // Fetch data here
+
   // Define schema-specific data for the AI SEO page
   const schemaType = "seo"; // Sanity schema type
   const pageSlugPrefix = "ai-seo"; // URL prefix for this category
@@ -64,15 +126,16 @@ export default function Page() {
   };
 
   // Schema Markup for AI SEO CollectionPage
-  function schemaMarkup() {
+  // --- FIX: Pass metadata and breadcrumbProps as arguments ---
+  function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
       __html: `
         {
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": "${metadata.title}",
-          "description": "${metadata.description}",
-          "url": "${metadata.openGraph.url}",
+          "name": "${pageMetadata.title}",
+          "description": "${pageMetadata.description}",
+          "url": "${pageMetadata.openGraph.url}",
           "breadcrumb": {
             "@type": "BreadcrumbList",
             "itemListElement": [
@@ -139,7 +202,8 @@ export default function Page() {
       <Script
         id="BreadcrumbListSchema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup()}
+        // --- FIX: Pass metadata and breadcrumbProps ---
+        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
         key={`${pageSlugPrefix}-jsonld`}
       />
       <BlogListingPageContent
@@ -155,6 +219,7 @@ export default function Page() {
         subcategoriesSectionDescription="of SEO"
         SubcategoriesComponent={ReusableCachedSEOSubcategories} // Pass the specific component
         subcategoriesLimit={2} // Pass the limit as a prop
+        serverData={seoListData} 
       />
     </>
   );

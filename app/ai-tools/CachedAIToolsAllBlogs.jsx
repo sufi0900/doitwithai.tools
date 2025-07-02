@@ -12,7 +12,7 @@ import { CacheStatusIndicator } from '@/React_Query_Caching/CacheStatusIndicator
 
 const ReusableCachedAllBlogs = ({
   currentPage = 1,
-  limit = 5,
+  limit = 10,
   documentType,
   pageSlugPrefix,
   onDataLoad,

@@ -7,8 +7,72 @@ import { NextSeo } from "next-seo"; // NextSeo is for Pages Router, ensure it's 
 // Import the new reusable component
 import BlogListingPageContent from "@/app/ai-tools/AllBlogs"; // Import the new reusable component
 
+// --- NEW IMPORTS ---
+import { client } from "@/sanity/lib/client"; // Import Sanity client
+import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
+// --- END NEW IMPORTS ---
+
 // --- Next.js Server-Side Configuration ---
 export const revalidate = 3600; // Revalidate every 1 hour
+
+async function getMakeMoneyListData() {
+  // --- CORRECTED CACHE KEY ---
+  const cacheKey = 'list:makemoney'; // A unique key for this specific list
+
+  try {
+    const cachedData = await redisHelpers.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for listing page: ${cacheKey}`);
+      return cachedData; // Data is already parsed by Upstash SDK
+    }
+  } catch (redisError) {
+    console.error(`Error accessing Redis for listing page ${cacheKey}:`, redisError);
+    // Continue to fetch from Sanity if Redis fails
+  }
+
+  console.log(`[Sanity Fetch] for listing page: ${cacheKey}`);
+  // Sanity query to fetch all necessary data for the "Make Money" listing cards
+  // --- CORRECTED SANITY QUERY _TYPE ---
+  const query = `*[_type == "makemoney"] | order(publishedAt desc) {
+    _id,
+    title,
+    slug,
+    mainImage{asset->{_id,url},alt},
+    publishedAt,
+    overview,
+    _updatedAt,
+    _createdAt,
+    _type,
+    metatitle,
+    metadesc,
+    schematitle,
+    schemadesc,
+    // Add any other fields needed for your listing cards
+  }`;
+
+  try {
+    const data = await client.fetch(query, {}, {
+      // Use the 'makemoney' tag so that when individual 'makemoney' documents are updated,
+      // this list cache can also be revalidated by the webhook.
+      // --- CORRECTED NEXT.JS CACHE TAG ---
+      next: { tags: ['makemoney'] }
+    });
+
+    if (data) {
+      try {
+        await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
+        console.log(`[Redis Cache Set] for listing page: ${cacheKey}`);
+      } catch (redisSetError) {
+        console.error(`Error setting Redis cache for listing page ${cacheKey}:`, redisSetError);
+      }
+    }
+    return data;
+  } catch (error) {
+    console.error(`Server-side fetch for Make Money listing failed:`, error.message); // Adjusted log message
+    return []; // Return empty array on error to prevent page crash
+  }
+}
+
 
 // --- SEO Metadata (Next.js App Router Standard) ---
 export const metadata = {
@@ -42,7 +106,9 @@ export const metadata = {
   },
 };
 
-export default function Page() {
+export default async function Page() { // Make this an async component to await data
+  const makeMoneyListData = await getMakeMoneyListData(); // Fetch data here
+
   // Define schema-specific data for the "Make Money With AI" page
   const schemaType = "makemoney"; // Sanity schema type
   const pageSlugPrefix = "ai-learn-earn"; // URL prefix for this category
@@ -61,15 +127,16 @@ export default function Page() {
   };
 
   // Schema Markup for "Make Money With AI" CollectionPage
-  function schemaMarkup() {
+  // --- FIX: Pass metadata and breadcrumbProps as arguments ---
+  function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
       __html: `
         {
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          "name": "${metadata.title}",
-          "description": "${metadata.description}",
-          "url": "${metadata.openGraph.url}",
+          "name": "${pageMetadata.title}",
+          "description": "${pageMetadata.description}",
+          "url": "${pageMetadata.openGraph.url}",
           "breadcrumb": {
             "@type": "BreadcrumbList",
             "itemListElement": [
@@ -136,7 +203,8 @@ export default function Page() {
       <Script
         id="BreadcrumbListSchema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup()}
+        // --- FIX: Pass metadata and breadcrumbProps ---
+        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
         key={`${pageSlugPrefix}-jsonld`}
       />
       <BlogListingPageContent
@@ -147,6 +215,7 @@ export default function Page() {
         pageDescription={pageDescription}
         breadcrumbProps={breadcrumbProps}
         // No subcategories props passed here, so the section won't render
+        serverData={makeMoneyListData} 
       />
     </>
   );

@@ -1,77 +1,21 @@
 // app/ai-tools/page.jsx
 import React from 'react';
 import Script from "next/script";
-import Head from "next/head"; // Note: For App Router, `metadata` export is preferred.
-import { NextSeo } from "next-seo"; // NextSeo is for Pages Router, ensure it's still needed/used with App Router.
+import Head from "next/head";
+import { NextSeo } from "next-seo";
 
 import BlogListingPageContent from "@/app/ai-tools/AllBlogs"; // Import the new reusable component
-import { client } from "@/sanity/lib/client"; // Import Sanity client
-import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
-import { urlForImage } from "@/sanity/lib/image"; // For images in metadata
+// Removed unnecessary imports for client and redisHelpers as data fetching is now delegated
+// import { client } from "@/sanity/lib/client";
+// import { redisHelpers } from '@/app/lib/redis';
+// import { urlForImage } from "@/sanity/lib/image"; // Not needed here as metadata is static
 
 // --- Next.js Server-Side Configuration ---
 export const revalidate = 3600; // Revalidate every 1 hour
 
-/**
- * Fetches the list of AI Tools articles, leveraging Redis cache.
- * This function acts as the "Chef" getting the "Ingredients List" from the "Pantry" (Redis)
- * or the "Supplier" (Sanity).
- */
-async function getAiToolsListData() {
-  const cacheKey = 'list:aitools'; // A unique key for this specific list
-
-  try {
-    const cachedData = await redisHelpers.get(cacheKey);
-    if (cachedData) {
-      console.log(`[Redis Cache Hit] for listing page: ${cacheKey}`);
-      return cachedData; // Data is already parsed by Upstash SDK
-    }
-  } catch (redisError) {
-    console.error(`Error accessing Redis for listing page ${cacheKey}:`, redisError);
-    // Continue to fetch from Sanity if Redis fails
-  }
-
-  console.log(`[Sanity Fetch] for listing page: ${cacheKey}`);
-  // Sanity query to fetch all necessary data for the AI Tools listing cards
-  const query = `*[_type == "aitool"] | order(publishedAt desc) {
-    _id,
-    title,
-    slug,
-    mainImage{asset->{_id,url},alt},
-    publishedAt,
-    overview,
-    _updatedAt,
-    _createdAt,
-    _type,
-    metatitle,
-    metadesc,
-    schematitle,
-    schemadesc,
-    // Add any other fields needed for your listing cards
-  }`;
-
-  try {
-    const data = await client.fetch(query, {}, {
-      // Use the 'aitool' tag so that when individual 'aitool' documents are updated,
-      // this list cache can also be revalidated by the webhook.
-      next: { tags: ['aitool'] }
-    });
-
-    if (data) {
-      try {
-        await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
-        console.log(`[Redis Cache Set] for listing page: ${cacheKey}`);
-      } catch (redisSetError) {
-        console.error(`Error setting Redis cache for listing page ${cacheKey}:`, redisSetError);
-      }
-    }
-    return data;
-  } catch (error) {
-    console.error(`Server-side fetch for AI Tools listing failed:`, error.message);
-    return []; // Return empty array on error to prevent page crash
-  }
-}
-
+// --- REMOVED: getAiToolsListData function ---
+// This data fetching function is now redundant as BlogListingPageContent and its children
+// will handle their own data fetching via useSanityCache (which will be Redis-backed).
 
 // --- SEO Metadata (Next.js App Router Standard) ---
 // This metadata object is directly used by Next.js for head tags.
@@ -84,7 +28,7 @@ export const metadata = {
     title: "Best AI Tools for Productivity - DoItWithAI.Tools",
     description: "Explore a comprehensive list of blogs on the Best AI Tools for Productivity (Freemium), providing detailed reviews of the top artificial intelligence solutions.",
     url: "https://www.doitwithai.tools/ai-tools",
-    type: "website",
+    type: "website", // Or "CollectionPage" if schema supports it directly
     images: [{
       url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
       width: 1200,
@@ -107,8 +51,10 @@ export const metadata = {
   },
 };
 
-export default async function Page() {
-  const aiToolsData = await getAiToolsListData(); // Fetch data here
+// --- REMOVED: generateMetadata is now static as it no longer depends on fetched data ---
+// export async function generateMetadata() { ... }
+
+export default function Page() { // Changed back to a regular function as it no longer awaits data
 
   // Define schema-specific data for the AI Tools page
   const schemaType = "aitool"; // Sanity schema type
@@ -128,7 +74,7 @@ export default async function Page() {
   };
 
   // Schema Markup for AI Tools CollectionPage
-  // --- FIX: Pass the metadata object as an argument ---
+  // --- FIX: Pass the module-level metadata object as an argument ---
   function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
       __html: `
@@ -162,12 +108,6 @@ export default async function Page() {
 
   return (
     <>
-      {/*
-        Note: In Next.js App Router, the `metadata` export is the primary way
-        to manage head tags. `next/head` and `next-seo` are generally for
-        Pages Router. If you're using App Router, you might be able to simplify
-        this section by relying more on the `metadata` export.
-      */}
       <Head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -190,20 +130,19 @@ export default async function Page() {
         <meta name="twitter:description" content={metadata.twitter.description} />
         <meta name="twitter:image" content={metadata.twitter.image} />
         <link rel="canonical" href={metadata.alternates.canonical} />
-        {/* NextSeo is Pages Router specific, consider removing if fully on App Router */}
         <NextSeo
           title={metadata.title}
           description={metadata.description}
           author={metadata.author}
           type="website"
-          locale='en_IE' // Note: This might conflict with en_US in metadata.openGraph.locale
+          locale='en_IE'
           site_name={metadata.openGraph.siteName}
           canonical={metadata.alternates.canonical}
           openGraph={{
             title: metadata.openGraph.title,
             description: metadata.openGraph.description,
             url: metadata.openGraph.url,
-            type: "ItemList", // Changed from "website" for better SEO context for a collection page
+            type: "ItemList",
             images: metadata.openGraph.images
           }}
         />
@@ -211,9 +150,8 @@ export default async function Page() {
       <Script
         id="BreadcrumbListSchema"
         type="application/ld+json"
-        // --- FIX: Pass the metadata object here ---
-        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
-        key={`${pageSlugPrefix}-jsonld`} // Dynamic key
+        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)} // Pass metadata here
+        key={`${pageSlugPrefix}-jsonld`}
       />
       <BlogListingPageContent
         schemaType={schemaType}
@@ -222,7 +160,8 @@ export default async function Page() {
         pageTitleHighlight={pageTitleHighlight}
         pageDescription={pageDescription}
         breadcrumbProps={breadcrumbProps}
-        serverData={aiToolsData} 
+        // REMOVED: serverData prop, as the child components will now fetch their own data
+        // via useSanityCache (which will be Redis-backed)
       />
     </>
   );

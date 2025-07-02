@@ -1,7 +1,8 @@
 // React_Query_Caching/cacheSystem.js
 import { get, set, del, createStore } from 'idb-keyval';
-import { client } from '@/sanity/lib/client'; // Import your Sanity client here
-import { getCacheConfig } from './cacheKeys'; // Import getCacheConfig to apply defaults
+// Removed direct Sanity client import, as network fetches will go through API route
+// import { client } from '@/sanity/lib/client'; 
+import { getCacheConfig } from './cacheKeys';
 
 class CustomSanityCache {
   constructor() {
@@ -9,10 +10,10 @@ class CustomSanityCache {
     this.subscribers = new Map();
     this.maxMemorySize = 50 * 1024 * 1024; // 50MB
     this.currentMemorySize = 0;
-    this.isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true; // Initialize based on current online status
+    this.isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
     this.store = null;
-    this.keyOptions = new Map(); // To store options like query, params, group for background refresh
-    this.refreshPromises = new Map(); // Tracks ongoing refreshes to prevent duplicates
+    this.keyOptions = new Map();
+    this.refreshPromises = new Map();
     this.initializeStore();
     this.setupNetworkListeners();
   }
@@ -42,57 +43,48 @@ class CustomSanityCache {
     }
   }
 
-  // --- MODIFIED generateCacheKey to handle null/undefined queries ---
   generateCacheKey(keyIdentifier, query) {
     let queryStr;
     if (typeof query === 'string') {
       queryStr = query;
     } else if (query === null) {
-      queryStr = 'null_query_representation'; // Consistent string for null queries
+      queryStr = 'null_query_representation';
     } else if (typeof query === 'undefined') {
-      queryStr = 'undefined_query_representation'; // Consistent string for undefined queries
+      queryStr = 'undefined_query_representation';
     } else {
-      // For objects, arrays, or other types that need stringification
       try {
         queryStr = JSON.stringify(query);
       } catch (e) {
         console.error("Failed to stringify query for hashing:", e, query);
-        queryStr = 'serialization_error_query_representation'; // Fallback for unstringifiable objects
+        queryStr = 'serialization_error_query_representation';
       }
     }
 
-    // Final defensive check to ensure queryStr is a non-empty string before hashing
     if (!queryStr || typeof queryStr !== 'string') {
-      queryStr = 'invalid_query_data_fallback_hash'; // Ultimate fallback for any edge case
+      queryStr = 'invalid_query_data_fallback_hash';
     }
 
     return `${keyIdentifier}_${this.hashString(queryStr)}`;
   }
 
-  // --- MODIFIED hashString for defensive check (though generateCacheKey should now prevent `str` being undefined) ---
   hashString(str) {
-    // This defensive check is secondary, as generateCacheKey should now ensure `str` is always a string.
-    if (typeof str !== 'string' || str === null) { // Check for null explicitly for safety
-      return 'invalid_hash_input'; // Return a consistent value for invalid inputs
+    if (typeof str !== 'string' || str === null) {
+      return 'invalid_hash_input';
     }
     if (str.length === 0) {
-      return 'empty_string_hash'; // Return a consistent hash for empty strings
+      return 'empty_string_hash';
     }
 
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+      hash = hash & hash;
     }
     return Math.abs(hash).toString(36);
   }
-  // --- END MODIFICATIONS ---
-
 
   async get(fullCacheKey, fetchOptions = {}) {
-    // Get options from stored options first, then override with passed fetchOptions
-    // Ensure options are correctly merged for cache config lookup
     const storedOptions = this.keyOptions.get(fullCacheKey) || {};
     const effectiveOptions = { ...storedOptions, ...fetchOptions };
     const cacheConfig = getCacheConfig(effectiveOptions.keyIdentifier || fullCacheKey);
@@ -106,15 +98,13 @@ class CustomSanityCache {
     if (memoryData && !forceNetwork) {
       const age = Date.now() - memoryData.timestamp;
       if (age < staleTime) {
-        // console.log(`[CacheSystem] Served fresh from memory: ${fullCacheKey}`);
         return { data: memoryData.data, isStale: false, source: 'memory', age };
       }
       if (age < maxAge || (!this.isOnline && enableOffline)) {
-        // Serve stale if within maxAge OR offline and allowed
-        if (this.isOnline) { // Only trigger background refresh if online
+        if (this.isOnline) {
+          // Trigger background refresh via API route
           this.backgroundRefresh(fullCacheKey, { query: effectiveOptions.query, params: effectiveOptions.params, ...cacheConfig });
         }
-        // console.log(`[CacheSystem] Served stale from memory: ${fullCacheKey}, Refreshing: ${this.isOnline?'Yes':'No(Offline)'}`);
         return { data: memoryData.data, isStale: true, source: 'memory', age };
       }
     }
@@ -125,15 +115,13 @@ class CustomSanityCache {
         const indexedData = await get(fullCacheKey, this.store);
         if (indexedData) {
           const age = Date.now() - indexedData.timestamp;
-          // Hydrate memory cache with data from IndexedDB
-          // Use indexedData.options if available, otherwise effectiveOptions for original query/params
           const optionsToStoreInMemory = indexedData.options || effectiveOptions;
           this.setMemoryCache(fullCacheKey, indexedData.data, indexedData.timestamp, optionsToStoreInMemory);
           if (age < maxAge || (!this.isOnline && enableOffline)) {
-            if (age > staleTime && this.isOnline) { // Only trigger background refresh if online and data is stale
+            if (age > staleTime && this.isOnline) {
+              // Trigger background refresh via API route
               this.backgroundRefresh(fullCacheKey, { query: optionsToStoreInMemory.query, params: optionsToStoreInMemory.params, ...cacheConfig });
             }
-            // console.log(`[CacheSystem] Served from IndexedDB: ${fullCacheKey}, Stale: ${age > staleTime}, Refreshing: ${this.isOnline && age > staleTime ? 'Yes' : 'No(Offline/NotStale)'}`);
             return { data: indexedData.data, isStale: age > staleTime, source: 'indexeddb', age };
           }
         }
@@ -142,8 +130,43 @@ class CustomSanityCache {
       }
     }
 
-    // If no fresh/stale/offline-enabled cached data, return null
-    // console.log(`[CacheSystem] No usable cache found for ${fullCacheKey}`);
+    // --- NEW: If not in local caches (memory, IndexedDB), try fetching from server-side Redis via API route ---
+    if (this.isOnline && navigator.onLine) {
+      try {
+        const response = await fetch('/api/cached-sanity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cacheKeyIdentifier: effectiveOptions.keyIdentifier,
+            query: effectiveOptions.query,
+            params: effectiveOptions.params,
+            cacheOptions: {
+              tags: effectiveOptions.tags, // Pass tags for Next.js revalidation
+              ex: effectiveOptions.ex, // Pass expiration for Redis
+            },
+          }),
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || `API error: ${response.status}`);
+        }
+
+        const serverData = result.data;
+        const serverSource = result.source; // 'redis' or 'network' from the API route
+
+        // Store the data fetched from the server (which might be from Redis or Sanity) into local caches
+        // Use `set` which will also trigger a server-side `set` if data was from Sanity (network)
+        await this.set(fullCacheKey, serverData, effectiveOptions);
+
+        return { data: serverData, isStale: false, source: serverSource, age: 0 }; // Always fresh from server
+      } catch (apiError) {
+        console.error(`[CacheSystem] Error fetching from server API for ${fullCacheKey}:`, apiError);
+        // Fall through to return null if API fetch fails
+      }
+    }
+    // --- END NEW ---
+
     return null;
   }
 
@@ -160,82 +183,138 @@ class CustomSanityCache {
         params: options.params, // Store the original params
         group: options.group,
         enableOffline: options.enableOffline,
+        tags: options.tags, // Pass tags to store for API route
+        ex: options.ex // Pass expiration for API route
       },
     };
     this.setMemoryCache(fullCacheKey, data, timestamp, cacheEntry.options);
     if (this.store) {
       try {
         await set(fullCacheKey, cacheEntry, this.store);
-        // console.log(`[CacheSystem] Set ${fullCacheKey} in IndexedDB.`);
       } catch (error) {
         console.warn(`IndexedDB write error for ${fullCacheKey}:`, error);
       }
     }
     // Always update keyOptions map with the latest settings
     this.keyOptions.set(fullCacheKey, cacheEntry.options);
+
+    // --- NEW: Send data to server-side Redis via API route if it was a fresh fetch from Sanity ---
+    // This `set` method can be called from `get` (after a network fetch) or directly (e.g., from background refresh).
+    // The API route will handle the Redis set logic.
+    if (this.isOnline && navigator.onLine) { // Only attempt to update server if online
+      try {
+        await fetch('/api/cached-sanity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cacheKeyIdentifier: cacheEntry.options.keyIdentifier,
+            query: cacheEntry.options.query,
+            params: cacheEntry.options.params,
+            cacheOptions: {
+              tags: cacheEntry.options.tags,
+              ex: cacheEntry.options.ex,
+            },
+          }),
+        });
+        // console.log(`[CacheSystem] Sent data to server Redis for ${fullCacheKey}`);
+      } catch (apiError) {
+        console.error(`[CacheSystem] Error sending data to server Redis for ${fullCacheKey}:`, apiError);
+      }
+    }
+    // --- END NEW ---
+
     this.notifySubscribers(fullCacheKey, { data, isStale: false, source: 'network', age: 0 });
   }
 
   setMemoryCache(cacheKey, data, timestamp, options = {}) {
-    // Use the passed options or fallback to keyOptions if options are not explicitly provided
     const effectiveOptions = this.keyOptions.get(cacheKey) || options;
     const dataSize = this.estimateSize(data);
-    // Cleanup before adding if size exceeds limit
     if (this.currentMemorySize + dataSize > this.maxMemorySize) {
       this.cleanupMemoryCache();
     }
     this.memoryCache.set(cacheKey, { data, timestamp, size: dataSize, options: effectiveOptions });
     this.currentMemorySize += dataSize;
-    // console.log(`Memory cache updated for ${cacheKey}. Current size: ${this.currentMemorySize / 1024}KB`);
   }
 
   estimateSize(obj) {
     try {
       return new TextEncoder().encode(JSON.stringify(obj)).length;
     } catch (e) {
-      // console.warn("Failed to estimate size:", e);
       return 0;
     }
   }
 
   cleanupMemoryCache() {
     const entries = Array.from(this.memoryCache.entries()).sort((a, b) => a[1].timestamp - b[1].timestamp);
-    const targetSize = this.maxMemorySize * 0.75; // Target 75% of max size after cleanup
+    const targetSize = this.maxMemorySize * 0.75;
     while (this.currentMemorySize > targetSize && entries.length > 0) {
       const [key, entry] = entries.shift();
       this.memoryCache.delete(key);
       this.currentMemorySize -= entry.size;
-      // Ensure we also remove from keyOptions if it's no longer in memory cache and no active refresh
       if (!this.refreshPromises.has(key)) {
         this.keyOptions.delete(key);
       }
     }
-    // console.log(`Memory cache cleaned up. Current size: ${this.currentMemorySize / 1024}KB`);
   }
 
-  async invalidate(fullCacheKey) {
+  async del(fullCacheKey) { // Renamed from invalidate to avoid confusion with internal logic
     const memoryEntry = this.memoryCache.get(fullCacheKey);
     if (memoryEntry) {
       this.memoryCache.delete(fullCacheKey);
       this.currentMemorySize -= memoryEntry.size;
     }
-    this.keyOptions.delete(fullCacheKey); // Remove options as well
+    this.keyOptions.delete(fullCacheKey);
     if (this.store) {
       try {
         await del(fullCacheKey, this.store);
-        // console.log(`IndexedDB deleted: ${fullCacheKey}`);
       } catch (error) {
         console.warn(`IndexedDB delete error for ${fullCacheKey}:`, error);
       }
     }
+    // --- NEW: Invalidate from server-side Redis via API route ---
+    if (this.isOnline && navigator.onLine) {
+      try {
+        // Get the original options to pass tags/paths for Next.js cache invalidation
+        const originalOptions = memoryEntry?.options || this.keyOptions.get(fullCacheKey) || {};
+        await fetch('/api/cached-sanity', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fullCacheKey: fullCacheKey,
+            revalidateTags: originalOptions.tags, // Pass tags for Next.js revalidation
+            revalidatePaths: originalOptions.revalidatePaths, // If you store paths in options
+          }),
+        });
+        // console.log(`[CacheSystem] Sent invalidate request to server Redis for ${fullCacheKey}`);
+      } catch (apiError) {
+        console.error(`[CacheSystem] Error sending invalidate request to server Redis for ${fullCacheKey}:`, apiError);
+      }
+    }
+    // --- END NEW ---
     this.notifySubscribers(fullCacheKey, null); // Notify subscribers that data is invalidated
   }
 
-  async invalidatePattern(pattern) {
-    const regex = new RegExp(pattern);
-    const keysToInvalidate = new Set(); // Use a Set to avoid duplicates
+  // Renamed invalidate to del, so renaming invalidatePattern to delPattern for consistency
+  async delPattern(pattern) {
+    // --- NEW: Send pattern invalidation request to server ---
+    if (this.isOnline && navigator.onLine) {
+      try {
+        await fetch('/api/cached-sanity', {
+          method: 'POST', // Use POST for actions that don't fit standard REST verbs easily
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pattern: pattern, action: 'invalidatePattern' }),
+        });
+        // console.log(`[CacheSystem] Sent pattern invalidate request to server for pattern: ${pattern}`);
+      } catch (apiError) {
+        console.error(`[CacheSystem] Error sending pattern invalidate request to server:`, apiError);
+      }
+    }
+    // --- END NEW ---
 
-    // Collect keys from both memory and stored options
+    // Client-side invalidation of pattern (memory and IndexedDB)
+    const regex = new RegExp(pattern);
+    const keysToInvalidate = new Set();
+
     for (const key of this.memoryCache.keys()) {
       if (regex.test(key)) {
         keysToInvalidate.add(key);
@@ -247,32 +326,8 @@ class CustomSanityCache {
       }
     }
 
-    const CONCURRENCY_LIMIT = 10;
-    const activeInvalidations = new Set();
-    const queue = Array.from(keysToInvalidate); // Convert Set to array for queue processing
-
-    // console.log(`Initiating invalidation for ${queue.length} items matching pattern "${pattern}".`);
-    while (queue.length > 0 || activeInvalidations.size > 0) {
-      while (queue.length > 0 && activeInvalidations.size < CONCURRENCY_LIMIT) {
-        const key = queue.shift();
-        if (key) {
-          const invalidationPromise = this.invalidate(key);
-          activeInvalidations.add(invalidationPromise);
-          invalidationPromise.finally(() => {
-            activeInvalidations.delete(invalidationPromise);
-          });
-        }
-      }
-      if (activeInvalidations.size > 0) {
-        await Promise.race(Array.from(activeInvalidations));
-      } else if (queue.length === 0 && activeInvalidations.size === 0) {
-        break; // All done
-      }
-      // Small pause to prevent blocking in case of very large invalidationsets
-      // No need for a strict setTimeout here if Promise.race is used, but a tiny one can help yield to event loop.
-      // await new Promise(resolve => setTimeout(resolve, 50));
-    }
-    // console.log(`Finished invalidating keys matching pattern "${pattern}".`);
+    const invalidationPromises = Array.from(keysToInvalidate).map(key => this.del(key)); // Use this.del
+    await Promise.allSettled(invalidationPromises);
   }
 
 
@@ -305,22 +360,6 @@ class CustomSanityCache {
     }
   }
 
-  // NOTE: The `addRefreshingKey`, `removeRefreshingKey`, `isKeyRefreshing`
-  // methods were potentially meant for a `_refreshingKeys` Set, but currently
-  // `isKeyRefreshing` checks `this.refreshPromises.has(key)`.
-  // If `this._refreshingKeys` is not explicitly defined and used as a Set,
-  // these two methods (`addRefreshingKey`, `removeRefreshingKey`) are effectively unused.
-  // I will leave them commented out as they were previously, focusing on the current bug.
-  /*
-  addRefreshingKey(key) {
-    this._refreshingKeys.add(key);
-  }
-
-  removeRefreshingKey(key) {
-    this._refreshingKeys.delete(key);
-  }
-  */
-
   isKeyRefreshing(key) {
     return this.refreshPromises.has(key);
   }
@@ -337,14 +376,33 @@ class CustomSanityCache {
         return;
       }
       if (!this.isOnline) {
-        // console.log(`Skipping background refresh for ${fullCacheKey}: Offline.`);
         return;
       }
 
       try {
-        // console.log(`Background refreshing: ${fullCacheKey}`);
-        const freshData = await client.fetch(options.query, options.params);
-        // Ensure to pass all original options to set, especially enableOffline
+        // --- NEW: Fetch data via API route for background refresh ---
+        const response = await fetch('/api/cached-sanity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cacheKeyIdentifier: options.keyIdentifier,
+            query: options.query,
+            params: options.params,
+            cacheOptions: {
+              tags: options.tags, // Pass tags for Next.js revalidation
+              ex: options.ex,
+            },
+          }),
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || `API error: ${response.status}`);
+        }
+
+        const freshData = result.data; // Data comes from the API route
+
+        // Store in local caches (memory, IndexedDB) and trigger server-side Redis update
         await this.set(fullCacheKey, freshData, options);
       } catch (error) {
         console.warn(`Background refresh failed for ${fullCacheKey}:`, error);
@@ -359,41 +417,30 @@ class CustomSanityCache {
 
   async refreshStaleData() {
     if (!this.isOnline) {
-      // console.log("Skipping refreshStaleData: Offline.");
       return;
     }
     const now = Date.now();
-    const keysToRefresh = new Set(); // Use a Set for keys to avoid duplicates
+    const keysToRefresh = new Set();
 
-    // Iterate over all known keys (those stored with options)
     for (const [key, options] of this.keyOptions.entries()) {
       const cacheConfig = getCacheConfig(options.keyIdentifier || key);
       const staleTime = options.staleTime ?? cacheConfig.staleTime;
-      const maxAge = options.maxAge ?? cacheConfig.maxAge; // Ensure maxAge is considered
+      const maxAge = options.maxAge ?? cacheConfig.maxAge;
 
-      // Get from memory first, then IndexedDB
       const memoryEntry = this.memoryCache.get(key);
       let currentEntry = memoryEntry;
-      if (!currentEntry && this.store) { // Only try IndexedDB if not in memory, to avoid unnecessary IDB reads
+      if (!currentEntry && this.store) {
         currentEntry = await get(key, this.store).catch(() => null);
         if (currentEntry) {
-          // Hydrate memory cache if found in IDB during this check
           this.setMemoryCache(key, currentEntry.data, currentEntry.timestamp, currentEntry.options || options);
         }
       }
 
       if (currentEntry) {
         const age = now - currentEntry.timestamp;
-        // If data is stale, not expired, and not already refreshing, add to refresh queue
         if (age > staleTime && age < maxAge && !this.refreshPromises.has(key)) {
           keysToRefresh.add(key);
         }
-      } else if (options.query && !this.refreshPromises.has(key)) {
-        // If no data at all (memory or IDB) but we have a query registered and online
-        // This scenario means data is missing/expired from all caches.
-        // It should be fetched as a foreground fetch by useSanityCache when enabled,
-        // but if this is a critical always-on piece of data, we could trigger a background fetch here.
-        // For now, let's let the `useSanityCache` hook handle initial fetching of missing data.
       }
     }
 
@@ -401,7 +448,6 @@ class CustomSanityCache {
     const activeRefreshes = new Set();
     const queue = Array.from(keysToRefresh);
 
-    // console.log(`Initiating stale data refresh for ${queue.length} items.`);
     while (queue.length > 0 || activeRefreshes.size > 0) {
       while (queue.length > 0 && activeRefreshes.size < CONCURRENCY_LIMIT) {
         const key = queue.shift();
@@ -418,10 +464,7 @@ class CustomSanityCache {
       } else if (queue.length === 0 && activeRefreshes.size === 0) {
         break;
       }
-      // Small pause to prevent blocking
-      // await new Promise(resolve => setTimeout(resolve, 50));
     }
-    // console.log(`Finished refreshing stale data.`);
   }
 
   async refreshGroup(groupIdentifier) {
@@ -457,7 +500,7 @@ class CustomSanityCache {
       } else if (queue.length === 0 && activeRefreshes.size === 0) {
         break;
       }
-      await new Promise(resolve => setTimeout(resolve, 50)); // Small pause
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
     console.log(`Finished refreshing group "${groupIdentifier}".`);
   }

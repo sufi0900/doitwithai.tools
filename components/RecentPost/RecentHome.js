@@ -13,8 +13,7 @@ export default function RecentPosts() {
   // Memoize the queries object as it is static
   const queries = useMemo(() => ({
     recent: `*[_type in ["makemoney", "aitool", "coding", "freeairesources", "seo"]]|order(publishedAt desc)[0...5]`,
-  }), []); // Empty dependency array means this object will not re-create on every render
-
+  }), []); 
   // Memoize the options object for useSanityCache
   const stableOptions = useMemo(() => ({
     componentName: 'RecentPosts', // Descriptive name for debugging

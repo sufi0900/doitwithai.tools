@@ -18,7 +18,7 @@ function verifySignature(body, signature, secret) {
     // Sanity signature format: t=timestamp,v1=signature
     const parts = signature.split(',');
     let timestamp, signatureHash;
-    
+
     for (const part of parts) {
       const [key, value] = part.split('=');
       if (key === 't') {
@@ -38,13 +38,13 @@ function verifySignature(body, signature, secret) {
     const payload = `${timestamp}.${body}`;
 
     // Create HMAC signature
-  const expectedSignature = crypto
-  .createHmac('sha256', secret)
-  .update(payload, 'utf8')
-  .digest('base64')
-  .replace(/\+/g, '-')   // Convert + to -
-  .replace(/\//g, '_')   // Convert / to _
-  .replace(/=+$/, '');   // Remove trailing =
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(payload, 'utf8')
+      .digest('base64')
+      .replace(/\+/g, '-')   // Convert + to -
+      .replace(/\//g, '_')   // Convert / to _
+      .replace(/=+$/, '');   // Remove trailing =
 
 
     console.log('[Webhook] Timestamp:', timestamp);
@@ -77,7 +77,7 @@ export async function POST(req) {
 
     // Check for the correct Sanity webhook signature header
     const signature = req.headers.get('sanity-webhook-signature');
-    
+
     console.log('[Webhook] Signature received:', signature ? 'Yes' : 'No');
     if (signature) {
       console.log('[Webhook] Signature value:', signature);
@@ -106,13 +106,15 @@ export async function POST(req) {
       return new Response('Bad Request: Missing _type in payload', { status: 400 });
     }
 
-    if (!slug?.current) {
-      console.warn('[Webhook] No slug found in payload, skipping cache invalidation');
-      return new Response('No slug found - no cache to invalidate', { status: 200 });
-    }
+    // Note: Free resources might not always have a slug if they are just files/assets.
+    // If you have individual pages for free resources, then slug is relevant.
+    // If not, the slug check below might prevent invalidation of the main list.
+    // Assuming free resources CAN have slugs for individual pages.
+    // If not, you might remove the `if (!slug?.current)` check for `freeResources` type.
+
 
     // 6. Define cache keys and tags based on the Sanity document type
-    let redisCacheKey;
+    let redisCacheKey; // For individual document pages (if they exist)
     let revalidationTags = [];
     let revalidationPaths = [];
 
@@ -137,12 +139,31 @@ export async function POST(req) {
         revalidationTags = ['coding', slug.current];
         revalidationPaths = ['/ai-code', `/ai-code/${slug.current}`];
         break;
+      // --- NEW CASE FOR FREE RESOURCES ---
+      case 'freeResources': // Assuming your Sanity document type for free resources is 'freeResources'
+        // Invalidate the main listing cache, featured cache, and counts cache
+        // If free resources also have individual slug pages, add that too.
+        redisCacheKey = slug?.current ? `article:free-resource:${slug.current}` : null; // If individual page
+        revalidationTags = ['freeResource']; // General tag for all free resources
+        revalidationPaths = ['/free-ai-resources']; // Invalidate the main listing page
+        if (slug?.current) {
+          revalidationPaths.push(`/free-ai-resources/${slug.current}`); // If individual page
+        }
+        // Also invalidate the specific list caches for the main listing page
+        // We can't know the exact page/sort/filter combination, so we invalidate the general list tag.
+        // For Redis, we need to be more aggressive or use a pattern if possible.
+        // For now, relying on `revalidateTag('freeResource')` for the list is sufficient.
+        await redisHelpers.del('featured:free-resources'); // Invalidate featured cache
+        await redisHelpers.del('counts:free-resources'); // Invalidate counts cache
+        console.log(`[Webhook] Invalidated specific free resource caches: featured:free-resources, counts:free-resources`);
+        break;
+      // --- END NEW CASE ---
       default:
         console.log(`[Webhook] Received webhook for unhandled type: ${_type}`);
         return new Response('No action taken for this document type', { status: 200 });
     }
 
-    // 7. Invalidate Redis Cache
+    // 7. Invalidate Redis Cache (for individual document page if applicable)
     if (redisCacheKey) {
       try {
         await redisHelpers.del(redisCacheKey);
