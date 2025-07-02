@@ -61,8 +61,13 @@ export async function POST(req) {
     const rawBody = await req.text();
     const body = JSON.parse(rawBody);
     
-    const signature = req.headers.get('sanity-signature');
+    // Check multiple possible signature headers
+    const signature = req.headers.get('sanity-signature') || 
+                     req.headers.get('x-sanity-signature') || 
+                     req.headers.get('x-signature') ||
+                     req.headers.get('signature');
     
+    console.log('[Webhook] All headers:', Object.fromEntries(req.headers.entries()));
     console.log('[Webhook] Signature received:', signature ? 'Yes' : 'No');
     console.log('[Webhook] Signature value:', signature);
     console.log('[Webhook] Document type:', body._type);
