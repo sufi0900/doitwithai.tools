@@ -38,10 +38,14 @@ function verifySignature(body, signature, secret) {
     const payload = `${timestamp}.${body}`;
 
     // Create HMAC signature
-    const expectedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(payload, 'utf8')
-      .digest('base64');
+  const expectedSignature = crypto
+  .createHmac('sha256', secret)
+  .update(payload, 'utf8')
+  .digest('base64')
+  .replace(/\+/g, '-')   // Convert + to -
+  .replace(/\//g, '_')   // Convert / to _
+  .replace(/=+$/, '');   // Remove trailing =
+
 
     console.log('[Webhook] Timestamp:', timestamp);
     console.log('[Webhook] Received signature:', signatureHash);
