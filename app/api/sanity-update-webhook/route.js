@@ -33,9 +33,10 @@ function verifySignature(body, signature, secret) {
       return false;
     }
 
-    // Create the payload that Sanity signs: timestamp + body
-    const payload = timestamp + body;
-    
+    // Create the payload that Sanity signs: timestamp + "." + body
+    // This is the correct format for Sanity webhook signature verification
+    const payload = `${timestamp}.${body}`;
+
     // Create HMAC signature
     const expectedSignature = crypto
       .createHmac('sha256', secret)
@@ -69,7 +70,7 @@ export async function POST(req) {
     // 2. Read the raw body for signature verification
     const rawBody = await req.text();
     const body = JSON.parse(rawBody);
-    
+
     // Check for the correct Sanity webhook signature header
     const signature = req.headers.get('sanity-webhook-signature');
     
@@ -117,25 +118,21 @@ export async function POST(req) {
         revalidationTags = ['aitool', slug.current];
         revalidationPaths = ['/ai-tools', `/ai-tools/${slug.current}`];
         break;
-
       case 'seo':
         redisCacheKey = `article:seo:${slug.current}`;
         revalidationTags = ['seo', slug.current];
         revalidationPaths = ['/ai-seo', `/ai-seo/${slug.current}`];
         break;
-
       case 'makemoney':
         redisCacheKey = `article:makemoney:${slug.current}`;
         revalidationTags = ['makemoney', slug.current];
         revalidationPaths = ['/ai-learn-earn', `/ai-learn-earn/${slug.current}`];
         break;
-
       case 'coding':
         redisCacheKey = `article:coding:${slug.current}`;
         revalidationTags = ['coding', slug.current];
         revalidationPaths = ['/ai-code', `/ai-code/${slug.current}`];
         break;
-
       default:
         console.log(`[Webhook] Received webhook for unhandled type: ${_type}`);
         return new Response('No action taken for this document type', { status: 200 });
