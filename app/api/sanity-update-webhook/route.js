@@ -1,6 +1,6 @@
 // app/api/sanity-update-webhook/route.js
 import { revalidatePath, revalidateTag } from 'next/cache';
-import { redisHelpers } from '@/app/lib/redis'; // Use redisHelpers instead of redisClient
+import { redisHelpers } from '@/app/lib/redis';
 import crypto from 'crypto';
 
 const SANITY_WEBHOOK_SECRET = process.env.SANITY_WEBHOOK_SECRET;
@@ -10,23 +10,39 @@ const SANITY_WEBHOOK_SECRET = process.env.SANITY_WEBHOOK_SECRET;
  */
 function verifySignature(body, signature, secret) {
   if (!signature || !secret) {
+    console.log('[Webhook] Missing signature or secret');
     return false;
   }
 
-  // Remove 'sha256=' prefix if present
-  const cleanSignature = signature.replace(/^sha256=/, '');
-  
-  // Create HMAC signature
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(body, 'utf8')
-    .digest('hex');
+  try {
+    // Remove 'sha256=' prefix if present
+    const cleanSignature = signature.replace(/^sha256=/, '');
+    
+    // Create HMAC signature
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(body, 'utf8')
+      .digest('hex');
 
-  // Use timingSafeEqual to prevent timing attacks
-  return crypto.timingSafeEqual(
-    Buffer.from(cleanSignature, 'hex'),
-    Buffer.from(expectedSignature, 'hex')
-  );
+    console.log('[Webhook] Received signature length:', cleanSignature.length);
+    console.log('[Webhook] Expected signature length:', expectedSignature.length);
+    console.log('[Webhook] Signatures match:', cleanSignature === expectedSignature);
+
+    // Check if lengths match before using timingSafeEqual
+    if (cleanSignature.length !== expectedSignature.length) {
+      console.warn('[Webhook] Signature length mismatch - using string comparison');
+      return cleanSignature === expectedSignature;
+    }
+
+    // Use timingSafeEqual to prevent timing attacks
+    return crypto.timingSafeEqual(
+      Buffer.from(cleanSignature, 'hex'),
+      Buffer.from(expectedSignature, 'hex')
+    );
+  } catch (error) {
+    console.error('[Webhook] Error in signature verification:', error);
+    return false;
+  }
 }
 
 /**
@@ -48,6 +64,7 @@ export async function POST(req) {
     const signature = req.headers.get('sanity-signature');
     
     console.log('[Webhook] Signature received:', signature ? 'Yes' : 'No');
+    console.log('[Webhook] Signature value:', signature);
     console.log('[Webhook] Document type:', body._type);
     console.log('[Webhook] Slug:', body.slug?.current);
 
