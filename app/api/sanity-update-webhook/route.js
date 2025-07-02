@@ -6,7 +6,7 @@ import crypto from 'crypto';
 const SANITY_WEBHOOK_SECRET = process.env.SANITY_WEBHOOK_SECRET;
 
 /**
- * Verify Sanity webhook signature using HMAC-SHA256
+ * Verify Sanity webhook signature using their standard format
  */
 function verifySignature(body, signature, secret) {
   if (!signature || !secret) {
@@ -15,30 +15,39 @@ function verifySignature(body, signature, secret) {
   }
 
   try {
-    // Remove 'sha256=' prefix if present
-    const cleanSignature = signature.replace(/^sha256=/, '');
+    // Sanity signature format: t=timestamp,v1=signature
+    const parts = signature.split(',');
+    let timestamp, signatureHash;
+    
+    for (const part of parts) {
+      const [key, value] = part.split('=');
+      if (key === 't') {
+        timestamp = value;
+      } else if (key === 'v1') {
+        signatureHash = value;
+      }
+    }
+
+    if (!timestamp || !signatureHash) {
+      console.log('[Webhook] Invalid signature format');
+      return false;
+    }
+
+    // Create the payload that Sanity signs: timestamp + body
+    const payload = timestamp + body;
     
     // Create HMAC signature
     const expectedSignature = crypto
       .createHmac('sha256', secret)
-      .update(body, 'utf8')
-      .digest('hex');
+      .update(payload, 'utf8')
+      .digest('base64');
 
-    console.log('[Webhook] Received signature length:', cleanSignature.length);
-    console.log('[Webhook] Expected signature length:', expectedSignature.length);
-    console.log('[Webhook] Signatures match:', cleanSignature === expectedSignature);
+    console.log('[Webhook] Timestamp:', timestamp);
+    console.log('[Webhook] Received signature:', signatureHash);
+    console.log('[Webhook] Expected signature:', expectedSignature);
+    console.log('[Webhook] Signatures match:', signatureHash === expectedSignature);
 
-    // Check if lengths match before using timingSafeEqual
-    if (cleanSignature.length !== expectedSignature.length) {
-      console.warn('[Webhook] Signature length mismatch - using string comparison');
-      return cleanSignature === expectedSignature;
-    }
-
-    // Use timingSafeEqual to prevent timing attacks
-    return crypto.timingSafeEqual(
-      Buffer.from(cleanSignature, 'hex'),
-      Buffer.from(expectedSignature, 'hex')
-    );
+    return signatureHash === expectedSignature;
   } catch (error) {
     console.error('[Webhook] Error in signature verification:', error);
     return false;
@@ -61,15 +70,13 @@ export async function POST(req) {
     const rawBody = await req.text();
     const body = JSON.parse(rawBody);
     
-    // Check multiple possible signature headers
-    const signature = req.headers.get('sanity-signature') || 
-                     req.headers.get('x-sanity-signature') || 
-                     req.headers.get('x-signature') ||
-                     req.headers.get('signature');
+    // Check for the correct Sanity webhook signature header
+    const signature = req.headers.get('sanity-webhook-signature');
     
-    console.log('[Webhook] All headers:', Object.fromEntries(req.headers.entries()));
     console.log('[Webhook] Signature received:', signature ? 'Yes' : 'No');
-    console.log('[Webhook] Signature value:', signature);
+    if (signature) {
+      console.log('[Webhook] Signature value:', signature);
+    }
     console.log('[Webhook] Document type:', body._type);
     console.log('[Webhook] Slug:', body.slug?.current);
 
