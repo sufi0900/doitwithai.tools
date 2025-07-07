@@ -32,8 +32,71 @@ async function getData(slug) {
   }
 
   // IMPORTANT: Fetch ALL necessary fields for metadata and schema generation
-  const query = `*[_type=="makemoney"&&slug.current=="${slug}"][0]{_id,title,slug,mainImage{asset->{_id,url},alt},publishedAt,_updatedAt,_createdAt,_type,metatitle,metadesc,schematitle,schemadesc,overview,content[]{...,_type=="image"=>{asset->{_id,url},alt,caption,imageDescription[]{...}},_type=="gif"=>{asset->{_id,url},alt,caption},_type=="video"=>{asset->{_id,url},alt,caption},},"wordCount":length(pt::text(content)),"estimatedReadingTime":round(length(pt::text(content))/250),"headings":content[_type=="block"&&stylein["h1","h2","h3","h4","h5","h6"]]{"text":pt::text(@),"level":style,"anchor":lower(pt::text(@))},faqs[]{question,answer},articleType,displaySettings}`;
-  try {
+  const query = `*[_type == "makemoney" && slug.current == "${slug}"][0]{
+    _id,
+    title,
+    slug,
+    mainImage{
+      asset->{
+        _id,
+        url
+      },
+      alt
+    },
+    publishedAt,
+    _updatedAt,
+    _createdAt,
+    _type,
+    metatitle,
+    metadesc,
+    schematitle,
+    schemadesc,
+    overview,
+    content[]{
+      ...,
+      _type == "image" => {
+        asset->{
+          _id,
+          url
+        },
+        alt,
+        caption,
+        imageDescription[]{
+          ...
+        }
+      },
+      _type == "gif" => {
+        asset->{
+          _id,
+          url
+        },
+        alt,
+        caption
+      },
+      _type == "video" => {
+        asset->{
+          _id,
+          url
+        },
+        alt,
+        caption
+      },
+    },
+    "wordCount": length(pt::text(content)),
+    "estimatedReadingTime": round(length(pt::text(content)) / 250),
+    "headings": content[_type == "block" && style in ["h1", "h2", "h3", "h4", "h5", "h6"]]{
+      "text": pt::text(@),
+      "level": style,
+      "anchor": lower(pt::text(@))
+    },
+    faqs[]{
+      question,
+      answer
+    },
+    articleType,
+    displaySettings
+  }`;
+    try {
     data = await client.fetch(query, {}, { next: { tags: ['makemoney', slug] } }); // Corrected tag from 'coding' to 'makemoney'
     console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
 
@@ -754,9 +817,6 @@ export default async function ParentPage({ params }) {
       {howToSchema && (<Script id="HowToSchema" type="application/ld+json" dangerouslySetInnerHTML={howToSchema} strategy="afterInteractive" />)}
       {softwareApplicationSchema && (<Script id="SoftwareApplicationSchema" type="application/ld+json" dangerouslySetInnerHTML={softwareApplicationSchema} strategy="afterInteractive" />)}
       {faqSchema && (<Script id="FAQSchema" type="application/ld+json" dangerouslySetInnerHTML={faqSchema} strategy="afterInteractive" />)}
-
-
-
 
 
       <PageCacheProvider pageType={data?._type || 'makemoney'} pageId={params.slug}>

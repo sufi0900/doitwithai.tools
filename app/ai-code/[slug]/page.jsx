@@ -30,8 +30,71 @@ async function getData(slug) {
   }
   
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
-  const query = `*[_type=="coding"&&slug.current=="${slug}"][0]{_id,title,slug,mainImage{asset->{_id,url},alt},publishedAt,_updatedAt,_createdAt,_type,metatitle,metadesc,schematitle,schemadesc,overview,content[]{...,_type=="image"=>{asset->{_id,url},alt,caption,imageDescription[]{...}},_type=="gif"=>{asset->{_id,url},alt,caption},_type=="video"=>{asset->{_id,url},alt,caption},},"wordCount":length(pt::text(content)),"estimatedReadingTime":round(length(pt::text(content))/250),"headings":content[_type=="block"&&stylein["h1","h2","h3","h4","h5","h6"]]{"text":pt::text(@),"level":style,"anchor":lower(pt::text(@))},faqs[]{question,answer},articleType,displaySettings}`;
-  try {
+  const query = `*[_type == "coding" && slug.current == "${slug}"][0]{
+    _id,
+    title,
+    slug,
+    mainImage{
+      asset->{
+        _id,
+        url
+      },
+      alt
+    },
+    publishedAt,
+    _updatedAt,
+    _createdAt,
+    _type,
+    metatitle,
+    metadesc,
+    schematitle,
+    schemadesc,
+    overview,
+    content[]{
+      ...,
+      _type == "image" => {
+        asset->{
+          _id,
+          url
+        },
+        alt,
+        caption,
+        imageDescription[]{
+          ...
+        }
+      },
+      _type == "gif" => {
+        asset->{
+          _id,
+          url
+        },
+        alt,
+        caption
+      },
+      _type == "video" => {
+        asset->{
+          _id,
+          url
+        },
+        alt,
+        caption
+      },
+    },
+    "wordCount": length(pt::text(content)),
+    "estimatedReadingTime": round(length(pt::text(content)) / 250),
+    "headings": content[_type == "block" && style in ["h1", "h2", "h3", "h4", "h5", "h6"]]{
+      "text": pt::text(@),
+      "level": style,
+      "anchor": lower(pt::text(@))
+    },
+    faqs[]{
+      question,
+      answer
+    },
+    articleType,
+    displaySettings
+  }`;
+    try {
     data = await client.fetch(query, {}, { next: { tags: ['coding', slug] } });
     
     console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
