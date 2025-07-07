@@ -5,6 +5,10 @@ import Head from "next/head";
 import { NextSeo } from "next-seo";
 export const revalidate = false;
 export const dynamic = "force-dynamic";
+import {redisHelpers} from '@/app/lib/redis';
+import { client } from "@/sanity/lib/client";
+import UnifiedCacheMonitor from '@/React_Query_Caching/UnifiedCacheMonitor';
+import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 
 export const metadata = {
   title: "Do it with AI tools – Double your SEO power & Explore AI Abilities",
@@ -29,8 +33,127 @@ export const metadata = {
   keywords: "AI tools, artificial intelligence, AI coding, AI SEO, AI resources, AI monetization, free AI resources, next.js AI, AI productivity, AI for business"
 };
 
-export default function Page() {
-  
+const HOMEPAGE_FREE_RESOURCES_LIMIT = 3; // From the provided code for DynamicResourceCarousel
+
+
+async function getHomePageInitialData() {
+  const cacheKey = 'homepage:initialData';
+  const startTime = Date.now();
+
+  try {
+    const cachedData = await redisHelpers.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for ${cacheKey} in ${Date.now() - startTime}ms`);
+      return { ...cachedData, __source: 'server-redis' };
+    }
+  } catch (redisError) {
+    console.error(`Redis error for ${cacheKey}:`, redisError.message);
+    // Continue to fetch from Sanity if Redis fails
+  }
+
+  console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
+
+  // Define all queries concurrently
+  const queries = {
+    // Trending
+    trendBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendBig==true][0...1]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+    trendRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendRelated==true][0...3]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+
+    // Feature Post
+    featureBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageFeatureBig==true][0...1]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+    featureRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageFeatureRelated==true][0...3]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+
+    // AI SEO
+    seoTrendBig: `*[_type=="seo"&&displaySettings.isHomePageSeoTrendBig==true][0...1]{_id,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+    seoTrendRelated: `*[_type=="seo"&&displaySettings.isHomePageSeoRelated==true][0...3]{_id,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+
+    // Mixed Categories Section
+    aiToolsQuery: `*[_type=="aitool"&&displaySettings.isHomePageAIToolTrendRelated==true][0...2]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
+    aiCodeQuery: `*[_type=="coding"&&displaySettings.isHomePageCoding==true][0...2]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
+    aiEarnQuery: `*[_type=="makemoney"&&displaySettings.isHomePageAiEarnTrendBig==true][0...2]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
+
+    // Recent Posts
+    recentPosts: `*[_type in ["makemoney","aitool","coding","freeairesources","seo","news"]]|order(publishedAt desc)[0...5]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
+
+    // Free AI Resources (FeaturedResourcesHorizontal component)
+    freeResourcesFeatured: `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...${HOMEPAGE_FREE_RESOURCES_LIMIT}]{_id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,content,publishedAt,"resourceFile":resourceFile.asset->,promptContent,previewSettings,_updatedAt}`,
+  };
+
+  try {
+    const [
+      fetchedTrendBig, fetchedTrendRelated,
+      fetchedFeatureBig, fetchedFeatureRelated,
+      fetchedSeoTrendBig, fetchedSeoTrendRelated,
+      fetchedAiTools, fetchedAiCode, fetchedAiEarn,
+      fetchedRecentPosts,
+      fetchedFreeResourcesFeatured
+    ] = await Promise.all([
+      client.fetch(queries.trendBig, {}, { next: { tags: ["homepage", "trending"] } }),
+      client.fetch(queries.trendRelated, {}, { next: { tags: ["homepage", "trending"] } }),
+      client.fetch(queries.featureBig, {}, { next: { tags: ["homepage", "feature"] } }),
+      client.fetch(queries.featureRelated, {}, { next: { tags: ["homepage", "feature"] } }),
+     client.fetch(queries.seoTrendBig, {}, { next: { tags: ["homepage", "seo"] } }),
+      client.fetch(queries.seoTrendRelated, {}, { next: { tags: ["homepage", "seo"] } }),
+   
+      client.fetch(queries.aiToolsQuery, {}, { next: { tags: ["homepage", "mixedCategories"] } }),
+      client.fetch(queries.aiCodeQuery, {}, { next: { tags: ["homepage", "mixedCategories"] } }),
+      client.fetch(queries.aiEarnQuery, {}, { next: { tags: ["homepage", "mixedCategories"] } }),
+      client.fetch(queries.recentPosts, {}, { next: { tags: ["homepage", "recentPosts"] } }),
+      client.fetch(queries.freeResourcesFeatured, {}, { next: { tags: ["homepage", "freeResources"] } }),
+    ]);
+
+    // --- IMPORTANT: Ensure all single-result queries are wrapped in arrays ---
+    const trendBigData = fetchedTrendBig ? [fetchedTrendBig] : [];
+    const trendRelatedData = fetchedTrendRelated || []; // This is already an array from Sanity
+
+    const featureBigData = fetchedFeatureBig ? [fetchedFeatureBig] : [];
+    const featureRelatedData = fetchedFeatureRelated || []; // This is already an array from Sanity
+ 
+    const seoTrendBigData = fetchedSeoTrendBig ? [fetchedSeoTrendBig] : [];
+    // seoTrendRelatedData will already be an array due to [0...3]
+    const seoTrendRelatedData = fetchedSeoTrendRelated || [];
+    
+    const aiToolsData = fetchedAiTools || [];
+    const aiCodeData = fetchedAiCode || [];
+    const aiEarnData = fetchedAiEarn || [];
+
+    const recentPostsData = fetchedRecentPosts || [];
+    const freeResourcesFeaturedData = fetchedFreeResourcesFeatured || [];
+
+
+    const data = {
+      trending: { trendBigData, trendRelatedData },
+      featurePost: { featureBigData, featureRelatedData }, // <-- Ensure featureBigData is an array here
+      aiSeo: { seoTrendBigData, seoTrendRelatedData }, // Pass the consistently array-wrapped data
+      mixedCategories: { aiToolsData, aiCodeData, aiEarnData },
+      recentPosts: recentPostsData,
+      freeResourcesFeatured: freeResourcesFeaturedData,
+      timestamp: Date.now()
+    };
+
+    console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
+
+    // Only cache if we got some meaningful data
+    if (Object.values(data).some(d => d !== null && (Array.isArray(d) ? d.length > 0 : true))) {
+      try {
+        await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
+        console.log(`[Redis Cache Set] for ${cacheKey}`);
+      } catch (redisSetError) {
+        console.error(`Redis set error for ${cacheKey}:`, redisSetError.message);
+      }
+    }
+
+    return { ...data, __source: 'server-network' };
+  } catch (error) {
+    console.error(`Server-side fetch for Homepage failed:`, error.message);
+    return null; // Return null on error
+  }
+}
+
+
+export default async function Page() {
+    const initialServerData = await getHomePageInitialData();
+
   function schemaMarkup() {
     return {
       __html: `{
@@ -240,8 +363,11 @@ export default function Page() {
         dangerouslySetInnerHTML={breadcrumbSchema()}
         key="breadcrumb-jsonld"
       />
+           <PageCacheProvider pageType="homepage" pageId="main"> 
+            {/* <UnifiedCacheMonitor /> */}
 
-      <HomePageCode/> 
+        <HomePageCode initialServerData={initialServerData} />
+        </PageCacheProvider>
     </>
   )
 }

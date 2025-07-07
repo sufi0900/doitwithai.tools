@@ -5,6 +5,7 @@ import React, { useMemo, useCallback } from "react"; // Import useMemo and useCa
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 
 
 const ReusableCachedFreeResourcesCounts = ({
@@ -12,54 +13,61 @@ const ReusableCachedFreeResourcesCounts = ({
   selectedFormat, // Prop: currently selected format value (used for styling)
   handleFormatChange, // Prop: callback from parent for filter change
   handleCountsLoad, // Prop: callback from parent to set counts
+    initialData = null // Accept initialData prop
+
 }) => {
   // Memoize the query to get resource counts for all formats
   const memoizedCountsQuery = useMemo(() => `{
-    "all": count(*[_type == "freeResources"]),
-    "image": count(*[_type == "freeResources" && resourceFormat == "image"]),
-    "video": count(*[_type == "freeResources" && resourceFormat == "video"]),
-    "text": count(*[_type == "freeResources" && resourceFormat == "text"]),
-    "document": count(*[_type == "freeResources" && resourceFormat == "document"]),
-    "aitool": count(*[_type == "freeResources" && resourceFormat == "aitool"])
-  }`, []); // Empty dependency array as this query is static
+    "all":count(*[_type=="freeResources"]),
+    "image":count(*[_type=="freeResources"&&resourceFormat=="image"]),
+    "video":count(*[_type=="freeResources"&&resourceFormat=="video"]),
+    "text":count(*[_type=="freeResources"&&resourceFormat=="text"]),
+    "document":count(*[_type=="freeResources"&&resourceFormat=="document"]),
+    "aitool":count(*[_type=="freeResources"&&resourceFormat=="aitool"])
+  }`, []);
 
-  // Memoize an empty params object
   const memoizedParams = useMemo(() => ({}), []);
 
-  // Memoize the options object for useSanityCache
   const stableOptions = useMemo(() => ({
     componentName: 'FreeResourcesCounts',
     enableOffline: true,
-    group: 'free-resources', // Assign to the same group as other free resources data
-  }), []); // Empty dependency array as these options are stable
+    group: 'free-resources',
+    // --- NEW: Pass initialData ---
+    initialData: initialData,
+    // --- NEW: Specify schemaType for useUnifiedCache ---
+    schemaType: "freeResources", // Even though it's a count query for all, the base type is freeResources
 
-  const { data: resourceCounts, isLoading, error, refresh, isStale } = useSanityCache(
-    CACHE_KEYS.PAGE.FREERESOURCES_COUNTS, // Use the new specific cache key
-    memoizedCountsQuery, // Use the memoized query
-    memoizedParams,      // Use the memoized params
-    stableOptions        // Use the stable options
+  }), [initialData]); // Add initialData to dependency array
+
+  const { data: resourceCounts, isLoading, error, refresh, isStale } = useUnifiedCache( // --- CHANGED: useUnifiedCache ---
+    CACHE_KEYS.PAGE.FREERESOURCES_COUNTS,
+    memoizedCountsQuery,
+    memoizedParams,
+    stableOptions
   );
 
-  // Register this component's cache key with usePageCache
   usePageCache(
-    CACHE_KEYS.PAGE.FREERESOURCES_COUNTS, // The cache key for this data
-    refresh,                             // The refresh function provided by useSanityCache
-    memoizedCountsQuery,                 // The memoized query string associated
-    'Free Resources Counts'              // A descriptive label
+    CACHE_KEYS.PAGE.FREERESOURCES_COUNTS,
+    refresh,
+    memoizedCountsQuery,
+    'FreeResourcesCounts'
   );
 
-  // This effect ensures the parent component receives the updated counts.
-  // handleCountsLoad is assumed to be a useCallback from the parent.
   React.useEffect(() => {
     if (resourceCounts && typeof handleCountsLoad === 'function') {
       handleCountsLoad(resourceCounts); // Pass the raw data back to the parent
     }
-  }, [resourceCounts, handleCountsLoad]); // Only trigger when resourceCounts changes
+  }, [resourceCounts, handleCountsLoad]);
 
-  // Memoize the refresh handler for the Retry button
   const handleRefresh = useCallback(() => {
-    refresh(true); // Force refresh
+    refresh(true);
   }, [refresh]);
+
+  // Helper function to get count for display (reads from current resourceCounts state)
+  const getCountForFormat = useCallback((format) => {
+    return resourceCounts[format] || 0;
+  }, [resourceCounts]);
+
 
   // Display a loading state or error for the counts section itself
   if (isLoading) {

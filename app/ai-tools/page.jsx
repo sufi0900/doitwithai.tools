@@ -3,12 +3,11 @@ import React from 'react';
 import Script from "next/script";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
+import {redisHelpers} from '@/app/lib/redis';
+import { client } from "@/sanity/lib/client";
 
 import BlogListingPageContent from "@/app/ai-tools/AllBlogs"; // Import the new reusable component
-// Removed unnecessary imports for client and redisHelpers as data fetching is now delegated
-// import { client } from "@/sanity/lib/client";
-// import { redisHelpers } from '@/app/lib/redis';
-// import { urlForImage } from "@/sanity/lib/image"; // Not needed here as metadata is static
+import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 
 // --- Next.js Server-Side Configuration ---
 export const revalidate = 3600; // Revalidate every 1 hour
@@ -53,8 +52,57 @@ export const metadata = {
 
 // --- REMOVED: generateMetadata is now static as it no longer depends on fetched data ---
 // export async function generateMetadata() { ... }
+async function getData(schemaType, pageSlugPrefix) {
+  const cacheKey = `blogList:${schemaType}:main`;
+  const startTime = Date.now();
+  
+  try {
+    const cachedData = await redisHelpers.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for ${cacheKey} in ${Date.now() - startTime}ms`);
+      return { ...cachedData, __source: 'server-redis' };
+    }
+  } catch (redisError) {
+    console.error(`Redis error for ${cacheKey}:`, redisError.message);
+  }
 
-export default function Page() { // Changed back to a regular function as it no longer awaits data
+  console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
+  
+  // Fetch initial data for the page
+  const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]`;
+  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]`; // 6 items (5 + 1 for hasMore check)
+  const totalCountQuery = `count(*[_type=="${schemaType}"])`;
+  
+  try {
+    const [featuredPost, firstPageBlogs, totalCount] = await Promise.all([
+      client.fetch(featuresQuery, {}, { next: { tags: [schemaType] } }),
+      client.fetch(firstPageBlogsQuery, {}, { next: { tags: [schemaType] } }),
+      client.fetch(totalCountQuery, {}, { next: { tags: [schemaType] } })
+    ]);
+    
+    const data = {
+      featuredPost,
+      firstPageBlogs,
+      totalCount,
+      timestamp: Date.now()
+    };
+    
+    console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
+    
+    try {
+      await redisHelpers.set(cacheKey, data, { ex: 3600 });
+      console.log(`[Redis Cache Set] for ${cacheKey}`);
+    } catch (redisSetError) {
+      console.error(`Redis set error for ${cacheKey}:`, redisSetError.message);
+    }
+    
+    return { ...data, __source: 'server-network' };
+  } catch (error) {
+    console.error(`Server-side fetch for ${schemaType} failed:`, error.message);
+    return null;
+  }
+}
+export default async function Page() { // Changed back to a regular function as it no longer awaits data
 
   // Define schema-specific data for the AI Tools page
   const schemaType = "aitool"; // Sanity schema type
@@ -62,6 +110,11 @@ export default function Page() { // Changed back to a regular function as it no 
   const pageTitle = "AI Tools";
   const pageTitleHighlight = "AI Tools";
   const pageDescription = "Explore the newest and most effective AI tools to boost your productivity.";
+
+
+  const serverData = await getData(schemaType, pageSlugPrefix);
+
+
 
   const breadcrumbProps = {
     pageName: "Best AI Tools",
@@ -153,16 +206,18 @@ export default function Page() { // Changed back to a regular function as it no 
         dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)} // Pass metadata here
         key={`${pageSlugPrefix}-jsonld`}
       />
-      <BlogListingPageContent
+        <PageCacheProvider pageType={schemaType} pageId="main">
+
+    <BlogListingPageContent
         schemaType={schemaType}
         pageSlugPrefix={pageSlugPrefix}
         pageTitle={pageTitle}
         pageTitleHighlight={pageTitleHighlight}
         pageDescription={pageDescription}
         breadcrumbProps={breadcrumbProps}
-        // REMOVED: serverData prop, as the child components will now fetch their own data
-        // via useSanityCache (which will be Redis-backed)
+        serverData={serverData}  // Pass server data
       />
+      </PageCacheProvider>
     </>
   );
 }

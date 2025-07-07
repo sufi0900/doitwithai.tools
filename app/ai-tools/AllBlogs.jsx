@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-alone */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
@@ -12,6 +12,9 @@ import ReusableCachedAllBlogs from "@/app/ai-tools/CachedAIToolsAllBlogs"; // Ad
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
+import { usePageCache } from '@/React_Query_Caching/usePageCache';
+import UnifiedCacheMonitor from '@/React_Query_Caching/UnifiedCacheMonitor';
 
 /**
  * Reusable client component for displaying a blog listing page with search,
@@ -36,6 +39,7 @@ import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
  * @param {string} [props.subcategoriesSectionDescription] - Description for the subcategories section.
  * @param {React.ElementType} [props.SubcategoriesComponent] - The component to render for subcategories (e.g., ReusableCachedSEOSubcategories).
  * @param {number} [props.subcategoriesLimit] - Limit per page for subcategories.
+ * @param {object} [props.serverData] - Initial data fetched on the server for hydration. **(ADDED)**
  */
 export default function BlogListingPageContent({
   schemaType,
@@ -44,6 +48,7 @@ export default function BlogListingPageContent({
   pageTitleHighlight,
   pageDescription,
   breadcrumbProps,
+  serverData, // Add this prop
   // New props for subcategories section
   showSubcategoriesSection = false,
   subcategoriesSectionTitle,
@@ -51,6 +56,49 @@ export default function BlogListingPageContent({
   SubcategoriesComponent, // Component to render for subcategories
   subcategoriesLimit = 2, // Default limit for subcategories
 }) {
+  // Add unified cache for initial page data **(START ADDED)**
+  const initialDataCacheOptions = useMemo(() => ({
+    componentName: `${schemaType}BlogListingInitial`,
+    enableOffline: true,
+    initialData: serverData,
+    forceRefresh: false,
+   
+  }), [serverData, schemaType]);
+
+ const initialDataQuery = useMemo(() => 
+  `{
+    "featuredPost": *[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0],
+    "firstPageBlogs": *[_type=="${schemaType}"] | order(publishedAt desc)[0...6],
+    "totalCount": count(*[_type=="${schemaType}"])
+  }`, [schemaType]);
+
+  const initialDataParams = useMemo(() => ({ schemaType }), [schemaType]);
+
+  const {
+    data: cachedInitialData,
+    isLoading: initialDataLoading,
+    error: initialDataError,
+    refresh: refreshInitialData,
+    isStale: initialDataIsStale
+  } = useUnifiedCache(
+    CACHE_KEYS.PAGE.BLOG_LISTING_INITIAL(schemaType),
+    initialDataQuery,
+    initialDataParams,
+    { ...initialDataCacheOptions, schemaType }
+  );
+
+  // Register with page cache
+  usePageCache(
+    CACHE_KEYS.PAGE.BLOG_LISTING_INITIAL(schemaType),
+    refreshInitialData,
+    initialDataQuery,
+    `${schemaType}BlogListingInitial`
+  );
+
+  // Use cached data if available, fallback to server data
+  const finalInitialData = cachedInitialData || serverData;
+  // **(END ADDED)**
+
   // State for main blog pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [allBlogsTotalPages, setAllBlogsTotalPages] = useState(1);
@@ -105,7 +153,6 @@ export default function BlogListingPageContent({
   const isNextButtonDisabledSubcategories = searchHook.isSearchActive || currentPageSubcategories >= subcategoriesTotalPages;
   const isPreviousButtonDisabledSubcategories = currentPageSubcategories === 1;
 
-
   return (
     <PageCacheProvider pageType={pageSlugPrefix} pageId="main"> {/* Dynamic pageType */}
       {/* Outer wrapper with gradient background matching AISEOPage */}
@@ -118,22 +165,24 @@ export default function BlogListingPageContent({
 
         {/* Main Content Container */}
         <div className="container mx-auto px-4 py-12">
+      {/* <UnifiedCacheMonitor /> */}
 
           {/* Cache Status Button */}
-          <div className="mb-8 flex justify-end">
+          {/* <div className="mb-8 flex justify-end">
             <div className="rounded-lg bg-white p-2 shadow-lg dark:bg-gray-800">
               <PageCacheStatusButton />
             </div>
-          </div>
+          </div> */}
 
           {/* Feature Post Section */}
           <section className="mb-16">
             <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-800">
-              <ReusableCachedFeaturePost
-                documentType={schemaType} // Dynamic document type
-                pageSlugPrefix={pageSlugPrefix} // Dynamic page slug prefix
-                cacheKey={CACHE_KEYS.PAGE.FEATURE_POST(pageSlugPrefix)} // Dynamic cache key
-              />
+             <ReusableCachedFeaturePost
+  documentType={schemaType}
+  pageSlugPrefix={pageSlugPrefix}
+  cacheKey={CACHE_KEYS.PAGE.FEATURE_POST(pageSlugPrefix)}
+  initialData={finalInitialData?.featuredPost}  // Pass the featured post data
+/>
             </div>
           </section>
 
@@ -288,13 +337,15 @@ export default function BlogListingPageContent({
               </div>
 
               <div className="rounded-2xl bg-white p-8 shadow-xl dark:bg-gray-800">
-                <ReusableCachedAllBlogs
-                  currentPage={currentPage}
-                  limit={5}
-                  documentType={schemaType} // Dynamic document type
-                  pageSlugPrefix={pageSlugPrefix} // Dynamic page slug prefix
-                  onDataLoad={handleAllBlogsDataLoad}
-                />
+<ReusableCachedAllBlogs
+  currentPage={currentPage}
+  limit={5}
+  documentType={schemaType}
+  pageSlugPrefix={pageSlugPrefix}
+  onDataLoad={handleAllBlogsDataLoad}
+  initialPageData={finalInitialData?.firstPageBlogs} // Pass initial data
+  initialTotalCount={finalInitialData?.totalCount}   // Pass total count
+/>
 
                 {/* Main Blog Pagination Controls */}
                 <div className="mt-12 flex justify-center">

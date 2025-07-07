@@ -27,6 +27,7 @@ export const CACHE_KEYS = {
     // Keys specifically for the mixed blogs page (all-posts)
     MIXED_BLOGS_TOTAL_COUNT: (category, sortBy) => `page_mixed_blogs_total_cat_${category}_sort_${sortBy}`,
     MIXED_BLOGS_PAGINATED: (page, category, sortBy) => `page_mixed_blogs_p${page}_cat_${category}_sort_${sortBy}`,
+  BLOG_LISTING_INITIAL: (schemaType) => `page:${schemaType}:listing:initial`,
 
     // Consolidated and canonical definition for search results
     SEARCH_RESULTS: (documentTypeOrScope, searchHash) => `page_${documentTypeOrScope}_search_${searchHash}`,
@@ -92,13 +93,13 @@ export const CACHE_CONFIG = {
 
   // Page-level specific configurations (for FEATURE_POST, etc.)
   PAGE_FEATURE_POST: {
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 60 * 1000, // 5 minutes
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     enableOffline: true,
   },
   // Config for single-documentType ALL_BLOGS_TOTAL
   PAGE_ALL_BLOGS_TOTAL: {
-    staleTime: 2 * 60 * 1000, // 2 minutes for total count
+    staleTime: 1 * 60 * 1000, // 2 minutes for total count
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     enableOffline: true,
   },

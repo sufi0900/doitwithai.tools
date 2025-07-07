@@ -9,6 +9,7 @@ import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for refreshGroup
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 
 const DynamicResourceCarousel = dynamic(() => import('@/app/free-ai-resources/ResourceCarousel'), {
   ssr: false,
@@ -21,30 +22,29 @@ const DynamicResourceCarousel = dynamic(() => import('@/app/free-ai-resources/Re
   ),
 });
 
-const FeaturedResourcesHorizontal = () => {
-  // Memoize the query
-  const query = useMemo(() => groq`*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc){_id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,content,publishedAt,"resourceFile":resourceFile.asset->,promptContent,previewSettings,_updatedAt}`, []); // Empty dependency array as query is static
+const FeaturedResourcesHorizontal  = ({ initialData = {} }) => { // Accept initialData prop
 
-  // Memoize empty params object
+  // Memoize the query
+  const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...3]{
+    _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
+    content,publishedAt,"resourceFile":resourceFile.asset->,promptContent,previewSettings,_updatedAt
+  }`, []);
+
   const memoizedParams = useMemo(() => ({}), []);
 
-  // Memoize options for useSanityCache call
   const stableOptions = useMemo(() => ({
-    componentName: 'FeaturedResourcesHorizontal', // More descriptive name for clarity
-    staleTime: 3 * 60 * 1000, // Consistent with HOMEPAGE config
-    maxAge: 15 * 60 * 1000,    // Consistent with HOMEPAGE config
-    enableOffline: true,
-    group: 'homepage-featured-resources', // Assign to a specific group
-  }), []);
+    componentName: 'FeaturedResourcesHorizontal',
 
-  const {
-    data: featuredResources,
-    isLoading,
-    error,
-    isStale,
-    refresh,
-  } = useSanityCache(
-    CACHE_KEYS.HOMEPAGE.FEATURED_RESOURCES_HORIZONTAL, // Use the specific cache key
+    enableOffline: true,
+    group: 'homepage-featured-resources',
+    // --- NEW: Pass initialData ---
+    initialData: initialData,
+    // --- NEW: Specify schemaType ---
+    schemaType: "freeResources",
+  }), [initialData]); // Add initialData to dependency array
+
+  const { data: featuredResources, isLoading, error, isStale, refresh } = useUnifiedCache( // --- CHANGED: useUnifiedCache ---
+    CACHE_KEYS.HOMEPAGE.FEATURED_RESOURCES_HORIZONTAL,
     query,
     memoizedParams,
     stableOptions

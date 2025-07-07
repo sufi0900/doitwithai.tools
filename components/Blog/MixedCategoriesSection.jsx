@@ -13,83 +13,66 @@ import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for refreshGroup
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 
-const MixedCategoriesSection = () => {
+const MixedCategoriesSection  = ({ initialData = {} }) => { // Accept initialData prop
+
   // Memoize queries for stability
   const queries = useMemo(() => ({
     aiToolsQuery: `*[_type=="aitool"&&displaySettings.isHomePageAIToolTrendRelated==true][0...2]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
     aiCodeQuery: `*[_type=="coding"&&displaySettings.isHomePageCoding==true][0...2]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
     aiEarnQuery: `*[_type=="makemoney"&&displaySettings.isHomePageAiEarnTrendBig==true][0...2]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
-  }), []); // Empty dependency array as these queries are static
+  }), []);
 
-  // Memoize empty params object
   const memoizedParams = useMemo(() => ({}), []);
 
-  // Memoize options for useSanityCache calls
-  const aiToolsOptions = useMemo(() => ({
-    componentName: 'Mixed-AITools',
-    staleTime: 3 * 60 * 1000,
-    maxAge: 15 * 60 * 1000,
+  const commonOptions = useMemo(() => ({
+    
     enableOffline: true,
-    group: 'homepage-mixed-categories', // New group for this section
+    group: 'homepage-mixed-categories',
   }), []);
+
+  const aiToolsOptions = useMemo(() => ({
+    ...commonOptions,
+    componentName: 'Mixed-AITools',
+    initialData: initialData.aiToolsData, // Pass initial data
+    schemaType: "aitool", // Specific schema type for this query
+  }), [commonOptions, initialData.aiToolsData]);
 
   const aiCodeOptions = useMemo(() => ({
+    ...commonOptions,
     componentName: 'Mixed-AICode',
-    staleTime: 3 * 60 * 1000,
-    maxAge: 15 * 60 * 1000,
-    enableOffline: true,
-    group: 'homepage-mixed-categories', // Same group
-  }), []);
+    initialData: initialData.aiCodeData, // Pass initial data
+    schemaType: "coding", // Specific schema type
+  }), [commonOptions, initialData.aiCodeData]);
 
   const aiEarnOptions = useMemo(() => ({
+    ...commonOptions,
     componentName: 'Mixed-AIEarn',
-    staleTime: 3 * 60 * 1000,
-    maxAge: 15 * 60 * 1000,
-    enableOffline: true,
-    group: 'homepage-mixed-categories', // Same group
-  }), []);
+    initialData: initialData.aiEarnData, // Pass initial data
+    schemaType: "makemoney", // Specific schema type
+  }), [commonOptions, initialData.aiEarnData]);
 
-  // --- USE CACHED DATA HOOKS ---
-  const {
-    data: aiToolsData,
-    isLoading: isAiToolsLoading,
-    error: aiToolsError,
-    isStale: isAiToolsStale,
-    refresh: refreshAiTools,
-  } = useSanityCache(
-    CACHE_KEYS.HOMEPAGE.MIXED_AI_TOOLS, // Use new specific cache key
+  const { data: aiToolsData, isLoading: isAiToolsLoading, error: aiToolsError, isStale: isAiToolsStale, refresh: refreshAiTools } = useUnifiedCache( // --- CHANGED: useUnifiedCache ---
+    CACHE_KEYS.HOMEPAGE.MIXED_AI_TOOLS,
     queries.aiToolsQuery,
     memoizedParams,
     aiToolsOptions
   );
 
-  const {
-    data: aiCodeData,
-    isLoading: isAiCodeLoading,
-    error: aiCodeError,
-    isStale: isAiCodeStale,
-    refresh: refreshAiCode,
-  } = useSanityCache(
-    CACHE_KEYS.HOMEPAGE.MIXED_AI_CODE, // Use new specific cache key
+  const { data: aiCodeData, isLoading: isAiCodeLoading, error: aiCodeError, isStale: isAiCodeStale, refresh: refreshAiCode } = useUnifiedCache( // --- CHANGED: useUnifiedCache ---
+    CACHE_KEYS.HOMEPAGE.MIXED_AI_CODE,
     queries.aiCodeQuery,
     memoizedParams,
     aiCodeOptions
   );
 
-  const {
-    data: aiEarnData,
-    isLoading: isAiEarnLoading,
-    error: aiEarnError,
-    isStale: isAiEarnStale,
-    refresh: refreshAiEarn,
-  } = useSanityCache(
-    CACHE_KEYS.HOMEPAGE.MIXED_AI_EARN, // Use new specific cache key
+  const { data: aiEarnData, isLoading: isAiEarnLoading, error: aiEarnError, isStale: isAiEarnStale, refresh: refreshAiEarn } = useUnifiedCache( // --- CHANGED: useUnifiedCache ---
+    CACHE_KEYS.HOMEPAGE.MIXED_AI_EARN,
     queries.aiEarnQuery,
     memoizedParams,
     aiEarnOptions
   );
-
   // NEW: Register cache keys and their refresh functions with the PageCacheProvider
   usePageCache(CACHE_KEYS.HOMEPAGE.MIXED_AI_TOOLS, refreshAiTools, queries.aiToolsQuery, 'MixedAITools');
   usePageCache(CACHE_KEYS.HOMEPAGE.MIXED_AI_CODE, refreshAiCode, queries.aiCodeQuery, 'MixedAICode');

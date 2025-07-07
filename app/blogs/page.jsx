@@ -1,9 +1,94 @@
 import React from 'react';
 import AllPosts from './AllPosts'; 
 import Script from "next/script";
+import { client } from "@/sanity/lib/client";
 
 export const revalidate = 3600; // Revalidate every hour
 export const dynamic = "force-dynamic";
+import {redisHelpers} from '@/app/lib/redis';
+
+
+
+// Define the limit for the initial server-side fetch to match client component's limit
+const INITIAL_BLOGS_LIMIT = 5; // Matches cardsPerPage in AllPosts.jsx
+
+// --- Server-side data fetching function ---
+async function getAllBlogsInitialData() {
+  const cacheKey = 'blogList:all-blogs:main'; // Unique key for the all blogs page
+  const startTime = Date.now();
+
+  try {
+    const cachedData = await redisHelpers.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for ${cacheKey} in ${Date.now() - startTime}ms`);
+      return { ...cachedData, __source: 'server-redis' };
+    }
+  } catch (redisError) {
+    console.error(`Redis error for ${cacheKey}:`, redisError.message);
+    // Continue to fetch from Sanity if Redis fails
+  }
+
+  console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
+
+  // Query for the first page of blogs from all four schemas
+  // We fetch limit + 1 to determine if there are more pages
+  const firstPageBlogsQuery = `*[
+    _type == "makemoney" ||
+    _type == "aitool" ||
+    _type == "coding" ||
+    _type == "seo"
+  ] | order(publishedAt desc)[0...${INITIAL_BLOGS_LIMIT + 1}]{
+    formattedDate,
+    tags,
+    readTime,
+    _id,
+    _type,
+    title,
+    slug,
+    mainImage,
+    overview,
+    body,
+    publishedAt
+  }`;
+
+  // Query for the total count of blogs from all four schemas
+  const totalCountQuery = `count(*[
+    _type == "makemoney" ||
+    _type == "aitool" ||
+    _type == "coding" ||
+    _type == "seo"
+  ])`;
+
+  try {
+    const [firstPageBlogs, totalCount] = await Promise.all([
+      client.fetch(firstPageBlogsQuery, {}, { next: { tags: ["makemoney", "aitool", "coding", "seo"] } }),
+      client.fetch(totalCountQuery, {}, { next: { tags: ["makemoney", "aitool", "coding", "seo"] } })
+    ]);
+
+    const data = {
+      firstPageBlogs,
+      totalCount,
+      timestamp: Date.now()
+    };
+
+    console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
+
+    if (data.firstPageBlogs?.length > 0) { // Only cache if we actually got some data
+      try {
+        await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
+        console.log(`[Redis Cache Set] for ${cacheKey}`);
+      } catch (redisSetError) {
+        console.error(`Redis set error for ${cacheKey}:`, redisSetError.message);
+      }
+    }
+
+    return { ...data, __source: 'server-network' };
+  } catch (error) {
+    console.error(`Server-side fetch for All Blogs page failed:`, error.message);
+    return null; // Return null on error
+  }
+}
+
 
 export const metadata = {
   title: "AI Blog Library: Latest Insights on SEO & More | Do it with AI Tools",
@@ -54,8 +139,9 @@ export const metadata = {
   }
 };
 
-export default function BlogsPage() {
-  
+export default async  function BlogsPage() {
+    const initialServerData = await getAllBlogsInitialData();
+
   function blogCollectionSchema() {
     return {
       __html: `{
@@ -265,7 +351,9 @@ export default function BlogsPage() {
       />
 
       {/* Main Content */}
-      <AllPosts />
+     <AllPosts
+          initialServerData={initialServerData} // Pass the fetched initial data
+        />
     </>
   );
 }

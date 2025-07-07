@@ -1,74 +1,58 @@
-// components/TrendingPage.jsx
+// components/Trending/page.jsx
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react"; // Added useMemo, useCallback
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Grid } from "@mui/material";
 import { urlForImage } from "@/sanity/lib/image";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard";
 import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard";
 import MediumCard from "@/components/Blog/HomeMediumCard";
 import BigCard from "@/components/Blog/HomeBigCard";
-import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
-import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for refreshGroup
+import { cacheSystem } from '@/React_Query_Caching/cacheSystem';
 
-const TrendingPage = () => {
-  // Memoize queries for stability
+const TrendingPage = ({ initialData = {} }) => {
   const queries = useMemo(() => ({
-    trendBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendBig==true]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
-    trendRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendRelated==true]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
-  }), []); // Empty dependency array as these queries are static
+    trendBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendBig==true][0...1]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+    trendRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendRelated==true][0...3]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+  }), []);
 
-  // Memoize options for useSanityCache calls
+  const commonSchemaTypes = useMemo(() => ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"], []);
+
   const bigCardOptions = useMemo(() => ({
     componentName: 'TrendingBig',
-    staleTime: 3 * 60 * 1000, // 3 minutes
-    maxAge: 15 * 60 * 1000,   // 15 minutes
+ 
     enableOffline: true,
-    group: 'homepage-trending', // Assign to a group for homepage trending content
-  }), []);
+    group: 'homepage-trending',
+    initialData: initialData.trending?.trendBigData, // Access from initialData.trending
+    schemaType: commonSchemaTypes,
+  }), [initialData.trending?.trendBigData, commonSchemaTypes]);
 
   const relatedCardOptions = useMemo(() => ({
     componentName: 'TrendingRelated',
-    staleTime: 3 * 60 * 1000, // 3 minutes
-    maxAge: 15 * 60 * 1000,   // 15 minutes
-    enableOffline: true,
-    group: 'homepage-trending', // Same group
-  }), []);
 
-  // Use the new caching system
-  const {
-    data: trendBigData,
-    isLoading: isBigLoading,
-    error: bigError,
-    isStale: isBigStale,
-    refresh: refreshBig,
-    cacheSource: bigCacheSource,
-    lastUpdated: bigLastUpdated
-  } = useSanityCache(
+    enableOffline: true,
+    group: 'homepage-trending',
+    initialData: initialData.trending?.trendRelatedData, // Access from initialData.trending
+    schemaType: commonSchemaTypes,
+  }), [initialData.trending?.trendRelatedData, commonSchemaTypes]);
+
+  const { data: trendBigData, isLoading: isBigLoading, error: bigError, isStale: isBigStale, refresh: refreshBig } = useUnifiedCache(
     CACHE_KEYS.HOMEPAGE.TRENDING_BIG,
     queries.trendBig,
-    {}, // No params
+    {},
     bigCardOptions
   );
 
-  const {
-    data: trendRelatedData,
-    isLoading: isRelatedLoading,
-    error: relatedError,
-    isStale: isRelatedStale,
-    refresh: refreshRelated,
-    cacheSource: relatedCacheSource,
-    lastUpdated: relatedLastUpdated
-  } = useSanityCache(
+  const { data: trendRelatedData, isLoading: isRelatedLoading, error: relatedError, isStale: isRelatedStale, refresh: refreshRelated } = useUnifiedCache(
     CACHE_KEYS.HOMEPAGE.TRENDING_RELATED,
     queries.trendRelated,
-    {}, // No params
+    {},
     relatedCardOptions
   );
 
-  // Register with PageCacheProvider
   usePageCache(CACHE_KEYS.HOMEPAGE.TRENDING_BIG, refreshBig, queries.trendBig, 'TrendingBig');
   usePageCache(CACHE_KEYS.HOMEPAGE.TRENDING_RELATED, refreshRelated, queries.trendRelated, 'TrendingRelated');
 
@@ -77,15 +61,14 @@ const TrendingPage = () => {
     aitool: "ai-tools",
     coding: "ai-code",
     seo: "ai-seo",
-    news: "ai-news", // Added 'news' if it's a possible type
-    freeairesources: "free-ai-resources", // Added 'freeairesources'
-  }), []); // Stable map
+    news: "ai-news",
+    freeairesources: "free-ai-resources",
+  }), []);
 
   const isLoading = isBigLoading || isRelatedLoading;
   const hasError = bigError || relatedError;
   const isStale = isBigStale || isRelatedStale;
 
-  // Memoize the combined refresh handler
   const handleRefresh = useCallback(async () => {
     try {
       if (typeof cacheSystem !== 'undefined' && cacheSystem.refreshGroup) {
@@ -101,7 +84,9 @@ const TrendingPage = () => {
     }
   }, [refreshBig, refreshRelated]);
 
-  const bigPost = trendBigData?.slice(0, 1)[0];
+  // Now trendBigData is always an array (or undefined before initial load from useUnifiedCache).
+  // So you can directly access the first element or use slice.
+  const bigPost = trendBigData && trendBigData.length > 0 ? trendBigData[0] : null;
   const relatedPosts = trendRelatedData || [];
 
   return (
@@ -146,9 +131,9 @@ const TrendingPage = () => {
         <Grid container spacing={2}>
           {/* Main Trending Post (BigCard) */}
           <Grid item xs={12} lg={6}>
-            {isLoading && !bigPost ? ( // Show skeleton if loading AND no data
+            {isLoading && !bigPost ? (
               <BigSkeleton />
-            ) : bigPost ? ( // Show content if data exists
+            ) : bigPost ? (
               <BigCard
                 key={bigPost._id}
                 title={bigPost.title}
@@ -163,15 +148,15 @@ const TrendingPage = () => {
             }
           </Grid>
 
-          {/* Related Trending Posts */}
+          {/* Related Trending Posts - First two */}
           <Grid item xs={12} sm={12} lg={3} xl={3}>
             <Grid container spacing={2}>
-              {isLoading && relatedPosts.length === 0 ? ( // Show skeletons if loading AND no data
+              {isLoading && relatedPosts.length === 0 ? (
                 <>
                   <Grid item xs={12}><MedSkeleton /></Grid>
                   <Grid item xs={12}><MedSkeleton /></Grid>
                 </>
-              ) : ( // Show content if data exists
+              ) : (
                 relatedPosts.slice(0, 2).map((post) => (
                   <Grid key={post._id} item xs={12}>
                     <MediumCard
@@ -189,14 +174,15 @@ const TrendingPage = () => {
             </Grid>
           </Grid>
 
+          {/* Related Trending Posts - Next two */}
           <Grid item xs={12} sm={12} lg={3} xl={3}>
             <Grid container spacing={2}>
-              {isLoading && relatedPosts.length === 0 ? ( // Show skeletons if loading AND no data
+              {isLoading && relatedPosts.length === 0 ? (
                 <>
                   <Grid item xs={12}><MedSkeleton /></Grid>
                   <Grid item xs={12}><MedSkeleton /></Grid>
                 </>
-              ) : ( // Show content if data exists
+              ) : (
                 relatedPosts.slice(2, 4).map((post) => (
                   <Grid key={post._id} item xs={12}>
                     <MediumCard

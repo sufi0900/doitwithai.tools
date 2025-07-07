@@ -17,12 +17,13 @@ import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
 import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
 import SearchResults from '@/React_Query_Caching/SearchResults';
+import UnifiedCacheMonitor from "@/React_Query_Caching/UnifiedCacheMonitor";
 
 
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 
-export default function AllBlogsPage() {
+export default function AllBlogsPage({ initialServerData,  }) {
   const schemaSlugMap = {
     makemoney: "ai-learn-earn",
     aitool: "ai-tools",
@@ -37,18 +38,18 @@ export default function AllBlogsPage() {
     coding: "AI Code",
     makemoney: "AI Learn & Earn"
   };
+  const cardsPerPage = 5; // Matches the limit passed to ReusableCachedMixedBlogs and server-side fetch
 
   // State for pagination and filters (managed by parent, but updated by child via onDataLoad)
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(initialServerData?.totalCount ? Math.ceil(initialServerData.totalCount / cardsPerPage) : 1);
+  const [totalCount, setTotalCount] = useState(initialServerData?.totalCount || 0);
 
   // Filter & Sort states
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('publishedAt desc');
   const [showFilters, setShowFilters] = useState(false); // For mobile filter toggle
 
-  const cardsPerPage = 5; // Matches the limit passed to ReusableCachedMixedBlogs
 
   // Initialize useCachedSearch for searching across ALL blog schemas
   const searchHookOptions = useMemo(() => ({
@@ -112,6 +113,7 @@ const handleInitiateSearch = useCallback(() => {
   return (
     <PageCacheProvider pageType="blogs" pageId="all-posts">
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900/30">
+      <UnifiedCacheMonitor />
 
         {/* Breadcrumb Section - New Styling */}
         <Breadcrumb
@@ -300,14 +302,17 @@ const handleInitiateSearch = useCallback(() => {
               className="mb-16" // Ensures spacing consistent with AISEOPage
             />
           ) : ( // Otherwise display the main mixed blog list
-            <ReusableCachedMixedBlogs
-              currentPage={currentPage}
-              limit={cardsPerPage}
-              selectedCategory={selectedCategory}
-              sortBy={sortBy}
-              onDataLoad={handleMixedBlogsDataLoad}
-              schemaSlugMap={schemaSlugMap}
-            />
+           <ReusableCachedMixedBlogs
+          currentPage={currentPage}
+          limit={cardsPerPage}
+          selectedCategory={selectedCategory}
+          sortBy={sortBy}
+          onDataLoad={handleMixedBlogsDataLoad}
+          schemaSlugMap={schemaSlugMap}
+          // --- Pass initial data to the mixed blogs component ---
+          initialPageData={initialServerData?.firstPageBlogs}
+          initialTotalCount={initialServerData?.totalCount}
+        />
           )}
 
           {/* Pagination - Only show if NOT in search results view */}

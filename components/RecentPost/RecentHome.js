@@ -8,33 +8,34 @@ import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 
-export default function RecentPosts() {
+export default function RecentPosts({ initialData = [] }) { // Accept initialData prop
   // Memoize the queries object as it is static
-  const queries = useMemo(() => ({
-    recent: `*[_type in ["makemoney", "aitool", "coding", "freeairesources", "seo"]]|order(publishedAt desc)[0...5]`,
-  }), []); 
-  // Memoize the options object for useSanityCache
-  const stableOptions = useMemo(() => ({
-    componentName: 'RecentPosts', // Descriptive name for debugging
-    staleTime: 3 * 60 * 1000, // Consistent with HOMEPAGE config
-    maxAge: 15 * 60 * 1000, // Consistent with HOMEPAGE config
-    enableOffline: true,
-  }), []); // Empty dependency array as these options are static
+ const queries = useMemo(() => ({
+    recent: `*[_type in ["makemoney","aitool","coding","freeairesources","seo","news"]]|order(publishedAt desc)[0...5]`,
+  }), []);
 
-  // Use useSanityCache hook with the memoized query and options
-  const {
-    data: recentData,
-    isLoading: loading,
-    error,           // Destructure error
-    isStale,         // Destructure isStale
-    refresh,         // Destructure refresh function (this is already useCallback from useSanityCache)
-  } = useSanityCache(
-    CACHE_KEYS.HOMEPAGE.RECENT_POSTS, // Use the correct cache key for Recent Posts
-    queries.recent, // Use the memoized query string
-    {}, // No params for this query
-    stableOptions // Use the memoized options
+  const commonSchemaTypes = useMemo(() => ["makemoney", "aitool", "coding", "freeairesources", "seo", "news"], []);
+
+  const stableOptions = useMemo(() => ({
+    componentName: 'RecentPosts',
+    staleTime: 3 * 60 * 1000,
+    maxAge: 15 * 60 * 1000,
+    enableOffline: true,
+    // --- NEW: Pass initialData ---
+    initialData: initialData,
+    // --- NEW: Specify schemaType (array if multiple types) ---
+    schemaType: commonSchemaTypes,
+  }), [initialData, commonSchemaTypes]); // Add initialData to dependency array
+
+  const { data: recentData, isLoading: loading, error, isStale, refresh } = useUnifiedCache( // --- CHANGED: useUnifiedCache ---
+    CACHE_KEYS.HOMEPAGE.RECENT_POSTS,
+    queries.recent,
+    {},
+    stableOptions
   );
+
 
   // Register this query's key and refresh function with the PageCacheProvider
   usePageCache(

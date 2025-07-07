@@ -2,14 +2,16 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react"; // Import useEffect
+import React, { useState, useMemo, useCallback } from "react";
 import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout"; // Assuming BlogLayout is truly reusable and its path is fixed
 import "@/styles/customanchor.css";
+// Corrected import: CachePerformanceMonitor is now a default export
 
 // Caching System Imports
-import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
+import { useUnifiedCache  } from '@/React_Query_Caching/useUnifiedCache';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
+import UnifiedCacheMonitor from "@/React_Query_Caching/UnifiedCacheMonitor"; // <--- NEW IMPORT
 
 /**
  * Reusable component for fetching and displaying article content, related posts,
@@ -55,13 +57,8 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     enableOffline: true,
     initialData: serverData, // Use server data as initial data
     forceRefresh: false, // Always allow cache-first behavior
-    staleTime: 5 * 60 * 1000, // Example: 5 minutes stale
-    maxAge: 30 * 60 * 1000, // Example: 30 minutes max age
-    // Add tags for server-side revalidation if this fetch is ever direct to Sanity
-    // (though with the API proxy, the API route will handle tags)
-    tags: [schemaType, currentSlug], 
-    ex: 3600 // Expiration for Redis (1 hour)
-  }), [serverData, schemaType, currentSlug]);
+   
+  }), [serverData, schemaType]);
 
   // Dynamic article query based on schemaType and currentSlug
   const articleQuery = useMemo(() =>
@@ -73,43 +70,23 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     currentSlug: currentSlug
   }), [schemaType, currentSlug]);
 
-  const {
-    data: cachedArticleData,
-    isLoading: articleLoading,
-    error: articleError,
-    refresh: refreshArticle,
-    isStale: articleIsStale,
-    cacheSource: articleCacheSource, // <-- ADDED
-    lastUpdated: articleLastUpdated // <-- ADDED
-  } = useSanityCache(
-    CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType), // Dynamic cache key
-    articleQuery,
-    articleQueryParams, // Pass dynamic params
-    articleCacheOptions
-  );
+ const { data: cachedArticleData, isLoading: articleLoading, error: articleError, refresh: refreshArticle, isStale: articleIsStale } = useUnifiedCache(
+  CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType),
+  articleQuery,
+  articleQueryParams,
+  { ...articleCacheOptions, schemaType } // Add schemaType to options
+);
 
   // Determine final article data - prioritize cached data over server data
   const finalArticleData = cachedArticleData || serverData;
   const currentPostId = finalArticleData?._id;
-
-  // --- LOGGING FOR ARTICLE DATA SOURCE ---
-  useEffect(() => {
-    if (!articleLoading) {
-      console.log(`[ArticleChildComp] Main Article (${currentSlug}): Source: ${articleCacheSource}, Stale: ${articleIsStale}, Last Updated: ${articleLastUpdated ? articleLastUpdated.toLocaleString() : 'N/A'}`);
-    }
-  }, [articleLoading, articleCacheSource, articleIsStale, articleLastUpdated, currentSlug]);
-  // --- END LOGGING ---
-
 
   // Memoize options for related posts cache
   const relatedPostsOptions = useMemo(() => ({
     componentName: `${schemaType}RelatedPosts`, // Dynamic component name
     enableOffline: true,
     enabled: !!currentPostId, // Only enable if we have a post ID
-    staleTime: 5 * 60 * 1000,
-    maxAge: 30 * 60 * 1000,
-    tags: [schemaType], // Tag for related posts
-    ex: 3600
+   
   }), [currentPostId, schemaType]);
 
   // Dynamic related posts query based on schemaType and currentPostId
@@ -122,39 +99,19 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     currentPostId: currentPostId
   }), [schemaType, currentPostId]);
 
-  const {
-    data: relatedPosts,
-    isLoading: relatedPostsLoading,
-    error: relatedPostsError,
-    refresh: refreshRelatedPosts,
-    isStale: relatedPostsStale,
-    cacheSource: relatedPostsCacheSource, // <-- ADDED
-    lastUpdated: relatedPostsLastUpdated // <-- ADDED
-  } = useSanityCache(
-    CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType), // Dynamic cache key
-    relatedPostsQuery,
-    relatedPostsQueryParams, // Pass dynamic params
-    relatedPostsOptions
-  );
-
-  // --- LOGGING FOR RELATED POSTS DATA SOURCE ---
-  useEffect(() => {
-    if (!relatedPostsLoading && currentPostId) {
-      console.log(`[ArticleChildComp] Related Posts (${currentSlug}): Source: ${relatedPostsCacheSource}, Stale: ${relatedPostsStale}, Last Updated: ${relatedPostsLastUpdated ? relatedPostsLastUpdated.toLocaleString() : 'N/A'}`);
-    }
-  }, [relatedPostsLoading, relatedPostsCacheSource, relatedPostsStale, relatedPostsLastUpdated, currentSlug, currentPostId]);
-  // --- END LOGGING ---
-
+ const { data: relatedPosts, isLoading: relatedPostsLoading, error: relatedPostsError, refresh: refreshRelatedPosts, isStale: relatedPostsStale } = useUnifiedCache(
+  CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType),
+  relatedPostsQuery,
+  relatedPostsQueryParams,
+  { ...relatedPostsOptions, schemaType } // Add schemaType to options
+);
 
   // Memoize options for related resources cache
   const relatedResourcesOptions = useMemo(() => ({
     componentName: `${schemaType}RelatedResources`, // Dynamic component name
     enableOffline: true,
     enabled: !!currentPostId, // Only enable if we have a post ID
-    staleTime: 5 * 60 * 1000,
-    maxAge: 30 * 60 * 1000,
-    tags: ['freeResource'], // Tag for free resources
-    ex: 3600
+   
   }), [currentPostId, schemaType]);
 
   // Related resources query string is static, but params are dynamic
@@ -166,30 +123,12 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     articleId: currentPostId
   }), [currentPostId]);
 
-  const {
-    data: relatedResources,
-    isLoading: resourcesLoading,
-    error: resourcesError,
-    refresh: refreshRelatedResources,
-    isStale: resourcesStale,
-    cacheSource: resourcesCacheSource, // <-- ADDED
-    lastUpdated: resourcesLastUpdated // <-- ADDED
-  } = useSanityCache(
-    CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
-    correctRelatedResourcesQuery,
-    relatedResourcesQueryParams, // Pass dynamic params
-    relatedResourcesOptions
-  );
-
-  // --- LOGGING FOR RELATED RESOURCES DATA SOURCE ---
-  useEffect(() => {
-    if (!resourcesLoading && currentPostId) {
-      console.log(`[ArticleChildComp] Related Resources (${currentSlug}): Source: ${resourcesCacheSource}, Stale: ${resourcesStale}, Last Updated: ${resourcesLastUpdated ? resourcesLastUpdated.toLocaleString() : 'N/A'}`);
-    }
-  }, [resourcesLoading, resourcesCacheSource, resourcesStale, resourcesLastUpdated, currentSlug, currentPostId]);
-  // --- END LOGGING ---
-
-
+ const { data: relatedResources, isLoading: resourcesLoading, error: resourcesError, refresh: refreshRelatedResources, isStale: resourcesStale } = useUnifiedCache(
+  CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
+  correctRelatedResourcesQuery,
+  relatedResourcesQueryParams,
+  { ...relatedResourcesOptions, schemaType: 'freeResources' } // Add schemaType for resources
+);
   // Register all cache operations with usePageCache for the status button
   usePageCache(CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType), refreshArticle, articleQuery, `${schemaType} ArticleContent`);
   usePageCache(CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType), refreshRelatedPosts, relatedPostsQuery, `${schemaType} RelatedPosts`);
@@ -254,6 +193,11 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
           <span>⚠️</span><span className="ml-2">Related content may be outdated.</span>
         </div>
       )}
+ 
+   <UnifiedCacheMonitor 
+        serverData={serverData}     // NEW: Pass server data
+        params={params}       // NEW: Pass params
+      />
       <BlogLayout
         data={finalArticleData}
         loading={isMainContentLoading}

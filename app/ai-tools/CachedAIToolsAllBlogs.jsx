@@ -5,6 +5,7 @@ import CardComponent from "@/components/Card/Page";
 import SkelCard from "@/components/Blog/Skeleton/Card";
 import { urlForImage } from "@/sanity/lib/image";
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem';
@@ -17,7 +18,9 @@ const ReusableCachedAllBlogs = ({
   pageSlugPrefix,
   onDataLoad,
   customQuery = null,
-  isSearchMode = false 
+  isSearchMode = false ,
+   initialPageData = null,    // Add this prop
+  initialTotalCount = null,  // Add this prop
 }) => {
   const [paginationStaleWarning, setPaginationStaleWarning] = useState(false);
   const start = useMemo(() => (currentPage - 1) * limit, [currentPage, limit]);
@@ -80,51 +83,54 @@ const ReusableCachedAllBlogs = ({
 
   const paginationGroup = useMemo(() => `${typeIdentifier}-all-blogs`, [typeIdentifier]);
 
-  // Memoize options objects for useSanityCache calls
-  const stableCacheOptions = useMemo(() => ({
+ const stableCacheOptions = useMemo(() => ({
     componentName: `${typeIdentifier || 'Custom'}-AllBlogs-Page${currentPage}`,
     enableOffline: true,
     group: paginationGroup,
-  }), [typeIdentifier, currentPage, paginationGroup]);
+    initialData: currentPage === 1 ? initialPageData : null, // Only use for first page
+ 
+  }), [typeIdentifier, currentPage, paginationGroup, initialPageData]);
 
   const stableTotalCacheOptions = useMemo(() => ({
     componentName: `${typeIdentifier || 'Custom'}-AllBlogs-TotalCount`,
     enableOffline: true,
     group: paginationGroup,
-  }), [typeIdentifier, paginationGroup]);
+    initialData: initialTotalCount, // Use initial total count
+
+  }), [typeIdentifier, paginationGroup, initialTotalCount]);
 
   // Removed the direct console.log statements from here.
   // They will no longer spam the console on every component re-render.
 
-  const {
-    data: pageData,
-    isLoading: pageIsLoading,
-    error: pageError,
-    refresh: refreshPageData,
-    isStale: pageIsStale,
-    cacheSource: pageCacheSource,
-    lastUpdated: pageLastUpdated
-  } = useSanityCache(
-    pageCacheKey,
-    memoizedPageQuery,
-    memoizedParams, 
-    stableCacheOptions
-  );
+ const {
+  data: pageData,
+  isLoading: pageIsLoading,
+  error: pageError,
+  refresh: refreshPageData,
+  isStale: pageIsStale,
+  cacheSource: pageCacheSource,
+  lastUpdated: pageLastUpdated
+} = useUnifiedCache(
+  pageCacheKey,
+  memoizedPageQuery,
+  memoizedParams,
+  { ...stableCacheOptions, schemaType: typeIdentifier }
+);
 
-  const {
-    data: totalData,
-    isLoading: totalIsLoading,
-    error: totalError,
-    refresh: refreshTotal,
-    isStale: totalIsStale,
-    cacheSource: totalCacheSource,
-    lastUpdated: totalLastUpdated
-  } = useSanityCache(
-    totalCountCacheKey,
-    memoizedTotalCountQuery,
-    memoizedParams, 
-    stableTotalCacheOptions
-  );
+const {
+  data: totalData,
+  isLoading: totalIsLoading,
+  error: totalError,
+  refresh: refreshTotal,
+  isStale: totalIsStale,
+  cacheSource: totalCacheSource,
+  lastUpdated: totalLastUpdated
+} = useUnifiedCache(
+  totalCountCacheKey,
+  memoizedTotalCountQuery,
+  memoizedParams,
+  { ...stableTotalCacheOptions, schemaType: typeIdentifier }
+);
 
   usePageCache(pageCacheKey, refreshPageData, memoizedPageQuery, `${typeIdentifier}BlogsPage${currentPage}`);
   usePageCache(totalCountCacheKey, refreshTotal, memoizedTotalCountQuery, `${typeIdentifier}BlogsTotalCount`);
@@ -203,15 +209,7 @@ const ReusableCachedAllBlogs = ({
   return (
     <div className="space-y-4" style={{ position: 'relative' }}>
       {/* Cache Status Indicator for this component instance */}
-      <CacheStatusIndicator
-        isLoading={combinedIsLoading}
-        isStale={combinedIsStale}
-        cacheSource={combinedCacheSource}
-        lastUpdated={combinedLastUpdated}
-        error={combinedError}
-        componentName={`${typeIdentifier}-AllBlogs-Page${currentPage}`}
-        refresh={() => handleRefresh(true)} 
-      />
+
 
       {paginationStaleWarning && (
         <div className="bg-yellow-100 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-900/20 dark:border-yellow-800">

@@ -15,63 +15,7 @@ import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
 // --- Next.js Server-Side Configuration ---
 export const revalidate = 3600; // Revalidate every 1 hour
 
-async function getMakeMoneyListData() {
-  // --- CORRECTED CACHE KEY ---
-  const cacheKey = 'list:makemoney'; // A unique key for this specific list
 
-  try {
-    const cachedData = await redisHelpers.get(cacheKey);
-    if (cachedData) {
-      console.log(`[Redis Cache Hit] for listing page: ${cacheKey}`);
-      return cachedData; // Data is already parsed by Upstash SDK
-    }
-  } catch (redisError) {
-    console.error(`Error accessing Redis for listing page ${cacheKey}:`, redisError);
-    // Continue to fetch from Sanity if Redis fails
-  }
-
-  console.log(`[Sanity Fetch] for listing page: ${cacheKey}`);
-  // Sanity query to fetch all necessary data for the "Make Money" listing cards
-  // --- CORRECTED SANITY QUERY _TYPE ---
-  const query = `*[_type == "makemoney"] | order(publishedAt desc) {
-    _id,
-    title,
-    slug,
-    mainImage{asset->{_id,url},alt},
-    publishedAt,
-    overview,
-    _updatedAt,
-    _createdAt,
-    _type,
-    metatitle,
-    metadesc,
-    schematitle,
-    schemadesc,
-    // Add any other fields needed for your listing cards
-  }`;
-
-  try {
-    const data = await client.fetch(query, {}, {
-      // Use the 'makemoney' tag so that when individual 'makemoney' documents are updated,
-      // this list cache can also be revalidated by the webhook.
-      // --- CORRECTED NEXT.JS CACHE TAG ---
-      next: { tags: ['makemoney'] }
-    });
-
-    if (data) {
-      try {
-        await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
-        console.log(`[Redis Cache Set] for listing page: ${cacheKey}`);
-      } catch (redisSetError) {
-        console.error(`Error setting Redis cache for listing page ${cacheKey}:`, redisSetError);
-      }
-    }
-    return data;
-  } catch (error) {
-    console.error(`Server-side fetch for Make Money listing failed:`, error.message); // Adjusted log message
-    return []; // Return empty array on error to prevent page crash
-  }
-}
 
 
 // --- SEO Metadata (Next.js App Router Standard) ---
@@ -106,8 +50,59 @@ export const metadata = {
   },
 };
 
+
+async function getData(schemaType, pageSlugPrefix) {
+  const cacheKey = `blogList:${schemaType}:main`;
+  const startTime = Date.now();
+  
+  try {
+    const cachedData = await redisHelpers.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for ${cacheKey} in ${Date.now() - startTime}ms`);
+      return { ...cachedData, __source: 'server-redis' };
+    }
+  } catch (redisError) {
+    console.error(`Redis error for ${cacheKey}:`, redisError.message);
+  }
+
+  console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
+  
+  // Fetch initial data for the page
+  const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]`;
+  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]`; // 6 items (5 + 1 for hasMore check)
+  const totalCountQuery = `count(*[_type=="${schemaType}"])`;
+  
+  try {
+    const [featuredPost, firstPageBlogs, totalCount] = await Promise.all([
+      client.fetch(featuresQuery, {}, { next: { tags: [schemaType] } }),
+      client.fetch(firstPageBlogsQuery, {}, { next: { tags: [schemaType] } }),
+      client.fetch(totalCountQuery, {}, { next: { tags: [schemaType] } })
+    ]);
+    
+    const data = {
+      featuredPost,
+      firstPageBlogs,
+      totalCount,
+      timestamp: Date.now()
+    };
+    
+    console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
+    
+    try {
+      await redisHelpers.set(cacheKey, data, { ex: 3600 });
+      console.log(`[Redis Cache Set] for ${cacheKey}`);
+    } catch (redisSetError) {
+      console.error(`Redis set error for ${cacheKey}:`, redisSetError.message);
+    }
+    
+    return { ...data, __source: 'server-network' };
+  } catch (error) {
+    console.error(`Server-side fetch for ${schemaType} failed:`, error.message);
+    return null;
+  }
+}
+
 export default async function Page() { // Make this an async component to await data
-  const makeMoneyListData = await getMakeMoneyListData(); // Fetch data here
 
   // Define schema-specific data for the "Make Money With AI" page
   const schemaType = "makemoney"; // Sanity schema type
@@ -115,6 +110,7 @@ export default async function Page() { // Make this an async component to await 
   const pageTitle = "Money Making Strategies";
   const pageTitleHighlight = "Money Making Strategies";
   const pageDescription = "Stay updated with the newest ways to earn and grow your income online.";
+  const serverData = await getData(schemaType, pageSlugPrefix);
 
   const breadcrumbProps = {
     pageName: "Make Money",
@@ -208,15 +204,14 @@ export default async function Page() { // Make this an async component to await 
         key={`${pageSlugPrefix}-jsonld`}
       />
       <BlogListingPageContent
-        schemaType={schemaType}
-        pageSlugPrefix={pageSlugPrefix}
-        pageTitle={pageTitle}
-        pageTitleHighlight={pageTitleHighlight}
-        pageDescription={pageDescription}
-        breadcrumbProps={breadcrumbProps}
-        // No subcategories props passed here, so the section won't render
-        serverData={makeMoneyListData} 
-      />
+             schemaType={schemaType}
+             pageSlugPrefix={pageSlugPrefix}
+             pageTitle={pageTitle}
+             pageTitleHighlight={pageTitleHighlight}
+             pageDescription={pageDescription}
+             breadcrumbProps={breadcrumbProps}
+             serverData={serverData}  // Pass server data
+           />
     </>
   );
 }

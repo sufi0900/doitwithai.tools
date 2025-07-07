@@ -22,75 +22,71 @@ const MBrands = dynamic(() => import("@/components/Marquee-Brands"), { ssr: true
 const MixedCategoriesSection = dynamic(() => import("@/components/Blog/MixedCategoriesSection"), { ssr: true });
 const Contact = dynamic(() => import("@/components/Contact"), { ssr: false });
 // import CacheTestComponent from '@/React_Query_Caching/CacheTestComponent'
-import { queryClient } from "@/React_Query_Caching/queryClient";
-import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
-import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton"
+
+import UnifiedCacheMonitor from '@/React_Query_Caching/UnifiedCacheMonitor';
 
 
-export default function HomePage({  }) {
+export default function HomePage({ initialServerData }) {
 
- useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.queryClient = queryClient
-    }
-  }, [])
+ 
+
+
+  // Ensure initialServerData exists before destructuring
+  const {
+    trending = {},
+    featurePost = {},
+    aiSeo = {},
+    mixedCategories = {},
+    recentPosts = [],
+    freeResourcesFeatured = [],
+  } = initialServerData || {}
+
 
   return (
    
-<>      
- <PageCacheProvider pageType="homepage" pageId="main">
-            <PageCacheStatusButton />
-         
-
-      
-          <Hero />
-
-        
-             <section className="bg-gray-light py-16 dark:bg-bg-color-dark md:py-4 lg:py-4">
-            <div className="container mx-auto px-4 py-4">
-              <div className="flex justify-end">
-                {/* Ensure GlobalRefreshButton is rendered here */}
-               
-              </div>
-            </div>
-            <div className="container">
-              <Grid container spacing={2}>
-                <Suspense fallback={<div>Loading trending...</div>}>
-                  <Trending />
-                </Suspense>
-              </Grid>
-            </div>
-          </section>
-
-          <Suspense fallback={<div>Loading features...</div>}>
-            <FeaturePost
-            />
-          </Suspense>
-
-          <Suspense fallback={<div>Loading more content...</div>}>
-            <>
-              <AISEO />
-              <Suspense fallback={<div>Loading mixed content...</div>}>
-                <MixedCategoriesSection />
-              </Suspense>
-              <FreeResourcesPage />
-            </>
-</Suspense>
- <Suspense fallback={<div>Loading categories...</div>}>
-            <HomepageCategories />
-          </Suspense>
-
-   <Suspense fallback={<div>Loading recent posts...</div>}>
-            <RecentPost  />
-          </Suspense> 
-      
-            <>
-              <MBrands />
-              <Contact />
-            </>
-          
+<>
+      {/* <PageCacheProvider pageType="homepage" pageId="main"> // Moved to parent server component */}
+            <UnifiedCacheMonitor />
    
-     </PageCacheProvider>
-</>
+
+      <Hero /> {/* Hero component likely static or fetches its own data, no initialData needed here */}
+
+      <section className="bg-gray-light py-16 dark:bg-bg-color-dark md:py-4 lg:py-4">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-end">{/* Ensure GlobalRefreshButton is rendered here */}</div>
+        </div>
+        <div className="container">
+          <Grid container spacing={2}>
+            {/* --- No Suspense needed here as data is prefetched --- */}
+            <Trending initialData={trending} />
+          </Grid>
+        </div>
+      </section>
+
+      {/* --- No Suspense needed here as data is prefetched --- */}
+      <FeaturePost initialData={featurePost} />
+
+      {/* --- No Suspense needed here as data is prefetched --- */}
+      <>
+        <AISEO initialData={aiSeo} />
+        {/* --- No Suspense needed here as data is prefetched --- */}
+        <MixedCategoriesSection initialData={mixedCategories} />
+        {/* --- FreeResourcesPage here refers to the homepage's specific featured resources --- */}
+        <FreeResourcesPage initialData={freeResourcesFeatured} />
+      </>
+
+      <HomepageCategories /> {/* Assume HomepageCategories fetches its own data or is static */}
+
+      {/* --- No Suspense needed here as data is prefetched --- */}
+      <RecentPost initialData={recentPosts} />
+
+      <>
+        <MBrands /> {/* Marquee brands typically static or very light client data */}
+        <Suspense fallback={<div>Loading contact form...</div>}>
+          <Contact /> {/* Keep Suspense for Contact if it's client-heavy */}
+        </Suspense>
+      </>
+      {/* </PageCacheProvider> // Moved to parent server component */}
+    </>
   );
 }

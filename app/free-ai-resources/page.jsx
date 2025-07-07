@@ -6,7 +6,8 @@ import Script from "next/script";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
 
-
+import {redisHelpers} from '@/app/lib/redis';
+import { client } from "@/sanity/lib/client";
 export const metadata = { 
   title: "Free AI Resources & Solution",
   description:
@@ -25,8 +26,88 @@ export const metadata = {
   ],
 };
 
-export default function Page() {
-  
+
+const INITIAL_RESOURCE_LIST_LIMIT = 6;
+
+// --- Server-side data fetching function ---
+async function getFreeResourcesInitialData() {
+  const cacheKey = 'freeResources:initialPageData'; // Unique key for this page's combined data
+  const startTime = Date.now();
+
+  try {
+    const cachedData = await redisHelpers.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for ${cacheKey} in ${Date.now() - startTime}ms`);
+      return { ...cachedData, __source: 'server-redis' };
+    }
+  } catch (redisError) {
+    console.error(`Redis error for ${cacheKey}:`, redisError.message);
+    // Continue to fetch from Sanity if Redis fails
+  }
+
+  console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
+
+  // 1. Query for the featured resource
+  const featuredResourceQuery = `*[_type=="freeResources"&&isOwnPageFeature==true]|order(publishedAt desc)[0]{
+    _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
+    previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,
+    "relatedArticle":relatedArticle->{title,slug},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
+  }`;
+
+  // 2. Query for resource counts by format
+  const countsQuery = `{
+    "all":count(*[_type=="freeResources"]),
+    "image":count(*[_type=="freeResources"&&resourceFormat=="image"]),
+    "video":count(*[_type=="freeResources"&&resourceFormat=="video"]),
+    "text":count(*[_type=="freeResources"&&resourceFormat=="text"]),
+    "document":count(*[_type=="freeResources"&&resourceFormat=="document"]),
+    "aitool":count(*[_type=="freeResources"&&resourceFormat=="aitool"])
+  }`;
+
+  // 3. Query for the first page of the resource list
+  const listQuery = `*[_type=="freeResources"]|order(publishedAt desc)[0...${INITIAL_RESOURCE_LIST_LIMIT + 1}]{
+    _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
+    previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,
+    "relatedArticle":relatedArticle->{title,slug},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
+  }`;
+
+  try {
+    const [featuredResource, resourceCounts, resourceList] = await Promise.all([
+      client.fetch(featuredResourceQuery, {}, { next: { tags: ["freeResources"] } }),
+      client.fetch(countsQuery, {}, { next: { tags: ["freeResources"] } }),
+      client.fetch(listQuery, {}, { next: { tags: ["freeResources"] } })
+    ]);
+
+    const data = {
+      featuredResource,
+      resourceCounts,
+      resourceList,
+      timestamp: Date.now()
+    };
+
+    console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
+
+    if (data.resourceList?.length > 0) { // Only cache if we actually got some data
+      try {
+        await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
+        console.log(`[Redis Cache Set] for ${cacheKey}`);
+      } catch (redisSetError) {
+        console.error(`Redis set error for ${cacheKey}:`, redisSetError.message);
+      }
+    }
+
+    return { ...data, __source: 'server-network' };
+  } catch (error) {
+    console.error(`Server-side fetch for Free AI Resources page failed:`, error.message);
+    return null; // Return null on error
+  }
+}
+
+
+
+export default async function Page() {
+    const initialServerData = await getFreeResourcesInitialData();
+
 // Update your grandparent page schema to include hasOfferCatalog
 
 function schemaMarkup() {
@@ -137,7 +218,8 @@ function schemaMarkup() {
      dangerouslySetInnerHTML={schemaMarkup()}
      key="AiTools-jsonld"
    />
-   <Allblogs/> 
+   <Allblogs           initialServerData={initialServerData}
+/> 
    </>
   )
 }

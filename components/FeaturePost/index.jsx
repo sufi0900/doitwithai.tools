@@ -8,62 +8,56 @@ import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
 import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
 import SmallCard from "@/components/Blog/HomeSmallCard"
 import BigCard from "@/components/Blog/HomeBigCard"
-import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for refreshGroup
 
-const FeaturePost = () => {
-  // Memoize queries for stability
-  const queries = useMemo(() => ({
-    featureBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageFeatureBig==true]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
-    featureRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageFeatureRelated==true]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
-  }), []); // Empty dependency array as these queries are static
+const FeaturePost  = ({ initialData = {} }) => { // Accept initialData prop
 
-  // Memoize options for useSanityCache calls
-  const bigFeatureOptions = useMemo(() => ({
+const queries = useMemo(() => ({
+    featureBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageFeatureBig==true][0...1]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+    featureRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageFeatureRelated==true][0...3]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedData,"displaySettings":displaySettings}`,
+  }), []);
+
+  const commonSchemaTypes = useMemo(() => ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"], []);
+
+  const bigCardOptions = useMemo(() => ({
     componentName: 'FeatureBig',
-    staleTime: 3 * 60 * 1000, // 3 minutes, consistent with HOMEPAGE config
-    maxAge: 15 * 60 * 1000,   // 15 minutes, consistent with HOMEPAGE config
-    enableOffline: true,
-    group: 'homepage-feature', // Assign to a group for homepage feature content
-  }), []);
 
-  const relatedFeatureOptions = useMemo(() => ({
+    enableOffline: true,
+    group: 'homepage-feature',
+    initialData: initialData.featurePost?.featureBigData, // Access from initialData.featurePost
+    schemaType: commonSchemaTypes,
+  }), [initialData.featurePost?.featureBigData, commonSchemaTypes]); // Add initialData to dependency array
+
+  const relatedCardOptions = useMemo(() => ({
     componentName: 'FeatureRelated',
-    staleTime: 3 * 60 * 1000, // 3 minutes, consistent with HOMEPAGE config
-    maxAge: 15 * 60 * 1000,   // 15 minutes, consistent with HOMEPAGE config
+
     enableOffline: true,
-    group: 'homepage-feature', // Same group
-  }), []);
+    group: 'homepage-feature',
+    initialData: initialData.featurePost?.featureRelatedData, // Access from initialData.featurePost
+    schemaType: commonSchemaTypes,
+  }), [initialData.featurePost?.featureRelatedData, commonSchemaTypes]); // Add initialData to dependency array
 
-  // Use the new caching system for featureBig
-  const {
-    data: featurePostBigData,
-    isLoading: isBigLoading,
-    error: bigError,
-    isStale: isBigStale,
-    refresh: refreshBig,
-  } = useSanityCache(
-    CACHE_KEYS.HOMEPAGE.FEATURE_BIG, // Use specific cache key
+  const { data: featurePostBigData, isLoading: isBigLoading, error: bigError, isStale: isBigStale, refresh: refreshBig } = useUnifiedCache(
+    CACHE_KEYS.HOMEPAGE.FEATURE_BIG,
     queries.featureBig,
-    {}, // No params
-    bigFeatureOptions
+    {},
+    bigCardOptions
   );
 
-  // Use the new caching system for featureRelated
-  const {
-    data: featureRelatedPostsData,
-    isLoading: isRelatedLoading,
-    error: relatedError,
-    isStale: isRelatedStale,
-    refresh: refreshRelated,
-  } = useSanityCache(
-    CACHE_KEYS.HOMEPAGE.FEATURE_RELATED, // Use specific cache key
+  const { data: featurePostRelatedData, isLoading: isRelatedLoading, error: relatedError, isStale: isRelatedStale, refresh: refreshRelated } = useUnifiedCache(
+    CACHE_KEYS.HOMEPAGE.FEATURE_RELATED,
     queries.featureRelated,
-    {}, // No params
-    relatedFeatureOptions
+    {},
+    relatedCardOptions
   );
+
+  // Register with PageCacheProvider
+  usePageCache(CACHE_KEYS.HOMEPAGE.FEATURE_BIG, refreshBig, queries.featureBig, 'FeatureBig');
+  usePageCache(CACHE_KEYS.HOMEPAGE.FEATURE_RELATED, refreshRelated, queries.featureRelated, 'FeatureRelated');
+
 
   // NEW: Register cache keys and their refresh functions with the PageCacheProvider
   usePageCache(CACHE_KEYS.HOMEPAGE.FEATURE_BIG, refreshBig, queries.featureBig, 'FeatureBigPost');
@@ -98,8 +92,8 @@ const FeaturePost = () => {
     freeairesources: "free-ai-resources", // Added 'freeairesources'
   }), []); // Stable map
 
-  const featureBigPost = featurePostBigData?.slice(0, 1)[0];
-  const featureRelatedPosts = featureRelatedPostsData || [];
+    const featureBigPost = featurePostBigData && featurePostBigData.length > 0 ? featurePostBigData[0] : null;
+  const featureRelatedPosts = featurePostRelatedData || [];
 
   return (
     <section id="blog" className="bg-gray-light py-16 dark:bg-bg-color-dark md:py-4 lg:py-4">
@@ -117,7 +111,7 @@ const FeaturePost = () => {
         </h1>
 
         {/* Stale Data Warning */}
-        {isStale && (featureBigPost || featureRelatedPosts.length > 0) && (
+      {isStale && ((featurePostBigData?.length > 0) || featureRelatedPosts.length > 0) && (
           <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-center">
             <div className="flex items-center justify-center space-x-2 text-sm text-yellow-800 dark:text-yellow-200">
               <span>⚠️</span><span>Featured content may be outdated.</span>

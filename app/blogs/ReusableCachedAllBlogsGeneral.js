@@ -11,6 +11,7 @@ import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 // Corrected usePageCache import path
 import { usePageCache } from '@/React_Query_Caching/usePageCache'; 
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for clearGroup/refreshGroup
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 
 const ReusableCachedMixedBlogs = ({
   currentPage = 1,
@@ -23,42 +24,34 @@ const ReusableCachedMixedBlogs = ({
     aitool: "ai-tools",
     coding: "ai-code",
     seo: "ai-seo",
-  }
+  },
+  initialPageData = null,
+  initialTotalCount = null,
+  
 }) => {
-  const [paginationStaleWarning, setPaginationStaleWarning] = useState(false);
-
+ const [paginationStaleWarning, setPaginationStaleWarning] = useState(false);
   const start = useMemo(() => (currentPage - 1) * limit, [currentPage, limit]);
 
   // Function to build the category filter string for GROQ
   const getCategoryFilter = useCallback((category) => {
+    // Collect all schema types for the query and tags
+    const allSchemaTypes = ["makemoney", "aitool", "coding", "seo"];
     return category === 'all'
-      ? `_type in ["makemoney", "aitool", "coding", "seo"]`
-      : `_type == "${category}"`;
-  }, []); // Dependencies are stable, so useCallback is fine.
+      ? `_type in ["${allSchemaTypes.join('","')}"]`
+      : `_type=="${category}"`;
+  }, []);
 
-  // Function to get the query parameters (if your backend needs them)
-  const getQueryParams = useCallback((category) => {
+  // Function to get the schema types for useUnifiedCache's schemaType option
+  const getQuerySchemaTypes = useCallback((category) => {
     return category === 'all'
-      ? { categories: ["makemoney", "aitool", "coding", "seo"] }
-      : { categories: [category] };
-  }, []); // Dependencies are stable, so useCallback is fine.
+      ? ["makemoney", "aitool", "coding", "seo"]
+      : [category];
+  }, []);
 
-  // Memoize the pageQuery string
-  const pageQuery = useMemo(() => `*[${getCategoryFilter(selectedCategory)}] | order(${sortBy}) {
-    formattedDate,
-    tags,
-    readTime,
-    _id,
-    _type,
-    title,
-    slug,
-    mainImage,
-    overview,
-    body,
-    publishedAt
-  }[${start}...${start + limit}]`, [getCategoryFilter, selectedCategory, sortBy, start, limit]);
+  // Memoize the page Query string
+  const pageQuery = useMemo(() => `*[${getCategoryFilter(selectedCategory)}]|order(${sortBy}){formattedDate,tags,readTime,_id,_type,title,slug,mainImage,overview,body,publishedAt}[${start}...${start + limit}]`, [getCategoryFilter, selectedCategory, sortBy, start, limit]);
 
-  // Memoize the totalCountQuery string
+  // Memoize the totalCount Query string
   const totalCountQuery = useMemo(() => `count(*[${getCategoryFilter(selectedCategory)}])`, [getCategoryFilter, selectedCategory]);
 
   // Define a distinct group for all mixed blogs for cache invalidation
@@ -68,21 +61,30 @@ const ReusableCachedMixedBlogs = ({
   const pageCacheKey = useMemo(() => CACHE_KEYS.PAGE.MIXED_BLOGS_PAGINATED(currentPage, selectedCategory, sortBy), [currentPage, selectedCategory, sortBy]);
   const totalCountCacheKey = useMemo(() => CACHE_KEYS.PAGE.MIXED_BLOGS_TOTAL_COUNT(selectedCategory, sortBy), [selectedCategory, sortBy]);
 
-  // Memoize options objects for useSanityCache calls
+  // Memoize options objects for useUnifiedCache calls
   const stablePageOptions = useMemo(() => ({
     componentName: `MixedBlogsPage_${currentPage}_${selectedCategory}_${sortBy}`,
     enableOffline: true,
     group: allBlogsGroup,
-  }), [currentPage, selectedCategory, sortBy, allBlogsGroup]);
+    // *** Pass initial data for the first page and "all" category ***
+    initialData: currentPage === 1 && selectedCategory === 'all' ? initialPageData : null,
+    // *** IMPORTANT: Pass the array of schema types ***
+    schemaType: getQuerySchemaTypes(selectedCategory),
+ 
+  }), [currentPage, selectedCategory, sortBy, allBlogsGroup, initialPageData, getQuerySchemaTypes]);
 
   const stableTotalOptions = useMemo(() => ({
     componentName: `MixedBlogsTotal_${selectedCategory}_${sortBy}`,
     enableOffline: true,
     group: allBlogsGroup,
-  }), [selectedCategory, sortBy, allBlogsGroup]);
+    // *** Pass initial total count for the "all" category ***
+    initialData: selectedCategory === 'all' ? initialTotalCount : null,
+    // *** IMPORTANT: Pass the array of schema types ***
+    schemaType: getQuerySchemaTypes(selectedCategory),
 
+  }), [selectedCategory, sortBy, allBlogsGroup, initialTotalCount, getQuerySchemaTypes]);
 
-  // FIRST useSanityCache call: Fetch paginated data
+  // *** FIRST useUnifiedCache call: Fetch paginated data ***
   const {
     data: postsData,
     isLoading: isPostsLoading,
@@ -90,14 +92,14 @@ const ReusableCachedMixedBlogs = ({
     refresh: refreshPosts,
     isStale: isPostsStale,
     cacheSource: postsCacheSource,
-  } = useSanityCache(
+  } = useUnifiedCache( // *** CHANGED ***
     pageCacheKey,
     pageQuery,
-    getQueryParams(selectedCategory),
+    {}, // Params are empty as queries are self-contained
     stablePageOptions
   );
 
-  // SECOND useSanityCache call: Fetch total count
+  // *** SECOND useUnifiedCache call: Fetch total count ***
   const {
     data: totalData,
     isLoading: isTotalLoading,
@@ -105,30 +107,20 @@ const ReusableCachedMixedBlogs = ({
     refresh: refreshTotal,
     isStale: isTotalStale,
     cacheSource: totalCacheSource,
-  } = useSanityCache(
+  } = useUnifiedCache( // *** CHANGED ***
     totalCountCacheKey,
     totalCountQuery,
-    getQueryParams(selectedCategory),
+    {}, // Params are empty
     stableTotalOptions
   );
 
   // Register the cache keys with usePageCache hook for UI status
-  usePageCache(
-    pageCacheKey,
-    refreshPosts,
-    pageQuery,
-    `Mixed Blogs Page ${currentPage} (${selectedCategory}, ${sortBy})`
-  );
-
-  usePageCache(
-    totalCountCacheKey,
-    refreshTotal,
-    totalCountQuery,
-    `Mixed Blogs Total Count (${selectedCategory}, ${sortBy})`
-  );
+  usePageCache(pageCacheKey, refreshPosts, pageQuery, `MixedBlogsPage${currentPage}(${selectedCategory},${sortBy})`);
+  usePageCache(totalCountCacheKey, refreshTotal, totalCountQuery, `MixedBlogsTotalCount(${selectedCategory},${sortBy})`);
 
   // Combine loading states
-  const isLoading = isPostsLoading || isTotalLoading;
+const isLoading = isPostsLoading || isTotalLoading;
+const hasExistingData = postsToDisplay.length > 0;
 
   // Calculate totalPages from fetched totalCount and limit
   const totalCount = typeof totalData === 'number' ? totalData : 0;
@@ -138,10 +130,10 @@ const ReusableCachedMixedBlogs = ({
   useEffect(() => {
     if (isPostsStale || isTotalStale) {
       setPaginationStaleWarning(true);
-      // Trigger background refresh for current page and total count
-      // This will update the cache in the background.
-      refreshPosts(false); // Pass false for background refresh
-      refreshTotal(false); // Pass false for background refresh
+      if (typeof window !== 'undefined' && window.navigator.onLine) {
+        refreshPosts(false); // Background refresh
+        refreshTotal(false); // Background refresh
+      }
     } else if ((postsData && !isPostsStale) && (totalData && !isTotalStale) && paginationStaleWarning) {
       setPaginationStaleWarning(false);
     }
@@ -150,6 +142,7 @@ const ReusableCachedMixedBlogs = ({
   // Effect to notify parent about loaded data and pagination details
   useEffect(() => {
     // Only call onDataLoad if data is stable and not currently loading.
+    // Also, ensure initial data is "seen" before subsequent fetches overwrite it.
     if (onDataLoad && postsData !== null && typeof totalData === 'number' && !isLoading) {
       onDataLoad(currentPage, totalPages, totalCount);
     }

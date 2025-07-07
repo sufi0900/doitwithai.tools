@@ -8,6 +8,7 @@ import SkelCard from "@/components/Blog/Skeleton/Card";
 import ResourceCard from "./ResourceCard";
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for refreshGroup
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 
 // Constants for the resource type and limit
 const DOCUMENT_TYPE = "freeResources";
@@ -20,6 +21,8 @@ const ReusableCachedFreeResourcesList = ({
   sortBy = "publishedAt",
   searchText = "", // Accept searchText prop from parent
   onDataLoad, // Callback to send pagination info and resources list to parent
+    initialData = null // Accept initialData prop
+
 }) => {
   const [listStaleWarning, setListStaleWarning] = useState(false);
   const start = useMemo(() => (currentPage - 1) * RESOURCE_LIMIT, [currentPage, RESOURCE_LIMIT]);
@@ -27,88 +30,68 @@ const ReusableCachedFreeResourcesList = ({
   const isSearchMode = useMemo(() => searchText && searchText.trim().length > 0, [searchText]);
 
   // Helper to format sort order for GROQ
-  const getOrderBy = useCallback((sortByValue) => {
+   const getOrderBy = useCallback((sortByValue) => {
     switch (sortByValue) {
-      case 'title-asc':
-        return 'title asc';
-      case 'title-desc':
-        return 'title desc';
-      default:
-        return 'publishedAt desc';
+      case 'title-asc': return 'title asc';
+      case 'title-desc': return 'title desc';
+      default: return 'publishedAt desc';
     }
-  }, []); // This function itself is stable
+  }, []);
 
-  // --- REFACTOR: Use a single memoized function to generate query and parameters ---
   const getDynamicQueryConfig = useCallback(() => {
     const orderBy = getOrderBy(sortBy);
-    let filters = `_type == $docType`;
+    let filters = `_type==$docType`;
     let queryParams = { docType: DOCUMENT_TYPE };
     let searchFilter = '';
     const trimmedSearchText = searchText.trim();
 
     if (isSearchMode) {
-      // Prioritize search: format and sort filters apply AFTER search
-      searchFilter = ` && (title match $searchText || overview match $searchText || content match $searchText || resourceType match $searchText || aiToolDetails.toolCategory match $searchText || aiToolDetails.functionality match $searchText)`;
-      queryParams.searchText = `*${trimmedSearchText}*`; // Wildcard search
+      searchFilter = `&&(title match $searchText||overview match $searchText||content match $searchText||resourceType match $searchText||aiToolDetails.toolCategory match $searchText||aiToolDetails.functionality match $searchText)`;
+      queryParams.searchText = `*${trimmedSearchText}*`;
     } else if (selectedFormat !== "all") {
-      // Apply format filter only if not in search mode
-      filters += ` && resourceFormat == $resourceFormat`;
+      filters += `&&resourceFormat==$resourceFormat`;
       queryParams.resourceFormat = selectedFormat;
     }
 
-    const listQuery = `*[${filters}${searchFilter}] | order(${orderBy}) [${start}...${start + RESOURCE_LIMIT + 1}] {
-      _id, title, slug, tags, mainImage, overview, resourceType, resourceFormat,
-      resourceLink, resourceLinkType, previewSettings,
-      "resourceFile": resourceFile.asset->,
-      content, publishedAt, promptContent,
-      "relatedArticle": relatedArticle->{title, slug},
-      aiToolDetails,
-      seoTitle, seoDescription, seoKeywords, altText, structuredData
+    const listQuery = `*[${filters}${searchFilter}]|order(${orderBy})[${start}...${start + RESOURCE_LIMIT + 1}]{
+      _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
+      previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,
+      "relatedArticle":relatedArticle->{title,slug},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
     }`;
-
     const totalCountQuery = `count(*[${filters}${searchFilter}])`;
 
-    return {
-      listQuery,
-      totalCountQuery,
-      queryParams,
-      orderBy
-    };
+    return { listQuery, totalCountQuery, queryParams, orderBy };
   }, [selectedFormat, sortBy, getOrderBy, start, searchText, isSearchMode]);
 
-  // Extract memoized query and params by calling the memoized function
   const { listQuery, totalCountQuery, queryParams, orderBy } = getDynamicQueryConfig();
 
-  // Determine the typeIdentifier for cache keys based on search or format/sort
-  const typeIdentifier = useMemo(() => 
-    isSearchMode
-      ? `search-${btoa(searchText).slice(0, 50).replace(/=/g, '')}` // Hash of search text for unique key
-      : `${selectedFormat}-${sortBy}`, // Format-sort for non-search mode
-  [isSearchMode, searchText, selectedFormat, sortBy]);
+  const typeIdentifier = useMemo(() => isSearchMode ? `search-${btoa(searchText).slice(0, 50).replace(/=/g, '')}` : `${selectedFormat}-${sortBy}`, [isSearchMode, searchText, selectedFormat, sortBy]);
 
-  // CacheKey for the paginated list
-  const listCacheKey = useMemo(() => CACHE_KEYS.PAGE.LIST_FREERESOURCES(currentPage, selectedFormat, sortBy, typeIdentifier), 
-  [currentPage, selectedFormat, sortBy, typeIdentifier]);
-  
-  // CacheKey for the total items
-  const totalItemsCacheKey = useMemo(() => CACHE_KEYS.PAGE.TOTAL_FREERESOURCES_ITEMS(selectedFormat, typeIdentifier), 
-  [selectedFormat, typeIdentifier]);
+  const listCacheKey = useMemo(() => CACHE_KEYS.PAGE.LIST_FREERESOURCES(currentPage, selectedFormat, sortBy, typeIdentifier), [currentPage, selectedFormat, sortBy, typeIdentifier]);
+  const totalItemsCacheKey = useMemo(() => CACHE_KEYS.PAGE.TOTAL_FREERESOURCES_ITEMS(selectedFormat, typeIdentifier), [selectedFormat, typeIdentifier]);
 
-  const freeResourcesGroup = useMemo(() => 'free-resources', []); // Memoized group name
+  const freeResourcesGroup = useMemo(() => 'free-resources', []);
 
-  // Memoize options objects for useSanityCache calls
+  // --- New stable options for useUnifiedCache, including initialData and schemaType ---
   const stableListOptions = useMemo(() => ({
     componentName: `FreeResourcesList_P${currentPage}_F${selectedFormat}_S${sortBy}${isSearchMode ? '_Search' : ''}`,
     enableOffline: true,
     group: freeResourcesGroup,
-  }), [currentPage, selectedFormat, sortBy, isSearchMode, freeResourcesGroup]);
+    // --- NEW: Pass initialData for the very first page of "all" resources ---
+    initialData: currentPage === 1 && selectedFormat === 'all' && !isSearchMode ? initialData : null,
+    // --- NEW: Specify schemaType for useUnifiedCache ---
+    schemaType: DOCUMENT_TYPE, // All resources are of type "freeResources"
+ 
+  }), [currentPage, selectedFormat, sortBy, isSearchMode, freeResourcesGroup, initialData]);
 
   const stableTotalOptions = useMemo(() => ({
     componentName: `FreeResourcesTotal_F${selectedFormat}${isSearchMode ? '_Search' : ''}`,
     enableOffline: true,
     group: freeResourcesGroup,
+    // --- No initial data for total count here, it's covered by initialPageData in the parent ---
+    schemaType: DOCUMENT_TYPE, // All resources are of type "freeResources"
+   
   }), [selectedFormat, isSearchMode, freeResourcesGroup]);
-
 
   // Fetch paginated resources
   const {
@@ -117,8 +100,8 @@ const ReusableCachedFreeResourcesList = ({
     error: resourcesError,
     refresh: refreshList,
     isStale: isListStale,
-    cacheSource: listCacheSource, // for dev info
-  } = useSanityCache(
+    cacheSource: listCacheSource,
+  } = useUnifiedCache( // --- CHANGED: useUnifiedCache ---
     listCacheKey,
     listQuery,
     queryParams,
@@ -132,8 +115,8 @@ const ReusableCachedFreeResourcesList = ({
     error: totalItemsError,
     refresh: refreshTotalItems,
     isStale: isTotalItemsStale,
-    cacheSource: totalCacheSource, // for dev info
-  } = useSanityCache(
+    cacheSource: totalCacheSource,
+  } = useUnifiedCache( // --- CHANGED: useUnifiedCache ---
     totalItemsCacheKey,
     totalCountQuery,
     queryParams,

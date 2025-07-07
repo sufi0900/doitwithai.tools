@@ -12,7 +12,6 @@ import "animate.css"; // Ensure animate.css is still needed and installed
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
 import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
-import SearchResults from '@/React_Query_Caching/SearchResults'; // <--- NEW IMPORT: Use the generic SearchResults component
 import SkelCard from "@/components/Blog/Skeleton/Card";
 
 export const revalidate = false;
@@ -25,36 +24,24 @@ import ReusableCachedFreeResourcesList from './ReusableCachedFreeResourcesList';
 
 const RESOURCE_LIMIT = 6;
 
-
-export default function FreeResourcesPage() {
+// --- Accept initialServerData and breadcrumbProps ---
+export default function FreeResourcesPage({ initialServerData }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState("all");
   const [sortBy, setSortBy] = useState('publishedAt');
-  const [resourceCounts, setResourceCounts] = useState({});
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [hasMorePages, setHasMorePages] = useState(false);
-  const [listResources, setListResources] = useState([]);
+
+  // Initialize with initialServerData or default values
+  const [resourceCounts, setResourceCounts] = useState(initialServerData?.resourceCounts || {});
+  const [totalPages, setTotalPages] = useState(initialServerData?.resourceList ? Math.ceil(initialServerData.resourceList.length / RESOURCE_LIMIT) : 1);
+  const [totalItems, setTotalItems] = useState(initialServerData?.resourceCounts?.all || 0);
+  const [hasMorePages, setHasMorePages] = useState((initialServerData?.resourceList?.length || 0) > RESOURCE_LIMIT);
+  const [listResources, setListResources] = useState(initialServerData?.resourceList?.slice(0, RESOURCE_LIMIT) || []);
 
   // Custom filter function for useCachedSearch
   const getCustomSearchFilter = useCallback((searchTextFromHook) => {
-    // This is where you could add additional GROQ filters to the search query
-    // For example, if you wanted the search to respect the current selectedFormat:
-    /*
-    let filterParts = [];
-    let params = {};
-    if (selectedFormat !== "all") {
-      filterParts.push(`resourceFormat == $searchFormat`);
-      params.searchFormat = selectedFormat;
-    }
-    return {
-      filter: filterParts.length > 0 ? `&& (${filterParts.join(' && ')})` : '',
-      params: params
-    };
-    */
     return { filter: '', params: {} };
-  }, []); // Depend on selectedFormat if you uncommented the logic above
+  }, []);
 
   // Define options for useCachedSearch using useMemo for stability
   const searchHookOptions = useMemo(() => ({
@@ -65,10 +52,8 @@ export default function FreeResourcesPage() {
     minSearchLength: 1,
     getCustomFilter: getCustomSearchFilter,
   }), [getCustomSearchFilter]);
-
   const searchHook = useCachedSearch(searchHookOptions);
 
-  // Resource formats for filter buttons
   const resourceFormats = [
     { label: "All Resources", value: "all" },
     { label: "Images", value: "image" },
@@ -78,7 +63,6 @@ export default function FreeResourcesPage() {
     { label: "AI Tools", value: "aitool" }
   ];
 
-  // Sort options
   const sortOptions = [
     { label: "Most Recent", value: "publishedAt" },
     { label: "Title A-Z", value: "title-asc" },
@@ -89,7 +73,6 @@ export default function FreeResourcesPage() {
     setResourceCounts(counts);
   }, []);
 
-  // Callback to update pagination info AND resources list from ReusableCachedFreeResourcesList
   const handleListLoad = useCallback((loadedTotalPages, loadedTotalItems, loadedHasMore, resources) => {
     setTotalPages(loadedTotalPages);
     setTotalItems(loadedTotalItems);
@@ -97,13 +80,12 @@ export default function FreeResourcesPage() {
     setListResources(resources);
   }, []);
 
-  // --- Unified Search Control Functions ---
   const initiateSearch = useCallback(() => {
     const trimmedSearchText = searchHook.searchText.trim();
     if (trimmedSearchText.length >= searchHook.minSearchLength) {
       searchHook.handleSearch();
       setIsSearchActive(true);
-      setCurrentPage(1); // Reset main list pagination when search is active
+      setCurrentPage(1);
     } else {
       handleResetSearch();
     }
@@ -111,13 +93,10 @@ export default function FreeResourcesPage() {
 
   const handleResetSearch = useCallback(() => {
     searchHook.resetSearch();
-    setIsSearchActive(false); // Explicitly deactivate search display
-    setCurrentPage(1); // Reset main list pagination
+    setIsSearchActive(false);
+    setCurrentPage(1);
   }, [searchHook]);
-  // --- END Unified Search Control Functions ---
 
-
-  // Pagination handlers (for the main list, not search results)
   const handlePrevious = () => {
     if (!searchHook.isSearchActive && currentPage > 1) {
       setCurrentPage((prev) => prev - 1);
@@ -130,30 +109,26 @@ export default function FreeResourcesPage() {
     }
   };
 
-  // --- MODIFIED: Filter by type handler ---
   const handleFormatChange = (format) => {
-    // Always reset search when a category is chosen
     searchHook.resetSearch();
-    setIsSearchActive(false); // Ensure search is deactivated
+    setIsSearchActive(false);
     setSelectedFormat(format);
     setCurrentPage(1);
   };
 
-  // --- MODIFIED: Sort handler ---
   const handleSortChange = (newSortBy) => {
-    // Always reset search when a sort option is chosen
     searchHook.resetSearch();
-    setIsSearchActive(false); // Ensure search is deactivated
+    setIsSearchActive(false);
     setSortBy(newSortBy);
     setCurrentPage(1);
   };
 
-  // Helper function to get count for display (reads from resourceCounts state or search results)
   const getCountForFormat = useCallback((format) => {
     return searchHook.isSearchActive
-      ? (searchHook.searchResults?.length || 0) // If search active, show search result count
-      : (resourceCounts[format] || 0); // Else, show main list category count
+      ? (searchHook.searchResults?.length || 0)
+      : (resourceCounts[format] || 0);
   }, [resourceCounts, searchHook.isSearchActive, searchHook.searchResults?.length]);
+
 
 
   return (
@@ -173,8 +148,9 @@ export default function FreeResourcesPage() {
         <div className="mb-6 flex justify-end gap-2">
           <PageCacheStatusButton />
         </div>
-
-        <ReusableCachedFeaturedFreeResources />
+ <ReusableCachedFeaturedFreeResources
+        initialData={initialServerData?.featuredResource} // Pass initial featured data
+      />
 
         {/* Search and Filter Section */}
         <div className="card mb-10 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none">
@@ -236,15 +212,14 @@ export default function FreeResourcesPage() {
         </div>
 
         {/* Category Filter Buttons with Counts */}
-        <ReusableCachedFreeResourcesCounts
-          resourceFormats={resourceFormats}
-          selectedFormat={selectedFormat}
-          getCountForFormat={getCountForFormat}
-          handleFormatChange={handleFormatChange}
-          handleCountsLoad={handleCountsLoad}
-          // --- REMOVED: disableFilters={searchHook.isSearchActive} ---
-        />
-
+      <ReusableCachedFreeResourcesCounts
+        resourceFormats={resourceFormats}
+        selectedFormat={selectedFormat}
+        // Removed getCountForFormat prop as ReusableCachedFreeResourcesCounts now manages its own counts data
+        handleFormatChange={handleFormatChange}
+        handleCountsLoad={handleCountsLoad}
+        initialData={initialServerData?.resourceCounts} // Pass initial counts data
+      />
         {/* Resources Grid (Conditional Rendering based on search vs. main list) */}
         {searchHook.isSearchActive ? (
           <div className="mb-10">
