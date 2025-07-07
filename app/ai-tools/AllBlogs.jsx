@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-alone */
+
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
