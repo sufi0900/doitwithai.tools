@@ -1,29 +1,24 @@
 // app/api/cms-status/route.js
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic'; // Add this line
+export const revalidate = 0; // Add this line
+
 export async function GET(request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const pageType = searchParams.get('pageType') || 'default';
-    const lastCheck = parseInt(searchParams.get('lastCheck') || '0');
+    // Your existing CMS status check logic
+    const status = await checkCMSStatus();
     
-    // Check global timestamps
-    const globalTimestamps = typeof globalThis !== 'undefined' ? globalThis.cmsUpdateTimestamps : {};
-    const globalTimestamp = globalTimestamps['global'] || 0;
-    const pageTimestamp = globalTimestamps[pageType] || 0;
-    
-    const latestTimestamp = Math.max(globalTimestamp, pageTimestamp);
-    const hasUpdates = latestTimestamp > lastCheck;
-    
-    return NextResponse.json({
-      hasUpdates,
-      latestTimestamp,
-      pageType,
-      lastCheck,
-      globalTimestamps // For debugging
+    return NextResponse.json({ 
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      ...status 
     });
   } catch (error) {
     console.error('CMS status check error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { status: 'error', message: error.message },
+      { status: 500 }
+    );
   }
 }
