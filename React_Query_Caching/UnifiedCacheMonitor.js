@@ -555,9 +555,9 @@ useEffect(() => {
   }
 
   // Hide in production
-  // if (process.env.NODE_ENV === 'production') {
-  //   return null;
-  // }
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
 
   return (
     <div className={`${position === 'fixed' ? 'fixed bottom-6 right-6 z-[9999]' : 'relative'} ${className}`}>
