@@ -10,7 +10,7 @@ const TagsAndShare = ({ tags }) => {
                          </h4>
                          <div className="flex items-center ">
                          {tags && tags.slice(0, 3).map((tag) => (
-       <TagButton key={tag.name} href={tag.link} text={tag.name} /> 
+       <TagButton key={tag?.name} href={tag?.link} text={tag?.name} /> 
      ))}
                          </div>
                        </div>

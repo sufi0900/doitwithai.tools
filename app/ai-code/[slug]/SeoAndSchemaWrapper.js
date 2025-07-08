@@ -129,13 +129,13 @@ export default function SeoAndSchemaWrapper({
           "@id": "https://www.doitwithai.tools#website"
         },
         "hasPart": headingStructure,
-        "keywords": data.tags?.map(tag => tag.name).join(",") || "",
+        "keywords": data.tags?.map(tag => tag?.name).join(",") || "",
         "about": {
           "@type": "Thing",
           "name": articleSection,
           "sameAs": "https://en.wikipedia.org/wiki/Search_engine_optimization" // Link to SEO Wikipedia
         },
-        "mentions": data.tags?.map(tag => ({ "@type": "Thing", "name": tag.name })) || [],
+        "mentions": data.tags?.map(tag => ({ "@type": "Thing", "name": tag?.name })) || [],
         "inLanguage": "en-US",
         "copyrightYear": new Date().getFullYear(),
         "copyrightHolder": {
@@ -469,7 +469,7 @@ export default function SeoAndSchemaWrapper({
         "datePublished": data.publishedAt,
         "dateModified": data._updatedAt || data.publishedAt,
         "screenshot": imageUrl ? { "@type": "ImageObject", "url": imageUrl } : undefined,
-        "featureList": data.tags?.map(tag => tag.name) || ["SEO", "Content Optimization", "Keyword Research"],
+        "featureList": data.tags?.map(tag => tag?.name) || ["SEO", "Content Optimization", "Keyword Research"],
         "softwareRequirements": "Web Browser",
         "memoryRequirements": "1GB RAM",
         "processorRequirements": "Any modern processor",
@@ -491,7 +491,7 @@ export default function SeoAndSchemaWrapper({
         {/* ALWAYS provide a fallback title */}
         <title>{data?.metatitle || 'Loading Content/Offline'} | DoItWithAI.tools</title>
         <meta name="description" content={data?.metadesc || 'The content for this page is currently loading or you are offline. Attempting to retrieve cached data.'} />
-        <meta name="keywords" content={data?.tags?.map(tag => tag.name).join(',') || ''} />
+        <meta name="keywords" content={data?.tags?.map(tag => tag?.name).join(',') || ''} />
         <meta name="author" content="Sufian Mustafa" />
         <meta name="creator" content="Sufian Mustafa" />
         <meta name="publisher" content="DoItWithAI.tools" />
@@ -506,7 +506,7 @@ export default function SeoAndSchemaWrapper({
             <meta name="article:modified_time" content={data._updatedAt || data.publishedAt} />
             <meta name="article:author" content="Sufian Mustafa" />
             <meta name="article:section" content={articleSection} /> {/* Specific section */}
-            <meta name="article:tag" content={data.tags?.map(tag => tag.name).join(',') || ''} />
+            <meta name="article:tag" content={data.tags?.map(tag => tag?.name).join(',') || ''} />
 
             {/* Content Classification */}
             <meta name="classification" content="Technology, Marketing, SEO" /> {/* More specific */}
@@ -543,7 +543,7 @@ export default function SeoAndSchemaWrapper({
             <meta property="article:author" content="Sufian Mustafa" />
             <meta property="article:section" content={articleSection} /> {/* Specific section */}
             {data.tags?.map((tag, index) => (
-              <meta key={`og-tag-${index}`} property="article:tag" content={tag.name} />
+              <meta key={`og-tag-${index}`} property="article:tag" content={tag?.name} />
             ))}
 
             {/* Enhanced Twitter Card Meta Tags */}
@@ -611,7 +611,7 @@ export default function SeoAndSchemaWrapper({
             publishedTime: data?.publishedAt,
             modifiedTime: data?._updatedAt || data?.publishedAt,
             section: articleSection, // Specific section
-            tags: data?.tags?.map(tag => tag.name) || [],
+            tags: data?.tags?.map(tag => tag?.name) || [],
           }}
           twitter={{
             card: 'summary_large_image',
@@ -622,7 +622,7 @@ export default function SeoAndSchemaWrapper({
             images: imageUrl ? [imageUrl] : [],
           }}
           additionalMetaTags={[
-            { name: 'keywords', content: data?.tags?.map(tag => tag.name).join(',') || '' },
+            { name: 'keywords', content: data?.tags?.map(tag => tag?.name).join(',') || '' },
             { name: 'author', content: 'Sufian Mustafa' }
           ]}
         />

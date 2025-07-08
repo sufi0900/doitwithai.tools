@@ -99,7 +99,7 @@ export function generatePageMetadata(data, params, basePath, metadataCategory) {
   return {
     title: `${data.metatitle || data.title || 'DoItWithAI.tools'}`,
     description: data.metadesc || data.overview || 'AI tools and resources',
-    keywords: data.tags?.map(tag => tag.name).join(',') || '',
+    keywords: data.tags?.map(tag => tag?.name).join(',') || '',
     authors: [{ name: "Sufian Mustafa", url: "https://www.doitwithai.tools/author/sufian-mustafa" }],
     creator: "Sufian Mustafa",
     publisher: "DoItWithAI.tools",
@@ -132,7 +132,7 @@ export function generatePageMetadata(data, params, basePath, metadataCategory) {
       publishedTime: data.publishedAt,
       modifiedTime: data._updatedAt,
       section: metadataCategory,
-      tags: data.tags?.map(tag => tag.name) || [],
+      tags: data.tags?.map(tag => tag?.name) || [],
     },
     twitter: {
       card: 'summary_large_image',

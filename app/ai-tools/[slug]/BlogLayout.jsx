@@ -206,12 +206,12 @@ const BlogLayout = ({
 
                                             <div>
                                                 <p className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white whitespace-nowrap">
-                                                    {data.tags &&
+                                                    {/* {data.tags &&
                                                         data.tags.slice(0, 1).map((tag) => (
-                                                            <Link key={tag.name} href={tag.link} className="tag">
-                                                                {tag.name}
+                                                            <Link key={tag?.name} href={tag?.link} className="tag">
+                                                                {tag?.name}
                                                             </Link>
-                                                        ))}
+                                                        ))} */}
                                                 </p>
                                             </div>
                                         </div>
