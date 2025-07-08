@@ -74,7 +74,47 @@ export const useUnifiedCache = (cacheKeyIdentifier, query, params = {}, options 
   // Store callback refs
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
+// Enhanced offline data retrieval
+const getOfflineData = useCallback(async () => {
+  if (!finalEnableOffline) return null;
+  
+  const fullCacheKey = cacheSystem.generateCacheKey(cacheKeyIdentifier, queryRef.current);
+  const cachedResult = await cacheSystem.get(fullCacheKey, {
+    staleTime: 0, // Accept any cached data when offline
+    maxAge: finalMaxAge * 10, // Extend max age for offline mode
+    enableOffline: true,
+    query: queryRef.current,
+    params: paramsRef.current,
+    keyIdentifier: cacheKeyIdentifier,
+    group: group,
+  });
+  
+  return cachedResult;
+}, [cacheKeyIdentifier, finalMaxAge, finalEnableOffline, group]);
 
+// Add this effect for better offline handling
+useEffect(() => {
+  const handleOffline = async () => {
+    if (!navigator.onLine && !data) {
+      const offlineData = await getOfflineData();
+      if (offlineData && mountedRef.current) {
+        setData(offlineData.data);
+        setIsStale(true);
+        setCacheSource('offline-cache');
+        setLastUpdated(new Date(Date.now() - offlineData.age));
+        setError(null);
+        setIsLoading(false);
+        
+        logCacheOperation('HIT', 'offline-fallback', 
+          cacheSystem.generateCacheKey(cacheKeyIdentifier, queryRef.current), 
+          offlineData.data);
+      }
+    }
+  };
+
+  window.addEventListener('offline', handleOffline);
+  return () => window.removeEventListener('offline', handleOffline);
+}, [data, getOfflineData, cacheKeyIdentifier]);
   // Update refs when props change
   useEffect(() => {
     queryRef.current = query;
