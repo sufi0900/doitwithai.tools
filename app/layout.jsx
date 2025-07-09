@@ -36,8 +36,7 @@ const inter = Inter({
 export default function RootLayout({
   children, // Removed the ': React.ReactNode;' type annotation
 }) {
-const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
 
   // Check if current page is a slug page (article page)
   const isSlugPage = pathname && (
@@ -57,10 +56,8 @@ const pathname = usePathname();
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#000000" />
       </head>
-      <body 
-        className={`bg-[#c8cff298] dark:bg-black ${inter.className}`} 
-        suppressHydrationWarning
-      >  <noscript>JavaScript is required for this app to work properly.</noscript>
+      <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
+  <noscript>JavaScript is required for this app to work properly.</noscript>
 
         <Toaster position="bottom-center" />
         <CacheProvider>
@@ -82,7 +79,7 @@ const pathname = usePathname();
             </Suspense>
           </Providers>
         </CacheProvider>
-        {mounted && <ServiceWorkerRegistration />}
+                        <ServiceWorkerRegistration /> 
 
       </body>
     </html>
