@@ -1,53 +1,56 @@
+// components/ServiceWorkerRegistration.js
 "use client";
 import { useEffect } from 'react';
 
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      const registerSW = async () => {
-        try {
-          // Wait for page to fully load
-          await new Promise(resolve => {
-            if (document.readyState === 'complete') {
-              resolve();
-            } else {
-              window.addEventListener('load', resolve);
-            }
-          });
+    const registerSW = async () => {
+      // Check if Service Workers are supported and if we're on the client side
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+        console.log('Service Workers not supported or not on client side. Skipping registration.');
+        return;
+      }
 
-          const registration = await navigator.serviceWorker.register('/sw.js', {
-            scope: '/',
-            updateViaCache: 'none' // Important for Vercel
-          });
+      try {
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/',
+          // 'updateViaCache: none' is not a standard option for navigator.serviceWorker.register.
+          // It's likely a misunderstanding of how Cache-Control headers work.
+          // We rely on next-pwa/Workbox to handle caching and updates.
+          // Removing this to avoid potential conflicts or misbehavior.
+        });
 
-          console.log('✅ Service Worker registered:', registration);
+        console.log('✅ Service Worker registered:', registration);
 
-          // Force activation
-          if (registration.waiting) {
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
-
-          // Listen for updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'activated') {
-                  console.log('✅ New Service Worker activated');
-                  window.location.reload();
-                }
-              });
-            }
-          });
-
-        } catch (error) {
-          console.error('❌ Service Worker registration failed:', error);
+        // This ensures the new worker takes control immediately (important for updates)
+        if (registration.installing) {
+          registration.installing.postMessage({ type: 'SKIP_WAITING' });
+        } else if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
-      };
 
+        // --- IMPORTANT: Removed the problematic 'updatefound' listener that caused reloads ---
+        // Service Worker updates will now naturally apply on the *next* page load
+        // after the new Service Worker activates in the background.
+        // This prevents hydration errors.
+
+      } catch (error) {
+        console.error('❌ Service Worker registration failed:', error);
+      }
+    };
+
+    // Ensure the script runs after the DOM is fully loaded to avoid conflicts
+    if (document.readyState === 'complete') {
       registerSW();
+    } else {
+      window.addEventListener('load', registerSW);
     }
-  }, []);
 
-  return null;
+    // Clean up the event listener if the component unmounts
+    return () => {
+      window.removeEventListener('load', registerSW);
+    };
+  }, []); // Empty dependency array, ensures it runs only once on client mount
+
+  return null; // This component doesn't render anything
 }
