@@ -2,30 +2,40 @@
 import { useEffect, useState } from 'react';
 
 export default function ServiceWorkerRegistration() {
-  const [isClient, setIsClient] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  // Handle hydration
   useEffect(() => {
-    setIsClient(true);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!isClient || typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-      return;
-    }
+    if (!mounted) return;
 
     const registerSW = async () => {
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+        return;
+      }
+
       try {
-        // Wait for hydration to complete
+        // Wait for page to be fully interactive
         await new Promise(resolve => {
           if (document.readyState === 'complete') {
-            setTimeout(resolve, 1000); // Add delay after page load
+            setTimeout(resolve, 2000); // Increase delay
           } else {
             window.addEventListener('load', () => {
-              setTimeout(resolve, 1000);
+              setTimeout(resolve, 2000);
             });
           }
         });
 
+        // Unregister any existing service workers first
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+
+        // Register your custom service worker
         const registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/',
           updateViaCache: 'none'
@@ -33,26 +43,16 @@ export default function ServiceWorkerRegistration() {
 
         console.log('✅ Service Worker registered:', registration);
 
-        // Handle updates
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'activated') {
-                console.log('✅ New Service Worker activated');
-                // Don't auto-reload, let user decide
-              }
-            });
-          }
-        });
-
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
       }
     };
 
     registerSW();
-  }, [isClient]);
+  }, [mounted]);
+
+  // Don't render anything during SSR
+  if (!mounted) return null;
 
   return null;
 }

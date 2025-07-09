@@ -1,9 +1,11 @@
 const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true, // Change to true
-  skipWaiting: false, // Change to false for better control
+ dest: 'public',
+  register: false, // Keep false since you're registering manually
+  skipWaiting: false,
   disable: process.env.NODE_ENV === 'development',
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
+  // Remove or modify buildExcludes to prevent app-build-manifest.json caching
+  buildExcludes: [/app-build-manifest\.json$/],
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
