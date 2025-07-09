@@ -1,3 +1,4 @@
+// components/ServiceWorkerRegistration.js
 "use client";
 import { useEffect } from 'react';
 
@@ -6,46 +7,39 @@ export default function ServiceWorkerRegistration() {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       const registerSW = async () => {
         try {
-          // Wait for page to fully load
-          await new Promise(resolve => {
-            if (document.readyState === 'complete') {
-              resolve();
-            } else {
-              window.addEventListener('load', resolve);
-            }
-          });
-
+          // Add a small delay to ensure page is loaded
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           const registration = await navigator.serviceWorker.register('/sw.js', {
             scope: '/',
-            updateViaCache: 'none' // Important for Vercel
+            updateViaCache: 'none'
           });
-
-          console.log('✅ Service Worker registered:', registration);
-
-          // Force activation
-          if (registration.waiting) {
-            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          }
-
-          // Listen for updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'activated') {
-                  console.log('✅ New Service Worker activated');
-                  window.location.reload();
-                }
-              });
-            }
-          });
-
+          
+          console.log('✅ Service Worker registered successfully');
+          
+          // Wait for the service worker to be ready
+          await navigator.serviceWorker.ready;
+          console.log('✅ Service Worker is ready');
+          
         } catch (error) {
           console.error('❌ Service Worker registration failed:', error);
+          
+          // Fallback: Try to register with different options
+          try {
+            await navigator.serviceWorker.register('/sw.js');
+            console.log('✅ Service Worker registered with fallback');
+          } catch (fallbackError) {
+            console.error('❌ Fallback registration also failed:', fallbackError);
+          }
         }
       };
 
-      registerSW();
+      // Register when page is fully loaded
+      if (document.readyState === 'complete') {
+        registerSW();
+      } else {
+        window.addEventListener('load', registerSW);
+      }
     }
   }, []);
 
