@@ -11,39 +11,39 @@ const withPWA = require('next-pwa')({
     /_ssgManifest\.js$/
   ],
   runtimeCaching: [
-    // Sanity API caching
-   // Page data caching
-{
-  urlPattern: /\/_next\/data\/.*/i,
-  handler: 'CacheFirst',
-  options: {
-    cacheName: 'next-data-cache',
-    networkTimeoutSeconds: 10,
-    expiration: {
-      maxEntries: 100,
-      maxAgeSeconds: 24 * 60 * 60, // 1 day
+    // Sanity API caching (assuming this was intended to be here and is not causing issues)
+    // Page data caching (Corrected handler)
+    {
+      urlPattern: /\/_next\/data\/.*/i,
+      handler: 'NetworkFirst', // Changed from CacheFirst to NetworkFirst
+      options: {
+        cacheName: 'next-data-cache',
+        networkTimeoutSeconds: 10,
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 24 * 60 * 60, // 1 day
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
     },
-    cacheableResponse: {
-      statuses: [0, 200],
+    // RSC payload caching (Corrected handler)
+    {
+      urlPattern: /.*\?_rsc=.*/i,
+      handler: 'NetworkFirst', // Changed from CacheFirst to NetworkFirst
+      options: {
+        cacheName: 'rsc-cache',
+        networkTimeoutSeconds: 5,
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60, // 1 hour
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
     },
-  },
-},
-// RSC payload caching
-{
-  urlPattern: /.*\?_rsc=.*/i,
-  handler: 'CacheFirst',
-  options: {
-    cacheName: 'rsc-cache',
-    networkTimeoutSeconds: 5,
-    expiration: {
-      maxEntries: 50,
-      maxAgeSeconds: 60 * 60, // 1 hour
-    },
-    cacheableResponse: {
-      statuses: [0, 200],
-    },
-  },
-},
     // Static assets caching
     {
       urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
@@ -120,7 +120,10 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-    // Page data caching
+    // Page data caching (This was a duplicate in your original config, ensure it's intended)
+    // If you intend to have two different strategies for /_next/data/.*, make sure
+    // only one uses networkTimeoutSeconds with NetworkFirst, or adjust the other.
+    // I'm assuming you want the NetworkFirst behavior for /_next/data/.*
     {
       urlPattern: /\/_next\/data\/.*/i,
       handler: 'NetworkFirst',
@@ -141,7 +144,6 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
   reactStrictMode: true, // Change back to true
-  
 
   images: {
     domains: ['your-sanity-domain.com'],
@@ -160,7 +162,6 @@ const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', '*.vercel.app'],
-      
     }
   }
 };
