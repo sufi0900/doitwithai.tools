@@ -79,7 +79,7 @@ export default function RootLayout({
             </Suspense>
           </Providers>
         </CacheProvider>
-  {typeof window !== 'undefined' && <ServiceWorkerRegistration />}
+                        <ServiceWorkerRegistration /> 
 
       </body>
     </html>
