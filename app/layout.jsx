@@ -51,19 +51,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* <link
-          rel="preload"
-          href="/modal-video.css"
-          as="style"
-          onLoad={(e) => { e.currentTarget.onload = null; e.currentTarget.rel = 'stylesheet'; }}
-        /> */}
+      
    <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#000000" />
       </head>
       <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
-                {/* <ServiceWorkerRegistration />  */}
-{/* <OfflineIndicator/> */}
+
         <Toaster position="bottom-center" />
         <CacheProvider>
           <Providers>
@@ -84,11 +78,10 @@ export default function RootLayout({
             </Suspense>
           </Providers>
         </CacheProvider>
+                        <ServiceWorkerRegistration /> 
+
       </body>
     </html>
   );
 }
-// git init
-// git add .
-// git commit -m "Your commit message"
-// git push -u origin main                                  
+                          

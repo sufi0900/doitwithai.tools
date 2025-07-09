@@ -1,7 +1,7 @@
 const withPWA = require('next-pwa')({
   dest: 'public',
-  register: false, // We'll register manually
-  skipWaiting: true,
+  register: true, // Change to true
+  skipWaiting: false, // Change to false for better control
   disable: process.env.NODE_ENV === 'development',
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
   runtimeCaching: [
@@ -20,46 +20,14 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-    {
-      urlPattern: /^https:\/\/cdn\.sanity\.io\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'sanity-images',
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:js|css|woff2?|png|jpg|jpeg|webp|svg|ico)$/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-resources',
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
-        },
-      },
-    },
-    {
-      urlPattern: /^https:\/\/.*\.vercel\.app\/.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'vercel-pages',
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 24 * 60 * 60, // 1 day
-        },
-      },
-    },
+    // ... rest of your caching rules
   ],
 });
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,
+  reactStrictMode: true, // Change back to true
+  
+
   images: {
     domains: ['your-sanity-domain.com'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
