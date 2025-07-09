@@ -13,6 +13,24 @@ const withPWA = require('next-pwa')({
   runtimeCaching: [
     // Sanity API caching (assuming this was intended to be here and is not causing issues)
     // Page data caching (Corrected handler)
+  
+    {
+        urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+        handler: 'CacheFirst',
+        options: {
+            cacheName: 'static-pages-cache',
+            expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+            },
+            cacheableResponse: {
+                statuses: [0, 200],
+            },
+        },
+    },
+  
+  
+  
     {
       urlPattern: /\/_next\/data\/.*/i,
       handler: 'NetworkFirst', // Changed from CacheFirst to NetworkFirst

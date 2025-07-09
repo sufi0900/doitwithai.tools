@@ -13,25 +13,25 @@ export default function ServiceWorkerRegistration() {
   useEffect(() => {
     if (!mounted) return;
 
-    const registerSW = async () => {
-      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-        console.log('Service Worker not supported');
-        setSwStatus('unsupported');
-        return;
-      }
+     const registerSW = async () => {
+        if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+            console.log('Service Worker not supported');
+            setSwStatus('unsupported');
+            return;
+        }
 
       try {
-        // Wait for page to be fully interactive
-        await new Promise(resolve => {
-          if (document.readyState === 'complete') {
-
-setTimeout(resolve, 2000); // Increased delay for better stability
-          } else {
-            window.addEventListener('load', () => {
-              setTimeout(resolve, 1000);
+            // Wait for React hydration to complete
+            await new Promise(resolve => {
+                if (document.readyState === 'complete') {
+                    // Add longer delay to ensure React is fully hydrated
+                    setTimeout(resolve, 3000);
+                } else {
+                    window.addEventListener('load', () => {
+                        setTimeout(resolve, 2000);
+                    });
+                }
             });
-          }
-        });
 
         // Check for existing service worker
         const existingRegistration = await navigator.serviceWorker.getRegistration();

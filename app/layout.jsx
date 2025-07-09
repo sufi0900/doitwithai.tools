@@ -1,5 +1,6 @@
 // layout.js
 "use client";
+import { useEffect, useState } from 'react';
 
 import { Inter } from "next/font/google";
 import { Suspense } from "react";
@@ -35,7 +36,23 @@ export default function RootLayout({
   children, // Removed the ': React.ReactNode;' type annotation
 }) {
   const pathname = usePathname();
+// Add this to your layout.js after the existing imports
 
+// Add inside your RootLayout component, before the return statement
+const [isOnline, setIsOnline] = useState(true);
+
+useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+    };
+}, []);
   // Check if current page is a slug page (article page)
   const isSlugPage = pathname && (
     pathname.startsWith('/ai-tools/') ||
