@@ -62,7 +62,7 @@ export default function RootLayout({
   <meta name="theme-color" content="#000000" />
       </head>
       <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
-                <ServiceWorkerRegistration /> 
+                {/* <ServiceWorkerRegistration />  */}
 {/* <OfflineIndicator/> */}
         <Toaster position="bottom-center" />
         <CacheProvider>
