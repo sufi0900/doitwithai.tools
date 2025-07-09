@@ -62,8 +62,8 @@ export default function RootLayout({
   <meta name="theme-color" content="#000000" />
       </head>
       <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
-                {/* <ServiceWorkerRegistration />  */}
-<OfflineIndicator/>
+                <ServiceWorkerRegistration /> 
+{/* <OfflineIndicator/> */}
         <Toaster position="bottom-center" />
         <CacheProvider>
           <Providers>
@@ -88,3 +88,7 @@ export default function RootLayout({
     </html>
   );
 }
+// git init
+// git add .
+// git commit -m "Your commit message"
+// git push -u origin main                                  
