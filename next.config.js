@@ -201,7 +201,7 @@ const nextConfig = {
         }
     },
     // Add this to handle static exports properly
-    output: 'export',
+    // output: 'export',
     trailingSlash: true,
     // Add this to ensure proper static file handling
     async rewrites() {
