@@ -1,36 +1,219 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Offline - DoItWithAI.Tools</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      text-align: center; 
-      padding: 50px; 
-      background: #f5f5f5;
-    }
-    .offline-container {
-      max-width: 400px;
-      margin: 0 auto;
-    }
-    .retry-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      margin: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - DoItWithAI.Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .offline-container {
+            text-align: center;
+            max-width: 500px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .offline-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .offline-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .offline-message {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .retry-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+        
+        .retry-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .cached-content {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .cached-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+        
+        .cached-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .cached-link {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 15px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .cached-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .connection-status {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .online {
+            background: rgba(46, 204, 113, 0.3);
+            color: #27ae60;
+        }
+        
+        .offline {
+            background: rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
+        }
+        
+        @media (max-width: 768px) {
+            .offline-container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+            
+            .offline-title {
+                font-size: 1.5rem;
+            }
+            
+            .offline-message {
+                font-size: 1rem;
+            }
+            
+            .cached-links {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="offline-container">
-    <h1>You're Offline</h1>
-    <p>This page isn't available offline yet.</p>
-    <button class="retry-btn" onclick="location.reload()">Retry</button>
-    <button class="retry-btn" onclick="history.back()">Go Back</button>
-  </div>
+    <div class="offline-container">
+        <div class="offline-icon">📡</div>
+        <h1 class="offline-title">You're Offline</h1>
+        <p class="offline-message">
+            Don't worry! You can still browse cached pages and content that you've previously visited.
+        </p>
+        
+        <div class="connection-status" id="connectionStatus">
+            <span id="statusText">Checking connection...</span>
+        </div>
+        
+        <div style="margin: 1rem 0;">
+            <button class="retry-button" onclick="location.reload()">Try Again</button>
+            <button class="retry-button" onclick="goHome()">Go Home</button>
+        </div>
+        
+        <div class="cached-content">
+            <h3 class="cached-title">📚 Available Cached Pages</h3>
+            <div class="cached-links">
+                <a href="/" class="cached-link">🏠 Home</a>
+                <a href="/ai-tools" class="cached-link">🤖 AI Tools</a>
+                <a href="/ai-seo" class="cached-link">🔍 AI SEO</a>
+                <a href="/ai-code" class="cached-link">💻 AI Code</a>
+                <a href="/ai-learn-earn" class="cached-link">💰 Learn & Earn</a>
+                <a href="/free-ai-resources" class="cached-link">🎁 Free Resources</a>
+                <a href="/ai-news" class="cached-link">📰 AI News</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check connection status
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            
+            if (navigator.onLine) {
+                statusElement.className = 'connection-status online';
+                statusText.textContent = '🟢 Connection restored! You can try refreshing the page.';
+            } else {
+                statusElement.className = 'connection-status offline';
+                statusText.textContent = '🔴 Currently offline. Showing cached content only.';
+            }
+        }
+
+        // Update status on load
+        updateConnectionStatus();
+
+        // Listen for online/offline events
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // Go home function
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        // Auto-refresh when connection is restored
+        window.addEventListener('online', function() {
+            setTimeout(() => {
+                if (confirm('Connection restored! Would you like to reload the page?')) {
+                    location.reload();
+                }
+            }, 1000);
+        });
+
+        // Show cached pages available
+        if ('caches' in window) {
+            caches.keys().then(function(cacheNames) {
+                console.log('Available caches:', cacheNames);
+            });
+        }
+    </script>
 </body>
 </html>
