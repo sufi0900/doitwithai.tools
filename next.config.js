@@ -1,15 +1,8 @@
 const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: false, // Keep false since you're registering manually
-  skipWaiting: false,
+ dest: 'public',
+  register: true, // Set to true to let next-pwa handle registration
+  skipWaiting: true, // Recommended for a smoother update experience
   disable: process.env.NODE_ENV === 'development',
-  publicExcludes: ['!robots.txt', '!sitemap.xml'],
-  buildExcludes: [
-    /app-build-manifest\.json$/,
-    /react-loadable-manifest\.json$/,
-    /_buildManifest\.js$/,
-    /_ssgManifest\.js$/
-  ],
   runtimeCaching: [
     // Sanity API caching (assuming this was intended to be here and is not causing issues)
     // Page data caching (Corrected handler)
