@@ -1,5 +1,6 @@
 // app/ai-seo/[slug]/page.jsx
 
+import { getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData";
 
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 import ArticleChildComp from "@/app/ai-code/[slug]/code";
@@ -11,6 +12,19 @@ import { getArticleData, generatePageMetadata } from "@/app/ai-code/[slug]/artic
 
 // --- Revalidation ---
 export const revalidate = 3600;
+
+
+export async function generateStaticParams() {
+  // Fetch all slugs for the "coding" schema type
+  const slugs = await getAllArticleSlugs("seo");
+
+  // Map the array of objects to the format Next.js expects: [{ slug: '...' }, { slug: '...' }]
+  return slugs.map((item) => ({
+    slug: item.slug,
+  }));
+}
+
+
 
 // --- Data Fetching (now using reusable utility) ---
 async function getData(slug) {

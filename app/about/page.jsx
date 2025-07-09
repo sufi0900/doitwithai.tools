@@ -2,8 +2,6 @@ import React from 'react'
 import AboutPageClient from './AboutPageClient'
 import Script from "next/script";
 
-export const revalidate = false;
-export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "About Do it with AI Tools – Your AI-Powered SEO & Productivity Hub",

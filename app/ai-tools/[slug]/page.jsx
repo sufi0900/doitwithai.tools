@@ -3,6 +3,7 @@
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 import ArticleChildComp from "@/app/ai-code/[slug]/code";
 import SeoAndSchemaWrapper from "@/app/ai-code/[slug]/SeoAndSchemaWrapper"; // NEW IMPORT
+import { getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData";
 
 
 import ArticleMicrodata from "@/app/ai-code/[slug]/ArticleMicrodata"; // New microdata component
@@ -10,6 +11,18 @@ import { getArticleData, generatePageMetadata } from "@/app/ai-code/[slug]/artic
 
 // --- Revalidation ---
 export const revalidate = 3600; // Revalidate every 1 hour
+
+export async function generateStaticParams() {
+  // Fetch all slugs for the "coding" schema type
+  const slugs = await getAllArticleSlugs("aitool");
+
+  // Map the array of objects to the format Next.js expects: [{ slug: '...' }, { slug: '...' }]
+  return slugs.map((item) => ({
+    slug: item.slug,
+  }));
+}
+
+
 
 // --- Data Fetching (now using reusable utility) ---
 async function getData(slug) {
