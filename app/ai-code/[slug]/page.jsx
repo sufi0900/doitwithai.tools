@@ -1,33 +1,35 @@
 // app/ai-code/[slug]/page.jsx
 
+import { getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData";
+
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 import ArticleChildComp from "@/app/ai-code/[slug]/code";
-import SeoAndSchemaWrapper from "@/app/ai-code/[slug]/SeoAndSchemaWrapper";
-import ArticleMicrodata from "@/app/ai-code/[slug]/ArticleMicrodata";
-import { getArticleData, generatePageMetadata, getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData"; // Import getAllArticleSlugs
+import SeoAndSchemaWrapper from "@/app/ai-code/[slug]/SeoAndSchemaWrapper"; // NEW IMPORT
+
+
+import ArticleMicrodata from "@/app/ai-code/[slug]/ArticleMicrodata"; // New microdata component
+import { getArticleData, generatePageMetadata } from "@/app/ai-code/[slug]/articleData"; // New utility functions
 
 // --- Revalidation ---
 export const revalidate = 3600;
+
+
+
+export async function generateStaticParams() {
+  // Fetch all slugs for the "coding" schema type
+  const slugs = await getAllArticleSlugs("coding");
+
+  // Map the array of objects to the format Next.js expects: [{ slug: '...' }, { slug: '...' }]
+  return slugs.map((item) => ({
+    slug: item.slug,
+  }));
+}
 
 // --- Data Fetching (now using reusable utility) ---
 async function getData(slug) {
   // Use the reusable function, specifying the schema type "coding" for this page
   return getArticleData(slug, "coding");
 }
-
-// --- generateStaticParams ---
-// This function tells Next.js which [slug] paths to pre-render at build time.
-export async function generateStaticParams() {
-  // You need a way to get all possible slugs for your articles.
-  // This likely involves fetching all article IDs/slugs from your data source (e.g., Sanity).
-  // Assuming you have a utility function like 'getAllArticleSlugs' in your articleData.js
-  const slugs = await getAllArticleSlugs("coding"); // You might need to pass the schema type or filter here
-
-  return slugs.map((slug) => ({
-    slug: slug,
-  }));
-}
-
 
 // --- Metadata Generation (now using reusable utility) ---
 export async function generateMetadata({ params }) {

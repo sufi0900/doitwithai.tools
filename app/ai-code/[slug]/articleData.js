@@ -10,6 +10,28 @@ import { urlForImage } from "@/sanity/lib/image";
  * @param {string} tagName - The tag name for Sanity revalidation (usually same as schemaTypeName).
  * @returns {Promise<object|null>} The fetched data or null if an error occurs.
  */
+
+
+// Add this new function to your existing articleData.js file
+
+/**
+ * Fetches all article slugs for a given schema type from Sanity.
+ * This is used by Next.js to generate static paths at build time.
+ * @param {string} schemaTypeName - The Sanity schema type name (e.g., "coding").
+ * @returns {Promise<Array<{slug: string}>>} An array of slug objects.
+ */
+export async function getAllArticleSlugs(schemaTypeName) {
+  const query = `*[_type == "${schemaTypeName}"]{ "slug": slug.current }`;
+  try {
+    const slugs = await client.fetch(query);
+    console.log(`[SanityFetch] Fetched ${slugs.length} slugs for type "${schemaTypeName}".`);
+    return slugs;
+  } catch (error) {
+    console.error(`Failed to fetch slugs for schema type ${schemaTypeName}:`, error.message);
+    return []; // Return an empty array on error to prevent build failure
+  }
+}
+
 export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeName) {
   const cacheKey = `article:${schemaTypeName}:${slug}`;
   const startTime = Date.now();
