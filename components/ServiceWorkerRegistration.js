@@ -1,35 +1,58 @@
-// components/ServiceWorkerRegistration.js
 "use client";
 import { useEffect, useState } from 'react';
 
 export default function ServiceWorkerRegistration() {
   const [mounted, setMounted] = useState(false);
 
+  // Handle hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!mounted || typeof window === 'undefined') return;
+    if (!mounted) return;
 
-    // Just listen for SW updates, don't register manually
-    const handleSWUpdate = () => {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('✅ Service Worker updated');
+    const registerSW = async () => {
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+        return;
+      }
+
+      try {
+        // Wait for page to be fully interactive
+        await new Promise(resolve => {
+          if (document.readyState === 'complete') {
+            setTimeout(resolve, 2000); // Increase delay
+          } else {
+            window.addEventListener('load', () => {
+              setTimeout(resolve, 2000);
+            });
+          }
         });
 
-        // Check if SW is already active
-        navigator.serviceWorker.ready.then((registration) => {
-          console.log('✅ Service Worker ready:', registration);
+        // Unregister any existing service workers first
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+
+        // Register your custom service worker
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/',
+          updateViaCache: 'none'
         });
+
+        console.log('✅ Service Worker registered:', registration);
+
+      } catch (error) {
+        console.error('❌ Service Worker registration failed:', error);
       }
     };
 
-    // Delay to avoid hydration conflicts
-    setTimeout(handleSWUpdate, 2000);
+    registerSW();
   }, [mounted]);
 
+  // Don't render anything during SSR
   if (!mounted) return null;
+
   return null;
 }

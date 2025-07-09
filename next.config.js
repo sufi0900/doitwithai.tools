@@ -1,9 +1,11 @@
-// next.config.js
 const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
+ dest: 'public',
+  register: false, // Keep false since you're registering manually
+  skipWaiting: false,
   disable: process.env.NODE_ENV === 'development',
+  publicExcludes: ['!robots.txt', '!sitemap.xml'],
+  // Remove or modify buildExcludes to prevent app-build-manifest.json caching
+  buildExcludes: [/app-build-manifest\.json$/],
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
@@ -13,29 +15,21 @@ const withPWA = require('next-pwa')({
         networkTimeoutSeconds: 10,
         expiration: {
           maxEntries: 50,
-          maxAgeSeconds: 24 * 60 * 60 * 7,
+          maxAgeSeconds: 24 * 60 * 60 * 7, // 7 days
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
       },
     },
-    {
-      urlPattern: /^https:\/\/cdn\.sanity\.io\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'sanity-images',
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60 * 30,
-        },
-      },
-    },
+    // ... rest of your caching rules
   ],
 });
 
 const nextConfig = {
-  reactStrictMode: false,
+  reactStrictMode: true, // Change back to true
+  
+
   images: {
     domains: ['your-sanity-domain.com'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -49,9 +43,11 @@ const nextConfig = {
       },
     ],
   },
+  // Important for Vercel Service Worker
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', '*.vercel.app']
+      allowedOrigins: ['localhost:3000', '*.vercel.app'],
+      
     }
   }
 };
