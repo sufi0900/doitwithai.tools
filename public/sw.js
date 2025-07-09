@@ -1,7 +1,8 @@
-const CACHE_NAME = 'doitwithai-v2';
-const RUNTIME_CACHE = 'runtime-v2';
-const STATIC_CACHE = 'static-v2';
-const API_CACHE = 'api-v2';
+const CACHE_NAME = 'doitwithai-v3';
+const RUNTIME_CACHE = 'runtime-v3';
+const STATIC_CACHE = 'static-v3';
+const API_CACHE = 'api-v3';
+const PAGES_CACHE = 'pages-v3';
 
 // Enhanced precache list
 const PRECACHE_URLS = [
@@ -13,7 +14,6 @@ const PRECACHE_URLS = [
   '/ai-learn-earn',
   '/free-ai-resources',
   '/ai-news',
-  // Add your static assets
   '/manifest.json',
   '/icons/web-app-manifest-192x192.png',
   '/icons/web-app-manifest-512x512.png'
@@ -21,7 +21,7 @@ const PRECACHE_URLS = [
 
 // Install event - Enhanced precaching
 self.addEventListener('install', (event) => {
-  console.log('SW: Installing v2');
+  console.log('SW: Installing v3');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -38,15 +38,15 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - Clean up old caches
+// Activate event - Cleanup old caches
 self.addEventListener('activate', (event) => {
-  console.log('SW: Activating v2');
+  console.log('SW: Activating v3');
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (![CACHE_NAME, RUNTIME_CACHE, STATIC_CACHE, API_CACHE].includes(cacheName)) {
+            if (![CACHE_NAME, RUNTIME_CACHE, STATIC_CACHE, API_CACHE, PAGES_CACHE].includes(cacheName)) {
               console.log('SW: Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
@@ -75,11 +75,10 @@ self.addEventListener('fetch', (event) => {
   if (url.protocol === 'chrome-extension:') return;
 
   // Skip webpack HMR and other Next.js internal requests
-  if (url.pathname.includes('/_next/') && (
-    url.pathname.includes('webpack') ||
-    url.pathname.includes('hmr') ||
-    url.search.includes('ts=')
-  )) return;
+  if (url.pathname.includes('/_next/') && 
+      (url.pathname.includes('webpack') || 
+       url.pathname.includes('hmr') || 
+       url.search.includes('ts='))) return;
 
   event.respondWith(handleRequest(request));
 });
@@ -91,6 +90,7 @@ async function handleRequest(request) {
   const isSanityRequest = url.hostname.includes('sanity.io');
   const isStaticAsset = url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/);
   const isNextStatic = url.pathname.includes('/_next/static/');
+  const isRSCRequest = url.search.includes('_rsc=') || url.pathname.includes('/_next/');
 
   try {
     // 1. Handle Navigation Requests (Page loads)
@@ -98,31 +98,35 @@ async function handleRequest(request) {
       return await handleNavigationRequest(request);
     }
 
-    // 2. Handle API Requests
+    // 2. Handle RSC (React Server Components) Requests
+    if (isRSCRequest) {
+      return await handleRSCRequest(request);
+    }
+
+    // 3. Handle API Requests
     if (isAPIRequest || isSanityRequest) {
       return await handleAPIRequest(request);
     }
 
-    // 3. Handle Static Assets
+    // 4. Handle Static Assets
     if (isStaticAsset || isNextStatic) {
       return await handleStaticAsset(request);
     }
 
-    // 4. Handle Other Requests
+    // 5. Handle Other Requests
     return await handleOtherRequests(request);
-
   } catch (error) {
     console.error('SW: Request handler failed:', error);
     return await handleOfflineResponse(request);
   }
 }
 
-// Handle navigation requests with stale-while-revalidate strategy
+// Handle navigation requests with cache-first strategy for offline support
 async function handleNavigationRequest(request) {
   const url = new URL(request.url);
   
   try {
-    // Try cache first
+    // Try cache first for offline support
     const cachedResponse = await caches.match(request);
     
     if (cachedResponse) {
@@ -132,7 +136,7 @@ async function handleNavigationRequest(request) {
       fetch(request)
         .then(response => {
           if (response && response.status === 200) {
-            caches.open(CACHE_NAME).then(cache => {
+            caches.open(PAGES_CACHE).then(cache => {
               cache.put(request, response.clone());
             });
           }
@@ -149,14 +153,13 @@ async function handleNavigationRequest(request) {
     
     if (networkResponse && networkResponse.status === 200) {
       // Cache successful response
-      const cache = await caches.open(CACHE_NAME);
+      const cache = await caches.open(PAGES_CACHE);
       cache.put(request, networkResponse.clone());
       console.log('SW: Cached navigation response:', url.pathname);
       return networkResponse;
     }
 
     return networkResponse;
-
   } catch (error) {
     console.log('SW: Navigation request failed:', url.pathname, error);
     
@@ -173,7 +176,50 @@ async function handleNavigationRequest(request) {
     }
 
     // Return offline page
-    return await caches.match('/offline.html') || new Response('Offline', { status: 503 });
+    return await caches.match('/offline.html') || 
+           new Response('Offline', { status: 503 });
+  }
+}
+
+// Handle RSC requests specially
+async function handleRSCRequest(request) {
+  const url = new URL(request.url);
+  
+  try {
+    // For RSC requests, try cache first for offline support
+    const cachedResponse = await caches.match(request);
+    
+    if (cachedResponse) {
+      console.log('SW: Serving RSC from cache:', url.pathname);
+      return cachedResponse;
+    }
+
+    // Try network
+    const networkResponse = await fetch(request);
+    
+    if (networkResponse && networkResponse.status === 200) {
+      // Cache successful RSC response
+      const cache = await caches.open(PAGES_CACHE);
+      cache.put(request, networkResponse.clone());
+      console.log('SW: Cached RSC response:', url.pathname);
+      return networkResponse;
+    }
+
+    return networkResponse;
+  } catch (error) {
+    console.log('SW: RSC request failed:', url.pathname, error);
+    
+    // Try cache again
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    // Return empty RSC response to prevent navigation errors
+    return new Response('', { 
+      status: 204,
+      headers: { 'Content-Type': 'text/plain' }
+    });
   }
 }
 
@@ -194,7 +240,6 @@ async function handleAPIRequest(request) {
     }
 
     return networkResponse;
-
   } catch (error) {
     console.log('SW: API request failed, trying cache:', url.pathname);
     
@@ -220,7 +265,6 @@ async function handleStaticAsset(request) {
   try {
     // Try cache first
     const cachedResponse = await caches.match(request);
-    
     if (cachedResponse) {
       console.log('SW: Serving static asset from cache:', url.pathname);
       return cachedResponse;
@@ -238,7 +282,6 @@ async function handleStaticAsset(request) {
     }
 
     return networkResponse;
-
   } catch (error) {
     console.log('SW: Static asset request failed:', url.pathname, error);
     
@@ -260,7 +303,6 @@ async function handleOtherRequests(request) {
   try {
     // Try cache first
     const cachedResponse = await caches.match(request);
-    
     if (cachedResponse) {
       console.log('SW: Serving other request from cache:', url.pathname);
       return cachedResponse;
@@ -278,7 +320,6 @@ async function handleOtherRequests(request) {
     }
 
     return networkResponse;
-
   } catch (error) {
     console.log('SW: Other request failed:', url.pathname, error);
     return await handleOfflineResponse(request);
@@ -287,7 +328,7 @@ async function handleOtherRequests(request) {
 
 // Find dynamic route in cache
 async function findDynamicRoute(pathname) {
-  const cacheNames = [CACHE_NAME, RUNTIME_CACHE];
+  const cacheNames = [CACHE_NAME, RUNTIME_CACHE, PAGES_CACHE];
   
   for (const cacheName of cacheNames) {
     const cache = await caches.open(cacheName);
@@ -319,13 +360,13 @@ async function handleOfflineResponse(request) {
     const offlinePage = await caches.match('/offline.html');
     return offlinePage || new Response('Offline', { status: 503 });
   }
-  
+
   // For other requests, try to find any cached version
   const cachedResponse = await caches.match(request);
   if (cachedResponse) {
     return cachedResponse;
   }
-  
+
   // Return appropriate error
   return new Response('Network unavailable', { status: 503 });
 }
@@ -334,7 +375,6 @@ async function handleOfflineResponse(request) {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'CACHE_UPDATE') {
     const { url, data } = event.data;
-    
     caches.open(RUNTIME_CACHE).then(cache => {
       cache.put(url, new Response(JSON.stringify(data), {
         headers: { 'Content-Type': 'application/json' }

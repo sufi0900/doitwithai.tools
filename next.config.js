@@ -12,21 +12,38 @@ const withPWA = require('next-pwa')({
   ],
   runtimeCaching: [
     // Sanity API caching
-    {
-      urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'sanity-api',
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60 * 7, // 7 days
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
+   // Page data caching
+{
+  urlPattern: /\/_next\/data\/.*/i,
+  handler: 'CacheFirst',
+  options: {
+    cacheName: 'next-data-cache',
+    networkTimeoutSeconds: 10,
+    expiration: {
+      maxEntries: 100,
+      maxAgeSeconds: 24 * 60 * 60, // 1 day
     },
+    cacheableResponse: {
+      statuses: [0, 200],
+    },
+  },
+},
+// RSC payload caching
+{
+  urlPattern: /.*\?_rsc=.*/i,
+  handler: 'CacheFirst',
+  options: {
+    cacheName: 'rsc-cache',
+    networkTimeoutSeconds: 5,
+    expiration: {
+      maxEntries: 50,
+      maxAgeSeconds: 60 * 60, // 1 hour
+    },
+    cacheableResponse: {
+      statuses: [0, 200],
+    },
+  },
+},
     // Static assets caching
     {
       urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,

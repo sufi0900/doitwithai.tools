@@ -24,7 +24,8 @@ export default function ServiceWorkerRegistration() {
         // Wait for page to be fully interactive
         await new Promise(resolve => {
           if (document.readyState === 'complete') {
-            setTimeout(resolve, 1000); // Reduced delay
+
+setTimeout(resolve, 2000); // Increased delay for better stability
           } else {
             window.addEventListener('load', () => {
               setTimeout(resolve, 1000);
@@ -96,6 +97,28 @@ export default function ServiceWorkerRegistration() {
 
     registerSW();
   }, [mounted]);
+
+
+// Prefetch current page content
+const prefetchCurrentPage = async () => {
+  try {
+    const currentPath = window.location.pathname;
+    const currentUrl = window.location.href;
+    
+    // Prefetch current page
+    await fetch(currentPath, { mode: 'same-origin' });
+    
+    // Prefetch RSC payload for current page
+    if (currentPath !== '/') {
+      await fetch(`${currentPath}?_rsc=1`, { mode: 'same-origin' });
+    }
+    
+    console.log('Pre-cached current page:', currentPath);
+  } catch (error) {
+    console.log('Failed to pre-cache current page:', error);
+  }
+};
+
 
   // Pre-cache important pages
   const preCachePages = async (registration) => {
