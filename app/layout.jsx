@@ -57,6 +57,7 @@ export default function RootLayout({
   <meta name="theme-color" content="#000000" />
       </head>
       <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
+  <noscript>JavaScript is required for this app to work properly.</noscript>
 
         <Toaster position="bottom-center" />
         <CacheProvider>
@@ -78,7 +79,7 @@ export default function RootLayout({
             </Suspense>
           </Providers>
         </CacheProvider>
-                        <ServiceWorkerRegistration /> 
+  {typeof window !== 'undefined' && <ServiceWorkerRegistration />}
 
       </body>
     </html>

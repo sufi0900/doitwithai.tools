@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 export default function ServiceWorkerRegistration() {
   const [mounted, setMounted] = useState(false);
 
-  // Handle hydration
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -18,30 +17,40 @@ export default function ServiceWorkerRegistration() {
       }
 
       try {
-        // Wait for page to be fully interactive
+        // Wait longer for React to fully hydrate
         await new Promise(resolve => {
-          if (document.readyState === 'complete') {
-            setTimeout(resolve, 2000); // Increase delay
-          } else {
-            window.addEventListener('load', () => {
-              setTimeout(resolve, 2000);
-            });
-          }
+          const checkHydration = () => {
+            // Check if React has finished hydrating
+            if (document.readyState === 'complete' && 
+                document.querySelector('[data-reactroot]') || 
+                document.querySelector('#__next')) {
+              setTimeout(resolve, 3000); // Increase delay
+            } else {
+              setTimeout(checkHydration, 100);
+            }
+          };
+          checkHydration();
         });
 
-        // Unregister any existing service workers first
+        // Clear any existing service workers that might cause conflicts
         const registrations = await navigator.serviceWorker.getRegistrations();
         for (const registration of registrations) {
-          await registration.unregister();
+          if (registration.scope !== window.location.origin + '/') {
+            await registration.unregister();
+          }
         }
 
-        // Register your custom service worker
         const registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/',
           updateViaCache: 'none'
         });
 
         console.log('✅ Service Worker registered:', registration);
+
+        // Listen for controller changes
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('SW: Controller changed');
+        });
 
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
@@ -51,8 +60,6 @@ export default function ServiceWorkerRegistration() {
     registerSW();
   }, [mounted]);
 
-  // Don't render anything during SSR
   if (!mounted) return null;
-
   return null;
 }

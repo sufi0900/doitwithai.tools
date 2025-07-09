@@ -46,7 +46,9 @@ const nextConfig = {
   // Important for Vercel Service Worker
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', '*.vercel.app']
+      allowedOrigins: ['localhost:3000', '*.vercel.app'],
+      optimizeCss: false,
+    scrollRestoration: true,
     }
   }
 };

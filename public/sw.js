@@ -1,22 +1,22 @@
-// public/sw.js
+// public/sw.js - Update with better caching strategy
 const CACHE_NAME = 'doitwithai-v1';
 const RUNTIME_CACHE = 'runtime-v1';
+const PAGES_CACHE = 'pages-v1';
 
 // Install event
 self.addEventListener('install', (event) => {
   console.log('SW: Installing');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Only cache essential files, avoid build manifests
       return cache.addAll([
         '/',
-        '/offline.html' // Create this page
+        '/offline.html'
       ]);
     }).catch(err => {
       console.error('SW: Install failed', err);
     })
   );
-  self.skipWaiting(); // Activate immediately
+  self.skipWaiting();
 });
 
 // Activate event
@@ -26,7 +26,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+          if (![CACHE_NAME, RUNTIME_CACHE, PAGES_CACHE].includes(cacheName)) {
             return caches.delete(cacheName);
           }
         })
@@ -37,15 +37,19 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event
+// Fetch event - Enhanced for better page caching
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  const url = new URL(request.url);
   
   // Skip non-GET requests
   if (request.method !== 'GET') return;
   
   // Skip service worker requests
   if (request.url.includes('/sw.js')) return;
+  
+  // Skip API routes that might cause hydration issues
+  if (url.pathname.startsWith('/api/')) return;
   
   // Skip build manifests and internal Next.js files
   if (request.url.includes('/_next/') && 
@@ -57,6 +61,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
+        console.log('SW: Serving from cache:', request.url);
         return cachedResponse;
       }
 
@@ -69,16 +74,36 @@ self.addEventListener('fetch', (event) => {
         // Clone the response
         const responseToCache = response.clone();
 
-        caches.open(RUNTIME_CACHE).then((cache) => {
+        // Determine cache strategy based on request type
+        let cacheName = RUNTIME_CACHE;
+        
+        // Cache HTML pages in pages cache
+        if (request.mode === 'navigate' || 
+            (request.headers.get('accept') && request.headers.get('accept').includes('text/html'))) {
+          cacheName = PAGES_CACHE;
+          console.log('SW: Caching page:', request.url);
+        }
+
+        caches.open(cacheName).then((cache) => {
           cache.put(request, responseToCache);
         });
 
         return response;
       }).catch(() => {
-        // Return offline page for navigation requests
+        console.log('SW: Offline, trying cache for:', request.url);
+        
+        // For navigation requests, try to serve cached page or offline page
         if (request.mode === 'navigate') {
-          return caches.match('/offline.html');
+          return caches.match(request).then((cachedPage) => {
+            if (cachedPage) {
+              return cachedPage;
+            }
+            return caches.match('/offline.html');
+          });
         }
+        
+        // For other requests, try to find in any cache
+        return caches.match(request);
       });
     })
   );
