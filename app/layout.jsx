@@ -2,7 +2,7 @@
 "use client";
 
 import { Inter } from "next/font/google";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { Providers } from "./providers";
