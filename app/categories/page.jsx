@@ -2,8 +2,6 @@ import React from 'react'
 import CategoriesPageCode from "./CategoriesPageCode"
 import Script from "next/script";
 
-export const revalidate = false;
-export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "All AI Categories: SEO, Learn, Earn & More | Do it with AI Tools",
