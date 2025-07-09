@@ -1,12 +1,29 @@
+// next.config.js
 const withPWA = require('next-pwa')({
- dest: 'public',
-  register: false, // Keep false since you're registering manually
-  skipWaiting: false,
+  dest: 'public',
+  register: true, // Let PWA handle registration
+  skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
-  // Remove or modify buildExcludes to prevent app-build-manifest.json caching
   buildExcludes: [/app-build-manifest\.json$/],
   runtimeCaching: [
+    // Navigation requests - Network first for dynamic content
+    {
+      urlPattern: /^https:\/\/doitwithai\.tools\/.*$/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'pages-cache',
+        networkTimeoutSeconds: 10,
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 24 * 60 * 60, // 1 day
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+    // Sanity API
     {
       urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
       handler: 'NetworkFirst',
@@ -22,12 +39,36 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-    // ... rest of your caching rules
+    // Sanity Images
+    {
+      urlPattern: /^https:\/\/cdn\.sanity\.io\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'sanity-images',
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
+        },
+      },
+    },
+    // Static assets
+    {
+      urlPattern: /\.(?:js|css|woff2?|png|jpg|jpeg|webp|svg|ico)$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'static-resources',
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
+        },
+      },
+    },
   ],
 });
 
 const nextConfig = {
-  reactStrictMode: true, // Change back to true
+  reactStrictMode: false, // Keep false to avoid hydration conflicts
+  swcMinify: false, // Disable for debugging
   
 
   images: {

@@ -1,4 +1,4 @@
-// Update ServiceWorkerRegistration component
+// components/ServiceWorkerRegistration.js
 "use client";
 import { useEffect, useState } from 'react';
 
@@ -10,51 +10,24 @@ export default function ServiceWorkerRegistration() {
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || typeof window === 'undefined') return;
 
-    const registerSW = async () => {
-      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-        return;
-      }
-
-      try {
-        // Critical: Wait for React hydration to complete
-        await new Promise(resolve => {
-          if (document.readyState === 'complete') {
-            // Wait for hydration and any client-side rendering
-            setTimeout(resolve, 3000);
-          } else {
-            window.addEventListener('load', () => {
-              setTimeout(resolve, 3000);
-            });
-          }
-        });
-
-        // Check if already registered
-        const existingRegistration = await navigator.serviceWorker.getRegistration();
-        if (existingRegistration) {
-          console.log('✅ Service Worker already registered');
-          return;
-        }
-
-        const registration = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/',
-          updateViaCache: 'none'
-        });
-
-        console.log('✅ Service Worker registered:', registration);
-
-        // Handle controller change (when SW takes control)
+    // Just listen for SW updates, don't register manually
+    const handleSWUpdate = () => {
+      if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('✅ Service Worker controller changed');
+          console.log('✅ Service Worker updated');
         });
 
-      } catch (error) {
-        console.error('❌ Service Worker registration failed:', error);
+        // Check if SW is already active
+        navigator.serviceWorker.ready.then((registration) => {
+          console.log('✅ Service Worker ready:', registration);
+        });
       }
     };
 
-    registerSW();
+    // Delay to avoid hydration conflicts
+    setTimeout(handleSWUpdate, 2000);
   }, [mounted]);
 
   if (!mounted) return null;
