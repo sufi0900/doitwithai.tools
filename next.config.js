@@ -47,8 +47,7 @@ const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', '*.vercel.app'],
-      optimizeCss: false,
-    scrollRestoration: true,
+      
     }
   }
 };

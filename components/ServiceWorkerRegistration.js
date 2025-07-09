@@ -1,3 +1,4 @@
+// Update ServiceWorkerRegistration component
 "use client";
 import { useEffect, useState } from 'react';
 
@@ -17,27 +18,23 @@ export default function ServiceWorkerRegistration() {
       }
 
       try {
-        // Wait longer for React to fully hydrate
+        // Critical: Wait for React hydration to complete
         await new Promise(resolve => {
-          const checkHydration = () => {
-            // Check if React has finished hydrating
-            if (document.readyState === 'complete' && 
-                document.querySelector('[data-reactroot]') || 
-                document.querySelector('#__next')) {
-              setTimeout(resolve, 3000); // Increase delay
-            } else {
-              setTimeout(checkHydration, 100);
-            }
-          };
-          checkHydration();
+          if (document.readyState === 'complete') {
+            // Wait for hydration and any client-side rendering
+            setTimeout(resolve, 3000);
+          } else {
+            window.addEventListener('load', () => {
+              setTimeout(resolve, 3000);
+            });
+          }
         });
 
-        // Clear any existing service workers that might cause conflicts
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const registration of registrations) {
-          if (registration.scope !== window.location.origin + '/') {
-            await registration.unregister();
-          }
+        // Check if already registered
+        const existingRegistration = await navigator.serviceWorker.getRegistration();
+        if (existingRegistration) {
+          console.log('✅ Service Worker already registered');
+          return;
         }
 
         const registration = await navigator.serviceWorker.register('/sw.js', {
@@ -47,9 +44,9 @@ export default function ServiceWorkerRegistration() {
 
         console.log('✅ Service Worker registered:', registration);
 
-        // Listen for controller changes
+        // Handle controller change (when SW takes control)
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('SW: Controller changed');
+          console.log('✅ Service Worker controller changed');
         });
 
       } catch (error) {
