@@ -11,7 +11,7 @@ import "slick-carousel/slick/slick-theme.css";
 import "../styles/index.css";
 import { Toaster } from 'react-hot-toast';
 import Header from "@/components/Header"
-// import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"; // Add this
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"; // Add this
 import OfflineIndicator from "@/components/OfflineIndicator"; // Add this
 
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider"
