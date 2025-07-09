@@ -1,7 +1,7 @@
 // lib/articleData.js
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis'; // Adjust path as needed
-import { urlForImage } from "@/sanity/lib/image"; // <--- Ensure this import is here
+import { urlForImage } from "@/sanity/lib/image";
 
 /**
  * Fetches article data from Sanity, with Redis caching.
@@ -84,7 +84,7 @@ export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeN
  * @param {string} metadataCategory - The specific category string for metadata (e.g., 'AI in SEO & Digital Marketing').
  * @returns {object} The metadata object.
  */
-export function generatePageMetadata(data, params, basePath, metadataCategory) { // <--- **Crucial: Exported here**
+export function generatePageMetadata(data, params, basePath, metadataCategory) {
   if (!data) {
     return {
       title: 'Loading Content/Offline | DoItWithAI.tools',
@@ -149,3 +149,4 @@ export function generatePageMetadata(data, params, basePath, metadataCategory) {
     },
   };
 }
+
