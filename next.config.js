@@ -1,113 +1,217 @@
-// next.config.js
-
 const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true, // Let next-pwa handle the registration
-  skipWaiting: true, // Install new SW version immediately
-  disable: process.env.NODE_ENV === 'development',
-  fallbacks: {
-    document: '/offline.html', // The key to showing your offline page!
-  },
-  runtimeCaching: [
-    // Your existing caching strategies are good, but let's refine them.
-    // This example uses a NetworkFirst strategy for pages and data.
-    {
-      urlPattern: ({ request }) => request.mode === 'navigate',
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'pages-cache',
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+    dest: 'public',
+    register: false, // Keep false since you're registering manually
+    skipWaiting: false,
+    disable: process.env.NODE_ENV === 'development',
+    publicExcludes: ['!robots.txt', '!sitemap.xml'],
+    buildExcludes: [
+        /app-build-manifest\.json$/,
+        /react-loadable-manifest\.json$/,
+        /_buildManifest\.js$/,
+        /_ssgManifest\.js$/
+    ],
+    runtimeCaching: [
+        // Navigation requests (most important fix)
+        {
+            urlPattern: /^https:\/\/.*$/i,
+            handler: 'NetworkFirst',
+            method: 'GET',
+            options: {
+                cacheName: 'navigation-cache',
+                networkTimeoutSeconds: 3,
+                expiration: {
+                    maxEntries: 100,
+                    maxAgeSeconds: 24 * 60 * 60, // 1 day
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
         },
-      },
-    },
-    {
-      urlPattern: /\/_next\/data\/.+\.json$/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'next-data-cache',
-        networkTimeoutSeconds: 10, // Attempt network but fall back to cache
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 24 * 60 * 60, // 1 Day
+        
+        // Static pages cache (for /about, /faq, etc.)
+        {
+            urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+            handler: 'CacheFirst',
+            options: {
+                cacheName: 'static-pages-cache',
+                expiration: {
+                    maxEntries: 50,
+                    maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
         },
-      },
-    },
-     {
-      urlPattern: /.*\?_rsc=.*/i, // Catches RSC payloads
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'rsc-cache',
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 24 * 60 * 60, // 1 Day
+
+        // Page data caching
+        {
+            urlPattern: /\/_next\/data\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+                cacheName: 'next-data-cache',
+                networkTimeoutSeconds: 10,
+                expiration: {
+                    maxEntries: 100,
+                    maxAgeSeconds: 24 * 60 * 60, // 1 day
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
         },
-      },
-    },
-    {
-      urlPattern: /\.(?:png|gif|jpg|jpeg|svg|webp)$/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'images-cache',
-        expiration: {
-          maxEntries: 60,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+
+        // RSC payload caching
+        {
+            urlPattern: /.*\?_rsc=.*/i,
+            handler: 'NetworkFirst',
+            options: {
+                cacheName: 'rsc-cache',
+                networkTimeoutSeconds: 5,
+                expiration: {
+                    maxEntries: 50,
+                    maxAgeSeconds: 60 * 60, // 1 hour
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
         },
-      },
-    },
-    {
-      urlPattern: /\.(?:js|css)$/,
-      handler: 'StaleWhileRevalidate',
-      options: {
-        cacheName: 'static-resources-cache',
-         expiration: {
-          maxEntries: 60,
-          maxAgeSeconds: 24 * 60 * 60, // 1 Day
+
+        // Sanity API caching
+        {
+            urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+                cacheName: 'sanity-api-cache',
+                networkTimeoutSeconds: 10,
+                expiration: {
+                    maxEntries: 100,
+                    maxAgeSeconds: 30 * 60, // 30 minutes
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
         },
-      },
-    },
-     {
-      urlPattern: ({ url }) => url.hostname.includes('sanity.io'),
-      handler: 'StaleWhileRevalidate',
-      options: {
-        cacheName: 'sanity-api-cache',
-        expiration: {
-          maxEntries: 10,
-          maxAgeSeconds: 60 * 60, // 1 hour
+
+        // Images caching
+        {
+            urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
+            handler: 'CacheFirst',
+            options: {
+                cacheName: 'images-cache',
+                expiration: {
+                    maxEntries: 200,
+                    maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
         },
-      },
-    },
-  ],
+
+        // Font caching
+        {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+                cacheName: 'google-fonts-cache',
+                expiration: {
+                    maxEntries: 30,
+                    maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
+        },
+
+        // Font files caching
+        {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+                cacheName: 'google-fonts-files',
+                expiration: {
+                    maxEntries: 30,
+                    maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
+        },
+
+        // API routes caching
+        {
+            urlPattern: /^https:\/\/.*\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+                cacheName: 'api-cache',
+                networkTimeoutSeconds: 5,
+                expiration: {
+                    maxEntries: 50,
+                    maxAgeSeconds: 5 * 60, // 5 minutes
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
+        },
+
+        // Static Next.js assets
+        {
+            urlPattern: /\/_next\/static\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+                cacheName: 'next-static-cache',
+                expiration: {
+                    maxEntries: 100,
+                    maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+                },
+                cacheableResponse: {
+                    statuses: [0, 200],
+                },
+            },
+        },
+    ],
 });
 
-
-
-
 const nextConfig = {
-  reactStrictMode: true, // Change back to true
-
-  images: {
-    domains: ['your-sanity-domain.com'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    formats: ['image/webp'],
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "cdn.sanity.io",
-        port: "",
-      },
-    ],
-  },
-  // Important for Vercel Service Worker
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000', '*.vercel.app'],
-    }
-  }
+    reactStrictMode: true,
+    images: {
+        domains: ['your-sanity-domain.com'],
+        deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+        imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+        formats: ['image/webp'],
+        remotePatterns: [
+            {
+                protocol: "https",
+                hostname: "cdn.sanity.io",
+                port: "",
+            },
+        ],
+    },
+    // Important for Vercel Service Worker
+    experimental: {
+        serverActions: {
+            allowedOrigins: ['localhost:3000', '*.vercel.app'],
+        }
+    },
+    // Add this to handle static exports properly
+    output: 'export',
+    trailingSlash: true,
+    // Add this to ensure proper static file handling
+    async rewrites() {
+        return [
+            {
+                source: '/sw.js',
+                destination: '/sw.js',
+            },
+        ];
+    },
 };
 
 module.exports = withPWA(nextConfig);

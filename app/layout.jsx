@@ -99,7 +99,7 @@ useEffect(() => {
             </Suspense>
           </Providers>
         </CacheProvider>
-         {/* <ServiceWorkerRegistration />  */}
+         <ServiceWorkerRegistration /> 
       </body>
     </html>
   );
