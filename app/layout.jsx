@@ -11,7 +11,7 @@ import "slick-carousel/slick/slick-theme.css";
 import "../styles/index.css";
 import { Toaster } from 'react-hot-toast';
 import Header from "@/components/Header"
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"; // Add this
+// import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"; // Add this
 import OfflineIndicator from "@/components/OfflineIndicator"; // Add this
 
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider"
@@ -62,7 +62,7 @@ export default function RootLayout({
   <meta name="theme-color" content="#000000" />
       </head>
       <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
-                <ServiceWorkerRegistration /> 
+                {/* <ServiceWorkerRegistration />  */}
 <OfflineIndicator/>
         <Toaster position="bottom-center" />
         <CacheProvider>
