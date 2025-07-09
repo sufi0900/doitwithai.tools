@@ -1,6 +1,7 @@
 // layout.js
 "use client";
 import { useEffect, useState } from 'react';
+import { useOnlineStatus } from './useOnlineStatus';
 
 import { Inter } from "next/font/google";
 import { Suspense } from "react";
@@ -39,7 +40,7 @@ export default function RootLayout({
 // Add this to your layout.js after the existing imports
 
 // Add inside your RootLayout component, before the return statement
-const [isOnline, setIsOnline] = useState(true);
+  const isOnline = useOnlineStatus();
 
 useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -73,7 +74,11 @@ useEffect(() => {
       </head>
       <body className={`bg-[#c8cff298] dark:bg-black ${inter.className}`}>
   <noscript>JavaScript is required for this app to work properly.</noscript>
-
+ {!isOnline && (
+        <div style={{ background: 'red', color: 'white', textAlign: 'center', padding: '5px' }}>
+          You are currently offline.
+        </div>
+      )}
         <Toaster position="bottom-center" />
         <CacheProvider>
           <Providers>
@@ -94,7 +99,7 @@ useEffect(() => {
             </Suspense>
           </Providers>
         </CacheProvider>
-         <ServiceWorkerRegistration /> 
+         {/* <ServiceWorkerRegistration />  */}
       </body>
     </html>
   );
