@@ -1,23 +1,20 @@
 const withPWA = require('next-pwa')({
  dest: 'public',
-  register: true,
-  skipWaiting: true,
+  register: true, // Set to true to let next-pwa handle registration
+  skipWaiting: true, // Recommended for a smoother update experience
   disable: process.env.NODE_ENV === 'development',
-  // ✅ ADD THIS FALLBACKS CONFIGURATION
-  fallbacks: {
-    document: '/offline.html', // This is the page that will be shown when an uncached page is requested offline
-  },
   runtimeCaching: [
     // Sanity API caching (assuming this was intended to be here and is not causing issues)
     // Page data caching (Corrected handler)
     {
-      urlPattern: ({ request }) => request.mode === 'navigate',
-      handler: 'NetworkFirst',
+      urlPattern: /\/_next\/data\/.*/i,
+      handler: 'NetworkFirst', // Changed from CacheFirst to NetworkFirst
       options: {
-        cacheName: 'pages-cache',
+        cacheName: 'next-data-cache',
+        networkTimeoutSeconds: 10,
         expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+          maxEntries: 100,
+          maxAgeSeconds: 24 * 60 * 60, // 1 day
         },
         cacheableResponse: {
           statuses: [0, 200],
