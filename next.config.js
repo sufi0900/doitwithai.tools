@@ -2,7 +2,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
+  disable: false, // ← Change this to false to enable in dev
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
@@ -11,7 +11,7 @@ const withPWA = require('next-pwa')({
         cacheName: 'sanity-api',
         expiration: {
           maxEntries: 50,
-          maxAgeSeconds: 24 * 60 * 60 * 7, // 7 days
+          maxAgeSeconds: 24 * 60 * 60 * 7,
         },
       },
     },
@@ -22,14 +22,13 @@ const withPWA = require('next-pwa')({
         cacheName: 'static-resources',
         expiration: {
           maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60 * 30, // 30 days
+          maxAgeSeconds: 24 * 60 * 60 * 30,
         },
       },
     },
   ],
 });
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
   images: {

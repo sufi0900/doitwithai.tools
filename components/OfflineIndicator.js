@@ -1,32 +1,69 @@
-// "use client";
-// import { useState, useEffect } from 'react';
-// import { useCacheContext } from '@/React_Query_Caching/CacheProvider';
+"use client";
+import { useState, useEffect } from 'react';
 
-// export default function OfflineIndicator() {
-//   const [isOnline, setIsOnline] = useState(true);
-//   const { isOnline: contextIsOnline } = useCacheContext();
+export default function OfflineDebug() {
+  const [debug, setDebug] = useState({
+    isOnline: true,
+    swRegistered: false,
+    cacheExists: false,
+    indexedDBData: null
+  });
 
-//   useEffect(() => {
-//     const handleOnline = () => setIsOnline(true);
-//     const handleOffline = () => setIsOnline(false);
+  useEffect(() => {
+    const checkStatus = async () => {
+      const newDebug = {
+        isOnline: navigator.onLine,
+        swRegistered: !!navigator.serviceWorker?.controller,
+        cacheExists: false,
+        indexedDBData: null
+      };
 
-//     window.addEventListener('online', handleOnline);
-//     window.addEventListener('offline', handleOffline);
+      // Check if cache exists
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        newDebug.cacheExists = cacheNames.length > 0;
+      }
 
-//     // Initial check
-//     setIsOnline(navigator.onLine);
+      // Check IndexedDB (your existing cache)
+      if (window.indexedDB) {
+        try {
+          const request = window.indexedDB.open('your-cache-db-name');
+          request.onsuccess = () => {
+            newDebug.indexedDBData = 'Available';
+            setDebug(newDebug);
+          };
+        } catch (e) {
+          newDebug.indexedDBData = 'Error';
+        }
+      }
 
-//     return () => {
-//       window.removeEventListener('online', handleOnline);
-//       window.removeEventListener('offline', handleOffline);
-//     };
-//   }, []);
+      setDebug(newDebug);
+    };
 
-//   if (isOnline && contextIsOnline) return null;
+    checkStatus();
 
-//   return (
-//     <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-black text-center py-2 z-50">
-//       <p>You're offline. Showing cached content.</p>
-//     </div>
-//   );
-// }
+    // Listen for online/offline changes
+    window.addEventListener('online', checkStatus);
+    window.addEventListener('offline', checkStatus);
+
+    return () => {
+      window.removeEventListener('online', checkStatus);
+      window.removeEventListener('offline', checkStatus);
+    };
+  }, []);
+
+  // Only show in development or when offline
+  if (process.env.NODE_ENV === 'production' && debug.isOnline) {
+    return null;
+  }
+
+  return (
+    <div className="fixed top-0 left-0 bg-black text-white p-4 text-sm z-50">
+      <h3>Debug Info:</h3>
+      <p>Online: {debug.isOnline ? '✅' : '❌'}</p>
+      <p>SW Registered: {debug.swRegistered ? '✅' : '❌'}</p>
+      <p>Cache Exists: {debug.cacheExists ? '✅' : '❌'}</p>
+      <p>IndexedDB: {debug.indexedDBData || 'Checking...'}</p>
+    </div>
+  );
+}
