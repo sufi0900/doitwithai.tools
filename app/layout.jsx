@@ -57,7 +57,7 @@ const pathname = usePathname();
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#000000" />
       </head>
-<body 
+        <body 
         className={`bg-[#c8cff298] dark:bg-black ${inter.className}`} 
         suppressHydrationWarning
       >  <noscript>JavaScript is required for this app to work properly.</noscript>
