@@ -79,7 +79,7 @@ export default function RootLayout({
             </Suspense>
           </Providers>
         </CacheProvider>
-                        <ServiceWorkerRegistration /> 
+                   
 
       </body>
     </html>
