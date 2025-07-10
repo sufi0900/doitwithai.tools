@@ -195,10 +195,44 @@ const preCachePages = async (registration) => {
 };
 
 
-// Cache data when user visits dynamic pages
-const cachePageData = async (pathname) => {
+// Cache page content when navigating (not just on reload)
+const cacheCurrentPage = async () => {
     if (typeof window === 'undefined') return;
     
+    try {
+        const currentPath = window.location.pathname;
+        const currentUrl = window.location.href;
+        
+        // Cache the current page HTML
+        await fetch(currentPath, {
+            mode: 'same-origin',
+            credentials: 'same-origin'
+        });
+        
+        // Cache RSC payload for the current page
+        if (currentPath !== '/') {
+            try {
+                await fetch(`${currentPath}?_rsc=1`, {
+                    mode: 'same-origin',
+                    credentials: 'same-origin'
+                });
+            } catch (rscError) {
+                console.log('Failed to cache RSC for:', currentPath);
+            }
+        }
+        
+        // For dynamic pages, cache their API data
+        await cachePageData(currentPath);
+        
+        console.log('✅ Cached current page:', currentPath);
+        
+    } catch (error) {
+        console.log('Failed to cache current page:', error);
+    }
+};
+
+// Add this function to cache API data for dynamic pages
+const cachePageData = async (pathname) => {
     try {
         // Define which pages need data caching
         const dynamicPages = {
@@ -216,7 +250,7 @@ const cachePageData = async (pathname) => {
                 credentials: 'same-origin'
             });
             
-            console.log('Cached data for category:', category);
+            console.log('Cached API data for category:', category);
         }
         
         // For slug pages, cache the specific post data
@@ -230,7 +264,7 @@ const cachePageData = async (pathname) => {
                         mode: 'same-origin',
                         credentials: 'same-origin'
                     });
-                    console.log('Cached data for slug:', slug);
+                    console.log('Cached post data for slug:', slug);
                 } catch (error) {
                     console.log('Failed to cache slug data:', slug);
                 }
@@ -240,13 +274,6 @@ const cachePageData = async (pathname) => {
         console.log('Failed to cache page data:', error);
     }
 };
-
-// Call this function when pathname changes
-useEffect(() => {
-    if (mounted) {
-        cachePageData(window.location.pathname);
-    }
-}, [mounted]);
 
   // Helper function to update cache from client
   const updateCache = (url, data) => {

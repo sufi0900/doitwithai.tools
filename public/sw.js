@@ -1,8 +1,8 @@
-const CACHE_NAME = 'doitwithai-v8'; // Increment version
-const RUNTIME_CACHE = 'runtime-v8';
-const STATIC_CACHE = 'static-v8';
-const API_CACHE = 'api-v8';
-const PAGES_CACHE = 'pages-v8';
+const CACHE_NAME = 'doitwithai-v7'; // Increment version
+const RUNTIME_CACHE = 'runtime-v7';
+const STATIC_CACHE = 'static-v7';
+const API_CACHE = 'api-v7';
+const PAGES_CACHE = 'pages-v7';
 // Enhanced precache list with proper static pages
 const PRECACHE_URLS = [
     '/',
@@ -63,72 +63,7 @@ self.addEventListener('activate', (event) => {
 });
 
 
-// Add this function after your existing functions
-async function cachePageProgrammatically(url, htmlContent, apiData = null) {
-    try {
-        const cache = await caches.open(PAGES_CACHE);
-        
-        // Cache the HTML content
-        const htmlResponse = new Response(htmlContent, {
-            status: 200,
-            headers: {
-                'Content-Type': 'text/html',
-                'sw-cached': new Date().toISOString(),
-                'sw-cache-source': 'programmatic'
-            }
-        });
-        
-        await cache.put(url, htmlResponse);
-        console.log('SW: Programmatically cached page:', url);
-        
-        // Cache API data if provided
-        if (apiData) {
-            const apiCache = await caches.open(API_CACHE);
-            const apiResponse = new Response(JSON.stringify(apiData), {
-                status: 200,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'sw-cached': new Date().toISOString()
-                }
-            });
-            
-            // Cache with different possible API URLs
-            const apiUrls = [
-                `/api/posts?category=${apiData.category}`,
-                `/api/posts/${apiData.slug}`,
-                url + '?_rsc=1'
-            ];
-            
-            for (const apiUrl of apiUrls) {
-                try {
-                    await apiCache.put(apiUrl, apiResponse.clone());
-                } catch (e) {
-                    console.log('Failed to cache API URL:', apiUrl);
-                }
-            }
-        }
-        
-    } catch (error) {
-        console.error('SW: Failed to cache page programmatically:', error);
-    }
-}
 
-// Add message listener for programmatic caching
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'CACHE_PAGE') {
-        const { url, htmlContent, apiData } = event.data;
-        event.waitUntil(cachePageProgrammatically(url, htmlContent, apiData));
-    }
-    
-    if (event.data && event.data.type === 'CACHE_UPDATE') {
-        const { url, data } = event.data;
-        caches.open(RUNTIME_CACHE).then(cache => {
-            cache.put(url, new Response(JSON.stringify(data), {
-                headers: { 'Content-Type': 'application/json' }
-            }));
-        });
-    }
-});
 
 
 
@@ -201,7 +136,7 @@ async function handleRequest(request) {
 }
 
 // CRITICAL FIX: Proper navigation request handling
-// CRITICAL FIX: Simplified navigation request handling
+// CRITICAL FIX: Proper navigation request handling
 async function handleNavigationRequest(request) {
     const url = new URL(request.url);
     const pathname = url.pathname;
@@ -209,14 +144,7 @@ async function handleNavigationRequest(request) {
     console.log('SW: Handling navigation request for:', pathname);
     
     try {
-        // Always try cache first for navigation requests
-        const cachedResponse = await getCachedNavigation(request);
-        if (cachedResponse) {
-            console.log('SW: Serving navigation from cache:', pathname);
-            return cachedResponse;
-        }
-        
-        // If not in cache and online, try network
+        // Always try network first when online
         if (navigator.onLine) {
             const networkResponse = await Promise.race([
                 fetch(request),
@@ -226,20 +154,25 @@ async function handleNavigationRequest(request) {
             ]);
             
             if (networkResponse && networkResponse.status === 200) {
-                // Cache successful response
+                // Cache successful response in multiple cache stores
                 const cache = await caches.open(PAGES_CACHE);
+                const runtimeCache = await caches.open(RUNTIME_CACHE);
+                
+                // Store in both caches for better offline access
                 cache.put(request, networkResponse.clone());
-                console.log('SW: Cached navigation response:', pathname);
+                runtimeCache.put(request, networkResponse.clone());
+                
+                console.log('SW: Cached navigation response in multiple stores:', pathname);
                 return networkResponse;
             }
         }
         
-        // Return offline page if nothing works
-        return await getOfflinePage();
+        // Try cache (either offline or network failed)
+        return await getCachedNavigation(request);
         
     } catch (error) {
-        console.log('SW: Navigation request failed:', pathname, error.message);
-        return await getOfflinePage();
+        console.log('SW: Network failed for navigation:', pathname, error.message);
+        return await getCachedNavigation(request);
     }
 }
 
