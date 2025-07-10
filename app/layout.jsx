@@ -43,8 +43,8 @@ export default function RootLayout({
   const isOnline = useOnlineStatus();
 
 useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    const handleOnline = () => isOnline(true);
+    const handleOffline = () => isOnline(false);
     
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -53,6 +53,37 @@ useEffect(() => {
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('offline', handleOffline);
     };
+}, []);
+
+
+// Add this after const pathname = usePathname();
+useEffect(() => {
+  // Function to handle link clicks and ensure caching
+  const handleLinkClick = (event) => {
+    const link = event.target.closest('a');
+    if (!link) return;
+    
+    const href = link.getAttribute('href');
+    if (href && href.startsWith('/') && !href.startsWith('//')) {
+      // This is an internal link, cache it
+      setTimeout(() => {
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'PRECACHE_PAGE',
+            path: href,
+            url: window.location.origin + href
+          });
+        }
+      }, 100);
+    }
+  };
+  
+  // Add click listener to document
+  document.addEventListener('click', handleLinkClick);
+  
+  return () => {
+    document.removeEventListener('click', handleLinkClick);
+  };
 }, []);
   // Check if current page is a slug page (article page)
   const isSlugPage = pathname && (
