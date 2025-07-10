@@ -138,42 +138,33 @@ async function handleRequest(request) {
 // CRITICAL FIX: Proper navigation request handling
 // CRITICAL FIX: Proper navigation request handling
 async function handleNavigationRequest(request) {
-    const url = new URL(request.url);
-    const pathname = url.pathname;
-    
-    console.log('SW: Handling navigation request for:', pathname);
-    
-    try {
-        // Always try network first when online
-        if (navigator.onLine) {
-            const networkResponse = await Promise.race([
-                fetch(request),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Network timeout')), 3000)
-                )
-            ]);
-            
-            if (networkResponse && networkResponse.status === 200) {
-                // Cache successful response in multiple cache stores
-                const cache = await caches.open(PAGES_CACHE);
-                const runtimeCache = await caches.open(RUNTIME_CACHE);
-                
-                // Store in both caches for better offline access
-                cache.put(request, networkResponse.clone());
-                runtimeCache.put(request, networkResponse.clone());
-                
-                console.log('SW: Cached navigation response in multiple stores:', pathname);
-                return networkResponse;
-            }
-        }
-        
-        // Try cache (either offline or network failed)
-        return await getCachedNavigation(request);
-        
-    } catch (error) {
-        console.log('SW: Network failed for navigation:', pathname, error.message);
-        return await getCachedNavigation(request);
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  console.log('SW: Handling navigation request (top-level) for:', pathname);
+  try {
+    // Always try network first when online
+    if (navigator.onLine) {
+      const networkResponse = await Promise.race([
+        fetch(request),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Network timeout')), 3000))
+      ]);
+      if (networkResponse && networkResponse.status === 200) {
+        // Cache successful response in multiple cache stores
+        const cache = await caches.open(PAGES_CACHE);
+        const runtimeCache = await caches.open(RUNTIME_CACHE);
+        // Store in both caches for better offline access
+        cache.put(request, networkResponse.clone());
+        runtimeCache.put(request, networkResponse.clone());
+        console.log('SW: Cached navigation response in multiple stores:', pathname);
+        return networkResponse;
+      }
     }
+    // Try cache (either offline or network failed)
+    return await getCachedNavigation(request);
+  } catch (error) {
+    console.log('SW: Network failed for navigation (top-level):', pathname, error.message);
+    return await getCachedNavigation(request);
+  }
 }
 
 // Simple offline page handler
@@ -223,43 +214,39 @@ async function getOfflinePage() {
 
 
 // Helper function to get cached navigation response
-// Helper function to get cached navigation response// Simplified cache matching
 async function getCachedNavigation(request) {
-    const url = new URL(request.url);
-    const pathname = url.pathname;
-    
-    console.log('SW: Looking for cached navigation:', pathname);
-    
-    // Simple cache matching strategies
-    const urlsToTry = [
-        request.url,
-        pathname,
-        pathname === '/' ? '/' : pathname.replace(/\/$/, ''),
-        pathname === '/' ? '/' : pathname + '/',
-        url.origin + pathname
-    ];
-    
-    // Try each cache store
-    const cacheStores = [CACHE_NAME, PAGES_CACHE, RUNTIME_CACHE];
-    
-    for (const cacheStore of cacheStores) {
-        try {
-            const cache = await caches.open(cacheStore);
-            
-            for (const urlToTry of urlsToTry) {
-                const cachedResponse = await cache.match(urlToTry);
-                if (cachedResponse) {
-                    console.log('SW: Found cached page:', urlToTry, 'in', cacheStore);
-                    return cachedResponse;
-                }
-            }
-        } catch (error) {
-            console.log('SW: Cache access failed for:', cacheStore);
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  console.log('SW: Looking for cached navigation:', pathname);
+
+  // Simple cache matching strategies
+  const urlsToTry = [
+    request.url,
+    pathname,
+    pathname === '/' ? '/' : pathname.replace(/\/$/, ''), // Try without trailing slash
+    pathname === '/' ? '/' : pathname + '/', // Try with trailing slash
+    url.origin + pathname
+  ];
+
+  // Try each cache store
+  const cacheStores = [CACHE_NAME, PAGES_CACHE, RUNTIME_CACHE];
+  for (const cacheStore of cacheStores) {
+    try {
+      const cache = await caches.open(cacheStore);
+      for (const urlToTry of urlsToTry) {
+        const cachedResponse = await cache.match(urlToTry);
+        if (cachedResponse) {
+          console.log('SW: Found cached page:', urlToTry, 'in', cacheStore);
+          return cachedResponse;
         }
+      }
+    } catch (error) {
+      console.log('SW: Cache access failed for:', cacheStore);
     }
-    
-    return null;
+  }
+  return null; // Return null if no cached response is found
 }
+
 // Handle RSC requests specially
 async function handleRequest(request) {
     const url = new URL(request.url);
@@ -555,6 +542,126 @@ self.addEventListener('sync', (event) => {
         event.waitUntil(updateCaches());
     }
 });
+
+
+// Add this after the existing message handler
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CACHE_UPDATE') {
+    const { url, data } = event.data;
+    caches.open(RUNTIME_CACHE).then(cache => {
+      cache.put(url, new Response(JSON.stringify(data), {
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    });
+  }
+  
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // ... (skip non-GET, sw.js, chrome-extension, webpackHMR requests)
+
+  // Determine if it's an HTML request (for navigation or client-side HTML fetch)
+  const isHtmlRequest = request.headers.get('accept')?.includes('text/html');
+
+  // Determine if it's a top-level navigation (only true for full page loads)
+  const isTopLevelNavigation = request.mode === 'navigate';
+
+  // Identify RSC (React Server Component) payloads
+  const isRSCPayload = url.search.includes('_rsc=') || request.headers.get('RSC'); // Next.js 13+ might send 'RSC' header
+
+  // Your existing checks
+  const isAPIRequest = url.pathname.includes('/api/') || url.hostname.includes('sanity.io');
+  const isStaticAsset = url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/);
+  const isNextStatic = url.pathname.includes('/_next/static/');
+
+  event.respondWith(
+    (async () => {
+      try {
+        // PRIORITY 1: Handle actual top-level navigations (full page loads)
+        if (isTopLevelNavigation) {
+          console.log('SW: Handling top-level navigation request for:', url.pathname);
+          return await handleNavigationRequest(request);
+        }
+
+        // PRIORITY 2: Handle client-side HTML fetches (e.g., from preCachePages or cacheCurrentPage)
+        // This is crucial for caching pages navigated via Link component after a refresh
+        if (isHtmlRequest) {
+          console.log('SW: Handling client-side HTML fetch for:', url.pathname);
+          // Use a network-first strategy, but aggressively cache successful responses
+          const networkResponse = await Promise.race([
+            fetch(request),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('HTML fetch timeout')), 5000))
+          ]);
+
+          if (networkResponse && networkResponse.status === 200) {
+            const cache = await caches.open(PAGES_CACHE);
+            const runtimeCache = await caches.open(RUNTIME_CACHE); // Also put in runtime for other uses
+            cache.put(request, networkResponse.clone());
+            runtimeCache.put(request, networkResponse.clone());
+            console.log('SW: Cached client-side HTML response in multiple stores:', url.pathname);
+            return networkResponse;
+          }
+        }
+
+        // PRIORITY 3: Handle static assets (cache-first)
+        if (isStaticAsset || isNextStatic) {
+          return await handleStaticAsset(request);
+        }
+
+        // PRIORITY 4: Handle API requests (network-first, fall back to cache)
+        if (isAPIRequest) {
+          return await handleAPIRequest(request);
+        }
+
+        // PRIORITY 5: Handle RSC (React Server Components) payloads (network-first, fall back to cache)
+        if (isRSCPayload) {
+          return await handleRSCRequest(request);
+        }
+
+        // PRIORITY 6: Handle other requests (network-first, fall back to cache)
+        return await handleOtherRequests(request);
+
+      } catch (error) {
+        console.error('SW: Request handler failed:', error);
+        // If navigation request fails, show offline page
+        if (isTopLevelNavigation || isHtmlRequest) {
+          return await getOfflinePage();
+        }
+        return new Response('Network Error or Resource Not Available Offline', { status: 503 });
+      }
+    })()
+  );
+});
+
+
+  // Add this new handler for precaching pages
+  if (event.data && event.data.type === 'PRECACHE_PAGE') {
+    const { path, url } = event.data;
+    
+    // Cache the page in multiple cache stores for better offline access
+    Promise.all([
+      caches.open(PAGES_CACHE),
+      caches.open(RUNTIME_CACHE),
+      caches.open(CACHE_NAME)
+    ]).then(([pagesCache, runtimeCache, mainCache]) => {
+      // Fetch and cache the page
+      return fetch(path, { mode: 'same-origin' })
+        .then(response => {
+          if (response && response.status === 200) {
+            pagesCache.put(path, response.clone());
+            runtimeCache.put(path, response.clone());
+            mainCache.put(path, response.clone());
+            console.log('SW: Pre-cached page from client navigation:', path);
+          }
+          return response;
+        });
+    }).catch(error => {
+      console.log('SW: Failed to pre-cache page:', path, error);
+    });
+  }
+});
+
 
 async function updateCaches() {
     try {
