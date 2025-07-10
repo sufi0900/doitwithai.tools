@@ -121,42 +121,64 @@ const prefetchCurrentPage = async () => {
 
 
   // Pre-cache important pages
-  const preCachePages = async (registration) => {
+// Pre-cache important pages
+const preCachePages = async (registration) => {
     if (registration.active) {
-      try {
-        // Get current page path
-        const currentPath = window.location.pathname;
-        
-        // List of important pages to pre-cache
-        const importantPages = [
-          '/',
-          '/ai-tools',
-          '/ai-seo',
-          '/ai-code',
-          '/ai-learn-earn',
-          '/free-ai-resources',
-          '/ai-news'
-        ];
-
-        // Add current page if it's not in the list
-        if (!importantPages.includes(currentPath)) {
-          importantPages.push(currentPath);
+        try {
+            // Get current page path
+            const currentPath = window.location.pathname;
+            
+            // List of important pages to pre-cache
+            const importantPages = [
+                '/',
+                '/ai-tools',
+                '/ai-seo', 
+                '/ai-code',
+                '/ai-learn-earn',
+                '/free-ai-resources',
+                '/ai-news',
+                '/about',
+                '/faq',
+                '/contact',
+                '/privacy',
+                '/terms'
+            ];
+            
+            // Add current page if it's not in the list
+            if (!importantPages.includes(currentPath)) {
+                importantPages.push(currentPath);
+            }
+            
+            // Pre-fetch pages in background with proper error handling
+            for (const page of importantPages) {
+                try {
+                    const response = await fetch(page, { 
+                        mode: 'same-origin',
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (response.ok) {
+                        // Also fetch RSC payload for the page
+                        try {
+                            await fetch(`${page}?_rsc=1`, { 
+                                mode: 'same-origin',
+                                credentials: 'same-origin'
+                            });
+                        } catch (rscError) {
+                            console.log('Failed to pre-cache RSC for:', page);
+                        }
+                    }
+                    
+                    console.log('Pre-cached page:', page);
+                } catch (error) {
+                    console.log('Failed to pre-cache page:', page, error);
+                }
+            }
+        } catch (error) {
+            console.error('Pre-caching failed:', error);
         }
-
-        // Pre-fetch pages in background
-        for (const page of importantPages) {
-          try {
-            await fetch(page, { mode: 'no-cors' });
-            console.log('Pre-cached page:', page);
-          } catch (error) {
-            console.log('Failed to pre-cache page:', page);
-          }
-        }
-      } catch (error) {
-        console.error('Pre-caching failed:', error);
-      }
     }
-  };
+};
 
   // Helper function to update cache from client
   const updateCache = (url, data) => {

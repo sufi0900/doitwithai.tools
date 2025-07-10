@@ -1,8 +1,8 @@
-const CACHE_NAME = 'doitwithai-v4';
-const RUNTIME_CACHE = 'runtime-v4';
-const STATIC_CACHE = 'static-v4';
-const API_CACHE = 'api-v4';
-const PAGES_CACHE = 'pages-v4';
+const CACHE_NAME = 'doitwithai-v5'; // Increment version
+const RUNTIME_CACHE = 'runtime-v5';
+const STATIC_CACHE = 'static-v5';
+const API_CACHE = 'api-v5';
+const PAGES_CACHE = 'pages-v5';
 
 // Enhanced precache list with proper static pages
 const PRECACHE_URLS = [
@@ -132,76 +132,88 @@ async function handleNavigationRequest(request) {
     const pathname = url.pathname;
     
     console.log('SW: Handling navigation request for:', pathname);
-
+    
     try {
-        // Always try network first for navigation requests when online
-        const networkResponse = await Promise.race([
-            fetch(request),
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Network timeout')), 3000)
-            )
-        ]);
-
-        if (networkResponse && networkResponse.status === 200) {
-            // Cache successful response
-            const cache = await caches.open(PAGES_CACHE);
-            cache.put(request, networkResponse.clone());
-            console.log('SW: Cached navigation response:', pathname);
-            return networkResponse;
+        // Check if we're offline first
+        const isOnline = navigator.onLine;
+        
+        if (isOnline) {
+            // Try network first when online
+            const networkResponse = await Promise.race([
+                fetch(request),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Network timeout')), 3000)
+                )
+            ]);
+            
+            if (networkResponse && networkResponse.status === 200) {
+                // Cache successful response
+                const cache = await caches.open(PAGES_CACHE);
+                cache.put(request, networkResponse.clone());
+                console.log('SW: Cached navigation response:', pathname);
+                return networkResponse;
+            }
         }
-
-        // If network response is not OK, fall back to cache
+        
+        // Try cache (either offline or network failed)
         return await getCachedNavigation(request);
-
+        
     } catch (error) {
         console.log('SW: Network failed for navigation:', pathname, error.message);
-        
         // Network failed, try cache
         return await getCachedNavigation(request);
     }
 }
 
 // Helper function to get cached navigation response
+// Helper function to get cached navigation response
 async function getCachedNavigation(request) {
     const url = new URL(request.url);
     const pathname = url.pathname;
     
+    console.log('SW: Looking for cached navigation:', pathname);
+    
     // Try multiple cache strategies
     const cacheStrategies = [
         // 1. Exact match
-        request,
-        
+        request.url,
         // 2. Try with trailing slash
         pathname.endsWith('/') ? pathname.slice(0, -1) : pathname + '/',
-        
-        // 3. Try root for homepage variations
+        // 3. Try root for home page variations
         pathname === '' ? '/' : pathname,
-        
         // 4. Try without trailing slash
         pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : null,
-        
-        // 5. Try with index.html
-        pathname + (pathname.endsWith('/') ? 'index.html' : '/index.html')
+        // 5. Try base path for dynamic routes
+        '/' + pathname.split('/')[1] + '/',
+        // 6. Try exact pathname
+        pathname
     ].filter(Boolean);
-
-    for (const strategy of cacheStrategies) {
-        try {
-            const cachedResponse = await caches.match(strategy);
-            if (cachedResponse) {
-                console.log('SW: Found cached navigation:', strategy);
-                return cachedResponse;
+    
+    // Search in all cache stores
+    const cacheNames = [CACHE_NAME, PAGES_CACHE, RUNTIME_CACHE];
+    
+    for (const cacheName of cacheNames) {
+        const cache = await caches.open(cacheName);
+        
+        for (const strategy of cacheStrategies) {
+            try {
+                const cachedResponse = await cache.match(strategy);
+                if (cachedResponse) {
+                    console.log('SW: Found cached navigation:', strategy, 'in', cacheName);
+                    return cachedResponse;
+                }
+            } catch (error) {
+                console.log('SW: Cache strategy failed:', strategy, error);
             }
-        } catch (error) {
-            console.log('SW: Cache strategy failed:', strategy, error);
         }
     }
-
+    
     // Try to find similar dynamic routes
     const dynamicResponse = await findDynamicRoute(pathname);
     if (dynamicResponse) {
         return dynamicResponse;
     }
-
+    
     // Last resort: return offline page
     console.log('SW: Returning offline page for:', pathname);
     const offlinePage = await caches.match('/offline.html');
@@ -210,7 +222,7 @@ async function getCachedNavigation(request) {
         <html>
         <head>
             <title>Offline</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
         </head>
         <body>
             <h1>You're offline</h1>
@@ -223,7 +235,6 @@ async function getCachedNavigation(request) {
         headers: { 'Content-Type': 'text/html' }
     });
 }
-
 // Handle RSC requests specially
 async function handleRSCRequest(request) {
     const url = new URL(request.url);
