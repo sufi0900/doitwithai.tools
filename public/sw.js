@@ -1,8 +1,8 @@
-const CACHE_NAME = 'doitwithai-v7'; // Increment version
-const RUNTIME_CACHE = 'runtime-v7';
-const STATIC_CACHE = 'static-v7';
-const API_CACHE = 'api-v7';
-const PAGES_CACHE = 'pages-v7';
+const CACHE_NAME = 'doitwithai-v8'; // Increment version
+const RUNTIME_CACHE = 'runtime-v8';
+const STATIC_CACHE = 'static-v8';
+const API_CACHE = 'api-v8';
+const PAGES_CACHE = 'pages-v8';
 // Enhanced precache list with proper static pages
 const PRECACHE_URLS = [
     '/',
@@ -61,6 +61,76 @@ self.addEventListener('activate', (event) => {
         })
     );
 });
+
+
+// Add this function after your existing functions
+async function cachePageProgrammatically(url, htmlContent, apiData = null) {
+    try {
+        const cache = await caches.open(PAGES_CACHE);
+        
+        // Cache the HTML content
+        const htmlResponse = new Response(htmlContent, {
+            status: 200,
+            headers: {
+                'Content-Type': 'text/html',
+                'sw-cached': new Date().toISOString(),
+                'sw-cache-source': 'programmatic'
+            }
+        });
+        
+        await cache.put(url, htmlResponse);
+        console.log('SW: Programmatically cached page:', url);
+        
+        // Cache API data if provided
+        if (apiData) {
+            const apiCache = await caches.open(API_CACHE);
+            const apiResponse = new Response(JSON.stringify(apiData), {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'sw-cached': new Date().toISOString()
+                }
+            });
+            
+            // Cache with different possible API URLs
+            const apiUrls = [
+                `/api/posts?category=${apiData.category}`,
+                `/api/posts/${apiData.slug}`,
+                url + '?_rsc=1'
+            ];
+            
+            for (const apiUrl of apiUrls) {
+                try {
+                    await apiCache.put(apiUrl, apiResponse.clone());
+                } catch (e) {
+                    console.log('Failed to cache API URL:', apiUrl);
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('SW: Failed to cache page programmatically:', error);
+    }
+}
+
+// Add message listener for programmatic caching
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'CACHE_PAGE') {
+        const { url, htmlContent, apiData } = event.data;
+        event.waitUntil(cachePageProgrammatically(url, htmlContent, apiData));
+    }
+    
+    if (event.data && event.data.type === 'CACHE_UPDATE') {
+        const { url, data } = event.data;
+        caches.open(RUNTIME_CACHE).then(cache => {
+            cache.put(url, new Response(JSON.stringify(data), {
+                headers: { 'Content-Type': 'application/json' }
+            }));
+        });
+    }
+});
+
+
 
 // Enhanced fetch handler with proper navigation handling
 self.addEventListener('fetch', (event) => {
