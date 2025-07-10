@@ -122,10 +122,10 @@ const prefetchCurrentPage = async () => {
 
   // Pre-cache important pages
 // Pre-cache important pages
+// Pre-cache important pages with their data
 const preCachePages = async (registration) => {
     if (registration.active) {
         try {
-            // Get current page path
             const currentPath = window.location.pathname;
             
             // List of important pages to pre-cache
@@ -149,9 +149,10 @@ const preCachePages = async (registration) => {
                 importantPages.push(currentPath);
             }
             
-            // Pre-fetch pages in background with proper error handling
+            // Pre-fetch pages and their data
             for (const page of importantPages) {
                 try {
+                    // Cache the page HTML
                     const response = await fetch(page, { 
                         mode: 'same-origin',
                         credentials: 'same-origin'
@@ -167,6 +168,19 @@ const preCachePages = async (registration) => {
                         } catch (rscError) {
                             console.log('Failed to pre-cache RSC for:', page);
                         }
+                        
+                        // For dynamic pages, try to cache their API data
+                        if (['ai-tools', 'ai-seo', 'ai-code', 'ai-learn-earn'].includes(page.replace('/', ''))) {
+                            try {
+                                // Cache the API data for these dynamic pages
+                                await fetch(`/api/posts?category=${page.replace('/', '').replace('-', '')}`, {
+                                    mode: 'same-origin',
+                                    credentials: 'same-origin'
+                                });
+                            } catch (apiError) {
+                                console.log('Failed to pre-cache API data for:', page);
+                            }
+                        }
                     }
                     
                     console.log('Pre-cached page:', page);
@@ -179,6 +193,60 @@ const preCachePages = async (registration) => {
         }
     }
 };
+
+
+// Cache data when user visits dynamic pages
+const cachePageData = async (pathname) => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+        // Define which pages need data caching
+        const dynamicPages = {
+            '/ai-tools': 'aitool',
+            '/ai-seo': 'SEO', 
+            '/ai-code': 'coding',
+            '/ai-learn-earn': 'makemoney'
+        };
+        
+        const category = dynamicPages[pathname];
+        if (category) {
+            // Cache the API data for this category
+            await fetch(`/api/posts?category=${category}`, {
+                mode: 'same-origin',
+                credentials: 'same-origin'
+            });
+            
+            console.log('Cached data for category:', category);
+        }
+        
+        // For slug pages, cache the specific post data
+        if (pathname.includes('/ai-tools/') || pathname.includes('/ai-seo/') || 
+            pathname.includes('/ai-code/') || pathname.includes('/ai-learn-earn/')) {
+            
+            const slug = pathname.split('/').pop();
+            if (slug) {
+                try {
+                    await fetch(`/api/posts/${slug}`, {
+                        mode: 'same-origin',
+                        credentials: 'same-origin'
+                    });
+                    console.log('Cached data for slug:', slug);
+                } catch (error) {
+                    console.log('Failed to cache slug data:', slug);
+                }
+            }
+        }
+    } catch (error) {
+        console.log('Failed to cache page data:', error);
+    }
+};
+
+// Call this function when pathname changes
+useEffect(() => {
+    if (mounted) {
+        cachePageData(window.location.pathname);
+    }
+}, [mounted]);
 
   // Helper function to update cache from client
   const updateCache = (url, data) => {

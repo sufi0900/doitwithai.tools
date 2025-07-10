@@ -1,9 +1,8 @@
-const CACHE_NAME = 'doitwithai-v5'; // Increment version
-const RUNTIME_CACHE = 'runtime-v5';
-const STATIC_CACHE = 'static-v5';
-const API_CACHE = 'api-v5';
-const PAGES_CACHE = 'pages-v5';
-
+const CACHE_NAME = 'doitwithai-v6'; // Increment version
+const RUNTIME_CACHE = 'runtime-v6';
+const STATIC_CACHE = 'static-v6';
+const API_CACHE = 'api-v6';
+const PAGES_CACHE = 'pages-v6';
 // Enhanced precache list with proper static pages
 const PRECACHE_URLS = [
     '/',
@@ -95,31 +94,36 @@ async function handleRequest(request) {
     const isStaticAsset = url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/);
     const isNextStatic = url.pathname.includes('/_next/static/');
     const isRSCRequest = url.search.includes('_rsc=') || url.pathname.includes('/_next/');
-
+    
     try {
-        // 1. Handle Navigation Requests (Page loads) - THIS IS THE KEY FIX
+        // 1. Handle Navigation Requests (Page loads)
         if (isNavigationRequest) {
             return await handleNavigationRequest(request);
         }
-
+        
         // 2. Handle RSC (React Server Components) Requests
         if (isRSCRequest) {
             return await handleRSCRequest(request);
         }
-
-        // 3. Handle API Requests
-        if (isAPIRequest || isSanityRequest) {
+        
+        // 3. Handle Next.js API Routes
+        if (isAPIRequest) {
+            return await handleNextAPIRequest(request);
+        }
+        
+        // 4. Handle Sanity API Requests
+        if (isSanityRequest) {
             return await handleAPIRequest(request);
         }
-
-        // 4. Handle Static Assets
+        
+        // 5. Handle Static Assets
         if (isStaticAsset || isNextStatic) {
             return await handleStaticAsset(request);
         }
-
-        // 5. Handle Other Requests
+        
+        // 6. Handle Other Requests
         return await handleOtherRequests(request);
-
+        
     } catch (error) {
         console.error('SW: Request handler failed:', error);
         return await handleOfflineResponse(request);
@@ -276,23 +280,52 @@ async function handleRSCRequest(request) {
     }
 }
 
-// Handle API requests with network-first strategy
+// Handle API requests with enhanced caching for Sanity data
 async function handleAPIRequest(request) {
     const url = new URL(request.url);
+    const isSanityRequest = url.hostname.includes('sanity.io');
     
     try {
+        // For Sanity requests, try cache first when offline
+        if (isSanityRequest && !navigator.onLine) {
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+                console.log('SW: Serving Sanity data from cache (offline):', url.pathname);
+                return cachedResponse;
+            }
+        }
+        
         // Try network first
-        const networkResponse = await fetch(request);
+        const networkResponse = await Promise.race([
+            fetch(request),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Network timeout')), 8000)
+            )
+        ]);
+        
         if (networkResponse && networkResponse.status === 200) {
-            // Cache successful API response
+            // Cache successful API response with longer expiry for Sanity
             const cache = await caches.open(API_CACHE);
-            cache.put(request, networkResponse.clone());
+            const responseClone = networkResponse.clone();
+            
+            // Store with custom headers for better offline access
+            const enhancedResponse = new Response(await responseClone.text(), {
+                status: networkResponse.status,
+                statusText: networkResponse.statusText,
+                headers: {
+                    ...Object.fromEntries(networkResponse.headers.entries()),
+                    'sw-cached': new Date().toISOString(),
+                    'sw-cache-type': isSanityRequest ? 'sanity-api' : 'api'
+                }
+            });
+            
+            cache.put(request, enhancedResponse);
             console.log('SW: Cached API response:', url.pathname);
             return networkResponse;
         }
-
+        
         return networkResponse;
-
+        
     } catch (error) {
         console.log('SW: API request failed, trying cache:', url.pathname);
         
@@ -302,14 +335,70 @@ async function handleAPIRequest(request) {
             console.log('SW: Serving API from cache:', url.pathname);
             return cachedResponse;
         }
-
-        // Return error response
-        return new Response(JSON.stringify({ error: 'Network unavailable' }), {
+        
+        // Return appropriate error response
+        return new Response(JSON.stringify({
+            error: 'Network unavailable',
+            offline: true,
+            cached: false
+        }), {
             status: 503,
             headers: { 'Content-Type': 'application/json' }
         });
     }
 }
+
+
+// Handle Next.js API routes specifically
+async function handleNextAPIRequest(request) {
+    const url = new URL(request.url);
+    
+    try {
+        // Check if offline first
+        if (!navigator.onLine) {
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+                console.log('SW: Serving Next.js API from cache (offline):', url.pathname);
+                return cachedResponse;
+            }
+        }
+        
+        // Try network with timeout
+        const networkResponse = await Promise.race([
+            fetch(request),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Network timeout')), 5000)
+            )
+        ]);
+        
+        if (networkResponse && networkResponse.status === 200) {
+            // Cache the API response
+            const cache = await caches.open(API_CACHE);
+            cache.put(request, networkResponse.clone());
+            console.log('SW: Cached Next.js API response:', url.pathname);
+            return networkResponse;
+        }
+        
+        return networkResponse;
+        
+    } catch (error) {
+        console.log('SW: Next.js API request failed:', url.pathname);
+        
+        // Try cache
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+            return cachedResponse;
+        }
+        
+        // Return empty response to prevent errors
+        return new Response(JSON.stringify({ error: 'Offline', data: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+}
+
+
 
 // Handle static assets with cache-first strategy
 async function handleStaticAsset(request) {
