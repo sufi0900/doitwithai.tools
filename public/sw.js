@@ -138,6 +138,9 @@ async function handleRequest(request) {
 // CRITICAL FIX: Proper navigation request handling// Add this enhanced navigation handler to your public/sw.js
 // Replace the existing handleNavigationRequest function
 
+// Add this enhanced navigation handler to your public/sw.js
+// Replace the existing handleNavigationRequest function
+
 async function handleNavigationRequest(request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
@@ -204,6 +207,76 @@ async function handleNavigationRequest(request) {
     console.log('SW: Navigation request failed:', pathname, error.message);
     return await getCachedNavigation(request);
   }
+}
+
+// Enhanced static page caching function
+async function cacheStaticPageAggressively(request, response) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  
+  try {
+    // Cache in multiple stores for redundancy
+    const cachePromises = [
+      caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone())),
+      caches.open(PAGES_CACHE).then(cache => cache.put(request, response.clone())),
+      caches.open(STATIC_CACHE).then(cache => cache.put(request, response.clone()))
+    ];
+    
+    // Also cache with and without trailing slash
+    const alternativeUrl = pathname.endsWith('/') ? 
+      pathname.slice(0, -1) : pathname + '/';
+    
+    if (alternativeUrl !== pathname) {
+      const alternativeRequest = new Request(url.origin + alternativeUrl, request);
+      cachePromises.push(
+        caches.open(CACHE_NAME).then(cache => cache.put(alternativeRequest, response.clone())),
+        caches.open(PAGES_CACHE).then(cache => cache.put(alternativeRequest, response.clone())),
+        caches.open(STATIC_CACHE).then(cache => cache.put(alternativeRequest, response.clone()))
+      );
+    }
+    
+    await Promise.all(cachePromises);
+    console.log('SW: Aggressively cached static page:', pathname);
+    
+  } catch (error) {
+    console.error('SW: Failed to cache static page:', pathname, error);
+  }
+}
+
+// Enhanced cache retrieval for static pages
+async function getCachedStaticPage(request, allowStale = false) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  
+  // Try multiple URL variations
+  const urlsToTry = [
+    request.url,
+    pathname,
+    pathname.replace(/\/$/, ''), // without trailing slash
+    pathname.endsWith('/') ? pathname : pathname + '/', // with trailing slash
+    url.origin + pathname
+  ];
+  
+  // Try multiple cache stores
+  const cacheStores = [STATIC_CACHE, CACHE_NAME, PAGES_CACHE, RUNTIME_CACHE];
+  
+  for (const cacheStore of cacheStores) {
+    try {
+      const cache = await caches.open(cacheStore);
+      
+      for (const urlToTry of urlsToTry) {
+        const cachedResponse = await cache.match(urlToTry);
+        if (cachedResponse) {
+          console.log('SW: Found cached static page:', urlToTry, 'in', cacheStore);
+          return cachedResponse;
+        }
+      }
+    } catch (error) {
+      console.log('SW: Cache access failed for:', cacheStore);
+    }
+  }
+  
+  return null;
 }
 
 // Enhanced static page caching function

@@ -228,6 +228,7 @@ const cacheDynamicPages = async (dynamicPages) => {
     }
   }
 };
+
 // Cache page content when navigating (not just on reload)
 const cacheCurrentPage = async () => {
   if (typeof window === 'undefined') return;
@@ -314,6 +315,102 @@ const cachePageData = async (pathname) => {
     }
 };
 
+
+// Add this new function to handle client-side navigation caching
+const handleClientSideNavigation = async () => {
+  if (typeof window === 'undefined') return;
+  
+  let currentPath = window.location.pathname;
+  
+  // Function to cache page when navigating via client-side routing
+  const cacheOnNavigation = async (newPath) => {
+    if (newPath === currentPath) return;
+    
+    try {
+      console.log('SW: Caching page for client-side navigation:', newPath);
+      
+      // Cache the HTML page
+      await fetch(newPath, {
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      });
+      
+      // Cache RSC payload
+      if (newPath !== '/') {
+        try {
+          await fetch(`${newPath}?_rsc=1`, {
+            mode: 'same-origin',
+            credentials: 'same-origin'
+          });
+        } catch (rscError) {
+          console.log('Failed to cache RSC for:', newPath);
+        }
+      }
+      
+      // Cache API data for dynamic pages
+      await cachePageData(newPath);
+      
+      // Notify service worker to cache this page
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'PRECACHE_PAGE',
+          path: newPath,
+          url: window.location.origin + newPath
+        });
+      }
+      
+      currentPath = newPath;
+      console.log('✅ Successfully cached page for offline access:', newPath);
+    } catch (error) {
+      console.log('Failed to cache page on navigation:', newPath, error);
+    }
+  };
+  
+  // Override Next.js router to cache pages on navigation
+  const originalPushState = history.pushState;
+  const originalReplaceState = history.replaceState;
+  
+  history.pushState = function(...args) {
+    const result = originalPushState.apply(this, args);
+    const newPath = window.location.pathname;
+    setTimeout(() => cacheOnNavigation(newPath), 500);
+    return result;
+  };
+  
+  history.replaceState = function(...args) {
+    const result = originalReplaceState.apply(this, args);
+    const newPath = window.location.pathname;
+    setTimeout(() => cacheOnNavigation(newPath), 500);
+    return result;
+  };
+  
+  // Listen for popstate events (back/forward buttons)
+  window.addEventListener('popstate', () => {
+    const newPath = window.location.pathname;
+    setTimeout(() => cacheOnNavigation(newPath), 500);
+  });
+  
+  // Also listen for Next.js route changes
+  const observer = new MutationObserver((mutations) => {
+    const newPath = window.location.pathname;
+    if (newPath !== currentPath) {
+      setTimeout(() => cacheOnNavigation(newPath), 500);
+    }
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-pathname']
+  });
+  
+  return () => {
+    observer.disconnect();
+    history.pushState = originalPushState;
+    history.replaceState = originalReplaceState;
+  };
+};
 
 
   // Helper function to update cache from client
