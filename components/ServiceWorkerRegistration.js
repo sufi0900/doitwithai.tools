@@ -88,6 +88,9 @@ export default function ServiceWorkerRegistration() {
 
         // Pre-cache important pages
         await preCachePages(registration);
+        await preloadStaticPages();
+        await prefetchCurrentPage();
+
 
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
@@ -97,6 +100,53 @@ export default function ServiceWorkerRegistration() {
 
     registerSW();
   }, [mounted]);
+
+
+// Add this new function for aggressive static page caching
+const preloadStaticPages = async () => {
+  const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
+  const currentPath = window.location.pathname;
+  
+  // Add current page if it's static
+  if (staticPages.includes(currentPath) && !staticPages.includes(currentPath)) {
+    staticPages.push(currentPath);
+  }
+  
+  try {
+    // Preload all static pages in the background
+    const preloadPromises = staticPages.map(async (page) => {
+      try {
+        // Fetch the page HTML
+        const response = await fetch(page, {
+          mode: 'same-origin',
+          credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+          // Also fetch Next.js data for the page
+          try {
+            await fetch(`/_next/data/${buildId}${page === '/' ? '/index' : page}.json`, {
+              mode: 'same-origin',
+              credentials: 'same-origin'
+            });
+          } catch (dataError) {
+            // Data fetch failed, but page might still work
+            console.log('Failed to preload data for:', page);
+          }
+          
+          console.log('✅ Preloaded static page:', page);
+        }
+      } catch (error) {
+        console.log('Failed to preload static page:', page, error);
+      }
+    });
+    
+    await Promise.allSettled(preloadPromises);
+    console.log('✅ Static pages preloading completed');
+  } catch (error) {
+    console.error('Static pages preloading failed:', error);
+  }
+};
 
 
 // Prefetch current page content

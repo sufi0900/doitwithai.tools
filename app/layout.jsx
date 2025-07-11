@@ -15,6 +15,7 @@ import { Toaster } from 'react-hot-toast';
 import Header from "@/components/Header"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"; // Add this
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider"
+import { staticPageCache } from '@/components/staticPageStorage';
 
 const ConditionalGlobalHeader = dynamic(() => import("@/components/Header/ConditionalGlobalHeader"), {
   ssr: false // Client-side only for scroll detection
@@ -85,6 +86,28 @@ useEffect(() => {
     document.removeEventListener('click', handleLinkClick);
   };
 }, []);
+
+
+useEffect(() => {
+  // Cache static pages when they're visited
+  const cacheCurrentStaticPage = async () => {
+    const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
+    if (staticPages.includes(pathname)) {
+      try {
+        const response = await fetch(pathname);
+        if (response.ok) {
+          const htmlContent = await response.text();
+          await staticPageCache.cachePage(pathname, htmlContent);
+        }
+      } catch (error) {
+        console.log('Failed to cache static page:', pathname);
+      }
+    }
+  };
+
+  cacheCurrentStaticPage();
+}, [pathname]);
+
   // Check if current page is a slug page (article page)
   const isSlugPage = pathname && (
     pathname.startsWith('/ai-tools/') ||

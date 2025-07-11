@@ -135,80 +135,61 @@ async function handleRequest(request) {
     }
 }
 
-// CRITICAL FIX: Proper navigation request handling// Add this enhanced navigation handler to your public/sw.js
-// Replace the existing handleNavigationRequest function
-
-// Add this enhanced navigation handler to your public/sw.js
-// Replace the existing handleNavigationRequest function
-
+// Add this after the existing handleNavigationRequest function
 async function handleNavigationRequest(request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   
   console.log('SW: Handling navigation request for:', pathname);
   
-  // Define static pages that should be cached aggressively
+  // Define static pages that should be cached more aggressively
   const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-  const isStaticPage = staticPages.includes(pathname) || staticPages.includes(pathname.replace(/\/$/, ''));
+  const isStaticPage = staticPages.some(page => pathname === page || pathname === page + '/');
   
   try {
-    // For static pages, try cache first (more reliable for offline)
-    if (isStaticPage) {
-      console.log('SW: Static page detected, trying cache first:', pathname);
-      
-      // Try multiple cache strategies for static pages
-      const cachedResponse = await getCachedStaticPage(request);
+    // For static pages, try cache first when offline
+    if (isStaticPage && !navigator.onLine) {
+      const cachedResponse = await getCachedNavigation(request);
       if (cachedResponse) {
-        console.log('SW: Serving static page from cache:', pathname);
+        console.log('SW: Serving static page from cache (offline):', pathname);
         return cachedResponse;
       }
-      
-      // If online, fetch and cache aggressively
-      if (navigator.onLine) {
-        try {
-          const networkResponse = await fetch(request);
-          if (networkResponse && networkResponse.status === 200) {
-            // Cache in multiple stores for better offline reliability
-            await cacheStaticPageAggressively(request, networkResponse.clone());
-            return networkResponse;
-          }
-        } catch (networkError) {
-          console.log('SW: Network failed for static page:', pathname);
-        }
-      }
-      
-      // Last resort: try any cached version
-      const anyCache = await getCachedStaticPage(request, true);
-      if (anyCache) {
-        return anyCache;
-      }
     }
     
-    // For dynamic pages, use network first (existing logic)
-    if (navigator.onLine) {
-      const networkResponse = await Promise.race([
-        fetch(request),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Network timeout')), 3000)
-        )
-      ]);
+    // Try network first (with shorter timeout for static pages)
+    const networkTimeout = isStaticPage ? 2000 : 3000;
+    const networkResponse = await Promise.race([
+      fetch(request),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Network timeout')), networkTimeout)
+      )
+    ]);
+    
+    if (networkResponse && networkResponse.status === 200) {
+      // Cache successful response in multiple stores
+      const cache = await caches.open(PAGES_CACHE);
+      const runtimeCache = await caches.open(RUNTIME_CACHE);
+      const mainCache = await caches.open(CACHE_NAME);
       
-      if (networkResponse && networkResponse.status === 200) {
-        const cache = await caches.open(PAGES_CACHE);
-        cache.put(request, networkResponse.clone());
-        return networkResponse;
+      // Store in all caches for better offline access
+      cache.put(request, networkResponse.clone());
+      runtimeCache.put(request, networkResponse.clone());
+      if (isStaticPage) {
+        mainCache.put(request, networkResponse.clone());
       }
+      
+      console.log('SW: Cached navigation response:', pathname);
+      return networkResponse;
     }
     
-    // Fallback to cache for dynamic pages
+    // Try cache if network failed
     return await getCachedNavigation(request);
     
   } catch (error) {
-    console.log('SW: Navigation request failed:', pathname, error.message);
+    console.log('SW: Network failed for navigation:', pathname, error.message);
     return await getCachedNavigation(request);
   }
 }
-
 // Enhanced static page caching function
 async function cacheStaticPageAggressively(request, response) {
   const url = new URL(request.url);

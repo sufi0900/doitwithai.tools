@@ -1,191 +1,83 @@
-// Create a new file: /lib/staticPageStorage.js
-// This will store static page content in IndexedDB for reliable offline access
-
-class StaticPageStorage {
+// React_Query_Caching/staticPageCache.js
+class StaticPageCache {
   constructor() {
-    this.dbName = 'static-pages-db';
+    this.memoryCache = new Map();
+    this.dbName = 'static-pages-cache';
     this.version = 1;
-    this.storeName = 'static-pages';
-    this.db = null;
+    this.storeName = 'pages';
   }
 
   async init() {
-    if (this.db) return this.db;
-    
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.version);
       
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve(this.db);
-      };
+      request.onsuccess = () => resolve(request.result);
       
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
-        
         if (!db.objectStoreNames.contains(this.storeName)) {
           const store = db.createObjectStore(this.storeName, { keyPath: 'path' });
-          store.createIndex('lastUpdated', 'lastUpdated');
-          store.createIndex('path', 'path', { unique: true });
+          store.createIndex('timestamp', 'timestamp');
         }
       };
     });
   }
 
-  async storeStaticPage(path, content, metadata = {}) {
-    await this.init();
-    
-    const data = {
-      path,
-      content,
-      lastUpdated: Date.now(),
-      metadata: {
-        title: metadata.title || '',
-        description: metadata.description || '',
-        cached: true,
-        ...metadata
+  async cachePage(path, htmlContent) {
+    try {
+      // Store in memory
+      this.memoryCache.set(path, {
+        content: htmlContent,
+        timestamp: Date.now()
+      });
+
+      // Store in IndexedDB
+      const db = await this.init();
+      const transaction = db.transaction([this.storeName], 'readwrite');
+      const store = transaction.objectStore(this.storeName);
+      
+      await store.put({
+        path,
+        content: htmlContent,
+        timestamp: Date.now()
+      });
+      
+      console.log('✅ Cached static page:', path);
+    } catch (error) {
+      console.error('Failed to cache static page:', path, error);
+    }
+  }
+
+  async getCachedPage(path) {
+    try {
+      // Try memory first
+      const memoryResult = this.memoryCache.get(path);
+      if (memoryResult) {
+        return memoryResult.content;
       }
-    };
-    
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-    
-    return new Promise((resolve, reject) => {
-      const request = store.put(data);
-      request.onsuccess = () => {
-        console.log('Static page stored in IndexedDB:', path);
-        resolve(request.result);
-      };
-      request.onerror = () => reject(request.error);
-    });
-  }
 
-  async getStaticPage(path) {
-    await this.init();
-    
-    const transaction = this.db.transaction([this.storeName], 'readonly');
-    const store = transaction.objectStore(this.storeName);
-    
-    return new Promise((resolve, reject) => {
-      const request = store.get(path);
-      request.onsuccess = () => {
-        const result = request.result;
-        if (result) {
-          console.log('Static page retrieved from IndexedDB:', path);
-          resolve(result);
-        } else {
-          resolve(null);
-        }
-      };
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async preloadStaticPages() {
-    const staticPages = [
-      { path: '/about', url: '/about' },
-      { path: '/faq', url: '/faq' },
-      { path: '/contact', url: '/contact' },
-      { path: '/privacy', url: '/privacy' },
-      { path: '/terms', url: '/terms' }
-    ];
-
-    for (const page of staticPages) {
-      try {
-        // Check if already cached and fresh (less than 24 hours)
-        const cached = await this.getStaticPage(page.path);
-        const now = Date.now();
-        const oneDayInMs = 24 * 60 * 60 * 1000;
-        
-        if (cached && (now - cached.lastUpdated) < oneDayInMs) {
-          console.log('Static page already cached and fresh:', page.path);
-          continue;
-        }
-        
-        // Fetch and store the page
-        const response = await fetch(page.url);
-        if (response.ok) {
-          const content = await response.text();
-          
-          // Extract metadata from the HTML
-          const metadata = this.extractMetadata(content);
-          
-          await this.storeStaticPage(page.path, content, metadata);
-        }
-        
-      } catch (error) {
-        console.error('Failed to preload static page:', page.path, error);
+      // Try IndexedDB
+      const db = await this.init();
+      const transaction = db.transaction([this.storeName], 'readonly');
+      const store = transaction.objectStore(this.storeName);
+      const result = await store.get(path);
+      
+      if (result) {
+        // Update memory cache
+        this.memoryCache.set(path, {
+          content: result.content,
+          timestamp: result.timestamp
+        });
+        return result.content;
       }
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to get cached page:', path, error);
+      return null;
     }
-  }
-
-  extractMetadata(htmlContent) {
-    const metadata = {};
-    
-    // Extract title
-    const titleMatch = htmlContent.match(/<title>(.*?)<\/title>/i);
-    if (titleMatch) {
-      metadata.title = titleMatch[1];
-    }
-    
-    // Extract description
-    const descMatch = htmlContent.match(/<meta\s+name="description"\s+content="(.*?)"/i);
-    if (descMatch) {
-      metadata.description = descMatch[1];
-    }
-    
-    return metadata;
-  }
-
-  async getAllStaticPages() {
-    await this.init();
-    
-    const transaction = this.db.transaction([this.storeName], 'readonly');
-    const store = transaction.objectStore(this.storeName);
-    
-    return new Promise((resolve, reject) => {
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async clearExpiredPages() {
-    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    
-    await this.init();
-    
-    const transaction = this.db.transaction([this.storeName], 'readwrite');
-    const store = transaction.objectStore(this.storeName);
-    const index = store.index('lastUpdated');
-    
-    const request = index.openCursor();
-    
-    return new Promise((resolve, reject) => {
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
-        if (cursor) {
-          const data = cursor.value;
-          if (now - data.lastUpdated > sevenDaysInMs) {
-            cursor.delete();
-            console.log('Deleted expired static page:', data.path);
-          }
-          cursor.continue();
-        } else {
-          resolve();
-        }
-      };
-      request.onerror = () => reject(request.error);
-    });
   }
 }
 
-// Create singleton instance
-export const staticPageStorage = new StaticPageStorage();
-
-// Auto-initialize and preload on import
-if (typeof window !== 'undefined') {
-  staticPageStorage.preloadStaticPages().catch(console.error);
-}
+export const staticPageCache = new StaticPageCache();
