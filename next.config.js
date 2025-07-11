@@ -30,37 +30,47 @@ const withPWA = require('next-pwa')({
         },
         
         // Static pages cache (for /about, /faq, etc.)
+       {
+    urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+    handler: 'CacheFirst', // Changed from NetworkFirst
+    options: {
+      cacheName: 'static-pages-cache',
+      expiration: {
+        maxEntries: 50,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days instead of 7
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      // Add aggressive caching strategies
+      plugins: [
         {
-            urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
-            handler: 'CacheFirst',
-            options: {
-                cacheName: 'static-pages-cache',
-                expiration: {
-                    maxEntries: 50,
-                    maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-                },
-                cacheableResponse: {
-                    statuses: [0, 200],
-                },
-            },
+          cacheKeyWillBeUsed: async ({ request }) => {
+            // Normalize URLs for consistent caching
+            const url = new URL(request.url);
+            return `${url.origin}${url.pathname.replace(/\/$/, '')}/`;
+          },
         },
-
+      ],
+    },
+  },
         // Page data caching
-        {
-            urlPattern: /\/_next\/data\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-                cacheName: 'next-data-cache',
-                networkTimeoutSeconds: 10,
-                expiration: {
-                    maxEntries: 100,
-                    maxAgeSeconds: 24 * 60 * 60, // 1 day
-                },
-                cacheableResponse: {
-                    statuses: [0, 200],
-                },
-            },
-        },
+     {
+    urlPattern: /^https:\/\/.*$/i,
+    handler: 'NetworkFirst',
+    method: 'GET',
+    options: {
+      cacheName: 'navigation-cache',
+      networkTimeoutSeconds: 5, // Increased timeout
+      expiration: {
+        maxEntries: 200, // Increased capacity
+        maxAgeSeconds: 24 * 60 * 60,
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+    },
+  },
 
         // RSC payload caching
         {
@@ -200,8 +210,7 @@ const nextConfig = {
             allowedOrigins: ['localhost:3000', '*.vercel.app'],
         }
     },
-    // Add this to handle static exports properly
-    // output: 'export',
+  
     trailingSlash: true,
     // Add this to ensure proper static file handling
     async rewrites() {

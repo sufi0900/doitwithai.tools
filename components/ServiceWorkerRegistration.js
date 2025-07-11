@@ -1,183 +1,423 @@
 "use client";
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function ServiceWorkerRegistration() {
-    const [mounted, setMounted] = useState(false);
-    const [swStatus, setSwStatus] = useState('checking');
+  const [mounted, setMounted] = useState(false);
+  const [swStatus, setSwStatus] = useState('checking');
 
-    // State for initial mount/hydration
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+  // Handle hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-    // --- Helper to send messages to Service Worker ---
-    const sendSWMessage = useCallback((type, payload) => {
-        if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({ type, ...payload });
+  useEffect(() => {
+    if (!mounted) return;
+
+     const registerSW = async () => {
+        if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+            console.log('Service Worker not supported');
+            setSwStatus('unsupported');
+            return;
         }
-    }, []);
 
-    // --- Initial Service Worker Registration and Setup ---
-    useEffect(() => {
-        if (!mounted) return;
-
-        const registerSW = async () => {
-            if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-                console.log('Service Worker not supported in this environment.');
-                setSwStatus('unsupported');
-                return;
-            }
-
-            try {
-                // Ensure the DOM is fully loaded and React is likely hydrated
-                await new Promise(resolve => {
-                    if (document.readyState === 'complete') {
-                        setTimeout(resolve, 500); // Small delay to ensure React takes over
-                    } else {
-                        window.addEventListener('load', () => setTimeout(resolve, 500), { once: true });
-                    }
-                });
-
-                // Check for existing registration and update if present
-                const existingRegistration = await navigator.serviceWorker.getRegistration();
-                if (existingRegistration) {
-                    console.log('SW: Existing registration found. Attempting update...');
-                    await existingRegistration.update();
-                    setSwStatus('updated');
+      try {
+            // Wait for React hydration to complete
+            await new Promise(resolve => {
+                if (document.readyState === 'complete') {
+                    // Add longer delay to ensure React is fully hydrated
+                    setTimeout(resolve, 3000);
+                } else {
+                    window.addEventListener('load', () => {
+                        setTimeout(resolve, 2000);
+                    });
                 }
+            });
 
-                // Register the service worker
-                const registration = await navigator.serviceWorker.register('/sw.js', {
-                    scope: '/',
-                    updateViaCache: 'none' // Important for controlling updates via SW activation
-                });
-
-                console.log('✅ Service Worker registered:', registration);
-                setSwStatus('registered');
-
-                // Listen for updatefound event on the registration
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    if (newWorker) {
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('SW: New version available and installed.');
-                                setSwStatus('update-available');
-                                // Prompt user to reload if a new SW is waiting
-                                if (window.confirm('A new version of the app is available! Reload to get the latest features?')) {
-                                    window.location.reload();
-                                }
-                            }
-                        });
-                    }
-                });
-
-                // Handle controller change (e.g., after a new SW activates)
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    console.log('SW: Controller changed. Reloading page...');
-                    window.location.reload();
-                });
-
-                // Listen for messages from the service worker
-                navigator.serviceWorker.addEventListener('message', (event) => {
-                    console.log('SW Message from worker:', event.data);
-                    if (event.data.type === 'CACHE_UPDATED') {
-                        console.log('Client: Cache updated for:', event.data.url);
-                    }
-                });
-
-                // --- Initial precaching of important pages ---
-                // Send messages to the SW to precache these URLs
-                const importantPages = [
-                    '/', '/offline.html', // Ensure offline.html is precached
-                    '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn',
-                    '/free-ai-resources', '/ai-news', '/about', '/faq',
-                    '/contact', '/privacy', '/terms'
-                ];
-
-                const currentPath = window.location.pathname;
-                if (!importantPages.includes(currentPath)) {
-                    importantPages.push(currentPath);
-                }
-
-                importantPages.forEach(page => {
-                    sendSWMessage('PRECACHE_PAGE', { path: page });
-                });
-
-            } catch (error) {
-                console.error('❌ Service Worker registration failed:', error);
-                setSwStatus('failed');
-            }
-        };
-
-        registerSW();
-    }, [mounted, sendSWMessage]); // Depend on mounted and sendSWMessage
-
-    // --- Handle Client-Side Navigation Caching ---
-    useEffect(() => {
-        if (!mounted) return;
-
-        let lastPath = window.location.pathname;
-
-        const handleNavigationChange = () => {
-            const newPath = window.location.pathname;
-            if (newPath !== lastPath) {
-                console.log('Client: Navigation detected to:', newPath);
-                // Send message to SW to precache the new page
-                sendSWMessage('PRECACHE_PAGE', { path: newPath });
-                lastPath = newPath;
-            }
-        };
-
-        // Observe DOM for changes (often triggered by Next.js client-side routing)
-        const observer = new MutationObserver(handleNavigationChange);
-        observer.observe(document.body, { childList: true, subtree: true });
-
-        // Listen for browser's back/forward buttons
-        window.addEventListener('popstate', handleNavigationChange);
-
-        return () => {
-            observer.disconnect();
-            window.removeEventListener('popstate', handleNavigationChange);
-        };
-    }, [mounted, sendSWMessage]); // Depend on mounted and sendSWMessage
-
-    // --- Global Cache Update Function (if needed by other components) ---
-    useEffect(() => {
-        if (mounted) {
-            window.updateSWCache = (url, data) => sendSWMessage('CACHE_UPDATE', { url, data });
+        // Check for existing service worker
+        const existingRegistration = await navigator.serviceWorker.getRegistration();
+        
+        if (existingRegistration) {
+          console.log('Existing SW found, updating...');
+          await existingRegistration.update();
+          setSwStatus('updated');
         }
-        // Cleanup global function on unmount (though usually not necessary for SW registration)
-        return () => {
-            if (mounted) {
-                delete window.updateSWCache;
-            }
-        };
-    }, [mounted, sendSWMessage]);
+
+        // Register service worker
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/',
+          updateViaCache: 'none'
+        });
+
+        console.log('✅ Service Worker registered:', registration);
+        setSwStatus('registered');
+
+        // Listen for updates
+        registration.addEventListener('updatefound', () => {
+          console.log('SW: Update found');
+          const newWorker = registration.installing;
+          
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('SW: New version available');
+                setSwStatus('update-available');
+                
+                // Optionally notify user about update
+                if (window.confirm('New version available! Reload to update?')) {
+                  window.location.reload();
+                }
+              }
+            });
+          }
+        });
+
+        // Listen for messages from SW
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          console.log('SW Message:', event.data);
+          
+          if (event.data.type === 'CACHE_UPDATED') {
+            console.log('Cache updated for:', event.data.url);
+          }
+        });
+
+        // Handle controller change
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('SW: Controller changed');
+          window.location.reload();
+        });
+
+        // Pre-cache important pages
+        await preCachePages(registration);
+
+      } catch (error) {
+        console.error('❌ Service Worker registration failed:', error);
+        setSwStatus('failed');
+      }
+    };
+
+    registerSW();
+  }, [mounted]);
 
 
-    // Don't render anything during SSR or if not mounted
-    if (!mounted) return null;
+// Prefetch current page content
+const prefetchCurrentPage = async () => {
+  try {
+    const currentPath = window.location.pathname;
+    const currentUrl = window.location.href;
+    
+    // Prefetch current page
+    await fetch(currentPath, { mode: 'same-origin' });
+    
+    // Prefetch RSC payload for current page
+    if (currentPath !== '/') {
+      await fetch(`${currentPath}?_rsc=1`, { mode: 'same-origin' });
+    }
+    
+    console.log('Pre-cached current page:', currentPath);
+  } catch (error) {
+    console.log('Failed to pre-cache current page:', error);
+  }
+};
 
-    // Optional: Show SW status indicator in development
-    if (process.env.NODE_ENV === 'development') {
-        return (
-            <div style={{
-                position: 'fixed',
-                bottom: '10px',
-                right: '10px',
-                background: getStatusColor(swStatus),
-                color: 'white',
-                padding: '5px 10px',
-                borderRadius: '5px',
-                fontSize: '12px',
-                zIndex: 9999
-            }}>
-                SW: {swStatus}
-            </div>
-        );
+
+  // Pre-cache important pages
+// Pre-cache important pages
+// Add this to your ServiceWorkerRegistration.js
+// Replace the existing preCachePages function
+
+const preCachePages = async (registration) => {
+  if (registration.active) {
+    try {
+      const currentPath = window.location.pathname;
+      
+      // Prioritize static pages for aggressive caching
+      const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
+      const dynamicPages = ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn', '/free-ai-resources', '/ai-news'];
+      
+      // Add current page if not already included
+      const allPages = [...staticPages, ...dynamicPages];
+      if (!allPages.includes(currentPath)) {
+        allPages.push(currentPath);
+      }
+      
+      // Cache static pages first with aggressive strategy
+      console.log('SW: Pre-caching static pages...');
+      await cacheStaticPagesAggressively(staticPages);
+      
+      // Then cache dynamic pages
+      console.log('SW: Pre-caching dynamic pages...');
+      await cacheDynamicPages(dynamicPages);
+      
+      console.log('SW: Pre-caching completed');
+      
+    } catch (error) {
+      console.error('Pre-caching failed:', error);
+    }
+  }
+};
+
+// Aggressive static page caching
+const cacheStaticPagesAggressively = async (staticPages) => {
+  const cachePromises = staticPages.map(async (page) => {
+    try {
+      // Fetch the page
+      const response = await fetch(page, {
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      });
+      
+      if (response.ok) {
+        // Cache in multiple stores for redundancy
+        const cacheStores = ['doitwithai-v7', 'static-v7', 'pages-v7'];
+        
+        for (const storeName of cacheStores) {
+          const cache = await caches.open(storeName);
+          await cache.put(page, response.clone());
+          
+          // Also cache with alternative URL formats
+          const alternativeUrl = page.endsWith('/') ? page.slice(0, -1) : page + '/';
+          if (alternativeUrl !== page) {
+            await cache.put(alternativeUrl, response.clone());
+          }
+        }
+        
+        console.log('SW: Aggressively cached static page:', page);
+      }
+    } catch (error) {
+      console.error('SW: Failed to cache static page:', page, error);
+    }
+  });
+  
+  await Promise.allSettled(cachePromises);
+};
+
+// Enhanced dynamic page caching
+const cacheDynamicPages = async (dynamicPages) => {
+  for (const page of dynamicPages) {
+    try {
+      // Cache the page HTML
+      const response = await fetch(page, {
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      });
+      
+      if (response.ok) {
+        const cache = await caches.open('pages-v7');
+        await cache.put(page, response.clone());
+        
+        // Cache RSC payload
+        try {
+          const rscResponse = await fetch(`${page}?_rsc=1`, {
+            mode: 'same-origin',
+            credentials: 'same-origin'
+          });
+          if (rscResponse.ok) {
+            await cache.put(`${page}?_rsc=1`, rscResponse);
+          }
+        } catch (rscError) {
+          console.log('Failed to cache RSC for:', page);
+        }
+        
+        // Cache API data for dynamic pages
+        await cachePageData(page);
+        
+        console.log('SW: Cached dynamic page:', page);
+      }
+    } catch (error) {
+      console.error('SW: Failed to cache dynamic page:', page, error);
+    }
+  }
+};
+// Cache page content when navigating (not just on reload)
+const cacheCurrentPage = async () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const currentPath = window.location.pathname;
+    const currentUrl = window.location.href;
+
+    // --- IMPORTANT CHANGE HERE ---
+    // Cache the current page HTML by fetching it as a navigation request
+    await fetch(currentPath, {
+      mode: 'navigate', // Treat as navigation request
+      credentials: 'same-origin',
+      headers: {
+        'X-Purpose': 'cache-on-client-navigation' // Custom header
+      }
+    });
+    console.log('✅Cached current page HTML via client navigation:', currentPath);
+
+    // Cache RSC payload for the current page
+    if (currentPath !== '/') {
+      try {
+        await fetch(`${currentPath}?_rsc=1`, {
+          mode: 'same-origin',
+          credentials: 'same-origin'
+        });
+        console.log('Cached RSC for:', currentPath);
+      } catch (rscError) {
+        console.log('Failed to cache RSC for:', currentPath, rscError);
+      }
     }
 
-    return null;
+    // For dynamic pages, cache their API data
+    await cachePageData(currentPath);
+  } catch (error) {
+    console.log('Failed to cache current page HTML/data:', error);
+  }
+};
+
+
+
+
+
+// Add this function to cache API data for dynamic pages
+const cachePageData = async (pathname) => {
+    try {
+        // Define which pages need data caching
+        const dynamicPages = {
+            '/ai-tools': 'aitool',
+            '/ai-seo': 'SEO', 
+            '/ai-code': 'coding',
+            '/ai-learn-earn': 'makemoney'
+        };
+        
+        const category = dynamicPages[pathname];
+        if (category) {
+            // Cache the API data for this category
+            await fetch(`/api/posts?category=${category}`, {
+                mode: 'same-origin',
+                credentials: 'same-origin'
+            });
+            
+            console.log('Cached API data for category:', category);
+        }
+        
+        // For slug pages, cache the specific post data
+        if (pathname.includes('/ai-tools/') || pathname.includes('/ai-seo/') || 
+            pathname.includes('/ai-code/') || pathname.includes('/ai-learn-earn/')) {
+            
+            const slug = pathname.split('/').pop();
+            if (slug) {
+                try {
+                    await fetch(`/api/posts/${slug}`, {
+                        mode: 'same-origin',
+                        credentials: 'same-origin'
+                    });
+                    console.log('Cached post data for slug:', slug);
+                } catch (error) {
+                    console.log('Failed to cache slug data:', slug);
+                }
+            }
+        }
+    } catch (error) {
+        console.log('Failed to cache page data:', error);
+    }
+};
+
+
+
+  // Helper function to update cache from client
+  const updateCache = (url, data) => {
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'CACHE_UPDATE',
+        url,
+        data
+      });
+    }
+  };
+
+  // Expose updateCache function globally for other components
+  useEffect(() => {
+    if (mounted) {
+      window.updateSWCache = updateCache;
+    }
+  }, [mounted]);
+
+// Add this useEffect after the existing ones
+useEffect(() => {
+  if (!mounted) return;
+  
+  const cleanup = handleClientSideNavigation();
+  
+  return cleanup;
+}, [mounted]);
+
+
+// Add after the existing useEffect hooks
+useEffect(() => {
+    if (!mounted) return;
+    
+    let currentPath = window.location.pathname;
+    
+    // Function to handle route changes
+    const handleRouteChange = () => {
+        const newPath = window.location.pathname;
+        if (newPath !== currentPath) {
+            currentPath = newPath;
+            
+            // Cache the new page after navigation
+            setTimeout(() => {
+                cacheCurrentPage();
+            }, 1000); // Small delay to ensure page is loaded
+        }
+    };
+    
+    // Listen for route changes (for client-side navigation)
+    const observer = new MutationObserver(() => {
+        handleRouteChange();
+    });
+    
+    // Watch for URL changes
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    // Also listen for popstate (back/forward buttons)
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Cache current page on initial load
+    cacheCurrentPage();
+    
+    return () => {
+        observer.disconnect();
+        window.removeEventListener('popstate', handleRouteChange);
+    };
+}, [mounted]);
+
+  // Don't render anything during SSR
+  if (!mounted) return null;
+
+  // Optional: Show SW status indicator in development
+  if (process.env.NODE_ENV === 'development') {
+    return (
+      <div style={{
+        position: 'fixed',
+        bottom: '10px',
+        right: '10px',
+        background: getStatusColor(swStatus),
+        color: 'white',
+        padding: '5px 10px',
+        borderRadius: '5px',
+        fontSize: '12px',
+        zIndex: 9999
+      }}>
+        SW: {swStatus}
+      </div>
+    );
+  }
+
+  return null;
 }
 
+function getStatusColor(status) {
+  switch (status) {
+    case 'registered': return '#4CAF50';
+    case 'updated': return '#2196F3';
+    case 'update-available': return '#FF9800';
+    case 'failed': return '#f44336';
+    case 'unsupported': return '#9E9E9E';
+    default: return '#9E9E9E';
+  }
+}
