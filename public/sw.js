@@ -136,60 +136,207 @@ async function handleRequest(request) {
 }
 
 // Add this after the existing handleNavigationRequest function
+// Replace the existing handleNavigationRequest function
 async function handleNavigationRequest(request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
-  
   console.log('SW: Handling navigation request for:', pathname);
-  
-  // Define static pages that should be cached more aggressively
-  const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-  const isStaticPage = staticPages.some(page => pathname === page || pathname === page + '/');
-  
+
   try {
-    // For static pages, try cache first when offline
-    if (isStaticPage && !navigator.onLine) {
-      const cachedResponse = await getCachedNavigation(request);
-      if (cachedResponse) {
-        console.log('SW: Serving static page from cache (offline):', pathname);
-        return cachedResponse;
+    // Try network first with timeout
+    if (navigator.onLine) {
+      try {
+        const networkResponse = await Promise.race([
+          fetch(request),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Network timeout')), 3000)
+          )
+        ]);
+
+        if (networkResponse && networkResponse.status === 200) {
+          // Cache in multiple stores with better key management
+          const cachePromises = [];
+          const cacheStores = [PAGES_CACHE, RUNTIME_CACHE, CACHE_NAME];
+          
+          // Store with multiple URL variations
+          const urlsToCache = [
+            pathname,
+            pathname === '/' ? '/' : pathname.replace(/\/$/, ''),
+            pathname === '/' ? '/' : pathname + '/'
+          ];
+
+          for (const cacheStore of cacheStores) {
+            const cache = await caches.open(cacheStore);
+            for (const urlToCache of urlsToCache) {
+              const requestToCache = new Request(urlToCache, {
+                method: 'GET',
+                headers: request.headers,
+                mode: 'same-origin',
+                credentials: 'same-origin'
+              });
+              cachePromises.push(cache.put(requestToCache, networkResponse.clone()));
+            }
+          }
+
+          await Promise.all(cachePromises);
+          console.log('SW: Successfully cached navigation response:', pathname);
+          return networkResponse;
+        }
+      } catch (networkError) {
+        console.log('SW: Network failed for navigation:', pathname, networkError.message);
       }
     }
-    
-    // Try network first (with shorter timeout for static pages)
-    const networkTimeout = isStaticPage ? 2000 : 3000;
-    const networkResponse = await Promise.race([
-      fetch(request),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Network timeout')), networkTimeout)
-      )
-    ]);
-    
-    if (networkResponse && networkResponse.status === 200) {
-      // Cache successful response in multiple stores
-      const cache = await caches.open(PAGES_CACHE);
-      const runtimeCache = await caches.open(RUNTIME_CACHE);
-      const mainCache = await caches.open(CACHE_NAME);
-      
-      // Store in all caches for better offline access
-      cache.put(request, networkResponse.clone());
-      runtimeCache.put(request, networkResponse.clone());
-      if (isStaticPage) {
-        mainCache.put(request, networkResponse.clone());
-      }
-      
-      console.log('SW: Cached navigation response:', pathname);
-      return networkResponse;
-    }
-    
-    // Try cache if network failed
-    return await getCachedNavigation(request);
+
+    // Try cache with improved matching
+    return await getCachedNavigationImproved(request);
     
   } catch (error) {
-    console.log('SW: Network failed for navigation:', pathname, error.message);
-    return await getCachedNavigation(request);
+    console.log('SW: Navigation request failed:', pathname, error.message);
+    return await getCachedNavigationImproved(request);
   }
 }
+// Replace getCachedNavigation with this improved version:
+// Replace the existing getCachedNavigationImproved function
+async function getCachedNavigationImproved(request) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+  console.log('SW: Looking for cached navigation:', pathname);
+
+  // All possible URL variations
+  const urlsToTry = [
+    pathname,
+    pathname === '/' ? '/' : pathname.replace(/\/$/, ''),
+    pathname === '/' ? '/' : pathname + '/',
+    url.origin + pathname,
+    url.origin + pathname.replace(/\/$/, ''),
+    url.origin + pathname + '/'
+  ];
+
+  // Try each cache store
+  const cacheStores = [PAGES_CACHE, CACHE_NAME, RUNTIME_CACHE, STATIC_CACHE];
+  
+  for (const cacheStore of cacheStores) {
+    try {
+      const cache = await caches.open(cacheStore);
+      
+      // First try exact matches
+      for (const urlToTry of urlsToTry) {
+        const cachedResponse = await cache.match(urlToTry);
+        if (cachedResponse) {
+          console.log('SW: Found cached page:', urlToTry, 'in', cacheStore);
+          return cachedResponse;
+        }
+      }
+      
+      // Then try with loose matching
+      for (const urlToTry of urlsToTry) {
+        const cachedResponse = await cache.match(urlToTry, {
+          ignoreSearch: true,
+          ignoreMethod: true,
+          ignoreVary: true
+        });
+        if (cachedResponse) {
+          console.log('SW: Found cached page with loose matching:', urlToTry, 'in', cacheStore);
+          return cachedResponse;
+        }
+      }
+      
+      // Try manual key matching as fallback
+      const keys = await cache.keys();
+      for (const key of keys) {
+        const keyUrl = new URL(key.url);
+        if (keyUrl.pathname === pathname || 
+            keyUrl.pathname === pathname.replace(/\/$/, '') ||
+            keyUrl.pathname === pathname + '/') {
+          const cachedResponse = await cache.match(key);
+          if (cachedResponse) {
+            console.log('SW: Found cached page via key matching:', key.url, 'in', cacheStore);
+            return cachedResponse;
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.log('SW: Cache access failed for:', cacheStore);
+    }
+  }
+
+  // If no cached version found, return offline page
+  return await getOfflinePage();
+}
+
+
+// Add this function to your sw.js file
+async function cleanupOldCaches() {
+  const cacheNames = await caches.keys();
+  const currentCaches = [CACHE_NAME, RUNTIME_CACHE, STATIC_CACHE, API_CACHE, PAGES_CACHE];
+  
+  // Only delete caches that are clearly old versions
+  const cachesToDelete = cacheNames.filter(cacheName => {
+    // Don't delete current caches
+    if (currentCaches.includes(cacheName)) return false;
+    
+    // Only delete caches that match our naming pattern but are old versions
+    const isOldVersion = cacheName.match(/^(doitwithai|runtime|static|api|pages)-v\d+$/) && 
+                         !cacheName.includes('v7');
+    
+    return isOldVersion;
+  });
+  
+  return Promise.all(
+    cachesToDelete.map(cacheName => {
+      console.log('SW: Deleting old cache:', cacheName);
+      return caches.delete(cacheName);
+    })
+  );
+}
+
+// Update your activate event listener:
+self.addEventListener('activate', (event) => {
+  console.log('SW: Activating v7');
+  event.waitUntil(
+    cleanupOldCaches()
+      .then(() => {
+        console.log('SW: Claiming clients');
+        return self.clients.claim();
+      })
+  );
+});
+
+
+// Add this function to your sw.js
+async function ensureCachePersistence() {
+  if ('storage' in navigator && 'persist' in navigator.storage) {
+    const persistent = await navigator.storage.persist();
+    console.log('SW: Cache persistence:', persistent ? 'granted' : 'denied');
+    
+    if (persistent) {
+      const estimate = await navigator.storage.estimate();
+      console.log('SW: Storage estimate:', estimate);
+    }
+  }
+}
+
+// Call this in your install event:
+self.addEventListener('install', (event) => {
+  console.log('SW: Installing v7');
+  event.waitUntil(
+    Promise.all([
+      caches.open(CACHE_NAME).then((cache) => {
+        console.log('SW: Precaching URLs');
+        return cache.addAll(PRECACHE_URLS);
+      }),
+      ensureCachePersistence()
+    ]).then(() => {
+      console.log('SW: Precaching complete');
+      return self.skipWaiting();
+    }).catch(err => {
+      console.error('SW: Install failed', err);
+    })
+  );
+});
+
+
 // Enhanced static page caching function
 async function cacheStaticPageAggressively(request, response) {
   const url = new URL(request.url);
