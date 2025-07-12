@@ -237,6 +237,45 @@ const cacheCurrentPage = async () => {
   }
 };
 
+// Add this function to your ServiceWorkerRegistration component
+const ensurePageCaching = async (pathname) => {
+  try {
+    // Force cache the page with multiple variations
+    const urlsToCache = [
+      pathname,
+      pathname === '/' ? '/' : pathname.replace(/\/$/, ''),
+      pathname === '/' ? '/' : pathname + '/',
+      window.location.origin + pathname
+    ];
+    
+    for (const url of urlsToCache) {
+      await fetch(url, { 
+        mode: 'same-origin',
+        credentials: 'same-origin',
+        cache: 'no-cache' // Force fresh fetch
+      });
+    }
+    
+    console.log('✅ Enhanced caching for:', pathname);
+  } catch (error) {
+    console.log('Failed to enhance cache for:', pathname, error);
+  }
+};
+
+// Update your route change handler:
+const handleRouteChange = () => {
+  const newPath = window.location.pathname;
+  if (newPath !== currentPath) {
+    currentPath = newPath;
+    
+    // Enhanced caching with delay
+    setTimeout(async () => {
+      await ensurePageCaching(newPath);
+      await cacheCurrentPage();
+    }, 500); // Slightly longer delay
+  }
+};
+
 
   // Helper function to update cache from client
   const updateCache = (url, data) => {
@@ -255,16 +294,6 @@ const cacheCurrentPage = async () => {
       window.updateSWCache = updateCache;
     }
   }, [mounted]);
-
-// Add this useEffect after the existing ones
-useEffect(() => {
-  if (!mounted) return;
-  
-  const cleanup = handleClientSideNavigation();
-  
-  return cleanup;
-}, [mounted]);
-
 
 // Add after the existing useEffect hooks
 useEffect(() => {

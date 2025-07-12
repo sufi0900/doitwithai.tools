@@ -117,6 +117,8 @@ const ReusableCachedMixedBlogs = ({
   // Register the cache keys with usePageCache hook for UI status
   usePageCache(pageCacheKey, refreshPosts, pageQuery, `MixedBlogsPage${currentPage}(${selectedCategory},${sortBy})`);
   usePageCache(totalCountCacheKey, refreshTotal, totalCountQuery, `MixedBlogsTotalCount(${selectedCategory},${sortBy})`);
+ const postsToDisplay = postsData || [];
+
 
   // Combine loading states
 const isLoading = isPostsLoading || isTotalLoading;
@@ -171,7 +173,7 @@ const hasExistingData = postsToDisplay.length > 0;
   // Determine if there's an error and NO data to display as a fallback
   const hasErrorAndNoData = (postsError || totalError) && (!postsData || postsData.length === 0);
 
-  const postsToDisplay = postsData || [];
+ 
 
   return (
     <div className="space-y-4">
