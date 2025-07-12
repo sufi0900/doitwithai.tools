@@ -64,32 +64,117 @@ self.addEventListener('activate', (event) => {
 
 
 
-
-
-
-// Enhanced fetch handler with proper navigation handling
+// Enhanced fetch handler with proper navigation handling// Replace the entire fetch event listener in sw.js
 self.addEventListener('fetch', (event) => {
-    const { request } = event;
-    const url = new URL(request.url);
+  const { request } = event;
+  const url = new URL(request.url);
 
-    // Skip non-GET requests
-    if (request.method !== 'GET') return;
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
 
-    // Skip service worker requests
-    if (url.pathname.includes('/sw.js')) return;
+  // Skip service worker requests
+  if (url.pathname.includes('/sw.js')) return;
 
-    // Skip chrome-extension requests
-    if (url.protocol === 'chrome-extension:') return;
+  // Skip chrome-extension requests
+  if (url.protocol === 'chrome-extension:') return;
 
-    // Skip webpack HMR and other Next.js internal requests
-    if (url.pathname.includes('/_next/') && (
-        url.pathname.includes('webpack') ||
-        url.pathname.includes('hmr') ||
-        url.search.includes('ts=')
-    )) return;
+  // Skip webpack HMR
+  if (url.pathname.includes('/_next/') && url.search.includes('ts=')) return;
 
-    event.respondWith(handleRequest(request));
+  event.respondWith(handleSimplifiedRequest(request));
 });
+
+// Add this new simplified request handler
+async function handleSimplifiedRequest(request) {
+  const url = new URL(request.url);
+  const isNavigationRequest = request.mode === 'navigate';
+  const isAPIRequest = url.pathname.includes('/api/') || url.hostname.includes('sanity.io');
+  const isStaticAsset = url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/);
+  const isNextStatic = url.pathname.includes('/_next/static/');
+
+  try {
+    // Handle navigation requests
+    if (isNavigationRequest) {
+      return await handleNavigationRequest(request);
+    }
+
+    // Handle static assets (cache first)
+    if (isStaticAsset || isNextStatic) {
+      return await handleStaticAsset(request);
+    }
+
+    // Handle API requests (network first)
+    if (isAPIRequest) {
+      return await handleAPIRequest(request);
+    }
+
+    // Handle other requests
+    return await handleOtherRequests(request);
+
+  } catch (error) {
+    console.error('SW: Request failed:', error);
+    if (isNavigationRequest) {
+      return await getOfflinePage();
+    }
+    return new Response('Service Unavailable', { status: 503 });
+  }
+}
+
+// Replace the entire fetch event listener in sw.js
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
+
+  // Skip service worker requests
+  if (url.pathname.includes('/sw.js')) return;
+
+  // Skip chrome-extension requests
+  if (url.protocol === 'chrome-extension:') return;
+
+  // Skip webpack HMR
+  if (url.pathname.includes('/_next/') && url.search.includes('ts=')) return;
+
+  event.respondWith(handleSimplifiedRequest(request));
+});
+
+// Add this new simplified request handler
+async function handleSimplifiedRequest(request) {
+  const url = new URL(request.url);
+  const isNavigationRequest = request.mode === 'navigate';
+  const isAPIRequest = url.pathname.includes('/api/') || url.hostname.includes('sanity.io');
+  const isStaticAsset = url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/);
+  const isNextStatic = url.pathname.includes('/_next/static/');
+
+  try {
+    // Handle navigation requests
+    if (isNavigationRequest) {
+      return await handleNavigationRequest(request);
+    }
+
+    // Handle static assets (cache first)
+    if (isStaticAsset || isNextStatic) {
+      return await handleStaticAsset(request);
+    }
+
+    // Handle API requests (network first)
+    if (isAPIRequest) {
+      return await handleAPIRequest(request);
+    }
+
+    // Handle other requests
+    return await handleOtherRequests(request);
+
+  } catch (error) {
+    console.error('SW: Request failed:', error);
+    if (isNavigationRequest) {
+      return await getOfflinePage();
+    }
+    return new Response('Service Unavailable', { status: 503 });
+  }
+}
 
 async function handleRequest(request) {
     const url = new URL(request.url);
@@ -135,7 +220,7 @@ async function handleRequest(request) {
     }
 }
 
-// Add this after the existing handleNavigationRequest function
+// Replace the existing handleNavigationRequest function
 // Replace the existing handleNavigationRequest function
 async function handleNavigationRequest(request) {
   const url = new URL(request.url);
@@ -149,77 +234,52 @@ async function handleNavigationRequest(request) {
         const networkResponse = await Promise.race([
           fetch(request),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Network timeout')), 3000)
+            setTimeout(() => reject(new Error('Network timeout')), 5000)
           )
         ]);
-
+        
         if (networkResponse && networkResponse.status === 200) {
-          // Cache in multiple stores with better key management
-          const cachePromises = [];
-          const cacheStores = [PAGES_CACHE, RUNTIME_CACHE, CACHE_NAME];
-          
-          // Store with multiple URL variations
-          const urlsToCache = [
-            pathname,
-            pathname === '/' ? '/' : pathname.replace(/\/$/, ''),
-            pathname === '/' ? '/' : pathname + '/'
-          ];
-
-          for (const cacheStore of cacheStores) {
-            const cache = await caches.open(cacheStore);
-            for (const urlToCache of urlsToCache) {
-              const requestToCache = new Request(urlToCache, {
-                method: 'GET',
-                headers: request.headers,
-                mode: 'same-origin',
-                credentials: 'same-origin'
-              });
-              cachePromises.push(cache.put(requestToCache, networkResponse.clone()));
-            }
-          }
-
-          await Promise.all(cachePromises);
-          console.log('SW: Successfully cached navigation response:', pathname);
+          // Cache in primary store only
+          const cache = await caches.open(PAGES_CACHE);
+          await cache.put(request, networkResponse.clone());
+          console.log('SW: Cached navigation response:', pathname);
           return networkResponse;
         }
       } catch (networkError) {
-        console.log('SW: Network failed for navigation:', pathname, networkError.message);
+        console.log('SW: Network failed for navigation:', pathname);
       }
     }
 
-    // Try cache with improved matching
+    // Try cache if network fails or offline
     return await getCachedNavigationImproved(request);
     
   } catch (error) {
-    console.log('SW: Navigation request failed:', pathname, error.message);
+    console.log('SW: Navigation request failed:', pathname);
     return await getCachedNavigationImproved(request);
   }
 }
 // Replace getCachedNavigation with this improved version:
-// Replace the existing getCachedNavigationImproved function
+
 async function getCachedNavigationImproved(request) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   console.log('SW: Looking for cached navigation:', pathname);
 
-  // All possible URL variations
+  // Simplified URL variations
   const urlsToTry = [
     pathname,
     pathname === '/' ? '/' : pathname.replace(/\/$/, ''),
     pathname === '/' ? '/' : pathname + '/',
-    url.origin + pathname,
-    url.origin + pathname.replace(/\/$/, ''),
-    url.origin + pathname + '/'
   ];
 
-  // Try each cache store
-  const cacheStores = [PAGES_CACHE, CACHE_NAME, RUNTIME_CACHE, STATIC_CACHE];
+  // Try each cache store in priority order
+  const cacheStores = [PAGES_CACHE, CACHE_NAME, RUNTIME_CACHE];
   
   for (const cacheStore of cacheStores) {
     try {
       const cache = await caches.open(cacheStore);
       
-      // First try exact matches
+      // Try exact matches first
       for (const urlToTry of urlsToTry) {
         const cachedResponse = await cache.match(urlToTry);
         if (cachedResponse) {
@@ -228,32 +288,11 @@ async function getCachedNavigationImproved(request) {
         }
       }
       
-      // Then try with loose matching
-      for (const urlToTry of urlsToTry) {
-        const cachedResponse = await cache.match(urlToTry, {
-          ignoreSearch: true,
-          ignoreMethod: true,
-          ignoreVary: true
-        });
-        if (cachedResponse) {
-          console.log('SW: Found cached page with loose matching:', urlToTry, 'in', cacheStore);
-          return cachedResponse;
-        }
-      }
-      
-      // Try manual key matching as fallback
-      const keys = await cache.keys();
-      for (const key of keys) {
-        const keyUrl = new URL(key.url);
-        if (keyUrl.pathname === pathname || 
-            keyUrl.pathname === pathname.replace(/\/$/, '') ||
-            keyUrl.pathname === pathname + '/') {
-          const cachedResponse = await cache.match(key);
-          if (cachedResponse) {
-            console.log('SW: Found cached page via key matching:', key.url, 'in', cacheStore);
-            return cachedResponse;
-          }
-        }
+      // Try with request object
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        console.log('SW: Found cached page via request match in', cacheStore);
+        return cachedResponse;
       }
       
     } catch (error) {
@@ -261,10 +300,9 @@ async function getCachedNavigationImproved(request) {
     }
   }
 
-  // If no cached version found, return offline page
+  // Return offline page if no cache found
   return await getOfflinePage();
 }
-
 
 // Add this function to your sw.js file
 async function cleanupOldCaches() {
@@ -372,41 +410,6 @@ async function cacheStaticPageAggressively(request, response) {
 }
 
 // Enhanced cache retrieval for static pages
-async function getCachedStaticPage(request, allowStale = false) {
-  const url = new URL(request.url);
-  const pathname = url.pathname;
-  
-  // Try multiple URL variations
-  const urlsToTry = [
-    request.url,
-    pathname,
-    pathname.replace(/\/$/, ''), // without trailing slash
-    pathname.endsWith('/') ? pathname : pathname + '/', // with trailing slash
-    url.origin + pathname
-  ];
-  
-  // Try multiple cache stores
-  const cacheStores = [STATIC_CACHE, CACHE_NAME, PAGES_CACHE, RUNTIME_CACHE];
-  
-  for (const cacheStore of cacheStores) {
-    try {
-      const cache = await caches.open(cacheStore);
-      
-      for (const urlToTry of urlsToTry) {
-        const cachedResponse = await cache.match(urlToTry);
-        if (cachedResponse) {
-          console.log('SW: Found cached static page:', urlToTry, 'in', cacheStore);
-          return cachedResponse;
-        }
-      }
-    } catch (error) {
-      console.log('SW: Cache access failed for:', cacheStore);
-    }
-  }
-  
-  return null;
-}
-
 // Enhanced static page caching function
 async function cacheStaticPageAggressively(request, response) {
   const url = new URL(request.url);
