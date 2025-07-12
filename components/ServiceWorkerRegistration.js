@@ -272,6 +272,65 @@ const handleRouteChange = () => {
   }
 };
 
+// Replace the existing cacheStaticPagesAggressively function
+const cacheStaticPagesAggressively = async (staticPages) => {
+  const cachePromises = staticPages.map(async (page) => {
+    try {
+      console.log('SW: Aggressively caching static page:', page);
+      
+      // Fetch the page
+      const response = await fetch(page, {
+        mode: 'same-origin',
+        credentials: 'same-origin',
+        cache: 'no-cache' // Force fresh fetch
+      });
+
+      if (response.ok) {
+        // Cache in multiple stores for redundancy
+        const cacheStores = ['doitwithai-v7', 'static-v7', 'pages-v7'];
+        const cachePromises = [];
+        
+        for (const storeName of cacheStores) {
+          const cache = await caches.open(storeName);
+          
+          // Cache with multiple URL variations
+          const urlVariations = [
+            page,
+            page.endsWith('/') ? page.slice(0, -1) : page + '/',
+            window.location.origin + page,
+            window.location.origin + (page.endsWith('/') ? page.slice(0, -1) : page + '/')
+          ];
+          
+          for (const url of urlVariations) {
+            const requestToCache = new Request(url, {
+              method: 'GET',
+              mode: 'same-origin',
+              credentials: 'same-origin'
+            });
+            cachePromises.push(cache.put(requestToCache, response.clone()));
+          }
+        }
+        
+        await Promise.all(cachePromises);
+        console.log('SW: Successfully cached static page with all variations:', page);
+        
+        // Also notify service worker to ensure it's cached there
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'PRECACHE_PAGE',
+            path: page,
+            url: window.location.origin + page
+          });
+        }
+      }
+    } catch (error) {
+      console.error('SW: Failed to cache static page:', page, error);
+    }
+  });
+
+  await Promise.allSettled(cachePromises);
+};
+
   // Helper function to update cache from client
   const updateCache = (url, data) => {
     if (navigator.serviceWorker.controller) {
@@ -365,4 +424,15 @@ useEffect(() => {
   }
 
   return null;
+}
+
+function getStatusColor(status) {
+  switch (status) {
+    case 'registered': return '#4CAF50';
+    case 'updated': return '#2196F3';
+    case 'update-available': return '#FF9800';
+    case 'failed': return '#f44336';
+    case 'unsupported': return '#9E9E9E';
+    default: return '#9E9E9E';
+  }
 }
