@@ -88,6 +88,9 @@ export default function ServiceWorkerRegistration() {
 
         // Pre-cache important pages
         await preCachePages(registration);
+        await preloadStaticPages();
+        await prefetchCurrentPage();
+
 
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
@@ -98,47 +101,180 @@ export default function ServiceWorkerRegistration() {
     registerSW();
   }, [mounted]);
 
-// Replace the preCachePages function
+
+// Add this new function for aggressive static page caching
+const preloadStaticPages = async () => {
+  const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
+  const currentPath = window.location.pathname;
+  
+  // Add current page if it's static
+  if (staticPages.includes(currentPath) && !staticPages.includes(currentPath)) {
+    staticPages.push(currentPath);
+  }
+  
+  try {
+    // Preload all static pages in the background
+    const preloadPromises = staticPages.map(async (page) => {
+      try {
+        // Fetch the page HTML
+        const response = await fetch(page, {
+          mode: 'same-origin',
+          credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+          // Also fetch Next.js data for the page
+          try {
+            await fetch(`/_next/data/${buildId}${page === '/' ? '/index' : page}.json`, {
+              mode: 'same-origin',
+              credentials: 'same-origin'
+            });
+          } catch (dataError) {
+            // Data fetch failed, but page might still work
+            console.log('Failed to preload data for:', page);
+          }
+          
+          console.log('✅ Preloaded static page:', page);
+        }
+      } catch (error) {
+        console.log('Failed to preload static page:', page, error);
+      }
+    });
+    
+    await Promise.allSettled(preloadPromises);
+    console.log('✅ Static pages preloading completed');
+  } catch (error) {
+    console.error('Static pages preloading failed:', error);
+  }
+};
+
+
+// Prefetch current page content
+const prefetchCurrentPage = async () => {
+  try {
+    const currentPath = window.location.pathname;
+    const currentUrl = window.location.href;
+    
+    // Prefetch current page
+    await fetch(currentPath, { mode: 'same-origin' });
+    
+    // Prefetch RSC payload for current page
+    if (currentPath !== '/') {
+      await fetch(`${currentPath}?_rsc=1`, { mode: 'same-origin' });
+    }
+    
+    console.log('Pre-cached current page:', currentPath);
+  } catch (error) {
+    console.log('Failed to pre-cache current page:', error);
+  }
+};
+
+
+  // Pre-cache important pages
+// Pre-cache important pages
+// Add this to your ServiceWorkerRegistration.js
+// Replace the existing preCachePages function
+
 const preCachePages = async (registration) => {
   if (registration.active) {
     try {
+      const currentPath = window.location.pathname;
+      
+      // Prioritize static pages for aggressive caching
       const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-      const dynamicPages = ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn'];
+      const dynamicPages = ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn', '/free-ai-resources', '/ai-news'];
       
-      console.log('SW: Starting simplified pre-caching...');
-      
-      // Cache static pages first
-      for (const page of staticPages) {
-        try {
-          const response = await fetch(page, {
-            cache: 'no-cache'
-          });
-          
-          if (response.ok) {
-            console.log('SW: Successfully pre-cached static page:', page);
-          }
-        } catch (error) {
-          console.log('SW: Failed to pre-cache static page:', page);
-        }
+      // Add current page if not already included
+      const allPages = [...staticPages, ...dynamicPages];
+      if (!allPages.includes(currentPath)) {
+        allPages.push(currentPath);
       }
       
-      // Cache dynamic pages
-      for (const page of dynamicPages) {
-        try {
-          const response = await fetch(page, {
-            cache: 'no-cache'
-          });
-          
-          if (response.ok) {
-            console.log('SW: Successfully pre-cached dynamic page:', page);
-          }
-        } catch (error) {
-          console.log('SW: Failed to pre-cache dynamic page:', page);
-        }
-      }
+      // Cache static pages first with aggressive strategy
+      console.log('SW: Pre-caching static pages...');
+      await cacheStaticPagesAggressively(staticPages);
+      
+      // Then cache dynamic pages
+      console.log('SW: Pre-caching dynamic pages...');
+      await cacheDynamicPages(dynamicPages);
+      
+      console.log('SW: Pre-caching completed');
       
     } catch (error) {
       console.error('Pre-caching failed:', error);
+    }
+  }
+};
+
+// Aggressive static page caching
+const cacheStaticPagesAggressively = async (staticPages) => {
+  const cachePromises = staticPages.map(async (page) => {
+    try {
+      // Fetch the page
+      const response = await fetch(page, {
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      });
+      
+      if (response.ok) {
+        // Cache in multiple stores for redundancy
+        const cacheStores = ['doitwithai-v7', 'static-v7', 'pages-v7'];
+        
+        for (const storeName of cacheStores) {
+          const cache = await caches.open(storeName);
+          await cache.put(page, response.clone());
+          
+          // Also cache with alternative URL formats
+          const alternativeUrl = page.endsWith('/') ? page.slice(0, -1) : page + '/';
+          if (alternativeUrl !== page) {
+            await cache.put(alternativeUrl, response.clone());
+          }
+        }
+        
+        console.log('SW: Aggressively cached static page:', page);
+      }
+    } catch (error) {
+      console.error('SW: Failed to cache static page:', page, error);
+    }
+  });
+  
+  await Promise.allSettled(cachePromises);
+};
+
+// Enhanced dynamic page caching
+const cacheDynamicPages = async (dynamicPages) => {
+  for (const page of dynamicPages) {
+    try {
+      // Cache the page HTML
+      const response = await fetch(page, {
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      });
+      
+      if (response.ok) {
+        const cache = await caches.open('pages-v7');
+        await cache.put(page, response.clone());
+        
+        // Cache RSC payload
+        try {
+          const rscResponse = await fetch(`${page}?_rsc=1`, {
+            mode: 'same-origin',
+            credentials: 'same-origin'
+          });
+          if (rscResponse.ok) {
+            await cache.put(`${page}?_rsc=1`, rscResponse);
+          }
+        } catch (rscError) {
+          console.log('Failed to cache RSC for:', page);
+        }
+        
+        // Cache API data for dynamic pages
+        await cachePageData(page);
+        
+        console.log('SW: Cached dynamic page:', page);
+      }
+    } catch (error) {
+      console.error('SW: Failed to cache dynamic page:', page, error);
     }
   }
 };
@@ -180,6 +316,9 @@ const cacheCurrentPage = async () => {
     console.log('Failed to cache current page HTML/data:', error);
   }
 };
+
+
+
 
 
 // Add this function to cache API data for dynamic pages
@@ -227,6 +366,102 @@ const cachePageData = async (pathname) => {
 };
 
 
+// Add this new function to handle client-side navigation caching
+const handleClientSideNavigation = async () => {
+  if (typeof window === 'undefined') return;
+  
+  let currentPath = window.location.pathname;
+  
+  // Function to cache page when navigating via client-side routing
+  const cacheOnNavigation = async (newPath) => {
+    if (newPath === currentPath) return;
+    
+    try {
+      console.log('SW: Caching page for client-side navigation:', newPath);
+      
+      // Cache the HTML page
+      await fetch(newPath, {
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      });
+      
+      // Cache RSC payload
+      if (newPath !== '/') {
+        try {
+          await fetch(`${newPath}?_rsc=1`, {
+            mode: 'same-origin',
+            credentials: 'same-origin'
+          });
+        } catch (rscError) {
+          console.log('Failed to cache RSC for:', newPath);
+        }
+      }
+      
+      // Cache API data for dynamic pages
+      await cachePageData(newPath);
+      
+      // Notify service worker to cache this page
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'PRECACHE_PAGE',
+          path: newPath,
+          url: window.location.origin + newPath
+        });
+      }
+      
+      currentPath = newPath;
+      console.log('✅ Successfully cached page for offline access:', newPath);
+    } catch (error) {
+      console.log('Failed to cache page on navigation:', newPath, error);
+    }
+  };
+  
+  // Override Next.js router to cache pages on navigation
+  const originalPushState = history.pushState;
+  const originalReplaceState = history.replaceState;
+  
+  history.pushState = function(...args) {
+    const result = originalPushState.apply(this, args);
+    const newPath = window.location.pathname;
+    setTimeout(() => cacheOnNavigation(newPath), 500);
+    return result;
+  };
+  
+  history.replaceState = function(...args) {
+    const result = originalReplaceState.apply(this, args);
+    const newPath = window.location.pathname;
+    setTimeout(() => cacheOnNavigation(newPath), 500);
+    return result;
+  };
+  
+  // Listen for popstate events (back/forward buttons)
+  window.addEventListener('popstate', () => {
+    const newPath = window.location.pathname;
+    setTimeout(() => cacheOnNavigation(newPath), 500);
+  });
+  
+  // Also listen for Next.js route changes
+  const observer = new MutationObserver((mutations) => {
+    const newPath = window.location.pathname;
+    if (newPath !== currentPath) {
+      setTimeout(() => cacheOnNavigation(newPath), 500);
+    }
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['data-pathname']
+  });
+  
+  return () => {
+    observer.disconnect();
+    history.pushState = originalPushState;
+    history.replaceState = originalReplaceState;
+  };
+};
+
 
   // Helper function to update cache from client
   const updateCache = (url, data) => {
@@ -245,6 +480,16 @@ const cachePageData = async (pathname) => {
       window.updateSWCache = updateCache;
     }
   }, [mounted]);
+
+// Add this useEffect after the existing ones
+useEffect(() => {
+  if (!mounted) return;
+  
+  const cleanup = handleClientSideNavigation();
+  
+  return cleanup;
+}, [mounted]);
+
 
 // Add after the existing useEffect hooks
 useEffect(() => {
