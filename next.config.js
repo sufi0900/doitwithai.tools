@@ -73,6 +73,34 @@ const withPWA = require('next-pwa')({
         },
       },
     },
+
+// Add this to your runtimeCaching array in next.config.js
+{
+  urlPattern: /^https:\/\/.*$/i,
+  handler: 'NetworkFirst',
+  method: 'GET',
+  options: {
+    cacheName: 'enhanced-navigation-cache-v1',
+    networkTimeoutSeconds: 5,
+    expiration: {
+      maxEntries: 200, // Increased from 100
+      maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days instead of 1 day
+    },
+    cacheableResponse: {
+      statuses: [0, 200],
+    },
+    // Add cache key will help with versioning
+    plugins: [{
+      cacheKeyWillBeUsed: async ({ request }) => {
+        const url = new URL(request.url);
+        // Normalize URLs to prevent duplicate caches
+        return url.origin + url.pathname.replace(/\/$/, '') || '/';
+      }
+    }]
+  },
+},
+
+
     // Next.js data
     {
       urlPattern: /\/_next\/data\/.*/i,

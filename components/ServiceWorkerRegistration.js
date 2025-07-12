@@ -102,53 +102,6 @@ export default function ServiceWorkerRegistration() {
   }, [mounted]);
 
 
-// Add this new function for aggressive static page caching
-const preloadStaticPages = async () => {
-  const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-  const currentPath = window.location.pathname;
-  
-  // Add current page if it's static
-  if (staticPages.includes(currentPath) && !staticPages.includes(currentPath)) {
-    staticPages.push(currentPath);
-  }
-  
-  try {
-    // Preload all static pages in the background
-    const preloadPromises = staticPages.map(async (page) => {
-      try {
-        // Fetch the page HTML
-        const response = await fetch(page, {
-          mode: 'same-origin',
-          credentials: 'same-origin'
-        });
-        
-        if (response.ok) {
-          // Also fetch Next.js data for the page
-          try {
-            await fetch(`/_next/data/${buildId}${page === '/' ? '/index' : page}.json`, {
-              mode: 'same-origin',
-              credentials: 'same-origin'
-            });
-          } catch (dataError) {
-            // Data fetch failed, but page might still work
-            console.log('Failed to preload data for:', page);
-          }
-          
-          console.log('✅ Preloaded static page:', page);
-        }
-      } catch (error) {
-        console.log('Failed to preload static page:', page, error);
-      }
-    });
-    
-    await Promise.allSettled(preloadPromises);
-    console.log('✅ Static pages preloading completed');
-  } catch (error) {
-    console.error('Static pages preloading failed:', error);
-  }
-};
-
-
 // Prefetch current page content
 const prefetchCurrentPage = async () => {
   try {
@@ -169,27 +122,83 @@ const prefetchCurrentPage = async () => {
   }
 };
 
-
-  // Pre-cache important pages
-// Replace the existing preCachePages function
 const preCachePages = async (registration) => {
   if (registration.active) {
     try {
-      // Send message to service worker to handle prefetching
-      navigator.serviceWorker.controller?.postMessage({
-        type: 'PREFETCH_PAGES',
-        staticPages: ['/about', '/faq', '/contact', '/privacy', '/terms'],
-        dynamicPages: ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn']
-      });
-      
-      console.log('✅ Prefetch request sent to service worker');
+      const currentPath = window.location.pathname;
+      // List of important pages to pre-cache
+      const importantPages = [
+        '/',
+        '/ai-tools',
+        '/ai-seo',
+        '/ai-code',
+        '/ai-learn-earn',
+        '/free-ai-resources',
+        ' /ai-news',
+        '/about',
+        '/faq',
+        '/contact',
+        '/privacy',
+        '/terms'
+      ];
+
+      // Add current page if it's not in the list
+      if (!importantPages.includes(currentPath)) {
+        importantPages.push(currentPath);
+      }
+
+      for (const page of importantPages) {
+        try {
+          // --- IMPORTANT CHANGE HERE ---
+          // Explicitly fetch the HTML for the page
+          // This ensures the Service Worker's navigation handler can cache it
+          const htmlResponse = await fetch(page, {
+            mode: 'navigate', // Treat as navigation request
+            credentials: 'same-origin',
+            headers: {
+              'X-Purpose': 'prefetch-html-for-offline' // Custom header for SW debugging/logic
+            }
+          });
+
+          if (htmlResponse.ok) {
+            console.log('Pre-cached page HTML:', page);
+            // The SW's navigation handler should now cache this.
+
+            // Also fetch RSC payload for the page if it's dynamic
+            if (page !== '/') {
+              try {
+                await fetch(`${page}?_rsc=1`, {
+                  mode: 'same-origin',
+                  credentials: 'same-origin'
+                });
+                console.log('Pre-cached RSC for:', page);
+              } catch (rscError) {
+                console.log('Failed to pre-cache RSC for:', page, rscError);
+              }
+            }
+
+            // For dynamic pages, try to cache their API data
+            if (['ai-tools', 'ai-seo', 'ai-code', 'ai-learn-earn'].includes(page.replace('/', ''))) {
+              try {
+                await fetch(`/api/posts?category=${page.replace('/', '').replace('-', '')}`, {
+                  mode: 'same-origin',
+                  credentials: 'same-origin'
+                });
+                console.log('Pre-cached API data for:', page);
+              } catch (apiError) {
+                console.log('Failed to pre-cache API data for:', page, apiError);
+              }
+            }
+          }
+        } catch (error) {
+          console.log('Failed to pre-cache page:', page, error);
+        }
+      }
     } catch (error) {
-      console.error('Prefetch request failed:', error);
+      console.error('Pre-caching failed:', error);
     }
   }
 };
-
-
 // Cache page content when navigating (not just on reload)
 const cacheCurrentPage = async () => {
   if (typeof window === 'undefined') return;
@@ -226,148 +235,6 @@ const cacheCurrentPage = async () => {
   } catch (error) {
     console.log('Failed to cache current page HTML/data:', error);
   }
-};
-
-
-// Add this function to cache API data for dynamic pages
-const cachePageData = async (pathname) => {
-    try {
-        // Define which pages need data caching
-        const dynamicPages = {
-            '/ai-tools': 'aitool',
-            '/ai-seo': 'SEO', 
-            '/ai-code': 'coding',
-            '/ai-learn-earn': 'makemoney'
-        };
-        
-        const category = dynamicPages[pathname];
-        if (category) {
-            // Cache the API data for this category
-            await fetch(`/api/posts?category=${category}`, {
-                mode: 'same-origin',
-                credentials: 'same-origin'
-            });
-            
-            console.log('Cached API data for category:', category);
-        }
-        
-        // For slug pages, cache the specific post data
-        if (pathname.includes('/ai-tools/') || pathname.includes('/ai-seo/') || 
-            pathname.includes('/ai-code/') || pathname.includes('/ai-learn-earn/')) {
-            
-            const slug = pathname.split('/').pop();
-            if (slug) {
-                try {
-                    await fetch(`/api/posts/${slug}`, {
-                        mode: 'same-origin',
-                        credentials: 'same-origin'
-                    });
-                    console.log('Cached post data for slug:', slug);
-                } catch (error) {
-                    console.log('Failed to cache slug data:', slug);
-                }
-            }
-        }
-    } catch (error) {
-        console.log('Failed to cache page data:', error);
-    }
-};
-
-
-// Add this new function to handle client-side navigation caching
-const handleClientSideNavigation = async () => {
-  if (typeof window === 'undefined') return;
-  
-  let currentPath = window.location.pathname;
-  
-  // Function to cache page when navigating via client-side routing
-  const cacheOnNavigation = async (newPath) => {
-    if (newPath === currentPath) return;
-    
-    try {
-      console.log('SW: Caching page for client-side navigation:', newPath);
-      
-      // Cache the HTML page
-      await fetch(newPath, {
-        mode: 'same-origin',
-        credentials: 'same-origin'
-      });
-      
-      // Cache RSC payload
-      if (newPath !== '/') {
-        try {
-          await fetch(`${newPath}?_rsc=1`, {
-            mode: 'same-origin',
-            credentials: 'same-origin'
-          });
-        } catch (rscError) {
-          console.log('Failed to cache RSC for:', newPath);
-        }
-      }
-      
-      // Cache API data for dynamic pages
-      await cachePageData(newPath);
-      
-      // Notify service worker to cache this page
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'PRECACHE_PAGE',
-          path: newPath,
-          url: window.location.origin + newPath
-        });
-      }
-      
-      currentPath = newPath;
-      console.log('✅ Successfully cached page for offline access:', newPath);
-    } catch (error) {
-      console.log('Failed to cache page on navigation:', newPath, error);
-    }
-  };
-  
-  // Override Next.js router to cache pages on navigation
-  const originalPushState = history.pushState;
-  const originalReplaceState = history.replaceState;
-  
-  history.pushState = function(...args) {
-    const result = originalPushState.apply(this, args);
-    const newPath = window.location.pathname;
-    setTimeout(() => cacheOnNavigation(newPath), 500);
-    return result;
-  };
-  
-  history.replaceState = function(...args) {
-    const result = originalReplaceState.apply(this, args);
-    const newPath = window.location.pathname;
-    setTimeout(() => cacheOnNavigation(newPath), 500);
-    return result;
-  };
-  
-  // Listen for popstate events (back/forward buttons)
-  window.addEventListener('popstate', () => {
-    const newPath = window.location.pathname;
-    setTimeout(() => cacheOnNavigation(newPath), 500);
-  });
-  
-  // Also listen for Next.js route changes
-  const observer = new MutationObserver((mutations) => {
-    const newPath = window.location.pathname;
-    if (newPath !== currentPath) {
-      setTimeout(() => cacheOnNavigation(newPath), 500);
-    }
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['data-pathname']
-  });
-  
-  return () => {
-    observer.disconnect();
-    history.pushState = originalPushState;
-    history.replaceState = originalReplaceState;
-  };
 };
 
 
