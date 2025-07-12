@@ -98,9 +98,6 @@ export default function ServiceWorkerRegistration() {
     registerSW();
   }, [mounted]);
 
-
-
-
 // Replace the preCachePages function
 const preCachePages = async (registration) => {
   if (registration.active) {
@@ -146,7 +143,6 @@ const preCachePages = async (registration) => {
   }
 };
 
-
 // Cache page content when navigating (not just on reload)
 const cacheCurrentPage = async () => {
   if (typeof window === 'undefined') return;
@@ -184,9 +180,6 @@ const cacheCurrentPage = async () => {
     console.log('Failed to cache current page HTML/data:', error);
   }
 };
-
-
-
 
 
 // Add this function to cache API data for dynamic pages
@@ -233,103 +226,7 @@ const cachePageData = async (pathname) => {
     }
 };
 
-// Add this function to your ServiceWorkerRegistration component
-const ensurePageCaching = async (pathname) => {
-  try {
-    // Force cache the page with multiple variations
-    const urlsToCache = [
-      pathname,
-      pathname === '/' ? '/' : pathname.replace(/\/$/, ''),
-      pathname === '/' ? '/' : pathname + '/',
-      window.location.origin + pathname
-    ];
-    
-    for (const url of urlsToCache) {
-      await fetch(url, { 
-        mode: 'same-origin',
-        credentials: 'same-origin',
-        cache: 'no-cache' // Force fresh fetch
-      });
-    }
-    
-    console.log('✅ Enhanced caching for:', pathname);
-  } catch (error) {
-    console.log('Failed to enhance cache for:', pathname, error);
-  }
-};
 
-// Update your route change handler:
-const handleRouteChange = () => {
-  const newPath = window.location.pathname;
-  if (newPath !== currentPath) {
-    currentPath = newPath;
-    
-    // Enhanced caching with delay
-    setTimeout(async () => {
-      await ensurePageCaching(newPath);
-      await cacheCurrentPage();
-    }, 500); // Slightly longer delay
-  }
-};
-
-// Replace the existing cacheStaticPagesAggressively function
-const cacheStaticPagesAggressively = async (staticPages) => {
-  const cachePromises = staticPages.map(async (page) => {
-    try {
-      console.log('SW: Aggressively caching static page:', page);
-      
-      // Fetch the page
-      const response = await fetch(page, {
-        mode: 'same-origin',
-        credentials: 'same-origin',
-        cache: 'no-cache' // Force fresh fetch
-      });
-
-      if (response.ok) {
-        // Cache in multiple stores for redundancy
-        const cacheStores = ['doitwithai-v7', 'static-v7', 'pages-v7'];
-        const cachePromises = [];
-        
-        for (const storeName of cacheStores) {
-          const cache = await caches.open(storeName);
-          
-          // Cache with multiple URL variations
-          const urlVariations = [
-            page,
-            page.endsWith('/') ? page.slice(0, -1) : page + '/',
-            window.location.origin + page,
-            window.location.origin + (page.endsWith('/') ? page.slice(0, -1) : page + '/')
-          ];
-          
-          for (const url of urlVariations) {
-            const requestToCache = new Request(url, {
-              method: 'GET',
-              mode: 'same-origin',
-              credentials: 'same-origin'
-            });
-            cachePromises.push(cache.put(requestToCache, response.clone()));
-          }
-        }
-        
-        await Promise.all(cachePromises);
-        console.log('SW: Successfully cached static page with all variations:', page);
-        
-        // Also notify service worker to ensure it's cached there
-        if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-            type: 'PRECACHE_PAGE',
-            path: page,
-            url: window.location.origin + page
-          });
-        }
-      }
-    } catch (error) {
-      console.error('SW: Failed to cache static page:', page, error);
-    }
-  });
-
-  await Promise.allSettled(cachePromises);
-};
 
   // Helper function to update cache from client
   const updateCache = (url, data) => {
@@ -348,16 +245,6 @@ const cacheStaticPagesAggressively = async (staticPages) => {
       window.updateSWCache = updateCache;
     }
   }, [mounted]);
-
-// Add this useEffect after the existing ones
-useEffect(() => {
-  if (!mounted) return;
-  
-  const cleanup = handleClientSideNavigation();
-  
-  return cleanup;
-}, [mounted]);
-
 
 // Add after the existing useEffect hooks
 useEffect(() => {
