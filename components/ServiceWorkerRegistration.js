@@ -171,137 +171,24 @@ const prefetchCurrentPage = async () => {
 
 
   // Pre-cache important pages
-// Pre-cache important pages
-// Add this to your ServiceWorkerRegistration.js
 // Replace the existing preCachePages function
-
 const preCachePages = async (registration) => {
   if (registration.active) {
     try {
-      const currentPath = window.location.pathname;
+      // Send message to service worker to handle prefetching
+      navigator.serviceWorker.controller?.postMessage({
+        type: 'PREFETCH_PAGES',
+        staticPages: ['/about', '/faq', '/contact', '/privacy', '/terms'],
+        dynamicPages: ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn']
+      });
       
-      // Prioritize static pages for aggressive caching
-      const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-      const dynamicPages = ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn', '/free-ai-resources', '/ai-news'];
-      
-      // Add current page if not already included
-      const allPages = [...staticPages, ...dynamicPages];
-      if (!allPages.includes(currentPath)) {
-        allPages.push(currentPath);
-      }
-      
-      // Cache static pages first with aggressive strategy
-      console.log('SW: Pre-caching static pages...');
-      await cacheStaticPagesAggressively(staticPages);
-      
-      // Then cache dynamic pages
-      console.log('SW: Pre-caching dynamic pages...');
-      await cacheDynamicPages(dynamicPages);
-      
-      console.log('SW: Pre-caching completed');
-      
+      console.log('✅ Prefetch request sent to service worker');
     } catch (error) {
-      console.error('Pre-caching failed:', error);
+      console.error('Prefetch request failed:', error);
     }
   }
 };
 
-// Aggressive static page caching
-const cacheStaticPagesAggressively = async (staticPages) => {
-  const cachePromises = staticPages.map(async (page) => {
-    try {
-      console.log('SW: Aggressively caching static page:', page);
-      
-      // Fetch the page
-      const response = await fetch(page, {
-        mode: 'same-origin',
-        credentials: 'same-origin',
-        cache: 'no-cache' // Force fresh fetch
-      });
-
-      if (response.ok) {
-        // Cache in multiple stores for redundancy
-        const cacheStores = ['doitwithai-v7', 'static-v7', 'pages-v7'];
-        const cachePromises = [];
-        
-        for (const storeName of cacheStores) {
-          const cache = await caches.open(storeName);
-          
-          // Cache with multiple URL variations
-          const urlVariations = [
-            page,
-            page.endsWith('/') ? page.slice(0, -1) : page + '/',
-            window.location.origin + page,
-            window.location.origin + (page.endsWith('/') ? page.slice(0, -1) : page + '/')
-          ];
-          
-          for (const url of urlVariations) {
-            const requestToCache = new Request(url, {
-              method: 'GET',
-              mode: 'same-origin',
-              credentials: 'same-origin'
-            });
-            cachePromises.push(cache.put(requestToCache, response.clone()));
-          }
-        }
-        
-        await Promise.all(cachePromises);
-        console.log('SW: Successfully cached static page with all variations:', page);
-        
-        // Also notify service worker to ensure it's cached there
-        if (navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-            type: 'PRECACHE_PAGE',
-            path: page,
-            url: window.location.origin + page
-          });
-        }
-      }
-    } catch (error) {
-      console.error('SW: Failed to cache static page:', page, error);
-    }
-  });
-
-  await Promise.allSettled(cachePromises);
-};
-
-// Enhanced dynamic page caching
-const cacheDynamicPages = async (dynamicPages) => {
-  for (const page of dynamicPages) {
-    try {
-      // Cache the page HTML
-      const response = await fetch(page, {
-        mode: 'same-origin',
-        credentials: 'same-origin'
-      });
-      
-      if (response.ok) {
-        const cache = await caches.open('pages-v7');
-        await cache.put(page, response.clone());
-        
-        // Cache RSC payload
-        try {
-          const rscResponse = await fetch(`${page}?_rsc=1`, {
-            mode: 'same-origin',
-            credentials: 'same-origin'
-          });
-          if (rscResponse.ok) {
-            await cache.put(`${page}?_rsc=1`, rscResponse);
-          }
-        } catch (rscError) {
-          console.log('Failed to cache RSC for:', page);
-        }
-        
-        // Cache API data for dynamic pages
-        await cachePageData(page);
-        
-        console.log('SW: Cached dynamic page:', page);
-      }
-    } catch (error) {
-      console.error('SW: Failed to cache dynamic page:', page, error);
-    }
-  }
-};
 
 // Cache page content when navigating (not just on reload)
 const cacheCurrentPage = async () => {
@@ -340,9 +227,6 @@ const cacheCurrentPage = async () => {
     console.log('Failed to cache current page HTML/data:', error);
   }
 };
-
-
-
 
 
 // Add this function to cache API data for dynamic pages
@@ -499,64 +383,31 @@ const handleClientSideNavigation = async () => {
   };
 
   // Expose updateCache function globally for other components
-  useEffect(() => {
-    if (mounted) {
-      window.updateSWCache = updateCache;
-    }
-  }, [mounted]);
-
-// Add this useEffect after the existing ones
+ // Replace all the useEffect hooks after the registration with just this:
 useEffect(() => {
   if (!mounted) return;
   
-  const cleanup = handleClientSideNavigation();
+  const handleRouteChange = () => {
+    // Simple route change handling
+    const currentPath = window.location.pathname;
+    console.log('Route changed to:', currentPath);
+    
+    // Let service worker handle the caching
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'ROUTE_CHANGE',
+        path: currentPath
+      });
+    }
+  };
   
-  return cleanup;
+  // Listen for route changes
+  window.addEventListener('popstate', handleRouteChange);
+  
+  return () => {
+    window.removeEventListener('popstate', handleRouteChange);
+  };
 }, [mounted]);
-
-
-// Add after the existing useEffect hooks
-useEffect(() => {
-    if (!mounted) return;
-    
-    let currentPath = window.location.pathname;
-    
-    // Function to handle route changes
-    const handleRouteChange = () => {
-        const newPath = window.location.pathname;
-        if (newPath !== currentPath) {
-            currentPath = newPath;
-            
-            // Cache the new page after navigation
-            setTimeout(() => {
-                cacheCurrentPage();
-            }, 1000); // Small delay to ensure page is loaded
-        }
-    };
-    
-    // Listen for route changes (for client-side navigation)
-    const observer = new MutationObserver(() => {
-        handleRouteChange();
-    });
-    
-    // Watch for URL changes
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-    
-    // Also listen for popstate (back/forward buttons)
-    window.addEventListener('popstate', handleRouteChange);
-    
-    // Cache current page on initial load
-    cacheCurrentPage();
-    
-    return () => {
-        observer.disconnect();
-        window.removeEventListener('popstate', handleRouteChange);
-    };
-}, [mounted]);
-
   // Don't render anything during SSR
   if (!mounted) return null;
 

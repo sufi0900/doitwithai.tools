@@ -11,43 +11,58 @@ const withPWA = require('next-pwa')({
     /_ssgManifest\.js$/
   ],
   runtimeCaching: [
-    // Static pages with aggressive caching
-    {
-      urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-pages-cache',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
+  // Static pages - CacheFirst for immediate offline access
+   {
+    urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+    handler: 'CacheFirst',
+    options: {
+      cacheName: 'static-pages-v1',
+      expiration: {
+        maxEntries: 50,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
       },
     },
+  },
     // Dynamic pages with Network First
     {
-      urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn|free-ai-resources|ai-news)(?:\/)?$/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'dynamic-pages-cache',
-        networkTimeoutSeconds: 3,
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60, // 1 hour
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
+    urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
+    handler: 'NetworkFirst',
+    options: {
+      cacheName: 'dynamic-pages-v1',
+      networkTimeoutSeconds: 5,
+      expiration: {
+        maxEntries: 100,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
       },
     },
+  },
+   {
+    urlPattern: /^https:\/\/.*$/i,
+    handler: 'NetworkFirst',
+    options: {
+      cacheName: 'navigation-v1',
+      networkTimeoutSeconds: 3,
+      expiration: {
+        maxEntries: 200,
+        maxAgeSeconds: 24 * 60 * 60,
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+    },
+  },
     // Homepage
     {
       urlPattern: /^https:\/\/.*\/$/, 
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'homepage-cache',
+        cacheName: 'homepage-cache-v1',
         networkTimeoutSeconds: 3,
         expiration: {
           maxEntries: 5,
@@ -63,7 +78,7 @@ const withPWA = require('next-pwa')({
       urlPattern: /\/_next\/data\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'next-data-cache',
+        cacheName: 'next-data-cache-v1',
         networkTimeoutSeconds: 10,
         expiration: {
           maxEntries: 100,
@@ -79,7 +94,7 @@ const withPWA = require('next-pwa')({
       urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'sanity-api-cache',
+        cacheName: 'sanity-api-cache-v1',
         networkTimeoutSeconds: 10,
         expiration: {
           maxEntries: 100,
@@ -95,7 +110,7 @@ const withPWA = require('next-pwa')({
       urlPattern: /^https:\/\/.*\/api\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'api-cache',
+        cacheName: 'api-cache-v1',
         networkTimeoutSeconds: 5,
         expiration: {
           maxEntries: 100,
@@ -111,7 +126,7 @@ const withPWA = require('next-pwa')({
       urlPattern: /\/_next\/static\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'next-static-cache',
+        cacheName: 'next-static-cache-v1',
         expiration: {
           maxEntries: 100,
           maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
@@ -126,7 +141,7 @@ const withPWA = require('next-pwa')({
       urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'images-cache',
+        cacheName: 'images-cache-v1',
         expiration: {
           maxEntries: 200,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
@@ -141,7 +156,7 @@ const withPWA = require('next-pwa')({
       urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'google-fonts-cache',
+        cacheName: 'google-fonts-cache-v1',
         expiration: {
           maxEntries: 30,
           maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
