@@ -1,7 +1,7 @@
 const withPWA = require('next-pwa')({
   dest: 'public',
-   register: true, // Change this to true
-  skipWaiting: true, // Change this to true
+  register: false, // Keep false since you're registering manually
+  skipWaiting: false,
   disable: process.env.NODE_ENV === 'development',
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
   buildExcludes: [
