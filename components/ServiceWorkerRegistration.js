@@ -383,31 +383,64 @@ const handleClientSideNavigation = async () => {
   };
 
   // Expose updateCache function globally for other components
- // Replace all the useEffect hooks after the registration with just this:
+  useEffect(() => {
+    if (mounted) {
+      window.updateSWCache = updateCache;
+    }
+  }, [mounted]);
+
+// Add this useEffect after the existing ones
 useEffect(() => {
   if (!mounted) return;
   
-  const handleRouteChange = () => {
-    // Simple route change handling
-    const currentPath = window.location.pathname;
-    console.log('Route changed to:', currentPath);
-    
-    // Let service worker handle the caching
-    if (navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'ROUTE_CHANGE',
-        path: currentPath
-      });
-    }
-  };
+  const cleanup = handleClientSideNavigation();
   
-  // Listen for route changes
-  window.addEventListener('popstate', handleRouteChange);
-  
-  return () => {
-    window.removeEventListener('popstate', handleRouteChange);
-  };
+  return cleanup;
 }, [mounted]);
+
+
+// Add after the existing useEffect hooks
+useEffect(() => {
+    if (!mounted) return;
+    
+    let currentPath = window.location.pathname;
+    
+    // Function to handle route changes
+    const handleRouteChange = () => {
+        const newPath = window.location.pathname;
+        if (newPath !== currentPath) {
+            currentPath = newPath;
+            
+            // Cache the new page after navigation
+            setTimeout(() => {
+                cacheCurrentPage();
+            }, 1000); // Small delay to ensure page is loaded
+        }
+    };
+    
+    // Listen for route changes (for client-side navigation)
+    const observer = new MutationObserver(() => {
+        handleRouteChange();
+    });
+    
+    // Watch for URL changes
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+    
+    // Also listen for popstate (back/forward buttons)
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Cache current page on initial load
+    cacheCurrentPage();
+    
+    return () => {
+        observer.disconnect();
+        window.removeEventListener('popstate', handleRouteChange);
+    };
+}, [mounted]);
+
   // Don't render anything during SSR
   if (!mounted) return null;
 
