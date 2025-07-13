@@ -245,10 +245,7 @@ const withPWA = require('next-pwa')({
 });
 
 const nextConfig = {
-// Add this to your existing nextConfig object
-env: {
-  NEXT_PUBLIC_BUILD_ID: process.env.NEXT_BUILD_ID || 'build'
-},
+
 
   // Add this to your existing nextConfig object
 webpack: (config, { dev, isServer }) => {

@@ -72,18 +72,13 @@ export default function ServiceWorkerRegistration() {
         });
 
         // Listen for messages from SW
-// Add this inside your registerSW function after registration
-// Enhanced message handling for precaching
-navigator.serviceWorker.addEventListener('message', (event) => {
-  console.log('SW Message:', event.data);
-  
-  if (event.data.type === 'PRECACHE_COMPLETE') {
-    console.log('✅ Service worker precaching completed');
-    setSwStatus('precached');
-  } else if (event.data.type === 'CACHE_UPDATED') {
-    console.log('Cache updated for:', event.data.url);
-  }
-});
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          console.log('SW Message:', event.data);
+          
+          if (event.data.type === 'CACHE_UPDATED') {
+            console.log('Cache updated for:', event.data.url);
+          }
+        });
 
         // Handle controller change
         navigator.serviceWorker.addEventListener('controllerchange', () => {

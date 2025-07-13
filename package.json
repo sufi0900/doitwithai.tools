@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "generate-sitemap": "next-sitemap",
-  "build": "node scripts/generate-pages-manifest.js && next build",
-    "build:manifest": "node scripts/generate-pages-manifest.js",
+    "build": " next build",
     "start": "next start",
     "lint": "next lint"
   },
