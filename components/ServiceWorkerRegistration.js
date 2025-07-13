@@ -10,10 +10,9 @@ export default function ServiceWorkerRegistration() {
     setMounted(true);
   }, []);
 
-  // 1. ADD this new function after the existing preloadStaticPages function
+  // 1. REPLACE your existing aggressiveStaticPrefetch function with this simpler version:
   const aggressiveStaticPrefetch = async () => {
     try {
-      // Define all static and semi-static pages
       const staticPages = [
         '/',
         '/about',
@@ -27,80 +26,80 @@ export default function ServiceWorkerRegistration() {
         '/ai-learn-earn'
       ];
 
-      // Get current build ID for Next.js data fetching
-      const buildId = await getBuildId();
-
       console.log('🚀 Starting aggressive static prefetch...');
 
-      // Prefetch all pages in parallel with timeout
+      // Prefetch all pages with a reasonable timeout
       const prefetchPromises = staticPages.map(async (page) => {
         return Promise.race([
-          prefetchPageWithAssets(page, buildId),
+          prefetchPageComplete(page),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout')), 10000)
+            setTimeout(() => reject(new Error('Timeout')), 8000)
           )
         ]);
       });
 
       const results = await Promise.allSettled(prefetchPromises);
 
+      let successful = 0;
       results.forEach((result, index) => {
         if (result.status === 'fulfilled') {
           console.log(`✅ Successfully prefetched: ${staticPages[index]}`);
+          successful++;
         } else {
           console.log(`❌ Failed to prefetch: ${staticPages[index]}`);
         }
       });
 
-      // Send message to service worker to cache these pages
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'AGGRESSIVE_CACHE_STATIC',
-          pages: staticPages,
-          buildId: buildId
-        });
-      }
+      console.log(`✅ Prefetch completed: ${successful}/${staticPages.length} pages cached`);
+
+      // Notify that offline mode is ready
+      window.dispatchEvent(new CustomEvent('offline-ready', {
+        detail: { cached: successful, total: staticPages.length }
+      }));
 
     } catch (error) {
       console.error('Aggressive prefetch failed:', error);
     }
   };
 
-  // 2. ADD this helper function
-  const prefetchPageWithAssets = async (page, buildId) => {
+  // 2. REPLACE your existing prefetchPageWithAssets function with this:
+  const prefetchPageComplete = async (page) => {
     try {
-      // Fetch the main HTML page
+      // Method 1: Direct fetch to populate service worker cache
       const htmlResponse = await fetch(page, {
         mode: 'same-origin',
         credentials: 'same-origin',
         headers: {
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Cache-Control': 'no-cache'
         }
       });
 
-      if (!htmlResponse.ok) throw new Error(`HTTP ${htmlResponse.status}`);
-
-      // For Next.js pages, also fetch the data
-      const dataPath = page === '/' ? '/index' : page;
-      try {
-        await fetch(`/_next/data/${buildId}${dataPath}.json`, {
-          mode: 'same-origin',
-          credentials: 'same-origin'
-        });
-      } catch (dataError) {
-        // Data fetch failed, but page might still work
-        console.log(`Data fetch failed for ${page}, but HTML cached`);
+      if (!htmlResponse.ok) {
+        throw new Error(`HTTP ${htmlResponse.status}`);
       }
 
-      // Fetch RSC payload for better offline experience
-      if (page !== '/') {
+      // Method 2: Also fetch with different headers to ensure caching
+      await fetch(page, {
+        mode: 'same-origin',
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'text/html',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'same-origin'
+        }
+      });
+
+      // Method 3: Fetch Next.js data if it's a dynamic page
+      if (['/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn'].includes(page)) {
         try {
-          await fetch(`${page}?_rsc=1`, {
+          const dataResponse = await fetch(`${page}?_rsc=1`, {
             mode: 'same-origin',
             credentials: 'same-origin'
           });
+          console.log(`RSC data fetched for ${page}`);
         } catch (rscError) {
-          console.log(`RSC fetch failed for ${page}`);
+          console.log(`RSC fetch failed for ${page}, but page cached`);
         }
       }
 
@@ -111,138 +110,61 @@ export default function ServiceWorkerRegistration() {
     }
   };
 
-  // 3. ADD this function to get Next.js build ID
-  const getBuildId = async () => {
+  // 3. ADD this new function to force cache population:
+  const forceCachePopulation = async () => {
     try {
-      const response = await fetch('/_next/static/chunks/webpack.js', {
-        method: 'HEAD',
-        mode: 'same-origin'
-      });
+      const staticPages = [
+        '/',
+        '/about',
+        '/faq',
+        '/contact',
+        '/privacy',
+        '/terms'
+      ];
 
-      // Extract build ID from URL or use fallback
-      const buildId = 'default-build-id'; // You might need to adjust this based on your setup
-      return buildId;
+      const semiDynamicPages = [
+        '/ai-tools',
+        '/ai-seo',
+        '/ai-code',
+        '/ai-learn-earn'
+      ];
+
+      console.log('🔄 Force caching static pages...');
+
+      // Cache static pages multiple times with different methods
+      for (const page of staticPages) {
+        try {
+          // Method 1: Regular fetch
+          await fetch(page, { mode: 'same-origin' });
+
+          // Method 2: Fetch with navigate mode simulation
+          await fetch(page, {
+            mode: 'same-origin',
+            headers: { 'Sec-Fetch-Mode': 'navigate' }
+          });
+
+          console.log(`✅ Force cached: ${page}`);
+        } catch (error) {
+          console.log(`❌ Force cache failed: ${page}`);
+        }
+      }
+
+      console.log('🔄 Force caching semi-dynamic pages...');
+
+      // Cache semi-dynamic pages (shell only)
+      for (const page of semiDynamicPages) {
+        try {
+          await fetch(page, { mode: 'same-origin' });
+          console.log(`✅ Force cached shell: ${page}`);
+        } catch (error) {
+          console.log(`❌ Force cache failed: ${page}`);
+        }
+      }
+
     } catch (error) {
-      console.log('Could not get build ID, using default');
-      return 'default-build-id';
+      console.error('Force cache population failed:', error);
     }
   };
-
-  // 5. ADD this new function for handling service worker messages
-  const handleServiceWorkerMessages = () => {
-    if (!navigator.serviceWorker) return;
-
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      console.log('SW Message:', event.data);
-
-      switch (event.data.type) {
-        case 'CACHE_UPDATED':
-          console.log('Cache updated for:', event.data.url);
-          break;
-        case 'STATIC_CACHE_COMPLETE':
-          console.log('✅ Static cache prefetching completed');
-          // Notify other components that offline mode is ready
-          window.dispatchEvent(new CustomEvent('offline-ready'));
-          break;
-        case 'PREFETCH_PROGRESS':
-          console.log(`Prefetch progress: ${event.data.completed}/${event.data.total}`);
-          break;
-      }
-    });
-  };
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    handleServiceWorkerMessages(); // ADD THIS LINE
-
-    const registerSW = async () => {
-      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-        console.log('Service Worker not supported');
-        setSwStatus('unsupported');
-        return;
-      }
-
-      try {
-        // Wait for React hydration to complete
-        await new Promise(resolve => {
-          if (document.readyState === 'complete') {
-            // Add longer delay to ensure React is fully hydrated
-            setTimeout(resolve, 3000);
-          } else {
-            window.addEventListener('load', () => {
-              setTimeout(resolve, 2000);
-            });
-          }
-        });
-
-        // Check for existing service worker
-        const existingRegistration = await navigator.serviceWorker.getRegistration();
-
-        if (existingRegistration) {
-          console.log('Existing SW found, updating...');
-          await existingRegistration.update();
-          setSwStatus('updated');
-        }
-
-        // Register service worker
-        const registration = await navigator.serviceWorker.register('/sw.js?v=2', {
-          scope: '/',
-          updateViaCache: 'none'
-        });
-
-        console.log('✅ Service Worker registered:', registration);
-        setSwStatus('registered');
-
-        // Listen for updates
-        registration.addEventListener('updatefound', () => {
-          console.log('SW: Update found');
-          const newWorker = registration.installing;
-
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('SW: New version available');
-                setSwStatus('update-available');
-
-                // Optionally notify user about update
-                if (window.confirm('New version available! Reload to update?')) {
-                  window.location.reload();
-                }
-              }
-            });
-          }
-        });
-
-        // Listen for messages from SW (this was existing but moved to handleServiceWorkerMessages)
-        // navigator.serviceWorker.addEventListener('message', (event) => {
-        //   console.log('SW Message:', event.data);
-
-        //   if (event.data.type === 'CACHE_UPDATED') {
-        //     console.log('Cache updated for:', event.data.url);
-        //   }
-        // });
-
-        // Handle controller change
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('SW: Controller changed');
-          window.location.reload();
-        });
-
-        // Pre-cache important pages
-        await preCachePages(registration);
-        await preloadStaticPages();
-        await prefetchCurrentPage();
-        await ensureOfflinePageCached();
-        await aggressiveStaticPrefetch(); // ADDED: 4. UPDATE the existing registerSW function
-      } catch (error) {
-        console.error('❌ Service Worker registration failed:', error);
-        setSwStatus('failed');
-      }
-    };
-
-    registerSW();
-  }, [mounted]);
 
 
   // Add this new function for aggressive static page caching
@@ -563,6 +485,116 @@ export default function ServiceWorkerRegistration() {
   }, [mounted]);
 
 
+  useEffect(() => {
+    if (!mounted) return;
+
+    const registerSW = async () => {
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+        console.log('Service Worker not supported');
+        setSwStatus('unsupported');
+        return;
+      }
+
+      try {
+        // Wait for React hydration to complete
+        await new Promise(resolve => {
+          if (document.readyState === 'complete') {
+            // Add longer delay to ensure React is fully hydrated
+            setTimeout(resolve, 3000);
+          } else {
+            window.addEventListener('load', () => {
+              setTimeout(resolve, 2000);
+            });
+          }
+        });
+
+        // Check for existing service worker
+        const existingRegistration = await navigator.serviceWorker.getRegistration();
+
+        if (existingRegistration) {
+          console.log('Existing SW found, updating...');
+          await existingRegistration.update();
+          setSwStatus('updated');
+        }
+
+        // Register service worker
+        const registration = await navigator.serviceWorker.register('/sw.js?v=2', {
+          scope: '/',
+          updateViaCache: 'none'
+        });
+
+        console.log('✅ Service Worker registered:', registration);
+        setSwStatus('registered');
+
+        // Listen for updates
+        registration.addEventListener('updatefound', () => {
+          console.log('SW: Update found');
+          const newWorker = registration.installing;
+
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('SW: New version available');
+                setSwStatus('update-available');
+
+                // Optionally notify user about update
+                if (window.confirm('New version available! Reload to update?')) {
+                  window.location.reload();
+                }
+              }
+            });
+          }
+        });
+
+        // 5. REPLACE your existing handleServiceWorkerMessages function with this:
+        const handleServiceWorkerMessages = () => {
+          if (!navigator.serviceWorker) return;
+
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            console.log('SW Message:', event.data);
+
+            switch (event.data.type) {
+              case 'CACHE_UPDATED':
+                console.log('Cache updated for:', event.data.url);
+                break;
+              case 'DATA_CACHE_UPDATED':
+                console.log('Data cache updated for:', event.data.url);
+                break;
+              case 'NAVIGATION_CACHE_UPDATED':
+                console.log('Navigation cache updated for:', event.data.url);
+                break;
+              default:
+                console.log('Unknown message type:', event.data.type);
+            }
+          });
+        };
+        handleServiceWorkerMessages(); // Call the function to set up the listener
+
+        // Handle controller change
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('SW: Controller changed');
+          window.location.reload();
+        });
+
+        // Pre-cache important pages
+        await preCachePages(registration);
+        await preloadStaticPages();
+        await prefetchCurrentPage();
+        await ensureOfflinePageCached();
+        await aggressiveStaticPrefetch(); // ADD THIS LINE
+        await forceCachePopulation(); // ADD THIS LINE
+
+
+      } catch (error) {
+        console.error('❌ Service Worker registration failed:', error);
+        setSwStatus('failed');
+      }
+    };
+
+    registerSW();
+  }, [mounted]);
+
+
   // Add after the existing useEffect hooks
   useEffect(() => {
     if (!mounted) return;
@@ -604,6 +636,112 @@ export default function ServiceWorkerRegistration() {
       window.removeEventListener('popstate', handleRouteChange);
     };
   }, [mounted]);
+
+  // 6. ADD this new function for testing offline capability:
+  const testOfflineCapability = async () => {
+    // Wait a bit for caches to populate
+    setTimeout(async () => {
+      try {
+        // Test if static pages are accessible
+        const testPages = ['/about', '/faq', '/contact'];
+
+        for (const page of testPages) {
+          try {
+            const response = await fetch(page, { mode: 'same-origin' });
+            if (response.ok) {
+              console.log(`✅ Offline test passed for: ${page}`);
+            }
+          } catch (error) {
+            console.log(`❌ Offline test failed for: ${page}`);
+          }
+        }
+      } catch (error) {
+        console.error('Offline capability test failed:', error);
+      }
+    }, 5000); // Test after 5 seconds
+  };
+
+  // 7. ADD this call in your main useEffect (after the registerSW call):
+  useEffect(() => {
+    if (!mounted) return;
+
+    handleServiceWorkerMessages(); // This now references the local function defined above.
+
+    const registerSW = async () => {
+      // ... your existing registerSW code ...
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+        console.log('Service Worker not supported');
+        setSwStatus('unsupported');
+        return;
+      }
+
+      try {
+        await new Promise(resolve => {
+          if (document.readyState === 'complete') {
+            setTimeout(resolve, 3000);
+          } else {
+            window.addEventListener('load', () => {
+              setTimeout(resolve, 2000);
+            });
+          }
+        });
+
+        const existingRegistration = await navigator.serviceWorker.getRegistration();
+
+        if (existingRegistration) {
+          console.log('Existing SW found, updating...');
+          await existingRegistration.update();
+          setSwStatus('updated');
+        }
+
+        const registration = await navigator.serviceWorker.register('/sw.js?v=2', {
+          scope: '/',
+          updateViaCache: 'none'
+        });
+
+        console.log('✅ Service Worker registered:', registration);
+        setSwStatus('registered');
+
+        registration.addEventListener('updatefound', () => {
+          console.log('SW: Update found');
+          const newWorker = registration.installing;
+
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('SW: New version available');
+                setSwStatus('update-available');
+
+                if (window.confirm('New version available! Reload to update?')) {
+                  window.location.reload();
+                }
+              }
+            });
+          }
+        });
+
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('SW: Controller changed');
+          window.location.reload();
+        });
+
+        await preCachePages(registration);
+        await preloadStaticPages();
+        await prefetchCurrentPage();
+        await ensureOfflinePageCached();
+        await aggressiveStaticPrefetch();
+        await forceCachePopulation(); // ADD THIS LINE
+
+        await testOfflineCapability(); // ADD THIS LINE
+      } catch (error) {
+        console.error('❌ Service Worker registration failed:', error);
+        setSwStatus('failed');
+      }
+    };
+
+    registerSW();
+  }, [mounted]);
+
 
   // Don't render anything during SSR
   if (!mounted) return null;
