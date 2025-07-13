@@ -10,311 +10,6 @@ export default function ServiceWorkerRegistration() {
     setMounted(true);
   }, []);
 
-  // 1. REPLACE your existing aggressiveStaticPrefetch function with this simpler version:
-  const aggressiveStaticPrefetch = async () => {
-    try {
-      const staticPages = [
-        '/',
-        '/about',
-        '/faq',
-        '/contact',
-        '/privacy',
-        '/terms',
-        '/ai-tools',
-        '/ai-seo',
-        '/ai-code',
-        '/ai-learn-earn'
-      ];
-
-      console.log('🚀 Starting aggressive static prefetch...');
-
-      // Prefetch all pages with a reasonable timeout
-      const prefetchPromises = staticPages.map(async (page) => {
-        return Promise.race([
-          prefetchPageComplete(page),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout')), 8000)
-          )
-        ]);
-      });
-
-      const results = await Promise.allSettled(prefetchPromises);
-
-      let successful = 0;
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          console.log(`✅ Successfully prefetched: ${staticPages[index]}`);
-          successful++;
-        } else {
-          console.log(`❌ Failed to prefetch: ${staticPages[index]}`);
-        }
-      });
-
-      console.log(`✅ Prefetch completed: ${successful}/${staticPages.length} pages cached`);
-
-      // Notify that offline mode is ready
-      window.dispatchEvent(new CustomEvent('offline-ready', {
-        detail: { cached: successful, total: staticPages.length }
-      }));
-
-    } catch (error) {
-      console.error('Aggressive prefetch failed:', error);
-    }
-  };
-
-  // 2. REPLACE your existing prefetchPageWithAssets function with this:
-  const prefetchPageComplete = async (page) => {
-    try {
-      // Method 1: Direct fetch to populate service worker cache
-      const htmlResponse = await fetch(page, {
-        mode: 'same-origin',
-        credentials: 'same-origin',
-        headers: {
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Cache-Control': 'no-cache'
-        }
-      });
-
-      if (!htmlResponse.ok) {
-        throw new Error(`HTTP ${htmlResponse.status}`);
-      }
-
-      // Method 2: Also fetch with different headers to ensure caching
-      await fetch(page, {
-        mode: 'same-origin',
-        credentials: 'same-origin',
-        headers: {
-          'Accept': 'text/html',
-          'Sec-Fetch-Mode': 'navigate',
-          'Sec-Fetch-Site': 'same-origin'
-        }
-      });
-
-      // Method 3: Fetch Next.js data if it's a dynamic page
-      if (['/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn'].includes(page)) {
-        try {
-          const dataResponse = await fetch(`${page}?_rsc=1`, {
-            mode: 'same-origin',
-            credentials: 'same-origin'
-          });
-          console.log(`RSC data fetched for ${page}`);
-        } catch (rscError) {
-          console.log(`RSC fetch failed for ${page}, but page cached`);
-        }
-      }
-
-      return true;
-    } catch (error) {
-      console.error(`Failed to prefetch ${page}:`, error);
-      return false;
-    }
-  };
-
-  // 3. ADD this new function to force cache population:
-  const forceCachePopulation = async () => {
-    try {
-      const staticPages = [
-        '/',
-        '/about',
-        '/faq',
-        '/contact',
-        '/privacy',
-        '/terms'
-      ];
-
-      const semiDynamicPages = [
-        '/ai-tools',
-        '/ai-seo',
-        '/ai-code',
-        '/ai-learn-earn'
-      ];
-
-      console.log('🔄 Force caching static pages...');
-
-      // Cache static pages multiple times with different methods
-      for (const page of staticPages) {
-        try {
-          // Method 1: Regular fetch
-          await fetch(page, { mode: 'same-origin' });
-
-          // Method 2: Fetch with navigate mode simulation
-          await fetch(page, {
-            mode: 'same-origin',
-            headers: { 'Sec-Fetch-Mode': 'navigate' }
-          });
-
-          console.log(`✅ Force cached: ${page}`);
-        } catch (error) {
-          console.log(`❌ Force cache failed: ${page}`);
-        }
-      }
-
-      console.log('🔄 Force caching semi-dynamic pages...');
-
-      // Cache semi-dynamic pages (shell only)
-      for (const page of semiDynamicPages) {
-        try {
-          await fetch(page, { mode: 'same-origin' });
-          console.log(`✅ Force cached shell: ${page}`);
-        } catch (error) {
-          console.log(`❌ Force cache failed: ${page}`);
-        }
-      }
-
-    } catch (error) {
-      console.error('Force cache population failed:', error);
-    }
-  };
-
-
-  // Add this new function for aggressive static page caching
-  // Replace the existing preloadStaticPages function
-  const preloadStaticPages = async () => {
-    try {
-      // Fetch the pages manifest
-      const manifestResponse = await fetch('/pages-manifest.json');
-      const manifest = await manifestResponse.json();
-
-      console.log('📋 Loading pages manifest:', manifest);
-
-      // Pre-cache all static pages from manifest
-      const cachePromises = manifest.static_pages.map(async (pageInfo) => {
-        const { url } = pageInfo;
-        try {
-          // Cache the main page
-          const response = await fetch(url, {
-            mode: 'navigate',
-            credentials: 'same-origin'
-          });
-
-          if (response.ok) {
-            console.log('✅ Pre-cached page:', url);
-
-            // Also cache Next.js data if it's not homepage
-            if (url !== '/') {
-              try {
-                await fetch(`/_next/data/${process.env.NEXT_PUBLIC_BUILD_ID || 'build'}${url === '/' ? '/index' : url}.json`, {
-                  mode: 'same-origin',
-                  credentials: 'same-origin'
-                });
-              } catch (dataError) {
-                // Data caching failed, but page HTML is cached
-              }
-            }
-          }
-        } catch (error) {
-          console.warn('Failed to pre-cache page:', url, error);
-        }
-      });
-
-      await Promise.allSettled(cachePromises);
-      console.log('✅ All static pages pre-caching completed');
-
-    } catch (error) {
-      console.error('Failed to load pages manifest:', error);
-
-      // Fallback to hardcoded list
-      const fallbackPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-      const fallbackPromises = fallbackPages.map(page =>
-        fetch(page, { mode: 'navigate', credentials: 'same-origin' })
-          .then(() => console.log('✅ Fallback cached:', page))
-          .catch(err => console.warn('Fallback cache failed:', page))
-      );
-
-      await Promise.allSettled(fallbackPromises);
-    }
-  };
-
-  // Prefetch current page content
-  const prefetchCurrentPage = async () => {
-    try {
-      const currentPath = window.location.pathname;
-      const currentUrl = window.location.href;
-
-      // Prefetch current page
-      await fetch(currentPath, { mode: 'same-origin' });
-
-      // Prefetch RSC payload for current page
-      if (currentPath !== '/') {
-        await fetch(`${currentPath}?_rsc=1`, { mode: 'same-origin' });
-      }
-
-      console.log('Pre-cached current page:', currentPath);
-    } catch (error) {
-      console.log('Failed to pre-cache current page:', error);
-    }
-  };
-
-  // Replace the existing preCachePages function
-  const preCachePages = async (registration) => {
-    if (registration.active) {
-      try {
-        // Send message to service worker to handle prefetching
-        navigator.serviceWorker.controller?.postMessage({
-          type: 'PREFETCH_PAGES',
-          staticPages: ['/about', '/faq', '/contact', '/privacy', '/terms'],
-          dynamicPages: ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn']
-        });
-
-        console.log('✅ Prefetch request sent to service worker');
-      } catch (error) {
-        console.error('Prefetch request failed:', error);
-      }
-    }
-  };
-
-  // Add this function after preCachePages
-  const ensureOfflinePageCached = async () => {
-    try {
-      // Pre-cache the offline page
-      await fetch('/offline.html', {
-        mode: 'same-origin',
-        credentials: 'same-origin'
-      });
-      console.log('✅ Offline page cached successfully');
-    } catch (error) {
-      console.log('Failed to cache offline page:', error);
-    }
-  };
-
-  // Cache page content when navigating (not just on reload)
-  const cacheCurrentPage = async () => {
-    if (typeof window === 'undefined') return;
-    try {
-      const currentPath = window.location.pathname;
-      const currentUrl = window.location.href;
-
-      // --- IMPORTANT CHANGE HERE ---
-      // Cache the current page HTML by fetching it as a navigation request
-      await fetch(currentPath, {
-        mode: 'navigate', // Treat as navigation request
-        credentials: 'same-origin',
-        headers: {
-          'X-Purpose': 'cache-on-client-navigation' // Custom header
-        }
-      });
-      console.log('✅Cached current page HTML via client navigation:', currentPath);
-
-      // Cache RSC payload for the current page
-      if (currentPath !== '/') {
-        try {
-          await fetch(`${currentPath}?_rsc=1`, {
-            mode: 'same-origin',
-            credentials: 'same-origin'
-          });
-          console.log('Cached RSC for:', currentPath);
-        } catch (rscError) {
-          console.log('Failed to cache RSC for:', currentPath, rscError);
-        }
-      }
-
-      // For dynamic pages, cache their API data
-      await cachePageData(currentPath);
-    } catch (error) {
-      console.log('Failed to cache current page HTML/data:', error);
-    }
-  };
-
   // Add this function to cache API data for dynamic pages
   const cachePageData = async (pathname) => {
     try {
@@ -359,20 +54,19 @@ export default function ServiceWorkerRegistration() {
     }
   };
 
-
-  // Add this new function to handle client-side navigation caching
-  const handleClientSideNavigation = async () => {
-    if (typeof window === 'undefined') return;
+  // 1. REPLACE the existing handleClientSideNavigation function with this corrected version:
+  const handleClientSideNavigation = () => {
+    if (typeof window === 'undefined') return () => {}; // Return empty cleanup function
 
     let currentPath = window.location.pathname;
 
     // Function to cache page when navigating via client-side routing
     const cacheOnNavigation = async (newPath) => {
       if (newPath === currentPath) return;
-
+      
       try {
         console.log('SW: Caching page for client-side navigation:', newPath);
-
+        
         // Cache the HTML page
         await fetch(newPath, {
           mode: 'same-origin',
@@ -429,13 +123,15 @@ export default function ServiceWorkerRegistration() {
     };
 
     // Listen for popstate events (back/forward buttons)
-    window.addEventListener('popstate', () => {
+    const handlePopState = () => {
       const newPath = window.location.pathname;
       setTimeout(() => cacheOnNavigation(newPath), 500);
-    });
+    };
 
-    // Also listen for Next.js route changes
-    const observer = new MutationObserver((mutations) => {
+    window.addEventListener('popstate', handlePopState);
+
+    // Also listen for Next.js route changes using MutationObserver
+    const observer = new MutationObserver(() => {
       const newPath = window.location.pathname;
       if (newPath !== currentPath) {
         setTimeout(() => cacheOnNavigation(newPath), 500);
@@ -449,15 +145,130 @@ export default function ServiceWorkerRegistration() {
       attributeFilter: ['data-pathname']
     });
 
+    // Return cleanup function to prevent memory leaks
     return () => {
-      observer.disconnect();
+      // Restore original functions
       history.pushState = originalPushState;
       history.replaceState = originalReplaceState;
+      
+      // Remove event listeners
+      window.removeEventListener('popstate', handlePopState);
+      
+      // Disconnect observer
+      if (observer) {
+        observer.disconnect();
+      }
     };
   };
 
+  // 3. SIMPLIFIED aggressiveStaticPrefetch function (replace the existing one):
+  const aggressiveStaticPrefetch = async () => {
+    try {
+      const staticPages = [
+        '/',
+        '/about',
+        '/faq', 
+        '/contact',
+        '/privacy',
+        '/terms',
+        '/ai-tools',
+        '/ai-seo',
+        '/ai-code',
+        '/ai-learn-earn'
+      ];
 
-  // Helper function to update cache from client
+      console.log('🚀 Starting aggressive static prefetch...');
+      
+      // Prefetch pages with a reasonable timeout
+      const prefetchPromises = staticPages.map(async (page) => {
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 8000)
+        );
+        
+        const fetchPromise = fetch(page, {
+          mode: 'same-origin',
+          credentials: 'same-origin',
+          headers: {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+          }
+        }).then(response => {
+          if (response.ok) {
+            console.log(`✅ Prefetched: ${page}`);
+            return response;
+          }
+          throw new Error(`HTTP ${response.status}`);
+        });
+
+        return Promise.race([fetchPromise, timeoutPromise])
+          .catch(error => {
+            console.log(`❌ Failed to prefetch: ${page}`, error.message);
+            return null;
+          });
+      });
+
+      await Promise.allSettled(prefetchPromises);
+
+      // Send simplified message to service worker
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'PREFETCH_COMPLETE',
+          pages: staticPages
+        });
+      }
+
+      console.log('✅ Aggressive static prefetch completed');
+    } catch (error) {
+      console.error('Aggressive prefetch failed:', error);
+    }
+  };
+
+
+  // Removed the `prefetchPageComplete` function as it's replaced by the new `aggressiveStaticPrefetch`.
+  // Removed the `forceCachePopulation` function as it's no longer needed with the new `aggressiveStaticPrefetch`.
+  // Removed the `preloadStaticPages` function as it's replaced by the new `aggressiveStaticPrefetch`.
+  // Removed the `prefetchCurrentPage` function as its logic is incorporated into `handleClientSideNavigation`.
+  // Removed the `preCachePages` function as it's replaced by the new `aggressiveStaticPrefetch` and `ensureOfflinePageCached`.
+  // Removed the `cacheCurrentPage` function as its logic is incorporated into `handleClientSideNavigation`.
+
+  // 5. SIMPLIFIED handleServiceWorkerMessages function:
+  const handleServiceWorkerMessages = () => {
+    if (!navigator.serviceWorker) return;
+
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      console.log('SW Message:', event.data);
+      
+      switch (event.data.type) {
+        case 'CACHE_UPDATED':
+          console.log('Cache updated for:', event.data.url);
+          break;
+        case 'PREFETCH_COMPLETE':
+          console.log('✅ Prefetch completed');
+          window.dispatchEvent(new CustomEvent('offline-ready'));
+          break;
+        case 'PREFETCH_PROGRESS':
+          console.log(`Prefetch progress: ${event.data.completed}/${event.data.total}`);
+          break;
+        default:
+          console.log('Unknown SW message:', event.data);
+      }
+    });
+  };
+
+  // Add this function after preCachePages
+  const ensureOfflinePageCached = async () => {
+    try {
+      // Pre-cache the offline page
+      await fetch('/offline.html', {
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      });
+      console.log('✅ Offline page cached successfully');
+    } catch (error) {
+      console.log('Failed to cache offline page:', error);
+    }
+  };
+
+  // Helper function to update cache from client (kept as it was not explicitly removed)
   const updateCache = (url, data) => {
     if (navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
@@ -475,167 +286,16 @@ export default function ServiceWorkerRegistration() {
     }
   }, [mounted]);
 
-  // Add this useEffect after the existing ones
+  // 2. UPDATE the useEffect that calls handleClientSideNavigation:
   useEffect(() => {
     if (!mounted) return;
-
+    
     const cleanup = handleClientSideNavigation();
-
+    
+    // Return the cleanup function
     return cleanup;
   }, [mounted]);
 
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    const registerSW = async () => {
-      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-        console.log('Service Worker not supported');
-        setSwStatus('unsupported');
-        return;
-      }
-
-      try {
-        // Wait for React hydration to complete
-        await new Promise(resolve => {
-          if (document.readyState === 'complete') {
-            // Add longer delay to ensure React is fully hydrated
-            setTimeout(resolve, 3000);
-          } else {
-            window.addEventListener('load', () => {
-              setTimeout(resolve, 2000);
-            });
-          }
-        });
-
-        // Check for existing service worker
-        const existingRegistration = await navigator.serviceWorker.getRegistration();
-
-        if (existingRegistration) {
-          console.log('Existing SW found, updating...');
-          await existingRegistration.update();
-          setSwStatus('updated');
-        }
-
-        // Register service worker
-        const registration = await navigator.serviceWorker.register('/sw.js?v=2', {
-          scope: '/',
-          updateViaCache: 'none'
-        });
-
-        console.log('✅ Service Worker registered:', registration);
-        setSwStatus('registered');
-
-        // Listen for updates
-        registration.addEventListener('updatefound', () => {
-          console.log('SW: Update found');
-          const newWorker = registration.installing;
-
-          if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('SW: New version available');
-                setSwStatus('update-available');
-
-                // Optionally notify user about update
-                if (window.confirm('New version available! Reload to update?')) {
-                  window.location.reload();
-                }
-              }
-            });
-          }
-        });
-
-        // 5. REPLACE your existing handleServiceWorkerMessages function with this:
-        const handleServiceWorkerMessages = () => {
-          if (!navigator.serviceWorker) return;
-
-          navigator.serviceWorker.addEventListener('message', (event) => {
-            console.log('SW Message:', event.data);
-
-            switch (event.data.type) {
-              case 'CACHE_UPDATED':
-                console.log('Cache updated for:', event.data.url);
-                break;
-              case 'DATA_CACHE_UPDATED':
-                console.log('Data cache updated for:', event.data.url);
-                break;
-              case 'NAVIGATION_CACHE_UPDATED':
-                console.log('Navigation cache updated for:', event.data.url);
-                break;
-              default:
-                console.log('Unknown message type:', event.data.type);
-            }
-          });
-        };
-        handleServiceWorkerMessages(); // Call the function to set up the listener
-
-        // Handle controller change
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('SW: Controller changed');
-          window.location.reload();
-        });
-
-        // Pre-cache important pages
-        await preCachePages(registration);
-        await preloadStaticPages();
-        await prefetchCurrentPage();
-        await ensureOfflinePageCached();
-        await aggressiveStaticPrefetch(); // ADD THIS LINE
-        await forceCachePopulation(); // ADD THIS LINE
-
-
-      } catch (error) {
-        console.error('❌ Service Worker registration failed:', error);
-        setSwStatus('failed');
-      }
-    };
-
-    registerSW();
-  }, [mounted]);
-
-
-  // Add after the existing useEffect hooks
-  useEffect(() => {
-    if (!mounted) return;
-
-    let currentPath = window.location.pathname;
-
-    // Function to handle route changes
-    const handleRouteChange = () => {
-      const newPath = window.location.pathname;
-      if (newPath !== currentPath) {
-        currentPath = newPath;
-
-        // Cache the new page after navigation
-        setTimeout(() => {
-          cacheCurrentPage();
-        }, 1000); // Small delay to ensure page is loaded
-      }
-    };
-
-    // Listen for route changes (for client-side navigation)
-    const observer = new MutationObserver(() => {
-      handleRouteChange();
-    });
-
-    // Watch for URL changes
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    // Also listen for popstate (back/forward buttons)
-    window.addEventListener('popstate', handleRouteChange);
-
-    // Cache current page on initial load
-    cacheCurrentPage();
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('popstate', handleRouteChange);
-    };
-  }, [mounted]);
 
   // 6. ADD this new function for testing offline capability:
   const testOfflineCapability = async () => {
@@ -661,14 +321,11 @@ export default function ServiceWorkerRegistration() {
     }, 5000); // Test after 5 seconds
   };
 
-  // 7. ADD this call in your main useEffect (after the registerSW call):
+  // 7. UPDATE the main registerSW function call order:
   useEffect(() => {
     if (!mounted) return;
 
-    handleServiceWorkerMessages(); // This now references the local function defined above.
-
     const registerSW = async () => {
-      // ... your existing registerSW code ...
       if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
         console.log('Service Worker not supported');
         setSwStatus('unsupported');
@@ -676,25 +333,19 @@ export default function ServiceWorkerRegistration() {
       }
 
       try {
+        // Wait for React hydration to complete
         await new Promise(resolve => {
           if (document.readyState === 'complete') {
-            setTimeout(resolve, 3000);
+            setTimeout(resolve, 2000);
           } else {
             window.addEventListener('load', () => {
-              setTimeout(resolve, 2000);
+              setTimeout(resolve, 1500);
             });
           }
         });
 
-        const existingRegistration = await navigator.serviceWorker.getRegistration();
-
-        if (existingRegistration) {
-          console.log('Existing SW found, updating...');
-          await existingRegistration.update();
-          setSwStatus('updated');
-        }
-
-        const registration = await navigator.serviceWorker.register('/sw.js?v=2', {
+        // Register service worker
+        const registration = await navigator.serviceWorker.register('/sw.js?v=3', {
           scope: '/',
           updateViaCache: 'none'
         });
@@ -702,37 +353,37 @@ export default function ServiceWorkerRegistration() {
         console.log('✅ Service Worker registered:', registration);
         setSwStatus('registered');
 
+        // Handle updates
         registration.addEventListener('updatefound', () => {
           console.log('SW: Update found');
           const newWorker = registration.installing;
-
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 console.log('SW: New version available');
                 setSwStatus('update-available');
-
-                if (window.confirm('New version available! Reload to update?')) {
-                  window.location.reload();
-                }
               }
             });
           }
         });
 
+        // Listen for messages from SW
+        handleServiceWorkerMessages();
+
+        // Listen for controller change
         navigator.serviceWorker.addEventListener('controllerchange', () => {
           console.log('SW: Controller changed');
           window.location.reload();
         });
 
-        await preCachePages(registration);
-        await preloadStaticPages();
-        await prefetchCurrentPage();
+        // Wait for service worker to be ready before prefetching
+        await navigator.serviceWorker.ready;
+        
+        // Now start prefetching
         await ensureOfflinePageCached();
         await aggressiveStaticPrefetch();
-        await forceCachePopulation(); // ADD THIS LINE
-
         await testOfflineCapability(); // ADD THIS LINE
+
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
         setSwStatus('failed');
