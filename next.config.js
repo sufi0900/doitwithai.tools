@@ -21,28 +21,28 @@ const withPWA = require('next-pwa')({
   runtimeCaching: [
   // Static pages - CacheFirst for immediate offline access
  // Add this as the FIRST item in your runtimeCaching array
-{
-  urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)$/i,
-  handler: 'CacheFirst',
-  options: {
-    cacheName: 'static-pages-v2',
-    expiration: {
-      maxEntries: 50,
-      maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
-    },
-    cacheableResponse: {
-      statuses: [0, 200],
-    },
-    plugins: [
-      {
-        cacheKeyWillBeUsed: async ({ request }) => {
-          const url = new URL(request.url);
-          return url.origin + url.pathname;
+  {
+    urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms|ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
+    handler: 'CacheFirst', // Changed from NetworkFirst to CacheFirst
+    options: {
+      cacheName: 'static-pages-precache-v2',
+      expiration: {
+        maxEntries: 50,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      plugins: [
+        {
+          cacheWillUpdate: async ({ request, response }) => {
+            // Only cache successful responses
+            return response && response.status === 200;
+          }
         }
-      }
-    ]
+      ]
+    },
   },
-},
     // Dynamic pages with Network First
     {
     urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
@@ -245,6 +245,19 @@ const withPWA = require('next-pwa')({
 });
 
 const nextConfig = {
+// Add this to your existing nextConfig object
+env: {
+  NEXT_PUBLIC_BUILD_ID: process.env.NEXT_BUILD_ID || 'build'
+},
+
+  // Add this to your existing nextConfig object
+webpack: (config, { dev, isServer }) => {
+  if (!dev && !isServer) {
+    // Generate pages manifest during build
+    require('./scripts/generate-pages-manifest.js');
+  }
+  return config;
+},
   reactStrictMode: true,
   images: {
     domains: ['your-sanity-domain.com'],

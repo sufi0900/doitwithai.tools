@@ -43,10 +43,10 @@ export default function ServiceWorkerRegistration() {
         }
 
         // Register service worker
-       const registration = await navigator.serviceWorker.register('/sw.js?v=2', {
-  scope: '/',
-  updateViaCache: 'none'
-});
+        const registration = await navigator.serviceWorker.register('/sw.js?v=2', {
+         scope: '/',
+         updateViaCache: 'none'
+         });
 
         console.log('✅ Service Worker registered:', registration);
         setSwStatus('registered');
@@ -72,13 +72,18 @@ export default function ServiceWorkerRegistration() {
         });
 
         // Listen for messages from SW
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          console.log('SW Message:', event.data);
-          
-          if (event.data.type === 'CACHE_UPDATED') {
-            console.log('Cache updated for:', event.data.url);
-          }
-        });
+// Add this inside your registerSW function after registration
+// Enhanced message handling for precaching
+navigator.serviceWorker.addEventListener('message', (event) => {
+  console.log('SW Message:', event.data);
+  
+  if (event.data.type === 'PRECACHE_COMPLETE') {
+    console.log('✅ Service worker precaching completed');
+    setSwStatus('precached');
+  } else if (event.data.type === 'CACHE_UPDATED') {
+    console.log('Cache updated for:', event.data.url);
+  }
+});
 
         // Handle controller change
         navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -89,8 +94,6 @@ export default function ServiceWorkerRegistration() {
         // Pre-cache important pages
         await preCachePages(registration);
         await preloadStaticPages();
-        await forcePreCacheAllPages();
-
         await prefetchCurrentPage();
         await ensureOfflinePageCached(); // Add this line
 
@@ -109,93 +112,61 @@ export default function ServiceWorkerRegistration() {
 // Add this new function for aggressive static page caching
 // Replace the existing preloadStaticPages function
 const preloadStaticPages = async () => {
-  const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-  
   try {
-    // Send message to service worker to handle comprehensive prefetching
-    if (navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'PREFETCH_PAGES',
-        data: {
-          staticPages: staticPages,
-          dynamicPages: ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn']
-        }
-      });
-      console.log('✅ Comprehensive prefetch request sent to service worker');
-    }
+    // Fetch the pages manifest
+    const manifestResponse = await fetch('/pages-manifest.json');
+    const manifest = await manifestResponse.json();
     
-    // Also prefetch from client side as backup
-    const prefetchPromises = staticPages.map(async (page) => {
+    console.log('📋 Loading pages manifest:', manifest);
+    
+    // Pre-cache all static pages from manifest
+    const cachePromises = manifest.static_pages.map(async (pageInfo) => {
+      const { url } = pageInfo;
       try {
-        const response = await fetch(page, {
-          mode: 'same-origin',
+        // Cache the main page
+        const response = await fetch(url, {
+          mode: 'navigate',
           credentials: 'same-origin'
         });
         
         if (response.ok) {
-          console.log('✅ Client-side prefetched:', page);
-        }
-      } catch (error) {
-        console.log('Failed to client-side prefetch:', page);
-      }
-    });
-    
-    await Promise.allSettled(prefetchPromises);
-    console.log('✅ Client-side static pages prefetching completed');
-  } catch (error) {
-    console.error('Static pages prefetching failed:', error);
-  }
-};
-// Add this new function to force cache all pages immediately
-const forcePreCacheAllPages = async () => {
-  const allPages = [
-    '/',
-    '/about',
-    '/faq', 
-    '/contact',
-    '/privacy',
-    '/terms',
-    '/ai-tools',
-    '/ai-seo',
-    '/ai-code',
-    '/ai-learn-earn'
-  ];
-  
-  try {
-    // Cache all pages in parallel
-    const cachePromises = allPages.map(async (page) => {
-      try {
-        // Fetch and cache the page
-        const response = await fetch(page, {
-          mode: 'same-origin',
-          credentials: 'same-origin',
-          cache: 'reload' // Force fresh fetch
-        });
-        
-        if (response.ok) {
-          // Also cache Next.js data if available
-          try {
-            await fetch(`/_next/data/BUILD_ID${page === '/' ? '/index' : page}.json`, {
-              mode: 'same-origin',
-              credentials: 'same-origin'
-            });
-          } catch (dataError) {
-            // Data fetch failed, but page might still work
-          }
+          console.log('✅ Pre-cached page:', url);
           
-          console.log('✅ Force cached page:', page);
+          // Also cache Next.js data if it's not homepage
+          if (url !== '/') {
+            try {
+              await fetch(`/_next/data/${process.env.NEXT_PUBLIC_BUILD_ID || 'build'}${url === '/' ? '/index' : url}.json`, {
+                mode: 'same-origin',
+                credentials: 'same-origin'
+              });
+            } catch (dataError) {
+              // Data caching failed, but page HTML is cached
+            }
+          }
         }
       } catch (error) {
-        console.log('Failed to force cache page:', page);
+        console.warn('Failed to pre-cache page:', url, error);
       }
     });
     
     await Promise.allSettled(cachePromises);
-    console.log('✅ All pages force cached');
+    console.log('✅ All static pages pre-caching completed');
+    
   } catch (error) {
-    console.error('Force caching failed:', error);
+    console.error('Failed to load pages manifest:', error);
+    
+    // Fallback to hardcoded list
+    const fallbackPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
+    const fallbackPromises = fallbackPages.map(page => 
+      fetch(page, { mode: 'navigate', credentials: 'same-origin' })
+        .then(() => console.log('✅ Fallback cached:', page))
+        .catch(err => console.warn('Fallback cache failed:', page))
+    );
+    
+    await Promise.allSettled(fallbackPromises);
   }
 };
+
 // Prefetch current page content
 const prefetchCurrentPage = async () => {
   try {
