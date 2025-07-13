@@ -89,6 +89,8 @@ export default function ServiceWorkerRegistration() {
         // Pre-cache important pages
         await preCachePages(registration);
         await preloadStaticPages();
+        await forcePreCacheAllPages();
+
         await prefetchCurrentPage();
         await ensureOfflinePageCached(); // Add this line
 
@@ -105,52 +107,95 @@ export default function ServiceWorkerRegistration() {
 
 
 // Add this new function for aggressive static page caching
+// Replace the existing preloadStaticPages function
 const preloadStaticPages = async () => {
   const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-  const currentPath = window.location.pathname;
-  
-  // Add current page if it's static
-  if (staticPages.includes(currentPath) && !staticPages.includes(currentPath)) {
-    staticPages.push(currentPath);
-  }
   
   try {
-    // Preload all static pages in the background
-    const preloadPromises = staticPages.map(async (page) => {
+    // Send message to service worker to handle comprehensive prefetching
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'PREFETCH_PAGES',
+        data: {
+          staticPages: staticPages,
+          dynamicPages: ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn']
+        }
+      });
+      console.log('✅ Comprehensive prefetch request sent to service worker');
+    }
+    
+    // Also prefetch from client side as backup
+    const prefetchPromises = staticPages.map(async (page) => {
       try {
-        // Fetch the page HTML
         const response = await fetch(page, {
           mode: 'same-origin',
           credentials: 'same-origin'
         });
         
         if (response.ok) {
-          // Also fetch Next.js data for the page
+          console.log('✅ Client-side prefetched:', page);
+        }
+      } catch (error) {
+        console.log('Failed to client-side prefetch:', page);
+      }
+    });
+    
+    await Promise.allSettled(prefetchPromises);
+    console.log('✅ Client-side static pages prefetching completed');
+  } catch (error) {
+    console.error('Static pages prefetching failed:', error);
+  }
+};
+// Add this new function to force cache all pages immediately
+const forcePreCacheAllPages = async () => {
+  const allPages = [
+    '/',
+    '/about',
+    '/faq', 
+    '/contact',
+    '/privacy',
+    '/terms',
+    '/ai-tools',
+    '/ai-seo',
+    '/ai-code',
+    '/ai-learn-earn'
+  ];
+  
+  try {
+    // Cache all pages in parallel
+    const cachePromises = allPages.map(async (page) => {
+      try {
+        // Fetch and cache the page
+        const response = await fetch(page, {
+          mode: 'same-origin',
+          credentials: 'same-origin',
+          cache: 'reload' // Force fresh fetch
+        });
+        
+        if (response.ok) {
+          // Also cache Next.js data if available
           try {
-            await fetch(`/_next/data/${buildId}${page === '/' ? '/index' : page}.json`, {
+            await fetch(`/_next/data/BUILD_ID${page === '/' ? '/index' : page}.json`, {
               mode: 'same-origin',
               credentials: 'same-origin'
             });
           } catch (dataError) {
             // Data fetch failed, but page might still work
-            console.log('Failed to preload data for:', page);
           }
           
-          console.log('✅ Preloaded static page:', page);
+          console.log('✅ Force cached page:', page);
         }
       } catch (error) {
-        console.log('Failed to preload static page:', page, error);
+        console.log('Failed to force cache page:', page);
       }
     });
     
-    await Promise.allSettled(preloadPromises);
-    console.log('✅ Static pages preloading completed');
+    await Promise.allSettled(cachePromises);
+    console.log('✅ All pages force cached');
   } catch (error) {
-    console.error('Static pages preloading failed:', error);
+    console.error('Force caching failed:', error);
   }
 };
-
-
 // Prefetch current page content
 const prefetchCurrentPage = async () => {
   try {
