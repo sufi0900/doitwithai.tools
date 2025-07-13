@@ -1,8 +1,6 @@
-// next.config.js - CORRECTED VERSION
-
 const withPWA = require('next-pwa')({
   dest: 'public',
-  register: false,
+  register: false, // Keep false since you're registering manually
   skipWaiting: false,
   disable: process.env.NODE_ENV === 'development',
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
@@ -12,6 +10,7 @@ const withPWA = require('next-pwa')({
     /_buildManifest\.js$/,
     /_ssgManifest\.js$/
   ],
+
   fallbacks: {
     document: '/offline.html',
     image: '/offline.html',
@@ -19,116 +18,168 @@ const withPWA = require('next-pwa')({
     video: '/offline.html',
     font: '/offline.html'
   },
-  // CORRECTED: Use proper handler names and remove conflicting options
   runtimeCaching: [
-    // Static pages - Use CacheFirst with no networkTimeout
-    {
-      urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-pages-v3',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
+  // Static pages - CacheFirst for immediate offline access
+ // Add this as the FIRST item in your runtimeCaching array
+  {
+    urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+    handler: 'StaleWhileRevalidate', // Changed from CacheFirst
+    options: {
+      cacheName: 'static-pages-v2',
+      expiration: {
+        maxEntries: 50,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
       },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      plugins: [
+        {
+          // Cache immediately on first visit
+          cacheWillUpdate: async ({ response }) => {
+            return response.status === 200 ? response : null;
+          },
+          cacheDidUpdate: async ({ cacheName, request }) => {
+            console.log('Static page cached:', request.url);
+          }
+        }
+      ]
     },
+  },
 
-    // Semi-dynamic pages - Use NetworkFirst with timeout
-    {
-      urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'semi-dynamic-pages-v3',
-        networkTimeoutSeconds: 5,
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60, // 1 day
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
+  // Semi-dynamic pages (ai-tools, ai-seo, etc.) - Cache shell immediately
+  {
+    urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
+    handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
+    options: {
+      cacheName: 'semi-dynamic-pages-v2',
+      networkTimeoutSeconds: 3, // Reduced timeout
+      expiration: {
+        maxEntries: 100,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      plugins: [
+        {
+          // Serve cached version immediately if available
+          cachedResponseWillBeUsed: async ({ cachedResponse, request }) => {
+            if (cachedResponse) {
+              console.log('Serving cached semi-dynamic page:', request.url);
+              return cachedResponse;
+            }
+            return null;
+          }
+        }
+      ]
+    },
+  },
+  
+  // Next.js data - More aggressive caching
+  {
+    urlPattern: /\/_next\/data\/.*/i,
+    handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
+    options: {
+      cacheName: 'next-data-cache-v2',
+      networkTimeoutSeconds: 5,
+      expiration: {
+        maxEntries: 200, // Increased
+        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days instead of 1
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
       },
     },
+  },
+  // RSC (React Server Components) payloads
+  {
+    urlPattern: /^https:\/\/.*\?_rsc=1$/i,
+    handler: 'StaleWhileRevalidate',
+    options: {
+      cacheName: 'rsc-cache-v1',
+      networkTimeoutSeconds: 5,
+      expiration: {
+        maxEntries: 100,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+    },
+  },
+   {
+    urlPattern: /^https:\/\/.*$/i,
+    handler: 'NetworkFirst',
+    options: {
+      cacheName: 'navigation-v2',
+      networkTimeoutSeconds: 3,
+      expiration: {
+        maxEntries: 200,
+        maxAgeSeconds: 24 * 60 * 60,
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+    },
+  },
+  // Homepage with better caching
+  {
+    urlPattern: /^https:\/\/.*\/$/,
+    handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
+    options: {
+      cacheName: 'homepage-cache-v2',
+      networkTimeoutSeconds: 3,
+      expiration: {
+        maxEntries: 10,
+        maxAgeSeconds: 60 * 60, // 1 hour
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+    },
+  },
 
-    // Next.js data - NetworkFirst with timeout
-    {
-      urlPattern: /\/_next\/data\/.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'next-data-cache-v3',
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
 
-    // RSC payloads - NetworkFirst with timeout
-    {
-      urlPattern: /^https:\/\/.*\?_rsc=1$/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'rsc-cache-v3',
-        networkTimeoutSeconds: 8,
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60, // 1 day
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
+// Enhanced navigation cache
+  {
+    urlPattern: /^https:\/\/.*$/i,
+    handler: 'StaleWhileRevalidate',
+    method: 'GET',
+    options: {
+      cacheName: 'enhanced-navigation-cache-v2',
+      networkTimeoutSeconds: 3, // Reduced timeout
+      expiration: {
+        maxEntries: 300, // Increased
+        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
       },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      plugins: [
+        {
+          cacheKeyWillBeUsed: async ({ request }) => {
+            const url = new URL(request.url);
+            // Normalize URLs to prevent duplicate caches
+            return url.origin + url.pathname.replace(/\/$/, '') || '/';
+          },
+          // Add immediate caching for navigation requests
+          requestWillFetch: async ({ request }) => {
+            console.log('Navigation request:', request.url);
+            return request;
+          }
+        }
+      ]
     },
+  },
 
-    // Homepage - NetworkFirst with timeout
-    {
-      urlPattern: /^https:\/\/.*\/$/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'homepage-cache-v3',
-        networkTimeoutSeconds: 5,
-        expiration: {
-          maxEntries: 10,
-          maxAgeSeconds: 60 * 60, // 1 hour
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-
-    // General navigation - NetworkFirst with timeout
-    {
-      urlPattern: /^https:\/\/.*$/i,
-      handler: 'NetworkFirst',
-      method: 'GET',
-      options: {
-        cacheName: 'enhanced-navigation-cache-v3',
-        networkTimeoutSeconds: 5,
-        expiration: {
-          maxEntries: 300,
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
 
     // Sanity API
     {
       urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'sanity-api-cache-v3',
+        cacheName: 'sanity-api-cache-v2',
         networkTimeoutSeconds: 10,
         expiration: {
           maxEntries: 100,
@@ -139,13 +190,12 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-
     // API routes
     {
       urlPattern: /^https:\/\/.*\/api\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'api-cache-v3',
+        cacheName: 'api-cache-v2',
         networkTimeoutSeconds: 5,
         expiration: {
           maxEntries: 100,
@@ -156,13 +206,12 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-
-    // Static assets - CacheFirst (no networkTimeout needed)
+    // Static assets
     {
       urlPattern: /\/_next\/static\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'next-static-cache-v3',
+        cacheName: 'next-static-cache-v2',
         expiration: {
           maxEntries: 100,
           maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
@@ -172,13 +221,12 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-
-    // Images - CacheFirst (no networkTimeout needed)
+    // Images
     {
       urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'images-cache-v3',
+        cacheName: 'images-cache-v2',
         expiration: {
           maxEntries: 200,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
@@ -188,13 +236,12 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-
-    // Fonts - CacheFirst (no networkTimeout needed)
+    // Fonts
     {
       urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'google-fonts-cache-v3',
+        cacheName: 'google-fonts-cache-v2',
         expiration: {
           maxEntries: 30,
           maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
@@ -204,28 +251,57 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-
-    // Fallback - NetworkFirst with timeout (should be LAST)
-    {
-      urlPattern: /^https?:\/\/.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'fallback-cache-v3',
-        networkTimeoutSeconds: 3,
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 24 * 60 * 60, // 1 day
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
+  {
+    urlPattern: /^https?:\/\/.*/,
+    handler: 'StaleWhileRevalidate',
+    options: {
+      cacheName: 'fallback-cache-v2',
+      networkTimeoutSeconds: 3, // Reduced timeout
+      expiration: {
+        maxEntries: 100,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
       },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      plugins: [
+        {
+          handlerDidError: async ({ request }) => {
+            console.log('Handler error for:', request.url);
+            // Try to serve from any cache first
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Fallback to offline page
+            return caches.match('/offline.html');
+          },
+          handlerDidComplete: async ({ response, request }) => {
+            if (!response || response.status !== 200) {
+              console.log('Handler completed with error for:', request.url);
+              return caches.match('/offline.html');
+            }
+            return response;
+          }
+        }
+      ]
     },
-  ],
+  },
+]
+  
 });
 
-// Rest of your next.config.js remains the same
 const nextConfig = {
+
+
+  // Add this to your existing nextConfig object
+webpack: (config, { dev, isServer }) => {
+  if (!dev && !isServer) {
+    // Generate pages manifest during build
+    require('./scripts/generate-pages-manifest.js');
+  }
+  return config;
+},
   reactStrictMode: true,
   images: {
     domains: ['your-sanity-domain.com'],
