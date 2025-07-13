@@ -154,9 +154,10 @@ useEffect(() => {
               <ScrollToTop />
             </Suspense>
           </Providers>
+                     <StaticContentPrefetcher /> {/* Add this line */}
+
         </CacheProvider>
          <ServiceWorkerRegistration /> 
-           <StaticContentPrefetcher /> {/* Add this line */}
 
       </body>
     </html>
