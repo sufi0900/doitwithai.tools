@@ -53,7 +53,7 @@ const withPWA = require('next-pwa')({
     handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
     options: {
       cacheName: 'semi-dynamic-pages-v2',
-      networkTimeoutSeconds: 3, // Reduced timeout
+      // networkTimeoutSeconds: 3, // Reduced timeout
       expiration: {
         maxEntries: 100,
         maxAgeSeconds: 24 * 60 * 60, // 1 day
@@ -82,7 +82,7 @@ const withPWA = require('next-pwa')({
     handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
     options: {
       cacheName: 'next-data-cache-v2',
-      networkTimeoutSeconds: 5,
+      // networkTimeoutSeconds: 5,
       expiration: {
         maxEntries: 200, // Increased
         maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days instead of 1
@@ -98,7 +98,7 @@ const withPWA = require('next-pwa')({
     handler: 'StaleWhileRevalidate',
     options: {
       cacheName: 'rsc-cache-v1',
-      networkTimeoutSeconds: 5,
+      // networkTimeoutSeconds: 5,
       expiration: {
         maxEntries: 100,
         maxAgeSeconds: 24 * 60 * 60, // 1 day
@@ -113,7 +113,7 @@ const withPWA = require('next-pwa')({
     handler: 'NetworkFirst',
     options: {
       cacheName: 'navigation-v2',
-      networkTimeoutSeconds: 3,
+      // networkTimeoutSeconds: 3,
       expiration: {
         maxEntries: 200,
         maxAgeSeconds: 24 * 60 * 60,
@@ -129,7 +129,7 @@ const withPWA = require('next-pwa')({
     handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
     options: {
       cacheName: 'homepage-cache-v2',
-      networkTimeoutSeconds: 3,
+      // networkTimeoutSeconds: 3,
       expiration: {
         maxEntries: 10,
         maxAgeSeconds: 60 * 60, // 1 hour
@@ -148,7 +148,7 @@ const withPWA = require('next-pwa')({
     method: 'GET',
     options: {
       cacheName: 'enhanced-navigation-cache-v2',
-      networkTimeoutSeconds: 3, // Reduced timeout
+      // networkTimeoutSeconds: 3, // Reduced timeout
       expiration: {
         maxEntries: 300, // Increased
         maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
@@ -180,7 +180,7 @@ const withPWA = require('next-pwa')({
       handler: 'NetworkFirst',
       options: {
         cacheName: 'sanity-api-cache-v2',
-        networkTimeoutSeconds: 10,
+        // networkTimeoutSeconds: 10,
         expiration: {
           maxEntries: 100,
           maxAgeSeconds: 30 * 60, // 30 minutes
@@ -196,7 +196,7 @@ const withPWA = require('next-pwa')({
       handler: 'NetworkFirst',
       options: {
         cacheName: 'api-cache-v2',
-        networkTimeoutSeconds: 5,
+        // networkTimeoutSeconds: 5,
         expiration: {
           maxEntries: 100,
           maxAgeSeconds: 30 * 60, // 30 minutes
@@ -256,7 +256,7 @@ const withPWA = require('next-pwa')({
     handler: 'StaleWhileRevalidate',
     options: {
       cacheName: 'fallback-cache-v2',
-      networkTimeoutSeconds: 3, // Reduced timeout
+      // networkTimeoutSeconds: 3, // Reduced timeout
       expiration: {
         maxEntries: 100,
         maxAgeSeconds: 24 * 60 * 60, // 1 day
