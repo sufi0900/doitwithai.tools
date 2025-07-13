@@ -4,6 +4,11 @@ const withPWA = require('next-pwa')({
   skipWaiting: false,
   disable: process.env.NODE_ENV === 'development',
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
+  // Add these lines:
+  additionalManifestEntries: [
+    { url: '/sw-message-handler.js', revision: '1' }
+  ],
+  swSrc: 'public/sw-message-handler.js', // If you want to use custom SW
   buildExcludes: [
     /app-build-manifest\.json$/,
     /react-loadable-manifest\.json$/,
@@ -22,10 +27,10 @@ const withPWA = require('next-pwa')({
   // Static pages - CacheFirst for immediate offline access
  // Add this as the FIRST item in your runtimeCaching array
   {
-    urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms|ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
-    handler: 'CacheFirst', // Changed from NetworkFirst to CacheFirst
+    urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+    handler: 'StaleWhileRevalidate', // Changed from CacheFirst
     options: {
-      cacheName: 'static-pages-precache-v2',
+      cacheName: 'static-pages-v2',
       expiration: {
         maxEntries: 50,
         maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
@@ -35,20 +40,69 @@ const withPWA = require('next-pwa')({
       },
       plugins: [
         {
-          cacheWillUpdate: async ({ request, response }) => {
-            // Only cache successful responses
-            return response && response.status === 200;
+          // Cache immediately on first visit
+          cacheWillUpdate: async ({ response }) => {
+            return response.status === 200 ? response : null;
+          },
+          cacheDidUpdate: async ({ cacheName, request }) => {
+            console.log('Static page cached:', request.url);
           }
         }
       ]
     },
   },
-    // Dynamic pages with Network First
-    {
+
+  // Semi-dynamic pages (ai-tools, ai-seo, etc.) - Cache shell immediately
+  {
     urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
-    handler: 'NetworkFirst',
+    handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
     options: {
-      cacheName: 'dynamic-pages-v2',
+      cacheName: 'semi-dynamic-pages-v2',
+      networkTimeoutSeconds: 3, // Reduced timeout
+      expiration: {
+        maxEntries: 100,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      plugins: [
+        {
+          // Serve cached version immediately if available
+          cachedResponseWillBeUsed: async ({ cachedResponse, request }) => {
+            if (cachedResponse) {
+              console.log('Serving cached semi-dynamic page:', request.url);
+              return cachedResponse;
+            }
+            return null;
+          }
+        }
+      ]
+    },
+  },
+  
+  // Next.js data - More aggressive caching
+  {
+    urlPattern: /\/_next\/data\/.*/i,
+    handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
+    options: {
+      cacheName: 'next-data-cache-v2',
+      networkTimeoutSeconds: 5,
+      expiration: {
+        maxEntries: 200, // Increased
+        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days instead of 1
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+    },
+  },
+  // RSC (React Server Components) payloads
+  {
+    urlPattern: /^https:\/\/.*\?_rsc=1$/i,
+    handler: 'StaleWhileRevalidate',
+    options: {
+      cacheName: 'rsc-cache-v1',
       networkTimeoutSeconds: 5,
       expiration: {
         maxEntries: 100,
@@ -74,66 +128,57 @@ const withPWA = require('next-pwa')({
       },
     },
   },
-    // Homepage
-    {
-      urlPattern: /^https:\/\/.*\/$/, 
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'homepage-cache-v2',
-        networkTimeoutSeconds: 3,
-        expiration: {
-          maxEntries: 5,
-          maxAgeSeconds: 30 * 60, // 30 minutes
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
+  // Homepage with better caching
+  {
+    urlPattern: /^https:\/\/.*\/$/,
+    handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
+    options: {
+      cacheName: 'homepage-cache-v2',
+      networkTimeoutSeconds: 3,
+      expiration: {
+        maxEntries: 10,
+        maxAgeSeconds: 60 * 60, // 1 hour
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
       },
     },
-
-// Add this to your runtimeCaching array in next.config.js
-{
-  urlPattern: /^https:\/\/.*$/i,
-  handler: 'NetworkFirst',
-  method: 'GET',
-  options: {
-    cacheName: 'enhanced-navigation-cache-v2',
-    networkTimeoutSeconds: 5,
-    expiration: {
-      maxEntries: 200, // Increased from 100
-      maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days instead of 1 day
-    },
-    cacheableResponse: {
-      statuses: [0, 200],
-    },
-    // Add cache key will help with versioning
-    plugins: [{
-      cacheKeyWillBeUsed: async ({ request }) => {
-        const url = new URL(request.url);
-        // Normalize URLs to prevent duplicate caches
-        return url.origin + url.pathname.replace(/\/$/, '') || '/';
-      }
-    }]
   },
-},
 
 
-    // Next.js data
-    {
-      urlPattern: /\/_next\/data\/.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'next-data-cache-v2',
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 24 * 60 * 60, // 1 day
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
+// Enhanced navigation cache
+  {
+    urlPattern: /^https:\/\/.*$/i,
+    handler: 'StaleWhileRevalidate',
+    method: 'GET',
+    options: {
+      cacheName: 'enhanced-navigation-cache-v2',
+      networkTimeoutSeconds: 3, // Reduced timeout
+      expiration: {
+        maxEntries: 300, // Increased
+        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
       },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      plugins: [
+        {
+          cacheKeyWillBeUsed: async ({ request }) => {
+            const url = new URL(request.url);
+            // Normalize URLs to prevent duplicate caches
+            return url.origin + url.pathname.replace(/\/$/, '') || '/';
+          },
+          // Add immediate caching for navigation requests
+          requestWillFetch: async ({ request }) => {
+            console.log('Navigation request:', request.url);
+            return request;
+          }
+        }
+      ]
     },
+  },
+
+
     // Sanity API
     {
       urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
@@ -211,36 +256,45 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-    // Add this as the LAST item in your runtimeCaching array
-{
-  urlPattern: /^https?:\/\/.*/,
-  handler: 'NetworkFirst',
-  options: {
-    cacheName: 'fallback-cache-v2',
-    networkTimeoutSeconds: 5,
-    expiration: {
-      maxEntries: 50,
-      maxAgeSeconds: 24 * 60 * 60, // 1 day
-    },
-    cacheableResponse: {
-      statuses: [0, 200],
-    },
-    plugins: [
-      {
-        handlerDidError: async () => {
-          return caches.match('/offline.html');
-        },
-        handlerDidComplete: async ({ response }) => {
-          if (!response || response.status !== 200) {
+      // Enhanced fallback cache (should be LAST)
+
+  {
+    urlPattern: /^https?:\/\/.*/,
+    handler: 'StaleWhileRevalidate',
+    options: {
+      cacheName: 'fallback-cache-v2',
+      networkTimeoutSeconds: 3, // Reduced timeout
+      expiration: {
+        maxEntries: 100,
+        maxAgeSeconds: 24 * 60 * 60, // 1 day
+      },
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      plugins: [
+        {
+          handlerDidError: async ({ request }) => {
+            console.log('Handler error for:', request.url);
+            // Try to serve from any cache first
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Fallback to offline page
             return caches.match('/offline.html');
+          },
+          handlerDidComplete: async ({ response, request }) => {
+            if (!response || response.status !== 200) {
+              console.log('Handler completed with error for:', request.url);
+              return caches.match('/offline.html');
+            }
+            return response;
           }
-          return response;
         }
-      }
-    ]
+      ]
+    },
   },
-},
-  ],
+]
   
 });
 
