@@ -18,25 +18,5 @@
       "type": "image/png"
     }
   
-  ],
-   "shortcuts": [
-    {
-      "name": "AI Tools",
-      "url": "/ai-tools",
-      "description": "Browse AI tools and resources"
-    },
-    {
-      "name": "Coding",
-      "url": "/ai-code",
-      "description": "Learn coding with AI"
-    },
-    {
-      "name": "SEO",
-      "url": "/ai-seo",
-      "description": "AI-powered SEO guides"
-    }
-  ],
-  "categories": ["productivity", "education", "technology"],
-  "lang": "en-US",
-  "dir": "ltr"
+  ]
 }

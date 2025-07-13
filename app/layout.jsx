@@ -15,8 +15,6 @@ import { Toaster } from 'react-hot-toast';
 import Header from "@/components/Header"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"; // Add this
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider"
-import { staticPageCache } from '@/components/staticPageStorage';
-import StaticContentPrefetcher from "./StaticContentPrefetcher";
 
 
 const ConditionalGlobalHeader = dynamic(() => import("@/components/Header/ConditionalGlobalHeader"), {
@@ -154,7 +152,6 @@ useEffect(() => {
               <ScrollToTop />
             </Suspense>
           </Providers>
-                     <StaticContentPrefetcher /> {/* Add this line */}
 
         </CacheProvider>
          <ServiceWorkerRegistration /> 
