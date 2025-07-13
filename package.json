@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "generate-sitemap": "next-sitemap",
+        "prebuild": "node scripts/generate-pages-manifest.js",
+
     "build": " next build",
+        "generate-manifest": "node scripts/generate-pages-manifest.js",
+
     "start": "next start",
     "lint": "next lint"
   },

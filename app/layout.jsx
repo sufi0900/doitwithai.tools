@@ -16,6 +16,8 @@ import Header from "@/components/Header"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"; // Add this
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider"
 import { staticPageCache } from '@/components/staticPageStorage';
+import StaticContentPrefetcher from "./StaticContentPrefetcher";
+
 
 const ConditionalGlobalHeader = dynamic(() => import("@/components/Header/ConditionalGlobalHeader"), {
   ssr: false // Client-side only for scroll detection
@@ -154,6 +156,8 @@ useEffect(() => {
           </Providers>
         </CacheProvider>
          <ServiceWorkerRegistration /> 
+           <StaticContentPrefetcher /> {/* Add this line */}
+
       </body>
     </html>
   );

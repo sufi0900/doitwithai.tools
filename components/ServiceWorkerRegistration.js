@@ -1,3 +1,5 @@
+//ServiceWorkerRegistration.js
+
 "use client";
 import { useEffect, useState } from 'react';
 
@@ -91,8 +93,7 @@ export default function ServiceWorkerRegistration() {
         await preloadStaticPages();
         await prefetchCurrentPage();
         await ensureOfflinePageCached(); // Add this line
-
-
+        await prefetchAllContent(); // Add this line
 
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
@@ -105,7 +106,6 @@ export default function ServiceWorkerRegistration() {
 
 
 // Add this new function for aggressive static page caching
-// Replace the existing preloadStaticPages function
 const preloadStaticPages = async () => {
   try {
     // Fetch the pages manifest
@@ -114,20 +114,23 @@ const preloadStaticPages = async () => {
     
     console.log('📋 Loading pages manifest:', manifest);
     
-    // Pre-cache all static pages from manifest
-    const cachePromises = manifest.static_pages.map(async (pageInfo) => {
-      const { url } = pageInfo;
+    // Enhanced prefetch with better error handling
+    const prefetchPage = async (pageInfo) => {
+      const { url, priority } = pageInfo;
       try {
-        // Cache the main page
+        // Fetch page HTML
         const response = await fetch(url, {
-          mode: 'navigate',
-          credentials: 'same-origin'
+          mode: 'same-origin',
+          credentials: 'same-origin',
+          headers: {
+            'X-Purpose': 'service-worker-prefetch'
+          }
         });
         
         if (response.ok) {
-          console.log('✅ Pre-cached page:', url);
+          console.log(`✅ SW prefetched: ${url}`);
           
-          // Also cache Next.js data if it's not homepage
+          // Also prefetch Next.js data
           if (url !== '/') {
             try {
               await fetch(`/_next/data/${process.env.NEXT_PUBLIC_BUILD_ID || 'build'}${url === '/' ? '/index' : url}.json`, {
@@ -135,33 +138,162 @@ const preloadStaticPages = async () => {
                 credentials: 'same-origin'
               });
             } catch (dataError) {
-              // Data caching failed, but page HTML is cached
+              console.log(`Data prefetch failed for ${url}:`, dataError);
             }
           }
+          
+          return { success: true, url };
+        } else {
+          throw new Error(`HTTP ${response.status}`);
         }
       } catch (error) {
-        console.warn('Failed to pre-cache page:', url, error);
+        console.warn(`❌ SW failed to prefetch ${url}:`, error);
+        return { success: false, url, error };
       }
-    });
+    };
     
-    await Promise.allSettled(cachePromises);
-    console.log('✅ All static pages pre-caching completed');
+    // Sort by priority and prefetch
+    const priorityOrder = { high: 1, medium: 2, low: 3 };
+    const sortedPages = manifest.static_pages.sort((a, b) => 
+      priorityOrder[a.priority] - priorityOrder[b.priority]
+    );
     
+    // Prefetch in batches
+    const batchSize = 3;
+    for (let i = 0; i < sortedPages.length; i += batchSize) {
+      const batch = sortedPages.slice(i, i + batchSize);
+      const batchPromises = batch.map(prefetchPage);
+      await Promise.allSettled(batchPromises);
+      
+      // Small delay between batches
+      if (i + batchSize < sortedPages.length) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+    
+    console.log('✅ All static pages prefetching completed');
   } catch (error) {
     console.error('Failed to load pages manifest:', error);
     
     // Fallback to hardcoded list
-    const fallbackPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
+    const fallbackPages = [
+      { url: '/', priority: 'high' },
+      { url: '/about', priority: 'medium' },
+      { url: '/faq', priority: 'medium' },
+      { url: '/contact', priority: 'medium' },
+      { url: '/privacy', priority: 'low' },
+      { url: '/terms', priority: 'low' },
+      { url: '/ai-tools', priority: 'high' },
+      { url: '/ai-seo', priority: 'high' },
+      { url: '/ai-code', priority: 'high' },
+      { url: '/ai-learn-earn', priority: 'high' }
+    ];
+    
     const fallbackPromises = fallbackPages.map(page => 
-      fetch(page, { mode: 'navigate', credentials: 'same-origin' })
-        .then(() => console.log('✅ Fallback cached:', page))
-        .catch(err => console.warn('Fallback cache failed:', page))
+      fetch(page.url, {
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      }).then(() => console.log(`✅ Fallback cached: ${page.url}`))
+        .catch(err => console.warn(`Fallback cache failed: ${page.url}`))
     );
     
     await Promise.allSettled(fallbackPromises);
   }
 };
 
+// Add this after the existing preloadStaticPages function (around line 80)
+const prefetchAllContent = async () => {
+  try {
+    // Fetch comprehensive content manifest
+    const manifestResponse = await fetch('/pages-manifest.json');
+    const manifest = await manifestResponse.json();
+    
+    console.log('🚀 Starting comprehensive prefetch...');
+    
+    // Prefetch all static and dynamic pages
+    const allPages = [...manifest.static_pages, ...manifest.dynamic_pages];
+    const prefetchPromises = allPages.map(async (pageInfo) => {
+      const { url, priority } = pageInfo;
+      
+      try {
+        // Prefetch page HTML
+        const response = await fetch(url, {
+          mode: 'same-origin',
+          credentials: 'same-origin',
+          headers: { 'X-Prefetch': 'comprehensive' }
+        });
+        
+        if (response.ok) {
+          // Prefetch Next.js data
+          if (url !== '/') {
+            try {
+              await fetch(`/_next/data/${process.env.NEXT_PUBLIC_BUILD_ID || 'build'}${url === '/' ? '/index' : url}.json`);
+            } catch (e) { /* ignore */ }
+          }
+          
+          console.log(`✅ Prefetched ${priority} priority page: ${url}`);
+        }
+      } catch (error) {
+        console.warn(`Failed to prefetch ${url}:`, error);
+      }
+    });
+    
+    await Promise.allSettled(prefetchPromises);
+    
+    // Prefetch category content
+    await prefetchCategoryContent();
+    
+    console.log('🎉 Comprehensive prefetch completed!');
+  } catch (error) {
+    console.error('Comprehensive prefetch failed:', error);
+  }
+};
+
+// Add this new function for prefetching category content
+const prefetchCategoryContent = async () => {
+  const categories = ['makemoney', 'aitool', 'coding', 'SEO'];
+  const categoryPaths = {
+    'aitool': 'ai-tools',
+    'SEO': 'ai-seo', 
+    'coding': 'ai-code',
+    'makemoney': 'ai-learn-earn'
+  };
+  
+  for (const category of categories) {
+    try {
+      // Fetch category posts from API
+      const response = await fetch(`/api/posts?category=${category}`);
+      if (response.ok) {
+        const posts = await response.json();
+        
+        // Prefetch individual post pages (first 10 per category)
+        const postPromises = posts.slice(0, 10).map(async (post) => {
+          const postUrl = `/${categoryPaths[category]}/${post.slug.current}`;
+          
+          try {
+            await fetch(postUrl, {
+              mode: 'same-origin',
+              credentials: 'same-origin',
+              headers: { 'X-Prefetch': 'post' }
+            });
+            
+            // Also prefetch post API data
+            await fetch(`/api/posts/${post.slug.current}`);
+            
+            console.log(`✅ Prefetched post: ${postUrl}`);
+          } catch (error) {
+            console.warn(`Failed to prefetch post ${postUrl}:`, error);
+          }
+        });
+        
+        await Promise.allSettled(postPromises);
+        console.log(`✅ Prefetched ${category} category content`);
+      }
+    } catch (error) {
+      console.warn(`Failed to prefetch ${category} category:`, error);
+    }
+  }
+};
 // Prefetch current page content
 const prefetchCurrentPage = async () => {
   try {
