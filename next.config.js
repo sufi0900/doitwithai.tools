@@ -1,7 +1,8 @@
 const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: false, // Keep false since you're registering manually
-  skipWaiting: false,
+ dest: 'public',
+  // You can set register: true and next-pwa will handle registration
+  register: true,
+  skipWaiting: true, // Recommended to activate the new SW immediately
   disable: process.env.NODE_ENV === 'development',
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
   buildExcludes: [
