@@ -21,31 +21,21 @@ const withPWA = require('next-pwa')({
   runtimeCaching: [
   // Static pages - CacheFirst for immediate offline access
  // Add this as the FIRST item in your runtimeCaching array
-  {
-    urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
-    handler: 'StaleWhileRevalidate', // Changed from CacheFirst
-    options: {
-      cacheName: 'static-pages-v2',
-      expiration: {
-        maxEntries: 50,
-        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-      },
-      cacheableResponse: {
-        statuses: [0, 200],
-      },
-      plugins: [
-        {
-          // Cache immediately on first visit
-          cacheWillUpdate: async ({ response }) => {
-            return response.status === 200 ? response : null;
-          },
-          cacheDidUpdate: async ({ cacheName, request }) => {
-            console.log('Static page cached:', request.url);
-          }
-        }
-      ]
+ // In next.config.js - Replace the existing static pages entry with this as the FIRST item
+{
+  urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+  handler: 'CacheFirst', // Changed from StaleWhileRevalidate
+  options: {
+    cacheName: 'static-pages-navigation-v3',
+    expiration: {
+      maxEntries: 50,
+      maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+    },
+    cacheableResponse: {
+      statuses: [0, 200],
     },
   },
+},
 
   // Semi-dynamic pages (ai-tools, ai-seo, etc.) - Cache shell immediately
   {
@@ -251,6 +241,25 @@ const withPWA = require('next-pwa')({
         },
       },
     },
+    // Add this before the final catch-all pattern
+{
+  urlPattern: ({ request }) => {
+    const url = new URL(request.url);
+    const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
+    return staticPages.includes(url.pathname) || staticPages.includes(url.pathname.replace(/\/$/, ''));
+  },
+  handler: 'CacheFirst',
+  options: {
+    cacheName: 'static-navigation-fallback-v1',
+    expiration: {
+      maxEntries: 20,
+      maxAgeSeconds: 30 * 24 * 60 * 60,
+    },
+    cacheableResponse: {
+      statuses: [0, 200],
+    },
+  },
+},
   {
     urlPattern: /^https?:\/\/.*/,
     handler: 'StaleWhileRevalidate',
