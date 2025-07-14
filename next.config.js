@@ -294,14 +294,6 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
 
 
-  // Add this to your existing nextConfig object
-webpack: (config, { dev, isServer }) => {
-  if (!dev && !isServer) {
-    // Generate pages manifest during build
-    require('./scripts/generate-pages-manifest.js');
-  }
-  return config;
-},
   reactStrictMode: true,
   images: {
     domains: ['your-sanity-domain.com'],
