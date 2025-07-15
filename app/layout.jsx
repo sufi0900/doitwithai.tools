@@ -15,7 +15,9 @@ import { Toaster } from 'react-hot-toast';
 import Header from "@/components/Header"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"; // Add this
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider"
+import Hero from "@/components/Hero";
 
+import "../components/Hero/critical-hero.css"
 
 const ConditionalGlobalHeader = dynamic(() => import("@/components/Header/ConditionalGlobalHeader"), {
   ssr: false // Client-side only for scroll detection
@@ -28,10 +30,14 @@ const ScrollToTop = dynamic(() => import("@/components/ScrollToTop"), {
 });
 
 // Optimize font loading
+// Enhanced font configuration in layout.js
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  preload: true
+  preload: true,
+  fallback: ['system-ui', 'arial'], // Add fallback fonts
+  adjustFontFallback: true, // Reduce layout shift
+  variable: '--font-inter'
 });
 
 export default function RootLayout({
@@ -122,6 +128,7 @@ useEffect(() => {
     <html lang="en" suppressHydrationWarning>
       <head>
       
+    
    <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#000000" />
@@ -143,10 +150,12 @@ useEffect(() => {
                 <Header />
               </Suspense>
             )}
-
+<Hero/>
             <main className={!isSlugPage ? "pt-24" : ""}>
               {children}
             </main>
+        
+
             <Suspense fallback={<div>Loading...</div>}>
               <Footer />
               <ScrollToTop />

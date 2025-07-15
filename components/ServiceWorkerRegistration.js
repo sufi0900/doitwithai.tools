@@ -307,7 +307,7 @@ const preCachePages = async (registration) => {
       navigator.serviceWorker.controller?.postMessage({
         type: 'PREFETCH_PAGES',
         staticPages: ['/about', '/faq', '/contact', '/privacy', '/terms'],
-        dynamicPages: ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn']
+        // dynamicPages: ['/', '/ai-tools', '/ai-seo', '/ai-code', '/ai-learn-earn']
       });
       
       console.log('✅ Prefetch request sent to service worker');
@@ -362,56 +362,13 @@ const cacheCurrentPage = async () => {
       }
     }
 
-    // For dynamic pages, cache their API data
-    await cachePageData(currentPath);
+   
   } catch (error) {
     console.log('Failed to cache current page HTML/data:', error);
   }
 };
 
-// Add this function to cache API data for dynamic pages
-const cachePageData = async (pathname) => {
-    try {
-        // Define which pages need data caching
-        const dynamicPages = {
-            '/ai-tools': 'aitool',
-            '/ai-seo': 'SEO', 
-            '/ai-code': 'coding',
-            '/ai-learn-earn': 'makemoney'
-        };
-        
-        const category = dynamicPages[pathname];
-        if (category) {
-            // Cache the API data for this category
-            await fetch(`/api/posts?category=${category}`, {
-                mode: 'same-origin',
-                credentials: 'same-origin'
-            });
-            
-            console.log('Cached API data for category:', category);
-        }
-        
-        // For slug pages, cache the specific post data
-        if (pathname.includes('/ai-tools/') || pathname.includes('/ai-seo/') || 
-            pathname.includes('/ai-code/') || pathname.includes('/ai-learn-earn/')) {
-            
-            const slug = pathname.split('/').pop();
-            if (slug) {
-                try {
-                    await fetch(`/api/posts/${slug}`, {
-                        mode: 'same-origin',
-                        credentials: 'same-origin'
-                    });
-                    console.log('Cached post data for slug:', slug);
-                } catch (error) {
-                    console.log('Failed to cache slug data:', slug);
-                }
-            }
-        }
-    } catch (error) {
-        console.log('Failed to cache page data:', error);
-    }
-};
+
 
 
 // Add this new function to handle client-side navigation caching

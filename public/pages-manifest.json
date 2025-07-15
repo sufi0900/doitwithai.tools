@@ -1,0 +1,91 @@
+{
+  "version": "1.0.0",
+  "generated": "2025-07-15T22:06:22.957Z",
+  "static_pages": [
+    {
+      "url": "/",
+      "title": "Home",
+      "priority": "high",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.955Z"
+    },
+    {
+      "url": "/about",
+      "title": "About",
+      "priority": "medium",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/faq",
+      "title": "FAQ",
+      "priority": "medium",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/contact",
+      "title": "Contact",
+      "priority": "medium",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/privacy",
+      "title": "Privacy Policy",
+      "priority": "low",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/terms",
+      "title": "Terms of Service",
+      "priority": "low",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/ai-tools",
+      "title": "AI Tools",
+      "priority": "high",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/ai-seo",
+      "title": "AI SEO",
+      "priority": "high",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/ai-code",
+      "title": "AI Code",
+      "priority": "high",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/ai-learn-earn",
+      "title": "AI Learn & Earn",
+      "priority": "high",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/free-ai-resources",
+      "title": "Free AI Resources",
+      "priority": "medium",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    },
+    {
+      "url": "/ai-news",
+      "title": "AI News",
+      "priority": "medium",
+      "type": "static",
+      "lastModified": "2025-07-15T22:06:22.957Z"
+    }
+  ],
+  "total_pages": 12
+}

@@ -305,6 +305,13 @@ const nextConfig = {
 
 
   reactStrictMode: true,
+
+ compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  // Optimize CSS and fonts
+  optimizeFonts: true,
+
   images: {
     domains: ['your-sanity-domain.com'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -321,6 +328,8 @@ const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', '*.vercel.app'],
+          optimizeCss: true // This is key for modern CSS optimization
+
     }
   },
   trailingSlash: true,

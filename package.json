@@ -5,11 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "generate-sitemap": "next-sitemap",
-        "prebuild": "node scripts/generate-pages-manifest.js",
-
+    "prebuild": "node scripts/generate-pages-manifest.js",
     "build": " next build",
-        "generate-manifest": "node scripts/generate-pages-manifest.js",
-
+    "generate-manifest": "node scripts/generate-pages-manifest.js",
     "start": "next start",
     "lint": "next lint"
   },
@@ -66,13 +64,21 @@
     "workbox-webpack-plugin": "^7.3.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.4.0",
     "@types/node": "^20.8.9",
     "@types/react": "^18.2.33",
     "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.31",
+    "critical": "^7.2.1",
+    "critters": "^0.0.23",
+    "lighthouse": "^12.8.0",
+    "postcss": "^8.5.6",
+    "postcss-critical-css": "^3.0.7",
     "prettier": "^3.0.3",
     "prettier-plugin-tailwindcss": "^0.5.6",
+    "puppeteer": "^24.12.1",
     "tailwindcss": "^3.3.5",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "web-vitals": "^5.0.3",
+    "webpack-bundle-analyzer": "^4.10.2"
   }
 }
