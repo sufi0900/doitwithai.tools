@@ -8,12 +8,14 @@ const Hero = () => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Ensure DOM is fully painted before triggering animations
+    // Ensure DOM is ready and force a reflow before triggering animations
     const timer = setTimeout(() => {
       setIsLoaded(true);
-    }, 50); // Small delay to ensure everything is painted
+    }, 50); // Small delay to ensure styles are applied
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
@@ -61,61 +63,33 @@ const Hero = () => {
           50% { transform: translateY(-5px); }
         }
 
-        /* CRITICAL: Prevent FOUC by hiding ALL animated elements initially */
-        .hero-section {
-          opacity: 0;
-          transition: opacity 0.3s ease-in-out;
-        }
-        
-        /* Show hero content only when loaded */
-        .hero-loaded .hero-section {
-          opacity: 1;
+        /* 🔥 CRITICAL FIX: Default hidden state with !important to override any conflicting styles */
+        .hero-animate {
+          opacity: 0 !important;
+          transform: translateY(20px) !important;
         }
 
-        /* Animation classes - elements start hidden and animate in */
-        .animate-fadeInDown,
-        .animate-backInDown,
-        .animate-fadeInLeft,
-        .animate-fadeInUp,
-        .animate-fadeInRight,
-        .animate-fadeInLeftBig,
+        /* Animation classes that override the hidden state */
+        .animate-fadeInDown {
+          animation: fadeInDown 0.8s ease-out both;
+        }
+        .animate-backInDown {
+          animation: backInDown 0.6s ease-out both;
+        }
+        .animate-fadeInLeft {
+          animation: fadeInLeft 0.8s ease-out both;
+        }
+        .animate-fadeInUp {
+          animation: fadeInUp 0.8s ease-out both;
+        }
+        .animate-fadeInRight {
+          animation: fadeInRight 0.8s ease-out both;
+        }
+        .animate-fadeInLeftBig {
+          animation: fadeInLeftBig 0.8s ease-out both;
+        }
         .animate-fadeInRightBig {
-          opacity: 0;
-          transform: translate3d(0, 0, 0); /* Prevent transform jumps */
-        }
-
-        /* Trigger animations ONLY when hero-loaded class is present */
-        .hero-loaded .animate-fadeInDown { 
-          animation: fadeInDown 0.8s ease-out forwards; 
-        }
-        .hero-loaded .animate-backInDown { 
-          animation: backInDown 0.6s ease-out forwards; 
-        }
-        .hero-loaded .animate-fadeInLeft { 
-          animation: fadeInLeft 0.8s ease-out forwards; 
-        }
-        .hero-loaded .animate-fadeInUp { 
-          animation: fadeInUp 0.8s ease-out forwards; 
-        }
-        .hero-loaded .animate-fadeInRight { 
-          animation: fadeInRight 0.8s ease-out forwards; 
-        }
-        .hero-loaded .animate-fadeInLeftBig { 
-          animation: fadeInLeftBig 0.8s ease-out forwards; 
-        }
-        .hero-loaded .animate-fadeInRightBig { 
-          animation: fadeInRightBig 0.8s ease-out forwards; 
-        }
-
-        /* Performance optimization for animated properties */
-        .hero-loaded .animate-fadeInDown,
-        .hero-loaded .animate-backInDown,
-        .hero-loaded .animate-fadeInLeft,
-        .hero-loaded .animate-fadeInUp,
-        .hero-loaded .animate-fadeInRight,
-        .hero-loaded .animate-fadeInLeftBig,
-        .hero-loaded .animate-fadeInRightBig {
-          will-change: transform, opacity;
+          animation: fadeInRightBig 0.8s ease-out both;
         }
 
         /* Static animations (not part of initial entrance) */
@@ -129,31 +103,21 @@ const Hero = () => {
         }
 
         /* Staggered delay classes */
-        .delay-1100 { animation-delay: 0.1s; }
-        .delay-1200 { animation-delay: 0.2s; }
-        .delay-1300 { animation-delay: 0.3s; }
-        .delay-1400 { animation-delay: 0.4s; }
-        .delay-1500 { animation-delay: 0.5s; }
-        .delay-1600 { animation-delay: 0.6s; }
-        .delay-1700 { animation-delay: 0.7s; }
-        .delay-1800 { animation-delay: 0.8s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-400 { animation-delay: 0.4s; }
+        .delay-600 { animation-delay: 0.6s; }
+        .delay-800 { animation-delay: 0.8s; }
+        .delay-1000 { animation-delay: 1.0s; }
+        .delay-1200 { animation-delay: 1.2s; }
+        .delay-1400 { animation-delay: 1.4s; }
+        .delay-1600 { animation-delay: 1.6s; }
 
-        /* Header elements - keep visible for LCP but add subtle fade-in */
-        .header-static {
-          opacity: 0;
-          animation: fadeInDown 0.6s ease-out forwards;
-        }
-        
-        .hero-loaded .header-static {
-          animation-delay: 0s;
-        }
-
-        /* General performance optimizations */
-        .hero-container { 
+        /* Performance optimizations */
+        .hero-section { 
           contain: layout style paint; 
           will-change: auto; 
         }
-        .hero-container * { 
+        .hero-section * { 
           backface-visibility: hidden; 
           perspective: 1000px; 
         }
@@ -172,11 +136,16 @@ const Hero = () => {
           -webkit-font-smoothing: antialiased; 
           -moz-osx-font-smoothing: grayscale; 
         }
+
+        /* Ensure headings are visible immediately for LCP */
+        .hero-heading {
+          opacity: 1 !important;
+          transform: none !important;
+        }
       `}</style>
-      
       <section
         id="home"
-        className={`hero-container relative z-10 overflow-hidden bg-teal-50 dark:bg-gray-800 min-h-screen flex items-center justify-center py-16 md:py-[75px] ${isLoaded ? 'hero-loaded' : ''}`}
+        className="relative z-10 overflow-hidden bg-teal-50 dark:bg-gray-800 min-h-screen flex items-center justify-center py-16 md:py-[75px]"
       >
         <div className="absolute inset-0 z-[-1] opacity-30 lg:opacity-100">
           <div className="w-full h-full bg-gradient-to-br from-teal-100/20 to-blue-100/20 dark:from-gray-700/20 dark:to-gray-600/20"></div>
@@ -185,16 +154,16 @@ const Hero = () => {
         <div className="container mx-auto flex flex-col items-center justify-center px-2 lg:px-8 max-w-7xl">
           <div className="hero-section w-full">
             
-            {/* Main headings - Static for LCP but with subtle animation */}
-            <h1 className="header-static text-4xl md:text-5xl lg:text-6xl text-center font-bold mb-2 text-optimized">
+            {/* ✅ LCP OPTIMIZATION: Main headings are immediately visible */}
+            <h1 className="hero-heading text-4xl md:text-5xl lg:text-6xl text-center font-bold mb-2 text-optimized">
               Welcome to
             </h1>
-            <h2 className="header-static text-3xl text-center md:text-4xl lg:text-5xl font-extrabold mb-6 text-gray-600 dark:text-gray-400 text-optimized">
+            <h2 className="hero-heading text-3xl text-center md:text-4xl lg:text-5xl font-extrabold mb-6 text-gray-600 dark:text-gray-400 text-optimized">
               Do It With AI Tools
             </h2>
 
             {/* First Paragraph */}
-            <p className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-6 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl first-line:uppercase first-line:tracking-widest first-letter:text-7xl first-letter:font-bold first-letter:text-primary dark:first-letter:text-primary first-letter:me-3 first-letter:float-start text-optimized animate-fadeInLeft delay-1100">
+            <p className={`hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-6 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl first-line:uppercase first-line:tracking-widest first-letter:text-7xl first-letter:font-bold first-letter:text-primary dark:first-letter:text-primary first-letter:me-3 first-letter:float-start text-optimized hero-animate ${isLoaded ? 'animate-fadeInLeft delay-200' : ''}`}>
               Artificial Intelligence is reshaping everything, and you've found the most
               <span className="relative inline-block mx-1">
                 <span className="absolute -left-2 top-4 text-yellow-400 animate-pulse2-custom text-sm">✨</span>
@@ -209,7 +178,7 @@ const Hero = () => {
             </p>
 
             {/* Second Paragraph */}
-            <p className="mb-6 text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl text-optimized animate-fadeInRight delay-1300">
+            <p className={`mb-6 text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl text-optimized hero-animate ${isLoaded ? 'animate-fadeInRight delay-400' : ''}`}>
               <span className="inline-block px-3 py-1 mx-1 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/30 dark:to-cyan-900/30 text-gray-700 dark:text-gray-200 font-semibold rounded-lg border-l-4 border-blue-500">
                 🚀 Discover
               </span>
@@ -226,7 +195,7 @@ const Hero = () => {
             </p>
 
             {/* Third Paragraph */}
-            <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 animate-fadeInUp delay-1400">
+            <div className={`mb-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 hero-animate ${isLoaded ? 'animate-fadeInUp delay-600' : ''}`}>
               <p className="text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl text-optimized">
                 <span className="inline-block px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-full text-sm mr-2">
                   ⚡ We're
@@ -242,7 +211,7 @@ const Hero = () => {
             </div>
 
             {/* Fourth Paragraph */}
-            <div className="relative mb-6 animate-fadeInLeft delay-1500">
+            <div className={`relative mb-6 hero-animate ${isLoaded ? 'animate-fadeInLeft delay-800' : ''}`}>
               <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-blue-500/5 dark:from-primary/10 dark:to-blue-500/10 rounded-lg"></div>
               <p className="relative p-4 text-lg font-medium leading-relaxed text-gray-700 dark:text-gray-200 sm:text-xl lg:text-lg xl:text-xl text-optimized">
                 <span className="inline-block w-2 h-2 bg-primary rounded-full mr-2"></span>
@@ -259,11 +228,11 @@ const Hero = () => {
 
             {/* Together let's unlock */}
             <p className="text-center font-medium text-lg mt-4 text-optimized">
-              <span className="relative inline-block animate-fadeInLeftBig delay-1600">
+              <span className={`relative inline-block hero-animate ${isLoaded ? 'animate-fadeInLeftBig delay-1000' : ''}`}>
                 <span className="animate-shimmer-custom bg-gradient-to-r from-transparent via-primary/20 to-transparent absolute inset-0 w-full"></span>
                 <span className="text-primary dark:text-white text-2xl">Together, let's unlock the future of AI,</span>
               </span>
-              <span className="group relative inline-block mx-2 animate-fadeInRightBig delay-1700">
+              <span className={`group relative inline-block mx-2 hero-animate ${isLoaded ? 'animate-fadeInRightBig delay-1200' : ''}`}>
                 <span className="font-semibold italic text-blue-600 dark:text-primary text-xl bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-500">
                   one solution at a time
                 </span>
@@ -278,13 +247,13 @@ const Hero = () => {
           <div className="flex flex-col mt-8 space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
             <a
               href="/blogs"
-              className="whitespace-nowrap rounded-sm bg-primary px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-primary/80 hover-optimized animate-fadeInUp delay-1800"
+              className={`whitespace-nowrap rounded-sm bg-primary px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-primary/80 hover-optimized hero-animate ${isLoaded ? 'animate-fadeInUp delay-1400' : ''}`}
             >
               🔍 Explore AI Insights
             </a>
             <a
               href="/contact"
-              className="whitespace-nowrap rounded-sm bg-black px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-black/90 dark:bg-white/10 dark:text-white dark:hover:bg-white/5 hover-optimized animate-fadeInUp delay-1800"
+              className={`whitespace-nowrap rounded-sm bg-black px-8 py-4 text-base font-semibold text-white duration-300 ease-in-out hover:bg-black/90 dark:bg-white/10 dark:text-white dark:hover:bg-white/5 hover-optimized hero-animate ${isLoaded ? 'animate-fadeInUp delay-1600' : ''}`}
             >
               💌 Join Our Community
             </a>
