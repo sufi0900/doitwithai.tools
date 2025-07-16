@@ -304,7 +304,7 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
 
 
-  reactStrictMode: true,
+
 
  compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
