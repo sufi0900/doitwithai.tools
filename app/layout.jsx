@@ -15,7 +15,6 @@ import { Toaster } from 'react-hot-toast';
 import Header from "@/components/Header"
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider"
-import Hero from "@/components/Hero"; // Imported
 import "../components/Hero/critical-hero.css"
 
 const ConditionalGlobalHeader = dynamic(() => import("@/components/Header/ConditionalGlobalHeader"), {
@@ -27,7 +26,23 @@ const Footer = dynamic(() => import("@/components/Footer"), {
 const ScrollToTop = dynamic(() => import("@/components/ScrollToTop"), {
   ssr: false // Client-side only component
 });
-
+const Hero = dynamic(() => import("@/components/Hero"), {
+  ssr: true,
+  loading: () => (
+    <section className="relative z-10 overflow-hidden bg-teal-50 dark:bg-gray-800 min-h-screen flex items-center justify-center py-16 md:py-[75px]">
+      <div className="container mx-auto flex flex-col items-center justify-center px-2 lg:px-8 max-w-7xl">
+        <div className="hero-section w-full">
+          <header className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-gray-900 dark:text-white">
+              <span className="block">Welcome to</span>
+              <span className="text-blue-600 dark:text-blue-400">DOITWITHAI TOOLS</span>
+            </h1>
+          </header>
+        </div>
+      </div>
+    </section>
+  )
+});
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",

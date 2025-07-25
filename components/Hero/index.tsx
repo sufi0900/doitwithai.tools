@@ -4,9 +4,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import AnimatedBinaryText from './AnimatedBinaryText'; // Adjust path if needed
-import "./critical-hero.css"; // Ensure this CSS contains the optimized animations
 import { useAnimationCleanup } from './useAnimationCleanup'; // Adjust path
-import "./non-critical-hero.css"
 
 // Key Changes for FCP Optimization (already implemented, retaining here for context):
 const criticalContentSelectors = {
@@ -19,51 +17,42 @@ const Hero = () => {
   const heroRef = useRef<HTMLElement>(null);
   const { addCleanup } = useAnimationCleanup();
 
-  // --- MODIFIED useEffect for initial hero animations and reduced motion preference ---
-  useEffect(() => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Replace the first useEffect (line ~20) with this:
+useEffect(() => {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
+  // CRITICAL: Ensure these elements are NEVER hidden by initial CSS animations
+  const criticalElements = document.querySelectorAll(`${criticalContentSelectors.mainHeading}, ${criticalContentSelectors.primarySubheading}, ${criticalContentSelectors.primaryCTA}`);
+  criticalElements.forEach(el => {
+    (el as HTMLElement).style.opacity = '1';
+    (el as HTMLElement).style.transform = 'none';
+  });
 
-    // CRITICAL: Ensure these elements are NEVER hidden by initial CSS animations
-    const criticalElements = document.querySelectorAll(
-      `${criticalContentSelectors.mainHeading},${criticalContentSelectors.primarySubheading},${criticalContentSelectors.primaryCTA}`
-    );
-    criticalElements.forEach(el => {
-      (el as HTMLElement).style.opacity = '1';
-      (el as HTMLElement).style.transform = 'none';
-      el.classList.remove('animated-staggered-item'); // Remove animation class if present
-      el.classList.remove('p1-animate', 'p1-span-animate'); // Remove other animation classes
-    });
-
-    let timer: NodeJS.Timeout;
-    timer = setTimeout(() => {
-      if (heroRef.current) {
-        requestAnimationFrame(() => {
-          heroRef.current!.classList.add('hero-animations-active');
-          if (prefersReducedMotion) {
-            heroRef.current!.classList.add('reduced-motion');
-            // For reduced motion, ensure all animated items are instantly visible
-            document.querySelectorAll(
-              '.audience-badge,.ai-benefit-card,.value-indicator,.press-button-secondary,.background-svg-container' // <-- ADDED .background-svg-container
-            ).forEach(el => {
-              const htmlEl = el as HTMLElement;
-              htmlEl.style.opacity = '1';
-              htmlEl.style.transform = 'none';
-              htmlEl.style.transitionDelay = '0s'; // Remove transition-delay for instant appearance in reduced motion
-              // Also ensure SVG animations are not running in reduced motion
-              el.querySelectorAll('[style*="animation"], [class*="animate-"]').forEach(svgAnimEl => {
-                (svgAnimEl as HTMLElement).style.animation = 'none';
-              });
-            });
-          }
+  // DEFER heavy animations until after FCP
+  const deferAnimations = () => {
+    if (heroRef.current) {
+      heroRef.current.classList.add('hero-animations-active');
+      
+      if (prefersReducedMotion) {
+        heroRef.current.classList.add('reduced-motion');
+        // Make all animated items instantly visible for reduced motion
+        document.querySelectorAll('.audience-badge, .ai-benefit-card, .value-indicator, .press-button-secondary, .background-svg-container').forEach(el => {
+          const htmlEl = el as HTMLElement;
+          htmlEl.style.opacity = '1';
+          htmlEl.style.transform = 'none';
         });
       }
-    }, 100); // Small delay to allow critical elements to render before animations start
+    }
+  };
 
-    addCleanup(() => clearTimeout(timer));
-    return () => clearTimeout(timer);
-  }, [addCleanup]);
+  // Use requestIdleCallback for better performance, fallback to setTimeout
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(deferAnimations, { timeout: 200 });
+  } else {
+    setTimeout(deferAnimations, 200);
+  }
 
-  // --- Keep other useEffects as they are for non-visual logic if still needed ---
+}, [addCleanup]);
 
   // IntersectionObserver for continuous background animations (SVGs, shimmer)
   // This useEffect will now primarily *pause* and *resume* animations, not trigger initial render.
