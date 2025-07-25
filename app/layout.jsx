@@ -156,7 +156,7 @@ export default function RootLayout({
             </Suspense>
           </Providers>
         </CacheProvider>
-        {/* <ServiceWorkerRegistration /> */}
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

@@ -28,6 +28,10 @@ import UnifiedCacheMonitor from '@/React_Query_Caching/UnifiedCacheMonitor';
 
 export default function HomePage({ initialServerData }) {
 
+ 
+
+
+  // Ensure initialServerData exists before destructuring
   const {
     trending = {},
     featurePost = {},
@@ -41,8 +45,8 @@ export default function HomePage({ initialServerData }) {
   return (
    
 <>
- <UnifiedCacheMonitor />
-      {/* <Hero />  */}
+            <UnifiedCacheMonitor />
+
       <section className="bg-gray-light py-16 dark:bg-bg-color-dark md:py-4 lg:py-4">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-end">{/* Ensure GlobalRefreshButton is rendered here */}</div>
@@ -50,12 +54,34 @@ export default function HomePage({ initialServerData }) {
         <div className="container">
           <Grid container spacing={2}>
             {/* --- No Suspense needed here as data is prefetched --- */}
-            {/* <Trending initialData={trending} /> */}
+            <Trending initialData={trending} />
           </Grid>
         </div>
       </section>
 
-    
+      {/* --- No Suspense needed here as data is prefetched --- */}
+      <FeaturePost initialData={featurePost} />
+
+      {/* --- No Suspense needed here as data is prefetched --- */}
+      <>
+        <AISEO initialData={aiSeo} />
+        {/* --- No Suspense needed here as data is prefetched --- */}
+        <MixedCategoriesSection initialData={mixedCategories} />
+        {/* --- FreeResourcesPage here refers to the homepage's specific featured resources --- */}
+        <FreeResourcesPage initialData={freeResourcesFeatured} />
+      </>
+
+      <HomepageCategories /> {/* Assume HomepageCategories fetches its own data or is static */}
+
+      {/* --- No Suspense needed here as data is prefetched --- */}
+      <RecentPost initialData={recentPosts} />
+
+      <>
+        <MBrands /> {/* Marquee brands typically static or very light client data */}
+        <Suspense fallback={<div>Loading contact form...</div>}>
+          <Contact /> {/* Keep Suspense for Contact if it's client-heavy */}
+        </Suspense>
+      </>
       {/* </PageCacheProvider> // Moved to parent server component */}
     </>
   );
