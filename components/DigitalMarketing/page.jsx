@@ -84,7 +84,7 @@ const DigitalMarketing = ({ initialData = {} }) => {
         <Breadcrumb
           pageName="Boost SEO"
           pageName2="with AI"
-          description="AI is revolutionizing how we approach SEO and digital marketing..."
+          description="AI is revolutionizing how we approach SEO and digital marketing."
           firstlinktext="Home"
           firstlink="/"
           link="/ai-seo"

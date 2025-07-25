@@ -1425,36 +1425,6 @@ p span.font-bold:hover {
     display: none !important;
   }
 }
-/* Add this to your critical-hero.css */
-@media (max-width: 768px) {
-  .background-svg-container {
-    display: none !important; /* Hide heavy SVGs on mobile */
-  }
-  
-  /* Show simplified mobile version */
-  .mobile-bg-pattern {
-    display: block !important;
-    opacity: 0.1;
-    background: radial-gradient(circle at 30% 20%, #4A6CF7 0%, transparent 50%),
-                radial-gradient(circle at 70% 80%, #06B6D4 0%, transparent 50%);
-  }
-}
-
-@media (min-width: 769px) {
-  .mobile-bg-pattern {
-    display: none !important;
-  }
-}
-
-/* Optimize animations for mobile */
-@media (max-width: 768px) {
-  .svg-animated-element,
-  .animate-pulse,
-  .animate-shimmer-custom {
-    animation: none !important; /* Disable complex animations on mobile */
-  }
-  
-  .ai-benefit-card {
-    transition: transform 0.2s ease !important; /* Simpler hover effects */
-  }
+.herobg{
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 3px 3px 0px;
 }

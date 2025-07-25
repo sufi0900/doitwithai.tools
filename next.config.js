@@ -1,8 +1,7 @@
 const withPWA = require('next-pwa')({
- dest: 'public',
-  // You can set register: true and next-pwa will handle registration
+  dest: 'public',
   register: true,
-  skipWaiting: true, // Recommended to activate the new SW immediately
+  skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
   buildExcludes: [
@@ -19,151 +18,124 @@ const withPWA = require('next-pwa')({
     video: '/offline.html',
     font: '/offline.html'
   },
+
   runtimeCaching: [
-  // Static pages - CacheFirst for immediate offline access
- // Add this as the FIRST item in your runtimeCaching array
- // In next.config.js - Replace the existing static pages entry with this as the FIRST item
-{
-  urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
-  handler: 'CacheFirst', // Changed from StaleWhileRevalidate
-  options: {
-    cacheName: 'static-pages-navigation-v3',
-    expiration: {
-      maxEntries: 50,
-      maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-    },
-    cacheableResponse: {
-      statuses: [0, 200],
-    },
-  },
-},
-
-  // Semi-dynamic pages (ai-tools, ai-seo, etc.) - Cache shell immediately
-  {
-    urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
-    handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
-    options: {
-      cacheName: 'semi-dynamic-pages-v2',
-      // networkTimeoutSeconds: 3, // Reduced timeout
-      expiration: {
-        maxEntries: 100,
-        maxAgeSeconds: 24 * 60 * 60, // 1 day
-      },
-      cacheableResponse: {
-        statuses: [0, 200],
-      },
-      plugins: [
-        {
-          // Serve cached version immediately if available
-          cachedResponseWillBeUsed: async ({ cachedResponse, request }) => {
-            if (cachedResponse) {
-              console.log('Serving cached semi-dynamic page:', request.url);
-              return cachedResponse;
+    // 🔥 FIX 1: EXCLUDE slug pages from aggressive caching to allow client-side JS
+    {
+      urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^\/]+\/?$/i,
+      handler: 'NetworkFirst', // Changed back to NetworkFirst for dynamic behavior
+      options: {
+        cacheName: 'slug-pages-dynamic-v1',
+        networkTimeoutSeconds: 3, // Quick timeout
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60, // Only 1 hour cache
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+        plugins: [
+          {
+            // 🔥 CRITICAL: Don't cache if it contains interactive elements
+            cacheWillUpdate: async ({ response, request }) => {
+              const url = new URL(request.url);
+              const isSlugPage = /\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^\/]+\/?$/.test(url.pathname);
+              
+              if (isSlugPage) {
+                console.log('Allowing network-first for slug page:', url.pathname);
+                return response.status === 200 ? response : null;
+              }
+              return response;
             }
-            return null;
           }
-        }
-      ]
-    },
-  },
-  
-  // Next.js data - More aggressive caching
-  {
-    urlPattern: /\/_next\/data\/.*/i,
-    handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
-    options: {
-      cacheName: 'next-data-cache-v2',
-      // networkTimeoutSeconds: 5,
-      expiration: {
-        maxEntries: 200, // Increased
-        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days instead of 1
-      },
-      cacheableResponse: {
-        statuses: [0, 200],
+        ]
       },
     },
-  },
-  // RSC (React Server Components) payloads
-  {
-    urlPattern: /^https:\/\/.*\?_rsc=1$/i,
-    handler: 'StaleWhileRevalidate',
-    options: {
-      cacheName: 'rsc-cache-v1',
-      // networkTimeoutSeconds: 5,
-      expiration: {
-        maxEntries: 100,
-        maxAgeSeconds: 24 * 60 * 60, // 1 day
-      },
-      cacheableResponse: {
-        statuses: [0, 200],
-      },
-    },
-  },
-   {
-    urlPattern: /^https:\/\/.*$/i,
-    handler: 'NetworkFirst',
-    options: {
-      cacheName: 'navigation-v2',
-      // networkTimeoutSeconds: 3,
-      expiration: {
-        maxEntries: 200,
-        maxAgeSeconds: 24 * 60 * 60,
-      },
-      cacheableResponse: {
-        statuses: [0, 200],
-      },
-    },
-  },
-  // Homepage with better caching
-  {
-    urlPattern: /^https:\/\/.*\/$/,
-    handler: 'StaleWhileRevalidate', // Changed from NetworkFirst
-    options: {
-      cacheName: 'homepage-cache-v2',
-      // networkTimeoutSeconds: 3,
-      expiration: {
-        maxEntries: 10,
-        maxAgeSeconds: 60 * 60, // 1 hour
-      },
-      cacheableResponse: {
-        statuses: [0, 200],
-      },
-    },
-  },
 
-
-// Enhanced navigation cache
-  {
-    urlPattern: /^https:\/\/.*$/i,
-    handler: 'StaleWhileRevalidate',
-    method: 'GET',
-    options: {
-      cacheName: 'enhanced-navigation-cache-v2',
-      // networkTimeoutSeconds: 3, // Reduced timeout
-      expiration: {
-        maxEntries: 300, // Increased
-        maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+    // Static pages - keep as CacheFirst
+    {
+      urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'static-pages-navigation-v3',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 30 * 24 * 60 * 60,
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
       },
-      cacheableResponse: {
-        statuses: [0, 200],
-      },
-      plugins: [
-        {
-          cacheKeyWillBeUsed: async ({ request }) => {
-            const url = new URL(request.url);
-            // Normalize URLs to prevent duplicate caches
-            return url.origin + url.pathname.replace(/\/$/, '') || '/';
-          },
-          // Add immediate caching for navigation requests
-          requestWillFetch: async ({ request }) => {
-            console.log('Navigation request:', request.url);
-            return request;
-          }
-        }
-      ]
     },
-  },
 
+    // 🔥 FIX 2: More selective Next.js data caching
+    {
+      urlPattern: /\/_next\/data\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^\/]+\.json$/i,
+      handler: 'NetworkFirst', // Changed from StaleWhileRevalidate
+      options: {
+        cacheName: 'next-data-slug-pages-v1',
+        networkTimeoutSeconds: 5,
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60, // 1 hour only
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+
+    // Regular Next.js data (non-slug pages)
+    {
+      urlPattern: /\/_next\/data\/.*/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'next-data-cache-v2',
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 7 * 24 * 60 * 60,
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+
+    // 🔥 FIX 3: RSC payloads - be more selective
+    {
+      urlPattern: ({ url, request }) => {
+        const isRSC = url.searchParams.get('_rsc') === '1';
+        const isSlugPage = /\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^\/]+/.test(url.pathname);
+        return isRSC && !isSlugPage; // Don't cache RSC for slug pages
+      },
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'rsc-cache-v1',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60,
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+
+    // Homepage
+    {
+      urlPattern: /^https:\/\/.*\/$/,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'homepage-cache-v2',
+        expiration: {
+          maxEntries: 10,
+          maxAgeSeconds: 60 * 60,
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
 
     // Sanity API
     {
@@ -171,33 +143,35 @@ const withPWA = require('next-pwa')({
       handler: 'NetworkFirst',
       options: {
         cacheName: 'sanity-api-cache-v2',
-        // networkTimeoutSeconds: 10,
+        networkTimeoutSeconds: 10,
         expiration: {
           maxEntries: 100,
-          maxAgeSeconds: 30 * 60, // 30 minutes
+          maxAgeSeconds: 30 * 60,
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
       },
     },
+
     // API routes
     {
       urlPattern: /^https:\/\/.*\/api\/.*/i,
       handler: 'NetworkFirst',
       options: {
         cacheName: 'api-cache-v2',
-        // networkTimeoutSeconds: 5,
+        networkTimeoutSeconds: 5,
         expiration: {
           maxEntries: 100,
-          maxAgeSeconds: 30 * 60, // 30 minutes
+          maxAgeSeconds: 30 * 60,
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
       },
     },
-    // Static assets
+
+    // Static Next.js assets
     {
       urlPattern: /\/_next\/static\/.*/i,
       handler: 'CacheFirst',
@@ -205,13 +179,14 @@ const withPWA = require('next-pwa')({
         cacheName: 'next-static-cache-v2',
         expiration: {
           maxEntries: 100,
-          maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+          maxAgeSeconds: 365 * 24 * 60 * 60,
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
       },
     },
+
     // Images
     {
       urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
@@ -220,13 +195,14 @@ const withPWA = require('next-pwa')({
         cacheName: 'images-cache-v2',
         expiration: {
           maxEntries: 200,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          maxAgeSeconds: 30 * 24 * 60 * 60,
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
       },
     },
+
     // Fonts
     {
       urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
@@ -235,85 +211,61 @@ const withPWA = require('next-pwa')({
         cacheName: 'google-fonts-cache-v2',
         expiration: {
           maxEntries: 30,
-          maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+          maxAgeSeconds: 365 * 24 * 60 * 60,
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
       },
     },
-    // Add this before the final catch-all pattern
-{
-  urlPattern: ({ request }) => {
-    const url = new URL(request.url);
-    const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-    return staticPages.includes(url.pathname) || staticPages.includes(url.pathname.replace(/\/$/, ''));
-  },
-  handler: 'CacheFirst',
-  options: {
-    cacheName: 'static-navigation-fallback-v1',
-    expiration: {
-      maxEntries: 20,
-      maxAgeSeconds: 30 * 24 * 60 * 60,
-    },
-    cacheableResponse: {
-      statuses: [0, 200],
-    },
-  },
-},
-  {
-    urlPattern: /^https?:\/\/.*/,
-    handler: 'StaleWhileRevalidate',
-    options: {
-      cacheName: 'fallback-cache-v2',
-      // networkTimeoutSeconds: 3, // Reduced timeout
-      expiration: {
-        maxEntries: 100,
-        maxAgeSeconds: 24 * 60 * 60, // 1 day
+
+    // 🔥 FIX 4: Final navigation cache - exclude slug pages
+    {
+      urlPattern: ({ url, request }) => {
+        const isSlugPage = /\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^\/]+/.test(url.pathname);
+        return request.mode === 'navigate' && !isSlugPage;
       },
-      cacheableResponse: {
-        statuses: [0, 200],
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'navigation-cache-v3',
+        networkTimeoutSeconds: 3,
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 24 * 60 * 60,
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
       },
-      plugins: [
-        {
-          handlerDidError: async ({ request }) => {
-            console.log('Handler error for:', request.url);
-            // Try to serve from any cache first
-            const cachedResponse = await caches.match(request);
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            // Fallback to offline page
-            return caches.match('/offline.html');
-          },
-          handlerDidComplete: async ({ response, request }) => {
-            if (!response || response.status !== 200) {
-              console.log('Handler completed with error for:', request.url);
-              return caches.match('/offline.html');
-            }
-            return response;
-          }
-        }
-      ]
     },
-  },
-]
-  
+
+    // Fallback cache (very selective)
+    {
+      urlPattern: /^https?:\/\/.*/,
+      handler: 'NetworkFirst', // Changed back to NetworkFirst
+      options: {
+        cacheName: 'fallback-cache-v3',
+        networkTimeoutSeconds: 2, // Very quick timeout
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 60 * 60, // Only 1 hour
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+  ]
 });
 
 const nextConfig = {
-
-
-
-
- compiler: {
+  compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  // Optimize CSS and fonts
   optimizeFonts: true,
 
   images: {
-    domains: ['your-sanity-domain.com'],
+    domains: ['cdn.sanity.io'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp'],
@@ -325,14 +277,10 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    serverActions: {
-      allowedOrigins: ['localhost:3000', '*.vercel.app'],
-          optimizeCss: true // This is key for modern CSS optimization
 
-    }
-  },
-  trailingSlash: true,
+  // 🔥 FIX 5: Remove trailingSlash which can cause routing issues
+  // trailingSlash: true, // REMOVE THIS LINE
+
   async rewrites() {
     return [
       {

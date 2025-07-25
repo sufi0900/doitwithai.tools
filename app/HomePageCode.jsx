@@ -47,8 +47,8 @@ export default function HomePage({ initialServerData }) {
 <>
             <UnifiedCacheMonitor />
 
-      <section className="bg-gray-light py-16 dark:bg-bg-color-dark md:py-4 lg:py-4">
-        <div className="container mx-auto px-4 py-4">
+      <section className="  ">
+        <div className="container mx-auto ">
           <div className="flex justify-end">{/* Ensure GlobalRefreshButton is rendered here */}</div>
         </div>
         <div className="container">

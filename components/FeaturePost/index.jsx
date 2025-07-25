@@ -96,7 +96,7 @@ const queries = useMemo(() => ({
   const featureRelatedPosts = featurePostRelatedData || [];
 
   return (
-    <section id="blog" className="bg-gray-light py-16 dark:bg-bg-color-dark md:py-4 lg:py-4">
+    <section id="blog" className="md:py-4 lg:py-4">
       <div className="container">
         <h1 className="mb-8 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
           <span className="group inline-block cursor-pointer">
