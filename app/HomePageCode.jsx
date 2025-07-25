@@ -50,7 +50,7 @@ export default function HomePage({ initialServerData }) {
         <div className="container">
           <Grid container spacing={2}>
             {/* --- No Suspense needed here as data is prefetched --- */}
-            <Trending initialData={trending} />
+            {/* <Trending initialData={trending} /> */}
           </Grid>
         </div>
       </section>

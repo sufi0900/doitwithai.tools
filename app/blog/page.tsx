@@ -1,112 +1,164 @@
-/*eslint-disable@next/next/no-img-element*/
-/*eslint-disable react/no-unescaped-entities*/
+/*eslint-disable @next/next/no-img-element */
+/*eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from 'react';
-import AnimatedBinaryText from './AnimatedBinaryText'; // Adjust path if needed
-import "./critical-hero.css"; // Ensure this CSS contains the optimized animations
-import { useAnimationCleanup } from './useAnimationCleanup'; // Adjust path
-import "./non-critical-hero.css"
+import { useEffect, useRef, useCallback, useState } from 'react'; // Added useCallback
+import AnimatedBinaryText from '@/components/Hero/AnimatedBinaryText'; // Adjust path if needed
+import "@/components/Hero/critical-hero.css"; // Ensure this CSS contains the optimized animations
+import { useAnimationCleanup } from '@/components/Hero/useAnimationCleanup'; // Adjust path
 
-// Key Changes for FCP Optimization (already implemented, retaining here for context):
-const criticalContentSelectors = {
-  mainHeading: '.ai-heading',
-  primarySubheading: '.primary-content',
-  primaryCTA: '.press-button',
-};
+
 
 const Hero = () => {
-  const heroRef = useRef<HTMLElement>(null);
+  const heroRef = useRef<HTMLElement>(null); // Specify HTMLElement for heroRef
   const { addCleanup } = useAnimationCleanup();
 
-  // --- MODIFIED useEffect for initial hero animations and reduced motion preference ---
+  // State variables for controlling section visibility and animation
+  const [showSecondaryContent, setShowSecondaryContent] = useState(false);
+  const [showBenefits, setShowBenefits] = useState(false);
+  const [showCTA, setShowCTA] = useState(false);
+
+  // THIS useEffect for initial hero animations and reduced motion preference
+  // This is crucial for your text to appear with its initial animation
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let timer: NodeJS.Timeout; // Type for setTimeout return
 
-    // CRITICAL: Ensure these elements are NEVER hidden by initial CSS animations
-    const criticalElements = document.querySelectorAll(
-      `${criticalContentSelectors.mainHeading},${criticalContentSelectors.primarySubheading},${criticalContentSelectors.primaryCTA}`
-    );
-    criticalElements.forEach(el => {
-      (el as HTMLElement).style.opacity = '1';
-      (el as HTMLElement).style.transform = 'none';
-      el.classList.remove('animated-staggered-item'); // Remove animation class if present
-      el.classList.remove('p1-animate', 'p1-span-animate'); // Remove other animation classes
-    });
-
-    let timer: NodeJS.Timeout;
+    // We use a short timeout + rAF to ensure the element is painted
+    // before applying the animation class, preventing FOUC.
     timer = setTimeout(() => {
       if (heroRef.current) {
         requestAnimationFrame(() => {
-          heroRef.current!.classList.add('hero-animations-active');
+          heroRef.current!.classList.add('hero-animations-active'); // Use ! for non-null assertion
           if (prefersReducedMotion) {
             heroRef.current!.classList.add('reduced-motion');
-            // For reduced motion, ensure all animated items are instantly visible
-            document.querySelectorAll(
-              '.audience-badge,.ai-benefit-card,.value-indicator,.press-button-secondary,.background-svg-container' // <-- ADDED .background-svg-container
-            ).forEach(el => {
-              const htmlEl = el as HTMLElement;
-              htmlEl.style.opacity = '1';
-              htmlEl.style.transform = 'none';
-              htmlEl.style.transitionDelay = '0s'; // Remove transition-delay for instant appearance in reduced motion
-              // Also ensure SVG animations are not running in reduced motion
-              el.querySelectorAll('[style*="animation"], [class*="animate-"]').forEach(svgAnimEl => {
-                (svgAnimEl as HTMLElement).style.animation = 'none';
-              });
+            // For reduced motion, ensure stagger animations immediately go to final state
+            document.querySelectorAll('.animated-staggered-item').forEach(el => {
+                // Assert el as HTMLElement to access .style
+                const htmlEl = el as HTMLElement;
+                htmlEl.style.opacity = '1';
+                htmlEl.style.transform = 'none';
             });
+            // Immediately show all content for reduced motion
+            setShowSecondaryContent(true);
+            setShowBenefits(true);
+            setShowCTA(true);
+          } else {
+            // Start the sequential animations for non-reduced motion users
+            setShowSecondaryContent(true);
           }
         });
       }
-    }, 100); // Small delay to allow critical elements to render before animations start
+    }, 100); // Small delay to allow initial render
 
+    // Add cleanup for the timer
     addCleanup(() => clearTimeout(timer));
     return () => clearTimeout(timer);
-  }, [addCleanup]);
+  }, [addCleanup]); // Depend on addCleanup so it's always available
 
-  // --- Keep other useEffects as they are for non-visual logic if still needed ---
-
-  // IntersectionObserver for continuous background animations (SVGs, shimmer)
-  // This useEffect will now primarily *pause* and *resume* animations, not trigger initial render.
+  // Intersection Observer for secondary content (Audience Badges)
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) {
-      // In reduced motion, we want to ensure SVGs don't animate at all
-      document.querySelectorAll('svg circle, svg path, svg rect, svg polygon').forEach(el => {
-        el.classList.remove('animate-svg'); // Remove classes that apply animations
-        (el as HTMLElement).style.animation = 'none'; // Directly disable any inline animations
+    if (prefersReducedMotion) return; // Skip for reduced motion, as content is already shown
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setShowBenefits(true); // Show benefits when secondary content is visible
+          observer.unobserve(entry.target); // Stop observing once triggered
+        }
       });
-      return;
+    }, { threshold: 0.1 }); // Trigger when 10% of the element is visible
+
+    // Observe the header's paragraph (the main description)
+    const headerP = heroRef.current?.querySelector('header p');
+    if (headerP) {
+      observer.observe(headerP);
+    }
+
+    addCleanup(() => observer.disconnect());
+    return () => observer.disconnect();
+  }, [addCleanup]); // Dependency array
+
+  // Intersection Observer for benefits section
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return; // Skip for reduced motion
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setShowCTA(true); // Show CTA when benefits are visible
+          observer.unobserve(entry.target); // Stop observing once triggered
+        }
+      });
+    }, { threshold: 0.1 }); // Trigger when 10% of the element is visible
+
+    // Observe the 'Why DoItWithAI.tools Stands Out' heading or the entire benefits grid
+    const benefitsHeading = heroRef.current?.querySelector('h2');
+    if (benefitsHeading) {
+      observer.observe(benefitsHeading);
+    } else {
+      // Fallback: observe the benefits grid if heading isn't found
+      const benefitsGrid = heroRef.current?.querySelector('.grid.md\\:grid-cols-2');
+      if (benefitsGrid) observer.observe(benefitsGrid);
+    }
+
+    addCleanup(() => observer.disconnect());
+    return () => observer.disconnect();
+  }, [addCleanup]); // Dependency array
+
+  // Consolidated Intersection Observer for continuous background animations (SVGs, shimmer)
+  // This useEffect remains largely the same
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+        document.querySelectorAll('svg circle, svg path, svg rect, svg polygon').forEach(el => {
+            el.classList.remove('animate-svg');
+            // If you had inline style.animation for SVG, you'd need to cast here too
+            // Example: (el as SVGElement).style.animationPlayState = 'paused';
+        });
+        return;
     }
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
+        // Assert entry.target as HTMLElement or SVGElement for style access
         const targetElement = entry.target as HTMLElement | SVGElement;
-        if (targetElement.classList.contains('ai-benefit-card')) {
-          // No direct style.animationPlayState here, as it's controlled by hover in CSS.
-        } else if (targetElement.classList.contains('svg-animated-element') || (targetElement instanceof HTMLElement || targetElement instanceof SVGElement) && (targetElement.style.animation || targetElement.classList.contains('animate-pulse') || targetElement.classList.contains('animate-shimmer-custom'))) {
-          // Only play animations if the `hero-animations-active` class is present on the hero section
-          // And the element is intersecting
-          if (heroRef.current?.classList.contains('hero-animations-active')) {
-            if (entry.isIntersecting) {
-              (targetElement as HTMLElement).style.animationPlayState = 'running';
-            } else {
-              (targetElement as HTMLElement).style.animationPlayState = 'paused';
-            }
+
+        // Handle SVG animations controlled by the 'animate-svg' class
+        if (targetElement.classList.contains('svg-animated-element')) {
+          if (entry.isIntersecting) {
+            targetElement.classList.add('animate-svg');
           } else {
-            // If hero-animations-active is not yet present, ensure they remain paused or unrendered
-            (targetElement as HTMLElement).style.animationPlayState = 'paused';
+            targetElement.classList.remove('animate-svg');
+          }
+        }
+        // Handle other continuous animations (like shimmer, pulse) via inline style.animationPlayState
+        else if (
+            // Check if it's an element that *can* have style.animation
+            (targetElement instanceof HTMLElement || targetElement instanceof SVGElement) &&
+            (targetElement.style.animation || // Elements with inline animation property
+            targetElement.classList.contains('animate-pulse') || // Add specific classes if their animations are continuous
+            targetElement.classList.contains('animate-shimmer-custom'))
+        ) {
+          if (entry.isIntersecting) {
+            targetElement.style.animationPlayState = 'running';
+          } else {
+            targetElement.style.animationPlayState = 'paused';
           }
         }
       });
     }, { threshold: 0.1 });
 
     const elementsToObserve = document.querySelectorAll(
-      '.svg-animated-element,' +
-      '[style*="animation"],' +
-      '.animate-pulse,' +
-      '.animate-shimmer-custom,' +
-      '.ai-benefit-card'
+        '.svg-animated-element, ' +
+        '[style*="animation"], ' +
+        '.animate-pulse, ' +
+        '.animate-shimmer-custom'
     );
+
     elementsToObserve.forEach((el) => observer.observe(el));
 
     addCleanup(() => observer.disconnect());
@@ -114,28 +166,21 @@ const Hero = () => {
   }, [addCleanup]);
 
   // THIS useEffect for pausing animations when tab is not active (essential for continuous animations)
+  // This useEffect remains largely the same
   useEffect(() => {
     const handleVisibilityChange = () => {
       const animatedElements = document.querySelectorAll(
-        '[style*="animation"],.animate-pulse,.animate-shimmer-custom,.svg-animated-element,.ai-benefit-card'
+        '[style*="animation"], .animate-pulse, .animate-shimmer-custom, .svg-animated-element'
       );
+
       animatedElements.forEach(el => {
-        const targetElement = el as HTMLElement;
+        // Assert el as HTMLElement or SVGElement to access .style
+        const targetElement = el as HTMLElement | SVGElement;
+
         if (document.hidden) {
-          if (targetElement.classList.contains('ai-benefit-card')) {
-            targetElement.style.setProperty('--animation-play-state', 'paused');
-          } else {
-            targetElement.style.animationPlayState = 'paused';
-          }
+          targetElement.style.animationPlayState = 'paused';
         } else {
-          // Only resume if hero-animations-active is also present
-          if (heroRef.current?.classList.contains('hero-animations-active')) {
-            if (targetElement.classList.contains('ai-benefit-card')) {
-              targetElement.style.setProperty('--animation-play-state', 'running');
-            } else {
-              targetElement.style.animationPlayState = 'running';
-            }
-          }
+          targetElement.style.animationPlayState = 'running';
         }
       });
     };
@@ -143,11 +188,11 @@ const Hero = () => {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     addCleanup(() => document.removeEventListener('visibilitychange', handleVisibilityChange));
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [addCleanup]);
+  }, [addCleanup]); // Depend on addCleanup
 
 
-  // --- MODIFIED JSX Structure - Add Specific Staggering Classes ---
   return (
+ 
     <section
       id="home"
       className="relative z-10 overflow-hidden bg-teal-50 dark:bg-gray-800 min-h-screen flex items-center justify-center py-16 md:py-[75px]"
@@ -163,11 +208,6 @@ const Hero = () => {
           <g aria-hidden="true">
             {/* Replace the existing center sphere */}
             {/* SEO growth lines with subtle flow animation */}
-        
-<circle r="3" fill="#3B82F6" opacity="0.8">
-  <animateMotion dur="6s" repeatCount="indefinite" 
-    path="M100 700 C300 600, 500 500, 700 450"/>
-</circle>
             <path d="M100 700 C300 600, 500 500, 700 450" stroke="#3B82F6" strokeWidth="2" opacity="0.4" strokeDasharray="20 10" style={{ animation: 'svgDataFlowSlow 12s linear infinite' }} />
             <path d="M150 750 C350 650, 550 550, 750 500" stroke="#A855F7" strokeWidth="2" opacity="0.4" strokeDasharray="15 8" style={{ animation: 'svgDataFlowSlow 15s linear infinite', animationDelay: '3s' }} />
             {/* Animated smaller nodes (datapoints) */}
@@ -180,39 +220,23 @@ const Hero = () => {
 
           {/* CRITICAL CONTENT - NO ANIMATION DELAYS */}
           <header className="text-center mb-8">
+            
+            <h1
+              id="hero-heading"
+              className="ai-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-gray-900 dark:text-white no-shift"
+              itemProp="headline"
+            >
+               <span className="block">Welcome to</span>
+               {/* MODIFIED: Added relative position to this span for absolute positioning of the note */}
 
-  <h1
-    id="hero-heading"
-    className="ai-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-gray-900 dark:text-white no-shift"
-    itemProp="headline"
-  >
-    <span className="block">Welcome to</span>
-    
-    {/* Main title with original badge for larger devices */}
-    <span className="text-blue-600 dark:text-blue-400 transition-all duration-300 relative inline-block">
-      DO IT WITH AI&nbsp;
-      <span className="inline-flex items-center whitespace-nowrap last-group">
-        TOOLS
-        <span className="new-launch-badge inline-flex items-center justify-center text-xs font-bold text-white bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-sm ml-1">
-          NEW!
-        </span>
-      </span>
+<span className=" text-blue-600 dark:text-blue-400 transition-all duration-300 relative inline-block">
+  DOITWITHAITOOL<span className="relative inline-block">S
+    <span className="new-launch-badge absolute inline-flex items-center justify-center text-xs font-bold text-white bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-sm ">
+      NEW!
     </span>
-    
-  <div className="new-launch-badge-mobile">
-  {/* This outer div will manage flex layout but won't animate its transform */}
-  
-  <div className="new-launch-badge-inner"> {/* NEW ELEMENT FOR ANIMATION */}
-    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-    </svg>
-    {/* This span holds the text and will now be a child of the animating inner div */}
-    <span className="inline-flex items-center justify-center text-xs font-bold text-white bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-sm ml-1">
-      NEW LAUNCH!
-    </span>
-  </div>
-</div>
-  </h1>
+  </span>
+</span>
+            </h1>
             
 <p className="primary-content hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-6 text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-200 sm:text-xl lg:text-lg xl:text-xl no-shift">
   <span className="block sm:inline">
@@ -233,7 +257,6 @@ const Hero = () => {
             {/* Added badge-X classes */}
            <span className="audience-badge badge-1 inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium whitespace-nowrap shadow-sm no-shift">
   <svg
- 
     className="w-4 h-4 mr-1 text-blue-500 dark:text-blue-300"
     fill="none"
     stroke="currentColor"
@@ -458,7 +481,6 @@ save 10+ hours weekly and
               <svg width="450" height="556" viewBox="0 0 450 556" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decorative neural network and circuit pattern in background">
                 <defs>
                   {/* Gradients */}
-                 
                   <linearGradient id="paint0_neural_gradient" x1="220" y1="40" x2="380" y2="200" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" /><stop offset="1" stopColor="#06B6D4" stopOpacity="0.3" /></linearGradient>
                   <linearGradient id="paint1_connection" x1="250" y1="80" x2="320" y2="160" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" /><stop offset="1" stopColor="#06B6D4" /></linearGradient>
                   <linearGradient id="paint2_connection" x1="280" y1="60" x2="380" y2="110" gradientUnits="userSpaceOnUse"><stop stopColor="#8B5CF6" /><stop offset="1" stopColor="#10B981" /></linearGradient>
@@ -496,10 +518,12 @@ save 10+ hours weekly and
                   <circle cx="220" cy="330" r="4" fill="#10B981" opacity="0.8" className="svg-animated-element" />
                   <circle cx="350" cy="330" r="4" fill="#10B981" opacity="0.8" className="svg-animated-element" />
                   <g aria-label="Floating binary code display">
-                    <AnimatedBinaryText initialText="01001001" x="150" y="175" fill="url(#paint7_binary)" fontSize="12" fontFamily="monospace" className="animated-binary-text" interval={2500} aria-label="Binary code" />
-                    <AnimatedBinaryText initialText="11010110" x="160" y="190" fill="url(#paint7_binary)" fontSize="12" fontFamily="monospace" className="animated-binary-text" interval={2000} aria-label="Binary code" />
-                    <AnimatedBinaryText initialText="00110101" x="140" y="205" fill="url(#paint7_binary)" fontSize="12" fontFamily="monospace" className="animated-binary-text" interval={3000} aria-label="Binary code" />
+                    <AnimatedBinaryText initialText="01001001" x="150" y="160" fill="url(#paint7_binary)" fontSize="12" fontFamily="monospace" className="animated-binary-text" interval={2500} aria-label="Binary code" />
+                    <AnimatedBinaryText initialText="11010110" x="160" y="175" fill="url(#paint7_binary)" fontSize="12" fontFamily="monospace" className="animated-binary-text" interval={2000} aria-label="Binary code" />
+                    <AnimatedBinaryText initialText="00110101" x="140" y="190" fill="url(#paint7_binary)" fontSize="12" fontFamily="monospace" className="animated-binary-text" interval={3000} aria-label="Binary code" />
                   </g>
+                  <polygon points="100,450 150,420 200,450 150,480" fill="url(#paint8_geometric)" opacity="0.4" />
+                  <polygon points="320,480 370,450 420,480 370,510" fill="url(#paint9_geometric)" opacity="0.3" />
                   <path d="M50 350 Q150 320, 250 350 Q350 380, 450 350" stroke="url(#paint10_dataflow)" strokeWidth="2" fill="none" opacity="0" />
                 </g>
               </svg>
@@ -524,14 +548,19 @@ save 10+ hours weekly and
                 </defs>
                 <g aria-hidden="true">
                   {/*DataFlowCurves*/}
+                  {/* These paths were commented out in your provided code, so they remain commented. */}
+                  {/*<path d="M5.88928 72.33C33.6599 66.479 101.397 64.908 150.178 105.427C211.155 156.076 229.591 62.093 264.333 66.607C299.076 71.123 337.718 83.657 362.889 212.24" stroke="url(#paint0_dataflow_main)" strokeWidth="2" strokeDasharray="15 10" className="svg-animated-element" style={{ animation: 'svgDataFlowSlow 20s linear infinite' }}/>*/}
+                  {/*<path d="M-22.11077 72.3303C5.65989 66.479 73.3965 64.9086 122.178 105.427C183.155 156.076 201.591 62.093 236.333 66.607C271.076 71.123 309.718 83.657 334.889 212.24" stroke="url(#paint1_dataflow_secondary)" strokeWidth="1.5" opacity="0.5" strokeDasharray="12 8" className="svg-animated-element" style={{ animation: 'svgDataFlowSlow 25s linear infinite', animationDelay: '5s' }}/>*/}
+                  {/*<path d="M-53.11077 72.3303C-25.3401 66.479 42.3965 64.9086 91.1783 105.427C152.155 156.076 170.591 62.093 205.333 66.607C240.076 71.122 278.718 83.657 303.889 212.24" stroke="url(#paint2_dataflow_tertiary)" strokeWidth="1" opacity="0.5"/>*/}
+                  {/* AI Analytics Visualization */}
                   <circle cx="220" cy="63" r="35" fill="url(#paint3_analytics_core)" opacity="0.8" />
-                  <g className="svg-animated-element rotating-needle" style={{ animation: 'smoothOrbitRotation 25s linear infinite' }}>
-  <circle cx="255" cy="63" r="3" fill="#2563EB" opacity="0.8" />
-  <path d="M220 63L255 63" stroke="#2563EB" strokeWidth="1.5" opacity="0.9" />
-</g>
+                  <g className="svg-animated-element rotating-needle" style={{ animation: 'smoothOrbitRotation 25s ease-in-out infinite' }}>
+                    <circle cx="255" cy="63" r="3" fill="#2563EB" opacity="0.8" />
+                    <path d="M220 63L255 63" stroke="#2563EB" strokeWidth="1.5" opacity="0.9" />
+                  </g>
                   <circle cx="240" cy="40" r="3" fill="#8B5CF6" opacity="0.6" className="svg-animated-element" style={{ animation: 'svgGlowPulse 12s ease-in-out infinite', animationDelay: '2s' }} />
                   <circle cx="195" cy="85" r="3" fill="#F59E0B" opacity="0.6" className="svg-animated-element" style={{ animation: 'svgFloatSlow 8s ease-in-out infinite', animationDelay: '4s' }} />
-                  <circle cx="253" cy="72" r="3" fill="#10B981" opacity="0.8"  />
+                  <circle cx="250" cy="70" r="2" fill="#10B981" opacity="0.6" className="svg-animated-element" style={{ animation: 'svgNodePulse 9s ease-in-out infinite', animationDelay: '6s' }} />
                   <circle cx="195" cy="85" r="3" fill="#F59E0B" opacity="0.8" />
                   {/* Connection Lines to Data Points */}
                   <path d="M220 63L190 45M220 63L210 35M220 63L240 40M220 63L250 70M220 63L195 85" stroke="url(#paint4_connections)" strokeWidth="1" opacity="0.4" />
@@ -555,7 +584,7 @@ save 10+ hours weekly and
               </svg>
             </div>
           </section>
-        );
-      };
-      
+  );
+};
+
 export default Hero;

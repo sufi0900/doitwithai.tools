@@ -140,7 +140,9 @@ export default function RootLayout({
                 <Header />
               </Suspense>
             )}
-
+<br/>
+<br/>
+<br/>
             {/* Conditionally render the Hero component only on the homepage */}
             {isHomePage && <Hero/>}
 
@@ -154,7 +156,7 @@ export default function RootLayout({
             </Suspense>
           </Providers>
         </CacheProvider>
-        <ServiceWorkerRegistration />
+        {/* <ServiceWorkerRegistration /> */}
       </body>
     </html>
   );
