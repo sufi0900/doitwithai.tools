@@ -542,7 +542,7 @@ save 10+ hours weekly and
                   <circle cx="90" cy="135" r="2" fill="#06B6D4" className="svg-animated-element" style={{ animation: 'gentleStrikeReverse 4s ease-in-out infinite', animationDelay: '0.5s' }} />
                   <circle cx="110" cy="140" r="2" fill="#8B5CF6" className="svg-animated-element" style={{ animation: 'gentleStrike 4s ease-in-out infinite', animationDelay: '1s' }} />
                   <circle cx="70" cy="150" r="2" fill="#10B981" className="svg-animated-element" style={{ animation: 'gentleStrikeReverse 4s ease-in-out infinite', animationDelay: '1.5s' }} />
-                  <circle cx="90" cy="145" r="2" fill="#F59E0B" className="svg-animated-element" className="svg-animated-element" style={{ animation: 'gentleStrike 4s ease-in-out infinite', animationDelay: '2s' }} />
+                  <circle cx="90" cy="145" r="2" fill="#F59E0B"  className="svg-animated-element" style={{ animation: 'gentleStrike 4s ease-in-out infinite', animationDelay: '2s' }} />
                   <circle cx="110" cy="150" r="2" fill="#EF4444" className="svg-animated-element" style={{ animation: 'gentleStrikeReverse 4s ease-in-out infinite', animationDelay: '2.5s' }} />
                   {/* Algorithm Flow */}
                   <path d="M280 100L320 110L340 130L360 140" stroke="url(#paint6_algorithm)" strokeWidth="2" fill="none" opacity="0.6" />
