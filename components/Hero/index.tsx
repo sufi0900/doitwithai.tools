@@ -139,7 +139,7 @@ useEffect(() => {
   return (
     <section
       id="home"
-      className="relative herobg z-10 overflow-hidden bg-teal-50 dark:bg-gray-800 min-h-screen flex items-center justify-center   pt-28"
+      className="relative herobg z-10 overflow-hidden bg-teal-50 dark:bg-gray-800 min-h-screen flex items-center justify-center   pt-[135px]"
       ref={heroRef}
       aria-labelledby="hero-heading"
       aria-describedby="hero-description"
