@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useMemo, useCallback, Suspense, useEffect, useRef } from "react";
 import dynamic from 'next/dynamic';
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
@@ -37,6 +37,7 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
   const currentSlug = params.slug;
   const [shouldLoadSidebar, setShouldLoadSidebar] = useState(false);
   const [shouldLoadRelated, setShouldLoadRelated] = useState(false);
+  const mountedRef = useRef(false);
 
   // Memoize static configurations
   const schemaSlugMap = useMemo(() => ({
@@ -100,17 +101,31 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
   const currentPostId = finalArticleData?._id;
 
   // Progressive loading trigger - load sidebar after main content is ready
-  React.useEffect(() => {
-    if (finalArticleData && !articleLoading) {
-      const timer = setTimeout(() => setShouldLoadSidebar(true), 100);
+  useEffect(() => {
+    mountedRef.current = true;
+    
+    if (finalArticleData && !articleLoading && mountedRef.current) {
+      const timer = setTimeout(() => {
+        if (mountedRef.current) {
+          setShouldLoadSidebar(true);
+        }
+      }, 100);
       return () => clearTimeout(timer);
     }
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, [finalArticleData, articleLoading]);
 
   // Load related content after sidebar
-  React.useEffect(() => {
-    if (shouldLoadSidebar) {
-      const timer = setTimeout(() => setShouldLoadRelated(true), 200);
+  useEffect(() => {
+    if (shouldLoadSidebar && mountedRef.current) {
+      const timer = setTimeout(() => {
+        if (mountedRef.current) {
+          setShouldLoadRelated(true);
+        }
+      }, 200);
       return () => clearTimeout(timer);
     }
   }, [shouldLoadSidebar]);
@@ -180,7 +195,7 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     { ...relatedResourcesOptions, schemaType: 'freeResources', enabled: shouldLoadRelated }
   );
 
-  // Register cache operations
+  // Register cache operations - always call hooks but conditionally register
   usePageCache(
     CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType),
     refreshArticle,
@@ -188,21 +203,20 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     `${schemaType}ArticleContent`
   );
 
-  if (shouldLoadRelated) {
-    usePageCache(
-      CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType),
-      refreshRelatedPosts,
-      relatedPostsQuery,
-      `${schemaType}RelatedPosts`
-    );
-    
-    usePageCache(
-      CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
-      refreshRelatedResources,
-      correctRelatedResourcesQuery,
-      `${schemaType}RelatedResources`
-    );
-  }
+  // Always call these hooks but they will only register when conditions are met
+  usePageCache(
+    shouldLoadRelated ? CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType) : null,
+    shouldLoadRelated ? refreshRelatedPosts : () => {},
+    shouldLoadRelated ? relatedPostsQuery : '',
+    shouldLoadRelated ? `${schemaType}RelatedPosts` : ''
+  );
+  
+  usePageCache(
+    shouldLoadRelated ? CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown') : null,
+    shouldLoadRelated ? refreshRelatedResources : () => {},
+    shouldLoadRelated ? correctRelatedResourcesQuery : '',
+    shouldLoadRelated ? `${schemaType}RelatedResources` : ''
+  );
 
   const isMainContentLoading = articleLoading && !finalArticleData;
   const handleRefreshArticle = useCallback(() => refreshArticle(true), [refreshArticle]);

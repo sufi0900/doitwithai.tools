@@ -16,9 +16,10 @@ export const CacheProvider = ({ children }) => {
   });
   const [globalOperationInProgress, setGlobalOperationInProgress] = useState(false);
 
-const setGlobalOperation = useCallback((inProgress) => {
-  setGlobalOperationInProgress(inProgress);
-}, []);
+  const setGlobalOperation = useCallback((inProgress) => {
+    setGlobalOperationInProgress(inProgress);
+  }, []);
+
   // Global state for keys currently being refreshed
   const [refreshingKeys, setRefreshingKeys] = useState(new Set());
 
@@ -82,18 +83,23 @@ const setGlobalOperation = useCallback((inProgress) => {
     return refreshingKeys.has(key);
   }, [refreshingKeys]);
 
- const contextValue = {
-  isOnline,
-  cacheStats,
-  refreshCache,
-  addRefreshingKey,
-  removeRefreshingKey,
-  isKeyRefreshing,
-  cacheSystem,
-  globalOperationInProgress, // NEW
-  setGlobalOperation, // NEW
-};
-  return <CacheContext.Provider value={contextValue}>{children}</CacheContext.Provider>;
+  const contextValue = {
+    isOnline,
+    cacheStats,
+    refreshCache,
+    addRefreshingKey,
+    removeRefreshingKey,
+    isKeyRefreshing,
+    cacheSystem,
+    globalOperationInProgress,
+    setGlobalOperation,
+  };
+
+  return (
+    <CacheContext.Provider value={contextValue}>
+      {children}
+    </CacheContext.Provider>
+  );
 };
 
 // --- Custom Hook to use the Cache Context ---
@@ -115,11 +121,14 @@ export const PageCacheProvider = ({ children, pageType, pageId }) => {
 
   // FIXED: Use useCallback to prevent unnecessary re-renders
   const registerCacheKey = useCallback((cacheKey, refreshFn, query, label) => {
+    if (!cacheKey) return; // Skip null/undefined keys
+    
     setPageCacheKeys((prev) => {
       const newMap = new Map(prev);
       newMap.set(cacheKey, { query, label, refreshFn });
       return newMap;
     });
+
     setPageRefreshFunctions((prev) => {
       const newMap = new Map(prev);
       newMap.set(cacheKey, refreshFn);
@@ -129,11 +138,14 @@ export const PageCacheProvider = ({ children, pageType, pageId }) => {
 
   // FIXED: Use useCallback to prevent unnecessary re-renders
   const unregisterCacheKey = useCallback((cacheKey) => {
+    if (!cacheKey) return; // Skip null/undefined keys
+    
     setPageCacheKeys((prev) => {
       const newMap = new Map(prev);
       newMap.delete(cacheKey);
       return newMap;
     });
+
     setPageRefreshFunctions((prev) => {
       const newMap = new Map(prev);
       newMap.delete(cacheKey);
@@ -180,5 +192,9 @@ export const PageCacheProvider = ({ children, pageType, pageId }) => {
     pageCacheKeys,
   };
 
-  return <CacheContext.Provider value={pageContextValue}>{children}</CacheContext.Provider>;
+  return (
+    <CacheContext.Provider value={pageContextValue}>
+      {children}
+    </CacheContext.Provider>
+  );
 };
