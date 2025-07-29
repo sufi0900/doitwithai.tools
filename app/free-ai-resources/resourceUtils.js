@@ -79,127 +79,139 @@ export const getFileUrl = (resourceFile) => {
 
 
 
-// Helper function for document preview
-export const renderDocumentPreview = (resourceType, resource,  fileExt) => {
-    // Colors for different document types
-    const colorSchemes = {
-      'pdf': {
-        bg: 'from-red-50 to-red-100 dark:from-red-900 dark:to-red-800',
-        accent: 'bg-red-600/90',
-        icon: 'text-red-700 dark:text-red-400'
-      },
-      'ebook': {
-        bg: 'from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800',
-        accent: 'bg-blue-600/90',
-        icon: 'text-blue-700 dark:text-blue-400'
-      },
-      'template': {
-        bg: 'from-indigo-50 to-indigo-100 dark:from-indigo-900 dark:to-indigo-800',
-        accent: 'bg-indigo-600/90',
-        icon: 'text-indigo-700 dark:text-indigo-400'
-      },
-      'guide': {
-        bg: 'from-amber-50 to-amber-100 dark:from-amber-900 dark:to-amber-800',
-        accent: 'bg-amber-600/90',
-        icon: 'text-amber-700 dark:text-amber-400'
-      },
-      'doc': {
-        bg: 'from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800',
-        accent: 'bg-blue-600/90',
-        icon: 'text-blue-700 dark:text-blue-400'
-      },
-      'xls': {
-        bg: 'from-green-50 to-green-100 dark:from-green-900 dark:to-green-800',
-        accent: 'bg-green-600/90',
-        icon: 'text-green-700 dark:text-green-400'
-      },
-      'default': {
-        bg: 'from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700',
-        accent: 'bg-gray-600/90',
-        icon: 'text-gray-700 dark:text-gray-400'
-      }
-    };
-    
-    if (resource && resource.resourceFile && getFileUrl(resource.resourceFile)) {
-        const fileUrl = getFileUrl(resource.resourceFile);
-      fileExt = fileUrl.match(/\.([^.]+)$/)?.[1] || '';
+// Enhanced renderDocumentPreview function with realistic document appearance
+export const renderDocumentPreview = (resourceType, resource, fileExt) => {
+  const colorSchemes = {
+    'pdf': {
+      bg: 'from-red-50 to-red-100 dark:from-red-900/40 dark:to-red-800/40',
+      accent: 'bg-red-600',
+      icon: 'text-red-700 dark:text-red-400',
+      shadow: 'shadow-red-200/50 dark:shadow-red-900/50'
+    },
+    'ebook': {
+      bg: 'from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40',
+      accent: 'bg-blue-600',
+      icon: 'text-blue-700 dark:text-blue-400',
+      shadow: 'shadow-blue-200/50 dark:shadow-blue-900/50'
+    },
+    'template': {
+      bg: 'from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-800/40',
+      accent: 'bg-indigo-600',
+      icon: 'text-indigo-700 dark:text-indigo-400',
+      shadow: 'shadow-indigo-200/50 dark:shadow-indigo-900/50'
+    },
+    'guide': {
+      bg: 'from-amber-50 to-amber-100 dark:from-amber-900/40 dark:to-amber-800/40',
+      accent: 'bg-amber-600',
+      icon: 'text-amber-700 dark:text-amber-400',
+      shadow: 'shadow-amber-200/50 dark:shadow-amber-900/50'
+    },
+    'doc': {
+      bg: 'from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40',
+      accent: 'bg-blue-600',
+      icon: 'text-blue-700 dark:text-blue-400',
+      shadow: 'shadow-blue-200/50 dark:shadow-blue-900/50'
+    },
+    'xls': {
+      bg: 'from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-800/40',
+      accent: 'bg-green-600',
+      icon: 'text-green-700 dark:text-green-400',
+      shadow: 'shadow-green-200/50 dark:shadow-green-900/50'
+    },
+    'default': {
+      bg: 'from-gray-50 to-gray-100 dark:from-gray-800/60 dark:to-gray-700/60',
+      accent: 'bg-gray-600',
+      icon: 'text-gray-700 dark:text-gray-400',
+      shadow: 'shadow-gray-200/50 dark:shadow-gray-700/50'
     }
-    
-    // Select color scheme based on extension
-    const scheme = colorSchemes[fileExt] || colorSchemes.default;
-    
-    // Document title to display - use resourceType as custom label
-    const docTitle = resource && resource.resourceType || 'Document';
-    const fileTitle = fileExt ? fileExt.toUpperCase() + ' Document' : '';
-    
-    return (
-      <div className={`absolute inset-0 bg-gradient-to-br ${scheme.bg} overflow-hidden shadow-inner`}>
-        {/* Document header with macOS-style buttons */}
-        <div className="absolute top-0 inset-x-0 h-8 bg-white/20 dark:bg-black/20 flex items-center px-3 border-b border-black/10 dark:border-white/10">
-          <div className="flex space-x-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-          </div>
-          <div className="text-xs font-medium ml-auto opacity-70">
-            {fileTitle || docTitle}
-          </div>
-        </div>
-        
-        {/* Document content simulation */}
-        <div className="absolute inset-0 mt-8 p-4">
-          {/* Title bar simulation */}
-          <div className={`w-full h-6 mb-3 ${scheme.accent} opacity-70 rounded`}></div>
-          
-          {/* Simulated document content with lines */}
-          <div className="space-y-2 mt-3">
-            {Array(6).fill(0).map((_, i) => (
-              <div 
-                key={i} 
-                className="h-1.5 rounded bg-black/10 dark:bg-white/10"
-                style={{ width: `${85 - Math.random() * 20}%`, opacity: 0.7 - (i * 0.05) }}
-              ></div>
-            ))}
-            
-            {/* Simulated image/chart placeholder in document */}
-            <div className="h-20 mt-4 mb-4 rounded bg-white/30 dark:bg-black/20 flex items-center justify-center border border-black/5 dark:border-white/5">
-              <div className="w-12 h-8 border-2 border-dashed border-current rounded opacity-30 flex items-center justify-center">
-                <span className="text-xs font-bold">IMAGE</span>
-              </div>
-            </div>
-            
-            {/* More text lines */}
-            {Array(4).fill(0).map((_, i) => (
-              <div 
-                key={i + 6} 
-                className="h-1.5 rounded bg-black/10 dark:bg-white/10"
-                style={{ width: `${90 - Math.random() * 30}%`, opacity: 0.7 - (i * 0.05) }}
-              ></div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Folded corner effect */}
-        <div className="absolute top-0 right-0 w-0 h-0 
-            border-t-[20px] border-r-[20px] 
-            border-t-transparent border-r-white/20 dark:border-r-white/10">
-        </div>
-        
-        {/* Document footer */}
-        <div className={`absolute inset-x-0 bottom-0 ${scheme.accent} p-2 shadow-inner`}>
-          <div className="flex justify-between items-center">
-            <h3 className="text-white text-xs font-medium truncate">
-              {docTitle} {fileExt ? `(${fileExt.toUpperCase()})` : ''}
-            </h3>
-            <span className="text-white/70 text-xs">Page 1</span>
-          </div>
-        </div>
-        
-        {/* Paper texture and effects */}
-        {createPaperEffect(resourceType)}
-      </div>
-    );
   };
+
+  if (resource && resource.resourceFile && getFileUrl(resource.resourceFile)) {
+    const fileUrl = getFileUrl(resource.resourceFile);
+    fileExt = fileUrl.match(/\.([^.]+)$/)?.[1] || '';
+  }
+
+  const scheme = colorSchemes[fileExt] || colorSchemes.default;
+  const docTitle = resource && resource.resourceType || 'Document';
+  const fileTitle = fileExt ? fileExt.toUpperCase() : 'DOC';
+
+return (
+  <div
+    className={`relative w-full h-full rounded-md shadow-lg overflow-hidden
+      bg-gradient-to-b
+      from-white dark:from-gray-800
+      to-gray-50 dark:to-gray-900
+      border border-gray-200 dark:border-gray-700
+      flex flex-col
+      transition-colors duration-300
+      `}
+  >
+    {/* Folded corner */}
+    <div className="absolute top-0 right-0 w-12 h-12
+      bg-gradient-to-tr
+      from-transparent
+      to-gray-300 dark:to-gray-600
+      clip-path-[polygon(100%_0,100%_100%,0_100%)]"
+      style={{ filter: 'drop-shadow(-1px 1px 1px rgba(0,0,0,0.1))' }}
+    />
+
+    {/* Header bar with macOS style buttons */}
+    <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700">
+      <div className="flex space-x-1.5">
+        <span className="w-3 h-3 rounded-full bg-red-500 shadow-sm"></span>
+        <span className="w-3 h-3 rounded-full bg-yellow-400 shadow-sm"></span>
+        <span className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></span>
+      </div>
+      <div className="ml-auto text-xs font-semibold text-gray-700 dark:text-gray-300 select-none">
+        {fileExt ? `${fileExt.toUpperCase()} Document` : docTitle}
+      </div>
+    </div>
+
+    {/* Document content lines simulation */}
+    <div className="flex-1 p-4 space-y-3 overflow-hidden">
+      {[...Array(7)].map((_, i) => (
+        <div
+          key={i}
+          className="h-2 rounded-full bg-gray-300 dark:bg-gray-700"
+          style={{ width: `${90 - i * 10}%`, opacity: 1 - i * 0.1 }}
+        />
+      ))}
+
+      {/* Image/chart placeholder */}
+      <div className="mt-4 h-20 rounded border-2 border-dashed border-gray-400 dark:border-gray-600
+        flex items-center justify-center text-gray-500 dark:text-gray-400 select-none
+        bg-gray-100 dark:bg-gray-800"
+      >
+        IMAGE
+      </div>
+
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={`bottom-${i}`}
+          className="h-2 rounded-full bg-gray-300 dark:bg-gray-700"
+          style={{ width: `${80 - i * 15}%`, opacity: 0.7 - i * 0.1 }}
+        />
+      ))}
+    </div>
+
+    {/* Footer bar */}
+    <div className={`p-2 text-white text-xs font-medium
+      bg-gradient-to-r
+      from-blue-600 dark:from-blue-700
+      to-blue-700 dark:to-blue-900
+      shadow-inner select-none
+      flex justify-between`}
+    >
+      <span>{docTitle} {fileExt ? `(${fileExt.toUpperCase()})` : ''}</span>
+      <span>Page 1</span>
+    </div>
+
+    {/* Paper grain texture overlay */}
+    <div className="pointer-events-none absolute inset-0 bg-[url('/paper-texture.png')] opacity-5 mix-blend-overlay" />
+  </div>
+);
+
+};
   
 // Helper function to create paper effects
 const createPaperEffect = (resourceFile ) => {

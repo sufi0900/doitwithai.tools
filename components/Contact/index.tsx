@@ -6,6 +6,7 @@ import emailjs from "@emailjs/browser";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NewsLatterBox from "./NewsLatterBox";
+import Breadcrumb from "../Common/Breadcrumb";
 
 const Contact = () => {
   const form = useRef<HTMLFormElement>(null);
@@ -100,8 +101,17 @@ const Contact = () => {
   };
 
   return (
-    <section id="contact" className="relative overflow-hidden ">
+    <section id="contact" className="relative overflow-hidden  mb-10">
       {/* Background decorative elements */}
+       <Breadcrumb
+        linktext="Contact Us"
+        firstlinktext="Home"
+        firstlink="/"
+        pageName="Contact Us"
+        pageName2=""
+        link="contact"
+        description="Connect for queries, feedback, or collaborations around AI tools, learning, or digital growth — and stay updated through our newsletter."
+      />
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-primary/10 to-transparent rounded-full blur-3xl"></div>
@@ -217,7 +227,7 @@ const Contact = () => {
                   </div>
 
                   {/* Enhanced Submit Button */}
-                  <div className="w-full mt-2 px-4">
+                  <div className="w-full mt-6 px-6">
                     <button
                       type="submit"
                       disabled={isSubmitting}

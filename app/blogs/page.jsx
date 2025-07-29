@@ -1,16 +1,16 @@
+// app/blogs/page.jsx
 import React from 'react';
-import AllPosts from './AllPosts'; 
+import StaticBlogsPageShell from './StaticBlogsPageShell'; // Import the new shell
+import AllBlogsAggregated from './AllPosts'; // Assuming you rename AllPosts to AllBlogsAggregated
 import Script from "next/script";
 import { client } from "@/sanity/lib/client";
+import { redisHelpers } from '@/app/lib/redis';
 
 export const revalidate = 3600; // Revalidate every hour
 export const dynamic = "force-dynamic";
-import {redisHelpers} from '@/app/lib/redis';
-
-
 
 // Define the limit for the initial server-side fetch to match client component's limit
-const INITIAL_BLOGS_LIMIT = 5; // Matches cardsPerPage in AllPosts.jsx
+const INITIAL_BLOGS_LIMIT = 5; // Matches cardsPerPage in AllBlogsAggregated.jsx
 
 // --- Server-side data fetching function ---
 async function getAllBlogsInitialData() {
@@ -89,7 +89,6 @@ async function getAllBlogsInitialData() {
   }
 }
 
-
 export const metadata = {
   title: "AI Blog Library: Latest Insights on SEO & More | Do it with AI Tools",
   description: "Explore our comprehensive AI blog collection featuring cutting-edge insights on AI tools, SEO strategies, coding techniques, & monetization opportunities",
@@ -139,8 +138,8 @@ export const metadata = {
   }
 };
 
-export default async  function BlogsPage() {
-    const initialServerData = await getAllBlogsInitialData();
+export default async function BlogsPage() {
+  const initialServerData = await getAllBlogsInitialData();
 
   function blogCollectionSchema() {
     return {
@@ -326,9 +325,11 @@ export default async  function BlogsPage() {
     };
   }
 
+
+
   return (
     <>
-      {/* Structured Data Scripts */}
+        {/* Structured Data Scripts */}
       <Script
         id="blog-collection-schema"
         type="application/ld+json"
@@ -349,11 +350,13 @@ export default async  function BlogsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={websiteSchema()}
       />
-
-      {/* Main Content */}
-     <AllPosts
+      {/* Main Content delivered via the StaticBlogsPageShell */}
+      <StaticBlogsPageShell initialServerData={initialServerData}>
+        {/* The client component for dynamic content will be rendered as children */}
+        <AllBlogsAggregated
           initialServerData={initialServerData} // Pass the fetched initial data
         />
+      </StaticBlogsPageShell>
     </>
   );
 }

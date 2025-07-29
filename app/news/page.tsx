@@ -171,6 +171,7 @@
 //                 DO IT WITH AI TOOLS
 //               </span>
 //             </h1>
+// ase-in-out mb-6 text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-200 
 //   <p className="primary-content hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-6 text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-200 sm:text-xl lg:text-lg xl:text-xl no-shift">
 //             <span className="block sm:inline">
 //               <span className="font-semibold text-blue-600 dark:text-blue-400">More than just another AI blog</span>

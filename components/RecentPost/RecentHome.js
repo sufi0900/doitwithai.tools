@@ -3,12 +3,28 @@ import { urlForImage } from "@/sanity/lib/image";
 import Link from "next/link";
 import SkelCard from "@/components/Blog/Skeleton/Card"
 import OptimizeImage from "@/components/Blog/ImageOptimizer"
-import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 
-import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
+
+import { 
+  AccessTime, 
+  CalendarMonthOutlined,
+  TrendingUp,
+  BookmarkAdd,
+  Share,
+  ArrowRightAltOutlined
+} from "@mui/icons-material";
+import { 
+  Clock, 
+  Calendar, 
+  ArrowRight, 
+  Sparkles, 
+  BookOpen,
+  TrendingUp as TrendingUpLucide,
+  Users
+} from "lucide-react";
 
 export default function RecentPosts({ initialData = [] }) { // Accept initialData prop
   // Memoize the queries object as it is static
@@ -69,12 +85,11 @@ export default function RecentPosts({ initialData = [] }) { // Accept initialDat
   return (
     <section className="pb-[20px] pt-[20px]">
       <div className="container">
-        <h2 className="mb-8 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+        <h2 className="mb-10 text-start text-3xl md:text-4xl font-bold tracking-tight ">
           <span className="relative mr-2 inline-block">
-            Recent
-            <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
+            Our Latest <span className="text-blue-600 dark:text-blue-400">AI Insights</span>
+            <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-gradient-to-r from-blue-600 to-purple-600"></span>
           </span>
-          <span className="text-blue-500">Post</span>
         </h2>
 
         {/* NEW: Stale Data Warning */}
@@ -102,109 +117,84 @@ export default function RecentPosts({ initialData = [] }) { // Accept initialDat
           </div>
         )}
 
-        <div className="flex flex-wrap justify-start">
-          {loading && !recentData ? ( // If loading and no data
-            Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="mx-2 mb-4 flex flex-wrap justify-start">
-                <SkelCard />
-              </div>
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {loading && !recentData ? (
+            Array.from({ length: 3 }).map((_, index) => ( // Display 3 skeleton cards for better visual balance
+              <SkelCard key={index} />
             ))
-          ) : recentData && recentData.length > 0 ? ( // Else if data exists
-            // Fix: Wrap the mapped JSX inside parentheses to form a single expression
-            (
-              recentData?.slice(0, 3).map((post) =>
-                <div key={post._id} className="mt-4 mb-6 px-2 ">
-                  <div className="card transition duration-300 hover:scale-[1.05] max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow  hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
-                    {" "}
-                    {post.slug?.current && schemaSlugMap[post._type] ? (
-                      <Link
-                        href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-                        className="relative block aspect-[37/22] w-full"
-                      >
-                        {post.tags && post.tags.length > 0 && (
-                          <Link
-                            href={post.tags[0].link}
-                            className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary"
-                          >
-                            {post.tags[0].name}
-                          </Link>
-                        )}
+          ) : recentData && recentData.length > 0 ? (
+            recentData?.slice(0, 3).map((post) => (
+              <div key={post._id} className="flex"> {/* Use flex to ensure consistent card heights */}
+                <div className="card group w-full transition duration-300 hover:scale-[1.03] transform cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg hover:shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 flex flex-col">
+                  {post.slug?.current && schemaSlugMap[post._type] ? (
+                    <Link
+                      href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                      className="relative block aspect-[37/22] w-full"
+                    >
+                      {post.tags && post.tags.length > 0 && (
+                        <span className="absolute right-4 top-4 z-20 inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 group-hover:bg-blue-700">
+                          {post.tags[0].name}
+                        </span>
+                      )}
 
-                        {/* Image */}
-                        <div className="relative aspect-[30/22] overflow-hidden">
-                          <div className="duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5] absolute inset-0 h-full w-full object-cover transition-transform ">
-                            <OptimizeImage
-                              src={urlForImage(post.mainImage).url()}
-                              alt={post.title}
-                              fill
-                            />
-                          </div>
-                        </div>
-                      </Link>
-                    ) : (
-                      <div className="text-red-500">Slug not available</div>
-                    )}
-                    <div className="p-5">
-                      {/* Title */}
-                      <Link
-                        href={`/${schemaSlugMap[post._type]}/${post.slug?.current || "#"}`}
-                      >
-                        <h5 className="mb-2 line-clamp-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                          {post.title}
-                        </h5>
-                      </Link>
-                      {/* Overview */}
-                      <p className="mb-3 line-clamp-4 font-normal text-gray-700 dark:text-gray-400">
-                        {post.overview}
-                      </p>
-                      {/* Meta Data */}
-                      <div className="mb-3 mt-3 flex items-center justify-between">
-                        <div className="flex items-center">
-                          <AccessTime className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-                          <p className="text-sm font-medium text-dark dark:text-white">
-                            Read Time: {post.readTime?.minutes} min
-                          </p>
-                        </div>
-                        <div className="flex items-center">
-                          <CalendarMonthOutlined className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-                          <p className="text-sm font-medium text-dark dark:text-white">
-                            {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </p>
+                      {/* Image container with hover effect */}
+                      <div className="relative aspect-[30/22] overflow-hidden">
+                        <div className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110">
+                          <OptimizeImage
+                            src={urlForImage(post.mainImage).url()}
+                            alt={post.title}
+                            fill
+                          />
                         </div>
                       </div>
-                      {/* Read more link */}
-                      <Link
-                        href={`/${schemaSlugMap[post._type]}/${post.slug?.current || "#"}`}
-                        className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-                      >
-                        Read more
-                        <svg
-                          className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
-                          aria-hidden="true"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 14 10"
-                        >
-                          <path
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M1 5h12m0 0L9 1m4 4L9 9"
-                          />
-                        </svg>
-                      </Link>
+                    </Link>
+                  ) : (
+                    <div className="text-red-500 p-5">Slug not available</div>
+                  )}
+                  <div className="p-5 flex flex-col flex-grow">
+                    {/* Title */}
+                    <Link
+                      href={`/${schemaSlugMap[post._type]}/${post.slug?.current || "#"}`}
+                    >
+                      <h5 className="mb-2 line-clamp-2 text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+                        {post.title}
+                      </h5>
+                    </Link>
+                    {/* Overview */}
+                    <p className="mb-3 line-clamp-3 md:line-clamp-4 font-normal text-gray-700 dark:text-gray-400 flex-grow">
+                      {post.overview}
+                    </p>
+                    {/* Meta Data */}
+                    <div className="mt-auto mb-3 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+                      <div className="flex items-center">
+                        <AccessTime className="mr-1.5 w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <span>{post.readTime?.minutes} min read</span>
+                      </div>
+                      <div className="flex items-center">
+                        <CalendarMonthOutlined className="mr-1.5 w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <span>{new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      </div>
                     </div>
+                    {/* Read more link */}
+                    <Link
+                      href={`/${schemaSlugMap[post._type]}/${post.slug?.current || "#"}`}
+                      className="inline-flex items-center px-4 py-2 text-center text-sm font-medium rounded-lg
+                                 bg-blue-600 text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300
+                                 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition-all duration-200 self-start"
+                    >
+                      Read more
+                      <ArrowRightAltOutlined className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
+                    </Link>
                   </div>
                 </div>
-              )
-            )
+              </div>
+            ))
           ) : (
-            <div className="text-center py-8 w-full">
-              <p className="text-gray-500 dark:text-gray-400">No recent posts found at this time.</p>
+            <div className="text-center py-8 col-span-full">
+              <p className="text-gray-500 dark:text-gray-400 mb-4">No recent posts found at this time.</p>
               <button
                 onClick={handleRefresh}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mt-4"
+                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-md"
               >
                 Refresh Posts
               </button>
@@ -212,13 +202,79 @@ export default function RecentPosts({ initialData = [] }) { // Accept initialDat
           )}
         </div>
 
-        <div className="mt-6 flex justify-center md:justify-center">
-          <Link href="/blogs">
-            <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
-              Explore All Blogs
-            </button>
-          </Link>
-        </div>
+
+         <div className="relative  mt-10">
+          {/* Background decoration */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#2563eb]/5 to-purple-500/5 rounded-3xl"></div>
+          
+          <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl 
+                         border border-gray-200 dark:border-gray-700 p-8 md:p-12 text-center
+                         shadow-xl">
+            {/* CTA Content */}
+            <div className="max-w-3xl mx-auto">
+              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#2563eb]/10 to-purple-500/10 
+                             rounded-full text-[#2563eb] dark:text-blue-400 text-sm font-medium mb-6">
+                <Users className="w-4 h-4 mr-2" />
+                Join 10,000+ AI Enthusiasts
+              </div>
+
+              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                Ready to Master AI and 
+                <span className="text-[#2563eb] block md:inline md:ml-2">
+                  Transform Your Workflow?
+                </span>
+              </h3>
+
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                Discover comprehensive guides, cutting-edge tools, and proven strategies that help you 
+                leverage AI for better SEO, increased productivity, and business growth.
+              </p>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link
+                  href="/blogs"
+                  className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] 
+                           hover:from-[#1d4ed8] hover:to-[#1e40af] text-white font-semibold rounded-xl
+                           shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 ease-out
+                           min-w-[200px] justify-center"
+                >
+                  <BookOpen className="w-5 h-5 mr-2 group-hover:animate-pulse" />
+                  Explore All Blogs
+                  <ArrowRight className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" />
+                </Link>
+
+                <Link
+                  href="/free-ai-resources"
+                  className="group inline-flex items-center px-8 py-4 bg-white dark:bg-gray-700
+                           border-2 border-[#2563eb] text-[#2563eb] dark:text-blue-400 font-semibold rounded-xl
+                           hover:bg-[#2563eb] hover:text-white dark:hover:bg-blue-600 dark:hover:text-white
+                           shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out
+                           min-w-[200px] justify-center"
+                >
+                  <Sparkles className="w-5 h-5 mr-2 group-hover:animate-spin" />
+                  Free Resources
+                </Link>
+              </div>
+
+              {/* Trust indicators */}
+              <div className="flex flex-wrap justify-center items-center gap-6 mt-8 text-sm text-gray-500 dark:text-gray-400">
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  No spam, ever
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                  Weekly updates
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                  100% Free content
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
       </div>
     </section>
   );

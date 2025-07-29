@@ -9,11 +9,11 @@ import { Code, DollarSign, Wrench } from "lucide-react"; // Ensure Wrench is imp
 import HomeBigCard from "@/components/Blog/HomeBigCard";
 import HomeSmallCard from "@/components/Blog/CategoryRightSideCards"; // This is your existing small card
 import SingleBlog from "@/components/Blog/HomeSmallCard"; // Your new second small card for AITools (assuming it's HomeSmallCard)
-import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for refreshGroup
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
+import Breadcrumb from "../Common/Breadcrumb";
 
 const MixedCategoriesSection  = ({ initialData = {} }) => { // Accept initialData prop
 
@@ -128,14 +128,19 @@ const MixedCategoriesSection  = ({ initialData = {} }) => { // Accept initialDat
   const secondAiTool = aiToolsData && aiToolsData.length > 1 ? aiToolsData[1] : null;
 
   return (
-    <section className="py-16 ">
+    <section className="py-4 ">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Featured Content</h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Discover the latest in AI tools, coding tutorials, and money-making opportunities
-          </p>
-        </div>
+        <Breadcrumb
+  pageName="AI Tools, Code &"
+  pageName2="Learn with AI"
+ 
+  description="Explore the latest in AI-powered tools, code automation, and smart earning strategies—all in one place."
+firstlinktext="Home"
+          firstlink="/"
+          link="/ai-seo"
+          linktext=""
+/>
+
 
         {/* NEW: Stale Data Warning */}
         {isStale && (firstAiTool || secondAiTool || aiCodeData?.length > 0 || aiEarnData?.length > 0) && (
@@ -255,21 +260,57 @@ const MixedCategoriesSection  = ({ initialData = {} }) => { // Accept initialDat
         </Grid>
 
         {/* Bottom CTA Buttons */}
+       {/* Bottom CTA Buttons */}
         <div className="text-center mt-12">
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/ai-tools">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
-                <Wrench className="w-4 h-4" />Explore AI Tools
-              </button>
-            </Link>
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6"> {/* Slightly reduced gap for tighter packing on smaller screens */}
+            {/* AI Code Button (Green Theme) */}
             <Link href="/ai-code">
-              <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
-                <Code className="w-4 h-4" />View AI Code
+              <button className="
+                px-5 py-2.5                       
+                rounded-lg
+                bg-green-600
+                text-white text-sm font-semibold 
+                shadow-sm
+                hover:bg-green-700
+                transition-colors duration-300 ease-in-out
+                focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700
+                flex items-center gap-2
+              ">
+                <Code className="w-4 h-4" />Explore AI Code
               </button>
             </Link>
+
+            {/* AI Tools Button (Blue Theme) - Still centered and slightly more prominent, but overall smaller */}
+            <Link href="/ai-tools">
+              <button className="
+                px-6 py-3                      
+                rounded-full
+                bg-blue-600
+                text-white text-base font-bold 
+                shadow-md hover:shadow-lg
+                hover:bg-blue-700
+                transition-colors duration-300 ease-in-out
+                focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700
+                flex items-center gap-2
+              ">
+                <Wrench className="w-4 h-4" />Discover AI Tools
+              </button>
+            </Link>
+
+            {/* AI Learn & Earn Button (Purple Theme) */}
             <Link href="/ai-learn-earn">
-              <button className="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />Start Earning
+              <button className="
+                px-5 py-2.5                      
+                rounded-lg
+                bg-purple-600
+                text-white text-sm font-semibold
+                shadow-sm
+                hover:bg-purple-700
+                transition-colors duration-300 ease-in-out
+                focus:outline-none focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-700
+                flex items-center gap-2
+              ">
+                <DollarSign className="w-4 h-4" />Learn & Earn with AI
               </button>
             </Link>
           </div>

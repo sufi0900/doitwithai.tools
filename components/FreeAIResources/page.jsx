@@ -1,15 +1,14 @@
 import React, { useMemo, useCallback } from 'react'; // Added useMemo, useCallback
-import { groq } from "next-sanity";
 import dynamic from 'next/dynamic';
 import ResourceCard from '@/app/free-ai-resources/RelatedesourceCard';
 import Link from 'next/link';
 import ResourceSkeleton from '@/app/free-ai-resources/ResourceSkeleton';
 import ResourceModalsProvider from '@/app/free-ai-resources/ResourceModalsProvider';
-import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for refreshGroup
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
+import Breadcrumb from '../Common/Breadcrumb';
 
 const DynamicResourceCarousel = dynamic(() => import('@/app/free-ai-resources/ResourceCarousel'), {
   ssr: false,
@@ -25,7 +24,7 @@ const DynamicResourceCarousel = dynamic(() => import('@/app/free-ai-resources/Re
 const FeaturedResourcesHorizontal  = ({ initialData = {} }) => { // Accept initialData prop
 
   // Memoize the query
-  const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...3]{
+  const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...30]{
     _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
     content,publishedAt,"resourceFile":resourceFile.asset->,promptContent,previewSettings,_updatedAt
   }`, []);
@@ -120,15 +119,17 @@ const FeaturedResourcesHorizontal  = ({ initialData = {} }) => { // Accept initi
   }
 
   return (
-    <section className="py-16 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <section className="py-2">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col items-center mb-10 text-center">
-          <h2 className="text-3xl font-bold mb-2">Featured Resources</h2>
-          <div className="w-20 h-1 bg-primary rounded mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300 max-w-2xl">
-            Discover our curated collection of premium AI resources, templates, and tools
-          </p>
-        </div>
+         <Breadcrumb
+          pageName="Free AI Resources"
+          pageName2="for You"
+          description="Discover free downloadable resources—ChatGPT prompts, AI templates, tools, and visuals—designed to boost your SEO and everyday productivity."
+          firstlinktext="Home"
+          firstlink="/"
+          link="/free-ai-resources"
+          linktext="Free Resources"
+        />
         {/* NEW: Stale Data Warning */}
         {isStale && featuredResources.length > 0 && (
           <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -154,13 +155,25 @@ const FeaturedResourcesHorizontal  = ({ initialData = {} }) => { // Accept initi
         )}
         <DynamicResourceCarousel>
           {featuredResources.map((resource) => (
-            <ResourceCard key={resource._id} resource={resource} wrapperClassName="h-full" />
+            <ResourceCard key={resource._id} resource={resource} wrapperClassName="h-full mb-4 " />
           ))}
         </DynamicResourceCarousel>
-        <div className="mt-10 text-center">
-          <Link href="/free-ai-resources" className="inline-flex items-center bg-primary hover:bg-primary-dark text-white py-3 px-6 rounded-md transition-colors">
-            View All Resources
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+      <div className="mt-10 text-center">
+          <Link href="/free-ai-resources" className="inline-block group">
+            <button className="
+              px-6 py-2.5
+              rounded-lg
+              bg-blue-600
+              text-white text-base font-semibold
+              shadow-md
+              hover:bg-blue-700
+              transition-colors duration-300 ease-in-out
+              focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700
+              flex items-center gap-2
+            ">
+              View All Resources
+              <svg className="w-4 h-4 ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
           </Link>
         </div>
       </div>

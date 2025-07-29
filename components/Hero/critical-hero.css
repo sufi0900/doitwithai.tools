@@ -1,54 +1,5 @@
 /* Enhanced entrance animations for better visual impact */
 
-/* 1. AUDIENCE BADGES - Individual staggered animations (Revised for Decency & FOUC fix) */
-@keyframes fadeInSlightlyUp {
-  0% {
-    opacity: 0;
-    transform: translateY(10px); /* Subtle lift from just below */
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 2. BENEFIT CARDS - Enhanced with bounce and scale effects (Revised for Decency & FOUC fix) */
-@keyframes cardFadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(30px); /* Gentle slide up */
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* 3. ENHANCED ICON ANIMATIONS (iconPop removed) */
-@keyframes iconFloat {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-/* 4. VALUE INDICATORS - Wave animation (Unchanged as it was not mentioned as "playful") */
-@keyframes waveIn {
-  0% {
-    opacity: 0;
-    transform: translateY(30px) rotateZ(-10deg) scale(0.5);
-  }
-  60% {
-    transform: translateY(-8px) rotateZ(5deg) scale(1.1);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) rotateZ(0deg) scale(1);
-  }
-}
-
 /* 5. ENHANCED HOVER EFFECTS (Unchanged as they contribute to professionalism) */
 .ai-benefit-card {
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -56,16 +7,6 @@
   perspective: 1000px;
 }
 
-.ai-benefit-card:hover {
-  transform: translateY(-12px) scale(1.03);
-  box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.1),
-    0 8px 16px rgba(37, 99, 235, 0.15);
-}
-
-.ai-benefit-card:hover .ai-icon-pulse {
-  animation: iconFloat 2s ease-in-out infinite;
-}
 
 /* 6. AUDIENCE BADGE HOVER EFFECTS (Unchanged as they contribute to professionalism) */
 .audience-badge {
@@ -73,10 +14,7 @@
   cursor: pointer;
 }
 
-.audience-badge:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
+
 
 /* 7. STAGGERED ANIMATION CLASSES (Updated with new keyframes and FOUC fix) */
 /* Initially hide elements that will be animated to prevent FOUC */
@@ -147,18 +85,6 @@
 }
 
 
-/* 11. REDUCED MOTION OVERRIDES (from AI expert) */
-@media (prefers-reduced-motion: reduce) {
-  .ai-benefit-card:hover,
-  .audience-badge:hover {
-    transform: none;
-    box-shadow: none;
-  }
-
-  .hero-animations-active .ai-icon-pulse {
-    animation: none;
-  }
-}
 
 /* Remaining original CSS rules below (cleaned of conflicting animations) */
 
@@ -168,13 +94,7 @@
 }
 .animate-shimmer-custom { animation: shimmer 2s ease-in-out infinite; will-change: transform; animation-delay: 2s}
 
-/* IMPORTANT FIX FOR FOUC:
-   The `animated-staggered-item` should *only* apply initial hidden/transformed states
-   if specific animations aren't already setting them.
-   For badges, cards, and value indicators, their specific animation keyframes
-   (fadeInSlightlyUp, cardFadeInUp, waveIn) now correctly set their `0%` opacity and transform.
-   This means the generic `animated-staggered-item` shouldn't override or interfere.
-*/
+
 .animated-staggered-item {
   /* The specific animations for badges, cards, and values handle their initial states. */
   /* This rule is now primarily for other elements that don't have a dedicated staggered animation */
@@ -213,28 +133,12 @@
   transition-duration: 0.01ms !important;
 }
 
-/* Add reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .hero-section * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
+
   /* SVG Performance Optimizations */
 svg {
   contain: strict;
   will-change: auto;
   shape-rendering: geometricPrecision;
-}
-
-/* Reduce animation complexity for better performance */
-@media (prefers-reduced-motion: reduce) {
-  .animated-staggered-item,
-  [style*="animation"] {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-  }
 }
 
 /* GPU acceleration for smooth animations */
@@ -249,13 +153,7 @@ svg {
   text-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
 }
 
-/* Better contrast for dark mode */
-@media (prefers-color-scheme: dark) {
-  .brand-highlight {
-    color: #60a5fa;
-    text-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
-  }
-}
+
 
 /* Enhanced focus indicators */
 .hero-section a:focus-visible,
@@ -297,13 +195,6 @@ svg {
   color: #e5e7eb; /* dark:text-gray-200 */
 }
 
-/*
-  CRITICAL HERO CUSTOM CSS
-  -------------------------
-  This file contains styles that are essential for the initial render
-  of the hero section, including animations, reduced motion preferences,
-  and hover effects that might be more complex than simple Tailwind utilities.
-*/
 
 /* 1. Base Styles for Hover Effects */
 /* This ensures smooth transitions for all elements with the 'transition-all' utility */
@@ -311,17 +202,6 @@ svg {
   --animation-play-state: running; /* Custom property for animation control */
 }
 
-/* 2. Optimized Hover Effects */
-
-/* Brand Text (DOITWITHAITOOLS) - Hover effect **REMOVED** as requested */
-/* The previous .brand-text:hover rules are removed to fix the look */
-
-/* General Link/Span Hover for descriptive text */
-p span.font-semibold:hover,
-p span.font-bold:hover {
-  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2); /* Subtle shadow for text */
-  cursor: pointer; /* Added pointer cursor */
-}
 
 /* Audience Badges */
 .audience-badge {
@@ -346,13 +226,7 @@ p span.font-bold:hover {
   transform: scale(0);
 }
 
-/* Audience Badges - Hover effect (refined, no scale/translate) */
-.audience-badge:hover {
-  transform: translateY(-2px); /* Slight lift */
 
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15), /* Slightly more pronounced shadow for depth */
-              0 0 0 2px var(--badge-hover-ring-color, transparent); /* Keep the subtle ring */
-}
 
 .audience-badge:hover::before {
   transform: scale(1);
@@ -362,12 +236,6 @@ p span.font-bold:hover {
 .dark .audience-badge::before {
   background: radial-gradient(circle at center, rgba(147, 197, 253, 0.15) 0%, transparent 70%); /* Subtle light blue glow for dark mode */
 }
-/* Define specific badge colors for the ring on hover if needed */
-.audience-badge.bg-blue-100:hover { --badge-hover-ring-color: rgba(59, 130, 246, 0.5); } /* Blue-600 with opacity */
-.audience-badge.bg-purple-100:hover { --badge-hover-ring-color: rgba(168, 85, 247, 0.5); } /* Purple-600 with opacity */
-.audience-badge.bg-orange-100:hover { --badge-hover-ring-color: rgba(249, 115, 22, 0.5); } /* Orange-600 with opacity */
-.audience-badge.bg-pink-100:hover { --badge-hover-ring-color: rgba(236, 72, 153, 0.5); } /* Pink-600 with opacity */
-.audience-badge.bg-green-100:hover { --badge-hover-ring-color: rgba(34, 197, 94, 0.5); } /* Green-600 with opacity */
 
 
 /* AI Benefit Cards */
@@ -379,11 +247,7 @@ p span.font-bold:hover {
   z-index: 1;
   transform-style: preserve-3d;
   cursor: pointer;
-  /*
-    REMOVED: border-color: var(--initial-border-color, var(--tw-border-gray-200));
-    This line caused the unexpected black border.
-    The initial border color is now handled directly by Tailwind classes in HTML (e.g., border-blue-200, border-gray-200).
-  */
+
 }
 
 .ai-benefit-card::after {
@@ -400,39 +264,7 @@ p span.font-bold:hover {
   z-index: 2;
 }
 
-.ai-benefit-card:hover {
-  transform: translateY(-5px) scale(1.02); /* More pronounced lift and scale */
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); /* Stronger shadow */
-  /* This variable will be set by specific card classes on hover */
-  border-color: var(--card-hover-border-color, currentColor);
-}
 
-.ai-benefit-card:hover::after {
-  box-shadow: inset 0 0 15px 3px var(--card-inset-glow-color, rgba(0,0,0,0.1)); /* Inner glow */
-}
-
-/* Define colors for specific card types */
-
-/* FIRST CARD SPECIFIC FIX: Ensure its initial border and hover border are controlled */
-/* The initial border is now solely from HTML's `border-blue-200` */
-.ai-benefit-card:first-child:hover {
-  /* Only change border color to blue-600 on hover, like the others */
-  border-color: #2563eb; /* Blue-600 */
-  --card-inset-glow-color: rgba(59, 130, 246, 0.2); /* Blue-500 with opacity */
-  --card-hover-border-color: #2563eb; /* Explicitly set hover border color */
-}
-
-
-.ai-benefit-card.card-purple:hover {
-  border-color: #9333ea; /* Purple-600 */
-  --card-inset-glow-color: rgba(168, 85, 247, 0.2); /* Purple-500 with opacity */
-  --card-hover-border-color: #9333ea; /* Explicitly set hover border color */
-}
-.ai-benefit-card.card-green:hover {
-  border-color: #16a34a; /* Green-600 */
-  --card-inset-glow-color: rgba(34, 197, 94, 0.2); /* Green-500 with opacity */
-  --card-hover-border-color: #16a34a; /* Explicitly set hover border color */
-}
 
 /* Pulsing effect for icons inside benefit cards */
 .ai-icon-pulse {
@@ -462,87 +294,7 @@ p span.font-bold:hover {
   opacity: 0.3; /* Subtle glow */
 }
 
-/* Specific pulse colors */
-.ai-icon-pulse.pulse-blue::before { background: radial-gradient(circle at center, rgba(59, 130, 246, 0.5) 0%, transparent 70%); }
-.ai-icon-pulse.pulse-purple::before { background: radial-gradient(circle at center, rgba(168, 85, 247, 0.5) 0%, transparent 70%); }
-.ai-icon-pulse.pulse-green::before { background: radial-gradient(circle at center, rgba(34, 197, 94, 0.5) 0%, transparent 70%); }
 
-
-/* Shimmer visibility for light/dark mode for first child (UNTOUCHED FROM YOUR ORIGINAL) */
-/* 2. IMPROVED: More noticeable, two-line, and subtle BLUE-ONLY shimmer for Benefit Card (Light Mode - Enhanced Presence) */
-.ai-benefit-card:first-child::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  /* Refined gradient for a more noticeable, two-line, and subtle BLUE-ONLY shimmer in light mode */
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(59, 130, 246, 0.08) 15%,   /* Slightly more noticeable blue tint start */
-    rgba(59, 130, 246, 0.25) 30%,   /* First subtle blue highlight */
-    rgba(59, 130, 246, 0.45) 45%,   /* Peak of first blue shimmer line (enhanced presence) */
-    rgba(59, 130, 246, 0.25) 55%,   /* Valley between lines / start of second */
-    rgba(59, 130, 246, 0.45) 70%,   /* Peak of second blue shimmer line (enhanced presence) */
-    rgba(59, 130, 246, 0.08) 85%,   /* Slightly more noticeable blue tint end */
-    transparent 100%
-  );
-  transform: skewX(-20deg); /* Consistent less aggressive angle */
-  animation: shimmerHighlight 5s ease-in-out infinite;
-  z-index: 3;
-  pointer-events: none;
-}
-/* Dark mode variant */
-/* Dark mode variant (updated for a more decent shimmer) */
-.dark .ai-benefit-card:first-child::before {
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(147, 197, 253, 0.1) 25%,    /* Subtle blue tint */
-    rgba(255, 255, 255, 0.5) 40%,    /* Softer white highlight */
-    rgba(147, 197, 253, 0.3) 50%,    /* Subtle blue peak */
-    rgba(255, 255, 255, 0.5) 60%,    /* Softer white highlight */
-    rgba(147, 197, 253, 0.1) 75%,    /* Subtle blue tint */
-    transparent 100%
-  );
-}
-
-@keyframes shimmerHighlight {
-  0% {
-    left: -100%;
-    opacity: 0; /* Expert's version: starts hidden */
-  }
-  10% {
-    opacity: 1;
-  }
-  50% {
-    left: 100%;
-    opacity: 1;
-  }
-  100% {
-    left: 100%;
-    opacity: 0;
-  }
-}
-
-
-
-
-
-/* Pulsing icon on hover (UNTOUCHED FROM YOUR ORIGINAL) */
-.ai-benefit-card:hover .ai-icon-pulse::before {
-  width: 150%;
-  height: 150%;
-  opacity: 0.3; /* Subtle glow */
-}
-
-
-
-/* Dark mode adjustment for Value Indicator hover ring */
-.dark .value-indicator:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), /* Enhanced shadow for dark mode */
-              0 0 0 2px rgba(147, 197, 253, 0.5); /* Lighter blue ring for dark mode (Tailwind blue-300 with opacity) */
-}
 
 /* Value Indicators (small badges below CTA) - Enhanced Hover Effect */
 .value-indicator {
@@ -552,54 +304,6 @@ p span.font-bold:hover {
   z-index: 1;
   cursor: pointer;
 }
-
-.value-indicator::before {
-  content: '';
-  position: absolute;
-  top: 50%;       /* Center vertically */
-  left: 50%;      /* Center horizontally */
-  width: 100%;    /* Initial width to cover the badge when scaled */
-  height: 100%;   /* Initial height to cover the badge when scaled */
-  border-radius: 50%; /* Ensures the expanding effect is circular */
-  /* Radial gradient for a soft, glowing wash effect from the center */
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-  transform: translate(-50%, -50%) scale(0); /* Start hidden and perfectly centered */
-  opacity: 0;
-  transition: transform 0.4s ease-out, opacity 0.4s ease-out; /* Smooth transition for the glow */
-  z-index: -1; /* Ensures the glow remains behind the badge content */
-}
-
-/* FIX: Dark mode specific glow for value indicators */
-.dark .value-indicator::before {
-  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, transparent 70%); /* Subtle dark transparent glow */
-}
-
-
-.value-indicator:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.15), /* Enhanced shadow for light mode */
-    0 0 0 2px var(--value-indicator-hover-ring-color, transparent);
-  outline: 1px solid var(--value-indicator-hover-ring-color, transparent);
-  outline-offset: 1px;
-  border-color: var(--value-indicator-hover-ring-color, transparent);
-}
-
-.value-indicator:hover::before {
-  transform: translate(-50%, -50%) scale(1.3); /* Scale up to ensure full badge coverage, even for wider badges */
-  opacity: 1; /* Make the glow fully visible */
-}
-/* Define specific ring colors for Value Indicators on hover (Light Mode - Keeping current enhanced visibility) */
-.value-indicator.bg-blue-100:hover { --value-indicator-hover-ring-color: rgba(59, 130, 246, 0.8); }   /* Blue-600 with higher opacity */
-.value-indicator.bg-green-100:hover { --value-indicator-hover-ring-color: rgba(34, 197, 94, 0.8); }  /* Green-600 with higher opacity */
-.value-indicator.bg-purple-100:hover { --value-indicator-hover-ring-color: rgba(168, 85, 247, 0.8); } /* Purple-600 with higher opacity */
-.value-indicator.bg-teal-100:hover { --value-indicator-hover-ring-color: rgba(13, 148, 136, 0.8); }   /* Teal-600 with higher opacity */
-
-/* Define specific ring colors for Value Indicators on hover (Dark Mode - NEW: Improved Distinction and Visibility) */
-.dark .value-indicator.bg-blue-100:hover { --value-indicator-hover-ring-color: rgba(96, 165, 250, 0.9); }   /* Blue-400: Clearer blue */
-.dark .value-indicator.bg-green-100:hover { --value-indicator-hover-ring-color: rgba(74, 222, 128, 0.9); }  /* Green-400: More distinct green */
-.dark .value-indicator.bg-purple-100:hover { --value-indicator-hover-ring-color: rgba(192, 132, 252, 0.9); } /* Purple-400: Clearer purple */
-.dark .value-indicator.bg-teal-100:hover { --value-indicator-hover-ring-color: rgba(34, 211, 238, 0.9); }   /* Cyan-400: Ensures distinctness from other blue/green shades */
 
 
 /* Trust Text (footer text) (UNTOUCHED FROM YOUR ORIGINAL) */
@@ -662,22 +366,6 @@ p span.font-bold:hover {
   backface-visibility: hidden;
 }
 
-/* Press-in effect with much stronger glow for light mode */
-.press-button:hover {
-  /* Darker background for press illusion */
-  background-color: #1055e9;
-  
-  /* Strong multi-layer glow effect - ADJUSTED FOR MORE NOTICEABLE GLOW IN LIGHT MODE */
-  box-shadow:
-    /* Inner shadow for pressed feeling - KEPT OUT AS PER YOUR FINDING */
-    
-    /* Outer glows - multiple layers for intensity */
-    0 0 0 1px rgba(59, 130, 246, 0.4),        /* Border glow */
-    0 2px 8px rgba(59, 130, 246, 0.4),        /* Close glow - increased opacity */
-    0 6px 20px rgba(59, 130, 246, 0.5),       /* Medium glow - increased spread/opacity */
-    0 12px 40px rgba(59, 130, 246, 0.6),      /* Far glow - increased spread/opacity */
-    0 0 80px rgba(59, 130, 246, 0.4);         /* Ambient glow - increased spread/opacity */
-}
 
 /* Active state for even more pressed feeling */
 .press-button:active {
@@ -744,23 +432,6 @@ p span.font-bold:hover {
   border-radius: 0.5rem;
 }
 
-/* Secondary button press effect with strong glow */
-.press-button-secondary:hover {
-  /* Darker background for press feeling */
-  background-color: rgba(229, 231, 235, 0.95);
-  border-color: rgba(107, 114, 128, 0.4);
-  
-  /* Multi-layer glow effect */
-  box-shadow:
-    /* Removed inset shadows as per your finding */
-    
-    /* Outer glows */
-    0 0 0 1px rgba(107, 114, 128, 0.3),
-    0 2px 8px rgba(107, 114, 128, 0.2),
-    0 4px 16px rgba(107, 114, 128, 0.3),
-    0 8px 32px rgba(107, 114, 128, 0.4),
-    0 0 50px rgba(107, 114, 128, 0.25);
-}
 
 .press-button-secondary:active {
   background: rgba(209, 213, 219, 0.95);
@@ -781,21 +452,6 @@ p span.font-bold:hover {
     0 4px 16px rgba(59, 130, 246, 0.3);
 }
 
-.dark .press-button:hover {
-  background-color: #2158ce; /* Main button color */
-  
-  /* NEW GLOW STRATEGY FOR DARK MODE */
-  box-shadow:
-    /* No inset shadows here based on your finding */
-    
-    /* Border on hover for distinction */
-    0 0 0 1px rgba(59, 130, 246, 0.6), /* Visible border to separate glow */
-    
-    /* Shifted outer glows to create a "behind" effect */
-    0 8px 32px rgba(59, 130, 246, 0.4), /* Moved closer to the bottom/farther out */
-    0 16px 64px rgba(59, 130, 246, 0.3), /* Even further out, higher blur */
-    0 0 80px rgba(59, 130, 246, 0.2);   /* Ambient glow, slightly less intense */
-}
 
 .dark .press-button-secondary {
   /* Updated to background-color */
@@ -879,18 +535,6 @@ p span.font-bold:hover {
   opacity: 0;
 }
 
-/* RESPONSIVE OPTIMIZATIONS */
-@media (max-width: 768px) {
-  .press-button:hover,
-  .press-button-secondary:hover {
-    /* Reduced glow for mobile performance */
-    box-shadow:
-      /* Inset shadows remain removed */
-      0 0 0 1px rgba(59, 130, 246, 0.4),
-      0 2px 8px rgba(59, 130, 246, 0.3),
-      0 4px 16px rgba(59, 130, 246, 0.4);
-  }
-}
 
 /* Focus states for accessibility */
 .press-button:focus-visible,
@@ -899,43 +543,8 @@ p span.font-bold:hover {
   outline-offset: 2px;
 }
 
-/* Disable effects for users who prefer reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .press-button,
-  .press-button-secondary {
-    transition: none;
-  }
-  
-  .press-button::after {
-    animation: none;
-  }
-  
-  .press-button:active,
-  .press-button-secondary:active {
-    transform: none;
-  }
-}
 
 
-/* ACCESSIBILITY: Respect reduced motion preferences (UNTOUCHED FROM YOUR ORIGINAL) */
-@media (prefers-reduced-motion: reduce) {
-  .ai-benefit-card:first-child::before,
-  .press-button:first-of-type::after {
-    animation: none;
-    display: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-            .press-button:first-of-type::after {
-                animation: none;
-                display: none;
-            }
-            .press-button, .press-button-secondary {
-                transition: none;
-            }
- }
-
-/* Enhanced CSS with Dual Badge System */
 
 /* Original badge for larger devices (stays with "S") */
 .new-launch-badge {
@@ -999,23 +608,11 @@ p span.font-bold:hover {
   display: flex; /* Inherit from parent, or set explicitly */
   align-items: center;
   justify-content: center;
-  
-  /* Inherit visual styles or apply them here if not desired on parent */
-  /* For instance, if you want a subtle container without the full background */
-  /* For now, just apply the transform. */
-  transform: scale(0.8); /* Initial scale applied here now */
+
   transition: transform 0.4s ease-out 0.4s; /* Transition for initial scale */
   will-change: transform;
   
-  /* Make sure background, padding, border-radius, shadow are on the element that animates */
-  /* If you want the text to not scale, then the text needs to be outside this scaling element. */
-  /* But you want the *badge* to breathe, which implies the background and everything scales. */
-  /* So, the text has to be inside the element that scales *with* the background. */
-  /* The original description suggests the *text itself* is moving relative to its container, not the container scaling. */
-  /* Let's refine based on the desired visual: the *entire badge shape* (including text) breathes,
-     but the text *inside* it should not shift *its position relative to the badge's center*.
-     This is usually an optical illusion or a rendering artifact when scaling.
-     Let's adjust the animation to minimize perceived text shift. */
+
 }
 
 /* Show mobile badge only on small devices */
@@ -1147,21 +744,6 @@ p span.font-bold:hover {
     0 0 0 1px rgba(34, 197, 94, 0.2);
 }
 
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .new-launch-badge,
-  .new-launch-badge-mobile {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    transition-delay: 0s !important;
-  }
-  
-  .ai-heading:hover .new-launch-badge,
-  .new-launch-badge-mobile:hover {
-    transform: none;
-  }
-}
 
 
 /* svgss */
@@ -1418,7 +1000,6 @@ p span.font-bold:hover {
 }
 
 
-
 @media (max-width: 1023px) {
   .hero-animations-active .top-right-svg {
     opacity: 0 !important;
@@ -1427,4 +1008,393 @@ p span.font-bold:hover {
 }
 .herobg{
   box-shadow: rgba(0, 0, 0, 0.15) 0px 3px 3px 0px;
+}
+
+/* 1. AUDIENCE BADGES - Individual staggered animations (Revised for Decency & FOUC fix) */
+@keyframes fadeInSlightlyUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px); /* Subtle lift from just below */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 2. BENEFIT CARDS - Enhanced with bounce and scale effects (Revised for Decency & FOUC fix) */
+@keyframes cardFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px); /* Gentle slide up */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 3. ENHANCED ICON ANIMATIONS (iconPop removed) */
+@keyframes iconFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* 4. VALUE INDICATORS - Wave animation (Unchanged as it was not mentioned as "playful") */
+@keyframes waveIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) rotateZ(-10deg) scale(0.5);
+  }
+  60% {
+    transform: translateY(-8px) rotateZ(5deg) scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateZ(0deg) scale(1);
+  }
+}
+.ai-benefit-card:hover {
+  transform: translateY(-12px) scale(1.03);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(37, 99, 235, 0.15);
+}
+
+.ai-benefit-card:hover .ai-icon-pulse {
+  animation: iconFloat 2s ease-in-out infinite;
+}
+.audience-badge:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+/* 11. REDUCED MOTION OVERRIDES (from AI expert) */
+@media (prefers-reduced-motion: reduce) {
+  .ai-benefit-card:hover,
+  .audience-badge:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .hero-animations-active .ai-icon-pulse {
+    animation: none;
+  }
+}
+/* Define specific badge colors for the ring on hover if needed */
+.audience-badge.bg-blue-100:hover { --badge-hover-ring-color: rgba(59, 130, 246, 0.5); } /* Blue-600 with opacity */
+.audience-badge.bg-purple-100:hover { --badge-hover-ring-color: rgba(168, 85, 247, 0.5); } /* Purple-600 with opacity */
+.audience-badge.bg-orange-100:hover { --badge-hover-ring-color: rgba(249, 115, 22, 0.5); } /* Orange-600 with opacity */
+.audience-badge.bg-pink-100:hover { --badge-hover-ring-color: rgba(236, 72, 153, 0.5); } /* Pink-600 with opacity */
+.audience-badge.bg-green-100:hover { --badge-hover-ring-color: rgba(34, 197, 94, 0.5); } /* Green-600 with opacity */
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .new-launch-badge,
+  .new-launch-badge-mobile {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition-delay: 0s !important;
+  }
+  
+  .ai-heading:hover .new-launch-badge,
+  .new-launch-badge-mobile:hover {
+    transform: none;
+  }
+}
+.ai-benefit-card:hover {
+  transform: translateY(-5px) scale(1.02); /* More pronounced lift and scale */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+  /* This variable will be set by specific card classes on hover */
+  border-color: var(--card-hover-border-color, currentColor);
+}
+
+.ai-benefit-card:hover::after {
+  box-shadow: inset 0 0 15px 3px var(--card-inset-glow-color, rgba(0,0,0,0.1)); /* Inner glow */
+}
+
+/* Define colors for specific card types */
+
+/* FIRST CARD SPECIFIC FIX: Ensure its initial border and hover border are controlled */
+/* The initial border is now solely from HTML's `border-blue-200` */
+.ai-benefit-card:first-child:hover {
+  /* Only change border color to blue-600 on hover, like the others */
+  border-color: #2563eb; /* Blue-600 */
+  --card-inset-glow-color: rgba(59, 130, 246, 0.2); /* Blue-500 with opacity */
+  --card-hover-border-color: #2563eb; /* Explicitly set hover border color */
+}
+
+
+.ai-benefit-card.card-purple:hover {
+  border-color: #9333ea; /* Purple-600 */
+  --card-inset-glow-color: rgba(168, 85, 247, 0.2); /* Purple-500 with opacity */
+  --card-hover-border-color: #9333ea; /* Explicitly set hover border color */
+}
+.ai-benefit-card.card-green:hover {
+  border-color: #16a34a; /* Green-600 */
+  --card-inset-glow-color: rgba(34, 197, 94, 0.2); /* Green-500 with opacity */
+  --card-hover-border-color: #16a34a; /* Explicitly set hover border color */
+}
+p span.font-semibold:hover,
+p span.font-bold:hover {
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2); /* Subtle shadow for text */
+  cursor: pointer; /* Added pointer cursor */
+}
+/* Audience Badges - Hover effect (refined, no scale/translate) */
+.audience-badge:hover {
+  transform: translateY(-2px); /* Slight lift */
+
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15), /* Slightly more pronounced shadow for depth */
+              0 0 0 2px var(--badge-hover-ring-color, transparent); /* Keep the subtle ring */
+}
+/* Add reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .hero-section * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Reduce animation complexity for better performance */
+@media (prefers-reduced-motion: reduce) {
+  .animated-staggered-item,
+  [style*="animation"] {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+/* Disable effects for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .press-button,
+  .press-button-secondary {
+    transition: none;
+  }
+  
+  .press-button::after {
+    animation: none;
+  }
+  
+  .press-button:active,
+  .press-button-secondary:active {
+    transform: none;
+  }
+}
+/* RESPONSIVE OPTIMIZATIONS */
+@media (max-width: 768px) {
+  .press-button:hover,
+  .press-button-secondary:hover {
+    /* Reduced glow for mobile performance */
+    box-shadow:
+      /* Inset shadows remain removed */
+      0 0 0 1px rgba(59, 130, 246, 0.4),
+      0 2px 8px rgba(59, 130, 246, 0.3),
+      0 4px 16px rgba(59, 130, 246, 0.4);
+  }
+}
+/* Better contrast for dark mode */
+@media (prefers-color-scheme: dark) {
+  .brand-highlight {
+    color: #60a5fa;
+    text-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
+  }
+}
+
+/* ACCESSIBILITY: Respect reduced motion preferences (UNTOUCHED FROM YOUR ORIGINAL) */
+@media (prefers-reduced-motion: reduce) {
+  .ai-benefit-card:first-child::before,
+  .press-button:first-of-type::after {
+    animation: none;
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+            .press-button:first-of-type::after {
+                animation: none;
+                display: none;
+            }
+            .press-button, .press-button-secondary {
+                transition: none;
+            }
+ }
+
+/* Enhanced CSS with Dual Badge System */
+/* Specific pulse colors */
+.ai-icon-pulse.pulse-blue::before { background: radial-gradient(circle at center, rgba(59, 130, 246, 0.5) 0%, transparent 70%); }
+.ai-icon-pulse.pulse-purple::before { background: radial-gradient(circle at center, rgba(168, 85, 247, 0.5) 0%, transparent 70%); }
+.ai-icon-pulse.pulse-green::before { background: radial-gradient(circle at center, rgba(34, 197, 94, 0.5) 0%, transparent 70%); }
+
+/* Shimmer visibility for light/dark mode for first child (UNTOUCHED FROM YOUR ORIGINAL) */
+/* 2. IMPROVED: More noticeable, two-line, and subtle BLUE-ONLY shimmer for Benefit Card (Light Mode - Enhanced Presence) */
+.ai-benefit-card:first-child::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  /* Refined gradient for a more noticeable, two-line, and subtle BLUE-ONLY shimmer in light mode */
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.08) 15%,   /* Slightly more noticeable blue tint start */
+    rgba(59, 130, 246, 0.25) 30%,   /* First subtle blue highlight */
+    rgba(59, 130, 246, 0.45) 45%,   /* Peak of first blue shimmer line (enhanced presence) */
+    rgba(59, 130, 246, 0.25) 55%,   /* Valley between lines / start of second */
+    rgba(59, 130, 246, 0.45) 70%,   /* Peak of second blue shimmer line (enhanced presence) */
+    rgba(59, 130, 246, 0.08) 85%,   /* Slightly more noticeable blue tint end */
+    transparent 100%
+  );
+  transform: skewX(-20deg); /* Consistent less aggressive angle */
+  animation: shimmerHighlight 5s ease-in-out infinite;
+  z-index: 3;
+  pointer-events: none;
+}
+/* Dark mode variant */
+/* Dark mode variant (updated for a more decent shimmer) */
+.dark .ai-benefit-card:first-child::before {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(147, 197, 253, 0.1) 25%,    /* Subtle blue tint */
+    rgba(255, 255, 255, 0.5) 40%,    /* Softer white highlight */
+    rgba(147, 197, 253, 0.3) 50%,    /* Subtle blue peak */
+    rgba(255, 255, 255, 0.5) 60%,    /* Softer white highlight */
+    rgba(147, 197, 253, 0.1) 75%,    /* Subtle blue tint */
+    transparent 100%
+  );
+}
+
+@keyframes shimmerHighlight {
+  0% {
+    left: -100%;
+    opacity: 0; /* Expert's version: starts hidden */
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    left: 100%;
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+
+
+
+
+/* Pulsing icon on hover (UNTOUCHED FROM YOUR ORIGINAL) */
+.ai-benefit-card:hover .ai-icon-pulse::before {
+  width: 150%;
+  height: 150%;
+  opacity: 0.3; /* Subtle glow */
+}
+
+
+
+/* Dark mode adjustment for Value Indicator hover ring */
+.dark .value-indicator:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), /* Enhanced shadow for dark mode */
+              0 0 0 2px rgba(147, 197, 253, 0.5); /* Lighter blue ring for dark mode (Tailwind blue-300 with opacity) */
+}
+
+.value-indicator::before {
+  content: '';
+  position: absolute;
+  top: 50%;       /* Center vertically */
+  left: 50%;      /* Center horizontally */
+  width: 100%;    /* Initial width to cover the badge when scaled */
+  height: 100%;   /* Initial height to cover the badge when scaled */
+  border-radius: 50%; /* Ensures the expanding effect is circular */
+  /* Radial gradient for a soft, glowing wash effect from the center */
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  transform: translate(-50%, -50%) scale(0); /* Start hidden and perfectly centered */
+  opacity: 0;
+  transition: transform 0.4s ease-out, opacity 0.4s ease-out; /* Smooth transition for the glow */
+  z-index: -1; /* Ensures the glow remains behind the badge content */
+}
+
+/* FIX: Dark mode specific glow for value indicators */
+.dark .value-indicator::before {
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, transparent 70%); /* Subtle dark transparent glow */
+}
+
+
+.value-indicator:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.15), /* Enhanced shadow for light mode */
+    0 0 0 2px var(--value-indicator-hover-ring-color, transparent);
+  outline: 1px solid var(--value-indicator-hover-ring-color, transparent);
+  outline-offset: 1px;
+  border-color: var(--value-indicator-hover-ring-color, transparent);
+}
+
+.value-indicator:hover::before {
+  transform: translate(-50%, -50%) scale(1.3); /* Scale up to ensure full badge coverage, even for wider badges */
+  opacity: 1; /* Make the glow fully visible */
+}
+/* Define specific ring colors for Value Indicators on hover (Light Mode - Keeping current enhanced visibility) */
+.value-indicator.bg-blue-100:hover { --value-indicator-hover-ring-color: rgba(59, 130, 246, 0.8); }   /* Blue-600 with higher opacity */
+.value-indicator.bg-green-100:hover { --value-indicator-hover-ring-color: rgba(34, 197, 94, 0.8); }  /* Green-600 with higher opacity */
+.value-indicator.bg-purple-100:hover { --value-indicator-hover-ring-color: rgba(168, 85, 247, 0.8); } /* Purple-600 with higher opacity */
+.value-indicator.bg-teal-100:hover { --value-indicator-hover-ring-color: rgba(13, 148, 136, 0.8); }   /* Teal-600 with higher opacity */
+
+/* Define specific ring colors for Value Indicators on hover (Dark Mode - NEW: Improved Distinction and Visibility) */
+.dark .value-indicator.bg-blue-100:hover { --value-indicator-hover-ring-color: rgba(96, 165, 250, 0.9); }   /* Blue-400: Clearer blue */
+.dark .value-indicator.bg-green-100:hover { --value-indicator-hover-ring-color: rgba(74, 222, 128, 0.9); }  /* Green-400: More distinct green */
+.dark .value-indicator.bg-purple-100:hover { --value-indicator-hover-ring-color: rgba(192, 132, 252, 0.9); } /* Purple-400: Clearer purple */
+.dark .value-indicator.bg-teal-100:hover { --value-indicator-hover-ring-color: rgba(34, 211, 238, 0.9); }   /* Cyan-400: Ensures distinctness from other blue/green shades */
+/* Press-in effect with much stronger glow for light mode */
+.press-button:hover {
+  /* Darker background for press illusion */
+  background-color: #1055e9;
+  
+  /* Strong multi-layer glow effect - ADJUSTED FOR MORE NOTICEABLE GLOW IN LIGHT MODE */
+  box-shadow:
+    /* Inner shadow for pressed feeling - KEPT OUT AS PER YOUR FINDING */
+    
+    /* Outer glows - multiple layers for intensity */
+    0 0 0 1px rgba(59, 130, 246, 0.4),        /* Border glow */
+    0 2px 8px rgba(59, 130, 246, 0.4),        /* Close glow - increased opacity */
+    0 6px 20px rgba(59, 130, 246, 0.5),       /* Medium glow - increased spread/opacity */
+    0 12px 40px rgba(59, 130, 246, 0.6),      /* Far glow - increased spread/opacity */
+    0 0 80px rgba(59, 130, 246, 0.4);         /* Ambient glow - increased spread/opacity */
+}
+/* Secondary button press effect with strong glow */
+.press-button-secondary:hover {
+  /* Darker background for press feeling */
+  background-color: rgba(229, 231, 235, 0.95);
+  border-color: rgba(107, 114, 128, 0.4);
+  
+  /* Multi-layer glow effect */
+  box-shadow:
+    /* Removed inset shadows as per your finding */
+    
+    /* Outer glows */
+    0 0 0 1px rgba(107, 114, 128, 0.3),
+    0 2px 8px rgba(107, 114, 128, 0.2),
+    0 4px 16px rgba(107, 114, 128, 0.3),
+    0 8px 32px rgba(107, 114, 128, 0.4),
+    0 0 50px rgba(107, 114, 128, 0.25);
+}
+.dark .press-button:hover {
+  background-color: #2158ce; /* Main button color */
+  
+  /* NEW GLOW STRATEGY FOR DARK MODE */
+  box-shadow:
+    /* No inset shadows here based on your finding */
+    
+    /* Border on hover for distinction */
+    0 0 0 1px rgba(59, 130, 246, 0.6), /* Visible border to separate glow */
+    
+    /* Shifted outer glows to create a "behind" effect */
+    0 8px 32px rgba(59, 130, 246, 0.4), /* Moved closer to the bottom/farther out */
+    0 16px 64px rgba(59, 130, 246, 0.3), /* Even further out, higher blur */
+    0 0 80px rgba(59, 130, 246, 0.2);   /* Ambient glow, slightly less intense */
 }

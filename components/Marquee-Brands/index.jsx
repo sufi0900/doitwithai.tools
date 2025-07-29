@@ -71,14 +71,7 @@ const Marquee = () => {
   return (
     <div className="relative border-b border-body-color/[.15] pb-8 dark:border-white/[.15] md:pb-10 lg:pb-12">
       {/* Section header */}
-      <div className="mb-8 text-center">
-        <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white md:text-3xl">
-          Trusted by AI Innovators
-        </h2>
-        <p className="text-base text-gray-600 dark:text-gray-300">
-          Leading brands powered by AI excellence
-        </p>
-      </div>
+     
 
       {/* Enhanced gradient background */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-purple-50/30 dark:from-blue-900/10 dark:via-transparent dark:to-purple-900/10" />

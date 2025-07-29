@@ -16,71 +16,106 @@ const ResourceCarousel = ({
   const numChildren = React.Children.count(children);
 
   // Settings for the slider - use the slidesToShow prop
-  const settings = {
-    dots: true,
-    infinite: numChildren > 1, // Only enable infinite loop if there's more than one slide
-    speed: 500,
-    slidesToShow: slidesToShow, // Use the prop instead of hardcoded 3
-    slidesToScroll: 1,
-    autoplay: autoplay && numChildren > 1, // Only autoplay if more than one slide
-    autoplaySpeed: autoplaySpeed,
-    pauseOnHover: true,
-    arrows: false,
-    dotsClass: "slick-dots custom-dots",
-    customPaging: function(i) {
-      return (
-        <div className="w-3 h-3 mx-1 rounded-full bg-gray-300 dark:bg-gray-600 hover:bg-primary dark:hover:bg-primary transition-colors"></div>
-      );
-    },
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: Math.min(slidesToShow, 2), // Respect the prop but cap at 2 for tablet
-          slidesToScroll: 1,
-          infinite: numChildren > 2, // Adjust infinite for this breakpoint
-          autoplay: autoplay && numChildren > 2,
-        }
+ const settings = {
+  dots: true,
+  infinite: numChildren > slidesToShow,
+  speed: 500,
+  slidesToShow: slidesToShow,
+  slidesToScroll: slidesToShow, // KEY FIX — scroll and dot count matches slidesToShow
+  autoplay: autoplay && numChildren > 1,
+  autoplaySpeed: autoplaySpeed,
+  pauseOnHover: true,
+  arrows: false,
+  dotsClass: "slick-dots custom-dots",
+  customPaging: function (i) {
+    return (
+      <div className="w-3 h-3 mx-1 rounded-full bg-gray-300 dark:bg-gray-600 hover:bg-primary dark:hover:bg-primary transition-colors"></div>
+    );
+  },
+  responsive: [
+    {
+      breakpoint: 1024,
+      settings: {
+        slidesToShow: Math.min(slidesToShow, 2),
+        slidesToScroll: Math.min(slidesToShow, 2), // keep scroll match
+        infinite: numChildren > 2,
+        autoplay: autoplay && numChildren > 2,
       },
-      {
-        breakpoint: 640,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-          centerMode: true,
-          centerPadding: '0',
-          infinite: numChildren > 1, // Adjust infinite for mobile
-          autoplay: autoplay && numChildren > 1,
-        }
-      }
-    ]
+    },
+    {
+      breakpoint: 640,
+      settings: {
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        centerMode: true,
+        centerPadding: "0",
+        infinite: numChildren > 1,
+        autoplay: autoplay && numChildren > 1,
+      },
+    },
+  ],
+};
+
+// Key changes for ResourceCarousel.js
+
+// 1. Update the useEffect CSS styles
+useEffect(() => {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .custom-dots {
+      position: absolute;
+      bottom: 0px;
+      display: flex !important;
+      justify-content: center;
+      width: 100%;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .custom-dots li {
+      margin: 0 4px;
+      display: inline-block;
+    }
+    .custom-dots li button {
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+    .custom-dots .slick-active div {
+      background-color: #5271FF !important;
+      transform: scale(1.2);
+    }
+    
+    /* FIX: Ensure carousel container has proper positioning */
+    .slick-slider {
+      z-index: 1;
+      position: relative;
+    }
+    
+    /* FIX: Ensure arrows are visible and properly positioned */
+    .carousel-nav {
+      z-index: 20 !important;
+      position: absolute !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      display: flex !important;
+    }
+    
+    /* FIX: Ensure icons inside arrows are visible */
+    .carousel-nav svg {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+  `;
+  document.head.appendChild(style);
+  return () => {
+    document.head.removeChild(style);
   };
-
-  useEffect(() => {
-    // Add custom CSS for the active dot
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .custom-dots .slick-active div {
-        background-color: #5271FF !important;
-        transform: scale(1.2);
-      }
-
-      /* Ensure carousel doesn't interfere with modals */
-      .slick-slider {
-        z-index: 0;
-      }
-
-      /* Fix modal z-index issue */
-      body > div[class*='fixed inset-0'] {
-        z-index: 50 !important;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
+}, []);
 
   // Conditionally render arrows based on the number of children
   const showArrows = numChildren > settings.slidesToShow; // Show arrows only if there are more items than fit in a single view
@@ -96,63 +131,40 @@ const ResourceCarousel = ({
       </Slider>
 
       {/* Custom navigation arrows - only render if needed */}
-      {showArrows && (
-        <>
-          <button
-            className="carouselNav absolute left-0 top-1/2 -translate-y-1/2 z-10
-                       backdrop-blur-md bg-white/10 dark:bg-gray-900/10
-                       border border-white/20 dark:border-gray-700/20
-                       rounded-full p-3 transition-all duration-500 ease-out
-                       hover:backdrop-blur-xl hover:bg-primary hover:border-primary
-                       dark:hover:bg-primary dark:hover:border-primary
-                       hover:shadow-2xl hover:shadow-primary/30 dark:hover:shadow-primary/40
-                       hover:scale-115 hover:-translate-x-2
-                       active:scale-105 active:transition-all active:duration-75
-                       focus:outline-none focus:ring-4 focus:ring-primary/30
-                       hidden md:flex items-center justify-center
-                       -ml-6 group overflow-hidden
-                       before:absolute before:inset-0 before:bg-gradient-to-r
-                       before:from-primary/0 before:to-primary/0
-                       before:hover:from-primary/10 before:hover:to-primary/20
-                       before:transition-all before:duration-500 before:opacity-0
-                       before:hover:opacity-100"
-            onClick={() => sliderRef.current.slickPrev()}
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="w-6 h-6 text-gray-700 dark:text-gray-300
-                                   group-hover:text-white dark:group-hover:text-white
-                                   transition-all duration-500 drop-shadow-sm
-                                   group-hover:drop-shadow-lg group-hover:scale-110
-                                   relative z-10" />
-          </button>
-
-          <button
-            className="carouselNav absolute right-0 top-1/2 -translate-y-1/2 z-10
-                       backdrop-blur-md bg-white/10 dark:bg-gray-900/10
-                       border border-white/20 dark:border-gray-700/20
-                       rounded-full p-3 transition-all duration-500 ease-out
-                       hover:backdrop-blur-xl hover:bg-primary hover:border-primary
-                       dark:hover:bg-primary dark:hover:border-primary
-                       hover:shadow-2xl hover:shadow-primary/30 dark:hover:shadow-primary/40
-                       hover:scale-115 hover:translate-x-2
-                       active:scale-105 active:transition-all active:duration-75
-                       focus:outline-none focus:ring-4 focus:ring-primary/30
-                       hidden md:flex items-center justify-center
-                       -mr-6 group overflow-hidden
-                       before:absolute before:inset-0 before:bg-gradient-to-l
-                       before:from-primary/0 before:to-primary/0
-                       before:hover:from-primary/10 before:hover:to-primary/20
-                       before:transition-all before:duration-500 before:opacity-0
-                       before:hover:opacity-100"
-            onClick={() => sliderRef.current.slickNext()}
-            aria-label="Next slide"
-          >
-            <ChevronRight className="w-6 h-6 text-gray-700 dark:text-gray-300
-                                    group-hover:text-white dark:group-hover:text-white
-                                    transition-all duration-500 drop-shadow-sm
-                                    group-hover:drop-shadow-lg group-hover:scale-110
-                                    relative z-10" />
-          </button>
+    {showArrows && (
+  <>
+    {/* Debug: Simple visible arrows */}
+    <button
+      className="absolute left-2 top-1/2 -translate-y-1/2 z-50 
+                 bg-blue-600 text-white rounded-full p-2 
+                 hover:bg-blue-700 shadow-lg"
+      onClick={() => sliderRef.current?.slickPrev()}
+      style={{ 
+        visibility: 'visible', 
+        opacity: 1, 
+        display: 'flex',
+        minWidth: '40px',
+        minHeight: '40px'
+      }}
+    >
+      <ChevronLeft className="w-6 h-6" />
+    </button>
+    
+    <button
+      className="absolute right-2 top-1/2 -translate-y-1/2 z-50
+                 bg-blue-600 text-white rounded-full p-2
+                 hover:bg-blue-700 shadow-lg"
+      onClick={() => sliderRef.current?.slickNext()}
+      style={{ 
+        visibility: 'visible', 
+        opacity: 1, 
+        display: 'flex',
+        minWidth: '40px',
+        minHeight: '40px'
+      }}
+    >
+      <ChevronRight className="w-6 h-6" />
+    </button>
         </>
       )}
     </div>

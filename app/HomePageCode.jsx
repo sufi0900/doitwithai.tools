@@ -10,7 +10,6 @@ import Grid from "@mui/material/Grid";
 // import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";
 import Trending from  "@/components/Trending/page"
 // Dynamic imports for components
-import Hero from "@/components/Hero";
 // const Trending = dynamic(() => import("@/components/Trending/page"), { ssr: true });
 import HomepageCategories from "@/components/Blog/HomepageCategories";
 import FreeResourcesPage from "@/components/FreeAIResources/page";
@@ -71,18 +70,14 @@ export default function HomePage({ initialServerData }) {
         <FreeResourcesPage initialData={freeResourcesFeatured} />
       </>
 
-      <HomepageCategories /> {/* Assume HomepageCategories fetches its own data or is static */}
-
-      {/* --- No Suspense needed here as data is prefetched --- */}
+      <HomepageCategories /> 
       <RecentPost initialData={recentPosts} />
 
-      <>
-        <MBrands /> {/* Marquee brands typically static or very light client data */}
-        <Suspense fallback={<div>Loading contact form...</div>}>
-          <Contact /> {/* Keep Suspense for Contact if it's client-heavy */}
-        </Suspense>
-      </>
-      {/* </PageCacheProvider> // Moved to parent server component */}
+        <div className='mt-10'>
+          <Contact /> 
+          </div>
+<MBrands /> 
+
     </>
   );
 }

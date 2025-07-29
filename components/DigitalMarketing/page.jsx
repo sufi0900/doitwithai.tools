@@ -84,7 +84,7 @@ const DigitalMarketing = ({ initialData = {} }) => {
         <Breadcrumb
           pageName="Boost SEO"
           pageName2="with AI"
-          description="AI is revolutionizing how we approach SEO and digital marketing."
+          description="Discover how AI is reshaping SEO. Our latest blogs break it down in simple, actionable ways—start exploring now!"
           firstlinktext="Home"
           firstlink="/"
           link="/ai-seo"
@@ -200,23 +200,28 @@ const DigitalMarketing = ({ initialData = {} }) => {
         {!isLoading && !hasError && !seoBigPost && seoRelatedPosts.length === 0 && (
           <div className="text-center py-8">
             <p className="text-gray-500 dark:text-gray-400">No AI SEO posts found at this time.</p>
-            {/* <button
-              onClick={handleRefresh} // Uncomment if you add handleRefresh
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mt-4"
-            >
-              Refresh AI SEO Content
-            </button> */}
+           
           </div>
         )}
-
-        {/* Your existing button as your existing code */}
-        <div className="mt-6 flex justify-center md:justify-end">
-          <Link href="/ai-seo">
-            <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
-              Explore More Blogs
-            </button>
-          </Link>
-        </div>
+{/* New inviting text and refined button */}
+<div className="text-center py-6 md:py-8"> {/* Adjusted padding for balance */}
+ 
+  <Link href="/ai-seo" className="inline-block group"> {/* Added 'group' class to Link for hover effects on children */}
+   <button className="
+      px-6 py-3
+      rounded-full
+      bg-blue-600
+      text-white text-base font-semibold
+      shadow-md
+      hover:bg-blue-700
+      transition-colors duration-300 ease-in-out
+      focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700
+    ">
+      Explore All AI SEO Blogs
+      <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">→</span> {/* Arrow icon for engagement */}
+    </button>
+  </Link>
+</div>
       </div>
     </section>
   );

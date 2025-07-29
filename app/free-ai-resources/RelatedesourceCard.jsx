@@ -117,23 +117,29 @@ const ResourceCard = ({ resource, wrapperClassName = "" }) => {
       <div className={`${wrapperClassName} group w-full h-full`}>
       <div className="h-full min-h-[450px] max-h-[450px] bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-1 flex flex-col">
       {/* Resource Preview */}
-          <div className="relative h-56">
-            {resource.resourceFormat === 'text' ? (
-              <div className="h-full">
-                {renderPromptCard()}
-              </div>
-            ) : (
-              <>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 z-10"></div>
-                <div className="absolute inset-0 bg-gray-800">
-                  {renderPreviewContent(resource)}
-                </div>
-                <div className="absolute top-3 left-3 z-20 px-3 py-1 rounded-full text-xs font-bold uppercase bg-primary text-white">
-                  {resource.resourceFormat}
-                </div>
-              </>
-            )}
-          </div>
+        <div className="relative h-56">
+  {resource.resourceFormat === 'text' ? (
+    <div className="h-full relative">
+      {renderPromptCard()}
+      {/* Add tag for text/prompt resources */}
+      <div className="absolute top-3 left-3 z-20 px-3 py-1 rounded-full text-xs font-bold uppercase bg-primary text-white">
+        {resource.resourceFormat}
+      </div>
+    </div>
+  ) : (
+    <>
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 z-10"></div>
+      <div className="absolute inset-0 bg-gray-800">
+        {renderPreviewContent(resource)}
+      </div>
+      {/* Tag for all other resource types */}
+      <div className="absolute top-3 left-3 z-20 px-3 py-1 rounded-full text-xs font-bold uppercase bg-primary text-white">
+        {resource.resourceFormat}
+      </div>
+    </>
+  )}
+</div>
+
 
           {/* Resource Details */}
           <div className="p-6 flex flex-col flex-grow">
@@ -156,47 +162,49 @@ const ResourceCard = ({ resource, wrapperClassName = "" }) => {
                 </div>
               )}
               
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => openModalById(resource._id)}
-                  className="py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-md transition-colors text-sm"
-                >
-                  Quick View
-                </button>
-                
-                <button
-   onClick={handleResourceAccess}
-   className="w-full bg-primary text-white font-medium px-4 py-2 rounded-md hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
-   aria-label={
-     resource.resourceFormat === 'text' ? `View prompt ${resource.title}` :
-     resource.resourceLinkType === 'external' ? `Access resource ${resource.title}` :
-     `Download ${resource.title}`
-   }
-    >
- {resource.resourceFormat === 'text' ? (
-          <>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          View Prompt
-        </>
-      ) : resource.resourceLinkType === 'external' ? (
-        <>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
-          Access Resource
-        </>
-      ) : (
-        <>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Download
-        </>
-      )}
-    </button>
-              </div>
+             <div className="grid grid-cols-2 gap-2">
+  <button
+    onClick={() => openModalById(resource._id)}
+    className="py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-md transition-colors text-sm"
+  >
+    Quick View
+  </button>
+  
+  <button
+    onClick={handleResourceAccess}
+    className="w-full bg-primary text-white font-medium px-4 py-2 rounded-md hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 text-sm"
+    aria-label={
+      resource.resourceFormat === 'text'
+        ? `View prompt ${resource.title}`
+        : resource.resourceLinkType === 'external'
+        ? `Access resource ${resource.title}`
+        : `Download ${resource.title}`
+    }
+  >
+    {resource.resourceFormat === 'text' ? (
+      <>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <span className="whitespace-nowrap">View Prompt</span>
+      </>
+    ) : resource.resourceLinkType === 'external' ? (
+      <>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+        Access Resource
+      </>
+    ) : (
+      <>
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Download
+      </>
+    )}
+  </button>
+</div>
             </div>
           </div>
         </div>

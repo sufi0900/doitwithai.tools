@@ -1,31 +1,49 @@
-//parent page.jsx for free-ai-resource page
+// app/free-ai-resources/page.jsx
 
-import React from 'react'
-import Allblogs from "./AllBlogs" //client page for free-ai-resource page
+import React from 'react';
 import Script from "next/script";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
 
-import {redisHelpers} from '@/app/lib/redis';
+import { redisHelpers } from '@/app/lib/redis';
 import { client } from "@/sanity/lib/client";
-export const metadata = { 
-  title: "Free AI Resources & Solution",
-  description:
-    "Explore free AI resources to boost your creativity & productivity. Discover AI solutions for various problems. Download free AI images and find prompts",
+
+// NEW IMPORT for the wrapper component
+import StaticFreeResourcePageShell from "./StaticFreeResourcePageShell"; // <--- ADD THIS IMPORT
+import Allblogs from "./AllBlogs"; // The client component that needs initial data
+
+export const revalidate = 3600; // Revalidate every 1 hour
+
+export const metadata = {
+  title: "Free AI Resources & Solution - DoItWithAI.Tools", // Updated title for consistency
+  description: "Explore free AI resources to boost your creativity & productivity. Discover AI solutions for various problems. Download free AI images and find prompts.",
   author: "Sufian Mustafa",
   openGraph: {
-    images: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
-  },
-  images: [
-    {
+    title: "Free AI Resources & Solution - DoItWithAI.Tools", // Updated title for consistency
+    description: "Explore free AI resources to boost your creativity & productivity. Discover AI solutions for various problems. Download free AI images and find prompts.",
+    url: "https://www.doitwithai.tools/free-ai-resources", // Corrected URL
+    type: "website",
+    images: [{
       url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
-      width: 800,
-      height: 600,
-    },
-    
-  ],
+      width: 1200, // Standard size for OpenGraph
+      height: 630, // Standard size for OpenGraph
+      alt: 'Free AI Resources',
+    }],
+    siteName: "AiToolTrend",
+    locale: 'en_US',
+  },
+  twitter: {
+    card: "summary_large_image",
+    domain: "doitwithai.tools",
+    url: "https://www.doitwithai.tools/free-ai-resources", // Corrected URL
+    title: "Free AI Resources & Solution - DoItWithAI.Tools", // Updated title for consistency
+    description: "Explore free AI resources to boost your creativity & productivity. Discover AI solutions for various problems. Download free AI images and find prompts.",
+    image: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
+  },
+  alternates: {
+    canonical: "https://www.doitwithai.tools/free-ai-resources", // Corrected URL
+  },
 };
-
 
 const INITIAL_RESOURCE_LIST_LIMIT = 6;
 
@@ -87,7 +105,7 @@ async function getFreeResourcesInitialData() {
 
     console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
 
-    if (data.resourceList?.length > 0) { // Only cache if we actually got some data
+    if (data.resourceList?.length > 0 || data.featuredResource || Object.keys(data.resourceCounts).length > 0) { // Only cache if we actually got some data
       try {
         await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
         console.log(`[Redis Cache Set] for ${cacheKey}`);
@@ -103,143 +121,114 @@ async function getFreeResourcesInitialData() {
   }
 }
 
-
-
 export default async function Page() {
-    const initialServerData = await getFreeResourcesInitialData();
+  const initialServerData = await getFreeResourcesInitialData();
 
-// Update your grandparent page schema to include hasOfferCatalog
-
-function schemaMarkup() {
-  return {
-    __html: `{
-      "@context": "https://schema.org",
-      "@type": "CollectionPage",
-      "name": "Free AI Resources and Solution",
-      "description": "Unlock the power of AI for free! Discover a treasure trove of valuable resources, including free non-copyrighted AI-generated HD images and creative writing prompts for various needs. Our blog offers practical solutions and guides on how AI can tackle challenges across different fields. Explore how AI can enhance your work, creativity, and problem-solving in any domain!",
-      "url": "https://www.doitwithai.tools/ai-tools",
-      "breadcrumb": {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://www.doitwithai.tools/"
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "name": "Free AI Resources",
-            "item": "https://www.doitwithai.tools/free-ai-resources"
-          }
-        ]
-      },
-      "mainEntity": {
-        "@type": "ItemList",
-        "numberOfItems": 100,
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "item": {
-              "@type": "CreativeWork",
-              "name": "AI Resources Collection",
-              "description": "Collection of free AI resources including images, videos, prompts and documents"
+  // Update your grandparent page schema to include hasOfferCatalog
+  function schemaMarkup(pageMetadata) { // Accept pageMetadata
+    return {
+      __html: `{
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "${pageMetadata.title}", // Use dynamic title
+        "description": "${pageMetadata.description}", // Use dynamic description
+        "url": "${pageMetadata.openGraph.url}", // Use dynamic URL
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://www.doitwithai.tools/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Free AI Resources",
+              "item": "https://www.doitwithai.tools/free-ai-resources"
             }
-          }
-        ]
-      },
-      "offers": {
-        "@type": "AggregateOffer",
-        "priceCurrency": "USD",
-        "price": "0",
-        "availability": "https://schema.org/InStock",
-        "offerCount": 100
-      }
-    }`
-  };
-}
+          ]
+        },
+        "mainEntity": {
+          "@type": "ItemList",
+          "numberOfItems": ${initialServerData?.resourceCounts?.all || 0}, // Use actual total count
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "item": {
+                "@type": "CreativeWork",
+                "name": "AI Resources Collection",
+                "description": "Collection of free AI resources including images, videos, prompts and documents"
+              }
+            }
+          ]
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "price": "0",
+          "availability": "https://schema.org/InStock",
+          "offerCount": ${initialServerData?.resourceCounts?.all || 0} // Use actual total count
+        }
+      }`
+    };
+  }
 
   return (
     <>
-    <Head>
-        <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta property="og:site_name" content="AiToolTrend" />
-        <meta property="og:locale" content="en_US" />
-  <title>{metadata.title}</title>
-
-  <meta name="description" content={metadata.description}/>
-  <meta name="author" content="sufian mustafa" />
-  <meta property="og:title" content={metadata.title} />
-  <meta property="og:description" content={metadata.description} />
-  <meta property="og:image" content={metadata.images} />
-  <meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-
-  {/*  */}
-  <meta property="og:url" content="https://www.doitwithai.tools/ai-tools" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content={metadata.title} />
-        <meta property="og:description" content={metadata.description} />
-        <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="doitwithai.tools" />
-        <meta property="twitter:url" content="https://www.doitwithai.tools/ai-tools" />
-        <meta name="twitter:title" content={metadata.title} />
-        <meta name="twitter:description" content={metadata.description} />
-        <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-  <link rel="canonical" href="https://www.doitwithai.tools/ai-tools"/>
+      <Head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:site_name" content={metadata.openGraph.siteName} />
+        <meta property="og:locale" content={metadata.openGraph.locale} />
+        <title>{metadata.title}</title>
+        <meta name="description" content={metadata.description} />
+        <meta name="author" content={metadata.author} />
+        <meta property="og:title" content={metadata.openGraph.title} />
+        <meta property="og:description" content={metadata.openGraph.description} />
+        <meta property="og:image" content={metadata.openGraph.images[0].url} /> {/* Corrected to array access */}
+        <meta property="og:image:width" content={metadata.openGraph.images[0].width} /> {/* Corrected */}
+        <meta property="og:image:height" content={metadata.openGraph.images[0].height} /> {/* Corrected */}
+        <meta property="og:url" content={metadata.openGraph.url} />
+        <meta property="og:type" content={metadata.openGraph.type} />
+        <meta name="twitter:card" content={metadata.twitter.card} />
+        <meta property="twitter:domain" content={metadata.twitter.domain} />
+        <meta property="twitter:url" content={metadata.twitter.url} />
+        <meta name="twitter:title" content={metadata.twitter.title} />
+        <meta name="twitter:description" content={metadata.twitter.description} />
+        <meta name="twitter:image" content={metadata.twitter.image} />
+        <link rel="canonical" href={metadata.alternates.canonical} />
         <NextSeo
-         title={metadata.title}
-         description={metadata.description}
+          title={metadata.title}
+          description={metadata.description}
           author={metadata.author}
-          type= "website"
-          locale= 'en_IE'
-          site_name= 'AiToolTrend'
-
-          canonical="https://www.doitwithai.tools/ai-tools"
+          type="website"
+          locale='en_IE'
+          site_name={metadata.openGraph.siteName}
+          canonical={metadata.alternates.canonical}
           openGraph={{
-            title: metadata.title,
-            description: metadata.description,
-            url: "https://www.doitwithai.tools/ai-tools",
+            title: metadata.openGraph.title,
+            description: metadata.openGraph.description,
+            url: metadata.openGraph.url,
             type: "ItemList",
-            images: metadata.images
+            images: metadata.openGraph.images
           }}
         />
-      
+      </Head>
 
-    </Head>
+      <Script
+        id="FreeResourcesSchema" // Changed ID to be more specific
+        type="application/ld+json"
+        dangerouslySetInnerHTML={schemaMarkup(metadata)} // Pass metadata here
+        key="FreeResources-jsonld" // Changed key
+      />
 
-    <Script
-    id="BreadcrumbListSchema"
-    type="application/ld+json"
-     dangerouslySetInnerHTML={schemaMarkup()}
-     key="AiTools-jsonld"
-   />
-   <Allblogs           initialServerData={initialServerData}
-/> 
-   </>
-  )
+      {/* Wrap Allblogs with the new StaticFreeResourcePageShell */}
+      <StaticFreeResourcePageShell>
+        <Allblogs initialServerData={initialServerData} />
+      </StaticFreeResourcePageShell>
+    </>
+  );
 }
-
-{process.env.NODE_ENV === 'development' && (
-  <button 
-    onClick={() => console.log(validateSchema(resource))}
-    style={{
-      position: 'absolute',
-      bottom: '5px',
-      right: '5px',
-      zIndex: 9999,
-      fontSize: '10px',
-      padding: '2px 5px',
-      background: '#ff4444',
-      color: 'white',
-      borderRadius: '3px',
-      opacity: 0.7
-    }}
-  >
-    Test Schema
-  </button>
-)}

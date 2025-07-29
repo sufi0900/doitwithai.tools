@@ -1,20 +1,20 @@
-// app/coding/page.jsx
+// app/ai-code/page.jsx
 import React from 'react';
 import Script from "next/script";
-import Head from "next/head"; // Note: For App Router, `metadata` export is preferred.
-import { NextSeo } from "next-seo"; // NextSeo is for Pages Router, ensure it's still needed/used with App Router.
+import Head from "next/head";
+import { NextSeo } from "next-seo";
 
 // Import the new reusable component
 import BlogListingPageContent from "@/app/ai-tools/AllBlogs"; // Import the new reusable component
 
-// --- NEW IMPORTS ---
+// --- NEW IMPORTS for StaticPageShell ---
+import StaticPageShell from "@/app/ai-seo/StaticPageShell"; // <--- ADD THIS IMPORT
 import { client } from "@/sanity/lib/client"; // Import Sanity client
 import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
 // --- END NEW IMPORTS ---
 
 // --- Next.js Server-Side Configuration ---
 export const revalidate = 3600; // Revalidate every 1 hour
-
 
 // --- SEO Metadata (Next.js App Router Standard) ---
 export const metadata = {
@@ -51,7 +51,7 @@ export const metadata = {
 async function getData(schemaType, pageSlugPrefix) {
   const cacheKey = `blogList:${schemaType}:main`;
   const startTime = Date.now();
-  
+
   try {
     const cachedData = await redisHelpers.get(cacheKey);
     if (cachedData) {
@@ -63,43 +63,41 @@ async function getData(schemaType, pageSlugPrefix) {
   }
 
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
-  
+
   // Fetch initial data for the page
   const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]`;
   const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]`; // 6 items (5 + 1 for hasMore check)
   const totalCountQuery = `count(*[_type=="${schemaType}"])`;
-  
+
   try {
     const [featuredPost, firstPageBlogs, totalCount] = await Promise.all([
       client.fetch(featuresQuery, {}, { next: { tags: [schemaType] } }),
       client.fetch(firstPageBlogsQuery, {}, { next: { tags: [schemaType] } }),
       client.fetch(totalCountQuery, {}, { next: { tags: [schemaType] } })
     ]);
-    
+
     const data = {
       featuredPost,
       firstPageBlogs,
       totalCount,
       timestamp: Date.now()
     };
-    
+
     console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
-    
+
     try {
       await redisHelpers.set(cacheKey, data, { ex: 3600 });
       console.log(`[Redis Cache Set] for ${cacheKey}`);
     } catch (redisSetError) {
       console.error(`Redis set error for ${cacheKey}:`, redisSetError.message);
     }
-    
+
     return { ...data, __source: 'server-network' };
   } catch (error) {
     console.error(`Server-side fetch for ${schemaType} failed:`, error.message);
     return null;
   }
 }
-
-
 
 export default async function Page() { // Make this an async component to await data
 
@@ -122,7 +120,6 @@ export default async function Page() { // Make this an async component to await 
   };
 
   // Schema Markup for "Code With AI" CollectionPage
-  // --- FIX: Pass metadata and breadcrumbProps as arguments ---
   function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
       __html: `
@@ -198,19 +195,29 @@ export default async function Page() { // Make this an async component to await 
       <Script
         id="BreadcrumbListSchema"
         type="application/ld+json"
-        // --- FIX: Pass metadata and breadcrumbProps ---
         dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
         key={`${pageSlugPrefix}-jsonld`}
       />
-      <BlogListingPageContent
-             schemaType={schemaType}
-             pageSlugPrefix={pageSlugPrefix}
-             pageTitle={pageTitle}
-             pageTitleHighlight={pageTitleHighlight}
-             pageDescription={pageDescription}
-             breadcrumbProps={breadcrumbProps}
-             serverData={serverData}  // Pass server data
-           />
+
+      {/* --- REPLACE THE BlogListingPageContent COMPONENT HERE --- */}
+      <StaticPageShell breadcrumbProps={breadcrumbProps}>
+        <BlogListingPageContent
+          schemaType={schemaType}
+          pageSlugPrefix={pageSlugPrefix}
+          pageTitle={pageTitle}
+          pageTitleHighlight={pageTitleHighlight}
+          pageDescription={pageDescription}
+          // breadcrumbProps is now passed to StaticPageShell, remove it here
+          serverData={serverData}  // Pass server data
+          // If this page needs subcategories, add the props here, otherwise omit them
+          // showSubcategoriesSection={false} // Example: if no subcategories for coding
+          // subcategoriesSectionTitle=""
+          // subcategoriesSectionDescription=""
+          // SubcategoriesComponent={null}
+          // subcategoriesLimit={0}
+        />
+      </StaticPageShell>
+      {/* --- END REPLACEMENT --- */}
     </>
   );
 }

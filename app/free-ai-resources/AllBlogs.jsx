@@ -1,16 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
-import React, { useState, useCallback, useMemo } from "react"; // Import useCallback, useMemo
-import Breadcrumb from "@/components/Common/Breadcrumb";
-import ResourceCard from "./ResourceCard" // Keep if you still use it for individual card rendering (e.g., in SearchResults if not using your generic CardComponent)
-import HeroSection from "./HeroSection";
+import React, { useState, useCallback, useMemo } from "react";
+import ResourceCard from "./ResourceCard";
+// REMOVED: HeroSection is handled by the shell/layout
 import ResourceListSchema from "./ResourceListSchema";
 import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
-import "animate.css"; // Ensure animate.css is still needed and installed
-import SearchIcon from '@mui/icons-material/Search';
-import SortIcon from '@mui/icons-material/Sort';
+import "animate.css";
+// Kept SearchIcon and SortIcon as they are part of the UI
+
 import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
 import SkelCard from "@/components/Blog/Skeleton/Card";
 
@@ -24,7 +23,6 @@ import ReusableCachedFreeResourcesList from './ReusableCachedFreeResourcesList';
 
 const RESOURCE_LIMIT = 6;
 
-// --- Accept initialServerData and breadcrumbProps ---
 export default function FreeResourcesPage({ initialServerData }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -33,7 +31,9 @@ export default function FreeResourcesPage({ initialServerData }) {
 
   // Initialize with initialServerData or default values
   const [resourceCounts, setResourceCounts] = useState(initialServerData?.resourceCounts || {});
-  const [totalPages, setTotalPages] = useState(initialServerData?.resourceList ? Math.ceil(initialServerData.resourceList.length / RESOURCE_LIMIT) : 1);
+  const [totalPages, setTotalPages] = useState(
+    initialServerData?.resourceList ? Math.ceil(initialServerData.resourceList.length / RESOURCE_LIMIT) : 1
+  );
   const [totalItems, setTotalItems] = useState(initialServerData?.resourceCounts?.all || 0);
   const [hasMorePages, setHasMorePages] = useState((initialServerData?.resourceList?.length || 0) > RESOURCE_LIMIT);
   const [listResources, setListResources] = useState(initialServerData?.resourceList?.slice(0, RESOURCE_LIMIT) || []);
@@ -129,101 +129,90 @@ export default function FreeResourcesPage({ initialServerData }) {
       : (resourceCounts[format] || 0);
   }, [resourceCounts, searchHook.isSearchActive, searchHook.searchResults?.length]);
 
-
-
   return (
     <PageCacheProvider pageType="free-resources" pageId="main">
-      <div className="container mt-10">
-        <HeroSection />
-        <Breadcrumb
-          pageName="Free AI Resources"
-          pageName2="Gallery"
-          description="Browse our collection of free AI resources including images, videos, templates, AI tools, and more to enhance your projects. These resources are organized by category and fully searchable."
-          link="/free-ai-resources"
-          linktext="free-resources"
-          firstlinktext="Home"
-          firstlink="/"
-        />
-
+      <div className="container mx-auto px-4 mt-10"> {/* Added mx-auto and px-4 for consistent container */}
         <div className="mb-6 flex justify-end gap-2">
           <PageCacheStatusButton />
         </div>
- <ReusableCachedFeaturedFreeResources
-        initialData={initialServerData?.featuredResource} // Pass initial featured data
-      />
 
-        {/* Search and Filter Section */}
-        <div className="card mb-10 rounded-sm bg-white p-6 shadow-three dark:bg-gray-dark dark:shadow-none">
-          {/* Search Bar */}
-          <div className="flex items-center w-full relative mb-6">
-            <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search resources, AI tools, categories..."
-              className="w-full rounded-sm border border-stroke bg-[#f8f8f8] px-12 py-3 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark dark:shadow-two dark:focus:border-primary dark:focus:shadow-none"
-              value={searchHook.searchText}
-              onChange={(e) => searchHook.updateSearchText(e.target.value)}
-              onKeyDown={searchHook.handleKeyDown}
-            />
-            <button
-              aria-label="search button"
-              className="ml-2 flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-primary text-white hover:bg-primary/80 transition-colors"
-              onClick={initiateSearch}
-            >
-              <svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19.4062 16.8125L13.9375 12.375C14.9375 11.0625 15.5 9.46875 15.5 7.78125C15.5 6.125 15.0312 4.5625 14.1875 3.1875C13.3438 1.8125 12.25 0.75 10.9062 0.09375C9.5625 -0.03125 8.15625 0 6.9375 0.5C5.6875 1 4.625 1.75 3.75 2.8125C2.9375 3.875 2.375 5.09375 2.25 6.40625C2.125 7.71875 2.375 9.03125 3.0625 10.2188C3.75 11.4062 4.75 12.4062 5.96875 13.0938C7.1875 13.7812 8.5625 14.0938 9.96875 14.0938C11.5938 14.0938 13.1562 13.5 14.4375 12.5L19.9062 17C20.0312 17.0625 20.1562 17.0938 20.25 17.0938C20.375 17.0938 20.5 17.0625 20.5938 16.9688C20.8125 16.8125 20.8125 16.4688 20.5938 16.2812L19.4062 16.8125ZM3.5625 7.125C3.5625 6.03125 3.875 5 4.4375 4.125C5 3.25 5.78125 2.5625 6.75 2.1875C7.71875 1.8125 8.75 1.75 9.75 2C10.75 2.25 11.6562 2.78125 12.375 3.5C13.0938 4.21875 13.5938 5.125 13.8438 6.125C14.0938 7.125 14.0312 8.15625 13.6875 9.125C13.3438 10.0938 12.6562 10.9062 11.8125 11.4688C10.9375 12.0312 9.90625 12.3438 8.8125 12.3438C7.375 12.3438 6.0 11.7812 4.96875 10.75C3.9375 9.71875 3.5625 8.53125 3.5625 7.125Z" fill="white" />
-              </svg>
-            </button>
-            {(searchHook.isSearchActive || searchHook.searchText.length > 0) && (
-              <button
-                aria-label="clear search button"
-                className="ml-2 flex h-[50px] w-full max-w-[70px] items-center justify-center rounded-sm bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-                onClick={handleResetSearch}
-              >
-                Clear
-              </button>
-            )}
+        {/* Featured Resources Section */}
+        <ReusableCachedFeaturedFreeResources
+          initialData={initialServerData?.featuredResource}
+        />
+
+        {/* --- Search and Filter Section --- */}
+        {/* Replaced old search section with your provided styling */}
+        <section className="mb-20">
+          <div className="mb-8">
+            <h3 className="mb-6 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl text-left"> {/* Added text-left */}
+              <span className="group inline-block cursor-pointer">
+                <span className="relative text-blue-700"> {/* Changed text-blue-600 to text-blue-700 */}
+                  Search Our
+                  <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-700"></span> {/* Changed bg-blue-600 to bg-blue-700 */}
+                </span>
+                {" "}
+                <span className="relative my-4 inline-block">
+                  Free AI Resources {/* Replaced {pageTitleHighlight} with static text */}
+                  <span className="absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-700 transition-all duration-300 group-hover:w-full"></span> {/* Changed bg-blue-600 to bg-blue-700 */}
+                </span>
+              </span>
+            </h3>
+            <p className="text-left text-base font-medium leading-relaxed text-gray-600 dark:text-gray-200"> {/* Added text-left */}
+              Find exactly what you're looking for in our comprehensive collection of free AI resources. {/* Updated dynamic text to static */}
+            </p>
           </div>
-
-          {/* Sort Dropdown */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <SortIcon className="text-gray-600 dark:text-gray-400" />
-              <select
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value)}
-      
-                className={`rounded-md border border-stroke bg-[#f8f8f8] px-4 py-2 text-base text-body-color outline-none transition-all duration-300 focus:border-primary dark:border-transparent dark:bg-[#2C303B] dark:text-body-color-dark
-                ${searchHook.isSearchActive ? 'opacity-70' : ''}`} 
-              >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Total Resources Display */}
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Total: {getCountForFormat(selectedFormat)} {selectedFormat === 'all' ? 'resources' : resourceFormats.find(f => f.value === selectedFormat)?.label.toLowerCase()}
+          <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 p-8 shadow-xl"> {/* Added shadow-xl */}
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Search for free AI resources..." 
+                  className="w-full rounded-xl border-0 bg-white/10 px-6 py-4 text-white placeholder-blue-200 backdrop-blur-sm transition-all duration-300 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 dark:bg-gray-800/50 dark:text-white dark:placeholder-gray-400"
+                  value={searchHook.searchText}
+                  onChange={(e) => searchHook.updateSearchText(e.target.value)}
+                  onKeyDown={searchHook.handleKeyDown}
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                  <svg className="h-5 w-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={initiateSearch} 
+                  className="flex items-center justify-center rounded-xl bg-white px-6 py-4 font-medium text-blue-700 shadow-lg transition-all duration-200 hover:bg-blue-50 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-white/50" // Changed text-blue-600 to text-blue-700 and added shadow-lg, hover:shadow-xl
+                >
+                  <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  Search
+                </button>
+                <button
+                  onClick={handleResetSearch} 
+                  className="flex items-center justify-center rounded-xl bg-white/20 px-6 py-4 font-medium text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
+                >
+                  <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+
 
         {/* Category Filter Buttons with Counts */}
-      <ReusableCachedFreeResourcesCounts
-        resourceFormats={resourceFormats}
-        selectedFormat={selectedFormat}
-        // Removed getCountForFormat prop as ReusableCachedFreeResourcesCounts now manages its own counts data
-        handleFormatChange={handleFormatChange}
-        handleCountsLoad={handleCountsLoad}
-        initialData={initialServerData?.resourceCounts} // Pass initial counts data
-      />
+        {/* Adjusted spacing below this section using mb-10 as there was no direct div below in original */}
+        <div className="mb-10">
+          <ReusableCachedFreeResourcesCounts
+            resourceFormats={resourceFormats}
+            selectedFormat={selectedFormat}
+            handleFormatChange={handleFormatChange}
+            handleCountsLoad={handleCountsLoad}
+            initialData={initialServerData?.resourceCounts}
+          />
+        </div>
+
         {/* Resources Grid (Conditional Rendering based on search vs. main list) */}
         {searchHook.isSearchActive ? (
           <div className="mb-10">
-            {/* Loading/Error/No Results for Search */}
             {searchHook.isSearchLoading && (
               <div className="flex flex-wrap -mx-3">
                 {Array.from({ length: RESOURCE_LIMIT }).map((_, index) => (
@@ -235,21 +224,20 @@ export default function FreeResourcesPage({ initialServerData }) {
             )}
 
             {searchHook.searchError && !searchHook.searchResults.length && !searchHook.isSearchLoading && (
-              <div className="text-center py-8">
+              <div className="text-left py-8"> {/* Added text-left */}
                 <p className="text-red-500 mb-4">Failed to load search results. {searchHook.searchError.message}</p>
                 {searchHook.refreshSearch && (
-                    <button onClick={searchHook.refreshSearch} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Retry Search</button>
+                  <button onClick={searchHook.refreshSearch} className="px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-800 transition-colors">Retry Search</button>
                 )}
               </div>
             )}
 
             {searchHook.showNoResults && (
-              <div className="text-center py-8">
+              <div className="text-left py-8"> {/* Added text-left */}
                 <p className="text-gray-500 dark:text-gray-400">No resources found matching "{searchHook.searchText}". Try a different search term.</p>
               </div>
             )}
 
-            {/* Display Search Results using ResourceCard */}
             {searchHook.searchResults && searchHook.searchResults.length > 0 && (
               <div className="flex flex-wrap -mx-3">
                 {searchHook.searchResults.map((resource) => (
@@ -270,11 +258,11 @@ export default function FreeResourcesPage({ initialServerData }) {
             selectedFormat={selectedFormat}
             sortBy={sortBy}
             onDataLoad={handleListLoad}
+            initialData={initialServerData?.resourceList}
           />
         )}
 
         {/* ResourceListSchema: Only show for main content, not search results */}
-        {/* Pass listResources from ReusableCachedFreeResourcesList component */}
         {!searchHook.isSearchActive && totalItems > 0 && (
           <ResourceListSchema
             resources={listResources}
@@ -291,7 +279,7 @@ export default function FreeResourcesPage({ initialServerData }) {
               className={`px-4 py-2 rounded-md transition-colors ${
                 currentPage === 1
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-blue-700 text-white hover:bg-blue-800' // Changed to blue-700/800
               }`}
             >
               Previous
@@ -303,7 +291,7 @@ export default function FreeResourcesPage({ initialServerData }) {
               className={`px-4 py-2 rounded-md transition-colors ${
                 !hasMorePages || currentPage >= totalPages
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-blue-700 text-white hover:bg-blue-800' // Changed to blue-700/800
               }`}
             >
               Next

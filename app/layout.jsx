@@ -1,162 +1,160 @@
 // layout.js
 "use client";
-import { useEffect, useState } from 'react';
-import { useOnlineStatus } from './useOnlineStatus';
-
-import { Inter } from "next/font/google";
-import { Suspense } from "react";
-import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation"; // Already imported
 import { Providers } from "./providers";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
-import "../styles/index.css";
-import { Toaster } from 'react-hot-toast';
-import Header from "@/components/Header"
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
-import { CacheProvider } from "@/React_Query_Caching/CacheProvider"
-import Hero from "@/components/Hero"; // Imported
-import "../components/Hero/critical-hero.css"
 
-const ConditionalGlobalHeader = dynamic(() => import("@/components/Header/ConditionalGlobalHeader"), {
-  ssr: false // Client-side only for scroll detection
-});
-const Footer = dynamic(() => import("@/components/Footer"), {
-  ssr: true
-});
+import "../styles/index.css"
+import "../components/Hero/critical-hero.css"
+import { useEffect, useState } from "react";
+import { useOnlineStatus } from "./useOnlineStatus";
+import { Inter } from "next/font/google";
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
+import Hero from "@/components/Hero"; // *no* CSS import here
+import Header from "@/components/Header";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import { CacheProvider } from "@/React_Query_Caching/CacheProvider";
+
+// EVERYTHING else lazy-loaded
+const ConditionalGlobalHeader = dynamic(
+  () => import("@/components/Header/ConditionalGlobalHeader"),
+  { ssr: false }
+);
+const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 const ScrollToTop = dynamic(() => import("@/components/ScrollToTop"), {
-  ssr: false // Client-side only component
+  ssr: false,
+});
+const Toaster = dynamic(() => import("react-hot-toast").then((m) => m.Toaster), {
+  ssr: false,
 });
 
 const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   preload: true,
-  fallback: ['system-ui', 'arial'],
+  fallback: ["system-ui", "arial"],
   adjustFontFallback: true,
-  variable: '--font-inter'
+  variable: "--font-inter",
 });
 
-export default function RootLayout({
-  children,
-}) {
+export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isOnline = useOnlineStatus();
+  const [hydrated, setHydrated] = useState(false);
 
+  // 1) Stick hero CSS + global CSS + carousel CSS + Toaster into a deferred import
   useEffect(() => {
-    const handleOnline = () => isOnline(true);
-    const handleOffline = () => isOnline(false);
+    // mark that initial paint has happened
+    setHydrated(true);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    // dynamically inject your hero animations & media query CSS
+    // import("../components/Hero/critical-hero.css");
+    // global styles
+    // import("../styles/index.css");
+    // carousel / slick CSS
+    import("slick-carousel/slick/slick.css");
+    import("slick-carousel/slick/slick-theme.css");
   }, []);
 
+  // online/offline banner
   useEffect(() => {
-    const handleLinkClick = (event) => {
-      const link = event.target.closest('a');
-      if (!link) return;
+    const goOnline = () => isOnline(true),
+      goOffline = () => isOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, [isOnline]);
 
-      const href = link.getAttribute('href');
-      if (href && href.startsWith('/') && !href.startsWith('//')) {
+  // Precache on link click
+  useEffect(() => {
+    const handler = (e) => {
+      const a = e.target.closest("a");
+      if (!a) return;
+      const href = a.getAttribute("href");
+      if (href?.startsWith("/") && !href.startsWith("//")) {
         setTimeout(() => {
-          if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-              type: 'PRECACHE_PAGE',
-              path: href,
-              url: window.location.origin + href
-            });
-          }
+          navigator.serviceWorker?.controller?.postMessage({
+            type: "PRECACHE_PAGE",
+            path: href,
+            url: window.location.origin + href,
+          });
         }, 100);
       }
     };
-
-    document.addEventListener('click', handleLinkClick);
-
-    return () => {
-      document.removeEventListener('click', handleLinkClick);
-    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
   }, []);
 
-
+  // Cache static pages
   useEffect(() => {
-    const cacheCurrentStaticPage = async () => {
-      const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-      if (staticPages.includes(pathname)) {
-        try {
-          const response = await fetch(pathname);
-          if (response.ok) {
-            const htmlContent = await response.text();
-            // Assuming staticPageCache is defined elsewhere or passed
-            // await staticPageCache.cachePage(pathname, htmlContent); 
-            console.warn("Caching static pages: staticPageCache is not defined in this snippet. Ensure it's imported/defined if needed.");
-          }
-        } catch (error) {
-          console.log('Failed to cache static page:', pathname);
-        }
-      }
-    };
-
-    cacheCurrentStaticPage();
+    const staticPages = ["/about", "/faq", "/contact", "/privacy", "/terms"];
+    if (staticPages.includes(pathname)) {
+      fetch(pathname)
+        .then((r) => (r.ok ? r.text() : null))
+        .then((html) => {
+          /* optional caching logic */
+        })
+        .catch(() => {});
+    }
   }, [pathname]);
 
+  const isHomePage = pathname === "/";
+  const isSlugPage =
+    pathname.startsWith("/ai-tools/") ||
+    pathname.startsWith("/ai-seo/") ||
+    pathname.startsWith("/ai-code/") ||
+    pathname.startsWith("/ai-learn-earn/") ||
+    pathname.startsWith("/free-ai-resources/") ||
+    pathname.startsWith("/ai-news/") &&
+      pathname.split("/").length === 3;
 
-
-  // Determine if the current page is the homepage
-  const isHomePage = pathname === '/';
-    // background-color: rgb(240 253 250 / var(--tw-bg-opacity, 1)) /* #f0fdfa */;
-  const isSlugPage = pathname && (
-    pathname.startsWith('/ai-tools/') ||
-    pathname.startsWith('/ai-seo/') ||
-    pathname.startsWith('/ai-code/') ||
-    pathname.startsWith('/ai-learn-earn/') ||
-    pathname.startsWith('/free-ai-resources/') ||
-    pathname.startsWith('/ai-news/')
-  ) && pathname.split('/').length === 3;
-  
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
       </head>
-      <body className={`bg-[#f0fdfa] dark:bg-black ${inter.className}`}>
+      <body className={`${inter.className} bg-[#f0fdfa] dark:bg-black`}>
         <noscript>JavaScript is required for this app to work properly.</noscript>
         {!isOnline && (
-          <div style={{ background: 'red', color: 'white', textAlign: 'center', padding: '5px' }}>
+          <div className="bg-red-600 text-white text-center p-2">
             You are currently offline.
           </div>
         )}
-        <Toaster position="bottom-center" />
-        <CacheProvider>
-          <Providers>
-            {isSlugPage ? (
-              <ConditionalGlobalHeader />
-            ) : (
-              <Suspense fallback={<div>Loading...</div>}>
-                <Header />
-              </Suspense>
-            )}
 
-            {/* Conditionally render the Hero component only on the homepage */}
-            {isHomePage && <Hero/>}
+        {/* 1st paint: Hero only */}
+        {isHomePage && <Hero />}
+  <Providers>
+        {/* everything else only once we've painted at least the hero */}
+        {hydrated && (
+          <>
+            <CacheProvider>
+            
+                {isSlugPage ? (
+                  <ConditionalGlobalHeader />
+                ) : (
+                  <Header />
+                )}
 
-            <main className={!isSlugPage ? "pt-[80px]" : ""}>
-              {children}
-            </main>
+                <main className={isHomePage ? "" : "pt-[80px]"}>
+                  {children}
+                </main>
 
-            <Suspense fallback={<div>Loading...</div>}>
-              <Footer />
-              <ScrollToTop />
-            </Suspense>
-          </Providers>
-        </CacheProvider>
-        <ServiceWorkerRegistration />
+                <Footer />
+                <ScrollToTop />
+              
+            </CacheProvider>
+
+            {/* Toaster for notifications */}
+            <Toaster position="bottom-center" />
+
+            <ServiceWorkerRegistration />
+          </>
+        )}
+        </Providers>
       </body>
     </html>
   );

@@ -236,11 +236,7 @@ const ReusableCachedFreeResourcesList = ({
           <button onClick={() => handleRefresh(true)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mt-4">Refresh All Resources</button>
         </div>
       )}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded dark:bg-gray-800 mt-4">
-          ListPage: {currentPage}|Format:{selectedFormat}|Sort:{sortBy}|Search:{searchText}|IsSearchMode:{isSearchMode ? 'Yes' : 'No'}|ListCacheKey:{listCacheKey}|TotalCacheKey:{totalItemsCacheKey}|Group:{freeResourcesGroup}|ListStale:{isListStale?'Yes':'No'}|TotalStale:{isTotalItemsStale?'Yes':'No'}|TotalItems:{totalItems}|TotalPages:{totalPages}|HasMore:{hasMore?'Yes':'No'}|QueryParams: {JSON.stringify(queryParams)}|ListQuery: {listQuery.split('|')[0]}...|ListCacheSrc:{listCacheSource}
-        </div>
-      )}
+    
     </div>
   );
 };
