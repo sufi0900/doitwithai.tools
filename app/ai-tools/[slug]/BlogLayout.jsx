@@ -61,6 +61,7 @@ const BlogLayout = ({
   schemaSlugMap,
   imgdesc,
 }) => {
+  // --- ALL REACT HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP LEVEL ---
   const [showGlobalHeader, setShowGlobalHeader] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [loadStage, setLoadStage] = useState(1); // Progressive loading stages
@@ -131,6 +132,29 @@ const BlogLayout = ({
     }
   }, [loading]);
 
+  // Memoize breadcrumb data to prevent re-renders
+  // This hook has been moved ABOVE the early returns.
+  const breadcrumbData = useMemo(() => {
+    // Provide default values for data properties if data is null/undefined during initial render
+    const categoryType = data?._type || 'default'; // Use a default category type if data is null
+    const title = data?.title || ''; // Use an empty string if title is null
+
+    return {
+      homeHref: "/",
+      // Safely access schemaSlugMap and data._type with nullish coalescing or checks
+      categoryHref: `/${(schemaSlugMap[categoryType] === 'ai-learn-earn' ? 'ai-learn-earn' : schemaSlugMap[categoryType]) || 'articles'}`, // Fallback for category href
+      categoryName: categoryType === "aitool" ? "AI Tools" :
+                    categoryType === "makemoney" ? "AI Learn & Earn" :
+                    categoryType === "coding" ? "AI Code" :
+                    categoryType === "seo" ? "AI SEO" :
+                    categoryType === "freeairesources" ? "Free AI Resources" : "AI News",
+      title: title.length > 50 ? `${title.substring(0, 50)}...` : title
+    };
+  }, [data, schemaSlugMap]); // Dependencies still include data and schemaSlugMap
+
+
+  // --- EARLY RETURNS COME AFTER ALL HOOKS ---
+
   // Early return for initial loading state of the *main* article data.
   // This should only show if 'data' is truly absent AND 'loading' is true (i.e., initial fetch).
   // With useUnifiedCache, 'data' might persist even during 'loading' (for refresh).
@@ -157,20 +181,9 @@ const BlogLayout = ({
     );
   }
 
+  // These can be safely defined here, as they are not hooks
   const currentPostId = data?._id;
   const currentPostType = data?._type;
-
-  // Memoize breadcrumb data to prevent re-renders
-  const breadcrumbData = useMemo(() => ({
-    homeHref: "/",
-    categoryHref: `/${schemaSlugMap[data?._type] === 'ai-learn-earn' ? 'ai-learn-earn' : schemaSlugMap[data._type]}`,
-    categoryName: data._type === "aitool" ? "AI Tools" :
-                  data._type === "makemoney" ? "AI Learn & Earn" :
-                  data._type === "coding" ? "AI Code" :
-                  data._type === "seo" ? "AI SEO" :
-                  data._type === "freeairesources" ? "Free AI Resources" : "AI News",
-    title: data.title.length > 50 ? `${data.title.substring(0, 50)}...` : data.title
-  }), [data, schemaSlugMap]);
 
   return (
     <>
@@ -181,13 +194,41 @@ const BlogLayout = ({
         mounted && showGlobalHeader ? 'pt-[18px]' : 'pt-[10px]'
       }`}>
         <div className="container">
-       
-
+        {/* Sticky Navigation Bar - Critical for FCP */}
+          <nav aria-label="Breadcrumb" className="mb-8 sticky top-0 z-40 w-full bg-white dark:bg-gray-900 shadow-md transition-all duration-300">
+            <ol className="flex items-center space-x-2 text-sm bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 px-4 py-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600">
+              <li>
+                <Link href={breadcrumbData.homeHref} className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                  </svg>
+                  Home
+                </Link>
+              </li>
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                </svg>
+                <Link href={breadcrumbData.categoryHref} className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200">
+                  {breadcrumbData.categoryName}
+                </Link>
+              </li>
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
+                </svg>
+                <span className="text-gray-900 dark:text-white font-medium bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded-md text-xs" aria-current="page">
+                  {breadcrumbData.title}
+                </span>
+              </li>
+            </ol>
+          </nav>
+        
           <article id="main-content" className="lg:m-4 flex flex-wrap">
             {/* Main Article Content - Priority for FCP */}
             <BlogHeader data={data} imgdesc={imgdesc} />
             
-            <div className="custom anchor mb-4  border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
+            <div className="custom anchor mb-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
             
             <div className="w-full lg:w-8/12">
               <div className="mb-10 mt-4 w-full overflow-hidden rounded article-content">
