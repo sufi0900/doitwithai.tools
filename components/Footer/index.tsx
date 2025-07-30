@@ -3,67 +3,49 @@ import Image from "next/image";
 import Link from "next/link";
 import { Star, Heart, ExternalLink, Users, MessageCircle } from "lucide-react";
 
-// Professional Trustpilot Rating Component
+// Simple and Compact Trustpilot Rating Component
 const TrustpilotInvite = () => {
   return (
-    <div className="bg-gradient-to-r from-[#2563eb]/5 to-purple-500/5 dark:from-[#2563eb]/10 dark:to-purple-500/10
-                    rounded-xl p-6 md:p-8 border border-[#2563eb]/20 dark:border-[#2563eb]/30
-                    backdrop-blur-sm mb-8 hover:shadow-lg transition-all duration-300">
-      <div className="flex flex-col items-center text-center space-y-4">
-        {/* Header with star rating */}
-        <div className="flex items-center space-x-2">
-          <div className="flex space-x-1">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                className="w-5 h-5 text-[#00b67a] fill-current"
-              />
-            ))}
-          </div>
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-            on Trustpilot
-          </span>
-        </div>
-
-        {/* Main message */}
-        <div>
-          <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-2">
-            Love our AI resources?
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300 max-w-lg mx-auto">
-            Help others discover quality AI content by sharing your experience.
-            Your feedback helps us improve and grow our community.
-          </p>
-        </div>
-
-        {/* CTA Button */}
-        <Link
-          href="https://www.trustpilot.com/review/doitwithai.tools"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center px-6 py-3 bg-[#2563eb] hover:bg-[#1d4ed8]
-                   text-white font-medium rounded-lg shadow-md hover:shadow-lg
-                   transform hover:scale-105 transition-all duration-300 group"
-        >
-          <MessageCircle className="w-4 h-4 mr-2 group-hover:animate-pulse" />
-          Share Your Experience
-          <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-        </Link>
-
-        {/* Trust indicators */}
-        <div className="flex flex-wrap justify-center items-center space-x-4 text-xs text-gray-500 dark:text-gray-400 mt-2">
-          <div className="flex items-center space-x-1">
-            <Users className="w-3 h-3" />
-            <span>Join 1000+ reviewers</span>
-          </div>
-          <div className="hidden sm:block w-1 h-1 bg-gray-400 rounded-full"></div> {/* Hide dot on small screens */}
-          <div className="flex items-center space-x-1">
-            <Heart className="w-3 h-3 text-red-500" />
-            <span>Takes 2 minutes</span>
-          </div>
-        </div>
+   <div className="max-w-2xl mx-auto">
+  {/* Trustpilot Card */}
+  <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-700/15 dark:to-indigo-700/15 
+                  border border-blue-500/20 dark:border-blue-700/30 rounded-xl shadow-sm hover:shadow-md 
+                  backdrop-blur-sm transition-all duration-300 px-6 py-4 sm:py-5 sm:px-8 
+                  flex flex-col sm:flex-row items-center justify-center gap-4 text-center sm:text-left">
+    
+    {/* Rating Section */}
+    <div className="flex items-center gap-2">
+      <div className="flex space-x-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star key={star} className="w-4 h-4 text-[#00b67a] fill-current" />
+        ))}
       </div>
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">4.8/5</span>
     </div>
+
+    {/* Divider */}
+    <div className="hidden sm:block w-px h-5 bg-gray-300 dark:bg-gray-600" />
+
+    {/* Message */}
+    <p className="text-sm text-gray-700 dark:text-gray-300">
+      Love our content?{" "}
+      <Link
+        href="https://www.trustpilot.com/review/doitwithai.tools"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-blue-700 dark:text-blue-400 hover:underline hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+      >
+        Share your experience on Trustpilot
+      </Link>
+    </p>
+  </div>
+
+  {/* Connected Small Note */}
+  <p className="mt-4 text-xs text-center text-gray-500 dark:text-gray-400">
+    Your feedback helps us grow and improve.
+  </p>
+</div>
+
   );
 };
 
@@ -132,8 +114,8 @@ const Footer = () => {
                       { icon: "twitter", href: "/" },
                       { icon: "youtube", href: "/" },
                       { icon: "linkedin", href: "/" },
-                      { icon: "tiktok", href: "https://www.tiktok.com/@yourprofile" }, // Added TikTok
-                      { icon: "pinterest", href: "https://www.pinterest.com/yourprofile" } // Added Pinterest
+                      { icon: "tiktok", href: "https://www.tiktok.com/@yourprofile" },
+                      { icon: "pinterest", href: "https://www.pinterest.com/yourprofile" }
                     ].map((social, index) => (
                       <Link
                         key={social.icon}
@@ -166,12 +148,12 @@ const Footer = () => {
                         )}
                         {social.icon === "tiktok" && (
                           <svg width="18" height="18" viewBox="0 0 24 24" className="fill-current">
-                            <path d="M12.067 1.011A9.761 9.761 0 001.218 10.706v2.19C1.218 18.258 5.672 23 12.067 23c6.395 0 10.85-4.742 10.85-10.101v-2.19c0-5.359-4.455-9.801-10.85-9.801zM10.975 18.995c-3.133 0-5.748-1.782-5.748-4.103 0-2.322 2.615-4.103 5.748-4.103s5.748 1.782 5.748 4.103c0 2.321-2.615 4.103-5.748 4.103zM10.975 7.42c-3.133 0-5.748-1.782-5.748-4.103 0-2.322 2.615-4.103 5.748-4.103s5.748 1.782 5.748 4.103c0 2.321-2.615 4.103-5.748 4.103zM10.975 2.912c-1.397 0-2.534-.794-2.534-1.782S9.578-.652 10.975-.652s2.534.794 2.534 1.782-1.137 1.782-2.534 1.782zM10.975 14.482c-1.397 0-2.534-.794-2.534-1.782s1.137-1.782 2.534-1.782 2.534.794 2.534 1.782-1.137 1.782-2.534 1.782zM10.975 1.011" />
+                            <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-.88-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
                           </svg>
                         )}
                         {social.icon === "pinterest" && (
                           <svg width="18" height="18" viewBox="0 0 24 24" className="fill-current">
-                            <path d="M12 0C5.373 0 0 5.373 0 12c0 5.093 3.102 9.456 7.5 11.234l.75-.001c.414-.001.75-.337.75-.75s-.336-.75-.75-.75c-3.559-1.638-6-5.188-6-9.734 0-4.694 3.806-8.5 8.5-8.5S20.5 7.306 20.5 12c0 3.32-1.905 6.185-4.654 7.643-.298.158-.456.495-.456.812v3.13c0 .414.336.75.75.75s.75-.336.75-.75v-2.887C19.782 17.513 22 14.93 22 12c0-6.627-5.373-12-12-12zM12 21.5c-3.69 0-6.75-2.91-6.75-6.5S8.31 8.5 12 8.5s6.75 2.91 6.75 6.5-3.06 6.5-6.75 6.5z"/>
+                            <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.174-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.749.097.118.112.219.083.402-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12.017 24.009c6.624 0 11.99-5.367 11.99-11.988C24.007 5.367 18.641.001.012.001z.017 0z"/>
                           </svg>
                         )}
                       </Link>
@@ -180,7 +162,8 @@ const Footer = () => {
                 </div>
               </div>
             </div>
-</div>
+          </div>
+
             {/* Navigation Links */}
             <div className="w-full px-4 sm:w-1/2 md:w-1/2 lg:w-2/12 xl:w-2/12">
               <div className="mb-12 lg:mb-16">
@@ -239,17 +222,18 @@ const Footer = () => {
                     </li>
                   ))}
                 </ul>
+
               </div>
             </div>
 
-            {/* Support & Trustpilot */}
+            {/* Support */}
             <div className="w-full px-4 md:w-1/2 lg:w-4/12 xl:w-3/12">
               <div className="mb-12 lg:mb-16">
                 <h2 className="mb-6 text-lg font-bold text-gray-800 dark:text-white
                              border-b-2 border-[#2563eb]/20 pb-2 inline-block">
                   Support & Help
                 </h2>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3">
                   {[
                     { href: "/contact", text: "Open Support Ticket" },
                     { href: "/terms-and-conditions", text: "Terms of Use" },
@@ -269,21 +253,21 @@ const Footer = () => {
                     </li>
                   ))}
                 </ul>
+                   
 
-                {/* Trustpilot Component */}
-                {/* <TrustpilotInvite /> */}
               </div>
             </div>
+          
           </div>
- <div className="px-4 mt-8 lg:mt-12"> {/* Added responsive padding and top margin */}
+
             <TrustpilotInvite />
-          </div>
+          
           {/* Enhanced Divider */}
           <div className="h-px w-full bg-gradient-to-r from-transparent via-[#2563eb]/30 to-transparent 
                          dark:via-[#2563eb]/20 my-8"></div>
           
           {/* Footer Bottom */}
-          <div className="py-8">
+          <div className="pb-8">
             <div className="text-center space-y-4">
               <p className="text-sm text-gray-600 dark:text-gray-300">
                 © {new Date().getFullYear()} DoItWithAI.tools. All rights reserved.
@@ -328,6 +312,196 @@ const Footer = () => {
               </div>
             </div>
           </div>
+        </div>
+           <div className="absolute right-0 top-14 z-[-1]">
+          <svg
+            width="55"
+            height="99"
+            viewBox="0 0 55 99"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle opacity="0.8" cx="49.5" cy="49.5" r="49.5" fill="#959CB1" />
+            <mask
+              id="mask0_94:899"
+              style={{ maskType: "alpha" }}
+              maskUnits="userSpaceOnUse"
+              x="0"
+              y="0"
+              width="99"
+              height="99"
+            >
+              <circle
+                opacity="0.8"
+                cx="49.5"
+                cy="49.5"
+                r="49.5"
+                fill="#4A6CF7"
+              />
+            </mask>
+            <g mask="url(#mask0_94:899)">
+              <circle
+                opacity="0.8"
+                cx="49.5"
+                cy="49.5"
+                r="49.5"
+                fill="url(#paint0_radial_94:899)"
+              />
+              <g opacity="0.8" filter="url(#filter0_f_94:899)">
+                <circle cx="53.8676" cy="26.2061" r="20.3824" fill="white" />
+              </g>
+            </g>
+            <defs>
+              <filter
+                id="filter0_f_94:899"
+                x="12.4852"
+                y="-15.1763"
+                width="82.7646"
+                height="82.7646"
+                filterUnits="userSpaceOnUse"
+                colorInterpolationFilters="sRGB"
+              >
+                <feFlood floodOpacity="0" result="BackgroundImageFix" />
+                <feBlend
+                  mode="normal"
+                  in="SourceGraphic"
+                  in2="BackgroundImageFix"
+                  result="shape"
+                />
+                <feGaussianBlur
+                  stdDeviation="10.5"
+                  result="effect1_foregroundBlur_94:899"
+                />
+              </filter>
+              <radialGradient
+                id="paint0_radial_94:899"
+                cx="0"
+                cy="0"
+                r="1"
+                gradientUnits="userSpaceOnUse"
+                gradientTransform="translate(49.5 49.5) rotate(90) scale(53.1397)"
+              >
+                <stop stopOpacity="0.47" />
+                <stop offset="1" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+        <div className="absolute bottom-24 left-0 z-[-1]">
+          <svg
+            width="79"
+            height="94"
+            viewBox="0 0 79 94"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              opacity="0.3"
+              x="-41"
+              y="26.9426"
+              width="66.6675"
+              height="66.6675"
+              transform="rotate(-22.9007 -41 26.9426)"
+              fill="url(#paint0_linear_94:889)"
+            />
+            <rect
+              x="-41"
+              y="26.9426"
+              width="66.6675"
+              height="66.6675"
+              transform="rotate(-22.9007 -41 26.9426)"
+              stroke="url(#paint1_linear_94:889)"
+              strokeWidth="0.7"
+            />
+            <path
+              opacity="0.3"
+              d="M50.5215 7.42229L20.325 1.14771L46.2077 62.3249L77.1885 68.2073L50.5215 7.42229Z"
+              fill="url(#paint2_linear_94:889)"
+            />
+            <path
+              d="M50.5215 7.42229L20.325 1.14771L46.2077 62.3249L76.7963 68.2073L50.5215 7.42229Z"
+              stroke="url(#paint3_linear_94:889)"
+              strokeWidth="0.7"
+            />
+            <path
+              opacity="0.3"
+              d="M17.9721 93.3057L-14.9695 88.2076L46.2077 62.325L77.1885 68.2074L17.9721 93.3057Z"
+              fill="url(#paint4_linear_94:889)"
+            />
+            <path
+              d="M17.972 93.3057L-14.1852 88.2076L46.2077 62.325L77.1884 68.2074L17.972 93.3057Z"
+              stroke="url(#paint5_linear_94:889)"
+              strokeWidth="0.7"
+            />
+            <defs>
+              <linearGradient
+                id="paint0_linear_94:889"
+                x1="-41"
+                y1="21.8445"
+                x2="36.9671"
+                y2="59.8878"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stopColor="#4A6CF7" stopOpacity="0.62" />
+                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient
+                id="paint1_linear_94:889"
+                x1="25.6675"
+                y1="95.9631"
+                x2="-42.9608"
+                y2="20.668"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stopColor="#4A6CF7" stopOpacity="0" />
+                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.51" />
+              </linearGradient>
+              <linearGradient
+                id="paint2_linear_94:889"
+                x1="20.325"
+                y1="-3.98039"
+                x2="90.6248"
+                y2="25.1062"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stopColor="#4A6CF7" stopOpacity="0.62" />
+                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient
+                id="paint3_linear_94:889"
+                x1="18.3642"
+                y1="-1.59742"
+                x2="113.9"
+                y2="80.6826"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stopColor="#4A6CF7" stopOpacity="0" />
+                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.51" />
+              </linearGradient>
+              <linearGradient
+                id="paint4_linear_94:889"
+                x1="61.1098"
+                y1="62.3249"
+                x2="-8.82468"
+                y2="58.2156"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stopColor="#4A6CF7" stopOpacity="0.62" />
+                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient
+                id="paint5_linear_94:889"
+                x1="65.4236"
+                y1="65.0701"
+                x2="24.0178"
+                y2="41.6598"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stopColor="#4A6CF7" stopOpacity="0" />
+                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.51" />
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
       </footer>
     </>

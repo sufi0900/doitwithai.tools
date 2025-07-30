@@ -1,5 +1,6 @@
 // components/Common/StaticBlogsPageShell.jsx
-// This will be a Server Component (no "use client")
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 import React from 'react';
 
 // Components
