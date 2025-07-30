@@ -255,10 +255,9 @@ const useDebounceCallback = (callback, delay) => {
 
 const { ref, inView } = useInView({
   triggerOnce: true,
-  rootMargin: "150px 0px", // Increased margin for better pre-loading
-  threshold: 0.1 // Load when 10% visible
+  rootMargin: "300px 0px", // Increased from 150px to 300px for earlier preloading
+  threshold: 0.05 // Reduced threshold for earlier trigger
 });
-
 const checkImageCache = useCallback(async () => {
   try {
     setRealTimeStatus('checking');
@@ -296,7 +295,6 @@ const checkImageCache = useCallback(async () => {
   // Helper function to clamp a value between a min and max
   const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
 
-  // Static placeholder component with same loader animation
 // Enhanced StaticPlaceholder component with improved responsive design
 const StaticPlaceholder = () => (
   <div className="relative w-full aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
@@ -846,15 +844,6 @@ useEffect(() => {
   };
 }, []);
 
-// Add this condition before your return statement:
-if (renderCount > maxRenders) {
-    return (
-        <div className="relative w-full bg-gray-200 rounded-xl p-8 text-center">
-            <p className="text-gray-500">Image loading stabilized</p>
-            <img src={src} alt={alt} className={className} loading="lazy" />
-        </div>
-    );
-}
 
   return (
     <>
@@ -1166,5 +1155,3 @@ if (renderCount > maxRenders) {
 };
 
 export default OptimizedImage;
-
-
