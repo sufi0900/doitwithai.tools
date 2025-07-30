@@ -141,19 +141,16 @@ class CustomSanityCache {
                     // Add debug logging as requested
                     console.log('[IndexedDB] Checking cache for:', fullCacheKey);
                     console.log('[IndexedDB] Found cached data:', !!indexedData);
-                    if (indexedData) {
-                        const age = Date.now() - indexedData.timestamp;
-                        const isStale = age > staleTime; // Calculate isStale here for the log
-                        console.log('[IndexedDB] Cache age:', age);
-                        console.log('[IndexedDB] Is stale:', isStale);
-                        console.log('[IndexedDB] Enable offline:', enableOffline);
-                        console.log('[IndexedDB] Network online:', navigator.onLine); // Use navigator.onLine for consistency
-
-                        // Hydrate memory cache with data from IndexedDB
-                        // Use indexedData.options if available, otherwise effectiveOptions for original query/params
-                        const optionsToStoreInMemory = indexedData.options || effectiveOptions;
-                        this.setMemoryCache(fullCacheKey, indexedData.data, indexedData.timestamp, optionsToStoreInMemory);
-
+                 if (indexedData) {
+    const age = Date.now() - indexedData.timestamp;
+    const isStale = age > staleTime;
+    
+    // CRITICAL FIX: Only hydrate if not already in memory with same timestamp
+    const memoryEntry = this.memoryCache.get(fullCacheKey);
+    if (!memoryEntry || memoryEntry.timestamp !== indexedData.timestamp) {
+        const optionsToStoreInMemory = indexedData.options || effectiveOptions;
+        this.setMemoryCache(fullCacheKey, indexedData.data, indexedData.timestamp, optionsToStoreInMemory);
+    }
                         if (age < maxAge || (!this.isOnline && enableOffline)) {
                             if (age > staleTime && this.isOnline) {
                                 // Only trigger background refresh if online and data is stale
@@ -219,20 +216,27 @@ class CustomSanityCache {
         this.notifySubscribers(fullCacheKey, { data, isStale: false, source: 'network', age: 0 });
     }
 
-    setMemoryCache(cacheKey, data, timestamp, options = {}) {
-        // Use the passed options or fallback to keyOptions if options are not explicitly provided
-        const effectiveOptions = this.keyOptions.get(cacheKey) || options;
-        const dataSize = this.estimateSize(data);
-
-        // Cleanup before adding if size exceeds limit
-        if (this.currentMemorySize + dataSize > this.maxMemorySize) {
-            this.cleanupMemoryCache();
-        }
-
-        this.memoryCache.set(cacheKey, { data, timestamp, size: dataSize, options: effectiveOptions });
-        this.currentMemorySize += dataSize;
-        // console.log(`Memory cache updated for ${cacheKey}. Current size: ${this.currentMemorySize / 1024}KB`);
+  setMemoryCache(cacheKey, data, timestamp, options = {}) {
+    // FIXED: Use consistent timestamp - don't create new ones
+    const effectiveOptions = this.keyOptions.get(cacheKey) || options;
+    const dataSize = this.estimateSize(data);
+    
+    // CRITICAL FIX: Use provided timestamp, don't generate new one
+    const finalTimestamp = timestamp || Date.now();
+    
+    if (this.currentMemorySize + dataSize > this.maxMemorySize) {
+        this.cleanupMemoryCache();
     }
+    
+    this.memoryCache.set(cacheKey, {
+        data,
+        timestamp: finalTimestamp, // Use consistent timestamp
+        size: dataSize,
+        options: effectiveOptions
+    });
+    
+    this.currentMemorySize += dataSize;
+}
 
     estimateSize(obj) {
         try {

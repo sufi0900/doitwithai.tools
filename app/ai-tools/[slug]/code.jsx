@@ -1,127 +1,49 @@
 /* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 "use client";
-import React from "react";
-import BlogLayout from "./BlogLayout";
-import { client } from "@/sanity/lib/client";
+import React, { useState, useMemo, useCallback } from "react";
+import dynamic from 'next/dynamic';
+import "@/styles/customanchor.css";
 
-import { useSanityCache } from "@/React_Query_Caching/useSanityCache";
-import { CACHE_KEYS } from "@/React_Query_Caching/cacheKeys";
-import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
-import { usePageCache } from "@/React_Query_Caching/usePageCache";
+// Caching System Imports
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
+import { usePageCache } from '@/React_Query_Caching/usePageCache';
+import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 
-import { fetchRelatedResources } from "@/app/free-ai-resources/resourceHelpers";
+// Dynamic imports with loading states - Critical for FCP improvement
+const BlogLayout = dynamic(() => import("@/app/ai-tools/[slug]/BlogLayout"), {
+  loading: () => (
+    <div className="animate-pulse">
+      <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-lg mb-6"></div>
+      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+    </div>
+  ),
+  ssr: false // Disable SSR for this component to improve server response time
+});
 
+const UnifiedCacheMonitor = dynamic(() => import("@/React_Query_Caching/UnifiedCacheMonitor"), {
+  loading: () => null,
+  ssr: false
+});
 
-// --- CORRECTED fetchMainArticleData ---
-async function fetchMainArticleData(slug, type) {
-  if (!slug || !type) return null;
-  // This query is for fetching a SINGLE article by its slug and type
-  const query = `*[_type == "${type}" && slug.current == "${slug}"][0]`;
-  const data = await client.fetch(query); // No params needed if variables are interpolated directly
-  return data;
-}
-// --- END CORRECTED fetchMainArticleData ---
-
-async function fetchRelatedPostsData(currentPostId, postType) {
-  if (!currentPostId || !postType) return [];
-  const excludeId = currentPostId ? currentPostId : '';
-  // Your query was `*[_type == "aitool" && _id != $excludeId]`.
-  // To make it more dynamic based on the current post's type:
-  const query = `*[_type == "${postType}" && _id != $excludeId] | order(publishedAt desc) [0...3]`; // Changed _createdAt to publishedAt for consistency
-  return await client.fetch(query, { excludeId });
-}
-
-export default function AiToolSlugPageCode({ data: initialData, params }) {
+export default function ArticleChildComp({ serverData, params, schemaType }) {
   const currentSlug = params.slug;
-  const currentPostType = initialData?._type;
-  const currentPostId = initialData?._id;
 
-  const {
-    data: articleData,
-    isLoading: articleLoading,
-    error: articleError,
-    refresh: refreshArticle,
-    isStale: isArticleStale,
-    cacheSource: articleCacheSource,
-  } = useSanityCache(
-    CACHE_KEYS.ARTICLE.CONTENT(currentSlug, currentPostType),
-    // Pass slug and type directly to fetchMainArticleData
-    () => fetchMainArticleData(currentSlug, currentPostType),
-    {
-      initialData: initialData,
-      componentName: `Article_${currentPostType}_${currentSlug}`,
-      enableOffline: true,
-      group: `article-content-group-${currentPostType}`,
-    }
-  );
-  usePageCache(CACHE_KEYS.ARTICLE.CONTENT(currentSlug, currentPostType), refreshArticle, `MainArticle:${currentPostType}/${currentSlug}`);
+  // Memoize static mappings and configurations at the top level
+  const schemaSlugMap = useMemo(() => ({
+    makemoney: "ai-learn-earn",
+    aitool: "ai-tools", 
+    coding: "ai-code",
+    seo: "ai-seo",
+    news: "ai-news",
+    freeairesources: "free-ai-resources",
+  }), []);
 
-
-  const {
-    data: relatedPosts,
-    isLoading: relatedPostsLoading,
-    error: relatedPostsError,
-    refresh: refreshRelatedPosts,
-    isStale: isRelatedPostsStale,
-    cacheSource: relatedPostsCacheSource,
-  } = useSanityCache(
-    CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId, currentPostType),
-    // Pass currentPostId and currentPostType to fetchRelatedPostsData
-    () => fetchRelatedPostsData(currentPostId, currentPostType),
-    {
-      componentName: `RelatedPosts_${currentPostType}_${currentPostId}`,
-      enableOffline: true,
-      group: `article-related-group-${currentPostType}`,
-    }
-  );
-  usePageCache(CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId, currentPostType), refreshRelatedPosts, `RelatedPosts:${currentPostType}/${currentPostId}`);
-
-
-  const {
-    data: relatedResources,
-    isLoading: resourcesLoading,
-    error: resourcesError,
-    refresh: refreshResources,
-    isStale: isResourcesStale,
-    cacheSource: resourcesCacheSource,
-  } = useSanityCache(
-    CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId),
-    // Pass currentPostId and currentPostType to fetchRelatedResources
-    () => fetchRelatedResources(currentPostId, currentPostType),
-    {
-      componentName: `RelatedResources_${currentPostId}`,
-      enableOffline: true,
-      group: `article-related-group-${currentPostType}`,
-    }
-  );
-  usePageCache(CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId), refreshResources, `RelatedResources:${currentPostId}`);
-
-
-  const isPageContentLoading = articleLoading && !articleData; // Simplified logic
-
-  // Consolidate all errors for display
-  const hasErrors = articleError || relatedPostsError || resourcesError;
-
-  // If there's an error and no main article data, we should show an error state instead of skeleton
-  if (!articleData && hasErrors) {
-      return (
-          <div className="container mx-auto px-4 py-16 text-center">
-              <h1 className="text-4xl font-bold mb-4 text-red-600">Error Loading Content</h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                  {articleError?.message || relatedPostsError?.message || resourcesError?.message || "An unexpected error occurred."}
-              </p>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                  Please try refreshing the page or check your internet connection.
-              </p>
-              <div className="flex justify-center p-4">
-                  <PageCacheStatusButton />
-              </div>
-          </div>
-      );
-  }
-
-  // --- Sanity PortableText components (unchanged) ---
-  const imgdesc = {
+  // Memoize imgdesc to prevent re-creation - MOVED TO TOP
+  const imgdesc = useMemo(() => ({
     block: {
       normal: ({ children }) => (
         <p className="hover:text-gray-950 dark:hover:text-gray-50 mb-4 mt-1 text-lg font-medium leading-relaxed text-gray-800 dark:text-gray-300 transition-all duration-300 ease-in-out">
@@ -134,31 +56,219 @@ export default function AiToolSlugPageCode({ data: initialData, params }) {
         </a>
       ),
     },
-  };
+  }), []);
 
-  const schemaSlugMap = {
-    makemoney: "ai-learn-earn",
-    aitool: "ai-tools",
-    news: "news",
-    coding: "ai-code",
-    freeairesources: "free-ai-resources",
-    seo: "ai-seo",
-  };
+  // Priority: Article content cache (most critical for FCP)
+  const articleCacheOptions = useMemo(() => ({
+    componentName: `${schemaType}ArticleContent`,
+    enableOffline: true,
+    initialData: serverData,
+    forceRefresh: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes - Keep content fresh but not too aggressive
+  }), [serverData, schemaType]);
+
+  const articleQuery = useMemo(() => 
+    `*[_type == $schemaType && slug.current == $currentSlug][0]`, 
+    [schemaType]
+  );
+
+  const articleQueryParams = useMemo(() => ({
+    schemaType: schemaType,
+    currentSlug: currentSlug
+  }), [schemaType, currentSlug]);
+
+  const {
+    data: cachedArticleData,
+    isLoading: articleLoading,
+    error: articleError,
+    refresh: refreshArticle,
+    isStale: articleIsStale
+  } = useUnifiedCache(
+    CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType),
+    articleQuery,
+    articleQueryParams,
+    { ...articleCacheOptions, schemaType }
+  );
+
+  // Determine final article data - prioritize cached data over server data
+  const finalArticleData = cachedArticleData || serverData;
+  const currentPostId = finalArticleData?._id;
+
+  // Lower priority: Related posts cache (load after main content)
+  const relatedPostsOptions = useMemo(() => ({
+    componentName: `${schemaType}RelatedPosts`,
+    enableOffline: true,
+    enabled: !!currentPostId && !!finalArticleData, // Only enable if we have main content
+    staleTime: 10 * 60 * 1000, // 10 minutes - Less critical, can be staler
+  }), [currentPostId, schemaType, finalArticleData]);
+
+  const relatedPostsQuery = useMemo(() => 
+    `*[_type == $schemaType && _id != $currentPostId] | order(_createdAt desc)[0...3]`, 
+    [schemaType]
+  );
+
+  const relatedPostsQueryParams = useMemo(() => ({
+    schemaType: schemaType,
+    currentPostId: currentPostId
+  }), [schemaType, currentPostId]);
+
+  const {
+    data: relatedPosts,
+    isLoading: relatedPostsLoading,
+    error: relatedPostsError,
+    refresh: refreshRelatedPosts,
+    isStale: relatedPostsStale
+  } = useUnifiedCache(
+    CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType),
+    relatedPostsQuery,
+    relatedPostsQueryParams,
+    { ...relatedPostsOptions, schemaType }
+  );
+
+  // Lowest priority: Related resources cache (load last)
+  const relatedResourcesOptions = useMemo(() => ({
+    componentName: `${schemaType}RelatedResources`,
+    enableOffline: true,
+    enabled: !!currentPostId && !!finalArticleData, // Only enable if we have main content
+    staleTime: 15 * 60 * 1000, // 15 minutes - Least critical
+  }), [currentPostId, schemaType, finalArticleData]);
+
+  const correctRelatedResourcesQuery = useMemo(() => 
+    `*[_type == "freeResources" && references($articleId)]{
+      _id,title,tags,mainImage,overview,resourceType,resourceFormat,
+      resourceLink,resourceLinkType,previewSettings,
+      "resourceFile": resourceFile.asset->,content,publishedAt,promptContent,
+      "relatedArticle": relatedArticle->{title,slug,_id,_type},
+      seoTitle,seoDescription,seoKeywords,altText,structuredData
+    }`, 
+    []
+  );
+
+  const relatedResourcesQueryParams = useMemo(() => ({
+    articleId: currentPostId
+  }), [currentPostId]);
+
+  const {
+    data: relatedResources,
+    isLoading: resourcesLoading,
+    error: resourcesError,
+    refresh: refreshRelatedResources,
+    isStale: resourcesStale
+  } = useUnifiedCache(
+    CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
+    correctRelatedResourcesQuery,
+    relatedResourcesQueryParams,
+    { ...relatedResourcesOptions, schemaType: 'freeResources' }
+  );
+
+  // Register all cache operations with usePageCache for the status button
+  usePageCache(
+    CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType),
+    refreshArticle,
+    articleQuery,
+    `${schemaType}ArticleContent`
+  );
+  
+  usePageCache(
+    CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType),
+    refreshRelatedPosts,
+    relatedPostsQuery,
+    `${schemaType}RelatedPosts`
+  );
+  
+  usePageCache(
+    CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
+    refreshRelatedResources,
+    correctRelatedResourcesQuery,
+    `${schemaType}RelatedResources`
+  );
+
+  // Critical: Only show loading for main content if we have no data at all
+  const isMainContentLoading = articleLoading && !finalArticleData;
+
+  // Memoize refresh callback for error state
+  const handleRefreshArticle = useCallback(() => refreshArticle(true), [refreshArticle]);
+
+  // Priority loading states - Show content ASAP even if supporting content is loading
+  if (isMainContentLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <p className="ml-4 text-lg text-gray-700 dark:text-gray-300">Loading article content...</p>
+      </div>
+    );
+  }
+
+  // Handle error states - improved offline handling
+  if (articleError && !finalArticleData) {
+    const isOfflineError = !navigator.onLine || 
+      articleError.message.includes('offline') || 
+      articleError.message.includes('network');
+
+    return (
+      <div className="text-center py-8">
+        <div className="mb-4">
+          {isOfflineError ? (
+            <div className="inline-flex items-center px-4 py-2 bg-orange-100 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+              <span className="text-orange-600 dark:text-orange-400">📡</span>
+              <span className="ml-2 text-orange-800 dark:text-orange-200">You appear to be offline</span>
+            </div>
+          ) : (
+            <p className="text-red-500">Failed to load article: {articleError.message || "Unknown error"}</p>
+          )}
+        </div>
+        <button
+          onClick={handleRefreshArticle}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // If we still don't have any article data, show a message
+  if (!finalArticleData) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500 dark:text-gray-400">No article data available. Please check your connection and try again.</p>
+        <button
+          onClick={handleRefreshArticle}
+          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
-      <div className="flex justify-end p-4">
-        <PageCacheStatusButton />
-      </div>
+      {/* Stale content warnings - only show for critical content */}
+      {articleIsStale && (
+        <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+          <span>⚠️</span>
+          <span className="ml-2">Article content may be outdated.</span>
+        </div>
+      )}
+
+      {/* Cache Monitor - Load last */}
+      <UnifiedCacheMonitor
+        serverData={serverData}
+        params={params}
+      />
+
+      {/* Main Blog Layout - Priority content loads first */}
       <BlogLayout
-        data={articleData} // Pass the data from useSanityCache
-        loading={isPageContentLoading}
+        data={finalArticleData}
+        loading={isMainContentLoading}
         relatedPosts={relatedPosts || []}
         relatedPostsLoading={relatedPostsLoading}
         relatedResources={relatedResources || []}
         resourcesLoading={resourcesLoading}
         schemaSlugMap={schemaSlugMap}
         imgdesc={imgdesc}
+        onRefreshArticle={handleRefreshArticle}
       />
     </>
   );

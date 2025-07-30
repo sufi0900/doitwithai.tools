@@ -124,7 +124,11 @@ export default function RootLayout({ children }) {
             You are currently offline.
           </div>
         )}
-
+    {isSlugPage ? (
+                  <ConditionalGlobalHeader />
+                ) : (
+                  <Header />
+                )}
         {/* 1st paint: Hero only */}
         {isHomePage && <Hero />}
   <Providers>
@@ -133,11 +137,7 @@ export default function RootLayout({ children }) {
           <>
             <CacheProvider>
             
-                {isSlugPage ? (
-                  <ConditionalGlobalHeader />
-                ) : (
-                  <Header />
-                )}
+            
 
                 <main className={isHomePage ? "" : "pt-[80px]"}>
                   {children}

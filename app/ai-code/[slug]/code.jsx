@@ -1,45 +1,31 @@
 "use client";
-import React, { useState, useMemo, useCallback, Suspense, useEffect, useRef } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import dynamic from 'next/dynamic';
+import "@/styles/customanchor.css";
+import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
+
+// Caching System Imports
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 
-// Progressive loading: Load non-critical components only when needed
-const BlogSidebar = dynamic(() => import("@/app/ai-tools/[slug]/BlogSidebar"), {
-  loading: () => <div className="animate-pulse bg-gray-200 h-96 rounded-lg"></div>,
-  ssr: false
-});
-
-const RelatedPostsSection = dynamic(() => import("@/app/ai-tools/[slug]/RelatedPostsSection"), {
-  loading: () => <div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>,
-  ssr: false
-});
-
-const RelatedResources = dynamic(() => import("@/app/free-ai-resources/RelatedResources"), {
-  loading: () => <div className="animate-pulse bg-gray-200 h-48 rounded-lg"></div>,
-  ssr: false
-});
-
-const RecentPost = dynamic(() => import("@/components/RecentPost/RecentHome"), {
+// Dynamic imports with better loading strategy
+const BlogLayout = dynamic(() => import("@/app/ai-tools/[slug]/BlogLayout"), {
+  loading: () => null, // Don't show loading here - we'll handle it ourselves
   ssr: false
 });
 
 const UnifiedCacheMonitor = dynamic(() => import("@/React_Query_Caching/UnifiedCacheMonitor"), {
+  loading: () => null,
   ssr: false
 });
 
-// Core components that should load immediately
-import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout";
-import "@/styles/customanchor.css";
-
 export default function ArticleChildComp({ serverData, params, schemaType }) {
   const currentSlug = params.slug;
-  const [shouldLoadSidebar, setShouldLoadSidebar] = useState(false);
-  const [shouldLoadRelated, setShouldLoadRelated] = useState(false);
-  const mountedRef = useRef(false);
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const [skeletonTimeout, setSkeletonTimeout] = useState(null);
 
-  // Memoize static configurations
+  // Memoized configurations (same as before)
   const schemaSlugMap = useMemo(() => ({
     makemoney: "ai-learn-earn",
     aitool: "ai-tools", 
@@ -64,17 +50,17 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     },
   }), []);
 
-  // Article cache options
+  // Priority: Article content cache
   const articleCacheOptions = useMemo(() => ({
     componentName: `${schemaType}ArticleContent`,
     enableOffline: true,
     initialData: serverData,
     forceRefresh: false,
+    staleTime: 5 * 60 * 1000,
   }), [serverData, schemaType]);
 
-  // Dynamic article query
   const articleQuery = useMemo(() => 
-    `*[_type==$schemaType && slug.current==$currentSlug][0]`, 
+    `*[_type == $schemaType && slug.current == $currentSlug][0]`, 
     [schemaType]
   );
 
@@ -83,7 +69,6 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     currentSlug: currentSlug
   }), [schemaType, currentSlug]);
 
-  // Main article content cache
   const {
     data: cachedArticleData,
     isLoading: articleLoading,
@@ -97,48 +82,48 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     { ...articleCacheOptions, schemaType }
   );
 
+  // Determine final article data
   const finalArticleData = cachedArticleData || serverData;
   const currentPostId = finalArticleData?._id;
 
-  // Progressive loading trigger - load sidebar after main content is ready
+  // **SMART LOADING SKELETON LOGIC**
   useEffect(() => {
-    mountedRef.current = true;
+    // Only show skeleton if:
+    // 1. We're actually loading (not just stale)
+    // 2. We don't have ANY data (neither cached nor server)
+    // 3. It's been more than 300ms (avoid flash for quick loads)
     
-    if (finalArticleData && !articleLoading && mountedRef.current) {
-      const timer = setTimeout(() => {
-        if (mountedRef.current) {
-          setShouldLoadSidebar(true);
-        }
-      }, 100);
-      return () => clearTimeout(timer);
+    if (articleLoading && !finalArticleData) {
+      const timeout = setTimeout(() => {
+        setShowSkeleton(true);
+      }, 300); // 300ms delay before showing skeleton
+      
+      setSkeletonTimeout(timeout);
+      
+      return () => {
+        clearTimeout(timeout);
+        setSkeletonTimeout(null);
+      };
+    } else {
+      // Clear skeleton immediately when data is available
+      setShowSkeleton(false);
+      if (skeletonTimeout) {
+        clearTimeout(skeletonTimeout);
+        setSkeletonTimeout(null);
+      }
     }
+  }, [articleLoading, finalArticleData, skeletonTimeout]);
 
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [finalArticleData, articleLoading]);
-
-  // Load related content after sidebar
-  useEffect(() => {
-    if (shouldLoadSidebar && mountedRef.current) {
-      const timer = setTimeout(() => {
-        if (mountedRef.current) {
-          setShouldLoadRelated(true);
-        }
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [shouldLoadSidebar]);
-
-  // Related posts cache - only load when needed
+  // Related posts cache (lower priority)
   const relatedPostsOptions = useMemo(() => ({
     componentName: `${schemaType}RelatedPosts`,
     enableOffline: true,
-    enabled: !!currentPostId && shouldLoadRelated,
-  }), [currentPostId, schemaType, shouldLoadRelated]);
+    enabled: !!currentPostId && !!finalArticleData,
+    staleTime: 10 * 60 * 1000,
+  }), [currentPostId, schemaType, finalArticleData]);
 
   const relatedPostsQuery = useMemo(() => 
-    `*[_type==$schemaType && _id!=$currentPostId] | order(_createdAt desc)[0...3]`, 
+    `*[_type == $schemaType && _id != $currentPostId] | order(_createdAt desc)[0...3]`, 
     [schemaType]
   );
 
@@ -157,25 +142,25 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType),
     relatedPostsQuery,
     relatedPostsQueryParams,
-    { ...relatedPostsOptions, schemaType, enabled: shouldLoadRelated }
+    { ...relatedPostsOptions, schemaType }
   );
 
-  // Related resources cache - only load when needed
+  // Related resources cache (lowest priority)
   const relatedResourcesOptions = useMemo(() => ({
     componentName: `${schemaType}RelatedResources`,
     enableOffline: true,
-    enabled: !!currentPostId && shouldLoadRelated,
-  }), [currentPostId, schemaType, shouldLoadRelated]);
+    enabled: !!currentPostId && !!finalArticleData,
+    staleTime: 15 * 60 * 1000,
+  }), [currentPostId, schemaType, finalArticleData]);
 
   const correctRelatedResourcesQuery = useMemo(() => 
-    `*[_type=="freeResources" && references($articleId)]{
-      _id,title,tags,mainImage,overview,resourceType,resourceFormat,
-      resourceLink,resourceLinkType,previewSettings,
-      "resourceFile":resourceFile.asset->,content,publishedAt,promptContent,
-      "relatedArticle":relatedArticle->{title,slug,_id,_type},
-      seoTitle,seoDescription,seoKeywords,altText,structuredData
-    }`, 
-    []
+    `*[_type == "freeResources" && references($articleId)]{
+      _id, title, tags, mainImage, overview, resourceType, resourceFormat, 
+      resourceLink, resourceLinkType, previewSettings,
+      "resourceFile": resourceFile.asset->, content, publishedAt, promptContent,
+      "relatedArticle": relatedArticle->{title, slug, _id, _type},
+      seoTitle, seoDescription, seoKeywords, altText, structuredData
+    }`, []
   );
 
   const relatedResourcesQueryParams = useMemo(() => ({
@@ -192,46 +177,32 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
     correctRelatedResourcesQuery,
     relatedResourcesQueryParams,
-    { ...relatedResourcesOptions, schemaType: 'freeResources', enabled: shouldLoadRelated }
+    { ...relatedResourcesOptions, schemaType: 'freeResources' }
   );
 
-  // Register cache operations - always call hooks but conditionally register
+  // Register cache operations
   usePageCache(
     CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType),
     refreshArticle,
     articleQuery,
     `${schemaType}ArticleContent`
   );
-
-  // Always call these hooks but they will only register when conditions are met
   usePageCache(
-    shouldLoadRelated ? CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType) : null,
-    shouldLoadRelated ? refreshRelatedPosts : () => {},
-    shouldLoadRelated ? relatedPostsQuery : '',
-    shouldLoadRelated ? `${schemaType}RelatedPosts` : ''
+    CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType),
+    refreshRelatedPosts,
+    relatedPostsQuery,
+    `${schemaType}RelatedPosts`
   );
-  
   usePageCache(
-    shouldLoadRelated ? CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown') : null,
-    shouldLoadRelated ? refreshRelatedResources : () => {},
-    shouldLoadRelated ? correctRelatedResourcesQuery : '',
-    shouldLoadRelated ? `${schemaType}RelatedResources` : ''
+    CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
+    refreshRelatedResources,
+    correctRelatedResourcesQuery,
+    `${schemaType}RelatedResources`
   );
 
-  const isMainContentLoading = articleLoading && !finalArticleData;
   const handleRefreshArticle = useCallback(() => refreshArticle(true), [refreshArticle]);
 
-  // Loading state
-  if (isMainContentLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        <p className="ml-4 text-lg text-gray-700 dark:text-gray-300">Loading article content...</p>
-      </div>
-    );
-  }
-
-  // Error state
+  // **IMPROVED ERROR HANDLING**
   if (articleError && !finalArticleData) {
     const isOfflineError = !navigator.onLine || 
       articleError.message.includes('offline') || 
@@ -243,10 +214,14 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
           {isOfflineError ? (
             <div className="inline-flex items-center px-4 py-2 bg-orange-100 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
               <span className="text-orange-600 dark:text-orange-400">📡</span>
-              <span className="ml-2 text-orange-800 dark:text-orange-200">You appear to be offline</span>
+              <span className="ml-2 text-orange-800 dark:text-orange-200">
+                You appear to be offline
+              </span>
             </div>
           ) : (
-            <p className="text-red-500">Failed to load article: {articleError.message || "Unknown error"}</p>
+            <p className="text-red-500">
+              Failed to load article: {articleError.message || "Unknown error"}
+            </p>
           )}
         </div>
         <button
@@ -259,10 +234,22 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     );
   }
 
+  // **SMART LOADING STATE** - Only show skeleton when truly needed
+  if (showSkeleton) {
+    return (
+      <div className="relative">
+        <SlugSkeleton />
+      </div>
+    );
+  }
+
+  // If we still don't have any article data, show a message
   if (!finalArticleData) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-500 dark:text-gray-400">No article data available. Please check your connection and try again.</p>
+        <p className="text-gray-500 dark:text-gray-400">
+          No article data available. Please check your connection and try again.
+        </p>
         <button
           onClick={handleRefreshArticle}
           className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
@@ -275,44 +262,20 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
 
   return (
     <>
-      {/* Stale content warnings */}
-      {articleIsStale && (
-        <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <span>⚠️</span>
-          <span className="ml-2">Article content may be outdated.</span>
-        </div>
-      )}
 
-      {(relatedPostsStale || resourcesStale) && shouldLoadRelated && (
-        <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-          <span>⚠️</span>
-          <span className="ml-2">Related content may be outdated.</span>
-        </div>
-      )}
+      <UnifiedCacheMonitor serverData={serverData} params={params} />
 
-      {/* Cache Monitor - Load only when needed */}
-      <Suspense fallback={null}>
-        {shouldLoadRelated && (
-          <UnifiedCacheMonitor
-            serverData={serverData}
-            params={params}
-          />
-        )}
-      </Suspense>
-
-      {/* Main Blog Layout - Priority content */}
+      {/* Main Blog Layout - Show immediately when data is available */}
       <BlogLayout
         data={finalArticleData}
-        loading={isMainContentLoading}
-        relatedPosts={shouldLoadRelated ? (relatedPosts || []) : []}
-        relatedPostsLoading={shouldLoadRelated ? relatedPostsLoading : false}
-        relatedResources={shouldLoadRelated ? (relatedResources || []) : []}
-        resourcesLoading={shouldLoadRelated ? resourcesLoading : false}
+        loading={false} // Never pass loading true here since we handle it above
+        relatedPosts={relatedPosts || []}
+        relatedPostsLoading={relatedPostsLoading}
+        relatedResources={relatedResources || []}
+        resourcesLoading={resourcesLoading}
         schemaSlugMap={schemaSlugMap}
         imgdesc={imgdesc}
         onRefreshArticle={handleRefreshArticle}
-        shouldLoadSidebar={shouldLoadSidebar}
-        shouldLoadRelated={shouldLoadRelated}
       />
     </>
   );

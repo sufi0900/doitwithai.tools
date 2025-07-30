@@ -1,20 +1,12 @@
-// app/blogs/BlogHeader.jsx (Rename from app/ai-seo/[slug]/BlogHeader if it's generic)
-// This component is optimized for Server-Side Rendering (SSR) for best FCP.
-// NO "use client" directive here.
 
 import React from "react";
 import Image from "next/image";
 import { urlForImage } from "@/sanity/lib/image";
 import { PortableText } from "@portabletext/react";
 
-// Assuming ReadingProgressCircle might still need 'use client'
-// and will handle its own mounting. We'll keep it here but ensure it doesn't block.
 import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
 
-// We no longer need useInView for initial render optimization.
-// import { useInView } from "react-intersection-observer";
 
-// We remove articleLoading and any state tied to it for FCP
 const BlogHeader = ({ data, imgdesc }) => {
   // If data is not available, return a minimal fallback to avoid errors
   // This should ideally not happen if data fetching is robust before rendering.

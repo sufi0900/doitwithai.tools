@@ -79,6 +79,18 @@ const containerRef = useRef(null);
     // This could be useful for high-traffic scenarios
   }, []);
 
+// Add this at the top of OptimizedImage component:
+const [renderCount, setRenderCount] = useState(0);
+const maxRenders = 3; // Prevent infinite loops
+
+useEffect(() => {
+    setRenderCount(prev => prev + 1);
+    if (renderCount > maxRenders) {
+        console.warn('Image render loop detected, stopping:', src);
+        setIsLoading(false);
+        return;
+    }
+}, [isLoading, hasLoadedOnce, imageError]);
 
 
   useEffect(() => {
@@ -833,6 +845,17 @@ useEffect(() => {
     // This prevents memory leaks when component unmounts quickly
   };
 }, []);
+
+// Add this condition before your return statement:
+if (renderCount > maxRenders) {
+    return (
+        <div className="relative w-full bg-gray-200 rounded-xl p-8 text-center">
+            <p className="text-gray-500">Image loading stabilized</p>
+            <img src={src} alt={alt} className={className} loading="lazy" />
+        </div>
+    );
+}
+
   return (
     <>
       {/* Main image container */}
@@ -1144,5 +1167,4 @@ useEffect(() => {
 
 export default OptimizedImage;
 
-//RangeError: Maximum call stack size exceeded
 

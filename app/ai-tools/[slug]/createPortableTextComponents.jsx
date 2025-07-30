@@ -177,23 +177,27 @@ if (!fileUrl) return (
       gif: GifComponent,
       video: VideoComponent,
 
-image: ({ value }) => {
+image: ({ value, index }) => {
   const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
+  
+  // Determine if this should be priority loaded (first 2-3 images)
+  const isPriority = index < 3;
+  
+  // Generate blur placeholder for better UX
+  const blurDataURL = value?.asset ? 
+    urlForImage(value.asset).width(20).height(20).blur(10).url() : 
+    undefined;
+
   return (
     <div className="w-full my-8 lg:my-12">
-      {/* Container with subtle shadow and modern styling */}
       <div className="relative group">
-        {/* Main image container */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-xl hover:shadow-2xl transition-all duration-300 ease-out">
-          {/* Subtle border gradient */}
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 p-[1px]">
             <div className="w-full h-full rounded-2xl bg-white dark:bg-gray-900" />
           </div>
           
-          {/* Image content */}
           <div className="relative p-3 lg:p-4">
             <figure className="relative">
-              {/* Zoom indicator - Added pointer-events-none */}
               <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                 <div className="bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,31 +207,28 @@ image: ({ value }) => {
                 </div>
               </div>
               
-              {/* Image with enhanced styling */}
               <div className="relative overflow-hidden rounded-xl">
-                <SimplifiedOptimizedImage
-                src={imageUrl}
-                      alt={value.alt || "Article image"}
-                      className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
-              
-              />
+                <OptimizedImage
+                  src={imageUrl}
+                  alt={value.alt || "Article image"}
+                  className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+                  priority={isPriority}
+                  blurDataURL={blurDataURL}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                />
                 
-                {/* Subtle overlay gradient - Added pointer-events-none */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
               </div>
               
-              {/* Caption with enhanced styling */}
               {value.imageDescription && (
                 <figcaption className="mt-4 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
                   <div className="flex items-start gap-3">
-                    {/* Info icon */}
                     <div className="flex-shrink-0 mt-0.5">
                       <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    {/* Caption text */}
-                    <div className="customanchor ">
+                    <div className="customanchor">
                       <PortableText 
                         value={value.imageDescription} 
                         components={imgdesc} 
@@ -240,12 +241,12 @@ image: ({ value }) => {
           </div>
         </div>
         
-        {/* Subtle glow effect */}
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
       </div>
     </div>
   );
 },
+
       table: ({ value }) => (
         <div className="card2 m-2 mb-4 mt-4 rounded-bl-xl rounded-br-xl rounded-tl-xl rounded-tr-xl shadow-md">
           <div className="relative overflow-x-auto rounded-xl">

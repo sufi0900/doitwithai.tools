@@ -1,89 +1,91 @@
-"use client";
-import React, { useState, useEffect, Suspense } from 'react';
-import dynamic from 'next/dynamic';
+"use client"
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import BlogHeader from './BlogHeader';
+import TableOfContents from './TableOfContents';
+import TagsAndShare from './TagsAndShare';
+import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
+import { PortableText } from "@portabletext/react";
+import PortableTextComponents from './createPortableTextComponents';
+import ArticleHeader from './ArticleHeader';
+import StickyArticleNavbar from './StickyArticleNavbar';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
-import { PortableText } from "@portabletext/react";
-import PortableTextComponents from './createPortableTextComponents';
 
-// Critical components - load immediately
-import BlogHeader from './BlogHeader';
-import TableOfContents from './TableOfContents';
-import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
-import ArticleHeader from './ArticleHeader';
-import StickyArticleNavbar from './StickyArticleNavbar';
-import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
+// Lazy load non-critical components
+const FAQSection = lazy(() => import('./FAQSection'));
+const RelatedPostsSection = lazy(() => import('./RelatedPostsSection'));
+const RelatedResources = lazy(() => import("@/app/free-ai-resources/RelatedResources"));
+const BlogSidebar = lazy(() => import("./BlogSidebar"));
+const RecentPost = lazy(() => import("@/components/RecentPost/RecentHome"));
 
-// Non-critical components - load progressively
-const FAQSection = dynamic(() => import('./FAQSection'), {
-  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-32 rounded-lg mb-4"></div>,
-  ssr: false
-});
+// Optimized component skeletons for lazy loaded components
+const ComponentSkeleton = ({ height = "200px", className = "" }) => (
+  <div className={`animate-pulse bg-gray-200/60 dark:bg-gray-700/60 rounded-lg ${className}`} style={{ height }}>
+    <div className="p-4 space-y-3">
+      <div className="h-4 bg-gray-300/80 dark:bg-gray-600/80 rounded w-3/4"></div>
+      <div className="h-4 bg-gray-300/80 dark:bg-gray-600/80 rounded w-1/2"></div>
+      <div className="h-4 bg-gray-300/80 dark:bg-gray-600/80 rounded w-2/3"></div>
+    </div>
+  </div>
+);
 
-const TagsAndShare = dynamic(() => import('./TagsAndShare'), {
-  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-16 rounded-lg"></div>,
-  ssr: false
-});
-
-const RelatedPostsSection = dynamic(() => import('./RelatedPostsSection'), {
-  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-48 rounded-lg"></div>,
-  ssr: false
-});
-
-const BlogSidebar = dynamic(() => import("./BlogSidebar"), {
-  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-96 rounded-lg"></div>,
-  ssr: false
-});
-
-const RelatedResources = dynamic(() => import("@/app/free-ai-resources/RelatedResources"), {
-  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-48 rounded-lg"></div>,
-  ssr: false
-});
-
-const RecentPost = dynamic(() => import("@/components/RecentPost/RecentHome"), {
-  ssr: false,
-  loading: () => <div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-64 rounded-lg mt-8"></div> // Added a specific loader for RecentPost
-});
-
-const CongratsPopup = dynamic(() => import("./CongratsPopup"), {
-  ssr: false
-});
+// Smart shimmer effect for progressive loading
+const SmartShimmer = ({ isLoading, children, fallback, delay = 0 }) => {
+  const [showFallback, setShowFallback] = useState(isLoading);
+  
+  useEffect(() => {
+    if (!isLoading) {
+      // Add small delay to prevent flash
+      const timer = setTimeout(() => setShowFallback(false), delay);
+      return () => clearTimeout(timer);
+    } else {
+      setShowFallback(true);
+    }
+  }, [isLoading, delay]);
+  
+  if (showFallback) {
+    return fallback;
+  }
+  
+  return children;
+};
 
 const BlogLayout = ({
   data,
-  loading,
+  loading, // This should now rarely be true for the main article content itself
   relatedPosts,
   relatedPostsLoading,
   relatedResources,
   resourcesLoading,
   schemaSlugMap,
   imgdesc,
-  shouldLoadSidebar = false, // Prop from ArticleChildComp
-  shouldLoadRelated = false, // Prop from ArticleChildComp
 }) => {
   const [showGlobalHeader, setShowGlobalHeader] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [contentLoaded, setContentLoaded] = useState(false); // Indicates main article content (portable text) has rendered
-  const [showFAQ, setShowFAQ] = useState(false);
+  const [loadStage, setLoadStage] = useState(1); // Progressive loading stages
+  const [contentReady, setContentReady] = useState(!loading); // Renamed from initialLoad to contentReady for clarity
 
-  const portableTextComponents = PortableTextComponents();
-  portableTextComponents.types.button = portableTextComponents.button;
+  // Memoize portable text components
+  const portableTextComponents = useMemo(() => {
+    const components = PortableTextComponents();
+    components.types.button = components.button; // Ensure custom button type is registered
+    return components;
+  }, []);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Mark content as ready immediately if not loading
+    // This assumes `loading` refers to the main article data fetch
+    if (!loading) {
+      setContentReady(true);
+    }
 
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const scrollThreshold = 100;
       setShowGlobalHeader(currentScrollY <= scrollThreshold);
-
-      // Trigger for FAQ Section: Load when user scrolls into view or 50% down
-      // You might want to use an Intersection Observer for more precise "in view" detection
-      // For simplicity, we'll use a scroll percentage
-      if (!showFAQ && currentScrollY > window.innerHeight * 0.5) {
-        setShowFAQ(true);
-      }
     };
 
     const handleBeforeUnload = () => {
@@ -104,84 +106,92 @@ const BlogLayout = ({
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('load', handleLoad);
 
-    // Initial check
-    handleScroll();
+    // Progressive loading stages - optimized timing
+    // These timers control when the lazy-loaded sections start to appear (or fetch)
+    const loadTimer1 = setTimeout(() => setLoadStage(2), 50);   // Load sidebar quickly
+    const loadTimer2 = setTimeout(() => setLoadStage(3), 200);  // Load related content (posts and resources)
+    const loadTimer3 = setTimeout(() => setLoadStage(4), 500);  // Load FAQ and Recent Posts
 
-    // Mark main content as loaded after a small delay to ensure initial render
-    const timer = setTimeout(() => setContentLoaded(true), 50);
+    handleScroll(); // Call once on mount to set initial header state
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('load', handleLoad);
-      clearTimeout(timer);
+      clearTimeout(loadTimer1);
+      clearTimeout(loadTimer2);
+      clearTimeout(loadTimer3);
     };
-  }, [showFAQ]); // Rerun effect if showFAQ changes to attach/detach scroll logic
+  }, [loading]); // Include `loading` to re-evaluate `contentReady` if main article loading state changes
 
-  if (loading && !data) {
-    return <SlugSkeleton />;
+  // Update content ready state when loading changes
+  useEffect(() => {
+    if (!loading) {
+      setContentReady(true);
+    }
+  }, [loading]);
+
+  // Early return for initial loading state of the *main* article data.
+  // This should only show if 'data' is truly absent AND 'loading' is true (i.e., initial fetch).
+  // With useUnifiedCache, 'data' might persist even during 'loading' (for refresh).
+  if (!data && loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-lg text-gray-700 dark:text-gray-300">Loading article content...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If data is null/undefined after loading, it means no article found or a persistent error
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-xl text-gray-700 dark:text-gray-300">Article not found or data is unavailable.</p>
+          {/* You might want to add a "Go back" button or retry here */}
+        </div>
+      </div>
+    );
   }
 
   const currentPostId = data?._id;
   const currentPostType = data?._type;
 
+  // Memoize breadcrumb data to prevent re-renders
+  const breadcrumbData = useMemo(() => ({
+    homeHref: "/",
+    categoryHref: `/${schemaSlugMap[data?._type] === 'ai-learn-earn' ? 'ai-learn-earn' : schemaSlugMap[data._type]}`,
+    categoryName: data._type === "aitool" ? "AI Tools" :
+                  data._type === "makemoney" ? "AI Learn & Earn" :
+                  data._type === "coding" ? "AI Code" :
+                  data._type === "seo" ? "AI SEO" :
+                  data._type === "freeairesources" ? "Free AI Resources" : "AI News",
+    title: data.title.length > 50 ? `${data.title.substring(0, 50)}...` : data.title
+  }), [data, schemaSlugMap]);
+
   return (
     <>
       <ArticleHeader articleTitle={data?.title} isSticky={false} />
-
-      {/* Sticky Article Navbar */}
       <StickyArticleNavbar articleTitle={data?.title} />
-
+      
       <section className={`overflow-hidden pb-[120px] transition-all duration-500 ease-out ${
-        mounted && showGlobalHeader ? 'pt-[104px]' : 'pt-[40px]'
+        mounted && showGlobalHeader ? 'pt-[18px]' : 'pt-[10px]'
       }`}>
         <div className="container">
-          {/* Sticky Navigation Bar */}
-          <nav aria-label="Breadcrumb" className="mb-8 sticky top-0 z-40 w-full bg-white dark:bg-gray-900 shadow-md transition-all duration-300">
-            <ol className="flex items-center space-x-2 text-sm bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 px-4 py-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600">
-              <li>
-                <Link href="/" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-                  </svg>
-                  Home
-                </Link>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-                </svg>
-                <Link
-                  href={`/${schemaSlugMap[data?._type] === 'ai-learn-earn' ? 'ai-learn-earn' : schemaSlugMap[data._type]}`}
-                  className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200"
-                >
-                  {data._type === "aitool" ? "AI Tools" :
-                    data._type === "makemoney" ? "AI Learn & Earn" :
-                      data._type === "coding" ? "AI Code" :
-                        data._type === "seo" ? "AI SEO" :
-                          data._type === "freeairesources" ? "Free AI Resources" : "AI News"}
-                </Link>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-                </svg>
-                <span className="text-gray-900 dark:text-white font-medium bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded-md text-xs" aria-current="page">
-                  {data.title.length > 50 ? `${data.title.substring(0, 50)}...` : data.title}
-                </span>
-              </li>
-            </ol>
-          </nav>
+       
 
           <article id="main-content" className="lg:m-4 flex flex-wrap">
-            {/* Priority Content - Load First */}
+            {/* Main Article Content - Priority for FCP */}
             <BlogHeader data={data} imgdesc={imgdesc} />
-
-            <div className="custom anchor mb-4 mt-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
-
+            
+            <div className="custom anchor mb-4  border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
+            
             <div className="w-full lg:w-8/12">
               <div className="mb-10 mt-4 w-full overflow-hidden rounded article-content">
-                {/* Author and Meta Info */}
+                {/* Author and Meta Info - Critical for FCP */}
                 <div className="mb-10 flex flex-nowrap items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-6 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-lg shadow-sm overflow-x-auto space-x-6">
                   <div className="flex items-center shrink-0">
                     <div className="relative mr-4 h-12 w-12 overflow-hidden rounded-full ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 transition-all duration-300 group-hover:ring-4">
@@ -191,6 +201,7 @@ const BlogLayout = ({
                           alt="Sufian Mustafa - AI Tools Expert"
                           fill
                           className="object-cover transition-transform duration-300 group-hover:scale-110"
+                          priority // Critical for FCP
                         />
                       </Link>
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
@@ -203,7 +214,7 @@ const BlogLayout = ({
                     </div>
                   </div>
 
-                  {/* Meta Info: Date, Time, Tag */}
+                  {/* Meta Info */}
                   <div className="flex flex-nowrap items-center gap-4 shrink-0">
                     <div className="flex items-center bg-white dark:bg-gray-700 px-3 py-2 rounded-lg shadow-sm whitespace-nowrap">
                       <span className="mr-2 text-blue-500">
@@ -212,7 +223,7 @@ const BlogLayout = ({
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {new Date(data.publishedAt).toLocaleDateString('en-US', {
                           day: 'numeric',
-                          month: 'short',
+                          month: 'short', 
                           year: 'numeric',
                         })}
                       </span>
@@ -225,75 +236,67 @@ const BlogLayout = ({
                         {data.readTime?.minutes} min read
                       </span>
                     </div>
-                    <div>
-                      <p className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white whitespace-nowrap">
-                        {/* Tag content */}
-                      </p>
-                    </div>
                   </div>
                 </div>
 
                 <ReadingProgressCircle />
 
-                {loading && (
+                {/* Only show refresh loading indicator when actually refreshing */}
+                {loading && contentReady && (
                   <div className="flex items-center justify-center py-4 mb-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
                     <span className="text-sm text-blue-600 dark:text-blue-400">Refreshing article content...</span>
                   </div>
                 )}
 
+                {/* Main Content - Critical for FCP */}
                 <div className="relative w-full">
-                  {/* Show skeleton overlay when article is loading during refresh */}
-                  {loading && (
-                    <div className="absolute inset-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-                      <SlugSkeleton />
-                    </div>
-                  )}
-
-                  <div className={loading ? 'opacity-20' : 'opacity-100'}>
-                    {/* Table of Contents - Priority */}
+                  <div className="opacity-100"> {/* Always show content if we have data */}
                     <TableOfContents tableOfContents={data.tableOfContents} />
-
-                    {/* Main Article Content - Priority */}
+                    
                     <div className="custom anchor mb-4 mt-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-                      <PortableText
-                        value={data.content}
-                        components={portableTextComponents}
-                      />
+                      <PortableText value={data.content} components={portableTextComponents} />
                     </div>
 
-                    {/* FAQ Section - Load when user scrolls down */}
-                    {showFAQ && (
-                      <Suspense fallback={<div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-32 rounded-lg mb-4"></div>}>
+                    {/* FAQ Section - Load after stage 4 */}
+                    <SmartShimmer
+                      isLoading={loadStage < 4}
+                      fallback={<ComponentSkeleton height="300px" />}
+                      delay={100} // Small delay to avoid flash if already loaded
+                    >
+                      <Suspense fallback={<ComponentSkeleton height="300px" />}>
                         <FAQSection faqs={data.faqs} />
                       </Suspense>
-                    )}
+                    </SmartShimmer>
                   </div>
                 </div>
 
-                {/* Related Resources - Load when content is ready and `shouldLoadRelated` is true */}
-                {contentLoaded && shouldLoadRelated && (
-                  <Suspense fallback={<div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-48 rounded-lg"></div>}>
-                    <RelatedResources
-                      resources={relatedResources}
-                      isLoading={resourcesLoading}
-                      slidesToShow={2}
+                {/* Related Resources - Load after stage 3 */}
+                <SmartShimmer
+                  isLoading={loadStage < 3 || resourcesLoading} // Also consider if resources themselves are loading
+                  fallback={<ComponentSkeleton height="400px" />}
+                  delay={150} // Slightly longer delay for this section
+                >
+                  <Suspense fallback={<ComponentSkeleton height="400px" />}>
+                    <RelatedResources 
+                      resources={relatedResources} 
+                      isLoading={resourcesLoading} 
+                      slidesToShow={2} 
                     />
                   </Suspense>
-                )}
+                </SmartShimmer>
               </div>
-
-              {/* Tags and Share - Load after main content has rendered */}
-              {contentLoaded && (
-                <Suspense fallback={<div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-16 rounded-lg"></div>}>
-                  <TagsAndShare tags={data.tags} />
-                </Suspense>
-              )}
+              
+              <TagsAndShare tags={data.tags} />
             </div>
 
-            {/* Sidebar - Load progressively based on `shouldLoadSidebar` */}
-            {shouldLoadSidebar && (
-              <Suspense fallback={<div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-96 rounded-lg"></div>}>
+            {/* Blog Sidebar - Load after stage 2 */}
+            <SmartShimmer
+              isLoading={loadStage < 2} // Based on progressive loading stage
+              fallback={<div className="w-full lg:w-4/12 lg:pl-8"><ComponentSkeleton height="600px" /></div>}
+              delay={100} // Small delay to avoid flash
+            >
+              <Suspense fallback={<div className="w-full lg:w-4/12 lg:pl-8"><ComponentSkeleton height="600px" /></div>}>
                 <BlogSidebar
                   relatedPosts={relatedPosts}
                   relatedPostsLoading={relatedPostsLoading}
@@ -304,31 +307,36 @@ const BlogLayout = ({
                   currentPostType={currentPostType}
                 />
               </Suspense>
-            )}
+            </SmartShimmer>
           </article>
 
-          {/* Related Posts Section - Load when `shouldLoadRelated` is true */}
-          {shouldLoadRelated && (
-            <Suspense fallback={<div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-48 rounded-lg"></div>}>
+          {/* Related Posts Section - Load after stage 3 */}
+          <SmartShimmer
+            isLoading={loadStage < 3 || relatedPostsLoading} // Also consider if related posts themselves are loading
+            fallback={<ComponentSkeleton height="500px" />}
+            delay={150} // Consistent delay with Related Resources
+          >
+            <Suspense fallback={<ComponentSkeleton height="500px" />}>
               <RelatedPostsSection
                 relatedPosts={relatedPosts}
                 loading={relatedPostsLoading}
                 schemaSlugMap={schemaSlugMap}
               />
             </Suspense>
-          )}
+          </SmartShimmer>
 
-          {/* Recent Post Section */}
+          {/* Recent Posts - Load after stage 4 */}
           <div className="border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-            <Suspense fallback={<div className="animate-pulse bg-gray-100 dark:bg-gray-800 h-64 rounded-lg mt-8"></div>}>
+            <SmartShimmer
+              isLoading={loadStage < 4} // Based on progressive loading stage
+              fallback={<ComponentSkeleton height="400px" />}
+              delay={200} // Slightly longer delay for the very last component
+            >
+              <Suspense fallback={<ComponentSkeleton height="400px" />}>
                 <RecentPost />
-            </Suspense>
+              </Suspense>
+            </SmartShimmer>
           </div>
-
-          {/* Congrats Popup - You might want to control its display with another state/logic */}
-          {/* For now, just render it based on its own internal logic or a separate prop */}
-          <CongratsPopup />
-
         </div>
       </section>
     </>
