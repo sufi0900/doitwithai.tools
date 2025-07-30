@@ -44,6 +44,7 @@ export default async function ParentPage({ params }) {
 
   return (
     <>
+
       {/* SEO and Schema Tags (reusable component) */}
       {/* Pass the correct props specific to 'aitool' */}
       <SeoAndSchemaWrapper

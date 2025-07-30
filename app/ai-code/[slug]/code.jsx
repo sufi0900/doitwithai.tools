@@ -1,4 +1,6 @@
+//ArticleChildComp which is reusbale for all the sanity schemas
 "use client";
+
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import dynamic from 'next/dynamic';
 import "@/styles/customanchor.css";
@@ -22,8 +24,13 @@ const UnifiedCacheMonitor = dynamic(() => import("@/React_Query_Caching/UnifiedC
 
 export default function ArticleChildComp({ serverData, params, schemaType }) {
   const currentSlug = params.slug;
-  const [showSkeleton, setShowSkeleton] = useState(false);
-  const [skeletonTimeout, setSkeletonTimeout] = useState(null);
+
+  // REMOVED: const [showSkeleton, setShowSkeleton] = useState(false);
+  // REMOVED: const [skeletonTimeout, setSkeletonTimeout] = useState(null);
+
+  // REPLACED with immediate skeleton logic:
+  const [showSkeleton, setShowSkeleton] = useState(!serverData); // Show skeleton immediately if no serverData
+  const [initialMount, setInitialMount] = useState(true);
 
   // Memoized configurations (same as before)
   const schemaSlugMap = useMemo(() => ({
@@ -86,33 +93,29 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
   const finalArticleData = cachedArticleData || serverData;
   const currentPostId = finalArticleData?._id;
 
-  // **SMART LOADING SKELETON LOGIC**
+  // --- REPLACED SKELETON LOGIC ---
   useEffect(() => {
-    // Only show skeleton if:
-    // 1. We're actually loading (not just stale)
-    // 2. We don't have ANY data (neither cached nor server)
-    // 3. It's been more than 300ms (avoid flash for quick loads)
-    
-    if (articleLoading && !finalArticleData) {
-      const timeout = setTimeout(() => {
-        setShowSkeleton(true);
-      }, 300); // 300ms delay before showing skeleton
-      
-      setSkeletonTimeout(timeout);
-      
-      return () => {
-        clearTimeout(timeout);
-        setSkeletonTimeout(null);
-      };
-    } else {
-      // Clear skeleton immediately when data is available
-      setShowSkeleton(false);
-      if (skeletonTimeout) {
-        clearTimeout(skeletonTimeout);
-        setSkeletonTimeout(null);
+    // Handle initial mount
+    if (initialMount) {
+      setInitialMount(false);
+      // If we have server data, hide skeleton immediately
+      if (serverData) {
+        setShowSkeleton(false);
       }
+      return;
     }
-  }, [articleLoading, finalArticleData, skeletonTimeout]);
+
+    // Handle subsequent loading states
+    if (articleLoading && !finalArticleData) {
+      setShowSkeleton(true);
+    } else if (finalArticleData) {
+      // Small delay to prevent flash, but much shorter than before
+      const timer = setTimeout(() => setShowSkeleton(false), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [articleLoading, finalArticleData, serverData, initialMount]);
+  // --- END REPLACED SKELETON LOGIC ---
+
 
   // Related posts cache (lower priority)
   const relatedPostsOptions = useMemo(() => ({
@@ -181,28 +184,34 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
   );
 
   // Register cache operations
+  // Note: These usePageCache calls should now pass an 'enabled' option
+  // if you want to conditionally register/unregister based on `shouldLoadRelated` etc.
+  // As per our previous discussion, the `usePageCache` hook itself needs to handle the `enabled` option.
   usePageCache(
     CACHE_KEYS.ARTICLE.CONTENT(currentSlug, schemaType),
     refreshArticle,
     articleQuery,
-    `${schemaType}ArticleContent`
+    `${schemaType}ArticleContent`,
+    { enabled: true } // Main content is always enabled
   );
   usePageCache(
     CACHE_KEYS.ARTICLE.RELATED_POSTS(currentPostId || 'unknown', schemaType),
     refreshRelatedPosts,
     relatedPostsQuery,
-    `${schemaType}RelatedPosts`
+    `${schemaType}RelatedPosts`,
+    { enabled: !!currentPostId && !!finalArticleData } // Only enable if related data should load
   );
   usePageCache(
     CACHE_KEYS.ARTICLE.RELATED_RESOURCES(currentPostId || 'unknown'),
     refreshRelatedResources,
     correctRelatedResourcesQuery,
-    `${schemaType}RelatedResources`
+    `${schemaType}RelatedResources`,
+    { enabled: !!currentPostId && !!finalArticleData } // Only enable if related data should load
   );
 
   const handleRefreshArticle = useCallback(() => refreshArticle(true), [refreshArticle]);
 
-  // **IMPROVED ERROR HANDLING**
+  // IMPROVED ERROR HANDLING (KEEP AS IS)
   if (articleError && !finalArticleData) {
     const isOfflineError = !navigator.onLine || 
       articleError.message.includes('offline') || 
@@ -234,16 +243,19 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     );
   }
 
-  // **SMART LOADING STATE** - Only show skeleton when truly needed
-  if (showSkeleton) {
+  // --- REPLACED SKELETON RETURN SECTION ---
+  if (showSkeleton || (!finalArticleData && articleLoading)) {
     return (
-      <div className="relative">
+      <div className="relative min-h-screen">
+        {/* Add static navbar placeholder to prevent layout shift */}
+        <div className="sticky top-0 z-40 w-full bg-white dark:bg-gray-900 shadow-md h-16"></div>
         <SlugSkeleton />
       </div>
     );
   }
+  // --- END REPLACED SKELETON RETURN SECTION ---
 
-  // If we still don't have any article data, show a message
+  // If we still don't have any article data after all checks, show a message
   if (!finalArticleData) {
     return (
       <div className="text-center py-8">
@@ -262,7 +274,6 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
 
   return (
     <>
-
       <UnifiedCacheMonitor serverData={serverData} params={params} />
 
       {/* Main Blog Layout - Show immediately when data is available */}

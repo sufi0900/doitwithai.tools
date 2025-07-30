@@ -1,3 +1,5 @@
+// BlogLayout which is responsible for displaying the article content
+
 "use client"
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import BlogHeader from './BlogHeader';
@@ -61,11 +63,14 @@ const BlogLayout = ({
   schemaSlugMap,
   imgdesc,
 }) => {
-  // --- ALL REACT HOOKS MUST BE CALLED UNCONDITIONALLY AT THE TOP LEVEL ---
+  // KEY CHANGES for BlogLayout.js - useState declarations
   const [showGlobalHeader, setShowGlobalHeader] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [loadStage, setLoadStage] = useState(1); // Progressive loading stages
-  const [contentReady, setContentReady] = useState(!loading); // Renamed from initialLoad to contentReady for clarity
+  const [loadStage, setLoadStage] = useState(1);
+  const [contentReady, setContentReady] = useState(!!data); // Use !!data instead of !loading
+
+  // ADD this new state for preventing layout shift:
+  const [layoutReady, setLayoutReady] = useState(false);
 
   // Memoize portable text components
   const portableTextComponents = useMemo(() => {
@@ -74,21 +79,24 @@ const BlogLayout = ({
     return components;
   }, []);
 
+  // KEY CHANGES for BlogLayout.js - main useEffect
   useEffect(() => {
     setMounted(true);
+    setLayoutReady(true); // Mark layout as ready immediately
     
-    // Mark content as ready immediately if not loading
-    // This assumes `loading` refers to the main article data fetch
-    if (!loading) {
+    // Mark content as ready if we have data
+    if (data && !loading) {
       setContentReady(true);
     }
 
+    // Keep your existing scroll handlers...
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const scrollThreshold = 100;
       setShowGlobalHeader(currentScrollY <= scrollThreshold);
     };
 
+    // Keep your existing beforeunload and load handlers...
     const handleBeforeUnload = () => {
       sessionStorage.setItem('scrollPosition', window.scrollY.toString());
     };
@@ -107,15 +115,15 @@ const BlogLayout = ({
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('load', handleLoad);
 
-    // Progressive loading stages - optimized timing
-    // These timers control when the lazy-loaded sections start to appear (or fetch)
-    const loadTimer1 = setTimeout(() => setLoadStage(2), 50);   // Load sidebar quickly
-    const loadTimer2 = setTimeout(() => setLoadStage(3), 200);  // Load related content (posts and resources)
-    const loadTimer3 = setTimeout(() => setLoadStage(4), 500);  // Load FAQ and Recent Posts
+    // OPTIMIZE loading timers - make them faster:
+    const loadTimer1 = setTimeout(() => setLoadStage(2), 10);   // Reduced from 50ms
+    const loadTimer2 = setTimeout(() => setLoadStage(3), 50);   // Reduced from 200ms  
+    const loadTimer3 = setTimeout(() => setLoadStage(4), 100);  // Reduced from 500ms
 
-    handleScroll(); // Call once on mount to set initial header state
+    handleScroll();
 
     return () => {
+      // ... cleanup code (ensure all event listeners and timers are cleared)
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('load', handleLoad);
@@ -123,17 +131,9 @@ const BlogLayout = ({
       clearTimeout(loadTimer2);
       clearTimeout(loadTimer3);
     };
-  }, [loading]); // Include `loading` to re-evaluate `contentReady` if main article loading state changes
-
-  // Update content ready state when loading changes
-  useEffect(() => {
-    if (!loading) {
-      setContentReady(true);
-    }
-  }, [loading]);
+  }, [data, loading]); // Add 'data' to dependencies
 
   // Memoize breadcrumb data to prevent re-renders
-  // This hook has been moved ABOVE the early returns.
   const breadcrumbData = useMemo(() => {
     // Provide default values for data properties if data is null/undefined during initial render
     const categoryType = data?._type || 'default'; // Use a default category type if data is null
@@ -150,26 +150,38 @@ const BlogLayout = ({
                     categoryType === "freeairesources" ? "Free AI Resources" : "AI News",
       title: title.length > 50 ? `${title.substring(0, 50)}...` : title
     };
-  }, [data, schemaSlugMap]); // Dependencies still include data and schemaSlugMap
+  }, [data, schemaSlugMap]);
 
-
-  // --- EARLY RETURNS COME AFTER ALL HOOKS ---
-
-  // Early return for initial loading state of the *main* article data.
-  // This should only show if 'data' is truly absent AND 'loading' is true (i.e., initial fetch).
-  // With useUnifiedCache, 'data' might persist even during 'loading' (for refresh).
-  if (!data && loading) {
+  // KEY CHANGES for BlogLayout.js - early return loading section
+  if (!layoutReady || (!data && loading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-lg text-gray-700 dark:text-gray-300">Loading article content...</p>
+      <>
+        {/* Static navbar to prevent layout shift */}
+        <div className="sticky top-0 z-40 w-full bg-white dark:bg-gray-900 shadow-md">
+          <div className="container">
+            <nav className="flex items-center space-x-2 text-sm bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 px-4 py-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 h-12">
+              <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-4 w-24 rounded"></div>
+              <div className="animate-pulse bg-gray-300 dark:bg-gray-600 h-4 w-32 rounded"></div>
+            </nav>
+          </div>
         </div>
-      </div>
+        
+        <section className="pb-[120px] pt-[18px]"> {/* Adjusted pt to match new header */}
+          <div className="container">
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-lg text-gray-700 dark:text-gray-300">Loading article content...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </>
     );
   }
 
   // If data is null/undefined after loading, it means no article found or a persistent error
+  // This block remains to handle cases where data fails to load completely
   if (!data) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -185,44 +197,17 @@ const BlogLayout = ({
   const currentPostId = data?._id;
   const currentPostType = data?._type;
 
+  // Keep the rest of your existing code, but ADD this wrapper to prevent layout shift:
   return (
-    <>
+    <div className="min-h-screen"> {/* ADD this wrapper */}
       <ArticleHeader articleTitle={data?.title} isSticky={false} />
       <StickyArticleNavbar articleTitle={data?.title} />
       
       <section className={`overflow-hidden pb-[120px] transition-all duration-500 ease-out ${
-        mounted && showGlobalHeader ? 'pt-[18px]' : 'pt-[10px]'
+        mounted && showGlobalHeader ? 'pt-[38px]' : 'pt-[10px]' // Keep original pt values for main content section
       }`}>
         <div className="container">
         {/* Sticky Navigation Bar - Critical for FCP */}
-          <nav aria-label="Breadcrumb" className="mb-8 sticky top-0 z-40 w-full bg-white dark:bg-gray-900 shadow-md transition-all duration-300">
-            <ol className="flex items-center space-x-2 text-sm bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 px-4 py-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600">
-              <li>
-                <Link href={breadcrumbData.homeHref} className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-                  </svg>
-                  Home
-                </Link>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-                </svg>
-                <Link href={breadcrumbData.categoryHref} className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200">
-                  {breadcrumbData.categoryName}
-                </Link>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-gray-400 mx-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"></path>
-                </svg>
-                <span className="text-gray-900 dark:text-white font-medium bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded-md text-xs" aria-current="page">
-                  {breadcrumbData.title}
-                </span>
-              </li>
-            </ol>
-          </nav>
         
           <article id="main-content" className="lg:m-4 flex flex-wrap">
             {/* Main Article Content - Priority for FCP */}
@@ -235,7 +220,7 @@ const BlogLayout = ({
                 {/* Author and Meta Info - Critical for FCP */}
                 <div className="mb-10 flex flex-nowrap items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-6 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-lg shadow-sm overflow-x-auto space-x-6">
                   <div className="flex items-center shrink-0">
-                    <div className="relative mr-4 h-12 w-12 overflow-hidden rounded-full ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 transition-all duration-300 group-hover:ring-4">
+                    <div className="relative mr-4 h-12 w-12 overflow-hidden rounded-full ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 transition-allduration-300 group-hover:ring-4">
                       <Link href="/author/sufian-mustafa">
                         <Image
                           src="/sufi.png"
@@ -380,7 +365,7 @@ const BlogLayout = ({
           </div>
         </div>
       </section>
-    </>
+    </div> 
   );
 };
 
