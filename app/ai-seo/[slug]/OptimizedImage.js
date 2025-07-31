@@ -29,13 +29,7 @@ const OptimizedImage = ({
   const [panY, setPanY] = useState(0);
   const [estimatedHeight, setEstimatedHeight] = useState(400);
   const [shouldPreserveSpace, setShouldPreserveSpace] = useState(false);
-  // 1. Add shimmer control state
-const [shimmerActive, setShimmerActive] = useState(false);
-
-// 2. Stabilize shimmer activation with useRef to prevent rapid re-triggers
-const shimmerTimeoutRef = useRef(null);
-const hasShimmerStarted = useRef(false);
-
+  
   // FIX: Added missing const
   const [isDragging, setIsDragging] = useState(false);
 
@@ -243,70 +237,50 @@ const hasShimmerStarted = useRef(false);
     }
   }, [inView]);
 
-
-
-useEffect(() => {
-  if (!inView || !mountedRef.current) return;
-  
-  // Clear any existing timeout
-  if (shimmerTimeoutRef.current) {
-    clearTimeout(shimmerTimeoutRef.current);
-  }
-  
-  if (showStaticPlaceholder && !hasShimmerStarted.current) {
-    hasShimmerStarted.current = true;
-    setShimmerActive(true);
+  useEffect(() => {
+    if (!inView || !mountedRef.current) return;
     
-    shimmerTimeoutRef.current = setTimeout(() => {
-      if (mountedRef.current) {
-        setShowPlaceholder(false);
-        setShimmerActive(false);
-        hasShimmerStarted.current = false;
-      }
-    }, 500);
-  } else if (!showStaticPlaceholder && !hasShimmerStarted.current) {
-    setShowPlaceholder(false);
-    setShimmerActive(false);
-  }
-  
-  return () => {
-    if (shimmerTimeoutRef.current) {
-      clearTimeout(shimmerTimeoutRef.current);
+    let timer;
+    if (showStaticPlaceholder) {
+      timer = setTimeout(() => {
+        if (mountedRef.current) {
+          setShowPlaceholder(false);
+        }
+      }, 500);
+    } else {
+      setShowPlaceholder(false);
     }
-  };
-}, [inView, showStaticPlaceholder]);
-  
-useEffect(() => {
-  if (!inView || showPlaceholder || hasLoadedOnce || imageError || !mountedRef.current) return;
-  
-  let progressInterval;
-  let startTime = performance.now();
-  let hasCompleted = false; // Add this flag to prevent restart
-  
-  const updateProgress = () => {
-    if (!mountedRef.current || hasCompleted) return;
     
-    const elapsed = performance.now() - startTime;
-    const targetTime = 1000;
-    const baseProgress = Math.min((elapsed / targetTime) * 100, 95);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [inView, showStaticPlaceholder]);
+
+  useEffect(() => {
+    if (!inView || showPlaceholder || hasLoadedOnce || imageError || !mountedRef.current) return;
     
-    setLoadingProgress(prev => {
-      const newProgress = Math.min(prev + 5, baseProgress);
-      if (newProgress >= 95) {
-        hasCompleted = true; // Set flag when complete
-      }
-      return newProgress;
-    });
-  };
-
-  progressInterval = setInterval(updateProgress, 100);
-  
-  return () => {
-    hasCompleted = true; // Cleanup flag
-    if (progressInterval) clearInterval(progressInterval);
-  };
-}, [inView, showPlaceholder, hasLoadedOnce, imageError]); // Remove dependencies that might cause restart
-
+    let progressInterval;
+    let startTime = performance.now();
+    
+    const updateProgress = () => {
+      if (!mountedRef.current) return;
+      
+      const elapsed = performance.now() - startTime;
+      const targetTime = 1000;
+      const baseProgress = Math.min((elapsed / targetTime) * 100, 95);
+      
+      setLoadingProgress(prev => {
+        if (prev >= 95) return prev;
+        return Math.min(prev + 5, baseProgress);
+      });
+    };
+    
+    progressInterval = setInterval(updateProgress, 100);
+    
+    return () => {
+      if (progressInterval) clearInterval(progressInterval);
+    };
+  }, [inView, showPlaceholder, hasLoadedOnce, imageError]);
 
   // Close modal when clicking outside the image
   useEffect(() => {
