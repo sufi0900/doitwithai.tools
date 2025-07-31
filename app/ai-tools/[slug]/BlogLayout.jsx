@@ -13,6 +13,7 @@ import StickyArticleNavbar from './StickyArticleNavbar';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
+import CommentSection from './CommentSection'; // Adjust path as needed
 
 // Lazy load non-critical components
 const FAQSection = lazy(() => import('./FAQSection'));
@@ -280,7 +281,7 @@ const BlogLayout = ({
                   <div className="opacity-100"> {/* Always show content if we have data */}
                     <TableOfContents tableOfContents={data.tableOfContents} />
                     
-                    <div className="custom anchor mb-4 mt-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+                    <div className="custom anchor mb-4 mt-4 border-b-2 customanchor border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                       <PortableText value={data.content} components={portableTextComponents} />
                     </div>
 
@@ -295,6 +296,20 @@ const BlogLayout = ({
                       </Suspense>
                     </SmartShimmer>
                   </div>
+                  <SmartShimmer
+  isLoading={loadStage < 4}
+  fallback={<ComponentSkeleton height="600px" />}
+  delay={200}
+>
+  <Suspense fallback={<ComponentSkeleton height="600px" />}>
+    <CommentSection
+      articleId={data?._id}
+      articleSlug={data?.slug?.current}
+      articleType={data?._type}
+      articleTitle={data?.title}
+    />
+  </Suspense>
+</SmartShimmer>
                 </div>
 
                 {/* Related Resources - Load after stage 3 */}
@@ -364,6 +379,9 @@ const BlogLayout = ({
             </SmartShimmer>
           </div>
         </div>
+        
+{/* Comment Section - Load after stage 4 */}
+
       </section>
     </div> 
   );

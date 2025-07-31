@@ -4,7 +4,7 @@ import { urlForImage } from "@/sanity/lib/image";
 import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
 import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
 import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
-import SimplifiedOptimizedImage from "@/app/ai-seo/[slug]/SimplifiedOptimizedImage";
+// import OptimizedImage from "@/app/ai-seo/[slug]/SimplifiedOptimizedImage";
 import { ArrowRight } from 'lucide-react';
 
 const PortableTextComponents = () => {
@@ -528,30 +528,50 @@ image: ({ value, index }) => {
       ),
     },
   
-      list: {
-        bullet: ({ children }) => (
-          <ul className="mb-4  ml-4 mr-4 transform space-y-4 rounded-lg bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out list-inside custom-bullet-list">
-          {children}
-        
-        </ul>
-        ),
-        number: ({ children }) => (
-          <ol className="mb-10 list-decimal ml-6 custom-number-list bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200">
-          {children}
-        </ol>
-        ),
-      },
-      listItem: {
-        bullet: ({ children }) => (
-          <li
-          className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-700 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl">
+     list: {
+      bullet: ({ children, value, is  }) => {
+        const isNested = value.listItem === 'bullet' && value.level > 0;
+        const listClasses = isNested
+          ? "mb-2 ml-8 space-y-2 list-disc custom-bullet-list" // Class for nested lists
+          : "mb-4 ml-4 mr-4 space-y-4 rounded-lg bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out list-inside custom-bullet-list"; // Class for top-level lists
+      
+        return (
+          <ul className={listClasses}>
             {children}
-          </li>
-        ),
-    
-        number: ({ children }) => <li className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-700 dark:text-gray-300  sm:text-xl lg:text-lg xl:text-xl">
-          {children}</li>,
+          </ul>
+        );
       },
+      number: ({ children, value, is }) => {
+        const isNested = value.listItem === 'number' && value.level > 0;
+        const listClasses = isNested
+          ? "mb-2 ml-8 list-decimal"
+          : "mb-10 list-decimal ml-6 custom-number-list bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200";
+          
+        return (
+          <ol className={listClasses}>
+            {children}
+          </ol>
+        );
+      },
+    },
+    listItem: {
+      bullet: ({ children }) => (
+        <li
+          className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out text-lg font-medium leading-relaxed text-gray-700 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl">
+          <span className="flex items-start">
+            <span className="flex-shrink-0 mr-2 text-blue-500 dark:text-blue-400">
+              <ArrowRight className="h-5 w-5" />
+            </span>
+            <span>{children}</span>
+          </span>
+        </li>
+      ),
+      number: ({ children }) => (
+        <li className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out text-lg font-medium leading-relaxed text-gray-700 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl">
+          {children}
+        </li>
+      ),
+    },
     marks: {
       strong: ({ children }) => (
         <strong className=" text-black  dark:text-white">{children}</strong>

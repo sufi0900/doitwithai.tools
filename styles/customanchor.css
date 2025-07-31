@@ -1,83 +1,93 @@
- .dark .customanchor a {
-          font-weight: bold;
-          color: #60A5FA; /* Existing color: Tailwind blue-400 */
-          transition: 0.3s;
-          text-decoration: none;
-          position: relative;
-          animation: subtlePulse 2s infinite ease-in-out; /* Apply the new animation */
-          display: inline-block; /* Ensure transform applies correctly */
-        }
+/* Dark Mode Anchor Styles */
+.dark .customanchor a {
+  font-weight: bold;
+  color: #60A5FA; /* Tailwind blue-400 */
+  transition: color 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Added transition for color */
+  text-decoration: none;
+  position: relative;
+  display: inline-block;
+  /* Animation that repeats every 5 seconds */
+  animation: subtlePulse 5s infinite ease-in-out;
+  animation-delay: 0s;
+}
+
+/* Dark Mode Hover Styles */
+.dark .customanchor a:hover {
+  color: #93C5FD; /* A lighter shade of blue (e.g., Tailwind blue-300) */
+}
 
 /* Light Mode Anchor Styles */
 .light .customanchor a {
-  font-weight: bold; /* Bold text for stronger emphasis */
+  font-weight: bold;
   color: #133efc; /* Strong blue color */
-  transition: 0.3s; /* Smooth transition */
-  text-decoration: none; /* Default no underline */
-  position: relative; /* Enable positioning for pseudo-element */
-  animation: lightSubtlePulse 2s infinite; /* Infinite animation */
+  transition: color 0.3s ease-in-out; /* Added transition for color */
+  text-decoration: none;
+  position: relative;
+  display: inline-block;
+  /* Animation that repeats every 5 seconds */
+  animation: lightSubtlePulse 5s infinite ease-in-out;
 }
- /* New pulse animation for interlinks */
-        @keyframes subtlePulse {
-          0% {
-            opacity: 1;
-            transform: scale(1);
-            box-shadow: 0 0 0px rgba(59, 130, 246, 0); /* Tailwind blue-500 */
-            filter: brightness(1);
-          }
-          50% {
-            opacity: 1; /* Keep opacity consistent or very slight fade */
-            transform: scale(1.002); /* Slightly more noticeable growth */
-            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6); /* More visible blue glow */
-            filter: brightness(1.10); /* Subtle text highlight */
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1);
-            box-shadow: 0 0 0px rgba(59, 130, 246, 0);
-            filter: brightness(1);
-          }
-        }
 
-  /* Light Mode Pulse Animation Keyframes */
-        @keyframes lightSubtlePulse {
-          0% {
-            opacity: 1;
-            transform: scale(1);
-            box-shadow: 0 0 0px rgba(19, 62, 252, 0); /* Using #133efc for shadow */
-            text-shadow: 0 0 0px rgba(19, 62, 252, 0); /* Initial text shadow */
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.02); /* Keep consistent scale with dark mode */
-            box-shadow: 0 0 6px rgba(19, 62, 252, 0.5); /* Glow using the link color */
-            text-shadow: 0 0 5px rgba(19, 62, 252, 0.6); /* More noticeable text glow */
-          }
-          100% {
-            opacity: 1;
-            transform: scale(1);
-            box-shadow: 0 0 0px rgba(19, 62, 252, 0);
-            text-shadow: 0 0 0px rgba(19, 62, 252, 0);
-          }
-        }
+/* Light Mode Hover Styles */
+.light .customanchor a:hover {
+  color: #0c2d9e; /* A slightly darker shade of blue for the hover effect */
+}
+/* Dark Mode Pulse Animation - Adjusted for 5-second cycle */
+@keyframes subtlePulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0px rgba(59, 130, 246, 0);
+    filter: brightness(1);
+  }
+  /* Animation happens in first 20% of the cycle (1 second) */
+  10% {
+    opacity: 1;
+    transform: scale(1.002);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+    filter: brightness(1.10);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0px rgba(59, 130, 246, 0);
+    filter: brightness(1);
+  }
+  /* Remain inactive for the remaining 80% of the cycle (4 seconds) */
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0px rgba(59, 130, 246, 0);
+    filter: brightness(1);
+  }
+}
 
+/* Light Mode Pulse Animation - Adjusted for 5-second cycle */
 @keyframes lightSubtlePulse {
   0% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 0px rgba(19, 62, 252, 0); /* No glow at start */
+    box-shadow: 0 0 0px rgba(19, 62, 252, 0);
     filter: brightness(1);
   }
-  50% {
-    opacity: 1;                            /* Keep full opacity */
-    transform: scale(1.002);               /* Slight 0.3% “grow” */
-    box-shadow: 0 0 8px rgba(19, 62, 252, 0.6); /* Subtle bright‐blue halo */
-    filter: brightness(1.4);              /* Light highlight */
+  /* Animation happens in first 20% of the cycle (1 second) */
+  10% {
+    opacity: 1;
+    transform: scale(1.002);
+    box-shadow: 0 0 8px rgba(19, 62, 252, 0.6);
+    filter: brightness(1.4);
   }
+  20% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0px rgba(19, 62, 252, 0);
+    filter: brightness(1);
+  }
+  /* Remain inactive for the remaining 80% of the cycle (4 seconds) */
   100% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 0px rgba(19, 62, 252, 0); /* Back to no glow */
+    box-shadow: 0 0 0px rgba(19, 62, 252, 0);
     filter: brightness(1);
   }
 }
@@ -100,16 +110,6 @@
   transform: scaleX(1); /* Scale to full width on hover */
 }
 
-/* Optional: Hover Styles (original styles) */
-.customanchor a:hover {
-  padding: 2px 5px;
-  border-radius: 8px;
-  box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px,
-              rgba(0, 0, 0, 0.23) 0px 6px 6px;
-  outline: none;
-  color: #fff;
-  background-color: #1e40af;
-}
 
 
  .imgdesc a,  .imgdesc link {
