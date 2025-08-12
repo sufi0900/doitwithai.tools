@@ -12,9 +12,7 @@ export async function GET(request) {
 
   try {
      // Load Inter font from your public folder
-    const interFont = await fetch(
-      new URL('../../../public/inter.ttf', import.meta.url)
-    ).then((res) => res.arrayBuffer())
+    
 
     const { searchParams } = new URL(request.url)
     // Add your base64 logo string here
