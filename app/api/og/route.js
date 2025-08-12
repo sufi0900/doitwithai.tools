@@ -1,5 +1,5 @@
 // app/api/og/route.js
-import Image from 'next/image';
+// import Image from 'next/image';
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'

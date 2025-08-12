@@ -11,14 +11,19 @@ import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 
 // Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
+
 
 function generateOGImageURL(params) {
   const baseURL = `${getBaseUrl()}/api/og`;
@@ -124,7 +129,7 @@ async function getHomePageInitialData() {
     excerpt
   },
   aiToolDetails,
-   _updatedAt}`,
+   _updatedAt  }`,
   };
 
   try {
