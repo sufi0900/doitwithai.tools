@@ -1,12 +1,11 @@
-/* eslint-disable @next/next/no-img-element */
+"use client";
 import { urlForImage } from "@/sanity/lib/image";
-
-import Image from "next/image"; // Keep this import, though OptimizeImage wraps it
 import Link from "next/link";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import EventNoteIcon from "@mui/icons-material/EventNote";
-import { Box, Card, CardMedia } from "@mui/material";
-import OptimizeImage from "@/components/Blog/ImageOptimizer"
+import { CalendarMonth, ArrowForward } from "@mui/icons-material";
+import { Box, Card, CardContent } from "@mui/material";
+import OptimizeImage from "@/components/Blog/ImageOptimizer";
 
 export default function CardComponent({
   publishedAt,
@@ -15,111 +14,183 @@ export default function CardComponent({
   overview,
   readTime,
   slug,
-  tags
+  tags,
 }) {
   return (
-    <>
-      <div className="px-2 py-4 ">
-        <Card
+    <Card
+      sx={{
+        transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+        "&:hover": {
+          transform: "translateY(-4px) scale(1.02)",
+          boxShadow: "0 20px 40px -12px rgba(37, 99, 235, 0.25)",
+        },
+        height: "auto", // Removed fixed height for dynamic content
+        width: "100%",
+        maxWidth: { xs: "100%", sm: "400px", md: "100%" },
+        borderRadius: "16px",
+        overflow: "hidden",
+        position: "relative",
+        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+        border: "1px solid #e2e8f0",
+        display: "flex",
+        flexDirection: "column",
+      }}
+      className="group cursor-pointer shadow-md hover:shadow-xl dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+    >
+      <Link href={slug}>
+        {/* Image Section - Better aspect ratio control */}
+        <Box
+          position="relative"
           sx={{
-            height: { xs: "auto", lg: "522px" },
-            transition: "transform 0.2s, box-shadow 0.2s",
-            "&:hover": {
-              transform: "scale(1.04)",
-            }
+            overflow: "hidden",
+            background: "linear-gradient(135deg, #2563eb10, #8b5cf610)",
+            flexShrink: 0,
+            width: "100%",
+            height: { 
+              xs: "200px", 
+              sm: "220px", 
+              md: "240px",
+              lg: "250px",
+              xl: "260px"
+            },
           }}
-          className="card4 max-w-sm transform cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white text-black shadow hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
         >
-          <Link href={slug}>
-            {tags && tags.slice(0, 1).map((tag, index) => (
-              <Link key={index} href={tag.link}>
-                <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary">
-                  {tag.name}
-                </span>
-              </Link>
-            ))}
-
-            {/* Image */}
-            <Box position="relative" sx={{ overflow: "hidden" }}>
-              <CardMedia
-                component="div"
-                sx={{
-                  position: "relative",
-                  // Set a fixed height for CardMedia on all devices,
-                  // or at least a responsive min-height.
-                  // This ensures the parent of Next.js Image (with fill) has a dimension.
-                  // For a card image, a fixed aspect ratio or a minimum height is often best.
-                  height: { xs: 200, sm: 250, md: 222, lg: 222 }, // Example: fixed heights for different breakpoints
-                  // Or, if you want a fixed aspect ratio regardless of width (e.g., 16:9)
-                  // paddingTop: '56.25%', // This creates a 16:9 aspect ratio (height / width = 9 / 16 = 0.5625)
-                  // height: 0, // When using paddingTop for aspect ratio, set height to 0
-                  overflow: "hidden",
+          <div className="w-full h-full">
+            <div className="absolute inset-0 h-full w-full transition-all duration-500 ease-out group-hover:scale-110">
+              <OptimizeImage
+                src={mainImage}
+                alt={title}
+                width={500}
+                height={300}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
                 }}
-                className="transition-transform duration-200 ease-in-out hover:rotate-3 hover:scale-[1.5]"
-              >
-                <OptimizeImage
-                  src={mainImage}
-                  alt={title}
-                  // Remove layout="responsive", it's replaced by `fill` and `sizes`
-                  // width={500} // Remove width/height when using `fill`
-                  // height={500} // Remove width/height when using `fill`
-                  // The `priority` prop can be passed down if you want to eager load,
-                  // as discussed in the previous response.
-                  priority={true} // Add priority to ensure it loads immediately on page load
-                />
-              </CardMedia>
-            </Box>
-          </Link>
-
-          <div className="p-5">
-            <Link href={slug}>
-              <h5 className="mb-2 line-clamp-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                {title}
-              </h5>
-            </Link>
-
-            <p className="mb-3 line-clamp-4 font-normal text-gray-700 dark:text-gray-400">
-              {overview}
-            </p>
-
-            <div className="mb-3 mt-3 flex items-center justify-between">
-              <div className="flex items-center">
-                <AccessTimeIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-                <p className="text-sm font-medium text-dark dark:text-white">
-                  Read Time: {readTime} min
-                </p>
-              </div>
-              <div className="flex items-center">
-                <EventNoteIcon className="mr-2 text-body-color transition duration-300 hover:text-blue-500" />
-                <p className="text-sm font-medium text-dark dark:text-white">
-                  {publishedAt}
-                </p>
-              </div>
+              />
             </div>
-            <Link
-              href={slug}
-              className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            >
-              Read more
-              <svg
-                className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 14 10"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M1 5h12m0 0L9 1m4 4L9 9"
-                />
-              </svg>
-            </Link>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
-        </Card>
-      </div>
-    </>
+          
+          {/* Tag positioning */}
+          {tags && tags.length > 0 && (
+            <Link
+              href={tags[0].link}
+              className="absolute right-3 top-3 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold capitalize text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:scale-105 backdrop-blur-sm border border-white/20"
+            >
+              <LocalOfferIcon style={{ fontSize: "10px" }} />
+              {tags[0].name}
+            </Link>
+          )}
+          
+          {/* Bottom gradient line */}
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+        </Box>
+      </Link>
+
+      {/* Content Section - Better content distribution */}
+      <CardContent
+        sx={{
+          padding: { 
+            xs: "16px !important", 
+            sm: "20px !important",
+            md: "24px !important" 
+          },
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+        }}
+      >
+        {/* Main content area */}
+        <div className="flex flex-col flex-grow">
+          <Link href={slug}>
+            <h5 
+              className="font-bold leading-tight text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 mb-3"
+              style={{
+                fontSize: 'clamp(0.9rem, 2vw, 1.1rem)',
+                lineHeight: '1.4',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                minHeight: 'clamp(3.6rem, 8vw, 4.2rem)'
+              }}
+            >
+              {title}
+            </h5>
+          </Link>
+          
+          <p 
+            className="font-normal text-gray-700 dark:text-gray-400"
+            style={{
+              fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
+              lineHeight: '1.5',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              minHeight: 'clamp(3.75rem, 6vw, 4.5rem)', // Consistent height for overview
+              marginBottom: '1rem',
+            }}
+          >
+            {overview}
+          </p>
+        </div>
+
+        {/* Bottom section with metadata and button */}
+        <div className="mt-auto">
+          {/* Metadata row */}
+          <div className="flex items-center justify-start gap-3 text-xs mb-4">
+            <div className="flex items-center gap-1.5">
+              <div className="p-1 rounded-full bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-800/50 transition-colors duration-300">
+                <CalendarMonth
+                  className="text-blue-600 dark:text-blue-400"
+                  sx={{ fontSize: 12 }}
+                />
+              </div>
+              <p className="font-medium text-gray-600 dark:text-gray-400">
+                {publishedAt}
+              </p>
+            </div>
+            
+            <div className="w-px h-3 bg-gray-300 dark:bg-gray-600" />
+            
+            <div className="flex items-center gap-1.5">
+              <div className="p-1 rounded-full bg-green-50 dark:bg-green-900/30 group-hover:bg-green-100 dark:group-hover:bg-green-800/50 transition-colors duration-300">
+                <AccessTimeIcon
+                  className="text-green-600 dark:text-green-400"
+                  sx={{ fontSize: 12 }}
+                />
+              </div>
+              <p className="font-medium text-gray-600 dark:text-gray-400">
+                {readTime} min
+              </p>
+            </div>
+          </div>
+
+          {/* Read More Button - Enhanced with proper spacing */}
+          <Link
+            href={slug}
+            className="group/button relative inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-800 overflow-hidden w-fit"
+          >
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover/button:translate-x-[100%] transition-transform duration-700 ease-out" />
+            
+            <span className="relative z-10">Read More</span>
+            
+            <ArrowForward
+              className="relative z-10 transition-all duration-300 group-hover/button:translate-x-0.5 group-hover/button:scale-110"
+              sx={{ fontSize: 16 }}
+            />
+            
+            {/* Hover glow effect */}
+            <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400 to-purple-500 opacity-0 group-hover/button:opacity-20 transition-opacity duration-300 blur-sm" />
+          </Link>
+        </div>
+      </CardContent>
+
+      {/* Decorative corner element */}
+      <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-3xl transform scale-0 group-hover:scale-100 transition-transform duration-500" />
+    </Card>
   );
 }

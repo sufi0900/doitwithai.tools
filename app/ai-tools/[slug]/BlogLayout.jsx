@@ -312,20 +312,7 @@ const BlogLayout = ({
 </SmartShimmer>
                 </div>
 
-                {/* Related Resources - Load after stage 3 */}
-                <SmartShimmer
-                  isLoading={loadStage < 3 || resourcesLoading} // Also consider if resources themselves are loading
-                  fallback={<ComponentSkeleton height="400px" />}
-                  delay={150} // Slightly longer delay for this section
-                >
-                  <Suspense fallback={<ComponentSkeleton height="400px" />}>
-                    <RelatedResources 
-                      resources={relatedResources} 
-                      isLoading={resourcesLoading} 
-                      slidesToShow={2} 
-                    />
-                  </Suspense>
-                </SmartShimmer>
+            
               </div>
               
               <TagsAndShare tags={data.tags} />
@@ -357,6 +344,20 @@ const BlogLayout = ({
             fallback={<ComponentSkeleton height="500px" />}
             delay={150} // Consistent delay with Related Resources
           >
+                {/* Related Resources - Load after stage 3 */}
+                <SmartShimmer
+                  isLoading={loadStage < 3 || resourcesLoading} // Also consider if resources themselves are loading
+                  fallback={<ComponentSkeleton height="400px" />}
+                  delay={150} // Slightly longer delay for this section
+                >
+                  <Suspense fallback={<ComponentSkeleton height="400px" />}>
+                    <RelatedResources 
+                      resources={relatedResources} 
+                      isLoading={resourcesLoading} 
+                      slidesToShow={3} 
+                    />
+                  </Suspense>
+                </SmartShimmer>
             <Suspense fallback={<ComponentSkeleton height="500px" />}>
               <RelatedPostsSection
                 relatedPosts={relatedPosts}

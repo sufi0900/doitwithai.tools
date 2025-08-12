@@ -2,46 +2,90 @@
 
 import React from 'react';
 import Script from "next/script";
-import Head from "next/head";
 import { NextSeo } from "next-seo";
 
 import { redisHelpers } from '@/app/lib/redis';
 import { client } from "@/sanity/lib/client";
 
 // NEW IMPORT for the wrapper component
-import StaticFreeResourcePageShell from "./StaticFreeResourcePageShell"; // <--- ADD THIS IMPORT
+import StaticFreeResourcePageShell from "./StaticFreeResourcePageShell";
 import Allblogs from "./AllBlogs"; // The client component that needs initial data
+import Head from 'next/head';
 
 export const revalidate = 3600; // Revalidate every 1 hour
 
+// Enhanced utility functions
+function getBaseUrl() {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';
+  }
+  return 'http://localhost:3000';
+}
+
+function generateOGImageURL(params) {
+  const baseURL = `${getBaseUrl()}/api/og`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseURL}?${searchParams.toString()}`;
+}
+
 export const metadata = {
-  title: "Free AI Resources & Solution - DoItWithAI.Tools", // Updated title for consistency
-  description: "Explore free AI resources to boost your creativity & productivity. Discover AI solutions for various problems. Download free AI images and find prompts.",
+  title: "Free AI Resources: Tools, Templates & Prompts | doitwithai.tools",
+  description: "Access a massive collection of free AI tools, prompts, and templates. Supercharge your productivity and projects with our zero-cost, high-quality resources.",
   author: "Sufian Mustafa",
+  keywords: "free AI resources, free AI images, AI prompts, AI solutions, free AI templates, AI for productivity, AI tools free",
   openGraph: {
-    title: "Free AI Resources & Solution - DoItWithAI.Tools", // Updated title for consistency
-    description: "Explore free AI resources to boost your creativity & productivity. Discover AI solutions for various problems. Download free AI images and find prompts.",
-    url: "https://www.doitwithai.tools/free-ai-resources", // Corrected URL
+    title: "Free AI Resources: Tools, Templates & Prompts | doitwithai.tools",
+    description: "Your ultimate collection of high-quality AI tools, templates, prompts, and guides to kickstart your AI journey and solve real-world problems.",
+    url: `${getBaseUrl()}/free-ai-resources`,
     type: "website",
     images: [{
-      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
-      width: 1200, // Standard size for OpenGraph
-      height: 630, // Standard size for OpenGraph
+      url: generateOGImageURL({
+        title: 'The Ultimate Free AI Resource Hub',
+        description: 'Your ultimate collection of high-quality AI tools, templates, prompts, and guides to kickstart your AI journey and solve real-world problems.',
+        category: 'Free AI Resources',
+        ctaText: 'Download Free Resources Now',
+        features: 'Zero Cost,High Quality,Instant Access',
+        bgColor: 'green'
+      }),
+      width: 1200,
+      height: 630,
       alt: 'Free AI Resources',
     }],
-    siteName: "AiToolTrend",
+    siteName: "doitwithai.tools",
     locale: 'en_US',
   },
   twitter: {
     card: "summary_large_image",
     domain: "doitwithai.tools",
-    url: "https://www.doitwithai.tools/free-ai-resources", // Corrected URL
-    title: "Free AI Resources & Solution - DoItWithAI.Tools", // Updated title for consistency
-    description: "Explore free AI resources to boost your creativity & productivity. Discover AI solutions for various problems. Download free AI images and find prompts.",
-    image: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
+    url: `${getBaseUrl()}/free-ai-resources`,
+    title: "Free AI Resources: Tools, Templates & Prompts | doitwithai.tools",
+    description: "Supercharge your projects with a massive collection of high-quality, zero-cost AI tools, prompts, and templates.",
+    image: generateOGImageURL({
+      title: 'The Ultimate Free AI Resource Hub',
+      description: 'Your ultimate collection of high-quality AI tools, templates, prompts, and guides to kickstart your AI journey and solve real-world problems.',
+      category: 'Free AI Resources',
+      ctaText: 'Download Free Resources Now',
+      features: 'Zero Cost,High Quality,Instant Access',
+      bgColor: 'green'
+    }),
+    creator: "@doitwithai",
   },
   alternates: {
-    canonical: "https://www.doitwithai.tools/free-ai-resources", // Corrected URL
+    canonical: `${getBaseUrl()}/free-ai-resources`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
@@ -66,29 +110,78 @@ async function getFreeResourcesInitialData() {
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
 
   // 1. Query for the featured resource
-  const featuredResourceQuery = `*[_type=="freeResources"&&isOwnPageFeature==true]|order(publishedAt desc)[0]{
-    _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
-    previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,
-    "relatedArticle":relatedArticle->{title,slug},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
-  }`;
+  const featuredResourceQuery = `*[_type == "freeResources" && isOwnPageFeature == true] | order(publishedAt desc)[0] {
+  _id,
+  title,
+  slug,
+  tags,
+  mainImage,
+  overview,
+  resourceType,
+  resourceFormat,
+  resourceLink,
+  resourceLinkType,
+  previewSettings,
+  "resourceFile": resourceFile.asset->,
+  content,
+  publishedAt,
+  promptContent,
+  "relatedArticle": relatedArticle-> {
+    title,
+    slug,
+    _type,
+    tags,
+    excerpt
+  },
+  aiToolDetails,
+  seoTitle,
+  seoDescription,
+  seoKeywords,
+  altText,
+  structuredData
+}`;
 
   // 2. Query for resource counts by format
   const countsQuery = `{
-    "all":count(*[_type=="freeResources"]),
-    "image":count(*[_type=="freeResources"&&resourceFormat=="image"]),
-    "video":count(*[_type=="freeResources"&&resourceFormat=="video"]),
-    "text":count(*[_type=="freeResources"&&resourceFormat=="text"]),
-    "document":count(*[_type=="freeResources"&&resourceFormat=="document"]),
-    "aitool":count(*[_type=="freeResources"&&resourceFormat=="aitool"])
+    "all": count(*[_type == "freeResources"]),
+    "image": count(*[_type == "freeResources" && resourceFormat == "image"]),
+    "video": count(*[_type == "freeResources" && resourceFormat == "video"]),
+    "text": count(*[_type == "freeResources" && resourceFormat == "text"]),
+    "document": count(*[_type == "freeResources" && resourceFormat == "document"]),
+    "aitool": count(*[_type == "freeResources" && resourceFormat == "aitool"])
   }`;
 
   // 3. Query for the first page of the resource list
-  const listQuery = `*[_type=="freeResources"]|order(publishedAt desc)[0...${INITIAL_RESOURCE_LIST_LIMIT + 1}]{
-    _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
-    previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,
-    "relatedArticle":relatedArticle->{title,slug},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
-  }`;
-
+ const listQuery = `*[_type == "freeResources"] | order(publishedAt desc)[0...${INITIAL_RESOURCE_LIST_LIMIT + 1}] {
+  _id,
+  title,
+  slug,
+  tags,
+  mainImage,
+  overview,
+  resourceType,
+  resourceFormat,
+  resourceLink,
+  resourceLinkType,
+  previewSettings,
+  "resourceFile": resourceFile.asset->,
+  content,
+  publishedAt,
+  promptContent,
+  "relatedArticle": relatedArticle-> {
+    title,
+    slug,
+    _type,
+    tags,
+    excerpt
+  },
+  aiToolDetails,
+  seoTitle,
+  seoDescription,
+  seoKeywords,
+  altText,
+  structuredData
+}`;
   try {
     const [featuredResource, resourceCounts, resourceList] = await Promise.all([
       client.fetch(featuredResourceQuery, {}, { next: { tags: ["freeResources"] } }),
@@ -124,15 +217,14 @@ async function getFreeResourcesInitialData() {
 export default async function Page() {
   const initialServerData = await getFreeResourcesInitialData();
 
-  // Update your grandparent page schema to include hasOfferCatalog
-  function schemaMarkup(pageMetadata) { // Accept pageMetadata
+  function schemaMarkup(pageMetadata) {
     return {
-      __html: `{
+      __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        "name": "${pageMetadata.title}", // Use dynamic title
-        "description": "${pageMetadata.description}", // Use dynamic description
-        "url": "${pageMetadata.openGraph.url}", // Use dynamic URL
+        "name": pageMetadata.title,
+        "description": pageMetadata.description,
+        "url": pageMetadata.openGraph.url,
         "breadcrumb": {
           "@type": "BreadcrumbList",
           "itemListElement": [
@@ -140,19 +232,19 @@ export default async function Page() {
               "@type": "ListItem",
               "position": 1,
               "name": "Home",
-              "item": "https://www.doitwithai.tools/"
+              "item": `${getBaseUrl()}/`
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": "Free AI Resources",
-              "item": "https://www.doitwithai.tools/free-ai-resources"
+              "item": `${getBaseUrl()}/free-ai-resources`
             }
           ]
         },
         "mainEntity": {
           "@type": "ItemList",
-          "numberOfItems": ${initialServerData?.resourceCounts?.all || 0}, // Use actual total count
+          "numberOfItems": initialServerData?.resourceCounts?.all || 0,
           "itemListElement": [
             {
               "@type": "ListItem",
@@ -170,59 +262,75 @@ export default async function Page() {
           "priceCurrency": "USD",
           "price": "0",
           "availability": "https://schema.org/InStock",
-          "offerCount": ${initialServerData?.resourceCounts?.all || 0} // Use actual total count
+          "offerCount": initialServerData?.resourceCounts?.all || 0
         }
-      }`
+      })
     };
   }
 
   return (
     <>
-      <Head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:site_name" content={metadata.openGraph.siteName} />
-        <meta property="og:locale" content={metadata.openGraph.locale} />
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        <meta name="author" content={metadata.author} />
-        <meta property="og:title" content={metadata.openGraph.title} />
-        <meta property="og:description" content={metadata.openGraph.description} />
-        <meta property="og:image" content={metadata.openGraph.images[0].url} /> {/* Corrected to array access */}
-        <meta property="og:image:width" content={metadata.openGraph.images[0].width} /> {/* Corrected */}
-        <meta property="og:image:height" content={metadata.openGraph.images[0].height} /> {/* Corrected */}
-        <meta property="og:url" content={metadata.openGraph.url} />
-        <meta property="og:type" content={metadata.openGraph.type} />
-        <meta name="twitter:card" content={metadata.twitter.card} />
-        <meta property="twitter:domain" content={metadata.twitter.domain} />
-        <meta property="twitter:url" content={metadata.twitter.url} />
-        <meta name="twitter:title" content={metadata.twitter.title} />
-        <meta name="twitter:description" content={metadata.twitter.description} />
-        <meta name="twitter:image" content={metadata.twitter.image} />
-        <link rel="canonical" href={metadata.alternates.canonical} />
-        <NextSeo
-          title={metadata.title}
-          description={metadata.description}
-          author={metadata.author}
-          type="website"
-          locale='en_IE'
-          site_name={metadata.openGraph.siteName}
-          canonical={metadata.alternates.canonical}
-          openGraph={{
-            title: metadata.openGraph.title,
-            description: metadata.openGraph.description,
-            url: metadata.openGraph.url,
-            type: "ItemList",
-            images: metadata.openGraph.images
-          }}
-        />
-      </Head>
+
+    <Head>
+      <NextSeo
+        title={metadata.title}
+        description={metadata.description}
+        canonical={metadata.alternates.canonical}
+        openGraph={{
+          type: 'website',
+          locale: 'en_US',
+          url: metadata.openGraph.url,
+          siteName: metadata.openGraph.siteName,
+          title: metadata.openGraph.title,
+          description: metadata.openGraph.description,
+          images: metadata.openGraph.images,
+        }}
+        twitter={{
+          card: metadata.twitter.card,
+          site: metadata.twitter.creator,
+          creator: metadata.twitter.creator,
+          title: metadata.twitter.title,
+          description: metadata.twitter.description,
+          image: metadata.twitter.image,
+        }}
+        additionalMetaTags={[
+          { name: 'keywords', content: metadata.keywords },
+          { name: 'author', content: metadata.author },
+          { name: 'robots', content: 'index, follow' },
+          {
+            name: 'googlebot',
+            content: 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
+          },
+          {
+            name: 'theme-color',
+            content: '#2563eb'
+          },
+          {
+            name: 'application-name',
+            content: 'doitwithai.tools'
+          },
+          {
+            name: 'msapplication-TileColor',
+            content: '#2563eb'
+          },
+          {
+            name: 'apple-mobile-web-app-capable',
+            content: 'yes'
+          },
+          {
+            name: 'apple-mobile-web-app-status-bar-style',
+            content: 'black-translucent'
+          }
+        ]}
+      />
+         </Head>
 
       <Script
-        id="FreeResourcesSchema" // Changed ID to be more specific
+        id="FreeResourcesSchema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup(metadata)} // Pass metadata here
-        key="FreeResources-jsonld" // Changed key
+        dangerouslySetInnerHTML={schemaMarkup(metadata)}
+        key="FreeResources-jsonld"
+        strategy="beforeInteractive"
       />
 
       {/* Wrap Allblogs with the new StaticFreeResourcePageShell */}

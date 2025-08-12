@@ -1,139 +1,54 @@
-/* Dark Mode Anchor Styles */
-.dark .customanchor a {
-  font-weight: bold;
-  color: #60A5FA; /* Tailwind blue-400 */
-  transition: color 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Added transition for color */
-  text-decoration: none;
-  position: relative;
-  display: inline-block;
-  /* Animation that repeats every 5 seconds */
-  animation: subtlePulse 5s infinite ease-in-out;
-  animation-delay: 0s;
+/* Custom anchor styles */
+.customanchor a {
+  /* Use a consistent font weight and color */
+  font-weight: 600;
+  color: #1e40af; /* A dark blue for light mode */
+  text-decoration: none; /* Remove the default underline */
+  position: relative; /* Needed for the pseudo-element */
+  transition: all 0.2s ease-in-out;
+  /* Add some padding bottom to prevent overlap with descenders */
+  padding-bottom: 2px;
 }
 
-/* Dark Mode Hover Styles */
-.dark .customanchor a:hover {
-  color: #93C5FD; /* A lighter shade of blue (e.g., Tailwind blue-300) */
-}
-
-/* Light Mode Anchor Styles */
-.light .customanchor a {
-  font-weight: bold;
-  color: #133efc; /* Strong blue color */
-  transition: color 0.3s ease-in-out; /* Added transition for color */
-  text-decoration: none;
-  position: relative;
-  display: inline-block;
-  /* Animation that repeats every 5 seconds */
-  animation: lightSubtlePulse 5s infinite ease-in-out;
-}
-
-/* Light Mode Hover Styles */
-.light .customanchor a:hover {
-  color: #0c2d9e; /* A slightly darker shade of blue for the hover effect */
-}
-/* Dark Mode Pulse Animation - Adjusted for 5-second cycle */
-@keyframes subtlePulse {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 0px rgba(59, 130, 246, 0);
-    filter: brightness(1);
-  }
-  /* Animation happens in first 20% of the cycle (1 second) */
-  10% {
-    opacity: 1;
-    transform: scale(1.002);
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
-    filter: brightness(1.10);
-  }
-  20% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 0px rgba(59, 130, 246, 0);
-    filter: brightness(1);
-  }
-  /* Remain inactive for the remaining 80% of the cycle (4 seconds) */
-  100% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 0px rgba(59, 130, 246, 0);
-    filter: brightness(1);
-  }
-}
-
-/* Light Mode Pulse Animation - Adjusted for 5-second cycle */
-@keyframes lightSubtlePulse {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 0px rgba(19, 62, 252, 0);
-    filter: brightness(1);
-  }
-  /* Animation happens in first 20% of the cycle (1 second) */
-  10% {
-    opacity: 1;
-    transform: scale(1.002);
-    box-shadow: 0 0 8px rgba(19, 62, 252, 0.6);
-    filter: brightness(1.4);
-  }
-  20% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 0px rgba(19, 62, 252, 0);
-    filter: brightness(1);
-  }
-  /* Remain inactive for the remaining 80% of the cycle (4 seconds) */
-  100% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 0px rgba(19, 62, 252, 0);
-    filter: brightness(1);
-  }
-}
-
-/* Underline Effect */
+/* Create a smooth, continuous underline with a pseudo-element */
 .customanchor a::after {
-  content: ""; /* Pseudo-element for the underline */
-  position: absolute; /* Position it absolutely within the anchor */
-  left: 0; /* Align to the left */
-  right: 0; /* Stretch to the right */
-  bottom: -2px; /* Position it just below the text */
-  height: 2px; /* Set height of the underline */
-  background-color: currentColor; /* Use the text color */
-  transform: scaleX(0); /* Start with a scale of 0 (invisible) */
-  transition: transform 0.3s ease; /* Smooth transition */
+  content: '';
+  position: absolute;
+  bottom: -1px; /* Position it below the text baseline, not at bottom: 0 */
+  left: 0;
+  width: 100%;
+  height: 1.5px; /* Adjust the thickness of the underline */
+  background-color: currentColor; /* Matches the text color */
+  transition: all 0.2s ease-in-out;
+  /* Ensure the underline doesn't get cut off */
+  border-radius: 0.5px;
 }
 
-/* Show underline on hover */
+/* Custom anchor hover styles */
+.customanchor a:hover {
+  color: #1d4ed8;
+}
+
+/* Animate the underline on hover instead of removing it */
 .customanchor a:hover::after {
-  transform: scaleX(1); /* Scale to full width on hover */
+  height: 0; /* Make it slightly thicker on hover */
 }
 
-
-
- .imgdesc a,  .imgdesc link {
-  font-weight: 500;
-  color: #0331ff;
-  text-decoration: underline;
-  text-underline-position: under;
-  transition: 0.3s;
+/* Dark mode-specific styles for anchors */
+.dark .customanchor a {
+  color: #60a5fa; /* A lighter blue for dark mode */
 }
 
-
-.imgdesc a:hover {
-  font-weight: 500;
-  padding: 2px 5px;
-  border-radius: 8px; 
-  text-decoration: none !important; /* Use !important to override other styles */
-  box-shadow:
-    rgba(0, 0, 0, 0.19) 0px 10px 20px,
-    rgba(0, 0, 0, 0.23) 0px 6px 6px;
-  outline: none;
-
-  color: #fff;
-  background-color: #1e40af;
+/* Dark mode hover styles */
+.dark .customanchor a:hover {
+  color: #93c5fd;
 }
+
+/* Dark mode hover effect */
+.dark .customanchor a:hover::after {
+  height: 0;
+}
+
 .nonebtn a:hover, .nonebtn link:hover, .nonebtn:hover{
   background-color: none;
   background: none;

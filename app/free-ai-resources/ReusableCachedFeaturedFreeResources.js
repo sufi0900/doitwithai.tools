@@ -12,7 +12,7 @@ const ReusableCachedFeaturedFreeResources = ({ initialData = null }) => { // Acc
   const memoizedQuery = useMemo(() => `*[_type=="freeResources"&&isOwnPageFeature==true]|order(publishedAt desc)[0]{
     _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
     previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,
-    "relatedArticle":relatedArticle->{title,slug},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
+    "relatedArticle":relatedArticle->{title,slug, _type},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
   }`, []);
 
   const stableOptions = useMemo(() => ({
@@ -67,8 +67,19 @@ const ReusableCachedFeaturedFreeResources = ({ initialData = null }) => { // Acc
 
   return (
     <div className="mb-12">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">Featured Resources</h2>
-      {isStale && ( // Check if featuredResource exists before showing stale warning
+   <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
+            <span className="group inline-block cursor-pointer">
+              <span className="relative text-blue-500">Feature
+                <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
+              </span>
+              {" "}
+              <span className="relative inline-block"> Resources
+                <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
+              </span>
+            </span>
+          </h1>
+        </div>      {isStale && ( // Check if featuredResource exists before showing stale warning
         <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <div className="flex items-center space-x-2 text-sm text-yellow-800 dark:text-yellow-200">
             <span>⚠️</span><span>Featured Resources content may be outdated.</span>

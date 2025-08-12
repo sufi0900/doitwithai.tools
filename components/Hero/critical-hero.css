@@ -1044,18 +1044,15 @@ svg {
   }
 }
 
-/* 4. VALUE INDICATORS - Wave animation (Unchanged as it was not mentioned as "playful") */
+/* 4. VALUE INDICATORS - Updated waveIn animation for a more professional feel */
 @keyframes waveIn {
   0% {
     opacity: 0;
-    transform: translateY(30px) rotateZ(-10deg) scale(0.5);
-  }
-  60% {
-    transform: translateY(-8px) rotateZ(5deg) scale(1.1);
+    transform: translateY(15px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) rotateZ(0deg) scale(1);
+    transform: translateY(0);
   }
 }
 .ai-benefit-card:hover {

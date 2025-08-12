@@ -1,20 +1,38 @@
 // app/blogs/page.jsx
 import React from 'react';
-import StaticBlogsPageShell from './StaticBlogsPageShell'; // Import the new shell
-import AllBlogsAggregated from './AllPosts'; // Assuming you rename AllPosts to AllBlogsAggregated
+import StaticBlogsPageShell from './StaticBlogsPageShell';
+import AllBlogsAggregated from './AllPosts';
 import Script from "next/script";
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis';
+import { NextSeo } from "next-seo";
+import Head from 'next/head';
 
-export const revalidate = 3600; // Revalidate every hour
+export const revalidate = 3600;
 export const dynamic = "force-dynamic";
 
-// Define the limit for the initial server-side fetch to match client component's limit
-const INITIAL_BLOGS_LIMIT = 5; // Matches cardsPerPage in AllBlogsAggregated.jsx
+// Enhanced utility functions
+function getBaseUrl() {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';
+  }
+  return 'http://localhost:3000';
+}
+
+function generateOGImageURL(params) {
+  const baseURL = `${getBaseUrl()}/api/og`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseURL}?${searchParams.toString()}`;
+}
+
+const INITIAL_BLOGS_LIMIT = 5;
 
 // --- Server-side data fetching function ---
 async function getAllBlogsInitialData() {
-  const cacheKey = 'blogList:all-blogs:main'; // Unique key for the all blogs page
+  const cacheKey = 'blogList:all-blogs:main';
   const startTime = Date.now();
 
   try {
@@ -25,13 +43,10 @@ async function getAllBlogsInitialData() {
     }
   } catch (redisError) {
     console.error(`Redis error for ${cacheKey}:`, redisError.message);
-    // Continue to fetch from Sanity if Redis fails
   }
 
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
 
-  // Query for the first page of blogs from all four schemas
-  // We fetch limit + 1 to determine if there are more pages
   const firstPageBlogsQuery = `*[
     _type == "makemoney" ||
     _type == "aitool" ||
@@ -51,7 +66,6 @@ async function getAllBlogsInitialData() {
     publishedAt
   }`;
 
-  // Query for the total count of blogs from all four schemas
   const totalCountQuery = `count(*[
     _type == "makemoney" ||
     _type == "aitool" ||
@@ -73,47 +87,58 @@ async function getAllBlogsInitialData() {
 
     console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
 
-    if (data.firstPageBlogs?.length > 0) { // Only cache if we actually got some data
+    if (data.firstPageBlogs?.length > 0) {
       try {
-        await redisHelpers.set(cacheKey, data, { ex: 3600 }); // Cache for 1 hour
+        await redisHelpers.set(cacheKey, data, { ex: 3600 });
         console.log(`[Redis Cache Set] for ${cacheKey}`);
       } catch (redisSetError) {
         console.error(`Redis set error for ${cacheKey}:`, redisSetError.message);
       }
     }
-
     return { ...data, __source: 'server-network' };
   } catch (error) {
     console.error(`Server-side fetch for All Blogs page failed:`, error.message);
-    return null; // Return null on error
+    return null;
   }
 }
 
 export const metadata = {
-  title: "AI Blog Library: Latest Insights on SEO & More | Do it with AI Tools",
+  title: " AI Blog Library: Insights on AI Tools, SEO & More | doitwithai.tools",
   description: "Explore our comprehensive AI blog collection featuring cutting-edge insights on AI tools, SEO strategies, coding techniques, & monetization opportunities",
   author: "Sufian Mustafa",
   keywords: "AI blog, AI tools, AI SEO, AI coding, AI monetization, artificial intelligence articles, AI tutorials, AI strategies, AI resources, machine learning blog, AI insights, AI productivity, AI for business, AI automation, AI learning",
   openGraph: {
-    title: "AI Blog Hub - Latest AI Insights & Expert Strategies",
+    title: " AI Blog Library: Insights on AI Tools, SEO & More | doitwithai.tools",
     description: "Discover cutting-edge AI content covering tools, SEO, coding, and monetization. Your complete resource for mastering artificial intelligence in business and daily life.",
     type: "website",
-    url: "https://www.doitwithai.tools/blogs",
-    siteName: "Do it with AI Tools",
-    images: [
-      {
-        url: "https://www.doitwithai.tools/images/blogs-og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "AI Blog Hub - Latest Insights and Strategies"
-      }
-    ]
+    url: `${getBaseUrl()}/blogs`,
+    siteName: "doitwithai.tools",
+    images: [{
+      url: generateOGImageURL({
+        title: 'Your Ultimate AI Blog Hub',
+        description: 'Get cutting-edge insights on AI tools, SEO, coding, and monetization to stay ahead.',
+        category: 'All Blogs',
+        ctaText: 'Explore All Articles',
+        features: 'AI Tools,AI SEO,AI Coding,Monetization',
+        bgColor: 'teal',
+      }),
+      width: 1200,
+      height: 630,
+      alt: "AI Blog Hub - Latest Insights and Strategies"
+    }],
   },
   twitter: {
     card: "summary_large_image",
     title: "AI Blog Hub - Latest AI Insights & Expert Strategies",
     description: "Discover cutting-edge AI content covering tools, SEO, coding, and monetization strategies.",
-    images: ["https://www.doitwithai.tools/images/blogs-twitter-card.jpg"],
+    image: generateOGImageURL({
+      title: 'Your Ultimate AI Blog Hub',
+      description: 'Get cutting-edge insights on AI tools, SEO, coding, and monetization to stay ahead.',
+      category: 'All Blogs',
+      ctaText: 'Explore All Articles',
+      features: 'AI Tools,AI SEO,AI Coding,Monetization',
+      bgColor: 'teal',
+    }),
     creator: "@doitwithai"
   },
   robots: {
@@ -128,14 +153,8 @@ export const metadata = {
     },
   },
   alternates: {
-    canonical: "https://www.doitwithai.tools/blogs"
+    canonical: `${getBaseUrl()}/blogs`
   },
-  other: {
-    'article:author': 'Sufian Mustafa',
-    'article:publisher': 'Do it with AI Tools',
-    'og:locale': 'en_US',
-    'og:site_name': 'Do it with AI Tools'
-  }
 };
 
 export default async function BlogsPage() {
@@ -143,22 +162,22 @@ export default async function BlogsPage() {
 
   function blogCollectionSchema() {
     return {
-      __html: `{
+      __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Blog",
-        "name": "Do it with AI Tools Blog",
-        "url": "https://www.doitwithai.tools/blogs",
+        "name": "doitwithai.tools Blog",
+        "url": `${getBaseUrl()}/blogs`,
         "description": "Comprehensive AI blog featuring expert insights on AI tools, SEO strategies, coding techniques, and monetization opportunities. Your go-to resource for mastering artificial intelligence in business and daily workflows.",
         "publisher": {
           "@type": "Organization",
-          "name": "Do it with AI Tools",
+          "name": "doitwithai.tools",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://www.doitwithai.tools/logoForHeader.png",
+            "url": `${getBaseUrl()}/logoForHeader.png`,
             "width": 600,
             "height": 60
           },
-          "url": "https://www.doitwithai.tools",
+          "url": `${getBaseUrl()}`,
           "sameAs": [
             "https://twitter.com/doitwithai",
             "https://www.facebook.com/doitwithai",
@@ -174,35 +193,35 @@ export default async function BlogsPage() {
               "@type": "ListItem",
               "position": 1,
               "name": "AI Tools Blog",
-              "url": "https://www.doitwithai.tools/ai-tools",
+              "url": `${getBaseUrl()}/ai-tools`,
               "description": "Latest reviews, tutorials, and insights on cutting-edge AI tools for productivity, SEO, and business automation."
             },
             {
-              "@type": "ListItem", 
+              "@type": "ListItem",
               "position": 2,
               "name": "AI SEO Blog",
-              "url": "https://www.doitwithai.tools/ai-seo",
+              "url": `${getBaseUrl()}/ai-seo`,
               "description": "Expert strategies for leveraging artificial intelligence to revolutionize your SEO performance and search rankings."
             },
             {
               "@type": "ListItem",
               "position": 3,
-              "name": "AI Code Blog", 
-              "url": "https://www.doitwithai.tools/ai-code",
+              "name": "AI Code Blog",
+              "url": `${getBaseUrl()}/ai-code`,
               "description": "Programming tutorials and development insights using AI to accelerate coding, solve problems, and build better applications."
             },
             {
               "@type": "ListItem",
               "position": 4,
               "name": "AI Learn & Earn Blog",
-              "url": "https://www.doitwithai.tools/ai-learn-earn", 
+              "url": `${getBaseUrl()}/ai-learn-earn`,
               "description": "Practical guides for acquiring AI skills and unlocking income opportunities through artificial intelligence."
             }
           ]
         },
         "potentialAction": {
           "@type": "SearchAction",
-          "target": "https://www.doitwithai.tools/blogs?search={search_term_string}",
+          "target": `${getBaseUrl()}/blogs?search={search_term_string}`,
           "query-input": "required name=search_term_string"
         },
         "about": [
@@ -212,7 +231,7 @@ export default async function BlogsPage() {
             "description": "Machine learning, AI tools, and automation technologies"
           },
           {
-            "@type": "Thing", 
+            "@type": "Thing",
             "name": "Search Engine Optimization",
             "description": "SEO strategies, techniques, and AI-powered optimization methods"
           },
@@ -223,17 +242,17 @@ export default async function BlogsPage() {
           },
           {
             "@type": "Thing",
-            "name": "Online Monetization", 
+            "name": "Online Monetization",
             "description": "Digital income strategies and AI-powered earning opportunities"
           }
         ]
-      }`
+      })
     };
   }
 
   function breadcrumbSchema() {
     return {
-      __html: `{
+      __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [
@@ -241,28 +260,28 @@ export default async function BlogsPage() {
             "@type": "ListItem",
             "position": 1,
             "name": "Home",
-            "item": "https://www.doitwithai.tools/"
+            "item": `${getBaseUrl()}/`
           },
           {
             "@type": "ListItem",
             "position": 2,
             "name": "Blogs",
-            "item": "https://www.doitwithai.tools/blogs"
+            "item": `${getBaseUrl()}/blogs`
           }
         ]
-      }`
+      })
     };
   }
 
   function faqSchema() {
     return {
-      __html: `{
+      __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "FAQPage",
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "What topics does the Do it with AI Tools blog cover?",
+            "name": "What topics does the doitwithai.tools blog cover?",
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Our blog covers four main categories: AI Tools (reviews and tutorials), AI SEO (search optimization strategies), AI Code (programming with AI assistance), and AI Learn & Earn (skill development and monetization opportunities)."
@@ -272,7 +291,7 @@ export default async function BlogsPage() {
             "@type": "Question",
             "name": "How often is new content published?",
             "acceptedAnswer": {
-              "@type": "Answer", 
+              "@type": "Answer",
               "text": "We publish new AI-focused content regularly, with multiple articles per week covering the latest trends, tools, and strategies in artificial intelligence, SEO, and digital marketing."
             }
           },
@@ -293,43 +312,70 @@ export default async function BlogsPage() {
             }
           }
         ]
-      }`
+      })
     };
   }
 
   function websiteSchema() {
     return {
-      __html: `{
+      __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "Do it with AI Tools - Blog Section",
-        "url": "https://www.doitwithai.tools/blogs",
+        "name": "doitwithai.tools - Blog Section",
+        "url": `${getBaseUrl()}/blogs`,
         "description": "Explore a full collection of AI-focused blog articles including SEO strategies, skill development, and income generation guides.",
         "inLanguage": "en-US",
         "isPartOf": {
           "@type": "WebSite",
-          "name": "Do it with AI Tools",
-          "url": "https://www.doitwithai.tools"
+          "name": "doitwithai.tools",
+          "url": `${getBaseUrl()}`
         },
         "author": {
           "@type": "Person",
           "name": "Sufian Mustafa",
-          "url": "https://www.doitwithai.tools/about"
+          "url": `${getBaseUrl()}/about`
         },
         "publisher": {
           "@type": "Organization",
-          "name": "Do it with AI Tools",
-          "logo": "https://www.doitwithai.tools/logoForHeader.png"
+          "name": "doitwithai.tools",
+          "logo": `${getBaseUrl()}/logoForHeader.png`
         }
-      }`
+      })
     };
   }
 
-
-
   return (
     <>
-        {/* Structured Data Scripts */}
+    <Head>
+      <NextSeo
+        title={metadata.title}
+        description={metadata.description}
+        canonical={metadata.alternates.canonical}
+        openGraph={{
+          title: metadata.openGraph.title,
+          description: metadata.openGraph.description,
+          url: metadata.openGraph.url,
+          type: "website",
+          images: metadata.openGraph.images,
+          siteName: metadata.openGraph.siteName,
+          locale: metadata.openGraph.locale,
+        }}
+        twitter={{
+          card: metadata.twitter.card,
+          site: metadata.twitter.creator,
+          handle: metadata.twitter.creator,
+          title: metadata.twitter.title,
+          description: metadata.twitter.description,
+          image: metadata.twitter.image,
+        }}
+        additionalMetaTags={[
+          { name: 'author', content: metadata.author },
+          { name: 'keywords', content: metadata.keywords },
+          { name: 'robots', content: metadata.robots.index && metadata.robots.follow ? 'index, follow' : 'noindex, nofollow' },
+        ]}
+      />
+      </Head>
+      {/* Structured Data Scripts */}
       <Script
         id="blog-collection-schema"
         type="application/ld+json"
@@ -350,11 +396,11 @@ export default async function BlogsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={websiteSchema()}
       />
+      
       {/* Main Content delivered via the StaticBlogsPageShell */}
       <StaticBlogsPageShell initialServerData={initialServerData}>
-        {/* The client component for dynamic content will be rendered as children */}
         <AllBlogsAggregated
-          initialServerData={initialServerData} // Pass the fetched initial data
+          initialServerData={initialServerData}
         />
       </StaticBlogsPageShell>
     </>

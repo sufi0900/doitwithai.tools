@@ -1,20 +1,68 @@
-// app/faq/page.tsx
 import React from 'react';
-import Head from 'next/head';
 import Script from 'next/script';
+import { NextSeo } from "next-seo";
 import FAQComponent from './FAQClient';
 import { faqsData } from './faqs'; // Import the centralized data
+import Head from 'next/head';
+
+// Enhanced utility functions
+function getBaseUrl() {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';
+  }
+  return 'http://localhost:3000';
+}
+
+function generateOGImageURL(params) {
+  const baseURL = `${getBaseUrl()}/api/og`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseURL}?${searchParams.toString()}`;
+}
 
 export const metadata = {
-  title: "Frequently Asked Questions - Do it with AI tools",
-  description:
-    "Get answers to your frequently asked questions about doitwithai.tools. Discover how our AI tools boost productivity & improve your SEO & digital presence",
+  title: "Frequently Asked Questions about Our AI Platform | doitwithai.tools",
+  description: "Find quick and clear answers to frequently asked questions about our AI tools, resources, and platform. Your AI inquiries, solved.",
   author: "Sufian Mustafa",
+  keywords: "AI FAQ, AI tools FAQ, artificial intelligence questions, AI SEO questions, AI resources FAQ, AI monetization FAQ",
   openGraph: {
-    images: '',
+    title: "Frequently Asked Questions about Our AI Platform | doitwithai.tools",
+    description: "Find clear and concise answers to the most common questions about our platform and AI tools.",
+    images: [{
+      url: generateOGImageURL({
+        title: 'Get Your Questions Answered Here',
+        description: 'Find clear and concise answers to the most common questions about our platform and AI tools.',
+        category: 'FAQ',
+        ctaText: 'Explore the Answers',
+        features: 'Quick Answers,AI Tools,SEO,Resources',
+      }),
+      width: 1200,
+      height: 630,
+      alt: 'FAQ page with questions and answers',
+    }],
+    url: `${getBaseUrl()}/faq`,
+    type: 'website',
+    siteName: 'doitwithai.tools',
+    locale: 'en_US',
   },
-  keywords:
-    "AI FAQ, AI tools FAQ, artificial intelligence questions, AI SEO questions, AI resources FAQ, AI monetization FAQ"
+  twitter: {
+    card: 'summary_large_image',
+    title: "Frequently Asked Questions about Our AI Platform | doitwithai.tools",
+    description: "Find quick and clear answers to frequently asked questions about our AI tools, resources, and platform.",
+    image: generateOGImageURL({
+      title: 'Get Your Questions Answered Here',
+      description: 'Find clear and concise answers to the most common questions about our platform and AI tools.',
+      category: 'FAQ',
+      ctaText: 'Explore the Answers',
+      features: 'Quick Answers,AI Tools,SEO,Resources',
+    }),
+  },
+  robots: "index, follow",
+  alternates: {
+    canonical: `${getBaseUrl()}/faq`,
+  },
 };
 
 // Schema JSON-LD
@@ -29,33 +77,79 @@ function faqSchemaMarkup() {
   }));
 
   return {
-    __html: JSON.stringify({ // Use JSON.stringify for cleaner generation
+    __html: JSON.stringify({
       "@context": "https://schema.org",
       "@type": "FAQPage",
       "mainEntity": mainEntity
-    }, null, 2) // Pretty print for readability
+    }, null, 2)
+  };
+}
+
+function breadcrumbSchema() {
+  return {
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": `${getBaseUrl()}/`
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "FAQ",
+          "item": `${getBaseUrl()}/faq`
+        }
+      ]
+    }, null, 2)
   };
 }
 
 export default function FAQPage() {
   return (
     <>
-      <Head>
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        <meta name="author" content={metadata.author} />
-        <meta property="og:title" content={metadata.title} />
-        <meta property="og:description" content={metadata.description} />
-        <meta property="og:type" content="website" />
-        <meta name="keywords" content={metadata.keywords} />
-        <link rel="canonical" href="https://www.doitwithai.tools/faq" />
-      </Head>
-
+    <Head>
+      <NextSeo
+        title={metadata.title}
+        description={metadata.description}
+        canonical={metadata.alternates.canonical}
+        openGraph={{
+          title: metadata.openGraph.title,
+          description: metadata.openGraph.description,
+          url: metadata.openGraph.url,
+          type: metadata.openGraph.type,
+          siteName: metadata.openGraph.siteName,
+          locale: metadata.openGraph.locale,
+          images: metadata.openGraph.images,
+        }}
+        twitter={{
+          card: metadata.twitter.card,
+          title: metadata.twitter.title,
+          description: metadata.twitter.description,
+          image: metadata.twitter.image,
+        }}
+        additionalMetaTags={[
+          { name: 'keywords', content: metadata.keywords },
+          { name: 'author', content: metadata.author },
+          { name: 'robots', content: metadata.robots },
+        ]}
+      />
+</Head>
       {/* JSON-LD Schema */}
-       <Script
+      <Script
         id="faq-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={faqSchemaMarkup()}
+        strategy="afterInteractive"
+      />
+
+      <Script
+        id="breadcrumb-schema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={breadcrumbSchema()}
         strategy="afterInteractive"
       />
 

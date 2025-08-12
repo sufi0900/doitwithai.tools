@@ -1,19 +1,35 @@
-// app/ai-tools/page.jsx
 import React from 'react';
 import Script from "next/script";
-import Head from "next/head";
 import { NextSeo } from "next-seo";
 import { redisHelpers } from '@/app/lib/redis';
 import { client } from "@/sanity/lib/client";
 
-import BlogListingPageContent from "@/app/ai-tools/AllBlogs"; // Import the new reusable component
+import BlogListingPageContent from "@/app/ai-tools/AllBlogs";
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 
 // NEW IMPORT for StaticPageShell
-import StaticPageShell from "@/app/ai-seo/StaticPageShell"; // <--- ADD THIS IMPORT
+import StaticPageShell from "@/app/ai-seo/StaticPageShell";
+import Head from 'next/head';
 
 // --- Next.js Server-Side Configuration ---
 export const revalidate = 3600; // Revalidate every 1 hour
+
+// Enhanced utility functions
+function getBaseUrl() {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';
+  }
+  return 'http://localhost:3000';
+}
+
+function generateOGImageURL(params) {
+  const baseURL = `${getBaseUrl()}/api/og`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseURL}?${searchParams.toString()}`;
+}
 
 async function getData(schemaType, pageSlugPrefix) {
   const cacheKey = `blogList:${schemaType}:main`;
@@ -31,9 +47,8 @@ async function getData(schemaType, pageSlugPrefix) {
 
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
 
-  // Fetch initial data for the page
   const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]`;
-  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]`; // 6 items (5 + 1 for hasMore check)
+  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]`;
   const totalCountQuery = `count(*[_type=="${schemaType}"])`;
 
   try {
@@ -68,40 +83,62 @@ async function getData(schemaType, pageSlugPrefix) {
 
 // --- SEO Metadata (Next.js App Router Standard) ---
 export const metadata = {
-  title: "Best AI Tools for Productivity - DoItWithAI.Tools",
-  description: "Explore a comprehensive list of blogs on the Best AI Tools for Productivity (Freemium), providing detailed reviews of the top artificial intelligence solutions.",
+  title: "Best AI Tools & Reviews for SEO & Productivity | doitwithai.tools",
+  description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
   author: "Sufian Mustafa",
   openGraph: {
-    title: "Best AI Tools for Productivity - DoItWithAI.Tools",
-    description: "Explore a comprehensive list of blogs on the Best AI Tools for Productivity (Freemium), providing detailed reviews of the top artificial intelligence solutions.",
-    url: "https://www.doitwithai.tools/ai-tools",
-    type: "website", // Or "CollectionPage" if schema supports it directly
+    title: "Best AI Tools & Reviews for SEO & Productivity | doitwithai.tools",
+    description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
+    url: `${getBaseUrl()}/ai-tools`,
+    type: "website",
     images: [{
-      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
+      url: generateOGImageURL({
+        title: 'Boost Your Productivity with AI',
+        description: 'Discover AI tools that streamline your workflow and supercharge your daily tasks.',
+        category: 'AI Tools',
+        ctaText: 'Explore AI Tools',
+        features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
+      }),
       width: 1200,
       height: 630,
       alt: 'Best AI Tools for Productivity',
     }],
-    siteName: "AiToolTrend",
+    siteName: "doitwithai.tools",
     locale: 'en_US',
   },
   twitter: {
     card: "summary_large_image",
     domain: "doitwithai.tools",
-    url: "https://www.doitwithai.tools/ai-tools",
-    title: "Best AI Tools for Productivity - DoItWithAI.Tools",
-    description: "Explore a comprehensive list of blogs on the Best AI Tools for Productivity (Freemium), providing detailed reviews of the top artificial intelligence solutions.",
-    image: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
+    url: `${getBaseUrl()}/ai-tools`,
+    title: "Best AI Tools & Reviews for SEO & Productivity | doitwithai.tools",
+    description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
+    image: generateOGImageURL({
+      title: 'Boost Your Productivity with AI',
+      description: 'Discover AI tools that streamline your workflow and supercharge your daily tasks.',
+      category: 'AI Tools',
+      ctaText: 'Explore AI Tools',
+      features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
+    }),
   },
   alternates: {
-    canonical: "https://www.doitwithai.tools/ai-tools",
+    canonical: `${getBaseUrl()}/ai-tools`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
 export default async function Page() {
-  // Define schema-specific data for the AI Tools page
-  const schemaType = "aitool"; // Sanity schema type
-  const pageSlugPrefix = "ai-tools"; // URL prefix for this category
+  const schemaType = "aitool";
+  const pageSlugPrefix = "ai-tools";
   const pageTitle = "AI Tools";
   const pageTitleHighlight = "AI Tools";
   const pageDescription = "Explore the newest and most effective AI tools to boost your productivity.";
@@ -120,99 +157,71 @@ export default async function Page() {
 
   function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
-      __html: `
-        {
-          "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          "name": "${pageMetadata.title}",
-          "description": "${pageMetadata.description}",
-          "url": "${pageMetadata.openGraph.url}",
-          "breadcrumb": {
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Home",
-                "item": "https://www.doitwithai.tools/"
-              },
-              {
-                "@type": "ListItem",
-                "position": 2,
-                "name": "${breadcrumbProps.pageName}",
-                "item": "${breadcrumbProps.link}"
-              }
-            ]
-          }
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": pageMetadata.title,
+        "description": pageMetadata.description,
+        "url": pageMetadata.openGraph.url,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": `${getBaseUrl()}/`
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": breadcrumbProps.pageName,
+              "item": `${getBaseUrl()}${breadcrumbProps.link}`
+            }
+          ]
         }
-      `
+      })
     };
   }
 
   return (
     <>
-      <Head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:site_name" content={metadata.openGraph.siteName} />
-        <meta property="og:locale" content={metadata.openGraph.locale} />
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        <meta name="author" content={metadata.author} />
-        <meta property="og:title" content={metadata.openGraph.title} />
-        <meta property="og:description" content={metadata.openGraph.description} />
-        <meta property="og:image" content={metadata.openGraph.images[0].url} />
-        <meta property="og:image:width" content={metadata.openGraph.images[0].width} />
-        <meta property="og:image:height" content={metadata.openGraph.images[0].height} />
-        <meta property="og:url" content={metadata.openGraph.url} />
-        <meta property="og:type" content={metadata.openGraph.type} />
-        <meta name="twitter:card" content={metadata.twitter.card} />
-        <meta property="twitter:domain" content={metadata.twitter.domain} />
-        <meta property="twitter:url" content={metadata.twitter.url} />
-        <meta name="twitter:title" content={metadata.twitter.title} />
-        <meta name="twitter:description" content={metadata.twitter.description} />
-        <meta name="twitter:image" content={metadata.twitter.image} />
-        <link rel="canonical" href={metadata.alternates.canonical} />
-        <NextSeo
-          title={metadata.title}
-          description={metadata.description}
-          author={metadata.author}
-          type="website"
-          locale='en_IE'
-          site_name={metadata.openGraph.siteName}
-          canonical={metadata.alternates.canonical}
-          openGraph={{
-            title: metadata.openGraph.title,
-            description: metadata.openGraph.description,
-            url: metadata.openGraph.url,
-            type: "ItemList",
-            images: metadata.openGraph.images
-          }}
-        />
-      </Head>
+    <Head>
+      <NextSeo
+        title={metadata.title}
+        description={metadata.description}
+        canonical={metadata.alternates.canonical}
+        openGraph={{
+          title: metadata.openGraph.title,
+          description: metadata.openGraph.description,
+          url: metadata.openGraph.url,
+          type: "ItemList",
+          images: metadata.openGraph.images,
+          siteName: metadata.openGraph.siteName,
+          locale: metadata.openGraph.locale,
+        }}
+        twitter={{
+          card: metadata.twitter.card,
+          site: metadata.twitter.site,
+          handle: metadata.twitter.creator,
+          title: metadata.twitter.title,
+          description: metadata.twitter.description,
+          image: metadata.twitter.image,
+        }}
+        additionalMetaTags={[
+          { name: 'author', content: metadata.author },
+          { name: 'keywords', content: metadata.keywords },
+          { name: 'robots', content: 'index, follow' },
+        ]}
+      />
+
+         </Head>
       <Script
         id="BreadcrumbListSchema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)} // Pass metadata here
+        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
         key={`${pageSlugPrefix}-jsonld`}
       />
-      {/* UnifiedCacheMonitor is generally placed outside the PageCacheProvider if it monitors global cache */}
-      {/* If it's specific to the page, it can remain inside */}
-      {/* <UnifiedCacheMonitor serverData={serverData} params={mockParams} /> // Assuming mockParams would be defined here if needed */}
-
-      {/* --- REPLACE THIS BLOCK --- */}
-      {/* <PageCacheProvider pageType={schemaType} pageId="main">
-        <BlogListingPageContent
-            schemaType={schemaType}
-            pageSlugPrefix={pageSlugPrefix}
-            pageTitle={pageTitle}
-            pageTitleHighlight={pageTitleHighlight}
-            pageDescription={pageDescription}
-            breadcrumbProps={breadcrumbProps}
-            serverData={serverData}  // Pass server data
-          />
-      </PageCacheProvider> */}
-      {/* --- WITH THIS --- */}
       <StaticPageShell breadcrumbProps={breadcrumbProps}>
         <PageCacheProvider pageType={schemaType} pageId="main">
           <BlogListingPageContent
@@ -221,12 +230,10 @@ export default async function Page() {
             pageTitle={pageTitle}
             pageTitleHighlight={pageTitleHighlight}
             pageDescription={pageDescription}
-            // breadcrumbProps={breadcrumbProps} // REMOVED: Handled by StaticPageShell
-            serverData={serverData}  // Still pass server data
+            serverData={serverData}
           />
         </PageCacheProvider>
       </StaticPageShell>
-      {/* --- END REPLACEMENT --- */}
     </>
   );
 }

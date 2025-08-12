@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from 'react'; // Added useMemo, useCallback
 import dynamic from 'next/dynamic';
 import ResourceCard from '@/app/free-ai-resources/RelatedesourceCard';
-import Link from 'next/link';
+// import Link from 'next/link';
 import ResourceSkeleton from '@/app/free-ai-resources/ResourceSkeleton';
 import ResourceModalsProvider from '@/app/free-ai-resources/ResourceModalsProvider';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
@@ -24,10 +24,27 @@ const DynamicResourceCarousel = dynamic(() => import('@/app/free-ai-resources/Re
 const FeaturedResourcesHorizontal  = ({ initialData = {} }) => { // Accept initialData prop
 
   // Memoize the query
-  const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...30]{
-    _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
-    content,publishedAt,"resourceFile":resourceFile.asset->,promptContent,previewSettings,_updatedAt
-  }`, []);
+  // Memoize the query
+const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...30]{
+  _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,
+  "relatedArticle": relatedArticle-> {
+    title,
+    slug,
+    _type,
+    tags,
+    aiToolDetails,
+    excerpt
+  },
+  resourceLinkType,
+  content,
+  publishedAt,
+  "resourceFile":resourceFile.asset->,
+  promptContent,
+  previewSettings,
+  // Add aiToolDetails here to fetch it for the main resource
+  aiToolDetails, 
+  _updatedAt
+}`, []);
 
   const memoizedParams = useMemo(() => ({}), []);
 
@@ -158,7 +175,7 @@ const FeaturedResourcesHorizontal  = ({ initialData = {} }) => { // Accept initi
             <ResourceCard key={resource._id} resource={resource} wrapperClassName="h-full mb-4 " />
           ))}
         </DynamicResourceCarousel>
-      <div className="mt-10 text-center">
+      {/* <div className="mt-10 text-center">
           <Link href="/free-ai-resources" className="inline-block group">
             <button className="
               px-6 py-2.5
@@ -175,7 +192,7 @@ const FeaturedResourcesHorizontal  = ({ initialData = {} }) => { // Accept initi
               <svg className="w-4 h-4 ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
           </Link>
-        </div>
+        </div> */}
       </div>
       <ResourceModalsProvider resources={featuredResources} />
     </section>

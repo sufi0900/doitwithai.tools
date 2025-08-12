@@ -1,3 +1,4 @@
+// components/BlogSidebar.js
 /*eslint-disable @next/next/no-img-element*/
 /*eslint-disable react/no-unescaped-entities*/
 "use client";
@@ -12,6 +13,8 @@ import RelatedPost from "./RelatedPost";
 import SearchResults from '@/React_Query_Caching/SearchResults';
 import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
 import Link from 'next/link';
+// Import the new Trustpilot component
+import TrustpilotSidebarInvite from './TrustpilotSidebarInvite'; 
 
 // Caching System Imports for Recent Posts
 import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
@@ -272,6 +275,8 @@ const BlogSidebar = ({
         />
       )}
 
+
+
       <div className="space-y-6">
         {/* Related Posts Section */}
         <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
@@ -310,7 +315,7 @@ const BlogSidebar = ({
         </div>
 
         {/* Related Resources Section */}
-       <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
+        <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
           <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 shadow-sm">
@@ -327,7 +332,7 @@ const BlogSidebar = ({
         </div>
 
         {/* Recent Posts Section */}
-      <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
+        <div className="group relative overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
           {/* Top Heading Section */}
           <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-3 px-4 py-3">
@@ -380,7 +385,7 @@ const BlogSidebar = ({
           )}
         </div>
         {/* Popular Categories Section */}
-     <div className="group mb-4 relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
+        <div className="group mb-4 relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
           <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 shadow-sm">
@@ -390,31 +395,35 @@ const BlogSidebar = ({
             </div>
           </div>
           <ul className="p-4 space-y-3">
-              {[
-                { href: "/ai-tools", icon: ToolIcon, label: "AI Tools" },
-                { href: "/ai-learn-earn", icon: MoneyIcon, label: "Learn & Earn With AI" },
-                { href: "/free-ai-resources", icon: GiftIcon, label: "Free AI Resources" },
-                { href: "/ai-seo", icon: TrendingIcon, label: "SEO With AI" },
-                { href: "/ai-code", icon: CodeIcon, label: "Code With AI" }
-              ].map((category, index) => (
-                <li key={category.href} className="group/cat">
-                  <Link href={category.href} className="flex items-center gap-4 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 group-hover/cat:shadow-md">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg text-white text-lg group-hover/cat:scale-110 transition-transform duration-300`}>
-                      <category.icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover/cat:text-blue-700 transition-colors duration-300">{category.label}</span>
-                    </div>
-                    <ArrowRightIcon className="h-4 w-4 text-gray-400 group-hover/cat:text-blue-700 group-hover/cat:translate-x-1 transition-all duration-300" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {[
+              { href: "/ai-tools", icon: ToolIcon, label: "AI Tools" },
+              { href: "/ai-learn-earn", icon: MoneyIcon, label: "Learn & Earn With AI" },
+              { href: "/free-ai-resources", icon: GiftIcon, label: "Free AI Resources" },
+              { href: "/ai-seo", icon: TrendingIcon, label: "SEO With AI" },
+              { href: "/ai-code", icon: CodeIcon, label: "Code With AI" }
+            ].map((category, index) => (
+              <li key={category.href} className="group/cat">
+                <Link href={category.href} className="flex items-center gap-4 rounded-xl p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 group-hover/cat:shadow-md">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 shadow-lg text-white text-lg group-hover/cat:scale-110 transition-transform duration-300`}>
+                    <category.icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover/cat:text-blue-700 transition-colors duration-300">{category.label}</span>
+                  </div>
+                  <ArrowRightIcon className="h-4 w-4 text-gray-400 group-hover/cat:text-blue-700 group-hover/cat:translate-x-1 transition-all duration-300" />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
       <div className="mt-8">
         <NewsLatterBox />
+      </div>
+            {/* NEW: Trustpilot Invitation Card */}
+      <div className="mb-6 mt-8">
+        <TrustpilotSidebarInvite />
       </div>
 
       {/* Enhanced Shimmer Animation */}

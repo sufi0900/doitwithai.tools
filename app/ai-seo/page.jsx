@@ -1,8 +1,7 @@
-// app/ai-seo/page.jsx
 import React from 'react';
 import Script from "next/script";
-import Head from "next/head";
 import { NextSeo } from "next-seo";
+import Head from 'next/head';
 
 // Your existing BlogListingPageContent import
 import BlogListingPageContent from "@/app/ai-tools/AllBlogs";
@@ -11,7 +10,7 @@ import BlogListingPageContent from "@/app/ai-tools/AllBlogs";
 import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";
 
 // NEW IMPORT for StaticPageShell
-import StaticPageShell from "./StaticPageShell"; // <--- ADD THIS IMPORT
+import StaticPageShell from "./StaticPageShell";
 
 // ---NEW IMPORTS for UnifiedCaching---
 import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
@@ -27,6 +26,20 @@ export const revalidate = 3600;
 
 const SUBCATEGORIES_LIMIT = 2;
 const BLOGS_PAGE_LIMIT = 5;
+
+// Unified utility functions for consistency
+function getBaseUrl() {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return 'http://localhost:3000';
+}
+
+function generateOGImageURL(params) {
+  const baseURL = `${getBaseUrl()}/api/og`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseURL}?${searchParams.toString()}`;
+}
 
 async function getData(schemaType, pageSlugPrefix) {
   const cacheKey = `blogList:${schemaType}:main`;
@@ -84,30 +97,62 @@ async function getData(schemaType, pageSlugPrefix) {
 }
 
 export const metadata = {
-  title: "AI in SEO & Digital Marketing - DoItWithAI.Tools",
-  description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
+  title: "Double Your SEO Results via AI Tools & Strategies | doitwithai.tools",
+  description: "Discover how AI tools are revolutionizing SEO, replacing outdated methods with smart strategies that boost your rankings & improve your online presence.",
   author: "Sufian Mustafa",
+  keywords: "AI SEO, digital marketing, AI for content, keyword research, on-page SEO, off-page SEO, link building, AI strategies",
   openGraph: {
-    title: "AI in SEO & Digital Marketing - DoItWithAI.Tools",
+    title: "Double Your SEO Results via AI Tools & Strategies | doitwithai.tools",
     description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
-    url: "https://www.doitwithai.tools/ai-seo",
+    url: `${getBaseUrl()}/ai-seo`,
     type: "website",
-    images: [{ url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg', width: 1200, height: 630, alt: 'AI in SEO & Digital Marketing', }],
-    siteName: "AiToolTrend",
+    images: [{
+      url: generateOGImageURL({
+        title: 'Master AI for SEO & Marketing',
+        description: 'Boost your rankings, automate content, and dominate search results with our AI insights.',
+        category: 'AI SEO',
+        ctaText: 'Explore AI SEO Tools',
+        features: 'AI-Powered SEO,Content Automation,Data-Driven Rankings'
+      }),
+      width: 1200,
+      height: 630,
+      alt: 'Double Your SEO Results via AI Tools & Strategies | doitwithai.tools',
+    }],
+    siteName: "doitwithai.tools",
     locale: 'en_US',
   },
   twitter: {
     card: "summary_large_image",
+    site: "@doitwithai",
+    creator: "@doitwithai",
     domain: "doitwithai.tools",
-    url: "https://www.doitwithai.tools/ai-seo",
-    title: "AI in SEO & Digital Marketing - DoItWithAI.Tools",
+    url: `${getBaseUrl()}/ai-seo`,
+    title: "Double Your SEO Results via AI Tools & Strategies | doitwithai.tools",
     description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
-    image: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
+    image: generateOGImageURL({
+      title: 'Master AI for SEO & Marketing',
+      description: 'Boost your rankings, automate content, and dominate search results with our AI insights.',
+      category: 'AI SEO',
+      ctaText: 'Explore AI SEO Tools',
+      features: 'AI-Powered SEO,Content Automation,Data-Driven Rankings'
+    }),
   },
   alternates: {
-    canonical: "https://www.doitwithai.tools/ai-seo",
+    canonical: `${getBaseUrl()}/ai-seo`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
+
 
 export default async function Page() {
   const schemaType = "seo";
@@ -135,51 +180,64 @@ export default async function Page() {
 
   function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
-      __html: `{"@context":"https://schema.org","@type":"CollectionPage","name":"${pageMetadata.title}","description":"${pageMetadata.description}","url":"${pageMetadata.openGraph.url}","breadcrumb":{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.doitwithai.tools/"},{"@type":"ListItem","position":2,"name":"${breadcrumbProps.pageName}","item":"${breadcrumbProps.link}"}]}}`
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": pageMetadata.title,
+        "description": pageMetadata.description,
+        "url": pageMetadata.openGraph.url,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": `${getBaseUrl()}/`
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": breadcrumbProps.pageName,
+              "item": `${getBaseUrl()}${breadcrumbProps.link}`
+            }
+          ]
+        }
+      })
     };
   }
 
   return (
     <>
-      <Head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta property="og:site_name" content={metadata.openGraph.siteName} />
-        <meta property="og:locale" content={metadata.openGraph.locale} />
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        <meta name="author" content={metadata.author} />
-        <meta property="og:title" content={metadata.openGraph.title} />
-        <meta property="og:description" content={metadata.openGraph.description} />
-        <meta property="og:image" content={metadata.openGraph.images[0].url} />
-        <meta property="og:image:width" content={metadata.openGraph.images[0].width} />
-        <meta property="og:image:height" content={metadata.openGraph.images[0].height} />
-        <meta property="og:url" content={metadata.openGraph.url} />
-        <meta property="og:type" content={metadata.openGraph.type} />
-        <meta name="twitter:card" content={metadata.twitter.card} />
-        <meta property="twitter:domain" content={metadata.twitter.domain} />
-        <meta property="twitter:url" content={metadata.twitter.url} />
-        <meta name="twitter:title" content={metadata.twitter.title} />
-        <meta name="twitter:description" content={metadata.twitter.description} />
-        <meta name="twitter:image" content={metadata.twitter.image} />
-        <link rel="canonical" href={metadata.alternates.canonical} />
-        <NextSeo
-          title={metadata.title}
-          description={metadata.description}
-          author={metadata.author}
-          type="website"
-          locale='en_IE'
-          site_name={metadata.openGraph.siteName}
-          canonical={metadata.alternates.canonical}
-          openGraph={{
-            title: metadata.openGraph.title,
-            description: metadata.openGraph.description,
-            url: metadata.openGraph.url,
-            type: "ItemList",
-            images: metadata.openGraph.images
-          }}
-        />
-      </Head>
+    <Head>
+      <NextSeo
+        title={metadata.title}
+        description={metadata.description}
+        canonical={metadata.alternates.canonical}
+        openGraph={{
+          title: metadata.openGraph.title,
+          description: metadata.openGraph.description,
+          url: metadata.openGraph.url,
+          type: "ItemList",
+          images: metadata.openGraph.images,
+          siteName: metadata.openGraph.siteName,
+          locale: metadata.openGraph.locale,
+        }}
+        twitter={{
+          card: metadata.twitter.card,
+          site: metadata.twitter.site,
+          handle: metadata.twitter.creator,
+          title: metadata.twitter.title,
+          description: metadata.twitter.description,
+          image: metadata.twitter.image,
+        }}
+        additionalMetaTags={[
+          { name: 'author', content: metadata.author },
+          { name: 'keywords', content: metadata.keywords },
+          { name: 'robots', content: 'index, follow' },
+        ]}
+      />
+         </Head>
       <Script
         id="BreadcrumbListSchema"
         type="application/ld+json"
@@ -187,39 +245,23 @@ export default async function Page() {
         key={`${pageSlugPrefix}-jsonld`}
       />
       <UnifiedCacheMonitor serverData={serverData} params={mockParams} />
-
-      {/* --- REPLACE THIS BLOCK --- */}
-      {/* <BlogListingPageContent
-        schemaType={schemaType}
-        pageSlugPrefix={pageSlugPrefix}
-        pageTitle={pageTitle}
-        pageTitleHighlight={pageTitleHighlight}
-        pageDescription={pageDescription}
-        breadcrumbProps={breadcrumbProps}
-        showSubcategoriesSection={true}
-        subcategoriesSectionTitle="SubCategories"
-        subcategoriesSectionDescription="of SEO"
-        SubcategoriesComponent={ReusableCachedSEOSubcategories}
-        subcategoriesLimit={SUBCATEGORIES_LIMIT}
-        serverData={serverData}
-      /> */}
-      {/* --- WITH THIS --- */}
-      <StaticPageShell breadcrumbProps={breadcrumbProps}>
-        <BlogListingPageContent
-          schemaType={schemaType}
-          pageSlugPrefix={pageSlugPrefix}
-          pageTitle={pageTitle}
-          pageTitleHighlight={pageTitleHighlight}
-          pageDescription={pageDescription}
-          showSubcategoriesSection={true}
-          subcategoriesSectionTitle="SubCategories"
-          subcategoriesSectionDescription="of SEO"
-          SubcategoriesComponent={ReusableCachedSEOSubcategories}
-          subcategoriesLimit={SUBCATEGORIES_LIMIT}
-          serverData={serverData} // Still pass serverData for dynamic content
-        />
-      </StaticPageShell>
-      {/* --- END REPLACEMENT --- */}
+      <PageCacheProvider pageType="listing" pageId={`${schemaType}-listing`}>
+        <StaticPageShell breadcrumbProps={breadcrumbProps}>
+          <BlogListingPageContent
+            schemaType={schemaType}
+            pageSlugPrefix={pageSlugPrefix}
+            pageTitle={pageTitle}
+            pageTitleHighlight={pageTitleHighlight}
+            pageDescription={pageDescription}
+            showSubcategoriesSection={true}
+            subcategoriesSectionTitle="SubCategories"
+            subcategoriesSectionDescription="of SEO"
+            SubcategoriesComponent={ReusableCachedSEOSubcategories}
+            subcategoriesLimit={SUBCATEGORIES_LIMIT}
+            serverData={serverData} // Still pass serverData for dynamic content
+          />
+        </StaticPageShell>
+      </PageCacheProvider>
     </>
   );
 }

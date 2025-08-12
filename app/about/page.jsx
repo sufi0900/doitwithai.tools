@@ -1,36 +1,64 @@
 import React from 'react'
 import AboutPageClient from './AboutPageClient'
 import Script from "next/script";
+import { NextSeo } from 'next-seo';
+import Head from 'next/head';
 
+// Enhanced utility functions
+function getBaseUrl() {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';
+  }
+  return 'http://localhost:3000';
+}
+
+function generateOGImageURL(params) {
+  const baseURL = `${getBaseUrl()}/api/og`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseURL}?${searchParams.toString()}`;
+}
 
 export const metadata = {
-  title: "About Do it with AI Tools – Your AI-Powered SEO & Productivity Hub",
-  description: "Discover how Do it with AI Tools empowers businesses and individuals to double their SEO performance and boost productivity using cutting-edge AI strategies, tools, and free resources.",
+  title: "About Do It With AI Tools – Our Story, Mission, and Vision",
+  description: "Learn about Do It With AI Tools, our mission to empower creators & businesses with AI insights, & the story behind building this smart AI-powered platform.",
   author: "Sufian Mustafa",
   openGraph: {
-    title: "About Do it with AI Tools – Your AI-Powered SEO & Productivity Hub",
-    description: "Discover how Do it with AI Tools empowers businesses and individuals to double their SEO performance and boost productivity using cutting-edge AI strategies, tools, and free resources.",
-    images: [
-      {
-        url: 'https://www.doitwithai.tools/about-og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'About Do it with AI Tools - AI-Powered SEO and Productivity Platform'
-      }
-    ],
-    url: 'https://www.doitwithai.tools/about',
+    title: "",
+    description: "Learn about Do It With AI Tools, our mission to empower creators & businesses with AI insights, & the story behind building this smart AI-powered platform.",
+    images: [{
+      url: generateOGImageURL({
+        title: 'The Story of Do It With AI Tools — Mission, Vision & Goals',
+        description: 'Learn about the vision and mission behind doitwithai.tools, a platform dedicated to making powerful AI tools accessible to everyone.',
+        category: 'Our Mission',
+        ctaText: 'Discover Our Story',
+        features: 'Our Story,Our Vision,Our Values',
+      }),
+      width: 1200,
+      height: 630,
+      alt: 'About Do It With AI Tools – Our Story, Mission, and Vision'
+    }],
+    url: `${getBaseUrl()}/about`,
     type: 'website',
-    siteName: 'Do it with AI Tools'
+    siteName: 'doitwithai.tools'
   },
   twitter: {
     card: 'summary_large_image',
-    title: "About Do it with AI Tools – Your AI-Powered SEO & Productivity Hub",
-    description: "Discover how Do it with AI Tools empowers businesses and individuals to double their SEO performance and boost productivity using cutting-edge AI strategies, tools, and free resources.",
-    images: ['https://www.doitwithai.tools/about-twitter-image.jpg']
+    title: "About Do It With AI Tools – Our Story, Mission, and Vision",
+    description: "Learn about Do It With AI Tools, our mission to empower creators & businesses with AI insights, & the story behind building this smart AI-powered platform.",
+    image: generateOGImageURL({
+      title: '',
+      description: 'Learn about the vision and mission behind doitwithai.tools, a platform dedicated to making powerful AI tools accessible to everyone.',
+      category: 'Our Mission',
+      ctaText: 'Discover Our Story',
+        features: 'Our Story,Our Vision,Our Values',
+    }),
   },
   keywords: "about AI tools, AI SEO platform, artificial intelligence productivity, AI-powered SEO, AI coding resources, AI learning platform, free AI resources, AI automation tools, SEO with AI, AI for business",
   robots: "index, follow",
-  canonical: "https://www.doitwithai.tools/about"
+  canonical: `${getBaseUrl()}/about`
 };
 
 export default function AboutPage() {
@@ -40,15 +68,15 @@ export default function AboutPage() {
       __html: `{
         "@context": "https://schema.org",
         "@type": "AboutPage",
-        "name": "About Do it with AI Tools",
-        "url": "https://www.doitwithai.tools/about",
-        "description": "Learn about Do it with AI Tools - your comprehensive platform for mastering SEO with AI, exploring cutting-edge AI tools, learning AI coding, discovering monetization opportunities, and accessing free AI resources.",
+        "name": "About doitwithai.tools",
+        "url": "${getBaseUrl()}/about",
+        "description": "Learn about doitwithai.tools - your comprehensive platform for mastering SEO with AI, exploring cutting-edge AI tools, learning AI coding, discovering monetization opportunities, and accessing free AI resources.",
         "mainEntity": {
           "@type": "Organization",
-          "name": "Do it with AI Tools",
-          "url": "https://www.doitwithai.tools",
-          "logo": "https://www.doitwithai.tools/logoForHeader.png",
-          "description": "Do it with AI Tools is a comprehensive platform that empowers businesses, creators, and marketers to double their SEO performance and boost productivity using cutting-edge AI strategies, tools, and resources.",
+          "name": "doitwithai.tools",
+          "url": "${getBaseUrl()}",
+          "logo": "${getBaseUrl()}/logoForHeader.png",
+          "description": "doitwithai.tools is a comprehensive platform that empowers businesses, creators, and marketers to double their SEO performance and boost productivity using cutting-edge AI strategies, tools, and resources.",
           "founder": {
             "@type": "Person",
             "name": "Sufian Mustafa",
@@ -58,7 +86,7 @@ export default function AboutPage() {
             "@type": "ContactPoint",
             "contactType": "customer service",
             "email": "sufianmustafa0900@gmail.com",
-            "url": "https://www.doitwithai.tools/contact",
+            "url": "${getBaseUrl()}/contact",
             "areaServed": "Worldwide",
             "availableLanguage": ["en"]
           },
@@ -105,13 +133,13 @@ export default function AboutPage() {
               "@type": "ListItem",
               "position": 1,
               "name": "Home",
-              "item": "https://www.doitwithai.tools/"
+              "item": "${getBaseUrl()}/"
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": "About",
-              "item": "https://www.doitwithai.tools/about"
+              "item": "${getBaseUrl()}/about"
             }
           ]
         }
@@ -127,10 +155,10 @@ export default function AboutPage() {
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "What is Do it with AI Tools?",
+            "name": "What is doitwithai.tools?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Do it with AI Tools is a comprehensive platform that empowers businesses, creators, and marketers to double their SEO performance and boost productivity using cutting-edge AI strategies, tools, and resources across 5 dynamic categories: AI Tools, AI SEO, AI Code, AI Learn & Earn, and Free AI Resources."
+              "text": "doitwithai.tools is a comprehensive platform that empowers businesses, creators, and marketers to double their SEO performance and boost productivity using cutting-edge AI strategies, tools, and resources across 5 dynamic categories: AI Tools, AI SEO, AI Code, AI Learn & Earn, and Free AI Resources."
             }
           },
           {
@@ -156,6 +184,41 @@ export default function AboutPage() {
 
   return (
     <>
+    <Head>
+      <NextSeo
+        title={metadata.title}
+        description={metadata.description}
+        canonical={metadata.canonical}
+        openGraph={{
+          title: metadata.openGraph.title,
+          description: metadata.openGraph.description,
+          url: metadata.openGraph.url,
+          type: metadata.openGraph.type,
+          siteName: metadata.openGraph.siteName,
+          images: metadata.openGraph.images,
+        }}
+        twitter={{
+          card: metadata.twitter.card,
+          title: metadata.twitter.title,
+          description: metadata.twitter.description,
+          image: metadata.twitter.image,
+        }}
+        additionalMetaTags={[
+          {
+            name: 'keywords',
+            content: metadata.keywords
+          },
+          {
+            name: 'author',
+            content: metadata.author
+          },
+          {
+            name: 'robots',
+            content: metadata.robots
+          }
+        ]}
+      />
+      </Head>
       <AboutPageClient />
       
       <Script

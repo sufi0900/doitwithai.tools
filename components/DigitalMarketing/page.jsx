@@ -7,7 +7,7 @@ import HomeMediumCard from "@/components/Blog/HomeMediumCard";
 import Breadcrumb from "../Common/Breadcrumb";
 import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard";
 import BigCard from "@/components/Blog/HomeBigCard";
-import Link from "next/link";
+// import Link from "next/link";
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
@@ -203,25 +203,7 @@ const DigitalMarketing = ({ initialData = {} }) => {
            
           </div>
         )}
-{/* New inviting text and refined button */}
-<div className="text-center py-6 md:py-8"> {/* Adjusted padding for balance */}
- 
-  <Link href="/ai-seo" className="inline-block group"> {/* Added 'group' class to Link for hover effects on children */}
-   <button className="
-      px-6 py-3
-      rounded-full
-      bg-blue-600
-      text-white text-base font-semibold
-      shadow-md
-      hover:bg-blue-700
-      transition-colors duration-300 ease-in-out
-      focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700
-    ">
-      Explore All AI SEO Blogs
-      <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">→</span> {/* Arrow icon for engagement */}
-    </button>
-  </Link>
-</div>
+
       </div>
     </section>
   );

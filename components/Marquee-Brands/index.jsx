@@ -20,7 +20,7 @@ const Marquee = () => {
     fetchBrands(); // Fetch brands data on component mount
   }, []);
 
-  const BrandCard = ({ brand, index }) => (
+  const AiTools = ({ brand, index }) => (
     <div className="inline-flex min-w-max">
       <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-gray-50 to-gray-100 p-4 shadow-lg transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 dark:from-gray-800 dark:via-gray-850 dark:to-gray-900 dark:hover:shadow-blue-400/20">
         {/* Gradient overlay on hover */}
@@ -69,9 +69,20 @@ const Marquee = () => {
   );
 
   return (
+        <div className="container">
     <div className="relative border-b border-body-color/[.15] pb-8 dark:border-white/[.15] md:pb-10 lg:pb-12">
       {/* Section header */}
-     
+      <h1 className="mb-8 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
+          <span className="group inline-block cursor-pointer">
+            <span className="relative text-blue-500">AI Tools We Use
+              <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
+            </span>
+            {" "}
+            <span className="relative inline-block"> & Recommend
+              <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
+            </span>
+          </span>
+        </h1>
 
       {/* Enhanced gradient background */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-purple-50/30 dark:from-blue-900/10 dark:via-transparent dark:to-purple-900/10" />
@@ -80,11 +91,11 @@ const Marquee = () => {
       <div className="relative overflow-hidden">
         <div className="animate-marquee hover:pause-marquee flex space-x-8 whitespace-nowrap pb-4 pt-4">
           {brands.map((brand, index) => (
-            <BrandCard key={`row1-${index}`} brand={brand} index={index} />
+            <AiTools key={`row1-${index}`} brand={brand} index={index} />
           ))}
           {/* Duplicate for seamless loop */}
           {brands.map((brand, index) => (
-            <BrandCard key={`row1-dup-${index}`} brand={brand} index={index} />
+            <AiTools key={`row1-dup-${index}`} brand={brand} index={index} />
           ))}
         </div>
         
@@ -97,11 +108,11 @@ const Marquee = () => {
       <div className="relative overflow-hidden">
         <div className="animate-marquee-reverse hover:pause-marquee flex space-x-8 whitespace-nowrap py-4">
           {brands.map((brand, index) => (
-            <BrandCard key={`row2-${index}`} brand={brand} index={index} />
+            <AiTools key={`row2-${index}`} brand={brand} index={index} />
           ))}
           {/* Duplicate for seamless loop */}
           {brands.map((brand, index) => (
-            <BrandCard key={`row3-dup-${index}`} brand={brand} index={index} />
+            <AiTools key={`row3-dup-${index}`} brand={brand} index={index} />
           ))}
         </div>
         
@@ -111,7 +122,8 @@ const Marquee = () => {
       </div>
 
       {/* Bottom accent line */}
-      <div className="mt-8 h-px w-full bg-gradient-to-r from-transparent via-blue-500/30 to-transparent dark:via-blue-400/30" />
+      {/* <div className="mt-8 h-px w-full bg-gradient-to-r from-transparent via-blue-500/30 to-transparent dark:via-blue-400/30" /> */}
+    </div>
     </div>
   );
 };

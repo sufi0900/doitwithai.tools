@@ -9,7 +9,7 @@ import { useOnlineStatus } from "./useOnlineStatus";
 import { Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import Hero from "@/components/Hero"; // *no* CSS import here
+import Hero from "@/components/Hero"; 
 import Header from "@/components/Header";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider";
@@ -87,6 +87,12 @@ export default function RootLayout({ children }) {
     return () => document.removeEventListener("click", handler);
   }, []);
 
+    useEffect(() => {
+    // Scroll to the top of the page on every navigation change
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+
   // Cache static pages
   useEffect(() => {
     const staticPages = ["/about", "/faq", "/contact", "/privacy", "/terms"];
@@ -124,6 +130,9 @@ export default function RootLayout({ children }) {
             You are currently offline.
           </div>
         )}
+
+  <Providers>
+
     {isSlugPage ? (
                   <ConditionalGlobalHeader />
                 ) : (
@@ -131,14 +140,11 @@ export default function RootLayout({ children }) {
                 )}
         {/* 1st paint: Hero only */}
         {isHomePage && <Hero />}
-  <Providers>
+
         {/* everything else only once we've painted at least the hero */}
         {hydrated && (
           <>
             <CacheProvider>
-            
-            
-
                 <main className={isHomePage ? "" : "pt-[80px]"}>
                   {children}
                 </main>

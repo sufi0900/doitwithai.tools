@@ -83,111 +83,149 @@ export default function RecentPosts({ initialData = [] }) { // Accept initialDat
   }, [refresh]);
 
   return (
-    <section className="pb-[20px] pt-[20px]">
+     <section className="pb-[20px] mt-[40px]">
       <div className="container">
-        <h2 className="mb-10 text-start text-3xl md:text-4xl font-bold tracking-tight ">
-          <span className="relative mr-2 inline-block">
-            Our Latest <span className="text-blue-600 dark:text-blue-400">AI Insights</span>
-            <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-gradient-to-r from-blue-600 to-purple-600"></span>
-          </span>
-        </h2>
-
+      <h2 className="mb-8 mt-8 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+        <span className="relative mr-2 inline-block">
+          Latest
+          <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
+        </span>
+        <span className="text-blue-500">Posts</span>
+      </h2>
+        
         {/* NEW: Stale Data Warning */}
-        {isStale && recentData && recentData.length > 0 && ( // Ensure there's data to display a warning about
+        {isStale && recentData && recentData.length > 0 && (
           <div className="mb-4 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
             <div className="flex items-center space-x-2 text-sm text-yellow-800 dark:text-yellow-200">
               <span>⚠️</span><span>Recent Posts content may be outdated.</span>
             </div>
           </div>
         )}
-
+        
         {/* NEW: Error Display */}
-        {hasError && !loading && !recentData && ( // Show error if error AND no data fallback
+        {hasError && !loading && !recentData && (
           <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
             <div className="text-red-800 dark:text-red-200">
               <h3 className="font-semibold mb-2">Failed to load recent posts</h3>
               <p className="text-sm mb-3">{error?.message || 'Unable to fetch data'}</p>
             </div>
             <button
-              onClick={handleRefresh} // Use the memoized handleRefresh here
+              onClick={handleRefresh}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mt-2"
             >
               Retry
             </button>
           </div>
         )}
-
+       
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading && !recentData ? (
-            Array.from({ length: 3 }).map((_, index) => ( // Display 3 skeleton cards for better visual balance
+            Array.from({ length: 3 }).map((_, index) => (
               <SkelCard key={index} />
             ))
           ) : recentData && recentData.length > 0 ? (
             recentData?.slice(0, 3).map((post) => (
-              <div key={post._id} className="flex"> {/* Use flex to ensure consistent card heights */}
-                <div className="card group w-full transition duration-300 hover:scale-[1.03] transform cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg hover:shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 flex flex-col">
-                  {post.slug?.current && schemaSlugMap[post._type] ? (
-                    <Link
-                      href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-                      className="relative block aspect-[37/22] w-full"
+              <Link
+                key={post._id}
+                href={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                className="group relative  w-full transition-all duration-400 ease-in-out
+                           hover:scale-[1.02] transform cursor-pointer overflow-hidden rounded-xl border
+                           border-gray-200 bg-white shadow-md hover:shadow-xl dark:border-gray-700 dark:bg-gray-800
+                           dark:hover:bg-gray-700 flex flex-col"
+              >
+                {/* Image Section */}
+                <div className="relative w-full aspect-[37/22] overflow-hidden">
+                  <div className="absolute inset-0 h-full w-full transition-all duration-500 ease-out group-hover:scale-110">
+                    <OptimizeImage
+                      src={urlForImage(post.mainImage).url()}
+                      alt={post.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  
+                  {/* Gradient Overlay on Hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                  {/* Enhanced Tag */}
+                  {post.tags && post.tags.length > 0 && (
+                    <span 
+                      className="absolute right-3 top-3 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold capitalize text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:scale-105 backdrop-blur-sm border border-white/20"
                     >
-                      {post.tags && post.tags.length > 0 && (
-                        <span className="absolute right-4 top-4 z-20 inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold capitalize text-white transition duration-300 group-hover:bg-blue-700">
-                          {post.tags[0].name}
-                        </span>
-                      )}
-
-                      {/* Image container with hover effect */}
-                      <div className="relative aspect-[30/22] overflow-hidden">
-                        <div className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110">
-                          <OptimizeImage
-                            src={urlForImage(post.mainImage).url()}
-                            alt={post.title}
-                            fill
-                          />
-                        </div>
-                      </div>
-                    </Link>
-                  ) : (
-                    <div className="text-red-500 p-5">Slug not available</div>
+                      <Sparkles className="w-3 h-3" />
+                      {post.tags[0].name}
+                    </span>
                   )}
-                  <div className="p-5 flex flex-col flex-grow">
-                    {/* Title */}
-                    <Link
-                      href={`/${schemaSlugMap[post._type]}/${post.slug?.current || "#"}`}
-                    >
-                      <h5 className="mb-2 line-clamp-2 text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
-                        {post.title}
-                      </h5>
-                    </Link>
-                    {/* Overview */}
-                    <p className="mb-3 line-clamp-3 md:line-clamp-4 font-normal text-gray-700 dark:text-gray-400 flex-grow">
-                      {post.overview}
-                    </p>
-                    {/* Meta Data */}
-                    <div className="mt-auto mb-3 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
-                      <div className="flex items-center">
-                        <AccessTime className="mr-1.5 w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        <span>{post.readTime?.minutes} min read</span>
+                  
+                  {/* Reading Progress Indicator */}
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+                </div>
+                
+                {/* Content Section */}
+                <div className="p-5 flex flex-col flex-grow">
+                  {/* Enhanced Title with Better Visibility */}
+                  <h5 className="mb-2 line-clamp-2 text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+                    {post.title}
+                  </h5>
+                  
+                  {/* Overview */}
+                  <p className="mb-3 line-clamp-3 md:line-clamp-4 font-normal text-gray-700 dark:text-gray-400 flex-grow">
+                    {post.overview}
+                  </p>
+                  
+                  {/* Enhanced Meta Information */}
+                  <div className="mt-auto mb-3 flex items-center justify-start gap-3 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div className="p-1 rounded-full bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-800/50 transition-colors duration-300">
+                        <CalendarMonthOutlined 
+                          className="text-blue-600 dark:text-blue-400" 
+                          sx={{ fontSize: 12 }}
+                        />
                       </div>
-                      <div className="flex items-center">
-                        <CalendarMonthOutlined className="mr-1.5 w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        <span>{new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                      </div>
+                      <p className="font-medium text-gray-600 dark:text-gray-400">
+                        {new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
                     </div>
-                    {/* Read more link */}
-                    <Link
-                      href={`/${schemaSlugMap[post._type]}/${post.slug?.current || "#"}`}
-                      className="inline-flex items-center px-4 py-2 text-center text-sm font-medium rounded-lg
-                                 bg-blue-600 text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300
-                                 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition-all duration-200 self-start"
+                    
+                    <div className="w-px h-3 bg-gray-300 dark:bg-gray-600" />
+                    
+                    <div className="flex items-center gap-1.5">
+                      <div className="p-1 rounded-full bg-green-50 dark:bg-green-900/30 group-hover:bg-green-100 dark:group-hover:bg-green-800/50 transition-colors duration-300">
+                        <AccessTime 
+                          className="text-green-600 dark:text-green-400" 
+                          sx={{ fontSize: 12 }}
+                        />
+                      </div>
+                      <p className="font-medium text-gray-600 dark:text-gray-400">
+                        {post.readTime?.minutes || '-'} min
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Enhanced Read More Button */}
+                  <div className="flex justify-start mt-4">
+                    <div
+                      className="group/button relative inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:shadow-lg  first-line:focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-800 overflow-hidden w-fit"
                     >
-                      Read more
-                      <ArrowRightAltOutlined className="ml-2 w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" />
-                    </Link>
+                      {/* Shimmer Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover/button:translate-x-[100%] transition-transform duration-700 ease-out" />
+                      
+                      {/* Button Content */}
+                      <span className="relative z-10">Read More</span>
+                      <ArrowRightAltOutlined 
+                        className="relative z-10 transition-all duration-300 group-hover/button:translate-x-0.5 group-hover/button:scale-110" 
+                        sx={{ fontSize: 14 }}
+                      />
+                      
+                      {/* Glow Effect */}
+                      <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400 to-purple-500 opacity-0 group-hover/button:opacity-20 transition-opacity duration-300 blur-sm" />
+                    </div>
                   </div>
                 </div>
-              </div>
+
+                {/* Corner Accent */}
+                <div className="absolute top-0 right-0 w-10 h-10 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-2xl transform scale-0 group-hover:scale-100 transition-transform duration-500" />
+              </Link>
             ))
           ) : (
             <div className="text-center py-8 col-span-full">

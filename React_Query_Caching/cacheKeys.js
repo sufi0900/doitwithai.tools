@@ -79,7 +79,7 @@ export const CACHE_KEYS = {
 export const CACHE_CONFIG = {
   // Default fallback configuration
   DEFAULT: {
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 1 * 60 * 1000, // 5 minutes
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     enableOffline: true
   },

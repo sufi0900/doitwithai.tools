@@ -27,13 +27,13 @@ const RelatedResources = ({ resources, isLoading = false, slidesToShow = 2 }) =>
     return (
       <div className="py-12 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center mb-8">
-            <h2 className="text-3xl font-bold mb-2">Related Resources</h2>
-            <div className="w-16 h-1 bg-primary rounded mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl text-center">
-              Explore more resources related to this article
-            </p>
-          </div>
+          <h2 className="mb-6 mt-6 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+          <span className="relative mr-2 inline-block">
+            Related
+            <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
+          </span>
+          <span className="text-blue-500">Resources</span>
+        </h2>
           <div className="flex flex-wrap -mx-3">
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="w-full sm:w-1/2 lg:w-1/3 px-3 mb-6">
@@ -53,17 +53,16 @@ const RelatedResources = ({ resources, isLoading = false, slidesToShow = 2 }) =>
 
   return (
     <>
-      <section className="py-12 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center mb-8">
-            <h2 className="text-3xl font-bold mb-2">Related Resources</h2>
-            <div className="w-16 h-1 bg-primary rounded mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl text-center">
-              Explore more resources related to this article
-            </p>
-          </div>
-          
-          {/* Carousel for resources - pass slidesToShow prop */}
+      <div className="container">
+        <h2 className="mb-8 mt-8 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
+          <span className="relative mr-2 inline-block">
+            Related
+            <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
+          </span>
+          <span className="text-blue-500">Resources</span>
+        </h2>
+        {/* FIX: Add a negative margin to the container to offset the card padding */}
+        <div className="-mx-3">
           <DynamicResourceCarousel slidesToShow={slidesToShow}>
             {resources.map((resource) => (
               <ResourceCard 
@@ -74,16 +73,7 @@ const RelatedResources = ({ resources, isLoading = false, slidesToShow = 2 }) =>
             ))}
           </DynamicResourceCarousel>
         </div>
-      </section>
-      
-      <div className="mt-10 text-center">
-          <Link href="/free-ai-resources" className="inline-flex items-center bg-primary hover:bg-primary-dark text-white py-3 px-6 rounded-md transition-colors">
-            View All Resources
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-            </svg>
-          </Link>
-        </div>
+      </div>
       <ResourceModalsProvider resources={resources} />
     </>
   );

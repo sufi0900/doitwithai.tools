@@ -3,8 +3,8 @@ import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
 import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
-// import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
-import OptimizedImage from "@/app/ai-seo/[slug]/SimplifiedOptimizedImage";
+import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
+import SimplifiedOptimizedImage from "@/app/ai-seo/[slug]/SimplifiedOptimizedImage";
 import { ArrowRight } from 'lucide-react';
 
 const PortableTextComponents = () => {
@@ -293,76 +293,24 @@ image: ({ value, index }) => {
         </h1>
       ),
   
- // Modified h2 component
- h2: ({ children }) => {
-   // Convert children to an array of elements
-   const childArray = React.Children.toArray(children);
-   
-   // Extract text from the first two children (words)
-   const words = childArray.map(child => typeof child === 'string' ? child : child.props.children).join(' ').trim().split(' ');
-   const firstTwoWords = words.slice(0, 2).join(' ');
-   const remainingWords = words.slice(2).join(' ');
- 
-   return (
-     <h2 className="relative pl-4 mb-6 text-4xl font-bold leading-tight text-gray-800 dark:text-white 
-                   border-l-[4px] border-blue-500 dark:border-blue-400 
-                   group hover:pl-6 transition-all duration-300 ease-out 
-                   hover:text-blue-600 dark:hover:text-blue-500">
-       <span className="relative inline-block">
-         {/* Container for the border effect */}
-         <span className="absolute left-0 -bottom-1 w-full h-[2px] bg-blue-500 dark:bg-blue-400 transition-all duration-300 ease-out scale-x-0 group-hover:scale-x-100"></span>
-         <span className="pb-1"> {/* This maintains space for text without overlap */}
-           {firstTwoWords}
-         </span>{' '}
-         {/* Remaining words */}
-         {remainingWords}
-       </span>
-       <span
-         className="absolute left-0 top-0 h-full animate-pulse bg-gradient-to-b from-blue-500 to-blue-400
-                   group-hover:from-blue-400 group-hover:to-blue-500 transition-all duration-300 ease-out"
-         style={{
-           width: '4px',
-           boxShadow: '0 0 4px rgba(37, 99, 235, 0.5)', // Light blue glow
-         }}
-       ></span>
-     </h2>
-   );
- },
- 
- // Modified h3 component
- h3: ({ children }) => {
-   // Convert children to an array of elements
-   const childArray = React.Children.toArray(children);
-   
-   // Extract text from the first two children (words)
-   const words = childArray.map(child => typeof child === 'string' ? child : child.props.children).join(' ').trim().split(' ');
-   const firstTwoWords = words.slice(0, 2).join(' ');
-   const remainingWords = words.slice(2).join(' ');
- 
-   return (
-     <h3 className="relative mb-6 text-2xl font-bold leading-snug text-gray-700 dark:text-gray-200 
-                    group hover:text-blue-600 dark:hover:text-blue-400 
-                    transition-all duration-300 ease-out">
-       <span className="relative inline-block pl-4">
-         {/* Container for the border effect */}
-         <span className="absolute left-0 -bottom-1 w-full h-[2px] bg-blue-500 dark:bg-blue-400 transition-all duration-300 ease-out scale-x-0 group-hover:scale-x-100"></span>
-         <span className="pb-1"> {/* This maintains space for text without overlap */}
-           {firstTwoWords}
-         </span>{' '}
-         {/* Remaining words */}
-         {remainingWords}
-       </span>
-       <span
-         className="absolute left-0 top-0 h-full animate-pulse bg-gradient-to-b from-blue-500 to-blue-400
-                   group-hover:from-blue-400 group-hover:to-blue-500 transition-all duration-300 ease-out"
-         style={{
-           width: '4px',
-           boxShadow: '0 0 4px rgba(37, 99, 235, 0.5)', // Light blue glow
-         }}
-       ></span>
-     </h3>
-       );
- },
+// Modified h2 component
+h2: ({ children }) => {
+  return (
+    <h2 className="mb-6 text-2xl font-bold text-gray-800 dark:text-white md:text-3xl lg:text-4xl">
+      {children}
+    </h2>
+  );
+},
+
+// Modified h3 component
+h3: ({ children }) => {
+  return (
+    <h3 className="mb-4 text-xl font-semibold text-gray-700 dark:text-gray-200 md:text-2xl lg:text-3xl">
+      {children}
+    </h3>
+  );
+},
+
       // Heading 4
       h4: ({ children }) => (
         <h4 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
@@ -528,50 +476,39 @@ image: ({ value, index }) => {
       ),
     },
   
-     list: {
-      bullet: ({ children, value, is  }) => {
-        const isNested = value.listItem === 'bullet' && value.level > 0;
-        const listClasses = isNested
-          ? "mb-2 ml-8 space-y-2 list-disc custom-bullet-list" // Class for nested lists
-          : "mb-4 ml-4 mr-4 space-y-4 rounded-lg bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out list-inside custom-bullet-list"; // Class for top-level lists
-      
-        return (
-          <ul className={listClasses}>
-            {children}
-          </ul>
-        );
+      list: {
+        bullet: ({ children }) => (
+       <ul className="mb-4 ml-4 mr-4 rounded-lg bg-white p-6 shadow-lg  dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out list-inside custom-bullet-list
+  [&_ul]:bg-transparent [&_ul]:p-0 [&_ul]:shadow-none [&_ul]:rounded-none">
+  {children}
+</ul>
+
+        ),
+       number: ({ children }) => (
+  <ol className="
+    mb-10 ml-6 list-decimal custom-number-list 
+    bg-white p-6 shadow-lg hover:shadow-xl 
+    dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 
+    transition-all duration-300 ease-in-out
+    [&_ol]:bg-transparent [&_ol]:p-0 [&_ol]:shadow-none [&_ol]:rounded-none [&_ol]:ml-6
+    [&_ul]:bg-transparent [&_ul]:p-0 [&_ul]:shadow-none [&_ul]:rounded-none [&_ul]:ml-6
+  ">
+    {children}
+  </ol>
+),
+
       },
-      number: ({ children, value, is }) => {
-        const isNested = value.listItem === 'number' && value.level > 0;
-        const listClasses = isNested
-          ? "mb-2 ml-8 list-decimal"
-          : "mb-10 list-decimal ml-6 custom-number-list bg-white p-6 shadow-lg hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200";
-          
-        return (
-          <ol className={listClasses}>
+      listItem: {
+        bullet: ({ children }) => (
+          <li
+          className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-700 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl">
             {children}
-          </ol>
-        );
+          </li>
+        ),
+    
+        number: ({ children }) => <li className="hover:text-gray-800  dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-lg font-medium leading-relaxed  text-gray-700 dark:text-gray-300  sm:text-xl lg:text-lg xl:text-xl">
+          {children}</li>,
       },
-    },
-    listItem: {
-      bullet: ({ children }) => (
-        <li
-          className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out text-lg font-medium leading-relaxed text-gray-700 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl">
-          <span className="flex items-start">
-            <span className="flex-shrink-0 mr-2 text-blue-500 dark:text-blue-400">
-              <ArrowRight className="h-5 w-5" />
-            </span>
-            <span>{children}</span>
-          </span>
-        </li>
-      ),
-      number: ({ children }) => (
-        <li className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out text-lg font-medium leading-relaxed text-gray-700 dark:text-gray-300 sm:text-xl lg:text-lg xl:text-xl">
-          {children}
-        </li>
-      ),
-    },
     marks: {
       strong: ({ children }) => (
         <strong className=" text-black  dark:text-white">{children}</strong>
@@ -619,5 +556,4 @@ image: ({ value, index }) => {
 };
 
 export default PortableTextComponents;
-
 

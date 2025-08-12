@@ -20,17 +20,9 @@ const RecentPost = dynamic(() => import("@/components/RecentPost/RecentHome"), {
 const MBrands = dynamic(() => import("@/components/Marquee-Brands"), { ssr: true });
 const MixedCategoriesSection = dynamic(() => import("@/components/Blog/MixedCategoriesSection"), { ssr: true });
 const Contact = dynamic(() => import("@/components/Contact"), { ssr: false });
-// import CacheTestComponent from '@/React_Query_Caching/CacheTestComponent'
-
-import UnifiedCacheMonitor from '@/React_Query_Caching/UnifiedCacheMonitor';
-
 
 export default function HomePage({ initialServerData }) {
 
- 
-
-
-  // Ensure initialServerData exists before destructuring
   const {
     trending = {},
     featurePost = {},
@@ -41,12 +33,9 @@ export default function HomePage({ initialServerData }) {
   } = initialServerData || {}
 
 
-  return (
-   
-<>
-            <UnifiedCacheMonitor />
-
-      <section className="  ">
+  return ( 
+        <>
+        <section className="">
         <div className="container mx-auto ">
           <div className="flex justify-end">{/* Ensure GlobalRefreshButton is rendered here */}</div>
         </div>
@@ -61,7 +50,6 @@ export default function HomePage({ initialServerData }) {
       {/* --- No Suspense needed here as data is prefetched --- */}
       <FeaturePost initialData={featurePost} />
 
-      {/* --- No Suspense needed here as data is prefetched --- */}
       <>
         <AISEO initialData={aiSeo} />
         {/* --- No Suspense needed here as data is prefetched --- */}
@@ -70,14 +58,13 @@ export default function HomePage({ initialServerData }) {
         <FreeResourcesPage initialData={freeResourcesFeatured} />
       </>
 
-      <HomepageCategories /> 
+      <HomepageCategories />  
+      <MBrands /> 
       <RecentPost initialData={recentPosts} />
 
         <div className='mt-10'>
           <Contact /> 
           </div>
-<MBrands /> 
-
     </>
   );
 }

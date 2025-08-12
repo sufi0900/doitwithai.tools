@@ -145,7 +145,24 @@ useEffect(() => {
       aria-describedby="hero-description"
       role="banner"
     >
-     
+       <div className="absolute inset-0 z-[-1] opacity-30 lg:opacity-100 background-svg-container top-left-svg"> {/* Left SVG */}
+        <svg width="100%" height="100%" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg" className="scale-150 sm:scale-100" preserveAspectRatio="xMidYMid slice" style={{ transform: 'translateZ(0)', willChange: 'auto' }} role="img" aria-label="Abstract AI network background with pulsating nodes and dataflow lines">
+          {/* All SVG graphical elements are decorative and complex. Using aria-hidden="true" on the entire SVG or the main groups is the most appropriate way to prevent screen readers from announcing their individual complex paths/circles. The overall SVG element already has role="img" and aria-label. */}
+          <g aria-hidden="true">
+            {/* Replace the existing center sphere */}
+            {/* SEO growth lines with subtle flow animation */}
+        
+<circle r="3" fill="#3B82F6" opacity="0.8">
+  <animateMotion dur="6s" repeatCount="indefinite" 
+    path="M100 700 C300 600, 500 500, 700 450"/>
+</circle>
+            <path d="M100 700 C300 600, 500 500, 700 450" stroke="#3B82F6" strokeWidth="2" opacity="0.4" strokeDasharray="20 10" style={{ animation: 'svgDataFlowSlow 12s linear infinite' }} />
+            <path d="M150 750 C350 650, 550 550, 750 500" stroke="#A855F7" strokeWidth="2" opacity="0.4" strokeDasharray="15 8" style={{ animation: 'svgDataFlowSlow 15s linear infinite', animationDelay: '3s' }} />
+            {/* Animated smaller nodes (datapoints) */}
+            <circle cx="700" cy="700" r="18" fill="#4A6CF7" opacity="0.4" style={{ animation: 'svgGlowPulse 9s ease-in-out infinite', animationDelay: '3s' }} />
+          </g>
+        </svg>
+      </div>     
       <div className="container mx-auto flex flex-col items-center justify-center px-2 lg:px-8 max-w-7xl">
         <div className="hero-section w-full">
 
@@ -273,14 +290,13 @@ useEffect(() => {
       </div>
       {/* H3: Changes to brand blue on hover */}
       <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-200">Rank Higher with AI-Powered SEO</h3>
-      <p className="text-gray-700 dark:text-gray-300  text-base">Master ChatGPT and 
-        {/* Span 1: Darker blue for readability on light blue background */}
-        <span className="font-semibold text-blue-800 dark:text-blue-300 group-hover:text-blue-900 dark:group-hover:text-blue-100 transition-colors duration-200">&nbsp;other AI tools for SEO&nbsp;</span>
-        with strategies that 
-        {/* Span 2: Green for emphasis (consistent with "FREE" below) */}
-save 10+ hours weekly and 
-        <span className="font-semibold text-blue-800 dark:text-blue-300 group-hover:text-blue-900 dark:group-hover:text-blue-100 transition-colors duration-200">&nbsp;        boost your overall rankings.
-&nbsp;</span>
+      <p className="text-gray-700 dark:text-gray-300  text-base">
+               <span className="font-semibold text-blue-800 dark:text-blue-300 group-hover:text-blue-900 dark:group-hover:text-blue-100 transition-colors duration-200">Master ChatGPT&nbsp;</span>
+
+        and other AI tools for SEO with strategies that  
+        <span className="font-semibold text-blue-800 dark:text-blue-300 group-hover:text-blue-900 dark:group-hover:text-blue-100 transition-colors duration-200">&nbsp;save 10+ hours weekly
+</span> and boost your overall rankings.
+
 
       </p>
     </div>
@@ -296,7 +312,7 @@ save 10+ hours weekly and
     &nbsp;Improve your daily workflow&nbsp;
   </span>
   with the best AI tools, AI learning content, and premium AI assets—all completely
-  <span className="font-bold text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-200">
+  <span className="font-semibold text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-200">
     &nbsp;FREE&nbsp;
   </span>.
 </p>
@@ -423,7 +439,108 @@ save 10+ hours weekly and
         </div>
       </div>
       
-          
+          {/* AI-Themed Background Elements - TopRight */}
+            {/* ADDED background-svg-container class for initial hiding */}
+            <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100 background-svg-container top-right-svg">
+              <svg width="450" height="556" viewBox="0 0 450 556" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decorative neural network and circuit pattern in background">
+                <defs>
+                  {/* Gradients */}
+                 
+                  <linearGradient id="paint0_neural_gradient" x1="220" y1="40" x2="380" y2="200" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" /><stop offset="1" stopColor="#06B6D4" stopOpacity="0.3" /></linearGradient>
+                  <linearGradient id="paint1_connection" x1="250" y1="80" x2="320" y2="160" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" /><stop offset="1" stopColor="#06B6D4" /></linearGradient>
+                  <linearGradient id="paint2_connection" x1="280" y1="60" x2="380" y2="110" gradientUnits="userSpaceOnUse"><stop stopColor="#8B5CF6" /><stop offset="1" stopColor="#10B981" /></linearGradient>
+                  <radialGradient id="paint3_node" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" /><stop offset="1" stopColor="#4A6CF7" stopOpacity="0.3" /></radialGradient>
+                  <radialGradient id="paint4_node" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"><stop stopColor="#06B6D4" /><stop offset="1" stopColor="#06B6D4" stopOpacity="0.3" /></radialGradient>
+                  <linearGradient id="paint5_circuit" x1="200" y1="250" x2="400" y2="400" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" stopOpacity="0.6" /><stop offset="1" stopColor="#06B6D4" stopOpacity="0.2" /></linearGradient>
+                  <linearGradient id="paint6_circuit_lines" x1="220" y1="270" x2="380" y2="330" gradientUnits="userSpaceOnUse"><stop stopColor="#2563EB" /><stop offset="1" stopColor="#7C3AED" /></linearGradient>
+                  <linearGradient id="paint7_binary" x1="100" y1="160" x2="200" y2="200" gradientUnits="userSpaceOnUse"><stop stopColor="#8B5CF6"/><stop offset="1" stopColor="#06B6D4"/></linearGradient> {/* Added missing gradient for binary text */}
+                  <linearGradient id="paint8_geometric" x1="100" y1="450" x2="200" y2="450" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" stopOpacity="0.5"/><stop offset="1" stopColor="#06B6D4" stopOpacity="0.1"/></linearGradient>
+                  <linearGradient id="paint9_geometric" x1="320" y1="480" x2="420" y2="480" gradientUnits="userSpaceOnUse"><stop stopColor="#8B5CF6" stopOpacity="0.4"/><stop offset="1" stopColor="#10B981" stopOpacity="0.1"/></linearGradient>
+                  <linearGradient id="paint10_dataflow" x1="50" y1="350" x2="450" y2="350" gradientUnits="userSpaceOnUse"><stop stopColor="#2563EB"/><stop offset="1" stopColor="#7C3AED"/></linearGradient>
+                </defs>
+                <g aria-hidden="true">
+                  <circle cx="300" cy="120" r="80" fill="url(#paint0_neural_gradient)" opacity="0.6" />
+                  <path d="M250 80L320 100L280 140L350 120L320 160" stroke="url(#paint1_connection)" strokeWidth="2" opacity="0.7" strokeDasharray="15 5" className="svg-animated-element" style={{ animation: 'neuralFlow 12s linear infinite' }} />
+                  <path d="M280 60L350 90L320 130L380 110" stroke="url(#paint2_connection)" strokeWidth="1.5" opacity="0.6" strokeDasharray="10 3" className="svg-animated-element" style={{ animation: 'neuralFlowReverse 15s linear infinite', animationDelay: '2s' }} />
+                  <circle cx="250" cy="80" r="8" fill="#4A6CF7" opacity="0.8" />
+                  <circle cx="320" cy="100" r="6" fill="#8B5CF6" opacity="0.9" />
+                  <circle cx="280" cy="140" r="7" fill="#4A6CF7" opacity="0.8" />
+                  <circle cx="350" cy="120" r="5" fill="#8B5CF6" opacity="0.9" />
+                  <circle cx="320" cy="160" r="6" fill="#10B981" opacity="0.8" />
+                  <circle cx="380" cy="110" r="4" fill="#10B981" opacity="0.9" />
+                  {/*Circuit Pattern - STATIC */}
+                  <rect x="200" y="250" width="200" height="150" rx="10" fill="none" stroke="url(#paint5_circuit)" strokeWidth="1" opacity="0.4" />
+                  <path d="M220 270L380 270" stroke="url(#paint6_circuit_lines)" strokeWidth="1" opacity="0.7" strokeDasharray="8 4" className="svg-animated-element" style={{ animation: 'svgDataFlow 8s linear infinite' }} />
+                  <path d="M220 290L350 290" stroke="url(#paint6_circuit_lines)" strokeWidth="1" opacity="0.7" strokeDasharray="8 4" className="svg-animated-element" style={{ animation: 'svgDataFlow 8s linear infinite', animationDelay: '0.5s' }} />
+                  <path d="M220 310L380 310" stroke="url(#paint6_circuit_lines)" strokeWidth="1" opacity="0.7" strokeDasharray="8 4" className="svg-animated-element" style={{ animation: 'svgDataFlow 8s linear infinite', animationDelay: '1s' }} />
+                  <path d="M220 330L350 330" stroke="url(#paint6_circuit_lines)" strokeWidth="1" opacity="0.7" strokeDasharray="8 4" className="svg-animated-element" style={{ animation: 'svgDataFlow 8s linear infinite', animationDelay: '1.5s' }} />
+                  <circle cx="220" cy="270" r="4" fill="#4A6CF7" opacity="0.8" className="svg-animated-element" />
+                  <circle cx="380" cy="270" r="4" fill="#4A6CF7" opacity="0.8" className="svg-animated-element" />
+                  <circle cx="220" cy="290" r="4" fill="#06B6D4" opacity="0.8" className="svg-animated-element" />
+                  <circle cx="350" cy="290" r="4" fill="#06B6D4" opacity="0.8" className="svg-animated-element" />
+                  <circle cx="220" cy="310" r="4" fill="#8B5CF6" opacity="0.8" className="svg-animated-element" />
+                  <circle cx="380" cy="310" r="4" fill="#8B5CF6" opacity="0.8" className="svg-animated-element" />
+                  <circle cx="220" cy="330" r="4" fill="#10B981" opacity="0.8" className="svg-animated-element" />
+                  <circle cx="350" cy="330" r="4" fill="#10B981" opacity="0.8" className="svg-animated-element" />
+                  <g aria-label="Floating binary code display">
+                    <AnimatedBinaryText initialText="01001001" x="150" y="175" fill="url(#paint7_binary)" fontSize="12" fontFamily="monospace" className="animated-binary-text" interval={2500} aria-label="Binary code" />
+                    <AnimatedBinaryText initialText="11010110" x="160" y="190" fill="url(#paint7_binary)" fontSize="12" fontFamily="monospace" className="animated-binary-text" interval={2000} aria-label="Binary code" />
+                    <AnimatedBinaryText initialText="00110101" x="140" y="205" fill="url(#paint7_binary)" fontSize="12" fontFamily="monospace" className="animated-binary-text" interval={3000} aria-label="Binary code" />
+                  </g>
+                  <path d="M50 350 Q150 320, 250 350 Q350 380, 450 350" stroke="url(#paint10_dataflow)" strokeWidth="2" fill="none" opacity="0" />
+                </g>
+              </svg>
+            </div>
+            {/* BottomLeftAI-ThemedBackgroundElements */}
+            {/* ADDED background-svg-container class for initial hiding */}
+            <div className="absolute bottom-0 left-0 z-[-1] opacity-30 lg:opacity-100 background-svg-container bottom-left-svg">
+              <svg width="364" height="201" viewBox="0 0 364 201" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decorative dataflow and machine learning pattern in background">
+                <defs>
+                  {/* DataFlow Gradients */}
+                  <linearGradient id="paint0_dataflow_main" x1="184.389" y1="69.2405" x2="184.389" y2="212.24" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" stopOpacity="0" /><stop offset="0.5" stopColor="#06B6D4" /><stop offset="1" stopColor="#4A6CF7" /></linearGradient>
+                  <linearGradient id="paint1_dataflow_secondary" x1="156.389" y1="69.2405" x2="156.389" y2="212.24" gradientUnits="userSpaceOnUse"><stop stopColor="#8B5CF6" stopOpacity="0" /><stop offset="1" stopColor="#8B5CF6" /></linearGradient>
+                  <linearGradient id="paint2_dataflow_tertiary" x1="125.389" y1="69.2405" x2="125.389" y2="212.24" gradientUnits="userSpaceOnUse"><stop stopColor="#10B981" stopOpacity="0" /><stop offset="1" stopColor="#10B981" /></linearGradient>
+                  {/* Analytics Core */}
+                  <radialGradient id="paint3_analytics_core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(220 63) rotate(90) scale(35)"><stop offset="0" stopColor="#4A6CF7" stopOpacity="0.3" /><stop offset="1" stopColor="#06B6D4" stopOpacity="0.1" /></radialGradient>
+                  {/* Connection Lines */}
+                  <linearGradient id="paint4_connections" x1="190" y1="35" x2="250" y2="85" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" /><stop offset="1" stopColor="#06B6D4" /></linearGradient>
+                  {/* ML Pattern */}
+                  <linearGradient id="paint5_ml_pattern" x1="50" y1="120" x2="130" y2="160" gradientUnits="userSpaceOnUse"><stop stopColor="#8B5CF6" /><stop offset="1" stopColor="#10B981" /></linearGradient>
+                  {/* Algorithm Flow */}
+                  <linearGradient id="paint6_algorithm" x1="280" y1="100" x2="360" y2="140" gradientUnits="userSpaceOnUse"><stop stopColor="#4A6CF7" /><stop offset="1" stopColor="#10B981" /></linearGradient>
+                </defs>
+                <g aria-hidden="true">
+                  {/*DataFlowCurves*/}
+                  <circle cx="220" cy="63" r="35" fill="url(#paint3_analytics_core)" opacity="0.8" />
+                  <g className="svg-animated-element rotating-needle" style={{ animation: 'smoothOrbitRotation 25s linear infinite' }}>
+  <circle cx="255" cy="63" r="3" fill="#2563EB" opacity="0.8" />
+  <path d="M220 63L255 63" stroke="#2563EB" strokeWidth="1.5" opacity="0.9" />
+</g>
+                  <circle cx="240" cy="40" r="3" fill="#8B5CF6" opacity="0.6" className="svg-animated-element" style={{ animation: 'svgGlowPulse 12s ease-in-out infinite', animationDelay: '2s' }} />
+                  <circle cx="195" cy="85" r="3" fill="#F59E0B" opacity="0.6" className="svg-animated-element" style={{ animation: 'svgFloatSlow 8s ease-in-out infinite', animationDelay: '4s' }} />
+                  <circle cx="253" cy="72" r="3" fill="#10B981" opacity="0.8"  />
+                  <circle cx="195" cy="85" r="3" fill="#F59E0B" opacity="0.8" />
+                  {/* Connection Lines to Data Points */}
+                  <path d="M220 63L190 45M220 63L210 35M220 63L240 40M220 63L250 70M220 63L195 85" stroke="url(#paint4_connections)" strokeWidth="1" opacity="0.4" />
+                  {/* Machine Learning Pattern */}
+                  <rect x="50" y="120" width="80" height="40" rx="5" fill="none" stroke="url(#paint5_ml_pattern)" strokeWidth="1" opacity="0.4" />
+                  {/* ML Nodes */}
+                  <circle cx="70" cy="130" r="2" fill="#4A6CF7" className="svg-animated-element" style={{ animation: 'gentleStrike 4s ease-in-out infinite', animationDelay: '0s' }} />
+                  <circle cx="90" cy="135" r="2" fill="#06B6D4" className="svg-animated-element" style={{ animation: 'gentleStrikeReverse 4s ease-in-out infinite', animationDelay: '0.5s' }} />
+                  <circle cx="110" cy="140" r="2" fill="#8B5CF6" className="svg-animated-element" style={{ animation: 'gentleStrike 4s ease-in-out infinite', animationDelay: '1s' }} />
+                  <circle cx="70" cy="150" r="2" fill="#10B981" className="svg-animated-element" style={{ animation: 'gentleStrikeReverse 4s ease-in-out infinite', animationDelay: '1.5s' }} />
+                  <circle cx="90" cy="145" r="2" fill="#F59E0B"  className="svg-animated-element" style={{ animation: 'gentleStrike 4s ease-in-out infinite', animationDelay: '2s' }} />
+                  <circle cx="110" cy="150" r="2" fill="#EF4444" className="svg-animated-element" style={{ animation: 'gentleStrikeReverse 4s ease-in-out infinite', animationDelay: '2.5s' }} />
+                  {/* Algorithm Flow */}
+                  <path d="M280 100L320 110L340 130L360 140" stroke="url(#paint6_algorithm)" strokeWidth="2" fill="none" opacity="0.6" />
+                  {/* Algorithm Nodes */}
+                  <circle cx="280" cy="100" r="4" fill="#4A6CF7" />
+                  <circle cx="320" cy="110" r="3" fill="#06B6D4" />
+                  <circle cx="340" cy="130" r="3" fill="#8B5CF6" />
+                  <circle cx="360" cy="140" r="4" fill="#10B981" />
+                </g>
+              </svg>
+            </div>
           </section>
         );
       };

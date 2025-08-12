@@ -1,8 +1,8 @@
 // app/learn-earn/page.jsx
 import React from 'react';
 import Script from "next/script";
-import Head from "next/head";
 import { NextSeo } from "next-seo";
+import Head from 'next/head';
 
 // Import the new reusable component
 import BlogListingPageContent from "@/app/ai-tools/AllBlogs";
@@ -18,35 +18,79 @@ import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
 // --- Next.js Server-Side Configuration ---
 export const revalidate = 3600; // Revalidate every 1 hour
 
-// --- SEO Metadata (Next.js App Router Standard) ---
+// Enhanced utility functions
+function getBaseUrl() {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';
+  }
+  return 'http://localhost:3000';
+}
+
+function generateOGImageURL(params) {
+  const baseURL = `${getBaseUrl()}/api/og`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseURL}?${searchParams.toString()}`;
+}
+
 export const metadata = {
-  title: "Make Money With AI - DoItWithAI.Tools",
-  description: "Discover in-depth guides to learn how to make money with AI! Explore the best AI tools and unlock new earning opportunities online.",
+  title: "Learn & Earn With AI | doitwithai.tools",
+  description: "Unlock the power of AI to learn in-demand skills and boost your income with AI tools and strategies that make artificial intelligence your growth partner.",
   author: "Sufian Mustafa",
+  keywords: "AI learn and earn, make money with AI, AI skills, AI income streams, AI career, AI business, AI monetization",
   openGraph: {
-    title: "Make Money With AI - DoItWithAI.Tools",
-    description: "Discover in-depth guides to learn how to make money with AI! Explore the best AI tools and unlock new earning opportunities online.",
-    url: "https://www.doitwithai.tools/ai-learn-earn", // Correct URL for this page
+    title: "Learn & Earn With AI | doitwithai.tools",
+    description: "Unlock the power of AI to learn in-demand skills and boost your income with AI tools and strategies that make artificial intelligence your growth partner.",
+    url: `${getBaseUrl()}/ai-learn-earn`,
     type: "website",
     images: [{
-      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg', // Use a relevant image for money making
+      url: generateOGImageURL({
+        title: 'Learn AI Skills, Earn Money',
+        description: 'Find the best AI tools and strategies to turn your knowledge into new sources of income.',
+        category: 'Learn & Earn',
+        ctaText: 'Get Started Today',
+        features: 'Master New Skills,Boost Your Income,Future-Proof Your Career',
+        bgColor: 'green'
+      }),
       width: 1200,
       height: 630,
-      alt: 'Make Money With AI',
+      alt: 'Learn and Earn with AI',
     }],
-    siteName: "AiToolTrend",
+    siteName: "doitwithai.tools",
     locale: 'en_US',
   },
   twitter: {
     card: "summary_large_image",
+    site: "@doitwithai",
+    creator: "@doitwithai",
     domain: "doitwithai.tools",
-    url: "https://www.doitwithai.tools/ai-learn-earn", // Correct URL for this page
-    title: "Make Money With AI - DoItWithAI.Tools",
-    description: "Discover in-depth guides to learn how to make money with AI! Explore the best AI tools and unlock new earning opportunities online.",
-    image: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg', // Use a relevant image for money making
+    url: `${getBaseUrl()}/ai-learn-earn`,
+    title: "Learn & Earn With AI | doitwithai.tools",
+    description: "Master AI skills and explore ways to boost your income. Get easy-to-follow guides, tips, and tools to help you learn and earn with artificial intelligence.",
+    image: generateOGImageURL({
+      title: 'Learn AI Skills, Earn Money',
+      description: 'Find the best AI tools and strategies to turn your knowledge into new sources of income.',
+      category: 'Learn & Earn',
+      ctaText: 'Get Started Today',
+      features: 'Master New Skills,Boost Your Income,Future-Proof Your Career',
+      bgColor: 'green'
+    }),
   },
   alternates: {
-    canonical: "https://www.doitwithai.tools/ai-learn-earn", // Correct canonical URL
+    canonical: `${getBaseUrl()}/ai-learn-earn`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
@@ -103,107 +147,97 @@ async function getData(schemaType, pageSlugPrefix) {
 
 export default async function Page() { // Make this an async component to await data
 
-  // Define schema-specific data for the "Make Money With AI" page
+  // Define schema-specific data for the "Learn & Earn With AI" page
   const schemaType = "makemoney"; // Sanity schema type
   const pageSlugPrefix = "ai-learn-earn"; // URL prefix for this category
-  const pageTitle = "Money Making Strategies";
-  const pageTitleHighlight = "Money Making Strategies";
-  const pageDescription = "Stay updated with the newest ways to earn and grow your income online.";
+  const pageTitle = "Learn & Earn With AI";
+  const pageTitleHighlight = "Learn & Earn With AI";
+  const pageDescription = "Discover AI tools, guides, and strategies to grow your skills and income together.";
   const serverData = await getData(schemaType, pageSlugPrefix);
+  const mockParams = {
+    slug: `${schemaType}-listing`,
+    pageType: 'listing'
+  };
 
   const breadcrumbProps = {
-    pageName: "Make Money",
-    pageName2: "Online",
-    description: "Discover effective strategies and legitimate opportunities to earn money online. Our guides cover everything from freelancing and e-commerce to passive income streams, helping you navigate the digital landscape to achieve financial independence.",
+    pageName: "Learn and Earn",
+    pageName2: "With AI",
+    description: "Tap into the endless possibilities of AI to earn money and learn valuable skills at the same time! In this category, we share actionable strategies for turning artificial intelligence into your earning partner. Learn how tools like ChatGPT can simplify tasks, enhance productivity, and open new revenue streams.",
     firstlinktext: "Home",
     firstlink: "/",
     link: "/ai-learn-earn", // Dynamic link using the defined prefix
     linktext: pageSlugPrefix, // Dynamic link text
   };
 
-  // Schema Markup for "Make Money With AI" CollectionPage
-  // --- FIX: Pass metadata and breadcrumbProps as arguments ---
+  // Schema Markup for "Learn and Earn With AI" CollectionPage
   function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
-      __html: `
-        {
-          "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          "name": "${pageMetadata.title}",
-          "description": "${pageMetadata.description}",
-          "url": "${pageMetadata.openGraph.url}",
-          "breadcrumb": {
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Home",
-                "item": "https://www.doitwithai.tools/"
-              },
-              {
-                "@type": "ListItem",
-                "position": 2,
-                "name": "${breadcrumbProps.pageName}",
-                "item": "${breadcrumbProps.link}"
-              }
-            ]
-          }
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": pageMetadata.title,
+        "description": pageMetadata.description,
+        "url": pageMetadata.openGraph.url,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": `${getBaseUrl()}/`
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": breadcrumbProps.pageName,
+              "item": `${getBaseUrl()}${breadcrumbProps.link}`
+            }
+          ]
         }
-      `
+      })
     };
   }
 
   return (
     <>
-      <Head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:site_name" content={metadata.openGraph.siteName} />
-        <meta property="og:locale" content={metadata.openGraph.locale} />
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        <meta name="author" content={metadata.author} />
-        <meta property="og:title" content={metadata.openGraph.title} />
-        <meta property="og:description" content={metadata.openGraph.description} />
-        <meta property="og:image" content={metadata.openGraph.images[0].url} />
-        <meta property="og:image:width" content={metadata.openGraph.images[0].width} />
-        <meta property="og:image:height" content={metadata.openGraph.images[0].height} />
-        <meta property="og:url" content={metadata.openGraph.url} />
-        <meta property="og:type" content={metadata.openGraph.type} />
-        <meta name="twitter:card" content={metadata.twitter.card} />
-        <meta property="twitter:domain" content={metadata.twitter.domain} />
-        <meta property="twitter:url" content={metadata.twitter.url} />
-        <meta name="twitter:title" content={metadata.twitter.title} />
-        <meta name="twitter:description" content={metadata.twitter.description} />
-        <meta name="twitter:image" content={metadata.twitter.image} />
-        <link rel="canonical" href={metadata.alternates.canonical} />
-        <NextSeo
-          title={metadata.title}
-          description={metadata.description}
-          author={metadata.author}
-          type="website"
-          locale='en_IE'
-          site_name={metadata.openGraph.siteName}
-          canonical={metadata.alternates.canonical}
-          openGraph={{
-            title: metadata.openGraph.title,
-            description: metadata.openGraph.description,
-            url: metadata.openGraph.url,
-            type: "ItemList",
-            images: metadata.openGraph.images
-          }}
-        />
-      </Head>
+        <Head>
+
+     
+      <NextSeo
+        title={metadata.title}
+        description={metadata.description}
+        canonical={metadata.alternates.canonical}
+        openGraph={{
+          title: metadata.openGraph.title,
+          description: metadata.openGraph.description,
+          url: metadata.openGraph.url,
+          type: "ItemList",
+          images: metadata.openGraph.images,
+          siteName: metadata.openGraph.siteName,
+          locale: metadata.openGraph.locale,
+        }}
+        twitter={{
+          card: metadata.twitter.card,
+          site: metadata.twitter.site,
+          handle: metadata.twitter.creator,
+          title: metadata.twitter.title,
+          description: metadata.twitter.description,
+          image: metadata.twitter.image,
+        }}
+        additionalMetaTags={[
+          { name: 'author', content: metadata.author },
+          { name: 'keywords', content: metadata.keywords },
+          { name: 'robots', content: 'index, follow' },
+        ]}
+      />
+         </Head>
       <Script
         id="BreadcrumbListSchema"
         type="application/ld+json"
-        // --- FIX: Pass metadata and breadcrumbProps ---
         dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
         key={`${pageSlugPrefix}-jsonld`}
       />
-
-     
       <StaticPageShell breadcrumbProps={breadcrumbProps}>
         <BlogListingPageContent
           schemaType={schemaType}
@@ -214,7 +248,6 @@ export default async function Page() { // Make this an async component to await 
           serverData={serverData} // Still pass server data to BlogListingPageContent
         />
       </StaticPageShell>
-      {/* --- END REPLACEMENT --- */}
     </>
   );
 }

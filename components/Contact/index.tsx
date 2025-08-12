@@ -101,7 +101,7 @@ const Contact = () => {
   };
 
   return (
-    <section id="contact" className="relative overflow-hidden  mb-10">
+    <section id="contact" className="container mx-auto px-4 py-16">
       {/* Background decorative elements */}
        <Breadcrumb
         linktext="Contact Us"
@@ -112,14 +112,15 @@ const Contact = () => {
         link="contact"
         description="Connect for queries, feedback, or collaborations around AI tools, learning, or digital growth — and stay updated through our newsletter."
       />
+
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-primary/10 to-transparent rounded-full blur-3xl"></div>
       </div>
 
-      <div className="container relative z-10">
+      <div className="container mt-8 relative z-10">
         <div className="-mx-4 flex flex-wrap">
-          <div className="w-full px-4 lg:w-7/12 xl:w-8/12">
+          <div className="w-full  lg:w-7/12 xl:w-8/12">
             <div className="wow fadeInUp group relative mb-12 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-100 px-8 py-11 shadow-three transition-all duration-500 hover:shadow-[0_20px_80px_rgba(74,108,247,0.12)] dark:border-gray-700/50 dark:bg-gray-dark/80 sm:p-[55px] lg:mb-5 lg:px-8 xl:p-[55px]">
               
               {/* Enhanced Header with Icon */}
@@ -280,7 +281,54 @@ const Contact = () => {
           </div>
         </div>
       </div>
+
+<div className="mt-16 mb-8">
+  <div className="bg-gradient-to-r from-blue-50/70 to-indigo-50/70 dark:from-blue-900/20 dark:to-indigo-900/30 rounded-2xl p-8 md:p-10 shadow-lg border border-blue-100 dark:border-blue-800/20 transition-all duration-500 hover:shadow-[0_20px_80px_rgba(74,108,247,0.12)]">
+    
+
+       <div className="text-center mb-8">
+      <div className="flex flex-col items-center gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl font-bold text-gray-900 dark:text-white">Trustpilot</span>
+          <div className="bg-[#00b67a] px-3 py-1.5 rounded-lg flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <svg key={star} className="w-4 h-4 text-white fill-white" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <h3 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white mb-4">
+      Help Our Community Grow
+      </h3>
       
+      <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+Since you're here connecting with us, your honest review on Trustpilot supports our mission and helps other AI enthusiasts find us through trusted community feedback. </p>
+    </div>
+
+    {/* CTA Button */}
+    <div className="text-center">
+      <a 
+        href="https://www.trustpilot.com/review/doitwithai.tools"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group inline-flex items-center justify-center gap-2 rounded-xl bg-[#00b67a] px-8 py-4 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:bg-[#009b69] hover:shadow-[0_8px_30px_rgba(0,182,122,0.4)] hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-[#00b67a]/20"
+      >
+        <span>Share Your Review</span>
+        <svg className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+      </a>
+      
+      {/* Small encouraging text */}
+      <p className="mt-4 text-sm text-slate-500 dark:text-slate-400 italic">
+        Takes less than 2 minutes • Helps our community grow 🌟
+      </p>
+    </div>
+    </div>
+    </div>
       {/* Enhanced Toast Notifications */}
       <ToastContainer
         position="top-right"

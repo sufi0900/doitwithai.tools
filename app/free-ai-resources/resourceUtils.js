@@ -367,6 +367,7 @@ export const renderPreviewContent = (resource) => {
                   loop={true}
                   className="absolute top-0 left-0 w-full h-full object-cover"
                   controls
+                  muted
                   preload="metadata"
                   title={resource.title}
                

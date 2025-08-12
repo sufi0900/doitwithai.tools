@@ -4,51 +4,61 @@ import Link from "next/link";
 import { Star, Heart, ExternalLink, Users, MessageCircle } from "lucide-react";
 
 // Simple and Compact Trustpilot Rating Component
+// Simple and Compact Trustpilot Rating Component
 const TrustpilotInvite = () => {
   return (
-   <div className="max-w-2xl mx-auto">
-  {/* Trustpilot Card */}
-  <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-700/15 dark:to-indigo-700/15 
-                  border border-blue-500/20 dark:border-blue-700/30 rounded-xl shadow-sm hover:shadow-md 
-                  backdrop-blur-sm transition-all duration-300 px-6 py-4 sm:py-5 sm:px-8 
-                  flex flex-col sm:flex-row items-center justify-center gap-4 text-center sm:text-left">
-    
-    {/* Rating Section */}
-    <div className="flex items-center gap-2">
-      <div className="flex space-x-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star key={star} className="w-4 h-4 text-[#00b67a] fill-current" />
-        ))}
+    <div className="max-w-2xl mx-auto">
+      {/* Trustpilot Card */}
+      <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-700/15 dark:to-indigo-700/15 border border-blue-500/20 dark:border-blue-700/30 rounded-xl shadow-sm hover:shadow-md backdrop-blur-sm transition-all duration-300 px-6 py-4 sm:py-5 sm:px-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-center sm:text-left">
+        
+        {/* Rating Section - Now with green square stars */}
+         <Link
+          href="https://www.trustpilot.com/review/doitwithai.tools"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2" // FIX: Added flexbox container here
+        >
+          {/* Trustpilot Logo Text */}
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
+            Trustpilot
+          </div>
+        
+          {/* Green Rating Box with White Stars */}
+          <div className="bg-[#00b67a] px-3 py-1.5 rounded flex items-center gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className="w-4 h-4 text-white fill-white"
+              />
+            ))}
+          </div>
+        </Link>
+        {/* Divider */}
+        <div className="hidden sm:block w-px h-5 bg-gray-300 dark:bg-gray-600" />
+        
+        {/* Message to invite reviews */}
+      <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+            Love our content? {" "}
+  <Link
+    href="https://www.trustpilot.com/review/doitwithai.tools"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="font-semibold text-[#00b67a] hover:underline"
+  >
+              Write a review on Trustpilot
+  </Link>
+  . <br/>It only takes a minute!
+</p>
+
       </div>
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">4.8/5</span>
+
+      {/* Connected Small Note */}
+      <p className="mt-3 text-xs text-center text-gray-500 dark:text-gray-400">
+        Your honest feedback helps us improve and grow our AI community.
+      </p>
     </div>
-
-    {/* Divider */}
-    <div className="hidden sm:block w-px h-5 bg-gray-300 dark:bg-gray-600" />
-
-    {/* Message */}
-    <p className="text-sm text-gray-700 dark:text-gray-300">
-      Love our content?{" "}
-      <Link
-        href="https://www.trustpilot.com/review/doitwithai.tools"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="font-semibold text-blue-700 dark:text-blue-400 hover:underline hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-      >
-        Share your experience on Trustpilot
-      </Link>
-    </p>
-  </div>
-
-  {/* Connected Small Note */}
-  <p className="mt-4 text-xs text-center text-gray-500 dark:text-gray-400">
-    Your feedback helps us grow and improve.
-  </p>
-</div>
-
   );
 };
-
 const Footer = () => {
   return (
     <>
@@ -76,17 +86,17 @@ const Footer = () => {
                   <Image
                     src="/26.png"
                     alt="DoItWithAI.tools Logo"
-                    className="w-full dark:hidden transform group-hover:scale-105 transition-transform duration-300"
-                    width={190}
-                    height={190}
+                    className="w-full transform group-hover:scale-105 transition-transform duration-300"
+                    width={290}
+                    height={290}
                   />
-                  <Image
+                  {/* <Image
                     src="/26.png"
                     alt="DoItWithAI.tools Logo"
                     className="hidden w-full dark:block transform group-hover:scale-105 transition-transform duration-300"
                     width={190}
                     height={190}
-                  />
+                  /> */}
                 </Link>
                 <div>
                 <p className="dark:text-gray-300 mb-6 text-base leading-relaxed text-gray-600">
@@ -313,196 +323,7 @@ const Footer = () => {
             </div>
           </div>
         </div>
-           <div className="absolute right-0 top-14 z-[-1]">
-          <svg
-            width="55"
-            height="99"
-            viewBox="0 0 55 99"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle opacity="0.8" cx="49.5" cy="49.5" r="49.5" fill="#959CB1" />
-            <mask
-              id="mask0_94:899"
-              style={{ maskType: "alpha" }}
-              maskUnits="userSpaceOnUse"
-              x="0"
-              y="0"
-              width="99"
-              height="99"
-            >
-              <circle
-                opacity="0.8"
-                cx="49.5"
-                cy="49.5"
-                r="49.5"
-                fill="#4A6CF7"
-              />
-            </mask>
-            <g mask="url(#mask0_94:899)">
-              <circle
-                opacity="0.8"
-                cx="49.5"
-                cy="49.5"
-                r="49.5"
-                fill="url(#paint0_radial_94:899)"
-              />
-              <g opacity="0.8" filter="url(#filter0_f_94:899)">
-                <circle cx="53.8676" cy="26.2061" r="20.3824" fill="white" />
-              </g>
-            </g>
-            <defs>
-              <filter
-                id="filter0_f_94:899"
-                x="12.4852"
-                y="-15.1763"
-                width="82.7646"
-                height="82.7646"
-                filterUnits="userSpaceOnUse"
-                colorInterpolationFilters="sRGB"
-              >
-                <feFlood floodOpacity="0" result="BackgroundImageFix" />
-                <feBlend
-                  mode="normal"
-                  in="SourceGraphic"
-                  in2="BackgroundImageFix"
-                  result="shape"
-                />
-                <feGaussianBlur
-                  stdDeviation="10.5"
-                  result="effect1_foregroundBlur_94:899"
-                />
-              </filter>
-              <radialGradient
-                id="paint0_radial_94:899"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientUnits="userSpaceOnUse"
-                gradientTransform="translate(49.5 49.5) rotate(90) scale(53.1397)"
-              >
-                <stop stopOpacity="0.47" />
-                <stop offset="1" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-          </svg>
-        </div>
-        <div className="absolute bottom-24 left-0 z-[-1]">
-          <svg
-            width="79"
-            height="94"
-            viewBox="0 0 79 94"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect
-              opacity="0.3"
-              x="-41"
-              y="26.9426"
-              width="66.6675"
-              height="66.6675"
-              transform="rotate(-22.9007 -41 26.9426)"
-              fill="url(#paint0_linear_94:889)"
-            />
-            <rect
-              x="-41"
-              y="26.9426"
-              width="66.6675"
-              height="66.6675"
-              transform="rotate(-22.9007 -41 26.9426)"
-              stroke="url(#paint1_linear_94:889)"
-              strokeWidth="0.7"
-            />
-            <path
-              opacity="0.3"
-              d="M50.5215 7.42229L20.325 1.14771L46.2077 62.3249L77.1885 68.2073L50.5215 7.42229Z"
-              fill="url(#paint2_linear_94:889)"
-            />
-            <path
-              d="M50.5215 7.42229L20.325 1.14771L46.2077 62.3249L76.7963 68.2073L50.5215 7.42229Z"
-              stroke="url(#paint3_linear_94:889)"
-              strokeWidth="0.7"
-            />
-            <path
-              opacity="0.3"
-              d="M17.9721 93.3057L-14.9695 88.2076L46.2077 62.325L77.1885 68.2074L17.9721 93.3057Z"
-              fill="url(#paint4_linear_94:889)"
-            />
-            <path
-              d="M17.972 93.3057L-14.1852 88.2076L46.2077 62.325L77.1884 68.2074L17.972 93.3057Z"
-              stroke="url(#paint5_linear_94:889)"
-              strokeWidth="0.7"
-            />
-            <defs>
-              <linearGradient
-                id="paint0_linear_94:889"
-                x1="-41"
-                y1="21.8445"
-                x2="36.9671"
-                y2="59.8878"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0.62" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient
-                id="paint1_linear_94:889"
-                x1="25.6675"
-                y1="95.9631"
-                x2="-42.9608"
-                y2="20.668"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.51" />
-              </linearGradient>
-              <linearGradient
-                id="paint2_linear_94:889"
-                x1="20.325"
-                y1="-3.98039"
-                x2="90.6248"
-                y2="25.1062"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0.62" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient
-                id="paint3_linear_94:889"
-                x1="18.3642"
-                y1="-1.59742"
-                x2="113.9"
-                y2="80.6826"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.51" />
-              </linearGradient>
-              <linearGradient
-                id="paint4_linear_94:889"
-                x1="61.1098"
-                y1="62.3249"
-                x2="-8.82468"
-                y2="58.2156"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0.62" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />
-              </linearGradient>
-              <linearGradient
-                id="paint5_linear_94:889"
-                x1="65.4236"
-                y1="65.0701"
-                x2="24.0178"
-                y2="41.6598"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop stopColor="#4A6CF7" stopOpacity="0" />
-                <stop offset="1" stopColor="#4A6CF7" stopOpacity="0.51" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
+          
       </footer>
     </>
   );

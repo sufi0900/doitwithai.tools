@@ -37,8 +37,10 @@ const ResourceModalContainer = ({ resource }) => {
     // Listen for modal open events
     const handleModalEvent = (e) => {
       if (e.detail && e.detail.id === resource._id) {
+        console.log(`Opening modal for resource: ${resource._id}`);
         setIsOpen(true);
       } else if (e.detail && e.detail.closeAll) {
+        console.log(`Closing modal for resource: ${resource._id} (close all)`);
         setIsOpen(false);
       }
     };
@@ -54,7 +56,18 @@ const ResourceModalContainer = ({ resource }) => {
   }, [resource._id]);
   
   const handleClose = () => {
+    console.log(`Closing individual modal for resource: ${resource._id}`);
     setIsOpen(false);
+    
+    // Dispatch individual modal close event
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('closeResourceModal', {
+        detail: { 
+          id: resource._id,
+          closeAll: false 
+        }
+      }));
+    }
   };
   
   return (

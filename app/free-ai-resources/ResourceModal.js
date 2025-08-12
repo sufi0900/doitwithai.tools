@@ -6,6 +6,31 @@ import { getFileUrl, renderPreviewContent, getResourceAltText } from "./resource
 const ResourceModal = ({ resource, isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [copyStates, setCopyStates] = useState({});
+const getArticleRoute = (relatedArticle) => {
+  if (!relatedArticle || !relatedArticle.slug?.current) {
+    return '#'; // fallback
+  }
+  
+  const routeMap = {
+    makemoney: "ai-learn-earn",
+    aitool: "ai-tools", 
+    coding: "ai-code",
+    seo: "ai-seo"
+  };
+  
+  // Get the route prefix, fallback to original behavior if not found
+  const routePrefix = routeMap[relatedArticle._type];
+  
+  if (routePrefix) {
+    return `/${routePrefix}/${relatedArticle.slug.current}`;
+  } else {
+    // Fallback to original behavior if _type doesn't match our mapping
+    console.warn('Unknown _type for related article:', relatedArticle._type);
+    return `/${relatedArticle.slug.current}`;
+  }
+};
+
+
 
   useEffect(() => {
     if (isOpen) {
@@ -458,7 +483,7 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
                   </div>
                   Related Article
                 </h3>
-                <a href={`/insights/${resource.relatedArticle.slug?.current}`} className="block p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-teal-100 dark:border-teal-800 hover:border-teal-300 dark:hover:border-teal-600 transition-all duration-200 group-hover:scale-[1.02]">
+                <a href={getArticleRoute(resource.relatedArticle)} className="block p-4 bg-white/50 dark:bg-gray-800/50 rounded-lg border border-teal-100 dark:border-teal-800 hover:border-teal-300 dark:hover:border-teal-600 transition-all duration-200 group-hover:scale-[1.02]">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <h4 className="font-semibold text-teal-800 dark:text-teal-300 text-lg mb-1 group-hover:text-teal-900 dark:group-hover:text-teal-200 transition-colors">{resource.relatedArticle.title}</h4>

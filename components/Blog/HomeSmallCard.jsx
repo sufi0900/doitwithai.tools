@@ -1,13 +1,10 @@
-"use client";
 import Link from "next/link";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { CalendarMonth } from "@mui/icons-material";
+import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 
 // Import your BlogCardImageOptimizer component
 import BlogCardImageOptimizer from "./ImageOptimizer"; // Adjust path as needed
 
-export default function SingleBlog({
+export default function VerySmallCard({
   publishedAt,
   mainImage,
   title,
@@ -20,76 +17,110 @@ export default function SingleBlog({
     <section>
       <Link
         href={slug}
-        // Overall card scale hover effect remains here.
-        className="lg:h-[151px] transition duration-200 ease-in-out hover:scale-[1.03]
-                   flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow
-                   md:flex-row hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+        className="group lg:h-[161px] transition-all duration-300 ease-out hover:scale-[1.03] hover:shadow-xl hover:shadow-blue-500/10
+                   flex flex-col items-center bg-white border border-gray-200 rounded-xl shadow-md
+                   md:flex-row hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-750
+                   relative overflow-hidden cursor-pointer"
       >
-        {/* Outer Image Container: Defines the space, applies overflow-hidden, and rounded corners. */}
+        {/* Subtle Background Gradient on Hover */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/0 to-purple-50/0 group-hover:from-blue-50/30 group-hover:to-purple-50/30 dark:group-hover:from-blue-900/10 dark:group-hover:to-purple-900/10 transition-all duration-300 pointer-events-none" />
+        
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent 
+                        translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+          
+        {/* Image Container with Enhanced Hover */}
         <div
-          className="relative overflow-hidden flex-shrink-0
+          className="relative overflow-hidden flex-shrink-0 z-10
                      w-full aspect-[4/3] 
                      md:w-48 md:h-full 
                      lg:w-[198px] lg:h-[151px] 
-                     rounded-t-lg md:rounded-none md:rounded-s-lg 
-                     "
+                     rounded-t-xl md:rounded-none md:rounded-l-xl"
         >
-          {/* Inner Wrapper for Hover Effects: This div will receive the scale and rotate transformations. */}
-          <div
-            className="w-full h-full 
-                       transition-transform duration-200 ease-in-out 
-                       hover:rotate-3 hover:scale-[1.5]" // Image specific hover effects applied to this inner wrapper
-          >
+          {/* Image Hover Effects */}
+          <div className="w-full h-full transition-all duration-300 ease-out group-hover:scale-110">
             <BlogCardImageOptimizer
               src={mainImage}
-              alt={title} // Use actual title for alt text for better accessibility
-              width={500} // Intrinsic width, used by Next.js for aspect ratio and placeholder
-              height={500} // Intrinsic height, used by Next.js for aspect ratio and placeholder
-              // No hover classes here. Only pass rounded classes for consistent styling.
-              className="rounded-t-lg md:rounded-none md:rounded-s-lg"
+              alt={title}
+              width={500}
+              height={500}
+              className="rounded-t-xl md:rounded-none md:rounded-l-xl object-cover w-full h-full"
             />
+            {/* Image Overlay on Hover */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
         </div>
-        <div className="flex flex-col justify-between p-4 leading-normal">
-          <h5 className="lg:leading-6 line-clamp-2 lg:text-lg font-medium text-start text-black dark:text-white sm:text-[16px] sm:leading-tight">
-            {title}
-          </h5>
-          <div className="mb-1 mt-1 flex items-center justify-start gap-2">
-            <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-              <p className="text-sm font-medium text-body-color">
-                {publishedAt}
-              </p>
-            </div>
-            <div className="flex items-center">
-              <p className="text-sm font-medium text-body-color">
-                Read Time: {ReadTime} min
-              </p>
-            </div>
+
+        {/* Content Container - Optimized for fixed height */}
+        <div className="flex flex-col justify-between p-4 leading-normal flex-1 relative z-10 min-h-0">
+          
+          {/* Title Section */}
+          <div className="mb-2">
+            <h5 className="lg:leading-6 line-clamp-2 text-base font-semibold text-start text-gray-900 dark:text-white sm:leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+              {title}
+            </h5>
           </div>
-          <div>
-            <Link
-              href={slug}
-              className="my-2 inline-flex items-center rounded-lg bg-blue-700 px-3 py-1 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            >
-              Read more
-              <svg
-                className="ms-2 h-3 w-3 rtl:rotate-180"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 14 10"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M1 5h12m0 0L9 1m4 4L9 9"
-                />
-              </svg>
-            </Link>
+
+          {/* Overview Section - Takes available flexible space */}
+          <div className="flex-1 mb-2 min-h-0">
+            <p className="line-clamp-2 lg:line-clamp-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-300">
+              {overview}
+            </p>
+          </div>
+
+          {/* Meta Information - Always at bottom */}
+          <div className="mt-auto">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  {/* Updated calendar icon container */}
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-800/50 transition-colors duration-300">
+                    <CalendarMonthOutlined 
+                      className="text-blue-600 dark:text-blue-400" 
+                      sx={{ fontSize: 10 }}
+                    />
+                  </div>
+                  <p className="text-[10px] font-medium text-gray-600 dark:text-gray-400">
+                    {publishedAt}
+                  </p>
+                </div>
+                
+                <div className="w-px h-3 bg-gray-300 dark:bg-gray-600" />
+                
+                <div className="flex items-center gap-1">
+                  {/* Updated clock icon container */}
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-green-50 dark:bg-green-900/30 group-hover:bg-green-100 dark:group-hover:bg-green-800/50 transition-colors duration-300">
+                    <AccessTime 
+                      className="text-green-600 dark:text-green-400" 
+                      sx={{ fontSize: 10 }}
+                    />
+                  </div>
+                  <p className="text-[10px] font-medium text-gray-600 dark:text-gray-400">
+                    {ReadTime} min
+                  </p>
+                </div>
+              </div>
+
+              {/* Read indicator - appears on hover */}
+              <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <span className="text-[10px] font-medium">Read</span>
+                <svg 
+                  className="w-2.5 h-2.5 transform group-hover:translate-x-0.5 transition-transform duration-300" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Corner Accent - Smaller for small card */}
+        <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-2xl transform scale-0 group-hover:scale-100 transition-transform duration-300" />
+        
+        {/* Hover Border Effect */}
+        <div className="absolute inset-0 rounded-xl border-2 border-blue-500/0 group-hover:border-blue-500/20 transition-all duration-300 pointer-events-none" />
       </Link>
     </section>
   );

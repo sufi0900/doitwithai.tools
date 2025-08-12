@@ -17,7 +17,7 @@ const FeaturePost  = ({ initialData = {} }) => { // Accept initialData prop
 
 const queries = useMemo(() => ({
     featureBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageFeatureBig==true][0...1]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
-    featureRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageFeatureRelated==true][0...3]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedData,"displaySettings":displaySettings}`,
+    featureRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageFeatureRelated==true][0...4]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedData,"displaySettings":displaySettings}`,
   }), []);
 
   const commonSchemaTypes = useMemo(() => ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"], []);
@@ -142,7 +142,7 @@ const queries = useMemo(() => ({
                 </Grid>
               </>
             ) : featureRelatedPosts.length > 0 ? ( // Show content if data exists
-              featureRelatedPosts.slice(0, 4).map((post) => (
+              featureRelatedPosts.slice(0, 5).map((post) => (
                 <Grid key={post._id} item xs={12} sm={12} md={12} marginBottom={2}>
                   <SmallCard
                     key={post._id}

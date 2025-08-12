@@ -56,7 +56,7 @@ const ReusableCachedFreeResourcesList = ({
     const listQuery = `*[${filters}${searchFilter}]|order(${orderBy})[${start}...${start + RESOURCE_LIMIT + 1}]{
       _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
       previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,
-      "relatedArticle":relatedArticle->{title,slug},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
+      "relatedArticle":relatedArticle->{title,slug,_type},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
     }`;
     const totalCountQuery = `count(*[${filters}${searchFilter}])`;
 

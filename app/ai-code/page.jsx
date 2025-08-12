@@ -1,50 +1,80 @@
-// app/ai-code/page.jsx
 import React from 'react';
 import Script from "next/script";
-import Head from "next/head";
 import { NextSeo } from "next-seo";
+import Head from 'next/head';
 
 // Import the new reusable component
-import BlogListingPageContent from "@/app/ai-tools/AllBlogs"; // Import the new reusable component
+import BlogListingPageContent from "@/app/ai-tools/AllBlogs";
 
 // --- NEW IMPORTS for StaticPageShell ---
-import StaticPageShell from "@/app/ai-seo/StaticPageShell"; // <--- ADD THIS IMPORT
-import { client } from "@/sanity/lib/client"; // Import Sanity client
-import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
+import StaticPageShell from "@/app/ai-seo/StaticPageShell";
+import { client } from "@/sanity/lib/client";
+import { redisHelpers } from '@/app/lib/redis';
 // --- END NEW IMPORTS ---
 
 // --- Next.js Server-Side Configuration ---
-export const revalidate = 3600; // Revalidate every 1 hour
+export const revalidate = 3600;
+
+// Enhanced utility functions
+function getBaseUrl() {
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';
+  }
+  return 'http://localhost:3000';
+}
+
+function generateOGImageURL(params) {
+  const baseURL = `${getBaseUrl()}/api/og`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseURL}?${searchParams.toString()}`;
+}
 
 // --- SEO Metadata (Next.js App Router Standard) ---
 export const metadata = {
-  title: "Code With AI - DoItWithAI.Tools",
-  description: "Build websites faster and smarter! Discover how AI tools can supercharge your coding with free templates and guides to improve & optimize code.",
+  title: " AI Code Blogs | Write, Debug & Optimize Faster - doitwithai.tools",
+  description: "Learn how to code with AI by discovering the best AI tools and techniques to generate code, and solve complex coding problems faster than ever before.",
   author: "Sufian Mustafa",
   openGraph: {
-    title: "Code With AI - DoItWithAI.Tools",
-    description: "Build websites faster and smarter! Discover how AI tools can supercharge your coding with free templates and guides to improve & optimize code.",
-    url: "https://www.doitwithai.tools/ai-code", // Correct URL for this page
+    title: "",
+    description: "Learn how to code with AI by discovering the best AI tools and techniques to generate code, and solve complex coding problems faster than ever before.",
+    url: `${getBaseUrl()}/ai-code`,
     type: "website",
     images: [{
-      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg', // Use a relevant image for coding
+      url: generateOGImageURL({
+        title: 'Supercharge Your Code with AI',
+        description: 'Discover how AI tools can help you write, optimize, and debug code faster than ever before.',
+        category: 'AI Code',
+        ctaText: 'Explore AI Coding Guides',
+        features: 'Code Generation,Bug Fixing,Faster Development',
+        bgColor: 'purple'
+      }),
       width: 1200,
       height: 630,
       alt: 'Code With AI',
     }],
-    siteName: "AiToolTrend",
+    siteName: "doitwithai.tools",
     locale: 'en_US',
   },
   twitter: {
     card: "summary_large_image",
     domain: "doitwithai.tools",
-    url: "https://www.doitwithai.tools/ai-code", // Correct URL for this page
-    title: "Code With AI - DoItWithAI.Tools",
-    description: "Build websites faster and smarter! Discover how AI tools can supercharge your coding with free templates and guides to improve & optimize code.",
-    image: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg', // Use a relevant image for coding
+    url: `${getBaseUrl()}/ai-code`,
+    title: "Code With AI - doitwithai.tools",
+    description: "",
+    image: generateOGImageURL({
+      title: 'Supercharge Your Code with AI',
+      description: 'Discover how AI tools can help you write, optimize, and debug code faster than ever before.',
+      category: 'AI Code',
+      ctaText: 'Explore AI Coding Guides',
+      features: 'Code Generation,Bug Fixing,Faster Development',
+      bgColor: 'purple'
+    }),
   },
   alternates: {
-    canonical: "https://www.doitwithai.tools/ai-code", // Correct canonical URL
+    canonical: `${getBaseUrl()}/ai-code`,
   },
 };
 
@@ -99,11 +129,9 @@ async function getData(schemaType, pageSlugPrefix) {
   }
 }
 
-export default async function Page() { // Make this an async component to await data
-
-  // Define schema-specific data for the "Code With AI" page
-  const schemaType = "coding"; // Sanity schema type
-  const pageSlugPrefix = "ai-code"; // URL prefix for this category
+export default async function Page() {
+  const schemaType = "coding";
+  const pageSlugPrefix = "ai-code";
   const pageTitle = "AI Code Blogs";
   const pageTitleHighlight = "AI Code";
   const pageDescription = "Dive into the world of AI coding with our latest articles and tutorials.";
@@ -111,86 +139,74 @@ export default async function Page() { // Make this an async component to await 
 
   const breadcrumbProps = {
     pageName: "AI Code Blogs",
-    pageName2: "from DoItWithAI.Tools",
+    pageName2: "from doitwithai.tools",
     description: "Unlock the power of AI to revolutionize your web development workflow! Discover how to leverage tools like ChatGPT to generate website code (HTML, CSS, React, React MUI, TailwindCSS, Next.js) and create stunning website templates and UI components. Our blog features in-depth guides on using AI to improve existing code (MERN Stack, Next.js), solve coding problems, and optimize both frontend and backend code. Explore free website templates built with ChatGPT and learn how to code with AI by your side!",
     firstlinktext: "Home",
     firstlink: "/",
-    link: `/${pageSlugPrefix}`, // Dynamic link using the defined prefix
-    linktext: pageSlugPrefix, // Dynamic link text
+    link: `/${pageSlugPrefix}`,
+    linktext: pageSlugPrefix,
   };
 
   // Schema Markup for "Code With AI" CollectionPage
   function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
-      __html: `
-        {
-          "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          "name": "${pageMetadata.title}",
-          "description": "${pageMetadata.description}",
-          "url": "${pageMetadata.openGraph.url}",
-          "breadcrumb": {
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Home",
-                "item": "https://www.doitwithai.tools/"
-              },
-              {
-                "@type": "ListItem",
-                "position": 2,
-                "name": "${breadcrumbProps.pageName}",
-                "item": "${breadcrumbProps.link}"
-              }
-            ]
-          }
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": pageMetadata.title,
+        "description": pageMetadata.description,
+        "url": pageMetadata.openGraph.url,
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": `${getBaseUrl()}/`
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": breadcrumbProps.pageName,
+              "item": `${getBaseUrl()}${breadcrumbProps.link}`
+            }
+          ]
         }
-      `
+      })
     };
   }
 
   return (
     <>
-      <Head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:site_name" content={metadata.openGraph.siteName} />
-        <meta property="og:locale" content={metadata.openGraph.locale} />
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        <meta name="author" content={metadata.author} />
-        <meta property="og:title" content={metadata.openGraph.title} />
-        <meta property="og:description" content={metadata.openGraph.description} />
-        <meta property="og:image" content={metadata.openGraph.images[0].url} />
-        <meta property="og:image:width" content={metadata.openGraph.images[0].width} />
-        <meta property="og:image:height" content={metadata.openGraph.images[0].height} />
-        <meta property="og:url" content={metadata.openGraph.url} />
-        <meta property="og:type" content={metadata.openGraph.type} />
-        <meta name="twitter:card" content={metadata.twitter.card} />
-        <meta property="twitter:domain" content={metadata.twitter.domain} />
-        <meta property="twitter:url" content={metadata.twitter.url} />
-        <meta name="twitter:title" content={metadata.twitter.title} />
-        <meta name="twitter:description" content={metadata.twitter.description} />
-        <meta name="twitter:image" content={metadata.twitter.image} />
-        <link rel="canonical" href={metadata.alternates.canonical} />
-        <NextSeo
-          title={metadata.title}
-          description={metadata.description}
-          author={metadata.author}
-          type="website"
-          locale='en_IE'
-          site_name={metadata.openGraph.siteName}
-          canonical={metadata.alternates.canonical}
-          openGraph={{
-            title: metadata.openGraph.title,
-            description: metadata.openGraph.description,
-            url: metadata.openGraph.url,
-            type: "ItemList",
-            images: metadata.openGraph.images
-          }}
-        />
+     <Head>
+      <NextSeo
+        title={metadata.title}
+        description={metadata.description}
+        canonical={metadata.alternates.canonical}
+        openGraph={{
+          title: metadata.openGraph.title,
+          description: metadata.openGraph.description,
+          url: metadata.openGraph.url,
+          type: "ItemList",
+          images: metadata.openGraph.images,
+          siteName: metadata.openGraph.siteName,
+          locale: metadata.openGraph.locale,
+        }}
+        twitter={{
+          card: metadata.twitter.card,
+          site: metadata.twitter.site,
+          handle: metadata.twitter.creator,
+          title: metadata.twitter.title,
+          description: metadata.twitter.description,
+          image: metadata.twitter.image,
+        }}
+        additionalMetaTags={[
+          { name: 'author', content: metadata.author },
+          { name: 'keywords', content: "AI code, AI coding guides, AI web development, ChatGPT code, improve code with AI, website templates, UI components, Next.js, MERN stack, frontend, backend" },
+          { name: 'robots', content: 'index, follow' },
+        ]}
+      />
       </Head>
       <Script
         id="BreadcrumbListSchema"
@@ -199,7 +215,6 @@ export default async function Page() { // Make this an async component to await 
         key={`${pageSlugPrefix}-jsonld`}
       />
 
-      {/* --- REPLACE THE BlogListingPageContent COMPONENT HERE --- */}
       <StaticPageShell breadcrumbProps={breadcrumbProps}>
         <BlogListingPageContent
           schemaType={schemaType}
@@ -207,17 +222,9 @@ export default async function Page() { // Make this an async component to await 
           pageTitle={pageTitle}
           pageTitleHighlight={pageTitleHighlight}
           pageDescription={pageDescription}
-          // breadcrumbProps is now passed to StaticPageShell, remove it here
-          serverData={serverData}  // Pass server data
-          // If this page needs subcategories, add the props here, otherwise omit them
-          // showSubcategoriesSection={false} // Example: if no subcategories for coding
-          // subcategoriesSectionTitle=""
-          // subcategoriesSectionDescription=""
-          // SubcategoriesComponent={null}
-          // subcategoriesLimit={0}
+          serverData={serverData}
         />
       </StaticPageShell>
-      {/* --- END REPLACEMENT --- */}
     </>
   );
 }

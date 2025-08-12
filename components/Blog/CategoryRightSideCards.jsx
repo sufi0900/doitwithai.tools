@@ -2,7 +2,9 @@
 import React from "react";
 import Link from "next/link";
 import { Clock } from "lucide-react";
-import { CalendarMonthOutlined, LocalOfferOutlined as LocalOfferIcon } from "@mui/icons-material";
+import { CalendarMonth, ArrowForward } from "@mui/icons-material";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { urlForImage } from "@/sanity/lib/image";
 import ImageOptimizer from "./ImageOptimizer";
 
@@ -11,7 +13,7 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const HomeSmallCard = ({ post, categoryType, categoryColor, CategoryIcon }) => {
+const CategoryRightSideCards = ({ post, categoryType, categoryColor, CategoryIcon }) => {
   const imageUrl = post.mainImage ? urlForImage(post.mainImage).url() : `https://placehold.co/400x200/CCCCCC/333333?text=Image+Not+Found`;
   const schemaSlugMap = {
     makemoney: "ai-learn-earn",
@@ -23,84 +25,94 @@ const HomeSmallCard = ({ post, categoryType, categoryColor, CategoryIcon }) => {
 
   return (
     <Link href={postSlug} className="block h-full">
-      <div className="group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white shadow transition-all duration-300 hover:shadow-lg hover:scale-[1.03] dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 h-full flex flex-col">
-        {/*
-          Reverted styling for the card container itself to align with the vertical layout.
-          - `rounded-lg` for consistency with big card.
-          - `border border-gray-200 shadow` for base styling.
-          - `hover:shadow-lg hover:scale-[1.03]` for big card like hover.
-          - `h-full flex flex-col` for vertical stacking and height stretching.
-        */}
-
+      <div 
+        className="group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-400 ease-out hover:scale-[1.02] hover:translate-y-[-4px] hover:shadow-xl dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 h-full flex flex-col"
+        style={{
+          boxShadow: "0 20px 40px -12px rgba(37, 99, 235, 0.25)",
+        }}
+      >
         {/* Image Section */}
         <div className="relative overflow-hidden h-32 md:h-40">
-          <img
-            src={imageUrl}
-            alt={post.title}
-            // Keep the image scale effect as it's a nice interaction.
-            // If you want the more aggressive rotate/scale from the big card, apply it here.
-            // For now, keeping the subtle scale.
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-            onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/400x200/CCCCCC/333333?text=Image+Not+Found`; }}
-          />
+          <div className="absolute inset-0 h-full w-full transition-all duration-500 ease-out group-hover:scale-110">
+            <ImageOptimizer
+              src={imageUrl}
+              alt={post.title}
+              width={400}
+              height={200}
+              className="h-full w-full object-cover"
+            />
+          </div>
+          
+          {/* Gradient Overlay on Hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
           {/* Category Tag - Absolute position on the image */}
           {categoryType && (
-            <div className={`absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full ${categoryColor} px-3 py-1 text-xs font-semibold capitalize text-white transition duration-300 hover:bg-stone-50 hover:text-primary`}>
+             <div className="absolute right-3 top-3 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold capitalize text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:scale-105 backdrop-blur-sm border border-white/20">
               {CategoryIcon && <CategoryIcon size={14} style={{ fontSize: "14px", marginRight: "4px" }} />}
               <span>{categoryType}</span>
             </div>
           )}
-          {/* Removed the dark overlay on image hover for simplicity, can be added back if desired. */}
-          {/* <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" /> */}
         </div>
 
         {/* Content Section: This needs to be `flex-col` and `justify-between` to push elements */}
-        <div className="p-4 flex flex-col flex-1"> {/* Removed `justify-between` from here initially */}
+        <div className="p-4 flex flex-col flex-1">
           {/* Top content block (title, overview) */}
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2 mb-2">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
               {post.title}
             </h3>
-            <p className="text-sm text-gray-700 dark:text-gray-400 line-clamp-3 mb-3"> {/* Increased line-clamp to 3 for more overview text */}
+            <p className="text-base text-gray-700 dark:text-gray-400 line-clamp-3 mb-3">
               {post.overview}
             </p>
           </div>
 
           {/* Bottom content block (metadata, read more button) */}
-          <div className="mt-auto"> {/* `mt-auto` pushes this block to the bottom */}
+          <div className="mt-auto">
             {/* Metadata (Date and Read Time) */}
-            <div className="flex items-center justify-start gap-3 text-xs text-gray-600 dark:text-gray-400 mb-3"> {/* Changed `justify-between` to `justify-start` and increased gap */}
-              <div className="flex items-center pr-3 border-r border-gray-300 dark:border-gray-600">
-                <CalendarMonthOutlined style={{ fontSize: "14px", marginRight: "4px" }} className="text-body-color transition duration-300 hover:text-blue-500" />
-                <span>{formatDate(post.publishedAt)}</span>
+            <div className="flex items-center justify-start gap-3 text-xs text-gray-600 dark:text-gray-400 mb-3">
+              <div className="flex items-center gap-1.5">
+                <div className="p-1 rounded-full bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-800/50 transition-colors duration-300">
+                  <CalendarMonth 
+                    className="text-blue-600 dark:text-blue-400" 
+                    sx={{ fontSize: 12 }}
+                  />
+                </div>
+                <p className="font-medium text-gray-600 dark:text-gray-400">
+                  {formatDate(post.publishedAt)}
+                </p>
               </div>
-              <div className="flex items-center">
-                <Clock style={{ fontSize: "14px", marginRight: "4px" }} size={14} className="text-body-color transition duration-300 hover:text-blue-500" />
-                {post.readTime?.minutes || 5} min read
+              <div className="w-px h-3 bg-gray-300 dark:bg-gray-600" />
+              <div className="flex items-center gap-1.5">
+                <div className="p-1 rounded-full bg-green-50 dark:bg-green-900/30 group-hover:bg-green-100 dark:group-hover:bg-green-800/50 transition-colors duration-300">
+                  <AccessTimeIcon 
+                    className="text-green-600 dark:text-green-400" 
+                    sx={{ fontSize: 12 }}
+                  />
+                </div>
+                <p className="font-medium text-gray-600 dark:text-gray-400">
+                  {post.readTime?.minutes || 5} min
+                </p>
               </div>
             </div>
 
-            {/* Read More Button */}
+            {/* Enhanced Read More Button */}
             <Link
               href={postSlug}
-              className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              className="group/button relative inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-800 overflow-hidden w-fit"
             >
-              Read more
-              <svg
-                className="ms-2 h-3.5 w-3.5 rtl:rotate-180"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 14 10"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M1 5h12m0 0L9 1m4 4L9 9"
-                />
-              </svg>
+              {/* Shimmer Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover/button:translate-x-[100%] transition-transform duration-700 ease-out" />
+              
+              {/* Button Content */}
+              <span className="relative z-10">Read More</span>
+              <ArrowForward 
+                className="relative z-10 transition-all duration-300 group-hover/button:translate-x-0.5 group-hover/button:scale-110" 
+                sx={{ fontSize: 14 }}
+              />
+              
+              {/* Glow Effect */}
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400 to-purple-500 opacity-0 group-hover/button:opacity-20 transition-opacity duration-300 blur-sm" />
             </Link>
           </div>
         </div>
@@ -109,4 +121,4 @@ const HomeSmallCard = ({ post, categoryType, categoryColor, CategoryIcon }) => {
   );
 };
 
-export default HomeSmallCard;
+export default CategoryRightSideCards;

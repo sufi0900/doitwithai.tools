@@ -178,39 +178,39 @@ export default function BlogListingPageContent({
             Find exactly what you're looking for in our comprehensive collection of {pageTitle.toLowerCase()}.
           </p>
         </div>
-        <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 p-8">
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder={`Search for ${pageTitle.toLowerCase()}...`}
-                className="w-full rounded-xl border-0 bg-white/10 px-6 py-4 text-white placeholder-blue-200 backdrop-blur-sm transition-all duration-300 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 dark:bg-gray-800/50 dark:text-white dark:placeholder-gray-400"
-                value={searchHook.searchText}
-                onChange={(e) => searchHook.updateSearchText(e.target.value)}
-                onKeyDown={searchHook.handleKeyDown}
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                <svg className="h-5 w-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={searchHook.handleSearch}
-                className="flex items-center justify-center rounded-xl bg-white px-6 py-4 font-medium text-blue-600 transition-all duration-200 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white/50"
-              >
-                <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                Search
-              </button>
-              <button
-                onClick={searchHook.resetSearch}
-                className="flex items-center justify-center rounded-xl bg-white/20 px-6 py-4 font-medium text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
-              >
-                <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                Reset
-              </button>
-            </div>
-          </div>
-        </div>
+     <div className="rounded-2xl p-6 md:p-8 bg-white dark:bg-gray-800 shadow-lg">
+  <div className="flex flex-col gap-4 sm:flex-row">
+    <div className="relative flex-1">
+      <input
+        type="text"
+        placeholder={`Search for ${pageTitle.toLowerCase()}...`}
+        className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent px-6 py-4 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-all duration-300"
+        value={searchHook.searchText}
+        onChange={(e) => searchHook.updateSearchText(e.target.value)}
+        onKeyDown={searchHook.handleKeyDown}
+      />
+      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+        <svg className="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+    </div>
+    <div className="flex gap-2">
+      <button
+        onClick={searchHook.handleSearch}
+        className="flex items-center justify-center rounded-xl bg-blue-600 px-6 py-4 font-medium text-white transition-all duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-md"
+      >
+        <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        Search
+      </button>
+      <button
+        onClick={searchHook.resetSearch}
+        className="flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-700 px-6 py-4 font-medium text-gray-700 dark:text-gray-300 transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-md"
+      >
+        <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Reset
+      </button>
+    </div>
+  </div>
+</div>
       </section>
 
       {/* SearchResults */}
