@@ -1,11 +1,9 @@
-// components/BlogSidebar.js
 /*eslint-disable @next/next/no-img-element*/
 /*eslint-disable react/no-unescaped-entities*/
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import Image from 'next/image';
-import { client } from "@/sanity/lib/client";
+
 import { urlForImage } from "@/sanity/lib/image";
 import SidebarRelatedResources from "@/app/free-ai-resources/SidebarRelatedResources";
 import NewsLatterBox from "@/components/Contact/NewsLatterBox";
@@ -21,18 +19,9 @@ import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import {
-  Search,
-  RefreshCcw,
+
   Link as LinkIcon,
-  Clock,
-  LayoutGrid,
-  Laptop,
-  LineChart,
-  DollarSign,
-  Gift,
-  Wrench,
-  Rocket,
-  ArrowRight,
+
 } from 'lucide-react';
 // Professional Icon Components
 const SearchIcon = ({ className = "w-4 h-4" }) => (
@@ -264,17 +253,18 @@ const BlogSidebar = ({
           error={searchHook.searchError}
           isSearchActive={searchHook.isSearchActive}
           searchText={searchHook.searchText}
-          pageSlugPrefix={schemaSlugMap[currentPostType] || 'article-sidebar'}
+  schemaSlugMap={schemaSlugMap} // Pass the entire map instead
+          
           showNoResults={searchHook.showNoResults}
           cacheSource={searchHook.cacheSource}
           isStale={searchHook.isStale}
           onResetSearch={searchHook.resetSearch}
           onRefreshSearch={searchHook.refreshSearch}
           className="mb-6"
-          minSearchLength={5}
+          minSearchLength={3}
+          isSidebarView={true} // This is the new prop that activates the smaller card
         />
       )}
-
 
 
       <div className="space-y-6">

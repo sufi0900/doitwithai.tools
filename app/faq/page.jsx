@@ -7,12 +7,16 @@ import Head from 'next/head';
 
 // Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
 
@@ -32,8 +36,8 @@ export const metadata = {
     description: "Find clear and concise answers to the most common questions about our platform and AI tools.",
     images: [{
       url: generateOGImageURL({
-        title: 'Get Your Questions Answered Here',
-        description: 'Find clear and concise answers to the most common questions about our platform and AI tools.',
+        title: 'Find quick, clear answers to your most common questions about our AI platform and tools.',
+        // description field is removed
         category: 'FAQ',
         ctaText: 'Explore the Answers',
         features: 'Quick Answers,AI Tools,SEO,Resources',
@@ -52,8 +56,8 @@ export const metadata = {
     title: "Frequently Asked Questions about Our AI Platform | doitwithai.tools",
     description: "Find quick and clear answers to frequently asked questions about our AI tools, resources, and platform.",
     image: generateOGImageURL({
-      title: 'Get Your Questions Answered Here',
-      description: 'Find clear and concise answers to the most common questions about our platform and AI tools.',
+      title: 'Find quick, clear answers to your most common questions about our AI platform and tools.',
+      // description field is removed
       category: 'FAQ',
       ctaText: 'Explore the Answers',
       features: 'Quick Answers,AI Tools,SEO,Resources',

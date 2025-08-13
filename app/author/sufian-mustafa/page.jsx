@@ -6,17 +6,19 @@ import { NextSeo } from "next-seo";
 import Script from "next/script";
 import Head from 'next/head';
 
-// Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
-
 function generateOGImageURL(params) {
   const baseURL = `${getBaseUrl()}/api/og`;
   const searchParams = new URLSearchParams(params);
@@ -40,12 +42,12 @@ export const metadata = {
     },
   },
   openGraph: {
-  title: "Sufian Mustafa: Author, Developer, & SEO Lead for doitwithai.tools",
-  description: "Meet the creator behind doitwithai.tools. Sufian Mustafa developed this platform & all its content using a unique, strategic blend of AI and web development",
-   images: [{
+    title: "Sufian Mustafa: Author, Developer, & SEO Lead for doitwithai.tools",
+    description: "Meet the creator behind doitwithai.tools. Sufian Mustafa developed this platform & all its content using a unique, strategic blend of AI and web development",
+    images: [{
       url: generateOGImageURL({
-        title: 'Meet the Creator',
-        description: ' Sufian Mustafa, the founder of doitwithai.tools, shares his story of building an entire platform with AI and passion.',
+        title: 'Sufian Mustafa: The creator who built this platform using a unique blend of AI and passion.',
+        // description field is removed
         category: 'Author Page',
         ctaText: 'Read My Story',
         features: 'Web Developer,AI Enthusiast,Content Creator',
@@ -67,11 +69,11 @@ export const metadata = {
     card: 'summary_large_image',
     site: "@doitwithai",
     creator: "@doitwithai",
-   title: "Sufian Mustafa: Author, Developer, & SEO Lead for doitwithai.tools",
-  description: "Meet the creator behind doitwithai.tools. Sufian Mustafa developed this platform & all its content using a unique, strategic blend of AI and web development",
-   image: generateOGImageURL({
-      title: 'Meet the Creator',
-      description: ' Sufian Mustafa, the founder of doitwithai.tools, shares his story of building an entire platform with AI and passion.',
+    title: "Sufian Mustafa: Author, Developer, & SEO Lead for doitwithai.tools",
+    description: "Meet the creator behind doitwithai.tools. Sufian Mustafa developed this platform & all its content using a unique, strategic blend of AI and web development",
+    image: generateOGImageURL({
+      title: 'Sufian Mustafa: The creator who built this platform using a unique blend of AI and passion.',
+      // description field is removed
       category: 'Author Page',
       ctaText: 'Read My Story',
       features: 'Web Developer,AI Enthusiast,Content Creator',

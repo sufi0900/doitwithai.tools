@@ -53,6 +53,21 @@ const SmartShimmer = ({ isLoading, children, fallback, delay = 0 }) => {
   
   return children;
 };
+const useDeviceSize = () => {
+  const [isLargeDevice, setIsLargeDevice] = useState(false);
+  
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsLargeDevice(window.innerWidth >= 1024); // lg breakpoint
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+  
+  return isLargeDevice;
+};
 
 const BlogLayout = ({
   data,
@@ -69,9 +84,13 @@ const BlogLayout = ({
   const [mounted, setMounted] = useState(false);
   const [loadStage, setLoadStage] = useState(1);
   const [contentReady, setContentReady] = useState(!!data); // Use !!data instead of !loading
+  const isLargeDevice = useDeviceSize();
 
   // ADD this new state for preventing layout shift:
   const [layoutReady, setLayoutReady] = useState(false);
+
+// Add this hook at the top of your component, after imports
+
 
   // Memoize portable text components
   const portableTextComponents = useMemo(() => {
@@ -214,58 +233,12 @@ const BlogLayout = ({
             {/* Main Article Content - Priority for FCP */}
             <BlogHeader data={data} imgdesc={imgdesc} />
             
-            <div className="custom anchor mb-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
+            <div className="customanchor mb-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
             
             <div className="w-full lg:w-8/12">
               <div className="mb-10 mt-4 w-full overflow-hidden rounded article-content">
                 {/* Author and Meta Info - Critical for FCP */}
-                <div className="mb-10 flex flex-nowrap items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-6 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 p-6 rounded-lg shadow-sm overflow-x-auto space-x-6">
-                  <div className="flex items-center shrink-0">
-                    <div className="relative mr-4 h-12 w-12 overflow-hidden rounded-full ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 transition-allduration-300 group-hover:ring-4">
-                      <Link href="/author/sufian-mustafa">
-                        <Image
-                          src="/sufi.png"
-                          alt="Sufian Mustafa - AI Tools Expert"
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-110"
-                          priority // Critical for FCP
-                        />
-                      </Link>
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                        By <Link href="/author/sufian-mustafa" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">Sufian Mustafa</Link>
-                      </span>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">AI Tools Expert & Founder</p>
-                    </div>
-                  </div>
-
-                  {/* Meta Info */}
-                  <div className="flex flex-nowrap items-center gap-4 shrink-0">
-                    <div className="flex items-center bg-white dark:bg-gray-700 px-3 py-2 rounded-lg shadow-sm whitespace-nowrap">
-                      <span className="mr-2 text-blue-500">
-                        <CalendarMonthOutlined className="w-4 h-4" />
-                      </span>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {new Date(data.publishedAt).toLocaleDateString('en-US', {
-                          day: 'numeric',
-                          month: 'short', 
-                          year: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex items-center bg-white dark:bg-gray-700 px-3 py-2 rounded-lg shadow-sm whitespace-nowrap">
-                      <span className="mr-2 text-green-500">
-                        <AccessTime className="w-4 h-4" />
-                      </span>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {data.readTime?.minutes} min read
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
+          
                 <ReadingProgressCircle />
 
                 {/* Only show refresh loading indicator when actually refreshing */}
@@ -281,7 +254,7 @@ const BlogLayout = ({
                   <div className="opacity-100"> {/* Always show content if we have data */}
                     <TableOfContents tableOfContents={data.tableOfContents} />
                     
-                    <div className="custom anchor mb-4 mt-4 border-b-2 customanchor border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+                    <div className="customanchor mb-4 mt-4 border-b-2 customanchor border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                       <PortableText value={data.content} components={portableTextComponents} />
                     </div>
 
@@ -319,23 +292,36 @@ const BlogLayout = ({
             </div>
 
             {/* Blog Sidebar - Load after stage 2 */}
-            <SmartShimmer
-              isLoading={loadStage < 2} // Based on progressive loading stage
-              fallback={<div className="w-full lg:w-4/12 lg:pl-8"><ComponentSkeleton height="600px" /></div>}
-              delay={100} // Small delay to avoid flash
-            >
-              <Suspense fallback={<div className="w-full lg:w-4/12 lg:pl-8"><ComponentSkeleton height="600px" /></div>}>
-                <BlogSidebar
-                  relatedPosts={relatedPosts}
-                  relatedPostsLoading={relatedPostsLoading}
-                  relatedResources={relatedResources}
-                  resourcesLoading={resourcesLoading}
-                  schemaSlugMap={schemaSlugMap}
-                  currentPostId={currentPostId}
-                  currentPostType={currentPostType}
-                />
-              </Suspense>
-            </SmartShimmer>
+            {/* BlogSidebar - Only load for large devices */}
+{isLargeDevice && (
+  <SmartShimmer
+    isLoading={loadStage < 2}
+    fallback={
+      <div className="w-full lg:w-4/12 lg:pl-8">
+        <ComponentSkeleton height="600px" />
+      </div>
+    }
+    delay={100}
+  >
+    <Suspense
+      fallback={
+        <div className="w-full lg:w-4/12 lg:pl-8">
+          <ComponentSkeleton height="600px" />
+        </div>
+      }
+    >
+      <BlogSidebar
+        relatedPosts={relatedPosts}
+        relatedPostsLoading={relatedPostsLoading}
+        relatedResources={relatedResources}
+        resourcesLoading={resourcesLoading}
+        schemaSlugMap={schemaSlugMap}
+        currentPostId={currentPostId}
+        currentPostType={currentPostType}
+      />
+    </Suspense>
+  </SmartShimmer>
+)}
           </article>
 
           {/* Related Posts Section - Load after stage 3 */}
@@ -380,9 +366,6 @@ const BlogLayout = ({
             </SmartShimmer>
           </div>
         </div>
-        
-{/* Comment Section - Load after stage 4 */}
-
       </section>
     </div> 
   );

@@ -18,14 +18,17 @@ import { redisHelpers } from '@/app/lib/redis'; // Import Redis helpers
 // --- Next.js Server-Side Configuration ---
 export const revalidate = 3600; // Revalidate every 1 hour
 
-// Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
 
@@ -42,13 +45,11 @@ export const metadata = {
   keywords: "AI learn and earn, make money with AI, AI skills, AI income streams, AI career, AI business, AI monetization",
   openGraph: {
     title: "Learn & Earn With AI | doitwithai.tools",
-    description: "Unlock the power of AI to learn in-demand skills and boost your income with AI tools and strategies that make artificial intelligence your growth partner.",
     url: `${getBaseUrl()}/ai-learn-earn`,
     type: "website",
     images: [{
       url: generateOGImageURL({
-        title: 'Learn AI Skills, Earn Money',
-        description: 'Find the best AI tools and strategies to turn your knowledge into new sources of income.',
+        title: 'Learn AI Skills & Boost Your Income — Turn Knowledge into Profit',
         category: 'Learn & Earn',
         ctaText: 'Get Started Today',
         features: 'Master New Skills,Boost Your Income,Future-Proof Your Career',
@@ -68,10 +69,8 @@ export const metadata = {
     domain: "doitwithai.tools",
     url: `${getBaseUrl()}/ai-learn-earn`,
     title: "Learn & Earn With AI | doitwithai.tools",
-    description: "Master AI skills and explore ways to boost your income. Get easy-to-follow guides, tips, and tools to help you learn and earn with artificial intelligence.",
     image: generateOGImageURL({
-      title: 'Learn AI Skills, Earn Money',
-      description: 'Find the best AI tools and strategies to turn your knowledge into new sources of income.',
+      title: 'Learn AI Skills & Boost Your Income — Turn Knowledge into Profit',
       category: 'Learn & Earn',
       ctaText: 'Get Started Today',
       features: 'Master New Skills,Boost Your Income,Future-Proof Your Career',
@@ -93,6 +92,7 @@ export const metadata = {
     },
   },
 };
+
 
 async function getData(schemaType, pageSlugPrefix) {
   const cacheKey = `blogList:${schemaType}:main`;

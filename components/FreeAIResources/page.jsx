@@ -175,24 +175,7 @@ const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|
             <ResourceCard key={resource._id} resource={resource} wrapperClassName="h-full mb-4 " />
           ))}
         </DynamicResourceCarousel>
-      {/* <div className="mt-10 text-center">
-          <Link href="/free-ai-resources" className="inline-block group">
-            <button className="
-              px-6 py-2.5
-              rounded-lg
-              bg-blue-600
-              text-white text-base font-semibold
-              shadow-md
-              hover:bg-blue-700
-              transition-colors duration-300 ease-in-out
-              focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700
-              flex items-center gap-2
-            ">
-              View All Resources
-              <svg className="w-4 h-4 ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-            </button>
-          </Link>
-        </div> */}
+     
       </div>
       <ResourceModalsProvider resources={featuredResources} />
     </section>

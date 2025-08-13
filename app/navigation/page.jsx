@@ -7,12 +7,16 @@ import Head from 'next/head';
 
 // Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
 
@@ -28,7 +32,7 @@ export const metadata = {
   authors: [{ name: "Sufian Mustafa" }],
   creator: "Sufian Mustafa",
   publisher: "doitwithai.tools",
- openGraph: {
+  openGraph: {
     title: "Navigate All Sections of doitwithai.tools",
     description: "Explore our complete sitemap to easily find all of our AI guides, free tools, and core pages in one place.",
     url: `${getBaseUrl()}/navigation`,
@@ -37,8 +41,8 @@ export const metadata = {
     type: "website",
     images: [{
       url: generateOGImageURL({
-        title: 'The Complete doitwithai.tools Directory',
-        description: 'Discover all of our AI content, core pages, and more in one central hub.',
+        title: 'The complete sitemap to easily find all our AI guides, tools, and pages.',
+        // description field is removed
         category: 'Site Navigation',
         ctaText: 'Discover All Sections',
         features: 'Full Sitemap,Easy Access,All Pages',
@@ -56,8 +60,8 @@ export const metadata = {
     site: "@doitwithai",
     domain: "doitwithai.tools",
     images: [generateOGImageURL({
-      title: 'The Complete doitwithai.tools Directory',
-      description: 'Discover all of our AI content, core pages, and more in one central hub.',
+      title: 'The complete sitemap to easily find all our AI guides, tools, and pages.',
+      // description field is removed
       category: 'Site Navigation',
       ctaText: 'Discover All Sections',
       features: 'Full Sitemap,Easy Access,All Pages',

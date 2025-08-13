@@ -65,7 +65,6 @@ const Header = () => {
                     cursor: "pointer",
                     transition: "all 0.3s ease",
                   }}
-                  // Removed box-shadow class here
                   className="group-hover:scale-110 transition-all duration-300 ring-2 ring-transparent group-hover:ring-blue-500/40 group-hover:ring-offset-2 group-hover:ring-offset-white dark:group-hover:ring-offset-gray-900"
                 >
                   <Image
@@ -95,7 +94,7 @@ const Header = () => {
                       {menuItem.path ? (
                         <Link
                           href={menuItem.path}
-                          prefetch={true} // Optimized: Added prefetching
+                          prefetch={true}
                           className={`
                             relative flex mt-6 mb-6 px-4 py-3 transition-all duration-300 ease-in-out items-center justify-center lg:mr-0 lg:inline-flex rounded-xl border border-transparent backdrop-blur-sm
                             ${usePathName === menuItem.path
@@ -111,14 +110,13 @@ const Header = () => {
                             </>
                           )}
                           <span className="relative z-10">{menuItem.title}</span>
-                          {/* Clean, simple underline animation on hover */}
                           <div className={`absolute bottom-0 h-0.5 w-0 rounded-full bg-current transition-all duration-300 ease-in-out ${usePathName !== menuItem.path ? "group-hover:w-full" : ""}`}></div>
                         </Link>
                       ) : (
                         <>
                           <p
                             onClick={() => handleSubmenu(index)}
-                            className="mt-6 px-4 py-3 flex cursor-pointer items-center justify-between text-base text-gray-700 group-hover:text-[#5271FF] dark:text-gray-300 dark:group-hover:text-[#5271FF] lg:inline-flex transition-all duration-300 ease-in-out rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                            className="mt-6 px-4 py-3 flex cursor-pointer items-center justify-between text-base text-gray-700 group-hover:text-[#5271FF] dark:text-gray-300 dark:group-hover:text-[#5271FF] lg:inline-flex transition-all duration-300 ease-in-out rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50"
                           >
                             <span className="relative z-10">{menuItem.title}</span>
                             <span className="pl-3 transform group-hover:rotate-180 transition-transform duration-300">
@@ -136,7 +134,7 @@ const Header = () => {
                               <Link
                                 href={submenuItem.path}
                                 key={submenuIndex}
-                                prefetch={true} // Optimized: Added prefetching
+                                prefetch={true}
                                 className="block rounded-lg py-3 px-4 text-sm text-gray-700 hover:text-[#5271FF] dark:text-gray-300 dark:hover:text-[#5271FF] lg:px-4 transition-all duration-200 ease-in-out border-l-2 border-transparent hover:border-[#5271FF]/50"
                               >
                                 <span className="flex items-center">
@@ -192,7 +190,7 @@ const Header = () => {
             </div>
 
             <div
-              className={`lg:hidden absolute right-0 top-full z-30 w-[280px] rounded-xl border border-gray-200/50 bg-white/95 backdrop-blur-xl px-6 py-6 duration-300 shadow-2xl dark:border-gray-700/50 dark:bg-gray-900/95 transform origin-top-right ${
+              className={`lg:hidden absolute right-0 top-full z-30 w-[280px] rounded-xl border border-gray-200/50 bg-white/95 backdrop-blur-xl px-6 py-6 duration-300 shadow-2xl dark:border-gray-700/50 dark:bg-gray-900/95 transform origin-top-right overflow-y-auto max-h-[80vh] ${
                 navbarOpen
                   ? "visible opacity-100 scale-100 translate-y-2"
                   : "invisible opacity-0 scale-95 -translate-y-2"
@@ -205,7 +203,7 @@ const Header = () => {
                       {menuItem.path ? (
                         <Link
                           href={menuItem.path}
-                          prefetch={true} // Optimized: Added prefetching
+                          prefetch={true}
                           className={`
                             relative flex p-3 transition-all duration-300 ease-in-out items-center justify-center rounded-xl border border-transparent
                             ${usePathName === menuItem.path
@@ -239,13 +237,13 @@ const Header = () => {
                           <div
                             className={`submenu relative rounded-xl bg-gray-50/80 dark:bg-gray-800/50 backdrop-blur-sm transition-all duration-300 mt-2 border-l-2 border-[#5271FF]/20 ${
                               openIndex === index ? "block opacity-100 max-h-96" : "hidden opacity-0 max-h-0"
-                            }`}
+                            } overflow-y-auto`}
                           >
                             {menuItem.submenu.map((submenuItem, submenuIndex) => (
                               <Link
                                 href={submenuItem.path}
                                 key={submenuIndex}
-                                prefetch={true} // Optimized: Added prefetching
+                                prefetch={true}
                                 className="block py-3 pl-6 pr-4 text-sm text-gray-700 hover:text-[#5271FF] dark:text-gray-300 dark:hover:text-[#5271FF] transition-all duration-200 ease-in-out border-l-2 border-transparent hover:border-[#5271FF]/50"
                               >
                                 <span className="flex items-center">

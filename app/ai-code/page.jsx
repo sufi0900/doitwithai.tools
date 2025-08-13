@@ -17,14 +17,19 @@ export const revalidate = 3600;
 
 // Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
+
 
 function generateOGImageURL(params) {
   const baseURL = `${getBaseUrl()}/api/og`;
@@ -34,18 +39,16 @@ function generateOGImageURL(params) {
 
 // --- SEO Metadata (Next.js App Router Standard) ---
 export const metadata = {
-  title: " AI Code Blogs | Write, Debug & Optimize Faster - doitwithai.tools",
+  title: "AI Code Blogs | Write, Debug & Optimize Faster - doitwithai.tools",
   description: "Learn how to code with AI by discovering the best AI tools and techniques to generate code, and solve complex coding problems faster than ever before.",
   author: "Sufian Mustafa",
   openGraph: {
     title: "",
-    description: "Learn how to code with AI by discovering the best AI tools and techniques to generate code, and solve complex coding problems faster than ever before.",
     url: `${getBaseUrl()}/ai-code`,
     type: "website",
     images: [{
       url: generateOGImageURL({
-        title: 'Supercharge Your Code with AI',
-        description: 'Discover how AI tools can help you write, optimize, and debug code faster than ever before.',
+        title: 'Supercharge Your Code with AI — Write, Optimize & Debug Faster Than Ever',
         category: 'AI Code',
         ctaText: 'Explore AI Coding Guides',
         features: 'Code Generation,Bug Fixing,Faster Development',
@@ -63,10 +66,8 @@ export const metadata = {
     domain: "doitwithai.tools",
     url: `${getBaseUrl()}/ai-code`,
     title: "Code With AI - doitwithai.tools",
-    description: "",
     image: generateOGImageURL({
-      title: 'Supercharge Your Code with AI',
-      description: 'Discover how AI tools can help you write, optimize, and debug code faster than ever before.',
+      title: 'Supercharge Your Code with AI — Write, Optimize & Debug Faster Than Ever',
       category: 'AI Code',
       ctaText: 'Explore AI Coding Guides',
       features: 'Code Generation,Bug Fixing,Faster Development',
@@ -77,6 +78,7 @@ export const metadata = {
     canonical: `${getBaseUrl()}/ai-code`,
   },
 };
+
 
 async function getData(schemaType, pageSlugPrefix) {
   const cacheKey = `blogList:${schemaType}:main`;

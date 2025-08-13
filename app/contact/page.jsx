@@ -4,14 +4,17 @@ import { NextSeo } from "next-seo";
 import Contact from "@/components/Contact";
 import Head from 'next/head';
 
-// Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
 
@@ -25,8 +28,8 @@ export const metadata = {
   title: "Contact doitwithai.tools for Expert AI, SEO, & Web Support ",
   description: "For inquiries about AI tools, support, or collaboration opportunities, please use the contact form to get in touch. We will respond promptly to your message.",
   keywords: "contact AI experts, AI tools support, SEO consultation, web development help, AI automation, machine learning guidance, digital marketing assistance",
-authors: [{ name: "Sufian Mustafa" }],
-creator: "Sufian Mustafa",
+  authors: [{ name: "Sufian Mustafa" }],
+  creator: "Sufian Mustafa",
   publisher: "doitwithai.tools",
   robots: {
     index: true,
@@ -48,8 +51,8 @@ creator: "Sufian Mustafa",
     locale: "en_US",
     images: [{
       url: generateOGImageURL({
-        title: 'Get in Touch with doitwithai.tools',
-        description: 'Have a question or a partnership idea? We are ready to help with your inquiry.',
+        title: 'Contact us for any inquiries about AI tools, support, or collaboration opportunities.',
+        // description field is removed
         category: 'Contact Us',
         ctaText: 'Message Us',
         features: 'AI Support,SEO Help,Partnerships',
@@ -64,8 +67,8 @@ creator: "Sufian Mustafa",
     title: "Get in Touch with doitwithai.tools",
     description: "Fill out the form to send us your message. We'll respond to your inquiry as soon as possible.",
     images: [generateOGImageURL({
-      title: 'Get in Touch with doitwithai.tools',
-      description: 'Have a question or a partnership idea? We are ready to help with your inquiry.',
+      title: 'Contact us for any inquiries about AI tools, support, or collaboration opportunities.',
+      // description field is removed
       category: 'Contact Us',
       ctaText: 'Message Us',
       features: 'AI Support,SEO Help,Partnerships',
@@ -76,7 +79,6 @@ creator: "Sufian Mustafa",
     canonical: `${getBaseUrl()}/contact`,
   },
 };
-
 // JSON-LD structured data for better SEO
 function jsonLdMarkup() {
   return {

@@ -44,7 +44,7 @@ creator: "Sufian Mustafa",
     images: [{
       url: generateOGImageURL({
         title: 'Boost Your SEO and Daily Productivity with Cutting-Edge AI Tools',
-        description: 'Your go-to resource hub for mastering AI tools that double your SEO power, grow your business, and improve your overall productivity.',
+        // description: 'Your go-to resource hub for mastering AI tools that double your SEO power, grow your business, and improve your overall productivity.',
         category: 'AI Tools',
         ctaText: 'Start Your AI Journey Now',
         features: 'AI-Powered SEO,10x Productivity,50+ Free Resources',
@@ -67,7 +67,7 @@ creator: "Sufian Mustafa",
     domain: "doitwithai.tools",
     url: getBaseUrl(),
     title: "Best AI Tools for Productivity | doitwithai.tools",
-    description: "Explore comprehensive guides on the Best AI Tools for Productivity. Detailed reviews of top AI solutions to boost your SEO and daily productivity.",
+    // description: "Explore comprehensive guides on the Best AI Tools for Productivity. Detailed reviews of top AI solutions to boost your SEO and daily productivity.",
     image: generateOGImageURL({
       title: 'Boost Your SEO and Daily Productivity with Cutting-Edge AI Tools',
       description: 'Your go-to resource hub for mastering AI tools that double your SEO power, grow your business, and improve your overall productivity.',

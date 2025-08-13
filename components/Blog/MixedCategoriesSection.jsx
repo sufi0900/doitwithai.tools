@@ -128,7 +128,7 @@ const MixedCategoriesSection  = ({ initialData = {} }) => { // Accept initialDat
   const secondAiTool = aiToolsData && aiToolsData.length > 1 ? aiToolsData[1] : null;
 
   return (
-    <section className="py-4 ">
+    <section className="py-4 mt-4 ">
       <div className="container mx-auto px-4">
         <Breadcrumb
   pageName="AI Tools, Code &"

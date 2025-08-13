@@ -13,15 +13,18 @@ export const dynamic = "force-dynamic";
 
 // Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
-
 function generateOGImageURL(params) {
   const baseURL = `${getBaseUrl()}/api/og`;
   const searchParams = new URLSearchParams(params);
@@ -103,20 +106,20 @@ async function getAllBlogsInitialData() {
 }
 
 export const metadata = {
-  title: " AI Blog Library: Insights on AI Tools, SEO & More | doitwithai.tools",
+  title: "AI Blog Library: Insights on AI Tools, SEO & More | doitwithai.tools",
   description: "Explore our comprehensive AI blog collection featuring cutting-edge insights on AI tools, SEO strategies, coding techniques, & monetization opportunities",
   author: "Sufian Mustafa",
   keywords: "AI blog, AI tools, AI SEO, AI coding, AI monetization, artificial intelligence articles, AI tutorials, AI strategies, AI resources, machine learning blog, AI insights, AI productivity, AI for business, AI automation, AI learning",
   openGraph: {
-    title: " AI Blog Library: Insights on AI Tools, SEO & More | doitwithai.tools",
+    title: "AI Blog Library: Insights on AI Tools, SEO & More | doitwithai.tools",
     description: "Discover cutting-edge AI content covering tools, SEO, coding, and monetization. Your complete resource for mastering artificial intelligence in business and daily life.",
     type: "website",
     url: `${getBaseUrl()}/blogs`,
     siteName: "doitwithai.tools",
     images: [{
       url: generateOGImageURL({
-        title: 'Your Ultimate AI Blog Hub',
-        description: 'Get cutting-edge insights on AI tools, SEO, coding, and monetization to stay ahead.',
+        title: 'Your Ultimate AI Blog Hub for cutting-edge insights on AI tools, SEO, coding, and more.',
+        // description field is removed
         category: 'All Blogs',
         ctaText: 'Explore All Articles',
         features: 'AI Tools,AI SEO,AI Coding,Monetization',
@@ -132,8 +135,8 @@ export const metadata = {
     title: "AI Blog Hub - Latest AI Insights & Expert Strategies",
     description: "Discover cutting-edge AI content covering tools, SEO, coding, and monetization strategies.",
     image: generateOGImageURL({
-      title: 'Your Ultimate AI Blog Hub',
-      description: 'Get cutting-edge insights on AI tools, SEO, coding, and monetization to stay ahead.',
+      title: 'Your Ultimate AI Blog Hub for cutting-edge insights on AI tools, SEO, coding, and more.',
+      // description field is removed
       category: 'All Blogs',
       ctaText: 'Explore All Articles',
       features: 'AI Tools,AI SEO,AI Coding,Monetization',

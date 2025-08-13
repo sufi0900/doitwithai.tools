@@ -16,12 +16,16 @@ export const revalidate = 3600; // Revalidate every 1 hour
 
 // Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
 
@@ -43,8 +47,8 @@ export const metadata = {
     type: "website",
     images: [{
       url: generateOGImageURL({
-        title: 'The Ultimate Free AI Resource Hub',
-        description: 'Your ultimate collection of high-quality AI tools, templates, prompts, and guides to kickstart your AI journey and solve real-world problems.',
+        title: 'Access our massive collection of free AI tools, prompts, and templates to supercharge your projects.',
+        // description field is removed
         category: 'Free AI Resources',
         ctaText: 'Download Free Resources Now',
         features: 'Zero Cost,High Quality,Instant Access',
@@ -64,8 +68,8 @@ export const metadata = {
     title: "Free AI Resources: Tools, Templates & Prompts | doitwithai.tools",
     description: "Supercharge your projects with a massive collection of high-quality, zero-cost AI tools, prompts, and templates.",
     image: generateOGImageURL({
-      title: 'The Ultimate Free AI Resource Hub',
-      description: 'Your ultimate collection of high-quality AI tools, templates, prompts, and guides to kickstart your AI journey and solve real-world problems.',
+      title: 'Access our massive collection of free AI tools, prompts, and templates to supercharge your projects.',
+      // description field is removed
       category: 'Free AI Resources',
       ctaText: 'Download Free Resources Now',
       features: 'Zero Cost,High Quality,Instant Access',
@@ -270,7 +274,6 @@ export default async function Page() {
 
   return (
     <>
-
     <Head>
       <NextSeo
         title={metadata.title}

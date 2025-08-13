@@ -4,14 +4,17 @@ import Script from "next/script";
 import { NextSeo } from "next-seo";
 import Head from 'next/head';
 
-// Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
 
@@ -30,8 +33,8 @@ export const metadata = {
     description: "Explore comprehensive AI categories including SEO optimization, coding assistance, learning resources, productivity tools, and free downloadable content.",
     images: [{
       url: generateOGImageURL({
-        title: 'Explore All AI Categories',
-        description: 'Discover a world of AI possibilities with our comprehensive categories for SEO, coding, productivity, and beyond.',
+        title: 'Browse all our AI-driven categories to improve SEO results and boost productivity.',
+        // description field is removed
         category: 'doitwithai.tools',
         ctaText: 'Discover All Categories',
         features: 'AI Tools,SEO,Coding,Resources',
@@ -50,8 +53,8 @@ export const metadata = {
     title: "AI Categories - Complete Guide to AI Tools & Resources",
     description: "Explore comprehensive AI categories including SEO optimization, coding assistance, learning resources, productivity tools, and free downloadable content.",
     image: generateOGImageURL({
-      title: 'Explore All AI Categories',
-      description: 'Discover a world of AI possibilities with our comprehensive categories for SEO, coding, productivity, and beyond.',
+      title: 'Browse all our AI-driven categories to improve SEO results and boost productivity.',
+      // description field is removed
       category: 'doitwithai.tools',
       ctaText: 'Discover All Categories',
       features: 'AI Tools,SEO,Coding,Resources',

@@ -230,6 +230,6 @@ const ResourceCarousel = ({
       )}
     </div>
   );
-};
+};  
 
 export default ResourceCarousel;

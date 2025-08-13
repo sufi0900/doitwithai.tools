@@ -16,6 +16,26 @@ const criticalContentSelectors = {
 const Hero = () => {
   const heroRef = useRef<HTMLElement>(null);
   const { addCleanup } = useAnimationCleanup();
+ // 1. ADDED: State to track if the screen is small
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  // 2. ADDED: useEffect to check screen size on mount and resize
+  useEffect(() => {
+    const handleResize = () => {
+      // Use window.innerWidth for a more direct check
+      // Tailwind's 'sm' breakpoint is 640px. You can adjust this value.
+      setIsSmallScreen(window.innerWidth < 640);
+    };
+
+    // Set initial value
+    handleResize();
+
+    // Add event listener for window resize
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup function
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
 // Replace the first useEffect (line ~20) with this:
 useEffect(() => {
@@ -145,6 +165,8 @@ useEffect(() => {
       aria-describedby="hero-description"
       role="banner"
     >
+            {!isSmallScreen && (
+
        <div className="absolute inset-0 z-[-1] opacity-30 lg:opacity-100 background-svg-container top-left-svg"> {/* Left SVG */}
         <svg width="100%" height="100%" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg" className="scale-150 sm:scale-100" preserveAspectRatio="xMidYMid slice" style={{ transform: 'translateZ(0)', willChange: 'auto' }} role="img" aria-label="Abstract AI network background with pulsating nodes and dataflow lines">
           {/* All SVG graphical elements are decorative and complex. Using aria-hidden="true" on the entire SVG or the main groups is the most appropriate way to prevent screen readers from announcing their individual complex paths/circles. The overall SVG element already has role="img" and aria-label. */}
@@ -162,7 +184,9 @@ useEffect(() => {
             <circle cx="700" cy="700" r="18" fill="#4A6CF7" opacity="0.4" style={{ animation: 'svgGlowPulse 9s ease-in-out infinite', animationDelay: '3s' }} />
           </g>
         </svg>
-      </div>     
+      </div> 
+)}
+
       <div className="container mx-auto flex flex-col items-center justify-center px-2 lg:px-8 max-w-7xl">
         <div className="hero-section w-full">
 
@@ -441,6 +465,8 @@ useEffect(() => {
       
           {/* AI-Themed Background Elements - TopRight */}
             {/* ADDED background-svg-container class for initial hiding */}
+                  {!isSmallScreen && (
+
             <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100 background-svg-container top-right-svg">
               <svg width="450" height="556" viewBox="0 0 450 556" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decorative neural network and circuit pattern in background">
                 <defs>
@@ -491,7 +517,8 @@ useEffect(() => {
                 </g>
               </svg>
             </div>
-            {/* BottomLeftAI-ThemedBackgroundElements */}
+
+)}
             {/* ADDED background-svg-container class for initial hiding */}
             <div className="absolute bottom-0 left-0 z-[-1] opacity-30 lg:opacity-100 background-svg-container bottom-left-svg">
               <svg width="364" height="201" viewBox="0 0 364 201" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decorative dataflow and machine learning pattern in background">
@@ -521,6 +548,10 @@ useEffect(() => {
                   <circle cx="253" cy="72" r="3" fill="#10B981" opacity="0.8"  />
                   <circle cx="195" cy="85" r="3" fill="#F59E0B" opacity="0.8" />
                   {/* Connection Lines to Data Points */}
+
+      {!isSmallScreen && (
+<>
+                  
                   <path d="M220 63L190 45M220 63L210 35M220 63L240 40M220 63L250 70M220 63L195 85" stroke="url(#paint4_connections)" strokeWidth="1" opacity="0.4" />
                   {/* Machine Learning Pattern */}
                   <rect x="50" y="120" width="80" height="40" rx="5" fill="none" stroke="url(#paint5_ml_pattern)" strokeWidth="1" opacity="0.4" />
@@ -531,6 +562,10 @@ useEffect(() => {
                   <circle cx="70" cy="150" r="2" fill="#10B981" className="svg-animated-element" style={{ animation: 'gentleStrikeReverse 4s ease-in-out infinite', animationDelay: '1.5s' }} />
                   <circle cx="90" cy="145" r="2" fill="#F59E0B"  className="svg-animated-element" style={{ animation: 'gentleStrike 4s ease-in-out infinite', animationDelay: '2s' }} />
                   <circle cx="110" cy="150" r="2" fill="#EF4444" className="svg-animated-element" style={{ animation: 'gentleStrikeReverse 4s ease-in-out infinite', animationDelay: '2.5s' }} />
+              </>
+              
+                )}
+                
                   {/* Algorithm Flow */}
                   <path d="M280 100L320 110L340 130L360 140" stroke="url(#paint6_algorithm)" strokeWidth="2" fill="none" opacity="0.6" />
                   {/* Algorithm Nodes */}

@@ -6,14 +6,19 @@ import Head from 'next/head';
 
 // Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
+
 
 function generateOGImageURL(params) {
   const baseURL = `${getBaseUrl()}/api/og`;
@@ -30,8 +35,8 @@ export const metadata = {
     description: "Learn about Do It With AI Tools, our mission to empower creators & businesses with AI insights, & the story behind building this smart AI-powered platform.",
     images: [{
       url: generateOGImageURL({
-        title: 'The Story of Do It With AI Tools — Mission, Vision & Goals',
-        description: 'Learn about the vision and mission behind doitwithai.tools, a platform dedicated to making powerful AI tools accessible to everyone.',
+        title: 'The Story of Do It With AI Tools — Our Mission to Empower Creators & Businesses with AI Insights',
+        // description: 'Learn about the vision and mission behind doitwithai.tools, a platform dedicated to making powerful AI tools accessible to everyone.',
         category: 'Our Mission',
         ctaText: 'Discover Our Story',
         features: 'Our Story,Our Vision,Our Values',
@@ -49,8 +54,8 @@ export const metadata = {
     title: "About Do It With AI Tools – Our Story, Mission, and Vision",
     description: "Learn about Do It With AI Tools, our mission to empower creators & businesses with AI insights, & the story behind building this smart AI-powered platform.",
     image: generateOGImageURL({
-      title: '',
-      description: 'Learn about the vision and mission behind doitwithai.tools, a platform dedicated to making powerful AI tools accessible to everyone.',
+      title: 'The Story of Do It With AI Tools — Our Mission to Empower Creators & Businesses with AI Insights',
+      // description: 'Learn about the vision and mission behind doitwithai.tools, a platform dedicated to making powerful AI tools accessible to everyone.',
       category: 'Our Mission',
       ctaText: 'Discover Our Story',
         features: 'Our Story,Our Vision,Our Values',

@@ -16,12 +16,16 @@ export const revalidate = 3600; // Revalidate every 1 hour
 
 // Enhanced utility functions
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';
-  }
+  
   return 'http://localhost:3000';
 }
 
@@ -83,57 +87,57 @@ async function getData(schemaType, pageSlugPrefix) {
 
 // --- SEO Metadata (Next.js App Router Standard) ---
 export const metadata = {
-  title: "Best AI Tools & Reviews for SEO & Productivity | doitwithai.tools",
-  description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
-  author: "Sufian Mustafa",
-  openGraph: {
-    title: "Best AI Tools & Reviews for SEO & Productivity | doitwithai.tools",
-    description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
-    url: `${getBaseUrl()}/ai-tools`,
-    type: "website",
-    images: [{
-      url: generateOGImageURL({
-        title: 'Boost Your Productivity with AI',
-        description: 'Discover AI tools that streamline your workflow and supercharge your daily tasks.',
-        category: 'AI Tools',
-        ctaText: 'Explore AI Tools',
-        features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
-      }),
-      width: 1200,
-      height: 630,
-      alt: 'Best AI Tools for Productivity',
-    }],
-    siteName: "doitwithai.tools",
-    locale: 'en_US',
-  },
-  twitter: {
-    card: "summary_large_image",
-    domain: "doitwithai.tools",
-    url: `${getBaseUrl()}/ai-tools`,
-    title: "Best AI Tools & Reviews for SEO & Productivity | doitwithai.tools",
-    description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
-    image: generateOGImageURL({
-      title: 'Boost Your Productivity with AI',
-      description: 'Discover AI tools that streamline your workflow and supercharge your daily tasks.',
-      category: 'AI Tools',
-      ctaText: 'Explore AI Tools',
-      features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
-    }),
-  },
-  alternates: {
-    canonical: `${getBaseUrl()}/ai-tools`,
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
+  title: "Best AI Tools & Reviews for SEO & Productivity | doitwithai.tools",
+  description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
+  author: "Sufian Mustafa",
+  openGraph: {
+    title: "Best AI Tools & Reviews for SEO & Productivity | doitwithai.tools",
+    description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
+    url: `${getBaseUrl()}/ai-tools`,
+    type: "website",
+    images: [{
+      url: generateOGImageURL({
+        title: 'Find the best AI tools and reviews to supercharge your SEO and productivity.',
+        // description field is removed
+        category: 'AI Tools',
+        ctaText: 'Explore AI Tools',
+        features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
+      }),
+      width: 1200,
+      height: 630,
+      alt: 'Best AI Tools for Productivity',
+    }],
+    siteName: "doitwithai.tools",
+    locale: 'en_US',
+  },
+  twitter: {
+    card: "summary_large_image",
+    domain: "doitwithai.tools",
+    url: `${getBaseUrl()}/ai-tools`,
+    title: "Best AI Tools & Reviews for SEO & Productivity | doitwithai.tools",
+    description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
+    image: generateOGImageURL({
+      title: 'Find the best AI tools and reviews to supercharge your SEO and productivity.',
+      // description field is removed
+      category: 'AI Tools',
+      ctaText: 'Explore AI Tools',
+      features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
+    }),
+  },
+  alternates: {
+    canonical: `${getBaseUrl()}/ai-tools`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default async function Page() {

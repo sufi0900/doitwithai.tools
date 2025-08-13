@@ -4,8 +4,8 @@ import { urlForImage } from "@/sanity/lib/image";
 import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
 import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
 import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
-import SimplifiedOptimizedImage from "@/app/ai-seo/[slug]/SimplifiedOptimizedImage";
-import { ArrowRight } from 'lucide-react';
+// import SimplifiedOptimizedImage from "@/app/ai-seo/[slug]/SimplifiedOptimizedImage";
+import { ArrowRight, Rocket } from 'lucide-react';
 
 const PortableTextComponents = () => {
   const GifComponent = ({ value }) => {
@@ -154,22 +154,22 @@ if (!fileUrl) return (
     );
   };
   
-  const imgdesc ={
-    block: {  
-      normal: ({ children }) => (
-        <p className="hover:text-gray-950 dark:hover:text-gray-50 mb-4 mt-1 text-lg  font-medium leading-relaxed text-gray-800 dark:text-gray-300  transition-all duration-300 ease-in-out">
-    {children}
-  </p>
-      ),
-     
-      a: ({ children }) => (
-        <a  className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
-          {children}
-        </a>
-      )
-    },
+const imgdesc = {
+  block: {
+    normal: ({ children }) => (
+      <p className="hover:text-gray-950 dark:hover:text-gray-50 mb-2 sm:mb-4 mt-1 text-sm sm:text-base font-medium leading-relaxed text-gray-800 dark:text-gray-300 transition-all duration-300 ease-in-out">
+        {children}
+      </p>
+    ),
+    a: ({ children }) => (
+      <a className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-sm sm:text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+        {children}
+      </a>
+    )
+  },
+}
    
-  }
+
 
  const portableTextComponents = {
     types: {
@@ -179,34 +179,34 @@ if (!fileUrl) return (
 
 image: ({ value, index }) => {
   const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
-  
-  // Determine if this should be priority loaded (first 2-3 images)
   const isPriority = index < 3;
-  
-  // Generate blur placeholder for better UX
-  const blurDataURL = value?.asset ? 
-    urlForImage(value.asset).width(20).height(20).blur(10).url() : 
-    undefined;
+  const blurDataURL = value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined;
 
   return (
-    <div className="w-full my-8 lg:my-12">
+    <div className="w-full my-6 sm:my-8 lg:my-12">
       <div className="relative group">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-xl hover:shadow-2xl transition-all duration-300 ease-out">
+          
+          {/* Enhanced gradient border */}
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 p-[1px]">
-            <div className="w-full h-full rounded-2xl bg-white dark:bg-gray-900" />
+            <div className="w-full h-full rounded-2xl bg-white dark:bg-gray-900"/>
           </div>
           
-          <div className="relative p-3 lg:p-4">
+          {/* Responsive padding */}
+          <div className="relative p-2 sm:p-3 lg:p-4">
             <figure className="relative">
-              <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                <div className="bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">
+              
+              {/* Zoom indicator - hidden on mobile */}
+              <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+                <div className="bg-black/70 backdrop-blur-sm text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
                   </svg>
                   Click to zoom
                 </div>
               </div>
-              
+
+              {/* Image container */}
               <div className="relative overflow-hidden rounded-xl">
                 <OptimizedImage
                   src={imageUrl}
@@ -214,25 +214,24 @@ image: ({ value, index }) => {
                   className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
                   priority={isPriority}
                   blurDataURL={blurDataURL}
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
                 />
-                
-                <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"/>
               </div>
-              
+
+              {/* FIXED: Enhanced image description with proper mobile sizing */}
               {value.imageDescription && (
-                <figcaption className="mt-4 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-                  <div className="flex items-start gap-3">
+                <figcaption className="mt-3 sm:mt-4 px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    {/* Icon - smaller on mobile */}
                     <div className="flex-shrink-0 mt-0.5">
-                      <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                       </svg>
                     </div>
-                    <div className="customanchor">
-                      <PortableText 
-                        value={value.imageDescription} 
-                        components={imgdesc} 
-                      />
+                    {/* Caption text - properly sized for mobile */}
+                    <div className="customanchor text-sm sm:text-base">
+                      <PortableText value={value.imageDescription} components={imgdesc}/>
                     </div>
                   </div>
                 </figcaption>
@@ -241,7 +240,8 @@ image: ({ value, index }) => {
           </div>
         </div>
         
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
+        {/* Background glow effect */}
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"/>
       </div>
     </div>
   );
@@ -294,36 +294,35 @@ image: ({ value, index }) => {
       ),
   
 // Modified h2 component
-h2: ({ children }) => {
-  return (
-    <h2 className="mb-6 text-2xl font-bold text-gray-800 dark:text-white md:text-3xl lg:text-4xl">
+  // H2 - Primary section headings
+  h2: ({ children }) => (
+    <h2 className="mb-5 text-xl font-bold text-gray-800 dark:text-white sm:text-2xl md:text-2xl lg:text-3xl xl:text-3xl">
       {children}
     </h2>
-  );
-},
+  ),
 
-// Modified h3 component
-h3: ({ children }) => {
-  return (
-    <h3 className="mb-4 text-xl font-semibold text-gray-700 dark:text-gray-200 md:text-2xl lg:text-3xl">
+  // H3 - Subsection headings  
+  h3: ({ children }) => (
+    <h3 className="mb-4 text-lg font-semibold text-gray-700 dark:text-gray-200 sm:text-xl md:text-xl lg:text-2xl xl:text-2xl">
       {children}
     </h3>
-  );
-},
+  ),
 
-      // Heading 4
-      h4: ({ children }) => (
-        <h4 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 sm:text-2xl lg:text-xl xl:text-2xl">
-          {children}
-        </h4>
-      ),
-    
-      // Heading 5
-      h5: ({ children }) => (
-        <h5 className="mb-4 text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">
-          {children}
-        </h5>
-      ),
+  // H4 - Sub-subsection headings
+  h4: ({ children }) => (
+    <h4 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-4 text-base font-bold leading-tight text-gray-700 dark:text-gray-300 sm:text-lg md:text-lg lg:text-xl xl:text-xl">
+      {children}
+    </h4>
+  ),
+
+  // H5 - Minor headings
+  h5: ({ children }) => (
+    <h5 className="mb-4 text-sm font-semibold leading-tight text-gray-600 dark:text-gray-400 sm:text-base md:text-base lg:text-lg xl:text-lg">
+      {children}
+    </h5>
+  ),
+
+
       h6: ({ children }) => (
         <div className="relative z-10 mb-10 overflow-hidden rounded-md bg-primary bg-opacity-10 p-8 md:p-9 lg:p-8 xl:p-9">
           <h4 className="text-center  text-lg sm:text-xl lg:text-2xl font-medium leading-relaxed  dark:text-gray-400 text-body-color">
@@ -511,43 +510,49 @@ h3: ({ children }) => {
       },
     marks: {
       strong: ({ children }) => (
-        <strong className=" text-black  dark:text-white">{children}</strong>
+        <strong
+        
+        className=" text-black  dark:text-white"
+        >{children}</strong>
       ),
       em: ({ children }) => <em>{children}</em>,
     },
-       button: ({ value }) => {
-  const { text, link } = value;
-  return (
-    <div className="btn1 mb-6 mt-6 flex justify-center">
+
+marks: {
+  link: ({ children, value }) => {
+    const rel = !value.href.startsWith('/') ? 'noreferrer noopener' : undefined;
+    return (
       <a
-        href={link}
-        className="relative inline-flex items-center gap-2 rounded-xl border-2 border-white bg-blue-700 px-6 py-3 text-xl font-semibold text-white shadow-lg transition-all duration-500 ease-in-out hover:scale-105 hover:bg-gradient-to-r hover:from-red-500 hover:via-purple-500 hover:to-blue-500 focus:outline-none focus:ring-4 focus:ring-pink-300"
-        style={{ color: '#ffffff' }} // <-- Force white text in both themes
+        href={value.href}
+        rel={rel}
+        className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px]"
       >
-        {text}
-        <span className="flex btn2 h-8 w-8 items-center justify-center rounded-full border border-white bg-white/20 p-2 shadow-md transition-all duration-300 hover:bg-white/30">
-          <ArrowRight className="h-5 w-5 text-white" />
-        </span>
+        {children}
       </a>
+    );
+  },
+},
 
-      {/* Animation Styling */}
-      <style jsx>{`
-        .btn1 a {
-          animation: pulse 1s infinite alternate;
-        }
 
-        @keyframes pulse {
-          0% {
-            box-shadow: 0 0 10px rgba(255, 105, 180, 0.4);
-          }
-          100% {
-            box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
-          }
-        }
-      `}</style>
-    </div>
+button: ({ value }) => {
+  const { text, link } = value;
+
+  return (
+    <div className="flex justify-center mb-6 mt-6">
+  <a
+    href={link}
+    className="press-button w-full sm:w-auto inline-flex items-center justify-center min-h-[52px] px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg sm:text-xl font-semibold tracking-wide rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:scale-[1.02] no-shift"
+    aria-label={text}
+    itemProp="url"
+  >
+    {text}
+    <Rocket className="ml-2 " />
+  </a>
+</div>
+
   );
 },
+
 
   };
 

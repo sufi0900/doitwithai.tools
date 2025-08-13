@@ -27,26 +27,30 @@ export default function MediumCard({
           transform: "translateY(-4px) scale(1.02)",
           boxShadow: "0 20px 40px -12px rgba(37, 99, 235, 0.25)",
         },
-        height: { xs: "auto", lg: "340px" },
+        height: { xs: "auto", lg: "329px" },
         borderRadius: "12px",
         overflow: "hidden",
-        position: "relative",
+        position: "relative", 
         background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
         border: "1px solid #e2e8f0",
         display: "flex",
-        flexDirection: "column",
+        // The key change: default to `flex-row` and switch to `flex-col` on `lg` screens.
+        flexDirection: { xs: "row", lg: "column" },
       }}
       className="group cursor-pointer shadow-md hover:shadow-xl dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
     >
-      <Link href={slug} className="h-full flex flex-col">
-        {/* Image Section - Fixed height to ensure layout consistency */}
+      {/* The Link container now also uses the same responsive flex direction */}
+      <Link href={slug} className="h-full flex flex-row lg:flex-col">
+        {/* Image Section */}
         <Box 
           position="relative" 
           sx={{ 
             overflow: "hidden",
             background: "linear-gradient(135deg, #2563eb10, #8b5cf610)",
             flexShrink: 0,
-            height: { xs: "180px", md: "140px" },
+            // Responsive dimensions for the image to fit both layouts
+            height: { xs: "100%", lg: "140px" },
+            width: { xs: "140px", lg: "100%" },
           }}
         >
           <div className="w-full h-full">
@@ -64,14 +68,14 @@ export default function MediumCard({
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
 
-          {/* Enhanced Tag - Wrapped in Link for correct behavior */}
+          {/* Enhanced Tag */}
           {tags && tags.length > 0 && (
             <Link 
               href={tags[0].link} 
-              onClick={(e) => e.stopPropagation()} // Stop propagation to prevent card link from being triggered
+              onClick={(e) => e.stopPropagation()}
               className="absolute right-3 top-3 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold capitalize text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:scale-105 backdrop-blur-sm border border-white/20"
             >
-              <LocalOfferIcon style={{fontSize:"10px"}} />   
+              <LocalOfferIcon style={{fontSize:"10px"}} />  
               {tags[0].name}
             </Link>
           )}
@@ -80,7 +84,7 @@ export default function MediumCard({
           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
         </Box>
 
-        {/* Content Section - Optimized for fixed height with better space distribution */}
+        {/* Content Section */}
         <CardContent 
           className="flex-1 flex flex-col p-4"
           sx={{ 
@@ -88,19 +92,21 @@ export default function MediumCard({
             display: "flex",
             flexDirection: "column",
             flex: 1,
-            minHeight: 0, // Important for flex children
+            minHeight: 0,
+            // Content is spaced correctly for both layouts
+            justifyContent: { xs: "space-between", lg: "flex-start" },
           }}
         >
-          {/* Title - Clickable with hover effects */}
+          {/* Title */}
           <div className="mb-3">
             <h5 className="line-clamp-2 text-base font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 min-h-[2.4rem] lg:min-h-[3rem]">
               {title}
             </h5>
           </div>
 
-          {/* Overview - Takes available space */}
+          {/* Overview */}
           <div className="flex-1 mb-3 min-h-0">
-            <p className="line-clamp-2 lg:line-clamp-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-300">
+            <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-300">
               {overview}
             </p>
           </div>
@@ -121,7 +127,7 @@ export default function MediumCard({
                   </p>
                 </div>
                 
-                <div className="h-3 bg-gray-300 dark:bg-gray-600" />
+                <div className="w-px h-3 bg-gray-300 dark:bg-gray-600" />
                 
                 <div className="flex items-center gap-1.5">
                   <div className="p-1 rounded-full bg-green-50 dark:bg-green-900/30 group-hover:bg-green-100 dark:group-hover:bg-green-800/50 transition-colors duration-300">
@@ -136,7 +142,7 @@ export default function MediumCard({
                 </div>
               </div>
 
-              {/* Read indicator - appears on hover, just like the smaller card */}
+              {/* Read indicator */}
               <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <span className="text-xs font-medium">Read</span>
                 <svg 

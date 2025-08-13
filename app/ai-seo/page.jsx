@@ -27,11 +27,17 @@ export const revalidate = 3600;
 const SUBCATEGORIES_LIMIT = 2;
 const BLOGS_PAGE_LIMIT = 5;
 
-// Unified utility functions for consistency
 function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
+  
   return 'http://localhost:3000';
 }
 
@@ -97,62 +103,59 @@ async function getData(schemaType, pageSlugPrefix) {
 }
 
 export const metadata = {
-  title: "Double Your SEO Results via AI Tools & Strategies | doitwithai.tools",
-  description: "Discover how AI tools are revolutionizing SEO, replacing outdated methods with smart strategies that boost your rankings & improve your online presence.",
-  author: "Sufian Mustafa",
-  keywords: "AI SEO, digital marketing, AI for content, keyword research, on-page SEO, off-page SEO, link building, AI strategies",
-  openGraph: {
-    title: "Double Your SEO Results via AI Tools & Strategies | doitwithai.tools",
-    description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
-    url: `${getBaseUrl()}/ai-seo`,
-    type: "website",
-    images: [{
-      url: generateOGImageURL({
-        title: 'Master AI for SEO & Marketing',
-        description: 'Boost your rankings, automate content, and dominate search results with our AI insights.',
-        category: 'AI SEO',
-        ctaText: 'Explore AI SEO Tools',
-        features: 'AI-Powered SEO,Content Automation,Data-Driven Rankings'
-      }),
-      width: 1200,
-      height: 630,
-      alt: 'Double Your SEO Results via AI Tools & Strategies | doitwithai.tools',
-    }],
-    siteName: "doitwithai.tools",
-    locale: 'en_US',
-  },
-  twitter: {
-    card: "summary_large_image",
-    site: "@doitwithai",
-    creator: "@doitwithai",
-    domain: "doitwithai.tools",
-    url: `${getBaseUrl()}/ai-seo`,
-    title: "Double Your SEO Results via AI Tools & Strategies | doitwithai.tools",
-    description: "AI is revolutionizing how we approach SEO and digital marketing, making it smarter, faster, and more effective! In our blog, you'll find the knowledge and tools necessary to successfully integrate AI into your SEO and marketing strategies.",
-    image: generateOGImageURL({
-      title: 'Master AI for SEO & Marketing',
-      description: 'Boost your rankings, automate content, and dominate search results with our AI insights.',
-      category: 'AI SEO',
-      ctaText: 'Explore AI SEO Tools',
-      features: 'AI-Powered SEO,Content Automation,Data-Driven Rankings'
-    }),
-  },
-  alternates: {
-    canonical: `${getBaseUrl()}/ai-seo`,
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
+  title: "Double Your SEO Results via AI Tools & Strategies | doitwithai.tools",
+  description: "Discover how AI tools are revolutionizing SEO, replacing outdated methods with smart strategies that boost your rankings & improve your online presence.",
+  author: "Sufian Mustafa",
+  keywords: "AI SEO, digital marketing, AI for content, keyword research, on-page SEO, off-page SEO, link building, AI strategies",
+  openGraph: {
+    title: "Double Your SEO Results via AI Tools & Strategies | doitwithai.tools",
+    url: `${getBaseUrl()}/ai-seo`,
+    type: "website",
+    images: [{
+      url: generateOGImageURL({
+        title: 'Revolutionize your SEO with AI tools that boost rankings and automate content.',
+        // description field is removed
+        category: 'AI SEO',
+        ctaText: 'Explore AI SEO Tools',
+        features: 'AI-Powered SEO,Content Automation,Data-Driven Rankings'
+      }),
+      width: 1200,
+      height: 630,
+      alt: 'Double Your SEO Results via AI Tools & Strategies | doitwithai.tools',
+    }],
+    siteName: "doitwithai.tools",
+    locale: 'en_US',
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@doitwithai",
+    creator: "@doitwithai",
+    domain: "doitwithai.tools",
+    url: `${getBaseUrl()}/ai-seo`,
+    title: "Double Your SEO Results via AI Tools & Strategies | doitwithai.tools",
+    image: generateOGImageURL({
+      title: 'Revolutionize your SEO with AI tools that boost rankings and automate content.',
+      // description field is removed
+      category: 'AI SEO',
+      ctaText: 'Explore AI SEO Tools',
+      features: 'AI-Powered SEO,Content Automation,Data-Driven Rankings'
+    }),
+  },
+  alternates: {
+    canonical: `${getBaseUrl()}/ai-seo`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
-
 
 export default async function Page() {
   const schemaType = "seo";

@@ -37,7 +37,7 @@ export default function HomeBigCard({
           transform: "translateY(-8px) scale(1.02)",
           boxShadow: "0 25px 50px -12px rgba(37, 99, 235, 0.25)",
         },
-        height: { xs: "auto", lg: "auto" }, // Allow dynamic height
+                height: { xs: "auto", lg: "680px" }, 
         borderRadius: "16px", // More modern rounded corners
         overflow: "hidden",
         position: "relative",
