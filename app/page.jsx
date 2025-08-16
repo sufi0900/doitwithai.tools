@@ -265,33 +265,36 @@ export default async function Page() {
     };
   }
 
-  function organizationSchema() {
-    return {
-      __html: `{
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "doitwithai.tools",
-        "alternateName": "Do It With AI Tools",
-        "url": "${getBaseUrl()}",
-        "logo": "${getBaseUrl()}/logoForHeader.png",
-        "description": "doitwithai.tools is an AI-focused content hub empowering creators, developers, marketers, and entrepreneurs with accessible, actionable AI knowledge and resources to boost productivity and SEO.",
-        "foundingDate": "2024",
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "contactType": "customer service",
-          "email": "sufianmustafa0900@gmail.com",
-          "url": "${getBaseUrl()}/contact",
-          "areaServed": "Worldwide",
-          "availableLanguage": ["en"]
-        },
-        "sameAs": [
-          "https://twitter.com/doitwithai",
-          "https://www.facebook.com/doitwithai",
-          "https://www.linkedin.com/company/doitwithai"
-        ]
-      }`
-    };
-  }
+function organizationSchema() {
+  return {
+    __html: `{
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "doitwithai.tools",
+      "alternateName": "Do It With AI Tools",
+      "url": "${getBaseUrl()}",
+      "logo": "${getBaseUrl()}/logoForHeader.png",
+      "description": "doitwithai.tools is an AI-focused content hub empowering creators, developers, marketers, and entrepreneurs with accessible, actionable AI knowledge and resources to boost productivity and SEO.",
+      "foundingDate": "2024",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "email": "sufianmustafa0900@gmail.com",
+        "url": "${getBaseUrl()}/contact",
+        "areaServed": "Worldwide",
+        "availableLanguage": ["en"]
+      },
+      "sameAs": [
+        "https://x.com/doitwithaitools",
+        "https://www.facebook.com/profile.php?id=61579751720695&mibextid=ZbWKwL",
+        "https://www.linkedin.com/company/do-it-with-ai-tools",
+        "https://www.pinterest.com/doitwithai/",
+        "https://www.tiktok.com/@doitwithai.tools",
+        "https://www.youtube.com/@doitwithaitools"
+      ]
+    }`
+  };
+}
 
   function breadcrumbSchema() {
     return {

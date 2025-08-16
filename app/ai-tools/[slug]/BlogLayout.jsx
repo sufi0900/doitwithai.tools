@@ -1,113 +1,114 @@
-// BlogLayout which is responsible for displaying the article content
+  // BlogLayout which is responsible for displaying the article content
 
-"use client"
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import BlogHeader from './BlogHeader';
-import TableOfContents from './TableOfContents';
-import TagsAndShare from './TagsAndShare';
-import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
-import { PortableText } from "@portabletext/react";
-import PortableTextComponents from './createPortableTextComponents';
-import ArticleHeader from './ArticleHeader';
-import StickyArticleNavbar from './StickyArticleNavbar';
-import Link from 'next/link';
-import Image from 'next/image';
-import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
-import CommentSection from './CommentSection'; // Adjust path as needed
+  "use client"
+  import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+  import BlogHeader from './BlogHeader';
+  import TableOfContents from './TableOfContents';
+  import TagsAndShare from './TagsAndShare';
+  import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
+  import { PortableText } from "@portabletext/react";
+  import PortableTextComponents from './createPortableTextComponents';
+  import ArticleHeader from './ArticleHeader';
+  import StickyArticleNavbar from './StickyArticleNavbar';
+  import Link from 'next/link';
+  import Image from 'next/image';
+  import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
+  import CommentSection from './CommentSection'; // Adjust path as needed
+  import { useCodeEnhancer } from './useCodeEnhancer';
 
-// Lazy load non-critical components
-const FAQSection = lazy(() => import('./FAQSection'));
-const RelatedPostsSection = lazy(() => import('./RelatedPostsSection'));
-const RelatedResources = lazy(() => import("@/app/free-ai-resources/RelatedResources"));
-const BlogSidebar = lazy(() => import("./BlogSidebar"));
-const RecentPost = lazy(() => import("@/components/RecentPost/RecentHome"));
+  // Lazy load non-critical components
+  const FAQSection = lazy(() => import('./FAQSection'));
+  const RelatedPostsSection = lazy(() => import('./RelatedPostsSection'));
+  const RelatedResources = lazy(() => import("@/app/free-ai-resources/RelatedResources"));
+  const BlogSidebar = lazy(() => import("./BlogSidebar"));
+  const RecentPost = lazy(() => import("@/components/RecentPost/RecentHome"));
 
-// Optimized component skeletons for lazy loaded components
-const ComponentSkeleton = ({ height = "200px", className = "" }) => (
-  <div className={`animate-pulse bg-gray-200/60 dark:bg-gray-700/60 rounded-lg ${className}`} style={{ height }}>
-    <div className="p-4 space-y-3">
-      <div className="h-4 bg-gray-300/80 dark:bg-gray-600/80 rounded w-3/4"></div>
-      <div className="h-4 bg-gray-300/80 dark:bg-gray-600/80 rounded w-1/2"></div>
-      <div className="h-4 bg-gray-300/80 dark:bg-gray-600/80 rounded w-2/3"></div>
+  // Optimized component skeletons for lazy loaded components
+  const ComponentSkeleton = ({ height = "200px", className = "" }) => (
+    <div className={`animate-pulse bg-gray-200/60 dark:bg-gray-700/60 rounded-lg ${className}`} style={{ height }}>
+      <div className="p-4 space-y-3">
+        <div className="h-4 bg-gray-300/80 dark:bg-gray-600/80 rounded w-3/4"></div>
+        <div className="h-4 bg-gray-300/80 dark:bg-gray-600/80 rounded w-1/2"></div>
+        <div className="h-4 bg-gray-300/80 dark:bg-gray-600/80 rounded w-2/3"></div>
+      </div>
     </div>
-  </div>
-);
+  );
 
-// Smart shimmer effect for progressive loading
-const SmartShimmer = ({ isLoading, children, fallback, delay = 0 }) => {
-  const [showFallback, setShowFallback] = useState(isLoading);
-  
-  useEffect(() => {
-    if (!isLoading) {
-      // Add small delay to prevent flash
-      const timer = setTimeout(() => setShowFallback(false), delay);
-      return () => clearTimeout(timer);
-    } else {
-      setShowFallback(true);
-    }
-  }, [isLoading, delay]);
-  
-  if (showFallback) {
-    return fallback;
-  }
-  
-  return children;
-};
-const useDeviceSize = () => {
-  const [isLargeDevice, setIsLargeDevice] = useState(false);
-  
-  useEffect(() => {
-    const checkDevice = () => {
-      setIsLargeDevice(window.innerWidth >= 1024); // lg breakpoint
-    };
+  // Smart shimmer effect for progressive loading
+  const SmartShimmer = ({ isLoading, children, fallback, delay = 0 }) => {
+    const [showFallback, setShowFallback] = useState(isLoading);
     
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
-  }, []);
-  
-  return isLargeDevice;
-};
-
-const BlogLayout = ({
-  data,
-  loading, // This should now rarely be true for the main article content itself
-  relatedPosts,
-  relatedPostsLoading,
-  relatedResources,
-  resourcesLoading,
-  schemaSlugMap,
-  imgdesc,
-}) => {
-  // KEY CHANGES for BlogLayout.js - useState declarations
-  const [showGlobalHeader, setShowGlobalHeader] = useState(true);
-  const [mounted, setMounted] = useState(false);
-  const [loadStage, setLoadStage] = useState(1);
-  const [contentReady, setContentReady] = useState(!!data); // Use !!data instead of !loading
-  const isLargeDevice = useDeviceSize();
-
-  // ADD this new state for preventing layout shift:
-  const [layoutReady, setLayoutReady] = useState(false);
-
-// Add this hook at the top of your component, after imports
-
-
-  // Memoize portable text components
-  const portableTextComponents = useMemo(() => {
-    const components = PortableTextComponents();
-    components.types.button = components.button; // Ensure custom button type is registered
-    return components;
-  }, []);
-
-  // KEY CHANGES for BlogLayout.js - main useEffect
-  useEffect(() => {
-    setMounted(true);
-    setLayoutReady(true); // Mark layout as ready immediately
+    useEffect(() => {
+      if (!isLoading) {
+        // Add small delay to prevent flash
+        const timer = setTimeout(() => setShowFallback(false), delay);
+        return () => clearTimeout(timer);
+      } else {
+        setShowFallback(true);
+      }
+    }, [isLoading, delay]);
     
-    // Mark content as ready if we have data
-    if (data && !loading) {
-      setContentReady(true);
+    if (showFallback) {
+      return fallback;
     }
+    
+    return children;
+  };
+  const useDeviceSize = () => {
+    const [isLargeDevice, setIsLargeDevice] = useState(false);
+    
+    useEffect(() => {
+      const checkDevice = () => {
+        setIsLargeDevice(window.innerWidth >= 1024); // lg breakpoint
+      };
+      
+      checkDevice();
+      window.addEventListener('resize', checkDevice);
+      return () => window.removeEventListener('resize', checkDevice);
+    }, []);
+    
+    return isLargeDevice;
+  };
+
+  const BlogLayout = ({
+    data,
+    loading, // This should now rarely be true for the main article content itself
+    relatedPosts,
+    relatedPostsLoading,
+    relatedResources,
+    resourcesLoading,
+    schemaSlugMap,
+    imgdesc,
+  }) => {
+    // KEY CHANGES for BlogLayout.js - useState declarations
+    const [showGlobalHeader, setShowGlobalHeader] = useState(true);
+    const [mounted, setMounted] = useState(false);
+    const [loadStage, setLoadStage] = useState(1);
+    const [contentReady, setContentReady] = useState(!!data); // Use !!data instead of !loading
+    const isLargeDevice = useDeviceSize();
+
+    // ADD this new state for preventing layout shift:
+    const [layoutReady, setLayoutReady] = useState(false);
+
+  // Add this hook at the top of your component, after imports
+
+
+    // Memoize portable text components
+    const portableTextComponents = useMemo(() => {
+      const components = PortableTextComponents();
+      components.types.button = components.button; // Ensure custom button type is registered
+      return components;
+    }, []);
+
+    // KEY CHANGES for BlogLayout.js - main useEffect
+    useEffect(() => {
+      setMounted(true);
+      setLayoutReady(true); // Mark layout as ready immediately
+      
+      // Mark content as ready if we have data
+      if (data && !loading) {
+        setContentReady(true);
+      }
 
     // Keep your existing scroll handlers...
     const handleScroll = () => {
@@ -254,7 +255,7 @@ const BlogLayout = ({
                   <div className="opacity-100"> {/* Always show content if we have data */}
                     <TableOfContents tableOfContents={data.tableOfContents} />
                     
-                    <div className="customanchor mb-4 mt-4 border-b-2 customanchor border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+                    <div className="mb-4 article-content mt-4 border-b-2 customanchor border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                       <PortableText value={data.content} components={portableTextComponents} />
                     </div>
 

@@ -241,78 +241,9 @@ export default function RecentPosts({ initialData = [] }) { // Accept initialDat
         </div>
 
 
-         <div className="relative  mt-10">
-          {/* Background decoration */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#2563eb]/5 to-purple-500/5 rounded-3xl"></div>
-          
-          <div className="relative bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl 
-                         border border-gray-200 dark:border-gray-700 p-8 md:p-12 text-center
-                         shadow-xl">
-            {/* CTA Content */}
-            <div className="max-w-3xl mx-auto">
-              <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-[#2563eb]/10 to-purple-500/10 
-                             rounded-full text-[#2563eb] dark:text-blue-400 text-sm font-medium mb-6">
-                <Users className="w-4 h-4 mr-2" />
-                Join 10,000+ AI Enthusiasts
-              </div>
+       
+         
 
-              <h3 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Ready to Master AI and 
-                <span className="text-[#2563eb] block md:inline md:ml-2">
-                  Transform Your Workflow?
-                </span>
-              </h3>
-
-              <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-                Discover comprehensive guides, cutting-edge tools, and proven strategies that help you 
-                leverage AI for better SEO, increased productivity, and business growth.
-              </p>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Link
-                  href="/blogs"
-                  className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] 
-                           hover:from-[#1d4ed8] hover:to-[#1e40af] text-white font-semibold rounded-xl
-                           shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 ease-out
-                           min-w-[200px] justify-center"
-                >
-                  <BookOpen className="w-5 h-5 mr-2 group-hover:animate-pulse" />
-                  Explore All Blogs
-                  <ArrowRight className="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" />
-                </Link>
-
-                <Link
-                  href="/free-ai-resources"
-                  className="group inline-flex items-center px-8 py-4 bg-white dark:bg-gray-700
-                           border-2 border-[#2563eb] text-[#2563eb] dark:text-blue-400 font-semibold rounded-xl
-                           hover:bg-[#2563eb] hover:text-white dark:hover:bg-blue-600 dark:hover:text-white
-                           shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out
-                           min-w-[200px] justify-center"
-                >
-                  <Sparkles className="w-5 h-5 mr-2 group-hover:animate-spin" />
-                  Free Resources
-                </Link>
-              </div>
-
-              {/* Trust indicators */}
-              <div className="flex flex-wrap justify-center items-center gap-6 mt-8 text-sm text-gray-500 dark:text-gray-400">
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  No spam, ever
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                  Weekly updates
-                </div>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                  100% Free content
-                </div>
-              </div>
-            </div>
-          </div>
-          </div>
       </div>
     </section>
   );

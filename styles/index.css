@@ -755,3 +755,55 @@ button[aria-label="Close modal"] {
   height: 8px;
   display: block !important;  
 }
+
+
+.sanity-code-input pre,
+.sanity-code-input code {
+  all: unset; /* The magic property! Resets all inherited styles. */
+  font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace; /* Re-apply font-family if unset breaks it */
+}
+/* Inline code styling for Sanity's default code marks */
+
+code {
+  @apply bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded  font-mono;
+  font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+}
+
+/* Code blocks within pre tags */
+pre code {
+  @apply bg-transparent text-inherit px-0 py-0 rounded-none;
+  display: block;
+  overflow-x: auto;
+}
+
+/* Pre element styling */
+pre {
+  @apply bg-gray-900 dark:bg-black text-gray-100 p-4 rounded-lg overflow-x-auto my-4;
+  font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+}
+
+/* Alternative dark theme for code blocks */
+.prose pre {
+  @apply bg-gray-900 border border-gray-700;
+}
+
+.prose code {
+  @apply bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded ;
+  font-weight: 500;
+}
+
+/* Ensure code doesn't break on small screens */
+code, pre {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 640px) {
+  pre {
+    @apply text-xs p-3;
+  }
+  
+  code {
+    @apply text-xs px-1 py-0.5;
+  }
+}

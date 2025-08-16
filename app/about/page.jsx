@@ -31,7 +31,7 @@ export const metadata = {
   description: "Learn about Do It With AI Tools, our mission to empower creators & businesses with AI insights, & the story behind building this smart AI-powered platform.",
   author: "Sufian Mustafa",
   openGraph: {
-    title: "",
+    title: "About Do It With AI Tools – Our Story, Mission, and Vision",
     description: "Learn about Do It With AI Tools, our mission to empower creators & businesses with AI insights, & the story behind building this smart AI-powered platform.",
     images: [{
       url: generateOGImageURL({
@@ -75,7 +75,7 @@ export default function AboutPage() {
         "@type": "AboutPage",
         "name": "About doitwithai.tools",
         "url": "${getBaseUrl()}/about",
-        "description": "Learn about doitwithai.tools - your comprehensive platform for mastering SEO with AI, exploring cutting-edge AI tools, learning AI coding, discovering monetization opportunities, and accessing free AI resources.",
+        "description": "Learn about Do It With AI Tools, our mission to empower creators & businesses with AI insights, & the story behind building this smart AI-powered platform.",
         "mainEntity": {
           "@type": "Organization",
           "name": "doitwithai.tools",
@@ -95,11 +95,14 @@ export default function AboutPage() {
             "areaServed": "Worldwide",
             "availableLanguage": ["en"]
           },
-          "sameAs": [
-            "https://twitter.com/doitwithai",
-            "https://www.facebook.com/doitwithai",
-            "https://www.linkedin.com/company/doitwithai"
-          ],
+        "sameAs": [
+        "https://x.com/doitwithaitools",
+        "https://www.facebook.com/profile.php?id=61579751720695&mibextid=ZbWKwL",
+        "https://www.linkedin.com/company/do-it-with-ai-tools",
+        "https://www.pinterest.com/doitwithai/",
+        "https://www.tiktok.com/@doitwithai.tools",
+        "https://www.youtube.com/@doitwithaitools"
+      ],
           "hasOfferCatalog": {
             "@type": "OfferCatalog",
             "name": "AI Tools and Resources",

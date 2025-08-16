@@ -151,10 +151,13 @@ export default function CategoriesPage() {
           "availableLanguage": ["en"]
         },
         "sameAs": [
-          "https://twitter.com/doitwithai",
-          "https://www.facebook.com/doitwithai",
-          "https://www.linkedin.com/company/doitwithai"
-        ]
+        "https://x.com/doitwithaitools",
+        "https://www.facebook.com/profile.php?id=61579751720695&mibextid=ZbWKwL",
+        "https://www.linkedin.com/company/do-it-with-ai-tools",
+        "https://www.pinterest.com/doitwithai/",
+        "https://www.tiktok.com/@doitwithai.tools",
+        "https://www.youtube.com/@doitwithaitools"
+      ]
       }`
     };
   }

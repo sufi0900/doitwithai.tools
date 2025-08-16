@@ -5,6 +5,7 @@ import React from "react";
 import { NextSeo } from "next-seo";
 import Script from "next/script";
 import Head from 'next/head';
+import Link from "next/link";
 
 function getBaseUrl() {
   // For production, always use your custom domain
@@ -280,8 +281,11 @@ const AuthorPage = () => {
           Through <span className="font-semibold text-blue-600 dark:text-blue-400">Do It With AI Tools</span>, my mission is to democratize access to AI-powered strategies and tools that drive measurable business results. This platform serves as a comprehensive resource hub where professionals can discover, learn, and implement cutting-edge AI solutions for SEO, productivity, and digital growth.
         </p>
         <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-300 mt-4">
-          Every resource, guide, and tool recommendation is thoroughly tested and validated through real-world application. This commitment to quality and practical value ensures that visitors can confidently implement these strategies to achieve their professional objectives. My vision is to bridge the gap between AI innovation and practical business application, making advanced technology accessible to professionals at every level.
+    Every resource, guide, and tool recommendation here is grounded in hands-on testing and real-world application. That emphasis on practicality ensures you get actionable steps that work — and that you can rely on to move projects forward. My vision remains clear: bridge the gap between AI innovation and everyday business use so professionals at every level can benefit.
         </p>
+         <p className="text-lg leading-relaxed text-gray-600 dark:text-gray-300 mt-4">
+    Thanks for being here with me. If you're ready to put AI to work for your projects, <Link href="/contact" className="font-semibold text-blue-600 dark:text-blue-400 underline hover:no-underline">let's build together</Link> — explore the latest guides, try the tools, or reach out and we’ll make something useful together.
+  </p>
       </section>
     </div>
 

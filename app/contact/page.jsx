@@ -102,11 +102,14 @@ function jsonLdMarkup() {
           "areaServed": "Worldwide",
           "serviceType": ["AI Tools Consultation", "SEO Strategy", "Web Development Support", "AI Automation Guidance"]
         },
-        "sameAs": [
-          "https://twitter.com/doitwithai",
-          "https://linkedin.com/company/doitwithai",
-          "https://facebook.com/doitwithai"
-        ]
+      "sameAs": [
+        "https://x.com/doitwithaitools",
+        "https://www.facebook.com/profile.php?id=61579751720695&mibextid=ZbWKwL",
+        "https://www.linkedin.com/company/do-it-with-ai-tools",
+        "https://www.pinterest.com/doitwithai/",
+        "https://www.tiktok.com/@doitwithai.tools",
+        "https://www.youtube.com/@doitwithaitools"
+      ]
       },
       "breadcrumb": {
         "@type": "BreadcrumbList",

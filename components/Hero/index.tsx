@@ -467,8 +467,7 @@ useEffect(() => {
             {/* ADDED background-svg-container class for initial hiding */}
                   {!isSmallScreen && (
 
-            <div className="absolute right-0 top-0 z-[-1] opacity-30 lg:opacity-100 background-svg-container top-right-svg">
-              <svg width="450" height="556" viewBox="0 0 450 556" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decorative neural network and circuit pattern in background">
+<div className="absolute right-0 top-16 z-[-1] opacity-30 lg:opacity-100 background-svg-container top-right-svg">              <svg width="450" height="556" viewBox="0 0 450 556" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decorative neural network and circuit pattern in background">
                 <defs>
                   {/* Gradients */}
                  
