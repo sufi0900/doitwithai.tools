@@ -5,7 +5,8 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { CalendarMonth, ArrowForward } from "@mui/icons-material";
 import { Box, Card, CardContent } from "@mui/material";
-import OptimizeImage from "@/components/Blog/ImageOptimizer";
+import Image from "next/image";
+import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
 
 export default function CardComponent({
   publishedAt,
@@ -57,17 +58,16 @@ export default function CardComponent({
         >
           <div className="w-full h-full">
             <div className="absolute inset-0 h-full w-full transition-all duration-500 ease-out group-hover:scale-110">
-              <OptimizeImage
-                src={mainImage}
-                alt={title}
-                width={500}
-                height={300}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-              />
+            <OptimizedImage
+  src={urlForImage(mainImage).width(800).height(600).fit("crop").auto("format").url()}
+  alt={title}
+  fill
+  quality={80}
+  priority={false} // set to true only for above-the-fold images
+  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+  style={{ objectFit: "cover" }}
+/>
+
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>

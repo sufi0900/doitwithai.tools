@@ -6,7 +6,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import CardComponent from "@/components/Card/Page";
 import SkelCard from "@/components/Blog/Skeleton/Card";
 import { urlForImage } from "@/sanity/lib/image";
-import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
+// import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 // Corrected usePageCache import path
 import { usePageCache } from '@/React_Query_Caching/usePageCache'; 

@@ -234,7 +234,7 @@
             {/* Main Article Content - Priority for FCP */}
             <BlogHeader data={data} imgdesc={imgdesc} />
             
-            <div className="customanchor mb-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
+            <div className=" mb-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
             
             <div className="w-full lg:w-8/12">
               <div className="mb-10 mt-4 w-full overflow-hidden rounded article-content">
@@ -255,7 +255,7 @@
                   <div className="opacity-100"> {/* Always show content if we have data */}
                     <TableOfContents tableOfContents={data.tableOfContents} />
                     
-                    <div className="mb-4 article-content mt-4 border-b-2 customanchor border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
+                    <div className="mb-4  mt-4 border-b-2  border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                       <PortableText value={data.content} components={portableTextComponents} />
                     </div>
 

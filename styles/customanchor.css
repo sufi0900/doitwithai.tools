@@ -1,4 +1,53 @@
+/* Custom anchor styles */
+.customanchor a {
+  /* Use a consistent font weight and color */
+  font-weight: 600;
+  color: #1e40af; /* A dark blue for light mode */
+  text-decoration: none; /* Remove the default underline */
+  position: relative; /* Needed for the pseudo-element */
+  transition: all 0.2s ease-in-out;
+  /* Add some padding bottom to prevent overlap with descenders */
+  padding-bottom: 2px;
+}
 
+/* Create a smooth, continuous underline with a pseudo-element */
+.customanchor a::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; /* Position it below the text baseline, not at bottom: 0 */
+  left: 0;
+  width: 100%;
+  height: 1.5px; /* Adjust the thickness of the underline */
+  background-color: currentColor; /* Matches the text color */
+  transition: all 0.2s ease-in-out;
+  /* Ensure the underline doesn't get cut off */
+  border-radius: 0.5px;
+}
+
+/* Custom anchor hover styles */
+.customanchor a:hover {
+  color: #1d4ed8;
+}
+
+/* Animate the underline on hover instead of removing it */
+.customanchor a:hover::after {
+  height: 0; /* Make it slightly thicker on hover */
+}
+
+/* Dark mode-specific styles for anchors */
+.dark .customanchor a {
+  color: #60a5fa; /* A lighter blue for dark mode */
+}
+
+/* Dark mode hover styles */
+.dark .customanchor a:hover {
+  color: #93c5fd;
+}
+
+/* Dark mode hover effect */
+.dark .customanchor a:hover::after {
+  height: 0;
+}
 
 .nonebtn a:hover, .nonebtn link:hover, .nonebtn:hover{
   background-color: none;

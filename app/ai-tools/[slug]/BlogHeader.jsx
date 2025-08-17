@@ -1,87 +1,174 @@
-import React from "react";
+import React, { useMemo } from "react";
 import Image from "next/image";
 import { urlForImage } from "@/sanity/lib/image";
 import { PortableText } from "@portabletext/react";
 import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
 
-const ArticleHeader = ({ data, imgdesc }) => {
-  // If data is not available, return a minimal fallback
-  if (!data || !data.title || !data.mainImage) {
-    return (
-      <div className="w-full">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="mb-4 text-xl font-bold leading-tight text-gray-800 dark:text-gray-200 text-left sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl">
-            Loading Article...
-          </h1>
-          <div className="w-16 sm:w-24 h-1 bg-blue-500 rounded-full"></div>
-        </div>
-        <div className="rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center h-48 sm:h-64 md:h-80 lg:h-96">
-          <p className="text-gray-500 dark:text-gray-400">Content loading...</p>
-        </div>
-      </div>
+// Optimized Portable Text component for image descriptions
+const ImgDescPortableText = React.memo(({ value }) => {
+  const components = useMemo(() => ({
+    block: {
+      normal: ({ children }) => {
+        // More robust empty content check
+        const hasContent = children.some(child => 
+          typeof child === "string" ? child.trim() : true
+        );
+        
+        if (!hasContent) return null;
+
+        return (
+          <p className="text-[11px] sm:text-xs md:text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300 transition-colors duration-300 hover:text-gray-900 dark:hover:text-gray-100 m-0">
+            {children}
+          </p>
+        );
+      },
+    },
+    marks: {
+      link: ({ children, value }) => {
+        const isExternal = value.href && !value.href.startsWith('/');
+        return (
+          <a
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline transition-colors duration-200"
+            href={value.href}
+            rel={isExternal ? 'noreferrer noopener' : undefined}
+            target={isExternal ? '_blank' : undefined}
+          >
+            {children}
+          </a>
+        );
+      },
+    },
+  }), []);
+
+  return <PortableText value={value} components={components} />;
+});
+
+ImgDescPortableText.displayName = 'ImgDescPortableText';
+
+// Enhanced loading skeleton component
+const LoadingSkeleton = React.memo(() => (
+  <div className="w-full animate-pulse">
+    <div className="mb-6 sm:mb-8">
+      <div className="h-8 sm:h-10 md:h-12 lg:h-14 xl:h-16 bg-gray-200 dark:bg-gray-700 rounded-lg mb-4 w-3/4"></div>
+      <div className="w-16 h-1 bg-gray-200 dark:bg-gray-700 rounded-full sm:w-24"></div>
+    </div>
+    <div className="aspect-[16/9] bg-gray-200 dark:bg-gray-700 rounded-2xl"></div>
+  </div>
+));
+
+LoadingSkeleton.displayName = 'LoadingSkeleton';
+
+const ArticleHeader = ({ data }) => {
+  // Memoize image URLs to prevent recalculation on re-renders
+  const imageUrls = useMemo(() => {
+    if (!data?.mainImage) return null;
+    
+    return {
+      main: urlForImage(data.mainImage)
+        .quality(85)
+        .format('webp')
+        .url(),
+      blur: urlForImage(data.mainImage)
+        .width(20)
+        .height(11)
+        .blur(10)
+        .quality(20)
+        .format('webp')
+        .url()
+    };
+  }, [data?.mainImage]);
+
+  // Check if image description has actual content
+  const hasImageDescription = useMemo(() => {
+    if (!data?.mainImage?.imageDescription) return false;
+    
+    // More thorough content check for Portable Text
+    return data.mainImage.imageDescription.some(block => 
+      block.children?.some(child => 
+        child.text && child.text.trim().length > 0
+      )
     );
+  }, [data?.mainImage?.imageDescription]);
+
+  // Early return for loading state
+  if (!data || !data.title || !data.mainImage) {
+    return <LoadingSkeleton />;
   }
 
   return (
-    <div className="w-full">
-      
-      {/* Enhanced Responsive Title Section - Left Aligned */}
-      <div className="mb-6 sm:mb-8 text-left">
-        <h1 className="mb-4 text-xl font-bold leading-tight tracking-tight text-blue-600 dark:text-blue-400 sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl">
+    <article className="w-full">
+      {/* Article Title Section with improved typography */}
+      <header className="mb-6 text-left sm:mb-8 lg:mb-10">
+        <h1 className="mb-4 text-xl font-bold leading-[1.1] tracking-tight text-blue-600 dark:text-blue-400 sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl transition-colors duration-300 hover:text-blue-700 dark:hover:text-blue-300">
           {data.title}
         </h1>
-        <div className="w-16 sm:w-24 h-1 bg-blue-500 rounded-full"></div>
+        <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full sm:w-24 transition-all duration-300 hover:w-20 sm:hover:w-28"></div>
+      </header>
+
+      {/* Reading Progress Circle with better positioning */}
+      <div className="relative z-10">
+        <ReadingProgressCircle />
       </div>
 
-      {/* Reading Progress Circle */}
-      <ReadingProgressCircle />
-
-      {/* Enhanced Main Image Section - Full Impact Design */}
-      <div className="w-full my-6 sm:my-8">
-        <div className="relative group">
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-xl hover:shadow-2xl transition-all duration-300 ease-out">
-            
-            {/* Enhanced gradient border */}
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 p-[1px]">
-              <div className="w-full h-full rounded-2xl bg-white dark:bg-gray-900"/>
+      {/* Main Image Section with enhanced responsiveness */}
+      <section className="my-6 w-full sm:my-8 lg:my-10" aria-label="Article featured image">
+        <div className="group relative isolate">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl transition-all duration-500 ease-out hover:shadow-2xl dark:from-gray-800 dark:to-gray-900">
+            {/* Enhanced gradient border effect */}
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-pink-500/20 p-[1px] opacity-60 transition-opacity duration-300 group-hover:opacity-100">
+              <div className="h-full w-full rounded-2xl bg-white dark:bg-gray-900" />
             </div>
-            
-            {/* Minimal padding for full impact */}
-            <div className="relative p-1 sm:p-2">
+
+            <div className="relative p-1 sm:p-2 lg:p-3">
               <figure className="relative">
-                
-                {/* Main Image Container */}
-                <div className="relative overflow-hidden rounded-xl">
-                  <div className="relative aspect-[16/9] sm:aspect-[20/10] lg:aspect-[28/16]">
+                {/* Main Image Container with improved aspect ratio handling */}
+                <div className="relative overflow-hidden rounded-xl shadow-lg">
+                  <div className="relative aspect-[16/9] sm:aspect-[4/3] lg:aspect-[16/9]">
                     <Image
-                      className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
-                      src={urlForImage(data.mainImage).url()}
-                      alt={data.mainImage.alt || `${data.title}`}
+                      className="h-full w-full object-cover transition-transform duration-700 ease-out  will-change-transform"
+                      src={imageUrls.main}
+                      alt={data.mainImage.alt || `Featured image for ${data.title}`}
                       fill
                       priority
                       placeholder="blur"
-                      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 80vw"
+                      blurDataURL={imageUrls.blur}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, (max-width: 1280px) 80vw, 70vw"
+                      quality={85}
                     />
                     
-                    {/* Subtle overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"/>
+                    {/* Enhanced overlay with better gradient */}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                    
+                    {/* Corner accent for visual enhancement */}
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-blue-500/20 to-transparent rounded-bl-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   </div>
                 </div>
 
-                {/* Enhanced Image Caption with Info Icon and Proper Mobile Sizing */}
-                {data.mainImage.imageDescription && (
-                  <figcaption className="mt-3 sm:mt-4 px-3 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
+                {/* Enhanced Image Caption with better spacing and layout */}
+                {hasImageDescription && (
+                  <figcaption className="mt-3 rounded-xl border border-gray-200/60 bg-gradient-to-r from-gray-50/80 to-gray-100/80 backdrop-blur-sm px-3 py-2.5 sm:mt-4 sm:px-4 sm:py-3 md:px-5 md:py-4 dark:border-gray-700/60 dark:from-gray-800/80 dark:to-gray-900/80 transition-all duration-300 hover:shadow-md group-hover:border-gray-300/60 dark:group-hover:border-gray-600/60">
                     <div className="flex items-start gap-2 sm:gap-3">
-                      {/* Info Icon - Smaller on Mobile */}
-                      <div className="flex-shrink-0 mt-0.5">
-                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      {/* Enhanced Icon with better sizing */}
+                      <div className="mt-0.5 flex-shrink-0 p-1 rounded-full bg-blue-100 dark:bg-blue-900/30 transition-colors duration-300">
+                        <svg
+                          className="h-3 w-3 text-blue-600 dark:text-blue-400 sm:h-3.5 sm:w-3.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2.5}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
                         </svg>
                       </div>
-                      {/* Caption Text - Properly Sized for Mobile */}
-                      <div className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                        <PortableText value={data.mainImage.imageDescription} components={imgdesc} />
+                      
+                      {/* Caption text with improved typography */}
+                      <div className="min-w-0 flex-1 -mt-0.5">
+                        <ImgDescPortableText value={data.mainImage.imageDescription} />
                       </div>
                     </div>
                   </figcaption>
@@ -90,12 +177,12 @@ const ArticleHeader = ({ data, imgdesc }) => {
             </div>
           </div>
           
-          {/* Background glow effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"/>
+          {/* Enhanced background glow effect */}
+          <div className="absolute -inset-2 -z-10 rounded-2xl bg-gradient-to-r from-blue-500/15 via-purple-500/15 to-pink-500/15 blur-2xl opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:scale-105" />
         </div>
-      </div>
-    </div>
+      </section>
+    </article>
   );
 };
 
-export default ArticleHeader;
+export default React.memo(ArticleHeader);

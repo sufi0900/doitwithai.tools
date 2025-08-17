@@ -7,7 +7,7 @@ import BlogCardImageOptimizer from "./ImageOptimizer"; // Adjust path as needed
 export default function SmallCard({
   publishedAt,
   mainImage,
-  title,
+  title,  
   overview,
   ReadTime,
   slug,

@@ -797,13 +797,3 @@ code, pre {
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
-
-@media (max-width: 640px) {
-  pre {
-    @apply text-xs p-3;
-  }
-  
-  code {
-    @apply text-xs px-1 py-0.5;
-  }
-}

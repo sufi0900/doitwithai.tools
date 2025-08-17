@@ -8,14 +8,22 @@ const OptimizedImage = ({
   children,
   priority = false,
   blurDataURL,
-  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+  fill = false,
+  width,
+  height,
+  quality = 85,
+  style,
+  onClick,
+  enableModal = true,
+  ...restProps
 }) => {
-  // Simple image state - just what we need
-  const [imageLoaded, setImageLoaded] = useState(false);
+  // Simplified loading state - only track what we need
+  const [isImageReady, setIsImageReady] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Modal states - keep all your existing modal functionality
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  
+  // Modal states
   const [modalState, setModalState] = useState({
     isOpen: false,
     imageLoaded: false,
@@ -32,36 +40,79 @@ const OptimizedImage = ({
   const dragStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
   const modalImageContainerRef = useRef(null);
   const modalRef = useRef(null);
+  const loadingTimeoutRef = useRef(null);
+  const progressIntervalRef = useRef(null);
 
-  // Simple image handlers - no complex state management
+  // Enhanced image load handler with progress simulation
   const handleImageLoad = useCallback(() => {
-    if (mountedRef.current) {
-      setImageLoaded(true);
-      setImageError(false);
-      setIsLoading(false);
+    if (!mountedRef.current) return;
+    
+    // Clear any ongoing progress simulation
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
     }
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+    }
+    
+    // Complete the progress and set image as ready
+    setLoadingProgress(100);
+    
+    // Small delay to ensure smooth transition
+    setTimeout(() => {
+      if (mountedRef.current) {
+        setIsImageReady(true);
+        setImageError(false);
+      }
+    }, 50);
   }, []);
 
   const handleImageError = useCallback(() => {
-    if (mountedRef.current) {
-      setImageError(true);
-      setImageLoaded(false);
-      setIsLoading(false);
+    if (!mountedRef.current) return;
+    
+    // Clear progress simulation
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
     }
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+    }
+    
+    setImageError(true);
+    setIsImageReady(false);
+    setLoadingProgress(0);
   }, []);
 
-  // Modal handlers - keep all your existing functionality
+  // Progress simulation for better UX
+  const startProgressSimulation = useCallback(() => {
+    setLoadingProgress(0);
+    
+    // Simulate loading progress
+    progressIntervalRef.current = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) return prev; // Stop at 90%, let actual load complete it
+        return prev + Math.random() * 15;
+      });
+    }, 200);
+
+    // Fallback timeout
+    loadingTimeoutRef.current = setTimeout(() => {
+      setLoadingProgress(85);
+    }, 3000);
+  }, []);
+
+  // Modal handlers
   const openModal = useCallback(() => {
-    if (imageLoaded && !imageError) {
-      setModalState(prev => ({
-        ...prev,
-        isOpen: true,
-        imageLoaded: false,
-        showContent: false,
-        hasError: false
-      }));
-    }
-  }, [imageLoaded, imageError]);
+    if (!enableModal || imageError || !isImageReady) return;
+    
+    setModalState(prev => ({
+      ...prev,
+      isOpen: true,
+      imageLoaded: false,
+      showContent: false,
+      hasError: false
+    }));
+  }, [enableModal, imageError, isImageReady]);
 
   const closeModal = useCallback(() => {
     setModalState({
@@ -78,7 +129,9 @@ const OptimizedImage = ({
 
   const handleModalImageLoad = useCallback(() => {
     if (!mountedRef.current) return;
+    
     setModalState(prev => ({ ...prev, imageLoaded: true }));
+    
     setTimeout(() => {
       if (mountedRef.current) {
         setModalState(prev => ({ ...prev, showContent: true }));
@@ -88,24 +141,39 @@ const OptimizedImage = ({
 
   const handleModalImageError = useCallback(() => {
     if (mountedRef.current) {
-      setModalState(prev => ({ ...prev, hasError: true, imageLoaded: false }));
+      setModalState(prev => ({
+        ...prev,
+        hasError: true,
+        imageLoaded: false
+      }));
     }
   }, []);
 
-  // Zoom and pan handlers - keep all your existing functionality
+  // Zoom and pan handlers (keeping your existing functionality)
   const handleZoomIn = () => {
-    setModalState(prev => ({ ...prev, zoomLevel: Math.min(prev.zoomLevel + 0.5, 4) }));
+    setModalState(prev => ({
+      ...prev,
+      zoomLevel: Math.min(prev.zoomLevel + 0.5, 4)
+    }));
   };
 
   const handleZoomOut = () => {
-    setModalState(prev => ({ ...prev, zoomLevel: Math.max(prev.zoomLevel - 0.5, 1) }));
+    setModalState(prev => ({
+      ...prev,
+      zoomLevel: Math.max(prev.zoomLevel - 0.5, 1)
+    }));
   };
 
   const resetZoomAndPan = () => {
-    setModalState(prev => ({ ...prev, zoomLevel: 1, panX: 0, panY: 0 }));
+    setModalState(prev => ({
+      ...prev,
+      zoomLevel: 1,
+      panX: 0,
+      panY: 0
+    }));
   };
 
-  // Mouse event handlers for panning - keep all your existing functionality
+  // Mouse/touch handlers (keeping your existing functionality)
   const handleMouseDown = (e) => {
     if (modalState.zoomLevel > 1) {
       e.preventDefault();
@@ -121,29 +189,31 @@ const OptimizedImage = ({
 
   const handleMouseMove = (e) => {
     if (!modalState.isDragging || modalState.zoomLevel <= 1) return;
-    
+
     const dx = e.clientX - dragStartRef.current.x;
     const dy = e.clientY - dragStartRef.current.y;
     const container = modalImageContainerRef.current;
-    
     if (!container) return;
-    
+
     const currentImageWidth = container.clientWidth * modalState.zoomLevel;
     const currentImageHeight = container.clientHeight * modalState.zoomLevel;
     const maxPanX = (currentImageWidth - container.clientWidth) / 2;
     const maxPanY = (currentImageHeight - container.clientHeight) / 2;
-    
+
     const newPanX = Math.max(-maxPanX, Math.min(maxPanX, dragStartRef.current.panX + dx));
     const newPanY = Math.max(-maxPanY, Math.min(maxPanY, dragStartRef.current.panY + dy));
-    
-    setModalState(prev => ({ ...prev, panX: newPanX, panY: newPanY }));
+
+    setModalState(prev => ({
+      ...prev,
+      panX: newPanX,
+      panY: newPanY
+    }));
   };
 
   const handleMouseUp = () => {
     setModalState(prev => ({ ...prev, isDragging: false }));
   };
 
-  // Touch handlers for mobile - keep your existing functionality
   const handleTouchStart = (e) => {
     if (modalState.zoomLevel > 1 && e.touches.length === 1) {
       setModalState(prev => ({ ...prev, isDragging: true }));
@@ -158,29 +228,31 @@ const OptimizedImage = ({
 
   const handleTouchMove = (e) => {
     if (!modalState.isDragging || modalState.zoomLevel <= 1 || e.touches.length !== 1) return;
-    
+
     const dx = e.touches[0].clientX - dragStartRef.current.x;
     const dy = e.touches[0].clientY - dragStartRef.current.y;
     const container = modalImageContainerRef.current;
-    
     if (!container) return;
-    
+
     const currentImageWidth = container.clientWidth * modalState.zoomLevel;
     const currentImageHeight = container.clientHeight * modalState.zoomLevel;
     const maxPanX = (currentImageWidth - container.clientWidth) / 2;
     const maxPanY = (currentImageHeight - container.clientHeight) / 2;
-    
+
     const newPanX = Math.max(-maxPanX, Math.min(maxPanX, dragStartRef.current.panX + dx));
     const newPanY = Math.max(-maxPanY, Math.min(maxPanY, dragStartRef.current.panY + dy));
-    
-    setModalState(prev => ({ ...prev, panX: newPanX, panY: newPanY }));
+
+    setModalState(prev => ({
+      ...prev,
+      panX: newPanX,
+      panY: newPanY
+    }));
   };
 
   const handleTouchEnd = () => {
     setModalState(prev => ({ ...prev, isDragging: false }));
   };
 
-  // Wheel handler for zoom - keep your existing functionality
   const handleWheel = (e) => {
     e.preventDefault();
     const container = modalImageContainerRef.current;
@@ -190,8 +262,8 @@ const OptimizedImage = ({
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     const scaleFactor = 0.1;
-    
     let newZoomLevel = modalState.zoomLevel;
+
     if (e.deltaY < 0) {
       newZoomLevel = Math.min(modalState.zoomLevel + scaleFactor, 4);
     } else {
@@ -220,22 +292,29 @@ const OptimizedImage = ({
     }));
   };
 
-  // Cleanup on unmount
+  // Effects
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
     };
   }, []);
 
   // Reset states when src changes
   useEffect(() => {
-    setImageLoaded(false);
+    setIsImageReady(false);
     setImageError(false);
-    setIsLoading(true);
-  }, [src]);
+    setLoadingProgress(0);
+    startProgressSimulation();
+  }, [src, startProgressSimulation]);
 
-  // Modal effects - keep your existing functionality
+  // Modal effects
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (modalRef.current && !modalRef.current.contains(event.target)) {
@@ -265,16 +344,29 @@ const OptimizedImage = ({
   // Reset pan when zoom returns to 1
   useEffect(() => {
     if (modalState.zoomLevel === 1) {
-      setModalState(prev => ({ ...prev, panX: 0, panY: 0 }));
+      setModalState(prev => ({
+        ...prev,
+        panX: 0,
+        panY: 0
+      }));
     }
   }, [modalState.zoomLevel]);
 
+  // Handle custom onClick vs modal
+  const handleClick = (e) => {
+    if (onClick) {
+      onClick(e);
+    } else if (enableModal) {
+      openModal();
+    }
+  };
+
   return (
     <>
-      {/* Main image container - completely simplified */}
+      {/* Main image container */}
       <div className="relative w-full overflow-hidden">
-        {/* Beautiful loading animation - show while Next.js Image is loading */}
-     {isLoading && !imageError && (
+        {/* Enhanced loading state - only show when image is not ready */}
+        {!isImageReady && !imageError && (
           <div className="absolute inset-0 z-10 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent animate-shimmer" />
             <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
@@ -331,57 +423,74 @@ const OptimizedImage = ({
             </div>
           </div>
         )}
-<div
-  onClick={openModal}
-  className={`relative group image-hover-container ${imageLoaded && !imageError ? 'cursor-zoom-in' : ''}`}
->
+
+        {/* Image container with click handler */}
+        <div
+          onClick={handleClick}
+          className={`relative group image-hover-container ${
+            isImageReady && !imageError && (enableModal || onClick) ? 'cursor-pointer' : ''
+          }`}
+        >
+          {/* Next.js Image with proper props */}
           <Image
             src={src}
             alt={alt}
-            className={`${className} transition-opacity duration-500 ease-out ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+            className={`${className} transition-opacity duration-300 ease-out ${
+              isImageReady ? 'opacity-100' : 'opacity-0'
+            }`}
             onLoad={handleImageLoad}
             onError={handleImageError}
-            width={800}
-            height={600}
-            quality={90}
+            {...(fill
+              ? { fill: true }
+              : {
+                  width: width || 800,
+                  height: height || 600
+                })}
+            quality={quality}
             loading={priority ? "eager" : "lazy"}
             priority={priority}
             placeholder={blurDataURL ? "blur" : "empty"}
             blurDataURL={blurDataURL}
             sizes={sizes}
+            style={style}
+            {...restProps}
           />
 
           {/* Error state */}
           {imageError && (
             <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 rounded-xl flex items-center justify-center">
-              <div className="text-center">
-                <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              <div className="text-center p-4">
+                <svg className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
                 </svg>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Failed to load image</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Failed to load image</p>
               </div>
             </div>
           )}
 
-          {/* Zoom indicator - only show when image is loaded */}
-       {/* Zoom indicator - only show when image is loaded */}
-{imageLoaded && !imageError && (
-  <div className={`absolute top-4 right-4 zoom-indicator pointer-events-none ${imageLoaded ? 'zoom-indicator-visible opacity-0 group-hover:opacity-100' : 'opacity-0'}`}>
-  
-  </div>
-)}
+          {/* Zoom indicator - only show when image is loaded and modal is enabled */}
+          {isImageReady && !imageError && enableModal && (
+            <div className="absolute top-4 right-4 zoom-indicator opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+              <div className="bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                </svg>
+                Click to zoom
+              </div>
+            </div>
+          )}
         </div>
 
         {children}
       </div>
 
-      {/* Modal - keep all your existing functionality and styling */}
+      {/* Modal - keeping your existing modal functionality */}
       {modalState.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center transition-all duration-300">
           <div className={`absolute inset-0 bg-black/90 ${modalState.imageLoaded ? 'backdrop-blur-sm' : ''} transition-all duration-300`} />
-          
-          {/* Loading state with your beautiful animation */}
-          {!modalState.imageLoaded && !modalState.hasError && (
+
+          {/* Loading state */}
+             {!modalState.imageLoaded && !modalState.hasError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-gradient-to-br from-gray-900/80 to-black/80 animate-pulse-fade">
               <div className="relative w-20 h-20 mb-4">
                 <div className="absolute inset-0 rounded-full border-4 border-t-4 border-blue-400 border-opacity-30 animate-spin-slow"></div>
@@ -399,14 +508,15 @@ const OptimizedImage = ({
     <div className="w-1.5 h-1.5 rounded-full bg-white animate-dot-2"></div>
     <div className="w-1.5 h-1.5 rounded-full bg-white animate-dot-3"></div>
   </div>
-</div>            </div>
+</div> 
+</div>
           )}
 
           {/* Error state */}
           {modalState.hasError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-gradient-to-br from-red-900/80 to-black/80">
               <svg className="w-16 h-16 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
               </svg>
               <p className="text-white text-lg font-semibold">Failed to load image</p>
             </div>
@@ -414,59 +524,56 @@ const OptimizedImage = ({
 
           <div
             ref={modalRef}
-            className={`relative max-h-[95vh] max-w-[95vw] overflow-hidden rounded-2xl shadow-2xl ${modalState.showContent ? 'animate-in zoom-in-95 duration-300' : 'opacity-0'}`}
+            className={`relative max-h-[95vh] max-w-[95vw] overflow-hidden rounded-2xl shadow-2xl ${
+              modalState.showContent ? 'animate-in zoom-in-95 duration-300' : 'opacity-0'
+            }`}
           >
             {/* Close button */}
             <button
               onClick={closeModal}
-              className="absolute top-4 right-4 z-50 p-3 rounded-full bg-gradient-to-br from-gray-700/80 to-gray-900/80 border border-white/20 text-white shadow-lg transition-all duration-300 hover:scale-110 hover:from-red-500/90 hover:to-red-700/90 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-70 active:scale-95"
+              className="absolute top-4 right-4 z-50 p-3 rounded-full bg-gradient-to-br from-gray-700/80 to-gray-900/80 border border-white/20 text-white shadow-lg transition-all duration-300 hover:scale-110 hover:from-red-500/90 hover:to-red-700/90 focus:outline-none focus:ring-2 focus:ring-red-400 active:scale-95"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
 
             {/* Control buttons */}
             {modalState.showContent && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex space-x-3 bg-gradient-to-br from-gray-800/80 to-gray-950/80 border border-white/15 rounded-full p-3 shadow-2xl md:space-x-4 md:p-4">
-               
-                {/* Zoom Out Button */}
-                {/* Zoom Out Button */}
-<button
-  onClick={handleZoomOut}
-  disabled={modalState.zoomLevel <= 1}
-  className="p-2.5 rounded-full bg-gradient-to-br from-white/10 to-white/0 text-white shadow-md transition-all duration-300 hover:bg-gray-700 hover:scale-105 hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-70 active:scale-95"
->
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-  </svg>
-</button>
-
-                {/* Reset Zoom and Pan Button */}
+    <div className="md:absolute md:bottom-4 md:left-1/2 md:-translate-x-1/2 md:z-50  md:space-x-3 bg-gradient-to-br from-gray-800/80 to-gray-950/80 border border-white/15 rounded-full p-3 shadow-2xl hidden md:flex">
                 <button
-                  onClick={resetZoomAndPan}
-                  disabled={modalState.zoomLevel === 1 && modalState.panX === 0 && modalState.panY === 0}
-                  className="p-2.5 rounded-full bg-gradient-to-br from-white/10 to-white/0 text-white shadow-md transition-all duration-300 hover:bg-green-500/50 hover:scale-105 hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-70 active:scale-95"
+                  onClick={handleZoomOut}
+                  disabled={modalState.zoomLevel <= 1}
+                  className="p-2.5 rounded-full bg-gradient-to-br from-white/10 to-white/0 text-white shadow-md transition-all duration-300 hover:bg-gray-700 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 active:scale-95"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4"/>
                   </svg>
                 </button>
 
-                {/* Zoom In Button */}
+                <button
+                  onClick={resetZoomAndPan}
+                  disabled={modalState.zoomLevel === 1 && modalState.panX === 0 && modalState.panY === 0}
+                  className="p-2.5 rounded-full bg-gradient-to-br from-white/10 to-white/0 text-white shadow-md transition-all duration-300 hover:bg-green-500/50 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 active:scale-95"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                </button>
+
                 <button
                   onClick={handleZoomIn}
                   disabled={modalState.zoomLevel >= 4}
-                  className="p-2.5 rounded-full bg-gradient-to-br from-white/10 to-white/0 text-white shadow-md transition-all duration-300  hover:bg-primary hover:scale-105 hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-70 active:scale-95"
-  >
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    </svg>
-  </button>
-</div>
+                  className="p-2.5 rounded-full bg-gradient-to-br from-white/10 to-white/0 text-white shadow-md transition-all duration-300 hover:bg-blue-500 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 active:scale-95"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+                  </svg>
+                </button>
+              </div>
             )}
 
-            {/* Modal image container - Fixed for proper centering */}
+            {/* Modal image container */}
             <div
               ref={modalImageContainerRef}
               className="relative w-full h-full flex items-center justify-center"
@@ -478,15 +585,17 @@ const OptimizedImage = ({
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
               onWheel={handleWheel}
-     style={{
-  cursor: modalState.zoomLevel > 1 ? (modalState.isDragging ? 'grabbing' : 'grab') : 'default',
-  overflow: 'hidden',
-}}
+              style={{
+                cursor: modalState.zoomLevel > 1 
+                  ? (modalState.isDragging ? 'grabbing' : 'grab') 
+                  : 'default',
+                overflow: 'hidden'
+              }}
             >
               <Image
                 src={src}
                 alt={alt}
-                className={`${className} transition-all duration-500 ease-out max-w-full max-h-[85vh] md:max-h-[90vh] object-contain`}
+                className="transition-all duration-500 ease-out max-w-full max-h-[85vh] md:max-h-[90vh] object-contain"
                 onLoad={handleModalImageLoad}
                 onError={handleModalImageError}
                 width={1920}
@@ -496,7 +605,7 @@ const OptimizedImage = ({
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 80vw"
                 style={{
                   transform: `scale(${modalState.zoomLevel}) translate(${modalState.panX}px, ${modalState.panY}px)`,
-                  transformOrigin: 'center center',
+                  transformOrigin: 'center center'
                 }}
               />
             </div>
@@ -504,7 +613,7 @@ const OptimizedImage = ({
         </div>
       )}
 
-      <style jsx>{`
+     <style jsx>{`
 
 /* Add hover effect with proper duration */
 .image-hover-container {

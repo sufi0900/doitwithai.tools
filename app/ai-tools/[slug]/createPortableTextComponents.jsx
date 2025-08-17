@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
@@ -7,160 +7,73 @@ import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
 import { Rocket } from 'lucide-react';
 import { CopyBlock, dracula } from "react-code-blocks";
 import { Clipboard, Check } from "lucide-react";
+import { getFileUrl } from "./sanityFileUrl"; // path as you saved it
+import Image from 'next/image';
 
 const PortableTextComponents = () => {
 
-  const GifComponent = ({ value }) => {
-    const [fileUrl, setFileUrl] = useState(null);
-    
-    const extractTextFromChildren = (children) => {
-      return React.Children.toArray(children)
-        .map(child => {
-          if (typeof child === 'string') {
-            return child;
-          }
-          if (React.isValidElement(child) && child.props.children) {
-            return extractTextFromChildren(child.props.children);
-          }
-          return '';
-        })
-        .join('');
-    };
-    
-    const createIdFromText = (text) => {
-      if (!text) return '';
-      
-      if (Array.isArray(text)) {
-        return React.Children.toArray(text)
-          .map(child => {
-            if (typeof child === 'string') {
-              return child;
-            }
-            if (React.isValidElement(child) && child.props.children) {
-              return createIdFromText(child.props.children);
-            }
-            return '';
-          })
-          .join('')
-          .replace(/\s+/g, '-')
-          .toLowerCase();
+// Add this before the PortableTextComponents function
+const CodeBlockComponent = ({ code, language }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(String(code));
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = String(code);
+        textarea.setAttribute("readonly", "");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
       }
-      
-      if (typeof text === 'string') {
-        return text.replace(/\s+/g, '-').toLowerCase();
-      }
-      
-      return '';
-    };
-
-    useEffect(() => {
-      let isMounted = true;
-      
-      const loadFileUrl = async () => {
-        try {
-          const url = await setFileUrl(value);
-          if (isMounted) {
-            setFileUrl(url);
-          }
-        } catch (error) {
-          console.error("Error loading file URL:", error);
-        }
-      };
-      
-      loadFileUrl();
-      
-      return () => {
-        isMounted = false;
-      };
-    }, [value]);
-
-    if (!fileUrl) return (
-      <div className="w-full overflow-hidden rounded px-2 sm:px-0 sm:lg:-mx-2">
-        <div className="sm:lg:m-4">
-          <div className="card3 rounded-xl animate-pulse">
-            <div className="bg-gray-200 dark:bg-gray-700 h-48 sm:h-64 rounded-xl"></div>
-          </div>
-        </div>
-      </div>
-    );
-
-    return (
-      <div className="w-full overflow-hidden rounded px-2 sm:px-0 sm:lg:-mx-2">
-        <div className="sm:lg:m-4">
-          <div className="card3 rounded-xl">
-            <figure className="relative my-4 sm:my-8">
-              <OptimizedGif
-                src={fileUrl}
-                alt={value.alt}
-                caption={value.caption}
-                className="customClassName h-full w-full object-cover"
-              />
-            </figure>
-          </div>
-        </div>
-      </div>
-    );
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (err) {
+      console.error("Copy failed", err);
+    }
   };
 
-  const VideoComponent = ({ value }) => {
-    const [fileUrl, setFileUrl] = useState(null);
+  return (
+    <div className="sanity-code-input mx-2 sm:mx-0"> 
+      <div className="my-4 sm:my-6 rounded-lg overflow-hidden shadow-sm relative">
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 z-20">
+          <button
+            onClick={handleCopy}
+            aria-label="Copy code"
+            className="inline-flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-1 bg-white/90 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm text-xs text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 transition"
+          >
+            {copied ? <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> : <Clipboard className="w-3 h-3 sm:w-4 sm:h-4" />}
+            <span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>
+          </button>
+        </div>
 
-    useEffect(() => {
-      let isMounted = true;
-      
-      const loadFileUrl = async () => {
-        try {
-          const url = await getFileUrl(value);
-          if (isMounted) {
-            setFileUrl(url);
-          }
-        } catch (error) {
-          console.error("Error loading file URL:", error);
-        }
-      };
-      
-      loadFileUrl();
-      
-      return () => {
-        isMounted = false;
-      };
-    }, [value]);
-
-    if (!fileUrl) return (
-      <div className="w-full overflow-hidden rounded px-2 sm:px-0 sm:lg:-mx-2">
-        <div className="sm:lg:m-4">
-          <div className="card3 rounded-xl animate-pulse">
-            <div className="bg-gray-200 dark:bg-gray-700 h-48 sm:h-64 rounded-xl"></div>
+        <div className="overflow-x-auto px-1 sm:px-2 py-2 bg-transparent">
+          <div className="min-w-0">
+            <CopyBlock
+              text={String(code)}
+              language={language}
+              showLineNumbers={true}
+              startingLineNumber={1}
+              theme={dracula}
+              wrapLines={false}
+              codeBlock
+            />
           </div>
         </div>
       </div>
-    );
-
-    return (
-      <div className="w-full overflow-hidden rounded px-2 sm:px-0 sm:lg:-mx-2">
-        <div className="sm:lg:m-4">
-          <div className="card3 rounded-xl">
-            <figure className="relative my-4 sm:my-8">
-              <OptimizedVideo
-                src={fileUrl}
-                alt={value.alt}
-                className="h-full w-full object-cover"
-              >
-                <figcaption className="imgdesc py-2 rounded-bl-xl rounded-br-xl text-center text-sm sm:text-base text-gray-800 dark:text-gray-400">
-                  {value.caption}
-                </figcaption>
-              </OptimizedVideo>
-            </figure>
-          </div>
-        </div>
-      </div>
-    );
-  };
+    </div>
+  );
+};
 
   const imgdesc = {
     block: {
       normal: ({ children }) => (
-        <p className="hover:text-gray-950 dark:hover:text-gray-50 mb-2 sm:mb-4 mt-1 text-xs sm:text-sm md:text-base font-medium leading-relaxed text-gray-800 dark:text-gray-300 transition-all duration-300 ease-in-out">
+        <p className="hover:text-gray-950 customanchor dark:hover:text-gray-50 mb-2 sm:mb-4 mt-1 text-xs sm:text-sm md:text-base font-medium leading-relaxed text-gray-800 dark:text-gray-300 transition-all duration-300 ease-in-out">
           {children}
         </p>
       ),
@@ -171,69 +84,206 @@ const PortableTextComponents = () => {
       )
     },
   }
+const GifComponent = ({ value }) => {
+  const [fileUrl, setFileUrl] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        // value could be the file object; derive URL
+        const url = getFileUrl(value) || (value?.asset?.url ?? null);
+        if (mounted) setFileUrl(url);
+      } catch (err) {
+        console.error("Gif load error:", err);
+      }
+    };
+    load();
+    return () => (mounted = false);
+  }, [value]);
+
+  if (!fileUrl) {
+    return (
+      <div className="w-full overflow-hidden rounded ...">
+        {/* skeleton */}
+      </div>
+    );
+  }
+
+  // Use a plain <img> for GIFs (Next/Image doesn't handle animated GIF optimization well)
+  return (
+      <div className="w-full my-4 sm:my-6 lg:my-8 px-2 sm:px-0">
+            <div className="relative group">
+              <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-lg hover:shadow-xl sm:hover:shadow-2xl transition-all duration-300 ease-out">
+                
+                {/* Enhanced gradient border - simplified on mobile */}
+                <div className="absolute inset-0 rounded-lg sm:rounded-2xl bg-gradient-to-br from-blue-500/5 sm:from-blue-500/10 via-purple-500/5 to-pink-500/5 sm:to-pink-500/10 p-[1px]">
+                  <div className="w-full h-full rounded-lg sm:rounded-2xl bg-white dark:bg-gray-900"/>
+                </div>
+                
+                {/* Responsive padding */}
+                <div className="relative p-1.5 sm:p-3 lg:p-4">
+                  <figure className="relative">
+                    
+                  
+
+                    {/* Gif container */}
+                    <div className="relative overflow-hidden rounded-md sm:rounded-xl">
+                      <OptimizedImage
+                        src={fileUrl}
+                        alt={value.alt || "Article image"}
+                        className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+                
+  width={800}
+                  height={600}
+                  quality={85}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"/>
+                    </div>
+
+                    {/* Enhanced image description with proper mobile sizing */}
+                    {value.caption && (
+                      <figcaption className="mt-2 sm:mt-3 md:mt-4 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
+                        <div className="flex items-start gap-1.5 sm:gap-2 md:gap-3">
+                          {/* Icon - smaller on mobile */}
+                          <div className="flex-shrink-0 mt-0.5">
+                            <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                          </div>
+                          {/* Caption text - properly sized for mobile */}
+                          <div className="customanchor text-xs sm:text-sm md:text-base min-w-0 flex-1">
+         {value.caption}                          </div>
+                        </div>
+                      </figcaption>
+                    )}
+                  </figure>
+                </div>
+              </div>
+              
+              {/* Background glow effect - reduced on mobile */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/5 sm:from-blue-500/10 via-purple-500/5 sm:via-purple-500/10 to-pink-500/5 sm:to-pink-500/10 rounded-lg sm:rounded-2xl blur-lg sm:blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"/>
+            </div>
+          </div>
+  );
+};
+
+const VideoComponent = ({ value }) => {
+ const [fileUrl, setFileUrl] = useState(null);
+  const [isLoadingUrl, setIsLoadingUrl] = useState(true);
+  const [urlError, setUrlError] = useState(null);
+
+  // Memoize video metadata
+  const videoMetadata = useMemo(() => ({
+    alt: value?.alt || value?.caption || 'Video content',
+    caption: value?.caption,
+    poster: value?.poster ? getFileUrl(value.poster) : null,
+    autoPlay: value?.autoPlay || false,
+    muted: value?.muted || false,
+    loop: value?.loop || false,
+    preloadDistance: value?.preloadDistance || '300px', // Start loading 300px before
+  }), [value]);
+
+  useEffect(() => {
+    let mounted = true;
+    
+    const loadVideoUrl = async () => {
+      try {
+        setIsLoadingUrl(true);
+        setUrlError(null);
+        
+        const url = getFileUrl(value) || (value?.asset?.url ?? null);
+        
+        if (mounted) {
+          if (url) {
+            setFileUrl(url);
+          } else {
+            setUrlError('No video URL found');
+          }
+          setIsLoadingUrl(false);
+        }
+      } catch (err) {
+        console.error("Video URL load error:", err);
+        if (mounted) {
+          setUrlError(err.message || 'Failed to load video URL');
+          setIsLoadingUrl(false);
+        }
+      }
+    };
+
+    loadVideoUrl();
+    return () => (mounted = false);
+  }, [value]);
+
+  return (
+    <div className="w-full my-4 sm:my-6 lg:my-8 px-2 sm:px-0">
+            <div className="relative group">
+              <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-lg hover:shadow-xl sm:hover:shadow-2xl transition-all duration-300 ease-out">
+                
+                {/* Enhanced gradient border - simplified on mobile */}
+                <div className="absolute inset-0 rounded-lg sm:rounded-2xl bg-gradient-to-br from-blue-500/5 sm:from-blue-500/10 via-purple-500/5 to-pink-500/5 sm:to-pink-500/10 p-[1px]">
+                  <div className="w-full h-full rounded-lg sm:rounded-2xl bg-white dark:bg-gray-900"/>
+                </div>
+                
+                {/* Responsive padding */}
+                <div className="relative p-1.5 sm:p-3 lg:p-4">
+                  <figure className="relative">
+                    
+                    {/* Zoom indicator - hidden on mobile */}
+                    
+
+                    {/* Video container */}
+                    <div className="relative overflow-hidden rounded-md sm:rounded-xl">
+                      <OptimizedVideo
+                  src={fileUrl}
+                  alt={videoMetadata.alt}
+                  caption={videoMetadata.caption}
+                  poster={videoMetadata.poster}
+                  autoPlay={videoMetadata.autoPlay}
+                  muted={videoMetadata.muted}
+                  loop={videoMetadata.loop}
+                  preloadDistance={videoMetadata.preloadDistance}
+                  className="h-full w-full object-cover transition-transform duration-500 "
+                />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"/>
+                    </div>
+
+                    {/* Enhanced image description with proper mobile sizing */}
+                    {value.caption && (
+                      <figcaption className="mt-2 sm:mt-3 md:mt-4 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
+                        <div className="flex items-start gap-1.5 sm:gap-2 md:gap-3">
+                          {/* Icon - smaller on mobile */}
+                          <div className="flex-shrink-0 mt-0.5">
+                            <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                          </div>
+                          {/* Caption text - properly sized for mobile */}
+                          <div className="customanchor text-xs sm:text-sm md:text-base min-w-0 flex-1">
+         {value.caption}                          </div>
+                        </div>
+                      </figcaption>
+                    )}
+                  </figure>
+                </div>
+              </div>
+              
+              {/* Background glow effect - reduced on mobile */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/5 sm:from-blue-500/10 via-purple-500/5 sm:via-purple-500/10 to-pink-500/5 sm:to-pink-500/10 rounded-lg sm:rounded-2xl blur-lg sm:blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"/>
+            </div>
+          </div>
+  );
+};
 
   const portableTextComponents = {
     types: {
-      code: ({ value }) => {
-        const code = value?.code || value?.codeString || value?.source || "";
-        const language = (value?.language || value?.lang || "text").toLowerCase();
-        const [copied, setCopied] = useState(false);
+      
+     code: ({ value }) => {
+  const code = value?.code || value?.codeString || value?.source || "";
+  const language = (value?.language || value?.lang || "text").toLowerCase();
 
-        const handleCopy = async () => {
-          try {
-            if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-              await navigator.clipboard.writeText(String(code));
-            } else {
-              const textarea = document.createElement("textarea");
-              textarea.value = String(code);
-              textarea.setAttribute("readonly", "");
-              textarea.style.position = "absolute";
-              textarea.style.left = "-9999px";
-              document.body.appendChild(textarea);
-              textarea.select();
-              document.execCommand("copy");
-              document.body.removeChild(textarea);
-            }
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1800);
-          } catch (err) {
-            console.error("Copy failed", err);
-          }
-        };
-
-        return (
-          <div className="sanity-code-input mx-2 sm:mx-0"> 
-            <div className="my-4 sm:my-6 rounded-lg overflow-hidden shadow-sm relative">
-              {/* Copy button - responsive positioning */}
-              <div className="absolute top-2 sm:top-3 right-2 sm:right-3 z-20">
-                <button
-                  onClick={handleCopy}
-                  aria-label="Copy code"
-                  className="inline-flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-1 bg-white/90 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm text-xs text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 transition"
-                >
-                  {copied ? <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> : <Clipboard className="w-3 h-3 sm:w-4 sm:h-4" />}
-                  <span className="hidden sm:inline">{copied ? "Copied" : "Copy"}</span>
-                </button>
-              </div>
-
-              {/* Code block wrapper - enhanced mobile scrolling */}
-              <div className="overflow-x-auto px-1 sm:px-2 py-2 bg-transparent">
-                <div className="min-w-0">
-                  <CopyBlock
-                    text={String(code)}
-                    language={language}
-                    showLineNumbers={true}
-                    startingLineNumber={1}
-                    theme={dracula}
-                    wrapLines={false}
-                    codeBlock
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      },
+  return <CodeBlockComponent code={code} language={language} />;
+},
 
       gif: GifComponent,
       video: VideoComponent,
@@ -257,28 +307,25 @@ const PortableTextComponents = () => {
                 <div className="relative p-1.5 sm:p-3 lg:p-4">
                   <figure className="relative">
                     
-                    {/* Zoom indicator - hidden on mobile */}
-                    <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
-                      <div className="bg-black/70 backdrop-blur-sm text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
-                        </svg>
-                        Click to zoom
-                      </div>
-                    </div>
+
 
                     {/* Image container */}
-                    <div className="relative overflow-hidden rounded-md sm:rounded-xl">
-                      <OptimizedImage
-                        src={imageUrl}
-                        alt={value.alt || "Article image"}
-                        className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
-                        priority={isPriority}
-                        blurDataURL={blurDataURL}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"/>
-                    </div>
+                 <div className="relative overflow-hidden rounded-md sm:rounded-xl">
+                <OptimizedImage
+                  src={imageUrl}
+                  alt={value.alt || "Article image"}
+                  className="w-full h-auto object-cover"
+                  priority={isPriority}
+                  blurDataURL={blurDataURL}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
+                  width={800}
+                  height={600}
+                  quality={85}
+                  enableModal={true}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"/>
+              </div>
+
 
                     {/* Enhanced image description with proper mobile sizing */}
                     {value.imageDescription && (
