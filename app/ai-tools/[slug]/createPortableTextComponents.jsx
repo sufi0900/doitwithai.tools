@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
-import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
+// import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
 import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
 import { Rocket } from 'lucide-react';
 import { CopyBlock, dracula } from "react-code-blocks";
 import { Clipboard, Check } from "lucide-react";
 import { getFileUrl } from "./sanityFileUrl"; // path as you saved it
-import Image from 'next/image';
+// import Image from 'next/image';
 
 const PortableTextComponents = () => {
 
@@ -84,89 +84,7 @@ const CodeBlockComponent = ({ code, language }) => {
       )
     },
   }
-const GifComponent = ({ value }) => {
-  const [fileUrl, setFileUrl] = useState(null);
 
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      try {
-        // value could be the file object; derive URL
-        const url = getFileUrl(value) || (value?.asset?.url ?? null);
-        if (mounted) setFileUrl(url);
-      } catch (err) {
-        console.error("Gif load error:", err);
-      }
-    };
-    load();
-    return () => (mounted = false);
-  }, [value]);
-
-  if (!fileUrl) {
-    return (
-      <div className="w-full overflow-hidden rounded ...">
-        {/* skeleton */}
-      </div>
-    );
-  }
-
-  // Use a plain <img> for GIFs (Next/Image doesn't handle animated GIF optimization well)
-  return (
-      <div className="w-full my-4 sm:my-6 lg:my-8 px-2 sm:px-0">
-            <div className="relative group">
-              <div className="relative overflow-hidden rounded-lg sm:rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-lg hover:shadow-xl sm:hover:shadow-2xl transition-all duration-300 ease-out">
-                
-                {/* Enhanced gradient border - simplified on mobile */}
-                <div className="absolute inset-0 rounded-lg sm:rounded-2xl bg-gradient-to-br from-blue-500/5 sm:from-blue-500/10 via-purple-500/5 to-pink-500/5 sm:to-pink-500/10 p-[1px]">
-                  <div className="w-full h-full rounded-lg sm:rounded-2xl bg-white dark:bg-gray-900"/>
-                </div>
-                
-                {/* Responsive padding */}
-                <div className="relative p-1.5 sm:p-3 lg:p-4">
-                  <figure className="relative">
-                    
-                  
-
-                    {/* Gif container */}
-                    <div className="relative overflow-hidden rounded-md sm:rounded-xl">
-                      <OptimizedImage
-                        src={fileUrl}
-                        alt={value.alt || "Article image"}
-                        className="w-full h-auto object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
-                
-  width={800}
-                  height={600}
-                  quality={85}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"/>
-                    </div>
-
-                    {/* Enhanced image description with proper mobile sizing */}
-                    {value.caption && (
-                      <figcaption className="mt-2 sm:mt-3 md:mt-4 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-                        <div className="flex items-start gap-1.5 sm:gap-2 md:gap-3">
-                          {/* Icon - smaller on mobile */}
-                          <div className="flex-shrink-0 mt-0.5">
-                            <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                          </div>
-                          {/* Caption text - properly sized for mobile */}
-                          <div className="customanchor text-xs sm:text-sm md:text-base min-w-0 flex-1">
-         {value.caption}                          </div>
-                        </div>
-                      </figcaption>
-                    )}
-                  </figure>
-                </div>
-              </div>
-              
-              {/* Background glow effect - reduced on mobile */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/5 sm:from-blue-500/10 via-purple-500/5 sm:via-purple-500/10 to-pink-500/5 sm:to-pink-500/10 rounded-lg sm:rounded-2xl blur-lg sm:blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10"/>
-            </div>
-          </div>
-  );
-};
 
 const VideoComponent = ({ value }) => {
  const [fileUrl, setFileUrl] = useState(null);
@@ -285,7 +203,6 @@ const VideoComponent = ({ value }) => {
   return <CodeBlockComponent code={code} language={language} />;
 },
 
-      gif: GifComponent,
       video: VideoComponent,
 
       image: ({ value, index }) => {
