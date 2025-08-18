@@ -70,13 +70,13 @@ export default function HomeBigCard({
             alt={title}
             width={500}
             height={320}
-
-
-            quality={80}
+          quality={80}
             className="object-cover w-full h-full"
             blurDataURL={undefined}
             style={undefined}
-            onClick={undefined} children={undefined}
+            onClick={undefined} 
+           enableModal={false}
+        children={false}
 
           />
           {/* Gradient Overlay on Hover */}
