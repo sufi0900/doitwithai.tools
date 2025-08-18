@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { AccessTime, CalendarMonthOutlined } from "@mui/icons-material";
 
-// Import your BlogCardImageOptimizer component
-import BlogCardImageOptimizer from "./ImageOptimizer"; // Adjust path as needed
+import ImageOptimizer from "@/app/ai-seo/[slug]/OptimizedImage";
+import Image from "next/image";
+
 
 export default function SmallCard({
   publishedAt,
@@ -17,8 +18,7 @@ export default function SmallCard({
     <section>
       <Link
         href={slug}
-        // Base layout is now horizontal (`flex-row`) for all screen sizes.
-        // `lg:h-[156px]` is preserved for the large screen height as requested.
+       
         className="group lg:h-[156px] transition-all duration-300 ease-out hover:scale-[1.03] hover:shadow-xl hover:shadow-blue-500/10
                    flex flex-row items-center bg-white border border-gray-200 rounded-xl shadow-md
                    hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-750
@@ -32,29 +32,24 @@ export default function SmallCard({
                          translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
         
         {/* Image Container with Enhanced Hover */}
-        <div
-          // For small screens, the image has a fixed width to create the horizontal card.
-          // For large screens, the image width is set to match your desired layout.
-          // The height is now handled by `h-full` to match the container's height.
-          className="relative overflow-hidden flex-shrink-0 z-10 w-32 sm:w-40 md:w-48 h-full
-                     lg:w-[198px] rounded-l-xl"
-        >
-          {/* Image Hover Effects */}
-          <div className="w-full h-full transition-all duration-300 ease-out group-hover:scale-110">
-            <BlogCardImageOptimizer
-              src={mainImage}
-              alt={title}
-              width={500}
-              height={500}
-              className="rounded-l-xl object-cover w-full h-full"
-            />
-            {/* Image Overlay on Hover */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </div>
-        </div>
+       {/* Image Container with Enhanced Hover */}
+<div className="relative overflow-hidden flex-shrink-0 z-10 w-32 sm:w-40 md:w-48 h-full lg:w-[198px] rounded-l-xl">
+  {/* Image Hover Effects */}
+  <div className="w-full h-full transition-all duration-300 ease-out group-hover:scale-110 relative">
+    <Image
+      src={mainImage}
+      alt={title}
+      fill={true}
+      quality={80}
+      className="object-cover"
+      sizes="(max-width: 768px) 200px, (max-width: 1024px) 250px, 300px"
+      containerSize="small"
+    />
+    {/* Image Overlay on Hover */}
+    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+  </div>
+</div>
 
-        {/* Content Container - Optimized for horizontal layout */}
-        {/* `flex-1` makes the content take up the remaining space. */}
         <div className="flex flex-col justify-between p-4 leading-normal flex-1 relative z-10 min-h-0">
           
           {/* Title Section */}

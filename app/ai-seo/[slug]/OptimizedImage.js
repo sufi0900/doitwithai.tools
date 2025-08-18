@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
+import { createPortal } from 'react-dom';
 
 const OptimizedImage = ({
   src,
@@ -366,63 +367,67 @@ const OptimizedImage = ({
       {/* Main image container */}
       <div className="relative w-full overflow-hidden">
         {/* Enhanced loading state - only show when image is not ready */}
-        {!isImageReady && !imageError && (
-          <div className="absolute inset-0 z-10 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent animate-shimmer" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-              <div className="relative flex items-center justify-center mb-6">
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20">
-                  <svg className="w-full h-full absolute inset-0 -rotate-90" viewBox="0 0 100 100">
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="42"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      fill="none"
-                      className="text-gray-200/60 dark:text-gray-700/60"
-                    />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="42"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                      strokeLinecap="round"
-                      className="text-blue-500 dark:text-blue-400 transition-all duration-700 ease-out"
-                      strokeDasharray="263.9"
-                      strokeDashoffset="131.95"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400/80 dark:text-gray-500/80" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fillRule="evenodd"
-                        d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <div className="text-center space-y-2 max-w-xs">
-                <div className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 tracking-wide">
-                  Loading image...
-                </div>
-              <div className="inline-flex items-center gap-2 px-3 py-2 rounded-full text-xs font-semibold transition-all duration-500 shadow-lg backdrop-blur-sm border-2 bg-blue-50/90 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200/50 dark:border-blue-700/50">
-  <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse shadow-lg shadow-blue-500/50"></div>
-  <span className="font-semibold tracking-wide">Loading</span>
-  <div className="flex items-center gap-1">
-    <div className="w-1 h-1 rounded-full bg-blue-500 dark:bg-blue-400 animate-dot-1"></div>
-    <div className="w-1 h-1 rounded-full bg-blue-500 dark:bg-blue-400 animate-dot-2"></div>
-    <div className="w-1 h-1 rounded-full bg-blue-500 dark:bg-blue-400 animate-dot-3"></div>
-  </div>
-</div>
-              </div>
-            </div>
+     {/* Enhanced loading state - responsive for all sizes */}
+{!isImageReady && !imageError && (
+  <div className="absolute inset-0 z-10 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
+    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent animate-shimmer" />
+    <div className="absolute inset-0 flex flex-col items-center justify-center p-2 sm:p-4">
+      <div className="relative flex items-center justify-center mb-2 sm:mb-4 md:mb-6">
+        {/* Responsive loader size */}
+        <div className="relative w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-20 lg:h-20">
+          <svg className="w-full h-full absolute inset-0 -rotate-90" viewBox="0 0 100 100">
+            <circle
+              cx="50"
+              cy="50"
+              r="42"
+              stroke="currentColor"
+              strokeWidth="2"
+              fill="none"
+              className="text-gray-200/60 dark:text-gray-700/60"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r="42"
+              stroke="currentColor"
+              strokeWidth="3"
+              fill="none"
+              strokeLinecap="round"
+              className="text-blue-500 dark:text-blue-400 transition-all duration-700 ease-out"
+              strokeDasharray="263.9"
+              strokeDashoffset="131.95"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <svg className="w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-8 lg:h-8 text-gray-400/80 dark:text-gray-500/80" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                clipRule="evenodd"
+              />
+            </svg>
           </div>
-        )}
+        </div>
+      </div>
+      
+      {/* Responsive text and status */}
+      <div className="text-center space-y-1 sm:space-y-2 max-w-xs">
+        <div className="text-[10px] xs:text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 tracking-wide">
+          Loading...
+        </div>
+        <div className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-full text-[9px] xs:text-[10px] sm:text-xs font-semibold transition-all duration-500 shadow-lg backdrop-blur-sm border-2 bg-blue-50/90 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200/50 dark:border-blue-700/50">
+          <div className="w-1 h-1 sm:w-2 sm:h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse shadow-lg shadow-blue-500/50"></div>
+          <span className="font-semibold tracking-wide hidden xs:inline">Loading</span>
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            <div className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-blue-500 dark:bg-blue-400 animate-dot-1"></div>
+            <div className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-blue-500 dark:bg-blue-400 animate-dot-2"></div>
+            <div className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-blue-500 dark:bg-blue-400 animate-dot-3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* Image container with click handler */}
         <div
@@ -485,33 +490,34 @@ const OptimizedImage = ({
       </div>
 
       {/* Modal - keeping your existing modal functionality */}
-      {modalState.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center transition-all duration-300">
+{modalState.isOpen && createPortal(
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center transition-all duration-300">
+    
           <div className={`absolute inset-0 bg-black/90 ${modalState.imageLoaded ? 'backdrop-blur-sm' : ''} transition-all duration-300`} />
 
           {/* Loading state */}
-             {!modalState.imageLoaded && !modalState.hasError && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-gradient-to-br from-gray-900/80 to-black/80 animate-pulse-fade">
-              <div className="relative w-20 h-20 mb-4">
-                <div className="absolute inset-0 rounded-full border-4 border-t-4 border-blue-400 border-opacity-30 animate-spin-slow"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-t-4 border-blue-500 animate-spin-fast"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg className="w-10 h-10 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              </div>
-<div className="flex items-center gap-2">
-  <p className="text-white text-lg font-semibold tracking-wide">Loading Image</p>
-  <div className="flex items-center gap-1">
-    <div className="w-1.5 h-1.5 rounded-full bg-white animate-dot-1"></div>
-    <div className="w-1.5 h-1.5 rounded-full bg-white animate-dot-2"></div>
-    <div className="w-1.5 h-1.5 rounded-full bg-white animate-dot-3"></div>
+ {/* Modal Loading state - responsive */}
+{!modalState.imageLoaded && !modalState.hasError && (
+  <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-gradient-to-br from-gray-900/80 to-black/80 animate-pulse-fade">
+    <div className="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 mb-2 sm:mb-4">
+      <div className="absolute inset-0 rounded-full border-3 sm:border-4 border-t-3 sm:border-t-4 border-blue-400 border-opacity-30 animate-spin-slow"></div>
+      <div className="absolute inset-0 rounded-full border-3 sm:border-4 border-t-3 sm:border-t-4 border-blue-500 animate-spin-fast"></div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <svg className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+    </div>
+    <div className="flex items-center gap-1 sm:gap-2">
+      <p className="text-white text-sm sm:text-lg font-semibold tracking-wide">Loading</p>
+      <div className="flex items-center gap-0.5 sm:gap-1">
+        <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white animate-dot-1"></div>
+        <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white animate-dot-2"></div>
+        <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-white animate-dot-3"></div>
+      </div>
+    </div>
   </div>
-</div> 
-</div>
-          )}
-
+)}
           {/* Error state */}
           {modalState.hasError && (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-gradient-to-br from-red-900/80 to-black/80">
@@ -540,7 +546,7 @@ const OptimizedImage = ({
 
             {/* Control buttons */}
             {modalState.showContent && (
-    <div className="md:absolute md:bottom-4 md:left-1/2 md:-translate-x-1/2 md:z-50  md:space-x-3 bg-gradient-to-br from-gray-800/80 to-gray-950/80 border border-white/15 rounded-full p-3 shadow-2xl hidden md:flex">
+<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center space-x-3 bg-gradient-to-br from-gray-800/80 to-gray-950/80 border border-white/15 rounded-full p-3 shadow-2xl">
                 <button
                   onClick={handleZoomOut}
                   disabled={modalState.zoomLevel <= 1}
@@ -610,8 +616,9 @@ const OptimizedImage = ({
               />
             </div>
           </div>
-        </div>
-      )}
+       </div>,
+  document.body
+)}
 
      <style jsx>{`
 
@@ -722,6 +729,51 @@ const OptimizedImage = ({
         .animate-pulse-fade {
           animation: pulse-fade 2s ease-in-out infinite;
         }
+     /* Add to your existing style jsx */
+@media (max-width: 360px) {
+  .xs\:w-10 { width: 2.5rem; }
+  .xs\:h-10 { height: 2.5rem; }
+  .xs\:w-4 { width: 1rem; }
+  .xs\:h-4 { height: 1rem; }
+  .xs\:text-xs { font-size: 0.75rem; }
+  .xs\:text-\[10px\] { font-size: 10px; }
+  .xs\:inline { display: inline; }
+}
+
+@media (max-width: 320px) {
+  .text-\[9px\] { font-size: 9px; }
+  .w-0\.5 { width: 0.125rem; }
+  .h-0\.5 { height: 0.125rem; }
+  .gap-0\.5 { gap: 0.125rem; }
+}
+
+/* Enhanced dot animations for smaller sizes */
+@keyframes dot-bounce-small {
+  0%, 80%, 100% { 
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .animate-dot-1,
+  .animate-dot-2,
+  .animate-dot-3 {
+    animation: dot-bounce-small 1.4s infinite ease-in-out;
+  }
+}
+@media (max-width: 640px) {
+  .border-3 {
+    border-width: 3px;
+  }
+  .border-t-3 {
+    border-top-width: 3px;
+  }
+}
       `}</style>
     </>
   );

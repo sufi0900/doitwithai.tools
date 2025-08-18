@@ -5,7 +5,7 @@ import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { CalendarMonth, ArrowForward } from "@mui/icons-material";
 import { Box, Card, CardContent } from "@mui/material";
-import Image from "next/image";
+// import Image from "next/image";
 import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
 
 export default function CardComponent({
@@ -61,11 +61,12 @@ export default function CardComponent({
             <OptimizedImage
   src={urlForImage(mainImage).width(800).height(600).fit("crop").auto("format").url()}
   alt={title}
-  fill
+    width={800}
+     height={600}
+                
   quality={80}
   priority={false} // set to true only for above-the-fold images
   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-  style={{ objectFit: "cover" }}
 />
 
             </div>

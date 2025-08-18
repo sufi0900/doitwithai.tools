@@ -16,7 +16,9 @@ import Breadcrumb from "../Common/Breadcrumb";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { CalendarMonthOutlined, ArrowForward } from "@mui/icons-material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import ImageOptimizer from "./ImageOptimizer";
+// import ImageOptimizer from "./ImageOptimizer";
+import ImageOptimizer from "@/app/ai-seo/[slug]/OptimizedImage";
+
 import { ShieldCheck } from "lucide-react"; // Import the new icon
 
 export default function HomeBigCard({ 
@@ -66,10 +68,11 @@ export default function HomeBigCard({
           <ImageOptimizer
             src={mainImage}
             alt={title}
-            width={500} 
+            width={500}
             height={320}
-            className="object-cover w-full h-full"
-          />
+                            quality={80}
+
+            className="object-cover w-full h-full" children={undefined} blurDataURL={undefined} style={undefined} onClick={undefined}          />
           
           {/* Gradient Overlay on Hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

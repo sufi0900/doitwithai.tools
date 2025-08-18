@@ -8,7 +8,8 @@ import Link from "next/link";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { CalendarMonth } from "@mui/icons-material";
-import ImageOptimizer from "./ImageOptimizer";
+// import ImageOptimizer from "./ImageOptimizer";
+import ImageOptimizer from "@/app/ai-seo/[slug]/OptimizedImage";
 
 export default function MediumCard({
   publishedAt,
@@ -60,8 +61,9 @@ export default function MediumCard({
                 alt={title}
                 width={400}
                 height={200}
-                className="object-cover w-full h-full"
-              />
+                quality={80}
+                className="object-cover w-full h-full" 
+                children={undefined} blurDataURL={undefined} style={undefined} onClick={undefined}              />
             </div>
             
             {/* Gradient Overlay on Hover */}

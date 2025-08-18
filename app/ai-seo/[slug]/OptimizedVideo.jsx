@@ -1,371 +1,259 @@
-/* eslint-disable @next/next/no-img-element */
 // OptimizedVideo.jsx
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useInView } from "react-intersection-observer";
 
-const OptimizedVideo = ({ 
-  src, 
-  alt, 
-  caption, 
-  className = "", 
-  children,
-  poster, // Optional poster image
-  autoPlay = false,
-  muted = false,
-  loop = false,
-  preloadDistance = "200px" // How early to start loading
-}) => {
-  const [isLoading, setIsLoading] = useState(false);
+const OptimizedVideo = ({ src, alt, caption, className = "", thumbnailUrl, children }) => {
+  const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [hasError, setHasError] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
-  const [bufferingProgress, setBufferingProgress] = useState(0);
-  const [isBuffering, setIsBuffering] = useState(false);
-  const [videoMetadata, setVideoMetadata] = useState(null);
-
+  const [videoError, setVideoError] = useState(false);
+  const [hasStartedLoading, setHasStartedLoading] = useState(false);
+  
   const videoRef = useRef(null);
   const progressIntervalRef = useRef(null);
-  const bufferCheckRef = useRef(null);
-
+  
   // Enhanced intersection observer with earlier trigger
   const { ref, inView } = useInView({
     triggerOnce: true,
-    rootMargin: preloadDistance, // Start loading before reaching the video
-    threshold: 0.1,
+    rootMargin: "200px 0px", // Start loading 200px before video comes into view
+    threshold: 0,
   });
 
-  // Simulate loading progress more realistically
-  const updateLoadingProgress = useCallback(() => {
+  // Cleanup function
+  const cleanup = () => {
     if (progressIntervalRef.current) {
       clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
     }
+  };
 
-    let progress = 0;
-    const increment = Math.random() * 5 + 2; // 2-7% increments
-    
-    progressIntervalRef.current = setInterval(() => {
-      progress += increment;
-      
-      // Slow down as we approach completion
-      if (progress > 70) {
-        progress += Math.random() * 2;
-      }
-      if (progress > 90) {
-        progress = Math.min(95, progress + Math.random() * 0.5);
-      }
-      
-      setLoadingProgress(Math.min(95, progress));
-    }, 150);
-  }, []);
-
-  // Check buffering status
-  const checkBuffering = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const buffered = video.buffered;
-    const currentTime = video.currentTime;
-    
-    if (buffered.length > 0) {
-      const bufferEnd = buffered.end(buffered.length - 1);
-      const bufferProgress = (bufferEnd / video.duration) * 100;
-      setBufferingProgress(bufferProgress);
-      
-      // Check if we're buffering (current time is close to buffer end)
-      const isCurrentlyBuffering = currentTime >= bufferEnd - 0.5;
-      setIsBuffering(isCurrentlyBuffering && !video.paused);
-    }
-  }, []);
-
-  // Start loading when in view
+  // Enhanced loading progress simulation
   useEffect(() => {
-    if (inView && src && !isLoading && !videoReady && !hasError) {
-      setIsLoading(true);
-      setLoadingProgress(5); // Start with 5%
-      updateLoadingProgress();
+    if (!inView || hasStartedLoading) return;
+    
+    setHasStartedLoading(true);
+    cleanup();
+
+    // Simulate initial loading progress
+    const updateProgress = (progress) => {
+      setLoadingProgress((current) => Math.min(90, Math.max(current, progress)));
+    };
+
+    // Check network connection for better progress estimation
+    if ("connection" in navigator) {
+      const connection = navigator.connection;
+      const downlink = connection.downlink || 1;
+      
+      if (downlink < 2) {
+        updateProgress(10); // Very slow connection
+      } else if (downlink < 5) {
+        updateProgress(25); // Slow connection
+      } else {
+        updateProgress(40); // Good connection
+      }
+    } else {
+      updateProgress(20); // Default for unknown connection
     }
-  }, [inView, src, isLoading, videoReady, hasError, updateLoadingProgress]);
+
+    // Progressive loading simulation
+    progressIntervalRef.current = setInterval(() => {
+      setLoadingProgress((current) => {
+        if (current >= 90) return current;
+        // Slower progress as it approaches completion
+        const increment = current > 70 ? Math.random() * 3 : Math.random() * 8;
+        return Math.min(90, current + increment);
+      });
+    }, 300);
+
+    return cleanup;
+  }, [inView, hasStartedLoading]);
 
   // Video event handlers
-  const handleLoadStart = useCallback(() => {
-    setIsLoading(true);
-    setHasError(false);
-  }, []);
-
-  const handleLoadedMetadata = useCallback(() => {
-    const video = videoRef.current;
-    if (video) {
-      setVideoMetadata({
-        duration: video.duration,
-        videoWidth: video.videoWidth,
-        videoHeight: video.videoHeight,
-      });
-    }
-  }, []);
-
-  const handleLoadedData = useCallback(() => {
+  const handleVideoLoad = () => {
     setLoadingProgress(100);
     setTimeout(() => {
       setIsLoading(false);
-      setVideoReady(true);
-    }, 300); // Small delay for smooth transition
-  }, []);
+    }, 200); // Small delay for smooth transition
+    cleanup();
+  };
 
-  const handleError = useCallback((e) => {
-    console.error('Video loading error:', e);
-    setHasError(true);
+  const handleVideoError = () => {
+    setVideoError(true);
     setIsLoading(false);
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-    }
-  }, []);
+    cleanup();
+  };
 
-  const handleProgress = useCallback(() => {
-    checkBuffering();
-  }, [checkBuffering]);
+  const handleVideoLoadStart = () => {
+    setLoadingProgress(50); // Jump to 50% when video actually starts loading
+  };
 
-  const handleWaiting = useCallback(() => {
-    setIsBuffering(true);
-  }, []);
-
-  const handleCanPlay = useCallback(() => {
-    setIsBuffering(false);
-  }, []);
-
-  // Cleanup intervals
-  useEffect(() => {
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-      if (bufferCheckRef.current) {
-        clearInterval(bufferCheckRef.current);
-      }
-    };
-  }, []);
-
-  // Set up buffer checking interval when video is ready
-  useEffect(() => {
-    if (videoReady && videoRef.current) {
-      bufferCheckRef.current = setInterval(checkBuffering, 1000);
-      return () => {
-        if (bufferCheckRef.current) {
-          clearInterval(bufferCheckRef.current);
+  const handleVideoProgress = () => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      if (video.buffered.length > 0) {
+        const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+        const duration = video.duration;
+        if (duration > 0) {
+          const progress = Math.min(95, 50 + (bufferedEnd / duration) * 45);
+          setLoadingProgress(progress);
         }
-      };
+      }
     }
-  }, [videoReady, checkBuffering]);
+  };
 
-  // Calculate aspect ratio for responsive container
-  const aspectRatio = videoMetadata 
-    ? (videoMetadata.videoHeight / videoMetadata.videoWidth) * 100
-    : 56.25; // Default to 16:9
+  // Calculate responsive dimensions
+  const getResponsiveClasses = () => {
+    return `
+      w-full 
+      h-auto 
+      min-h-[200px] 
+      sm:min-h-[250px] 
+      md:min-h-[300px] 
+      lg:min-h-[350px] 
+      xl:min-h-[400px]
+      max-h-[80vh]
+      object-cover
+      ${className}
+    `.trim();
+  };
 
-  return (
-    <div ref={ref} className="relative w-full overflow-hidden group">
-      {/* Skeleton/Placeholder - Always show when not in view */}
-      {!inView && (
-       <div 
-    className="w-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg flex items-center justify-center animate-pulse"
-    // Add the padding-bottom here
-    style={{ paddingBottom: `${aspectRatio}%`, position: 'relative' }} 
-  >
-    <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
+  // Loading skeleton with exact video dimensions
+  const LoadingSkeleton = () => (
+    <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden animate-pulse">
+      {/* Maintain aspect ratio container */}
+      <div className="aspect-video w-full min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] max-h-[80vh] flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-900">
+        
+        {/* Enhanced loading content */}
+        <div className="flex flex-col items-center justify-center space-y-4 p-4">
+          
+          {/* Video player icon with pulse animation */}
+          <div className="relative">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-lg animate-pulse">
               <svg 
-                className="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4 mx-auto" 
+                className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 dark:text-blue-400" 
                 fill="currentColor" 
                 viewBox="0 0 24 24"
               >
                 <path d="M8 5v14l11-7z"/>
               </svg>
-              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                Video will load when visible
-              </p>
             </div>
+            {/* Ripple effect */}
+            <div className="absolute inset-0 w-16 h-16 sm:w-20 sm:h-20 bg-blue-500 dark:bg-blue-400 opacity-20 rounded-full animate-ping"></div>
           </div>
-        </div>
-      )}
 
-      {/* Loading State - Show when loading */}
-      {inView && isLoading && !hasError && (
-        <div 
-          className="w-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg flex items-center justify-center relative overflow-hidden"
-          style={{ paddingBottom: `${aspectRatio}%` }}
-        >
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            {/* Animated Play Icon */}
-            <div className="relative mb-4">
-              <svg 
-                className="w-20 h-20 text-gray-300 dark:text-gray-600" 
-                fill="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-              {/* Spinning loader around play icon */}
-              <div className="absolute inset-0 rounded-full border-4 border-gray-200 dark:border-gray-700">
-                <div 
-                  className="rounded-full border-4 border-blue-500 border-r-transparent animate-spin"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                  }}
-                />
+          {/* Loading text */}
+          <div className="text-center space-y-2">
+            <p className="text-sm sm:text-base font-medium text-gray-600 dark:text-gray-300">
+              Loading Video...
+            </p>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              {loadingProgress.toFixed(0)}%
+            </p>
+          </div>
+
+          {/* Enhanced progress bar */}
+          <div className="w-full max-w-xs">
+            <div className="h-2 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 transition-all duration-300 ease-out rounded-full"
+                style={{ 
+                  width: `${loadingProgress}%`,
+                  transform: `translateX(${loadingProgress < 100 ? '0' : '0'})`,
+                }}
+              />
+            </div>
+            
+            {/* Connection indicator */}
+            {"connection" in navigator && (
+              <div className="flex justify-between items-center mt-2 text-xs text-gray-500 dark:text-gray-400">
+                <span>
+                  {navigator.connection.downlink < 2 ? 'Slow connection' :
+                   navigator.connection.downlink < 5 ? 'Good connection' : 'Fast connection'}
+                </span>
+                <span>{navigator.connection.effectiveType || 'Unknown'}</span>
               </div>
-            </div>
-
-            {/* Loading Text with Progress */}
-            <div className="text-center">
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
-                Loading Video...
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {Math.round(loadingProgress)}%
-              </p>
-            </div>
-          </div>
-
-          {/* Enhanced Progress Bar */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out relative overflow-hidden"
-              style={{ width: `${loadingProgress}%` }}
-            >
-              {/* Shimmer effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] animate-shimmer" />
-            </div>
+              )}
           </div>
         </div>
-      )}
 
-      {/* Error State */}
-      {hasError && (
-        <div 
-          className="w-full bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/30 rounded-lg flex items-center justify-center border-2 border-red-200 dark:border-red-800"
-          style={{ paddingBottom: `${aspectRatio}%` }}
-        >
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+        {/* Shimmer overlay effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full animate-shimmer"></div>
+      </div>
+    </div>
+  );
+
+  // Error state component
+  const ErrorState = () => (
+    <div className="relative w-full bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 overflow-hidden">
+      <div className="aspect-video w-full min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] max-h-[80vh] flex items-center justify-center">
+        <div className="text-center space-y-4 p-4">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center mx-auto">
             <svg 
-              className="w-16 h-16 text-red-400 mb-4" 
+              className="w-6 h-6 sm:w-8 sm:h-8 text-red-500 dark:text-red-400" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" 
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-red-600 dark:text-red-400 font-medium mb-2">
-              Failed to load video
+          </div>
+          <div>
+            <p className="text-sm sm:text-base font-medium text-red-600 dark:text-red-400 mb-1">
+              Video failed to load
             </p>
-            <button 
-              onClick={() => {
-                setHasError(false);
-                setIsLoading(true);
-                setVideoReady(false);
-                updateLoadingProgress();
-              }}
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
-            >
-              Retry
-            </button>
+            <p className="text-xs sm:text-sm text-red-500 dark:text-red-500">
+              Please check your connection and try again
+            </p>
           </div>
-        </div>
-      )}
-
-      {/* Video Element */}
-      {inView && !hasError && (
-        <div className="relative">
-          {/* Video Container with aspect ratio */}
-          <div 
-            className="relative w-full overflow-hidden rounded-lg"
-            style={{ paddingBottom: `${aspectRatio}%` }}
+          <button
+            onClick={() => {
+              setVideoError(false);
+              setIsLoading(true);
+              setLoadingProgress(0);
+              setHasStartedLoading(false);
+            }}
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors duration-200"
           >
-            <video
-              ref={videoRef}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-                videoReady ? 'opacity-100' : 'opacity-0'
-              } ${className}`}
-              controls
-              preload="metadata"
-              poster={poster}
-              autoPlay={autoPlay}
-              muted={muted}
-              loop={loop}
-              onLoadStart={handleLoadStart}
-              onLoadedMetadata={handleLoadedMetadata}
-              onLoadedData={handleLoadedData}
-              onError={handleError}
-              onProgress={handleProgress}
-              onWaiting={handleWaiting}
-              onCanPlay={handleCanPlay}
-              aria-label={alt}
-            >
-              <source src={src} type="video/mp4" />
-              <source src={src.replace('.mp4', '.webm')} type="video/webm" />
-              <p className="text-center text-gray-600 dark:text-gray-400 p-4">
-                Your browser does not support the video tag. 
-                <a href={src} className="text-blue-500 hover:underline ml-1">
-                  Download video
-                </a>
-              </p>
-            </video>
+            Retry
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
-            {/* Buffering Overlay */}
-            {videoReady && isBuffering && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm">
-                <div className="text-center">
-                  <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mb-2" />
-                  <p className="text-white text-sm font-medium">Buffering...</p>
-                </div>
-              </div>
-            )}
+  return (
+    <div ref={ref} className="w-full">
+      {/* Always show skeleton initially or when loading */}
+      {(!hasStartedLoading || (isLoading && !videoError)) && <LoadingSkeleton />}
+      
+      {/* Show error state */}
+      {videoError && <ErrorState />}
 
-            {/* Buffer Progress Indicator (subtle) */}
-            {videoReady && bufferingProgress > 0 && bufferingProgress < 100 && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/20">
-                <div 
-                  className="h-full bg-white/60 transition-all duration-300"
-                  style={{ width: `${bufferingProgress}%` }}
-                />
-              </div>
-            )}
-
-            {/* Video Quality Badge */}
-            {videoMetadata && videoReady && (
-              <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-medium backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                {videoMetadata.videoWidth}x{videoMetadata.videoHeight}
-                {videoMetadata.duration && (
-                  <span className="ml-2">
-                    {Math.floor(videoMetadata.duration / 60)}:
-                    {String(Math.floor(videoMetadata.duration % 60)).padStart(2, '0')}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Caption */}
-        
+      {/* Video element - only render when in view */}
+      {hasStartedLoading && !videoError && (
+        <div className={`${isLoading ? 'opacity-0 absolute inset-0 pointer-events-none' : 'opacity-100'} transition-opacity duration-500`}>
+          <video
+            ref={videoRef}
+            className={getResponsiveClasses()}
+            controls
+            preload="metadata" // Changed to metadata for better performance
+            onLoadStart={handleVideoLoadStart}
+            onCanPlay={handleVideoLoad}
+            onError={handleVideoError}
+            onProgress={handleVideoProgress}
+            onLoadedData={() => setLoadingProgress(85)}
+            poster={thumbnailUrl} // Use the new thumbnailUrl prop
+            aria-label={caption || alt || "Video content"}
+          >
+            <source src={src} type="video/mp4" />
+            <source src={src} type="video/webm" />
+            <source src={src} type="video/ogg" />
+            Your browser does not support the video tag.
+          </video>
         </div>
       )}
 
+      {/* Children content (caption, etc.) */}
       {children}
-
-      {/* Add shimmer animation styles */}
-      <style jsx>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(200%); }
-        }
-        .animate-shimmer {
-          animation: shimmer 1.5s infinite;
-        }
-      `}</style>
     </div>
   );
 };

@@ -43,7 +43,7 @@ const ReadingProgressCircle = () => {
     <div 
       className={`fixed bottom-24 right-4 z-50 flex items-center justify-center rounded-full readingbar shadow-lg 
                 transition-all duration-300 ease-in-out
-                ${isHovered ? 'scale-110 shadow-xl' : ''}
+              
                 ${isComplete ? 'bg-green-50 dark:bg-green-900/20' : 'bg-white dark:bg-gray-800'}
                 h-[80px] w-[80px] border border-gray-100 dark:border-gray-700`}  // Adjusting the height and width of the outer circle
       onMouseEnter={() => setIsHovered(true)}

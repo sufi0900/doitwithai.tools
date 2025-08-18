@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import Image from "next/image";
 import { urlForImage } from "@/sanity/lib/image";
 import { PortableText } from "@portabletext/react";
-import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
+// import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
 
 // Optimized Portable Text component for image descriptions
 const ImgDescPortableText = React.memo(({ value }) => {
@@ -28,7 +28,7 @@ const ImgDescPortableText = React.memo(({ value }) => {
         const isExternal = value.href && !value.href.startsWith('/');
         return (
           <a
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline transition-colors duration-200"
+            className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
             href={value.href}
             rel={isExternal ? 'noreferrer noopener' : undefined}
             target={isExternal ? '_blank' : undefined}
@@ -57,6 +57,7 @@ const LoadingSkeleton = React.memo(() => (
 ));
 
 LoadingSkeleton.displayName = 'LoadingSkeleton';
+
 
 const ArticleHeader = ({ data }) => {
   // Memoize image URLs to prevent recalculation on re-renders
@@ -105,10 +106,7 @@ const ArticleHeader = ({ data }) => {
         <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full sm:w-24 transition-all duration-300 hover:w-20 sm:hover:w-28"></div>
       </header>
 
-      {/* Reading Progress Circle with better positioning */}
-      <div className="relative z-10">
-        <ReadingProgressCircle />
-      </div>
+
 
       {/* Main Image Section with enhanced responsiveness */}
       <section className="my-6 w-full sm:my-8 lg:my-10" aria-label="Article featured image">
@@ -148,8 +146,8 @@ const ArticleHeader = ({ data }) => {
                 {hasImageDescription && (
                   <figcaption className="mt-3 rounded-xl border border-gray-200/60 bg-gradient-to-r from-gray-50/80 to-gray-100/80 backdrop-blur-sm px-3 py-2.5 sm:mt-4 sm:px-4 sm:py-3 md:px-5 md:py-4 dark:border-gray-700/60 dark:from-gray-800/80 dark:to-gray-900/80 transition-all duration-300 hover:shadow-md group-hover:border-gray-300/60 dark:group-hover:border-gray-600/60">
                     <div className="flex items-start gap-2 sm:gap-3">
-                      {/* Enhanced Icon with better sizing */}
-                      <div className="mt-0.5 flex-shrink-0 p-1 rounded-full bg-blue-100 dark:bg-blue-900/30 transition-colors duration-300">
+                      {/* Icon container */}
+                      <div className="flex-shrink-0 p-1 rounded-full bg-blue-100 dark:bg-blue-900/30 transition-colors duration-300">
                         <svg
                           className="h-3 w-3 text-blue-600 dark:text-blue-400 sm:h-3.5 sm:w-3.5"
                           fill="none"
@@ -166,8 +164,8 @@ const ArticleHeader = ({ data }) => {
                         </svg>
                       </div>
                       
-                      {/* Caption text with improved typography */}
-                      <div className="min-w-0 flex-1 -mt-0.5">
+                      {/* Caption text container */}
+                      <div className="min-w-0 flex-1">
                         <ImgDescPortableText value={data.mainImage.imageDescription} />
                       </div>
                     </div>

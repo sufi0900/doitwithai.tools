@@ -2,7 +2,7 @@ import React, { useMemo, useCallback } from "react"; // Import useMemo and useCa
 import { urlForImage } from "@/sanity/lib/image";
 import Link from "next/link";
 import SkelCard from "@/components/Blog/Skeleton/Card"
-import OptimizeImage from "@/components/Blog/ImageOptimizer"
+import OptimizeImage from "@/app/ai-seo/[slug]/OptimizedImage";
 
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
@@ -11,19 +11,15 @@ import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { 
   AccessTime, 
   CalendarMonthOutlined,
-  TrendingUp,
-  BookmarkAdd,
-  Share,
+  
   ArrowRightAltOutlined
 } from "@mui/icons-material";
 import { 
-  Clock, 
-  Calendar, 
-  ArrowRight, 
+ 
   Sparkles, 
-  BookOpen,
+ 
   TrendingUp as TrendingUpLucide,
-  Users
+ 
 } from "lucide-react";
 
 export default function RecentPosts({ initialData = [] }) { // Accept initialData prop
@@ -137,10 +133,14 @@ export default function RecentPosts({ initialData = [] }) { // Accept initialDat
                 <div className="relative w-full aspect-[37/22] overflow-hidden">
                   <div className="absolute inset-0 h-full w-full transition-all duration-500 ease-out group-hover:scale-110">
                     <OptimizeImage
-                      src={urlForImage(post.mainImage).url()}
-                      alt={post.title}
-                      fill
-                      className="object-cover"
+                     src={urlForImage(post.mainImage).width(800).height(600).fit("crop").auto("format").url()}
+                     alt={post.title}
+                       width={800}
+                        height={600}
+                                   
+                     quality={80}
+                     priority={false} // set to true only for above-the-fold images
+                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                   </div>
                   
