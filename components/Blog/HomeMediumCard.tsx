@@ -56,14 +56,17 @@ export default function MediumCard({
         >
           <div className="w-full h-full">
             <div className="absolute inset-0 h-full w-full transition-all duration-500 ease-out group-hover:scale-110">
-              <ImageOptimizer
+       <ImageOptimizer
                 src={mainImage}
                 alt={title}
                 width={400}
                 height={200}
                 quality={80}
-                className="object-cover w-full h-full" 
-                children={undefined} blurDataURL={undefined} style={undefined} onClick={undefined}              />
+                className="object-cover w-full h-full"
+                blurDataURL={undefined}
+                style={undefined}
+                onClick={undefined}          />
+           
             </div>
             
             {/* Gradient Overlay on Hover */}

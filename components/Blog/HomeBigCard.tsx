@@ -65,15 +65,21 @@ export default function HomeBigCard({
           }}
           className="transition-all duration-500 ease-out group-hover:scale-110"
         >
-          <ImageOptimizer
+       <ImageOptimizer
             src={mainImage}
             alt={title}
             width={500}
             height={320}
-                            quality={80}
+  
 
-            className="object-cover w-full h-full" children={undefined} blurDataURL={undefined} style={undefined} onClick={undefined}          />
-          
+            quality={80}
+            className="object-cover w-full h-full"
+            blurDataURL={undefined}
+            style={undefined}
+            onClick={undefined}
+
+
+          />
           {/* Gradient Overlay on Hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </CardMedia>

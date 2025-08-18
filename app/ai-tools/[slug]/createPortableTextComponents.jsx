@@ -1,139 +1,21 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
+// import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
 import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
 import { Rocket } from 'lucide-react';
 import { CopyBlock, dracula } from "react-code-blocks";
 import { Clipboard, Check } from "lucide-react";
-import { getFileUrl } from "./sanityFileUrl";
+import { getFileUrl } from "./sanityFileUrl"; // path as you saved it
+// import Image from 'next/image';
 
 const PortableTextComponents = () => {
-  // REUSABLE: Enhanced Caption Component (replaces duplicate code)
-  const EnhancedCaption = useCallback(({ content, type = 'image' }) => {
-    const isVideo = type === 'video';
-    
-    return (
-      <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex items-start gap-2 sm:gap-3">
-          {/* Caption icon - responsive and reusable */}
-          <div className="flex-shrink-0">
-            <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-              <svg
-                className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-          </div>
-          
-          {/* Caption text - responsive and reusable */}
-          <div className="flex-1 min-w-0">
-            <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words -mt-1">
-              {isVideo ? content : <PortableText value={content} components={imgdesc} />}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }, []);
-
-  // REUSABLE: Glowing Container Component (reduces duplicate structure)
-  const GlowingContainer = useCallback(({ children, className = "" }) => (
-    <div className="relative w-full my-8 sm:my-10 md:my-12">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
-        <div className="group relative transform transition-all duration-500">
-          {/* Enhanced gradient border - responsive */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-sm"></div>
-          
-          {/* Main container with responsive padding */}
-          <div className="relative bg-white dark:bg-gray-900 p-2 sm:p-3 md:p-4 rounded-lg shadow-xl group-hover:shadow-2xl transition-shadow duration-500">
-            <div className={`relative overflow-hidden rounded-lg ${className}`}>
-              {children}
-            </div>
-            
-            {/* Background glow effect - reduced on mobile */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  ), []);
-
-  // REUSABLE: Loading State Component
-  const LoadingState = useCallback(({ type = 'video', message = 'Preparing content...' }) => (
-    <GlowingContainer>
-      <div className="relative overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
-        <div className="aspect-video w-full min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] flex items-center justify-center animate-pulse">
-          <div className="text-center">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-4 h-4 sm:w-6 sm:h-6 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
-                {type === 'video' ? (
-                  <path d="M8 5v14l11-7z" />
-                ) : (
-                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                )}
-              </svg>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
-          </div>
-        </div>
-      </div>
-    </GlowingContainer>
-  ), [GlowingContainer]);
-
-  // REUSABLE: Error State Component
-  const ErrorState = useCallback(({ type = 'video', title = 'Content not available' }) => (
-    <GlowingContainer>
-      <div className="relative overflow-hidden rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-        <div className="aspect-video w-full min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] flex items-center justify-center">
-          <div className="text-center space-y-4 p-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center mx-auto">
-              <svg className="w-4 h-4 sm:w-6 sm:h-6 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm sm:text-base font-medium text-red-600 dark:text-red-400">{title}</p>
-              <p className="text-xs sm:text-sm text-red-500 dark:text-red-500 mt-1">
-                Unable to load {type} content
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </GlowingContainer>
-  ), [GlowingContainer]);
-
-  // MEMOIZED: Image description components (prevents re-creation)
-  const imgdesc = useMemo(() => ({
-    block: {
-      normal: ({ children }) => (
-        <p className="hover:text-gray-950 customanchor dark:hover:text-gray-50 mb-2 sm:mb-4 mt-1 text-xs sm:text-sm md:text-base font-medium leading-relaxed text-gray-800 dark:text-gray-300 transition-all duration-300 ease-in-out">
-          {children}
-        </p>
-      ),
-      a: ({ children }) => (
-        <a className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-xs sm:text-sm md:text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
-          {children}
-        </a>
-      )
-    },
-  }), []);
-
-  // OPTIMIZED: CodeBlock Component with useCallback for performance
-  const CodeBlockComponent = useCallback(({ code, language }) => {
+  // Add this before the PortableTextComponents function
+  const CodeBlockComponent = ({ code, language }) => {
     const [copied, setCopied] = useState(false);
 
-    const handleCopy = useCallback(async () => {
+    const handleCopy = async () => {
       try {
         if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(String(code));
@@ -153,7 +35,7 @@ const PortableTextComponents = () => {
       } catch (err) {
         console.error("Copy failed", err);
       }
-    }, [code]);
+    };
 
     return (
       <div className="sanity-code-input mx-2 sm:mx-0">
@@ -185,10 +67,26 @@ const PortableTextComponents = () => {
         </div>
       </div>
     );
-  }, []);
+  };
 
-  // OPTIMIZED: Video Component with reusable components
-  const VideoComponent = useCallback(({ value }) => {
+  const imgdesc = {
+    block: {
+      normal: ({ children }) => (
+        <p
+          className="hover:text-gray-950 customanchor dark:hover:text-gray-50 mb-2 sm:mb-4 mt-1 text-xs sm:text-sm md:text-base font-medium leading-relaxed text-gray-800 dark:text-gray-300 transition-all duration-300 ease-in-out">
+          {children}
+        </p>
+      ),
+      a: ({ children }) => (
+        <a className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-xs sm:text-sm md:text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+          {children}
+        </a>
+      )
+    },
+  }
+
+  // Enhanced VideoComponent in portableTextComponents
+  const VideoComponent = ({ value }) => {
     const [fileUrl, setFileUrl] = useState(null);
     const [isUrlLoading, setIsUrlLoading] = useState(true);
 
@@ -212,81 +110,222 @@ const PortableTextComponents = () => {
       return () => (mounted = false);
     }, [value]);
 
+    // Show loading state while URL is being fetched
     if (isUrlLoading) {
-      return <LoadingState type="video" message="Preparing video..." />;
-    }
-
-    if (!fileUrl) {
-      return <ErrorState type="video" title="Video not available" />;
-    }
-
-    return (
-      <GlowingContainer>
-        <div className="relative">
-          <OptimizedVideo
-            src={fileUrl}
-            alt={value.alt}
-            caption={value.caption}
-            className="rounded-lg shadow-lg"
-          />
-
-          {/* Enhanced caption using reusable component */}
-          {value.caption && (
-            <EnhancedCaption content={value.caption} type="video" />
-          )}
-        </div>
-      </GlowingContainer>
-    );
-  }, [LoadingState, ErrorState, GlowingContainer, EnhancedCaption]);
-
-  // OPTIMIZED: Image Component with reusable components
-  const ImageComponent = useCallback(({ value, index }) => {
-    const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
-    const isPriority = index < 3;
-    const blurDataURL = value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined;
-
-    return (
-      <GlowingContainer>
-        <figure className="relative">
-          <div className="relative overflow-hidden rounded-lg">
-            <OptimizedImage
-              src={imageUrl}
-              alt={value.alt || "Article image"}
-              className="w-full h-auto object-cover rounded-lg shadow-lg"
-              priority={isPriority}
-              blurDataURL={blurDataURL}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
-              width={800}
-              height={600}
-              quality={85}
-              enableModal={true}
-            />
-            
-            {/* Subtle overlay on hover */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg" />
+      return (
+        <div className="relative w-full my-8 sm:my-10 md:my-12">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
+            <div className="group relative transform transition-all duration-500">
+              {/* Loading skeleton while URL loads */}
+              <div className="relative overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
+                <div className="aspect-video w-full min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] flex items-center justify-center animate-pulse">
+                  <div className="text-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-4 h-4 sm:w-6 sm:h-6 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Preparing video...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      );
+    }
 
-          {/* Enhanced description using reusable component */}
-          {value.imageDescription && (
-            <EnhancedCaption content={value.imageDescription} type="image" />
-          )}
-        </figure>
-      </GlowingContainer>
+    // Show error state if no URL could be loaded
+    if (!fileUrl) {
+      return (
+        <div className="relative w-full my-8 sm:my-10 md:my-12">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
+            <div className="group relative transform transition-all duration-500">
+              <div className="relative overflow-hidden rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                <div className="aspect-video w-full min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] flex items-center justify-center">
+                  <div className="text-center space-y-4 p-4">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center mx-auto">
+                      <svg className="w-4 h-4 sm:w-6 sm:h-6 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm sm:text-base font-medium text-red-600 dark:text-red-400">
+                        Video not available
+                      </p>
+                      <p className="text-xs sm:text-sm text-red-500 dark:text-red-500 mt-1">
+                        Unable to load video content
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative w-full my-8 sm:my-10 md:my-12">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <div className="group relative transform transition-all duration-500 ">
+
+            {/* Enhanced gradient border - responsive */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-sm"></div>
+
+            {/* Main container with responsive padding */}
+            <div className="relative bg-white dark:bg-gray-900 p-2 sm:p-3 md:p-4 rounded-lg shadow-xl group-hover:shadow-2xl transition-shadow duration-500">
+
+              <div className="relative overflow-hidden rounded-lg">
+
+
+                {/* Video container with OptimizedVideo component */}
+                <div className="relative">
+                  <OptimizedVideo
+                    src={fileUrl}
+                    alt={value.alt}
+                    caption={value.caption}
+                    className="rounded-lg shadow-lg"
+                  />
+
+                  {/* Enhanced caption with proper mobile sizing */}
+                  {value.caption && (
+                  <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    
+                    {/* Caption icon - no vertical alignment class needed here */}
+                    <div className="flex-shrink-0">
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                          <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Caption text - properly sized for mobile */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words">
+                            {value.caption}
+                          </p>
+                        </div>
+
+                      </div>
+                    </div>
+                  )}
+
+
+                </div>
+
+              </div>
+
+              {/* Background glow effect - reduced on mobile */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+            </div>
+          </div>
+        </div>
+      </div>
     );
-  }, [GlowingContainer, EnhancedCaption]);
+  };
 
-  // MEMOIZED: Main components object to prevent recreation
-  const portableTextComponents = useMemo(() => ({
+  const portableTextComponents = {
     types: {
+
       code: ({ value }) => {
         const code = value?.code || value?.codeString || value?.source || "";
         const language = (value?.language || value?.lang || "text").toLowerCase();
+
         return <CodeBlockComponent code={code} language={language} />;
       },
 
       video: VideoComponent,
-      image: ImageComponent,
 
+image: ({ value, index }) => {
+  const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
+  const isPriority = index < 3;
+  const blurDataURL = value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined;
+
+  return (
+    <div className="relative w-full my-8 sm:my-10 md:my-12">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+        <div className="group relative transform transition-all duration-500">
+
+          {/* Enhanced gradient border - responsive (same as video) */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-sm"></div>
+
+          {/* Main container with responsive padding (same as video) */}
+          <div className="relative bg-white dark:bg-gray-900 p-2 sm:p-3 md:p-4 rounded-lg shadow-xl group-hover:shadow-2xl transition-shadow duration-500">
+
+            <div className="relative overflow-hidden rounded-lg">
+              <figure className="relative">
+
+                {/* Image container */}
+                <div className="relative overflow-hidden rounded-lg">
+                  <OptimizedImage
+                    src={imageUrl}
+                    alt={value.alt || "Article image"}
+                    className="w-full h-auto object-cover rounded-lg shadow-lg"
+                    priority={isPriority}
+                    blurDataURL={blurDataURL}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
+                    width={800}
+                    height={600}
+                    quality={85}
+                    enableModal={true}
+                  />
+                  
+                  {/* Subtle overlay on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg" />
+                </div>
+
+                {/* Enhanced image description with proper mobile sizing (same as video caption) */}
+                {value.imageDescription && (
+                <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    
+                    {/* Caption icon - no vertical alignment class needed here */}
+                    <div className="flex-shrink-0">
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    
+                    {/* Caption text container */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words -mt-1">
+                        <PortableText value={value.imageDescription} components={imgdesc}/>
+                      </p>
+                    </div>
+                    
+                  </div>
+                </div>
+              )}
+
+              </figure>
+            </div>
+
+            {/* Background glow effect - reduced on mobile (same as video) */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+},
       table: ({ value }) => (
         <div className="card2 mx-2 sm:mx-0 sm:m-2 mb-4 mt-4 rounded-xl shadow-md overflow-hidden">
           <div className="relative overflow-x-auto">
@@ -331,24 +370,28 @@ const PortableTextComponents = () => {
         </h1>
       ),
 
+      // H2 - Primary section headings
       h2: ({ children }) => (
         <h2 className="mb-3 sm:mb-4 md:mb-5 text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-bold text-gray-800 dark:text-white px-2 sm:px-0">
           {children}
         </h2>
       ),
 
+      // H3 - Subsection headings
       h3: ({ children }) => (
         <h3 className="mb-3 sm:mb-4 text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-semibold text-gray-700 dark:text-gray-200 px-2 sm:px-0">
           {children}
         </h3>
       ),
 
+      // H4 - Sub-subsection headings
       h4: ({ children }) => (
         <h4 className="hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-3 sm:mb-4 text-sm sm:text-base md:text-lg lg:text-xl xl:text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 px-2 sm:px-0">
           {children}
         </h4>
       ),
 
+      // H5 - Minor headings
       h5: ({ children }) => (
         <h5 className="mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-lg xl:text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0">
           {children}
@@ -358,13 +401,26 @@ const PortableTextComponents = () => {
 
     list: {
       bullet: ({ children }) => (
-        <ul className="mb-4 mx-2 sm:mx-0 sm:ml-4 sm:mr-4 rounded-lg bg-white p-3 sm:p-4 md:p-6 shadow-sm sm:shadow-lg dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out list-inside custom-bullet-list [&_ul]:bg-transparent [&_ul]:p-0 [&_ul]:shadow-none [&_ul]:rounded-none [&_ul]:mx-0 [&_ul]:ml-2 sm:[&_ul]:ml-4">
+        <ul className="
+          mb-4 mx-2 sm:mx-0 sm:ml-4 sm:mr-4 rounded-lg
+          bg-white p-3 sm:p-4 md:p-6 shadow-sm sm:shadow-lg
+          dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200
+          transition-all duration-300 ease-in-out list-inside custom-bullet-list
+          [&_ul]:bg-transparent [&_ul]:p-0 [&_ul]:shadow-none [&_ul]:rounded-none [&_ul]:mx-0 [&_ul]:ml-2 sm:[&_ul]:ml-4
+        ">
           {children}
         </ul>
       ),
 
       number: ({ children }) => (
-        <ol className="mb-6 sm:mb-8 md:mb-10 mx-2 sm:mx-0 sm:ml-6 list-decimal custom-number-list bg-white p-3 sm:p-4 md:p-6 shadow-sm sm:shadow-lg hover:shadow-lg sm:hover:shadow-xl dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out rounded-lg [&_ol]:bg-transparent [&_ol]:p-0 [&_ol]:shadow-none [&_ol]:rounded-none [&_ol]:mx-0 [&_ol]:ml-2 sm:[&_ol]:ml-6 [&_ul]:bg-transparent [&_ul]:p-0 [&_ul]:shadow-none [&_ul]:rounded-none [&_ul]:mx-0 [&_ul]:ml-2 sm:[&_ul]:ml-6">
+        <ol className="
+          mb-6 sm:mb-8 md:mb-10 mx-2 sm:mx-0 sm:ml-6 list-decimal custom-number-list
+          bg-white p-3 sm:p-4 md:p-6 shadow-sm sm:shadow-lg hover:shadow-lg sm:hover:shadow-xl
+          dark:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-200
+          transition-all duration-300 ease-in-out rounded-lg
+          [&_ol]:bg-transparent [&_ol]:p-0 [&_ol]:shadow-none [&_ol]:rounded-none [&_ol]:mx-0 [&_ol]:ml-2 sm:[&_ol]:ml-6
+          [&_ul]:bg-transparent [&_ul]:p-0 [&_ul]:shadow-none [&_ul]:rounded-none [&_ul]:mx-0 [&_ul]:ml-2 sm:[&_ul]:ml-6
+        ">
           {children}
         </ol>
       ),
@@ -430,7 +486,7 @@ const PortableTextComponents = () => {
         </div>
       );
     },
-  }), [CodeBlockComponent, VideoComponent, ImageComponent]);
+  };
 
   return portableTextComponents;
 };
