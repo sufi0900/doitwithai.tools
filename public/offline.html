@@ -96,7 +96,14 @@
             animation-delay: 2s;
             opacity: 0.1;
         }
+.connection-status {
+    display: none; /* Initially hidden */
+    /* your existing styles */
+}
 
+.connection-status.show {
+    display: block;
+}
         .floating-element:nth-child(3) {
             width: 100px;
             height: 100px;
@@ -635,10 +642,10 @@
 
         </p>
         
-        <div class="connection-status" id="connectionStatus">
-            <div class="status-indicator" id="statusIndicator"></div>
-            <span id="statusText">Checking connection<span class="loading-dots"><span></span><span></span><span></span></span></span>
-        </div>
+      <div class="connection-status" id="connectionStatus" style="display: none;">
+    <div class="status-indicator" id="statusIndicator"></div>
+    <span id="statusText">Checking connection<span class="loading-dots"><span></span><span></span><span></span></span></span>
+</div>
         
         <div class="button-group">
             <button class="retry-button" onclick="location.reload()">
@@ -735,23 +742,23 @@
         }
 
         // Connection status management
-        function updateConnectionStatus() {
-            const statusElement = document.getElementById('connectionStatus');
-            const statusText = document.getElementById('statusText');
-            const statusIndicator = document.getElementById('statusIndicator');
-            
-            if (navigator.onLine) {
-                statusElement.className = 'connection-status online';
-                statusIndicator.className = 'status-indicator online';
-                statusText.innerHTML = 'Connection restored! You can refresh the page now.';
-            } else {
-                statusElement.className = 'connection-status offline';
-                statusIndicator.className = 'status-indicator offline';
-                statusText.innerHTML = 'Currently offline. Showing offline content only.';
-            }
-        }
-
-        // Go home function
+  function updateConnectionStatus() {
+    const statusElement = document.getElementById('connectionStatus');
+    const statusText = document.getElementById('statusText');
+    const statusIndicator = document.getElementById('statusIndicator');
+    
+    if (navigator.onLine) {
+        statusElement.className = 'connection-status online';
+        statusIndicator.className = 'status-indicator online';
+        statusText.innerHTML = 'Connection restored! You can refresh the page now.';
+        statusElement.style.display = 'block'; // Show when online
+    } else {
+        statusElement.className = 'connection-status offline';
+        statusIndicator.className = 'status-indicator offline';
+        statusText.innerHTML = 'Currently offline. Showing offline content only.';
+        statusElement.style.display = 'block'; // Show when offline
+    }
+}
       // New function to go back to the previous page
 function goBack() {
     window.history.back();
@@ -759,21 +766,47 @@ function goBack() {
 
 
         // Auto-refresh when connection is restored
-        window.addEventListener('online', function() {
-            updateConnectionStatus();
+   // Auto-reload when connection is restored
+let connectionRestoredTimeout;
+window.addEventListener('online', function() {
+    updateConnectionStatus();
+    
+    // Clear any existing timeout
+    if (connectionRestoredTimeout) {
+        clearTimeout(connectionRestoredTimeout);
+    }
+    
+    // Auto-reload after 3 seconds, with user confirmation
+    connectionRestoredTimeout = setTimeout(() => {
+        if (confirm('🎉 Great news! Your connection is back. Would you like to reload the page to continue your AI journey?')) {
+            location.reload();
+        } else {
+            // If user declines, hide the connection status after 5 more seconds
             setTimeout(() => {
-                if (confirm('🎉 Great news! Your connection is back. Would you like to reload the page to continue your AI journey?')) {
-                    location.reload();
-                }
-            }, 1000);
-        });
-
+                document.getElementById('connectionStatus').style.display = 'none';
+            }, 5000);
+        }
+    }, 1000);
+});
         // Initialize everything
-        document.addEventListener('DOMContentLoaded', function() {
-            initTheme();
-            updateConnectionStatus();
-        });
-
+   document.addEventListener('DOMContentLoaded', function() {
+    initTheme();
+    
+    // Only show connection status when there's a status change
+    if (!navigator.onLine) {
+        updateConnectionStatus();
+    }
+    
+    // Initial connection check after 2 seconds
+    setTimeout(() => {
+        if (navigator.onLine) {
+            // If online, auto-redirect to home or show reload option
+            if (confirm('Connection detected! Would you like to return to the main site?')) {
+                window.location.href = '/';
+            }
+        }
+    }, 2000);
+});
         // Listen for online/offline events
         window.addEventListener('online', updateConnectionStatus);
         window.addEventListener('offline', updateConnectionStatus);

@@ -5,7 +5,7 @@ import { getFileUrl, renderPreviewContent, getResourceAltText } from "./resource
 
 const ResourceModal = ({ resource, isOpen, onClose }) => {
     // State to manage the active tab in the modal
-    const [activeTab, setActiveTab] = useState('overview');
+    // const [activeTab, setActiveTab] = useState('overview');
     // State to manage the "Copied!" message for buttons
     const [copyStates, setCopyStates] = useState({});
 
@@ -273,129 +273,35 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
                                 </div>
                             </div>
 
-                            {/* Tab Navigation for AI Tools */}
-                            <div className="border-b border-gray-200 dark:border-gray-700">
-                                <nav className="flex space-x-4 sm:space-x-8">
-                                    {[{ id: 'overview', label: 'Overview', icon: '📋' }, { id: 'features', label: 'Features', icon: '⭐' }, { id: 'pros-cons', label: 'Pros & Cons', icon: '⚖️' }].map((tab) => (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => setActiveTab(tab.id)}
-                                            className={`py-1.5 px-0.5 border-b-2 font-medium text-sm sm:text-base transition-all duration-200 ${activeTab === tab.id ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'}`}
-                                        >
-                                            <span className="mr-1 sm:mr-2">{tab.icon}</span>
-                                            {tab.label}
-                                        </button>
-                                    ))}
-                                </nav>
-                            </div>
-
+                          
                             {/* Tab Content */}
-                            <div className="min-h-[150px] sm:min-h-[200px]">
-                                {activeTab === 'overview' && (
-                                    <div className="space-y-4 sm:space-y-6">
-                                        {resource.overview && (
-                                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 sm:p-6 rounded-xl border border-blue-200 dark:border-blue-800">
-                                                <h4 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-900 dark:text-white flex items-center">
-                                                    <span className="mr-1.5 sm:mr-2">📝</span>Overview
-                                                </h4>
-                                                <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm sm:text-lg" itemProp="description">{resource.overview}</p>
-                                            </div>
-                                        )}
-                                        {resource.aiToolDetails.functionality && resource.aiToolDetails.functionality.length > 0 && (
-                                            <div>
-                                                <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-900 dark:text-white flex items-center">
-                                                    <span className="mr-1.5 sm:mr-2">⚡</span>Key Functionality
-                                                </h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                                                    {resource.aiToolDetails.functionality.map((func, index) => (
-                                                        <div key={index} className="group bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105">
-                                                            <div className="flex items-center">
-                                                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3 group-hover:scale-110 transition-transform duration-200">
-                                                                    <span className="text-xs sm:text-sm">✨</span>
-                                                                </div>
-                                                                <span className="text-gray-800 dark:text-gray-200 font-medium text-sm">{func}</span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                {activeTab === 'features' && resource.aiToolDetails.features && resource.aiToolDetails.features.length > 0 && (
-                                    <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-                                        {resource.aiToolDetails.features.map((feature, index) => (
-                                            <div key={index} className="group bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-                                                <div className="flex items-start">
-                                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 group-hover:scale-110 transition-transform duration-200">
-                                                        <span className="text-white font-bold text-sm sm:text-base">#{index + 1}</span>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <h5 className="font-semibold text-gray-900 dark:text-white mb-1.5 sm:mb-2 text-base sm:text-lg">{feature.feature}</h5>
-                                                        {feature.description && (
-                                                            <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-sm sm:text-base">{feature.description}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                {activeTab === 'pros-cons' && resource.aiToolDetails.prosAndCons && (resource.aiToolDetails.prosAndCons.pros?.length > 0 || resource.aiToolDetails.prosAndCons.cons?.length > 0) && (
-                                    <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-                                        {/* Enhanced Pros */}
-                                        {resource.aiToolDetails.prosAndCons.pros?.length > 0 && (
-                                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 p-4 sm:p-6 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
-                                                <h5 className="font-bold text-green-800 dark:text-green-400 mb-3 sm:mb-4 flex items-center text-base sm:text-lg">
-                                                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center mr-2 sm:mr-3">
-                                                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </div>
-                                                    Advantages
-                                                </h5>
-                                                <ul className="space-y-2 sm:space-y-3">
-                                                    {resource.aiToolDetails.prosAndCons.pros.map((pro, index) => (
-                                                        <li key={index} className="flex items-start group">
-                                                            <div className="w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full flex items-center justify-center mr-2 mt-0.5 group-hover:scale-110 transition-transform duration-200">
-                                                                <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                                </svg>
-                                                            </div>
-                                                            <span className="text-green-700 dark:text-green-300 leading-relaxed text-sm sm:text-base">{pro}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                        {/* Enhanced Cons */}
-                                        {resource.aiToolDetails.prosAndCons.cons?.length > 0 && (
-                                            <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 p-4 sm:p-6 rounded-xl border border-red-200 dark:border-red-800 shadow-sm">
-                                                <h5 className="font-bold text-red-800 dark:text-red-400 mb-3 sm:mb-4 flex items-center text-base sm:text-lg">
-                                                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-red-500 rounded-full flex items-center justify-center mr-2 sm:mr-3">
-                                                        <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </div>
-                                                    Limitations
-                                                </h5>
-                                                <ul className="space-y-2 sm:space-y-3">
-                                                    {resource.aiToolDetails.prosAndCons.cons.map((con, index) => (
-                                                        <li key={index} className="flex items-start group">
-                                                            <div className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 rounded-full flex items-center justify-center mr-2 mt-0.5 group-hover:scale-110 transition-transform duration-200">
-                                                                <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                                </svg>
-                                                            </div>
-                                                            <span className="text-red-700 dark:text-red-300 leading-relaxed text-sm sm:text-base">{con}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                            <div className="">
+                              {resource.overview && (
+  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 sm:p-6 rounded-xl border border-blue-200 dark:border-blue-800 mb-6 sm:mb-8">
+    <h4 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 text-gray-900 dark:text-white flex items-center">
+      <span className="mr-1.5 sm:mr-2">📝</span>Overview
+    </h4>
+    <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm sm:text-lg" itemProp="description">{resource.overview}</p>
+  </div>
+)}
+
+{resource.aiToolDetails.features && resource.aiToolDetails.features.length > 0 && (
+  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 sm:p-6 rounded-xl border border-blue-200 dark:border-blue-800">
+    <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-900 dark:text-white flex items-center">
+      <span className="mr-1.5 sm:mr-2">⭐</span>Key Features
+    </h4>
+    <ul className="grid gap-2 sm:gap-3">
+      {resource.aiToolDetails.features.map((feature, index) => (
+        <li key={index} className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-200">
+          <span className="text-gray-800 dark:text-gray-200 font-medium text-sm">{feature}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+)}             
                             </div>
+                             {/* Key Features Section - Add this */}
+ 
                         </div>
                     ) : (
                         /* Enhanced content for other resource types */
