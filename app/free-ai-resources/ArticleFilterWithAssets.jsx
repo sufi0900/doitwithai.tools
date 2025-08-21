@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+/* eslint-disable react/no-unescaped-entities */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
