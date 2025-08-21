@@ -1,8 +1,7 @@
 import React from 'react'
 import HomePageCode from "./HomePageCode"
 import Script from "next/script";
-import Head from "next/head";
-import { NextSeo } from "next-seo";
+
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 import { redisHelpers } from '@/app/lib/redis';
@@ -197,73 +196,6 @@ async function getHomePageInitialData() {
 export default async function Page() {
   const initialServerData = await getHomePageInitialData();
 
-  function schemaMarkup() {
-    return {
-      __html: `{
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "doitwithai.tools",
-        "alternateName": "Do It With AI Tools",
-        "url": "${getBaseUrl()}/",
-        "description": "doitwithai.tools is your central platform to master SEO using cutting-edge AI insights and discover how artificial intelligence can revolutionize your daily tasks. We empower businesses, creators, and marketers to double SEO performance and boost overall productivity by strategically automating repetitive tasks using our free AI resources.",
-        "publisher": {
-          "@type": "Organization",
-          "name": "doitwithai.tools",
-          "logo": {
-            "@type": "ImageObject",
-            "url": "${getBaseUrl()}/logoForHeader.png",
-            "width": 600,
-            "height": 60
-          }
-        },
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "${getBaseUrl()}/search?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        },
-        "mainEntity": {
-          "@type": "ItemList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "AI Tools",
-              "url": "${getBaseUrl()}/ai-tools",
-              "description": "Discover powerful AI tools to streamline SEO tasks, automate daily workflows, and boost overall productivity. Explore solutions tailored for marketers, creators, and AI enthusiasts looking to work smarter with cutting-edge automation and insight-driven platforms."
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "AI SEO",
-              "url": "${getBaseUrl()}/ai-seo",
-              "description": "Master modern SEO using the power of AI. Explore expert strategies for keyword research, content creation, technical SEO, on-page and off-page optimization, and link building using AI-driven tools. This category helps you double your SEO performance with less effort and more impact."
-            },
-            {
-              "@type": "ListItem",
-              "position": 3,
-              "name": "AI Learn & Earn",
-              "url": "${getBaseUrl()}/ai-learn-earn",
-              "description": "Use AI to learn in-demand skills, unlock new income opportunities, and transform your digital future. Whether you're a beginner or scaling up, discover simple, practical ways to earn online using AI-powered learning, freelancing, content creation, and automation strategies."
-            },
-            {
-              "@type": "ListItem",
-              "position": 4,
-              "name": "AI Code",
-              "url": "${getBaseUrl()}/ai-code",
-              "description": "Learn how to accelerate development, solve coding problems, and build smarter applications using AI. From generating code snippets to deploying full-stack projects, this section helps developers and learners leverage ChatGPT and other AI tools to make programming easier and more efficient."
-            },
-            {
-              "@type": "ListItem",
-              "position": 5,
-              "name": "Free AI Resources",
-              "url": "${getBaseUrl()}/free-ai-resource",
-              "description": "Access a growing library of free downloadable AI resources including templates, prompts, videos, documents, and guides. Ideal for content creators, marketers, and developers looking for high-quality tools to kickstart their AI journey without spending a dime."
-            }
-          ]
-        }
-      }`
-    };
-  }
 
 function organizationSchema() {
   return {
@@ -351,14 +283,7 @@ function organizationSchema() {
   return (
     <>
   
-      {/* Enhanced Schema.org JSON-LD structured data */}
-      <Script
-        id="WebsiteSchema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup()}
-        key="website-jsonld"
-        strategy="beforeInteractive"
-      />
+    
       
       <Script
         id="OrganizationSchema"
