@@ -197,74 +197,73 @@ async function getHomePageInitialData() {
 export default async function Page() {
   const initialServerData = await getHomePageInitialData();
 
- function schemaMarkup() {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "doitwithai.tools",
-    "alternateName": "Do It With AI Tools",
-    "url": getBaseUrl(),
-    "description": "doitwithai.tools is your central platform to master SEO using cutting-edge AI insights and discover how artificial intelligence can revolutionize your daily tasks. We empower businesses, creators, and marketers to double SEO performance and boost overall productivity by strategically automating repetitive tasks using our free AI resources.",
-    "publisher": {
-      "@type": "Organization",
-      "name": "doitwithai.tools",
-      "logo": {
-        "@type": "ImageObject",
-        "url": `${getBaseUrl()}/logoForHeader.png`,
-        "width": 600,
-        "height": 60
-      }
-    },
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": `${getBaseUrl()}/search?q={search_term_string}`,
-      "query-input": "required name=search_term_string"
-    },
-    "mainEntity": {
-      "@type": "ItemList",
-      "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": "AI Tools",
-          "url": `${getBaseUrl()}/ai-tools`,
-          "description": "Discover powerful AI tools to streamline SEO tasks, automate daily workflows, and boost overall productivity. Explore solutions tailored for marketers, creators, and AI enthusiasts looking to work smarter with cutting-edge automation and insight-driven platforms."
+  function schemaMarkup() {
+    return {
+      __html: `{
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "doitwithai.tools",
+        "alternateName": "Do It With AI Tools",
+        "url": "${getBaseUrl()}/",
+        "description": "doitwithai.tools is your central platform to master SEO using cutting-edge AI insights and discover how artificial intelligence can revolutionize your daily tasks. We empower businesses, creators, and marketers to double SEO performance and boost overall productivity by strategically automating repetitive tasks using our free AI resources.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "doitwithai.tools",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "${getBaseUrl()}/logoForHeader.png",
+            "width": 600,
+            "height": 60
+          }
         },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "AI SEO",
-          "url": `${getBaseUrl()}/ai-seo`,
-          "description": "Master modern SEO using the power of AI. Explore expert strategies for keyword research, content creation, technical SEO, on-page and off-page optimization, and link building using AI-driven tools. This category helps you double your SEO performance with less effort and more impact."
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "${getBaseUrl()}/search?q={search_term_string}",
+          "query-input": "required name=search_term_string"
         },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "name": "AI Learn & Earn",
-          "url": `${getBaseUrl()}/ai-learn-earn`,
-          "description": "Use AI to learn in-demand skills, unlock new income opportunities, and transform your digital future. Whether you're a beginner or scaling up, discover simple, practical ways to earn online using AI-powered learning, freelancing, content creation, and automation strategies."
-        },
-        {
-          "@type": "ListItem",
-          "position": 4,
-          "name": "AI Code",
-          "url": `${getBaseUrl()}/ai-code`,
-          "description": "Learn how to accelerate development, solve coding problems, and build smarter applications using AI. From generating code snippets to deploying full-stack projects, this section helps developers and learners leverage ChatGPT and other AI tools to make programming easier and more efficient."
-        },
-        {
-          "@type": "ListItem",
-          "position": 5,
-          "name": "Free AI Resources",
-          "url": `${getBaseUrl()}/free-ai-resource`,
-          "description": "Access a growing library of free downloadable AI resources including templates, prompts, videos, documents, and guides. Ideal for content creators, marketers, and developers looking for high-quality tools to kickstart their AI journey without spending a dime."
+        "mainEntity": {
+          "@type": "ItemList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "AI Tools",
+              "url": "${getBaseUrl()}/ai-tools",
+              "description": "Discover powerful AI tools to streamline SEO tasks, automate daily workflows, and boost overall productivity. Explore solutions tailored for marketers, creators, and AI enthusiasts looking to work smarter with cutting-edge automation and insight-driven platforms."
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "AI SEO",
+              "url": "${getBaseUrl()}/ai-seo",
+              "description": "Master modern SEO using the power of AI. Explore expert strategies for keyword research, content creation, technical SEO, on-page and off-page optimization, and link building using AI-driven tools. This category helps you double your SEO performance with less effort and more impact."
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "AI Learn & Earn",
+              "url": "${getBaseUrl()}/ai-learn-earn",
+              "description": "Use AI to learn in-demand skills, unlock new income opportunities, and transform your digital future. Whether you're a beginner or scaling up, discover simple, practical ways to earn online using AI-powered learning, freelancing, content creation, and automation strategies."
+            },
+            {
+              "@type": "ListItem",
+              "position": 4,
+              "name": "AI Code",
+              "url": "${getBaseUrl()}/ai-code",
+              "description": "Learn how to accelerate development, solve coding problems, and build smarter applications using AI. From generating code snippets to deploying full-stack projects, this section helps developers and learners leverage ChatGPT and other AI tools to make programming easier and more efficient."
+            },
+            {
+              "@type": "ListItem",
+              "position": 5,
+              "name": "Free AI Resources",
+              "url": "${getBaseUrl()}/free-ai-resource",
+              "description": "Access a growing library of free downloadable AI resources including templates, prompts, videos, documents, and guides. Ideal for content creators, marketers, and developers looking for high-quality tools to kickstart their AI journey without spending a dime."
+            }
+          ]
         }
-      ]
-    }
-  };
-  return {
-    __html: JSON.stringify(schema)
-  };
-}
+      }`
+    };
+  }
 
 function organizationSchema() {
   return {
@@ -351,82 +350,7 @@ function organizationSchema() {
 
   return (
     <>
-    <Head>
-       <NextSeo
-        title="Boost Your SEO and Daily Productivity with AI | doitwithai.tools"
-        description="doitwithai.tools offers advanced AI insights and proven strategies to master AI tools that boost SEO, grow your business, & improve overall productivity."
-        canonical={getBaseUrl()}
-        openGraph={{
-          type: 'website',
-          locale: 'en_US',
-          url: getBaseUrl(),
-          siteName: 'doitwithai.tools',
-          title: 'Boost Your SEO and Daily Productivity with AI | doitwithai.tools',
-          description: 'doitwithai.tools offers advanced AI insights and proven strategies to master AI tools that boost SEO, grow your business, & improve overall productivity.',
-          images: [
-            {
-          url: metadata.openGraph.url,
-              width: 1200,
-              height: 630,
-              alt: 'doitwithai.tools - Boost Your SEO and Daily Productivity with Cutting-Edge AI Tools',
-            }
-          ],
-        }}
-        twitter={{
-          handle: '@doitwithai',
-          site: '@doitwithai',
-          cardType: 'summary_large_image',
-        }}
-        additionalMetaTags={[
-          {
-            name: 'keywords',
-            content: 'AI tools, SEO optimization, productivity, artificial intelligence, AI SEO, automation, AI resources, digital marketing, AI productivity tools'
-          },
-          {
-            name: 'author',
-            content: 'Sufian Mustafa'
-          },
-          {
-            name: 'robots',
-            content: 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1'
-          },
-          {
-            name: 'googlebot',
-            content: 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
-          },
-          {
-            name: 'theme-color',
-            content: '#2563eb'
-          },
-          {
-            name: 'application-name',
-            content: 'doitwithai.tools'
-          },
-          {
-            name: 'msapplication-TileColor',
-            content: '#2563eb'
-          },
-          {
-            name: 'apple-mobile-web-app-capable',
-            content: 'yes'
-          },
-          {
-            name: 'apple-mobile-web-app-status-bar-style',
-            content: 'black-translucent'
-          }
-        ]}
-        additionalLinkTags={[
-          {
-            rel: 'icon',
-            href: '/favicon.ico'
-          },
-          {
-            rel: 'apple-touch-icon',
-            href: '/apple-touch-icon.png'
-          }
-        ]}
-      />
-</Head>
+  
       {/* Enhanced Schema.org JSON-LD structured data */}
       <Script
         id="WebsiteSchema"
