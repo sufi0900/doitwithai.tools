@@ -122,6 +122,7 @@ async function getFreeResourcesInitialData() {
     seoDescription,
     seoKeywords,
     altText,
+    features,
     structuredData,
     imageMetadata,
     videoMetadata

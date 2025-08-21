@@ -9,6 +9,9 @@ import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
 import "animate.css";
 import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
 import SkelCard from "@/components/Blog/Skeleton/Card";
+import { useUnifiedCache } from "@/React_Query_Caching/useUnifiedCache";
+import { urlForImage } from "@/sanity/lib/image";
+import Link from "next/link";
 
 // Import our new cached components
 import ReusableCachedFeaturedFreeResources from './ReusableCachedFeaturedFreeResources';
@@ -17,11 +20,283 @@ import ReusableCachedFreeResourcesList from './ReusableCachedFreeResourcesList';
 
 const RESOURCE_LIMIT = 6;
 
+// Add this component inside your AllBlogs.jsx file (before the main return)
+const ArticleSelector = ({ onArticleSelect, onClose }) => {
+  const schemaSlugMap = useMemo(() => ({
+    makemoney: "ai-learn-earn",
+    aitool: "ai-tools",
+    coding: "ai-code",
+    seo: "ai-seo",
+  }), []);
+
+  // Query to fetch all articles from all schemas
+  const allArticlesQuery = useMemo(() => `
+    *[_type in ["makemoney", "aitool", "coding", "seo"]] | order(publishedAt desc) {
+      _id,
+      _type,
+      title,
+      slug,
+      mainImage,
+      publishedAt,
+      overview
+    }
+  `, []);
+
+  const {
+    data: articlesData,
+    isLoading: isArticlesLoading,
+    error: articlesError
+  } = useUnifiedCache(
+    'all-articles-for-filter',
+    allArticlesQuery,
+    {},
+    {
+      componentName: 'ArticleSelectorAllArticles',
+      enableOffline: true,
+      group: 'article-selector',
+      schemaType: ["makemoney", "aitool", "coding", "seo"]
+    }
+  );
+
+  const getSchemaLabel = (schemaType) => {
+    const labels = {
+      'makemoney': 'Make Money',
+      'aitool': 'AI Tools',
+      'coding': 'AI Code',
+      'seo': 'AI SEO'
+    };
+    return labels[schemaType] || schemaType;
+  };
+
+  const getSchemaColor = (schemaType) => {
+    const colors = {
+      'makemoney': 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+      'aitool': 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+      'coding': 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+      'seo': 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+    };
+    return colors[schemaType] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+  };
+
+  return (
+    <div className="mb-10 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          Select Article to Filter Assets
+        </h3>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {isArticlesLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg h-32"></div>
+          ))}
+        </div>
+      ) : articlesError ? (
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-4">Failed to load articles</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+          {articlesData?.map((article) => (
+            <div
+              key={article._id}
+              onClick={() => onArticleSelect(article)}
+              className="group cursor-pointer bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600"
+            >
+              {/* Article Image */}
+              {article.mainImage && (
+                <img
+                  src={urlForImage(article.mainImage).width(150).height(80).url()}
+                  alt={article.title}
+                  className="w-full h-16 object-cover rounded-md mb-3"
+                />
+              )}
+
+              {/* Schema Badge */}
+              <div className={`inline-block px-2 py-1 rounded-full text-xs font-semibold mb-2 ${getSchemaColor(article._type)}`}>
+                {getSchemaLabel(article._type)}
+              </div>
+
+              {/* Article Title */}
+              <h4 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                {article.title}
+              </h4>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Add this component for filtered resources display
+const FilteredResourcesList = ({ selectedArticle, onClearFilter }) => {
+  const getAssetsQuery = useCallback((articleId) => `
+    *[_type == "freeResources" && relatedArticle._ref == "${articleId}"] | order(publishedAt desc) {
+      _id,
+      title,
+      slug,
+      tags,
+      mainImage,
+      overview,
+      resourceType,
+      resourceFormat,
+      resourceLink,
+      resourceLinkType,
+      previewSettings,
+      "resourceFile": resourceFile.asset->,
+      content,
+      publishedAt,
+      promptContent,
+      "relatedArticle": relatedArticle->{title,slug,_type,tags,excerpt},
+      aiToolDetails,
+      seoTitle,
+      seoDescription,
+      seoKeywords,
+      altText,
+      structuredData,
+      imageMetadata,
+      videoMetadata
+    }
+  `, []);
+
+  const assetsQuery = selectedArticle ? getAssetsQuery(selectedArticle._id) : null;
+  const assetsCacheKey = selectedArticle ? `assets-for-article-${selectedArticle._id}` : null;
+
+  const {
+    data: assetsData,
+    isLoading: isAssetsLoading,
+    error: assetsError
+  } = useUnifiedCache(
+    assetsCacheKey,
+    assetsQuery,
+    {},
+    {
+      componentName: `FilteredAssets_${selectedArticle?._id || 'none'}`,
+      enableOffline: true,
+      group: 'filtered-assets',
+      schemaType: ["freeResources"],
+      enabled: !!selectedArticle
+    }
+  );
+
+  const getSchemaLabel = (schemaType) => {
+    const labels = {
+      'makemoney': 'Make Money',
+      'aitool': 'AI Tools',
+      'coding': 'AI Code',
+      'seo': 'AI SEO'
+    };
+    return labels[schemaType] || schemaType;
+  };
+
+  const getSchemaColor = (schemaType) => {
+    const colors = {
+      'makemoney': 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+      'aitool': 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+      'coding': 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+      'seo': 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+    };
+    return colors[schemaType] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+  };
+
+  return (
+    <div className="mb-10">
+      {/* Filter Status Header */}
+      <div className="mb-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800/30">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className={`px-3 py-1 rounded-full text-sm font-semibold ${getSchemaColor(selectedArticle._type)}`}>
+                {getSchemaLabel(selectedArticle._type)}
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                Assets for: {selectedArticle.title}
+              </h3>
+            </div>
+          </div>
+          <button
+            onClick={onClearFilter}
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-300 dark:border-gray-600"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Clear Filter
+          </button>
+        </div>
+      </div>
+
+      {/* Assets Display */}
+      {isAssetsLoading ? (
+        <div className="flex flex-wrap -mx-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="w-full sm:w-1/2 lg:w-1/3 p-3">
+              <SkelCard />
+            </div>
+          ))}
+        </div>
+      ) : assetsError ? (
+        <div className="text-center py-8">
+          <p className="text-red-500 mb-4">Failed to load assets for this article.</p>
+        </div>
+      ) : !assetsData || assetsData.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">📭</div>
+          <p className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">
+            No Assets Found
+          </p>
+          <p className="text-gray-500 dark:text-gray-500 mb-4">
+            This article doesn't have any linked free resources yet.
+          </p>
+          <button
+            onClick={onClearFilter}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Show All Resources
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-wrap -mx-3">
+            {assetsData.map((resource) => (
+              <ResourceCard key={resource._id} resource={resource} />
+            ))}
+          </div>
+
+          {/* Results Count */}
+          <div className="text-center mt-8">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Showing {assetsData.length} asset{assetsData.length !== 1 ? 's' : ''} linked to this article
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+
 export default function FreeResourcesPage({ initialServerData }) {
+  // Add these state variables to your AllBlogs.jsx after existing useState declarations
+  const [showArticleFilter, setShowArticleFilter] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [filteredByArticle, setFilteredByArticle] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState("all");
   const [sortBy, setSortBy] = useState('publishedAt');
+  const [selectedArticleType, setSelectedArticleType] = useState('all');
 
   const [resourceCounts, setResourceCounts] = useState(initialServerData?.resourceCounts || {});
   const [totalPages, setTotalPages] = useState(
@@ -77,6 +352,7 @@ export default function FreeResourcesPage({ initialServerData }) {
       searchHook.handleSearch();
       setIsSearchActive(true);
       setCurrentPage(1);
+      handleClearArticleFilter(); // Reset article filter
     } else {
       handleResetSearch();
     }
@@ -105,6 +381,7 @@ export default function FreeResourcesPage({ initialServerData }) {
     setIsSearchActive(false);
     setSelectedFormat(format);
     setCurrentPage(1);
+    handleClearArticleFilter(); // Reset article filter
   };
 
   const handleSortChange = (newSortBy) => {
@@ -119,6 +396,32 @@ export default function FreeResourcesPage({ initialServerData }) {
       ? (searchHook.searchResults?.length || 0)
       : (resourceCounts[format] || 0);
   }, [resourceCounts, searchHook.isSearchActive, searchHook.searchResults?.length]);
+
+
+  // Handler functions to add to your main component
+  const handleShowArticleFilter = () => {
+    // Reset any active search
+    searchHook.resetSearch();
+    setIsSearchActive(false);
+    setShowArticleFilter(true);
+  };
+
+  const handleArticleSelect = (article) => {
+    setSelectedArticle(article);
+    setFilteredByArticle(true);
+    setShowArticleFilter(false);
+    // Reset other filters
+    setSelectedFormat("all");
+    setSelectedArticleType("all");
+    setCurrentPage(1);
+  };
+
+  const handleClearArticleFilter = () => {
+    setSelectedArticle(null);
+    setFilteredByArticle(false);
+    setShowArticleFilter(false);
+    setCurrentPage(1);
+  };
 
   return (
     <PageCacheProvider pageType="free-resources" pageId="main">
@@ -160,7 +463,7 @@ export default function FreeResourcesPage({ initialServerData }) {
                   onKeyDown={searchHook.handleKeyDown}
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <svg className="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <svg className="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -168,43 +471,68 @@ export default function FreeResourcesPage({ initialServerData }) {
                   onClick={initiateSearch}
                   className="flex items-center justify-center rounded-full bg-blue-600 px-6 py-4 font-medium text-white shadow-md transition-all duration-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   Search
                 </button>
                 <button
                   onClick={handleResetSearch}
                   className="flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-600 bg-transparent px-6 py-4 font-medium text-gray-700 dark:text-gray-300 shadow-sm transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                   Reset
                 </button>
               </div>
             </div>
           </div>
         </section>
-
+        
         {/* Category Filter Buttons with Counts */}
-        <div className="mb-10 flex flex-wrap justify-center gap-2">
-          {resourceFormats.map((format) => (
+        {!searchHook.isSearchActive && !filteredByArticle && (
+          <div className="mb-10 flex flex-wrap justify-center gap-2">
+            {resourceFormats.map((format) => (
+              <button
+                key={format.value}
+                onClick={() => handleFormatChange(format.value)}
+                disabled={filteredByArticle}
+                className={`flex items-center rounded-full px-6 py-3 font-medium transition-all duration-200 shadow-sm ${
+                  selectedFormat === format.value
+                    ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
+                    : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600'
+                } ${filteredByArticle ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {format.label}
+                <span className="ml-2 rounded-full bg-gray-200 dark:bg-gray-700 px-2 py-0.5 text-xs text-gray-800 dark:text-gray-200">
+                  {getCountForFormat(format.value)}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+        
+        {/* Article Filter Button (add this after your existing filters, before the resources grid) */}
+        {!searchHook.isSearchActive && !filteredByArticle && (
+          <div className="mb-10 flex justify-center">
             <button
-              key={format.value}
-              onClick={() => handleFormatChange(format.value)}
-              disabled={searchHook.isSearchActive}
-              className={`flex items-center rounded-full px-6 py-3 font-medium transition-all duration-200 shadow-sm ${
-                selectedFormat === format.value
-                  ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' // Active button styling
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600' // Inactive button styling
-              } ${searchHook.isSearchActive ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={handleShowArticleFilter}
+              className="flex items-center gap-2 rounded-full px-6 py-3 font-medium transition-all duration-200 shadow-sm bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md hover:from-purple-700 hover:to-blue-700 transform hover:scale-105"
             >
-              {format.label}
-              <span className="ml-2 rounded-full bg-gray-200 dark:bg-gray-700 px-2 py-0.5 text-xs text-gray-800 dark:text-gray-200">
-                {getCountForFormat(format.value)}
-              </span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Filter by Related Article
             </button>
-          ))}
-        </div>
-
-        {/* Resources Grid (Conditional Rendering based on search vs. main list) */}
+          </div>
+        )}
+        
+        {/* Show Article Selector when requested */}
+        {showArticleFilter && (
+          <ArticleSelector
+            onArticleSelect={handleArticleSelect}
+            onClose={() => setShowArticleFilter(false)}
+          />
+        )}
+        
+        {/* Resources Grid - Conditional rendering based on filter state */}
         {searchHook.isSearchActive ? (
           <div className="mb-10">
             {searchHook.isSearchLoading && (
@@ -246,26 +574,32 @@ export default function FreeResourcesPage({ initialServerData }) {
               </div>
             )}
           </div>
+        ) : filteredByArticle ? (
+          <FilteredResourcesList
+            selectedArticle={selectedArticle}
+            onClearFilter={handleClearArticleFilter}
+          />
         ) : (
           <ReusableCachedFreeResourcesList
             currentPage={currentPage}
             selectedFormat={selectedFormat}
+            selectedArticleType={selectedArticleType}
             sortBy={sortBy}
             onDataLoad={handleListLoad}
             initialData={initialServerData?.resourceList}
           />
         )}
-
+        
         {/* ResourceListSchema: Only show for main content, not search results */}
-        {!searchHook.isSearchActive && totalItems > 0 && (
+        {!searchHook.isSearchActive && !filteredByArticle && totalItems > 0 && (
           <ResourceListSchema
             resources={listResources}
             baseUrl="https://www.doitwithai.tools/free-ai-resources"
           />
         )}
-
-        {/* Pagination (visible only if not in search view and if there are items to paginate) */}
-        {!searchHook.isSearchActive && totalItems > 0 && (
+        
+        {/* Pagination (visible only if not in search or filtered view and if there are items to paginate) */}
+        {!searchHook.isSearchActive && !filteredByArticle && totalItems > 0 && (
           <div className="flex justify-center items-center space-x-4 mb-10">
             <nav className="flex items-center space-x-2 rounded-lg p-2 bg-transparent shadow-md border border-gray-200 dark:border-gray-700">
               <button

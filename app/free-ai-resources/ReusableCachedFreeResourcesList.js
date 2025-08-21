@@ -1,8 +1,6 @@
 // components/Resources/ReusableCachedFreeResourcesList.jsx
 "use client";
-
 import React, { useEffect, useCallback, useState, useMemo } from 'react'; // Import useMemo
-import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import SkelCard from "@/components/Blog/Skeleton/Card";
 import ResourceCard from "./ResourceCard";
@@ -19,6 +17,8 @@ const ReusableCachedFreeResourcesList = ({
   currentPage = 1,
   selectedFormat = "all",
   sortBy = "publishedAt",
+   selectedArticleType = "all", // Keep existing
+  selectedArticle = null, // Add new prop
   searchText = "", // Accept searchText prop from parent
   onDataLoad, // Callback to send pagination info and resources list to parent
     initialData = null // Accept initialData prop
@@ -38,31 +38,43 @@ const ReusableCachedFreeResourcesList = ({
     }
   }, []);
 
-  const getDynamicQueryConfig = useCallback(() => {
-    const orderBy = getOrderBy(sortBy);
-    let filters = `_type==$docType`;
-    let queryParams = { docType: DOCUMENT_TYPE };
-    let searchFilter = '';
-    const trimmedSearchText = searchText.trim();
+const getDynamicQueryConfig = useCallback(() => {
+  const orderBy = getOrderBy(sortBy);
+  let filters = `_type == $docType`;
+  let queryParams = { docType: DOCUMENT_TYPE };
+  let searchFilter = '';
 
-    if (isSearchMode) {
-      searchFilter = `&&(title match $searchText||overview match $searchText||content match $searchText||resourceType match $searchText||aiToolDetails.toolCategory match $searchText||aiToolDetails.functionality match $searchText)`;
-      queryParams.searchText = `*${trimmedSearchText}*`;
-    } else if (selectedFormat !== "all") {
-      filters += `&&resourceFormat==$resourceFormat`;
-      queryParams.resourceFormat = selectedFormat;
-    }
+  const trimmedSearchText = searchText.trim();
+  
+  if (isSearchMode) {
+    searchFilter = `&& (title match $searchText || overview match $searchText || content match $searchText || resourceType match $searchText || aiToolDetails.toolCategory match $searchText || aiToolDetails.functionality match $searchText)`;
+    queryParams.searchText = `*${trimmedSearchText}*`;
+  } else if (selectedArticle) {
+    // NEW: Filter by selected article
+    filters += ` && relatedArticle._ref == $articleId`;
+    queryParams.articleId = selectedArticle._id;
+  } else if (selectedArticleType !== "all") {
+    // Existing article type filter
+    filters += ` && relatedArticle->_type == $articleType`;
+    queryParams.articleType = selectedArticleType;
+  } else if (selectedFormat !== "all") {
+    // Existing format filter
+    filters += ` && resourceFormat == $resourceFormat`;
+    queryParams.resourceFormat = selectedFormat;
+  }
 
-    const listQuery = `*[${filters}${searchFilter}]|order(${orderBy})[${start}...${start + RESOURCE_LIMIT + 1}]{
-      _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,
-      previewSettings,"resourceFile":resourceFile.asset->,content,publishedAt,promptContent,
-      "relatedArticle":relatedArticle->{title,slug,_type},aiToolDetails,seoTitle,seoDescription,seoKeywords,altText,structuredData
-    }`;
-    const totalCountQuery = `count(*[${filters}${searchFilter}])`;
+  const listQuery = `*[${filters}${searchFilter}] | order(${orderBy})[${start}...${start + RESOURCE_LIMIT + 1}] {
+    _id, title, slug, tags, mainImage, overview, resourceType, resourceFormat, 
+    resourceLink, resourceLinkType, previewSettings, 
+    "resourceFile": resourceFile.asset->, content, publishedAt, promptContent,
+    "relatedArticle": relatedArticle->{title, slug, _type}, 
+    aiToolDetails, seoTitle, seoDescription, seoKeywords, altText, structuredData
+  }`;
 
-    return { listQuery, totalCountQuery, queryParams, orderBy };
-  }, [selectedFormat, sortBy, getOrderBy, start, searchText, isSearchMode]);
+  const totalCountQuery = `count(*[${filters}${searchFilter}])`;
 
+  return { listQuery, totalCountQuery, queryParams, orderBy };
+}, [selectedFormat, selectedArticleType, selectedArticle, sortBy, getOrderBy, start, searchText, isSearchMode]);
   const { listQuery, totalCountQuery, queryParams, orderBy } = getDynamicQueryConfig();
 
   const typeIdentifier = useMemo(() => isSearchMode ? `search-${btoa(searchText).slice(0, 50).replace(/=/g, '')}` : `${selectedFormat}-${sortBy}`, [isSearchMode, searchText, selectedFormat, sortBy]);
