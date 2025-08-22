@@ -35,17 +35,12 @@ export default function HomePage({ initialServerData }) {
 
   return ( 
         <>
-        <section className="">
-        <div className="container mx-auto ">
-          <div className="flex justify-end">{/* Ensure GlobalRefreshButton is rendered here */}</div>
-        </div>
-        <div className="container">
-          <Grid container spacing={2}>
+       
+        
+        
             {/* --- No Suspense needed here as data is prefetched --- */}
             <Trending initialData={trending} />
-          </Grid>
-        </div>
-      </section>
+        
 
       {/* --- No Suspense needed here as data is prefetched --- */}
       <FeaturePost initialData={featurePost} />

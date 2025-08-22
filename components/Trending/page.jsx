@@ -90,7 +90,7 @@ const TrendingPage = ({ initialData = {} }) => {
   const relatedPosts = trendRelatedData || [];
 
   return (
-    <section className="pb-[30px] ">
+    <section className="pb-[30px] md:py-4 lg:py-4 ">
       <div className="container">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
