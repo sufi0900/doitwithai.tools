@@ -22,8 +22,8 @@ import { redisHelpers } from '@/app/lib/redis';
 
 // ---END NEW IMPORTS---
 
-export const revalidate = 3600;
-
+export const revalidate = false;
+export const dynamic = "force-dynamic";
 const SUBCATEGORIES_LIMIT = 2;
 const BLOGS_PAGE_LIMIT = 5;
 

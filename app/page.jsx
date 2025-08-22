@@ -3,11 +3,12 @@ import HomePageCode from "./HomePageCode"
 import Script from "next/script";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
-export const revalidate = false;
-export const dynamic = "force-dynamic";
+
 import { redisHelpers } from '@/app/lib/redis';
 import { client } from "@/sanity/lib/client";
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
+export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 // Enhanced utility functions
 function getBaseUrl() {
