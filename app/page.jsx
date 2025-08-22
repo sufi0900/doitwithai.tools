@@ -11,6 +11,21 @@ export const revalidate = 3600;
 export const dynamic = "force-dynamic";
 
 // Enhanced utility functions
+function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  return 'http://localhost:3000';
+}
+
+
 
 // Enhanced metadata with consistent branding
 export const metadata = {
@@ -22,7 +37,7 @@ creator: "Sufian Mustafa",
 
   keywords: "AI tools, SEO optimization, productivity, artificial intelligence, AI SEO, automation, AI resources, digital marketing, AI productivity tools",
   openGraph: {
-  
+   
     siteName: "doitwithai.tools",
     locale: 'en_US',
     url: getBaseUrl(),
@@ -38,7 +53,7 @@ creator: "Sufian Mustafa",
     url: getBaseUrl(),
     title: "Best AI Tools for Productivity | doitwithai.tools",
     // description: "Explore comprehensive guides on the Best AI Tools for Productivity. Detailed reviews of top AI solutions to boost your SEO and daily productivity.",
-
+   
   },
   alternates: {
     canonical: getBaseUrl(),
