@@ -181,77 +181,36 @@ export default async function Page() {
     linktext: "seo-with-ai",
   };
 
-function schemaMarkup(pageMetadata, breadcrumbProps) {
-  return {
-    __html: JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "CollectionPage",
-      "name": pageMetadata.title,
-      "description": pageMetadata.description,
-      "url": pageMetadata.openGraph.url,
-      "breadcrumb": {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": `${getBaseUrl()}/`
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "name": breadcrumbProps.pageName,
-            "item": `${getBaseUrl()}${breadcrumbProps.link}`
-          }
-        ]
-      },
-      "mainEntity": {
-        "@type": "ItemList",
-        "name": "AI SEO Articles",
-        "description": "Collection of AI-powered SEO strategies and insights",
-        "itemListElement": [
-          // This should be populated with actual blog posts if available
-        ]
-      },
-      "about": {
-        "@type": "Thing",
-        "name": "AI SEO",
-        "description": "Artificial Intelligence tools and strategies for Search Engine Optimization"
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "doitwithai.tools",
-        "logo": {
-          "@type": "ImageObject",
-          "url": `${getBaseUrl()}/logoForHeader.png`
+  function schemaMarkup(pageMetadata, breadcrumbProps) {
+    return {
+      __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": pageMetadata.title,
+        "description": pageMetadata.description,
+        "url": pageMetadata.openGraph.url,  
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": `${getBaseUrl()}/`
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": breadcrumbProps.pageName,
+              "item": `${getBaseUrl()}${breadcrumbProps.link}`
+            }
+          ]
         }
-      }
-    })
-  };
-}
+      })
+    };
+  }
 
-// Add WebSite schema for better recognition
-function websiteSchema() {
-  return {
-    __html: JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "doitwithai.tools - AI SEO",
-      "url": `${getBaseUrl()}/ai-seo`,
-      "description": "Discover how AI tools are revolutionizing SEO, replacing outdated methods with smart strategies that boost your rankings & improve your online presence.",
-      "isPartOf": {
-        "@type": "WebSite",
-        "name": "doitwithai.tools",
-        "url": `${getBaseUrl()}`
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "doitwithai.tools"
-      }
-    })
-  };
-}
+
 
   return (
     <>
@@ -284,23 +243,14 @@ function websiteSchema() {
         ]}
       />
          </Head>
-     <Script
-      id="website-schema"
-      type="application/ld+json"
-      dangerouslySetInnerHTML={websiteSchema()}
-              key={`${pageSlugPrefix}-jsonld`}
-
-      
-    />
     <Script
-      id="breadcrumb-schema"
-      type="application/ld+json"
-      dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
-              key={`${pageSlugPrefix}-jsonld`}
+        id="BreadcrumbListSchema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
+        key={`${pageSlugPrefix}-jsonld`}
+      />
 
-      
-    />
-      <UnifiedCacheMonitor serverData={serverData} params={mockParams} />
+      {/* <UnifiedCacheMonitor serverData={serverData} params={mockParams} /> */}
       <PageCacheProvider pageType="listing" pageId={`${schemaType}-listing`}>
         <StaticPageShell breadcrumbProps={breadcrumbProps}>
           <BlogListingPageContent
