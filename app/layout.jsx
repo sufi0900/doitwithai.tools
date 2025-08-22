@@ -139,7 +139,7 @@ export default function RootLayout({ children }) {
                   <Header />
                 )}
         {/* 1st paint: Hero only */}
-        {isHomePage && <Hero />}
+        {/* {isHomePage && <Hero />} */}
 
         {/* everything else only once we've painted at least the hero */}
         {hydrated && (
