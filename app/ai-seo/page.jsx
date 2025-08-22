@@ -288,12 +288,16 @@ function websiteSchema() {
       id="website-schema"
       type="application/ld+json"
       dangerouslySetInnerHTML={websiteSchema()}
+              key={`${pageSlugPrefix}-jsonld`}
+
       
     />
     <Script
       id="breadcrumb-schema"
       type="application/ld+json"
       dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
+              key={`${pageSlugPrefix}-jsonld`}
+
       
     />
       <UnifiedCacheMonitor serverData={serverData} params={mockParams} />

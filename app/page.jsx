@@ -431,7 +431,7 @@ function organizationSchema() {
         id="WebsiteSchema"
         type="application/ld+json"
         dangerouslySetInnerHTML={schemaMarkup()}
-        key="website-jsonld"
+        
         
       />
       
@@ -439,7 +439,6 @@ function organizationSchema() {
         id="OrganizationSchema"
         type="application/ld+json"
         dangerouslySetInnerHTML={organizationSchema()}
-        key="organization-jsonld"
         
       />
       
@@ -447,7 +446,6 @@ function organizationSchema() {
         id="BreadcrumbSchema"
         type="application/ld+json"
         dangerouslySetInnerHTML={breadcrumbSchema()}
-        key="breadcrumb-jsonld"
         
       />
 
@@ -455,7 +453,6 @@ function organizationSchema() {
         id="FAQSchema"
         type="application/ld+json"
         dangerouslySetInnerHTML={faqSchema()}
-        key="faq-jsonld"
         
       />
 
