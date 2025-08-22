@@ -11,26 +11,6 @@ export const revalidate = 3600;
 export const dynamic = "force-dynamic";
 
 // Enhanced utility functions
-function getBaseUrl() {
-  // For production, always use your custom domain
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';  // Remove trailing slash
-  }
-  
-  // For development
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  
-  return 'http://localhost:3000';
-}
-
-
-function generateOGImageURL(params) {
-  const baseURL = `${getBaseUrl()}/api/og`;
-  const searchParams = new URLSearchParams(params);
-  return `${baseURL}?${searchParams.toString()}`;
-}
 
 // Enhanced metadata with consistent branding
 export const metadata = {
@@ -42,18 +22,7 @@ creator: "Sufian Mustafa",
 
   keywords: "AI tools, SEO optimization, productivity, artificial intelligence, AI SEO, automation, AI resources, digital marketing, AI productivity tools",
   openGraph: {
-    images: [{
-      url: generateOGImageURL({
-        title: 'Boost Your SEO and Daily Productivity with Cutting-Edge AI Tools',
-        // description: 'Your go-to resource hub for mastering AI tools that double your SEO power, grow your business, and improve your overall productivity.',
-        category: 'AI Tools',
-        ctaText: 'Start Your AI Journey Now',
-        features: 'AI-Powered SEO,10x Productivity,50+ Free Resources',
-      }),
-      width: 1200,
-      height: 630,
-      alt: 'doitwithai.tools - Boost Your SEO and Daily Productivity with Cutting-Edge AI Tools',
-    }],
+  
     siteName: "doitwithai.tools",
     locale: 'en_US',
     url: getBaseUrl(),
@@ -69,13 +38,7 @@ creator: "Sufian Mustafa",
     url: getBaseUrl(),
     title: "Best AI Tools for Productivity | doitwithai.tools",
     // description: "Explore comprehensive guides on the Best AI Tools for Productivity. Detailed reviews of top AI solutions to boost your SEO and daily productivity.",
-    image: generateOGImageURL({
-      title: 'Boost Your SEO and Daily Productivity with Cutting-Edge AI Tools',
-      description: 'Your go-to resource hub for mastering AI tools that double your SEO power, grow your business, and improve your overall productivity.',
-      category: 'AI Tools',
-      ctaText: 'Start Your AI Journey Now',
-      features: 'AI-Powered SEO,10x Productivity,50+ Free Resources',
-    }),
+
   },
   alternates: {
     canonical: getBaseUrl(),
