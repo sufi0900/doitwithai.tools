@@ -1,5 +1,12 @@
-# public/robots.txt
+# public/robots.txt - FIXED VERSION
 User-agent: *
-Disallow:
+Allow: /
 
-Sitemap: https://www.doitwithai.tools/api/sitemap.xml
+# Block admin/development routes (if any)
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /studio/
+
+# Important: Your sitemap URL should be /sitemap.xml, not /api/sitemap.xml
+Sitemap: https://doitwithai.tools/sitemap.xml
