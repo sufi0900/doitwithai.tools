@@ -174,19 +174,19 @@ const AuthorPage = () => {
           type="application/ld+json"
           dangerouslySetInnerHTML={authorSchema()}
           key="author-jsonld"
-          strategy="beforeInteractive"
+          
         />
         <Script
           id="BreadcrumbSchema"
           type="application/ld+json"
           dangerouslySetInnerHTML={breadcrumbSchema()}
           key="breadcrumb-jsonld"
-          strategy="beforeInteractive"
+          
         />
 
 
 
-
+other code
 
       </>
     );

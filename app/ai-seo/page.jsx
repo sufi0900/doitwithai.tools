@@ -288,13 +288,13 @@ function websiteSchema() {
       id="website-schema"
       type="application/ld+json"
       dangerouslySetInnerHTML={websiteSchema()}
-      strategy="beforeInteractive"
+      
     />
     <Script
       id="breadcrumb-schema"
       type="application/ld+json"
       dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
-      strategy="beforeInteractive"
+      
     />
       <UnifiedCacheMonitor serverData={serverData} params={mockParams} />
       <PageCacheProvider pageType="listing" pageId={`${schemaType}-listing`}>
