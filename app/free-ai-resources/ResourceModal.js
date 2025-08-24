@@ -2,11 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { urlForImage } from "@/sanity/lib/image";
 import { getFileUrl, renderPreviewContent, getResourceAltText } from "./resourceUtils";
+import Image from 'next/image';
 
 const ResourceModal = ({ resource, isOpen, onClose }) => {
-    // State to manage the active tab in the modal
-    // const [activeTab, setActiveTab] = useState('overview');
-    // State to manage the "Copied!" message for buttons
+ 
     const [copyStates, setCopyStates] = useState({});
 
     // Helper function to generate the correct article route based on its type
@@ -21,6 +20,7 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
             coding: "ai-code",
             seo: "ai-seo"
         };
+
 
         // Get the route prefix, fallback to original behavior if not found
         const routePrefix = routeMap[relatedArticle._type];
@@ -188,54 +188,82 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
         >
             <meta itemProp="name" content={resource.title} />
             {resource.overview && <meta itemProp="description" content={resource.overview} />}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 animate-slideUp">
-                {/* Enhanced Header */}
-                <div className={`relative ${isAITool ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600' : 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900'} px-4 py-3 sm:px-6 sm:py-4`}>
-                    {isAITool && (<div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>)}
-                    <div className="relative flex justify-between items-start">
-                        <div className="flex-1 pr-4">
-                            <div className="flex items-center gap-1 mb-1 sm:gap-2 sm:mb-2">
-                                <div className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs sm:text-sm font-medium ${isAITool ? 'bg-white/20 text-white backdrop-blur-sm border border-white/30' : 'bg-blue-500/20 text-blue-800 dark:bg-blue-500/30 dark:text-blue-300'}`}>
-                                    {isAITool && <span className="mr-0.5 sm:mr-1">🤖</span>}
-                                    {resource.resourceType}
-                                </div>
-                                {isAITool && resource.aiToolDetails?.toolCategory && (renderCategoryBadge(resource.aiToolDetails.toolCategory))}
-                            </div>
-                            <h3 className={`text-xl sm:text-3xl font-bold mb-2 ${isAITool ? 'text-white' : 'text-gray-900 dark:text-white'}`} itemProp="headline">
-                                {resource.title}
-                            </h3>
-                            <div className="flex items-center gap-2 flex-wrap sm:gap-3">
-                                {isAITool && resource.aiToolDetails?.pricingModel && (renderPricingBadge(resource.aiToolDetails.pricingModel))}
-                                {isAITool && resource.aiToolDetails?.rating && (renderStarRating(resource.aiToolDetails.rating))}
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => onClose(false)}
-                            className={`p-1.5 sm:p-2 rounded-full transition-all duration-200 hover:rotate-90 ${isAITool ? 'text-white/80 hover:text-white hover:bg-white/20' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-                            aria-label="Close modal"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+<div 
+  className="bg-white dark:bg-gray-900 rounded-2xl max-w-5xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-gray-200 dark:border-gray-800 animate-slideUp mx-2 sm:mx-4"
+>                {/* Enhanced Header */}
+               <div className={`relative ${
+  isAITool 
+    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600' 
+    : 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900'
+} px-3 py-3 sm:px-6 sm:py-4`}>
+  {isAITool && (
+    <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
+  )}
+  <div className="relative flex justify-between items-start">
+    <div className="flex-1 pr-2 sm:pr-4">
+      <div className="flex items-center gap-1 mb-1 sm:gap-2 sm:mb-2 flex-wrap">
+        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+          isAITool 
+            ? 'bg-white/20 text-white backdrop-blur-sm border border-white/30' 
+            : 'bg-blue-500/20 text-blue-800 dark:bg-blue-500/30 dark:text-blue-300'
+        }`}>
+          {isAITool && <span className="mr-1">🤖</span>}
+          {resource.resourceType}
+        </div>
+        {isAITool && resource.aiToolDetails?.toolCategory && (
+          <div className="hidden sm:block">
+            {renderCategoryBadge(resource.aiToolDetails.toolCategory)}
+          </div>
+        )}
+      </div>
+      <h3 className={`text-lg sm:text-3xl font-bold mb-2 leading-tight ${
+        isAITool ? 'text-white' : 'text-gray-900 dark:text-white'
+      }`} itemProp="headline">
+        {resource.title}
+      </h3>
+      <div className="flex items-center gap-2 flex-wrap">
+        {isAITool && resource.aiToolDetails?.pricingModel && (
+          renderPricingBadge(resource.aiToolDetails.pricingModel)
+        )}
+        {isAITool && resource.aiToolDetails?.rating && (
+          renderStarRating(resource.aiToolDetails.rating)
+        )}
+      </div>
+    </div>
+    <button
+      onClick={() => onClose(false)}
+      className={`p-2 rounded-full transition-all duration-200 hover:rotate-90 flex-shrink-0 ${
+        isAITool 
+          ? 'text-white/80 hover:text-white hover:bg-white/20' 
+          : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'
+      }`}
+      aria-label="Close modal"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+</div>
 
                 {/* Enhanced Content Area */}
                 <div className="flex-1 overflow-y-auto">
                     {/* AI Tool Specific Content */}
                     {isAITool && resource.aiToolDetails ? (
-                        <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-8">
                             {/* Hero Section with Tool Preview */}
                             <div className="relative">
                                 <div className="relative aspect-[16/9] bg-gradient-to-br from-blue-100 via-indigo-50 to-purple-100 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 rounded-xl overflow-hidden shadow-inner">
                                     {resource.previewSettings?.previewImage ? (
-                                        <img
-                                            src={urlForImage(resource.previewSettings.previewImage).url()}
-                                            alt={resource.previewSettings.previewImage?.alt || altText}
-                                            className="w-full h-full object-cover"
-                                            itemProp="image"
-                                        />
+ <Image
+    src={urlForImage(resource.previewSettings.previewImage).url()}
+    alt={resource.previewSettings.previewImage?.alt || getEnhancedAltText(resource)}
+    fill
+    className="object-cover"
+    itemProp="image"
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+    priority={true} // Since this is likely above the fold
+  />
                                     ) : resource.mainImage ? (
                                         <img
                                             src={urlForImage(resource.mainImage).url()}
@@ -310,14 +338,40 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
                             <div className="mb-6 sm:mb-8">
                                 {resource.resourceFormat === 'image' && resource.resourceFile && (
                                     <div className="relative rounded-xl overflow-hidden shadow-lg">
-                                        <img src={getFileUrl(resource.resourceFile)} alt={altText} className="w-full h-auto object-contain" itemProp="contentUrl" loading="lazy" />
-                                    </div>
+ <img
+      src={getFileUrl(resource.resourceFile)}
+      alt={resource.imageMetadata?.altText || altText}
+      className="w-full h-auto object-contain"
+      itemProp="contentUrl"
+      loading="lazy"
+    />                                   
+    
+      {resource.imageMetadata?.caption && (
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+        <p className="text-white text-sm font-medium text-center">
+          {resource.imageMetadata.caption}
+        </p>
+      </div>
+    )}
+     </div>
                                 )}
-                                {resource.resourceFormat === 'video' && resource.resourceFile && (
-                                    <div className="relative rounded-xl overflow-hidden shadow-lg">
-                                        <video src={getFileUrl(resource.resourceFile)} controls className="w-full h-auto object-contain" itemProp="contentUrl" preload="metadata" title={resource.title} />
-                                    </div>
-                                )}
+                               {resource.resourceFormat === 'video' && resource.resourceFile && (
+  <div className="relative rounded-xl overflow-hidden shadow-lg">
+    <video
+        src={getFileUrl(resource.resourceFile)}
+        controls
+        className="w-full h-auto object-contain max-h-[60vh]"
+        itemProp="contentUrl"
+        preload="metadata"
+        poster={resource.mainImage ? urlForImage(resource.mainImage).url() : undefined}
+        title={resource.title}
+        playsInline
+        controlsList="nodownload"
+        onLoadStart={() => console.log('Video loading started')}
+        onError={(e) => console.error('Video load error:', e)}
+      />
+  </div>
+)}
                                 {resource.resourceFormat === 'text' && Array.isArray(resource.promptContent) && (
                                     <div className="space-y-4 sm:space-y-6">
                                         {resource.promptContent.map((promptItem, index) => (
@@ -357,11 +411,13 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
                                         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-6 sm:p-8 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
                                             <div className="text-center">
                                                 <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
-                                                    <svg className="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2-5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
+                                                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+</svg>
                                                 </div>
                                                 <h4 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1.5 sm:mb-2">{resource.resourceFile.originalFilename || resource.title}</h4>
+                                               
+                                               
                                                 <p className="text-gray-600 dark:text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">Document ready for download</p>
                                                 <div className="flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-blue-600 dark:text-blue-400">
                                                     <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -488,82 +544,89 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
                     )}
                 </div>
                 {/* Enhanced Footer */}
-                <div className="border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-                    <div className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-                        {/* Enhanced Resource Info */}
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-                            <div className="flex items-center text-gray-500 dark:text-gray-400">
-                                <svg className="w-3.5 h-3.5 mr-1.5 sm:w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 4h6m-6 0h6m6 0v6a2 2 0 01-2 2H8a2 2 0 01-2-2V7m6 0h6" />
-                                </svg>
-                                Added: {new Date(resource.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </div>
-                            <div className="flex items-center text-gray-500 dark:text-gray-400">
-                                <svg className="w-3.5 h-3.5 mr-1.5 sm:w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                </svg>
-                                {resource.resourceType}
-                            </div>
-                        </div>
-
-                        {/* Enhanced CTA Buttons */}
-                        <div className="flex gap-2 sm:gap-3">
-                            {resource.resourceFormat === 'text' && Array.isArray(resource.promptContent) && resource.promptContent.length > 0 ? (
-                                <button
-                                    onClick={() => {
-                                        const allPrompts = resource.promptContent.map(p => `${p.promptTitle ? `${p.promptTitle}:\n` : ''}${p.promptText}`).join('\n\n');
-                                        handleCopy(allPrompts, 'copy-all-prompts');
-                                    }}
-                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2.5 px-4 sm:py-3 sm:px-6 rounded-xl transition-all duration-300 font-semibold flex items-center gap-1.5 sm:gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm sm:text-base"
-                                >
-                                    {copyStates['copy-all-prompts'] ? (
-                                        <>
-                                            <svg className="w-4 h-4 sm:w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            All Copied!
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg className="w-4 h-4 sm:w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                            </svg>
-                                            Copy All Prompts
-                                        </>
-                                    )}
-                                </button>
-                            ) : resource.resourceFormat === 'aitool' ? (
-                                <button
-                                    onClick={handleResourceAccess}
-                                    className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white py-2.5 px-6 sm:py-3 sm:px-8 rounded-xl transition-all duration-300 font-semibold flex items-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group text-sm sm:text-base"
-                                    aria-label={`Launch ${resource.title} AI tool`}
-                                >
-                                    <div className="w-5 h-5 sm:w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                                        <span className="text-xs sm:text-sm">🚀</span>
-                                    </div>
-                                    Launch AI Tool
-                                    <svg className="w-4 h-4 sm:w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                    </svg>
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={handleResourceAccess}
-                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2.5 px-6 sm:py-3 sm:px-8 rounded-xl transition-all duration-300 font-semibold flex items-center gap-2 sm:gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group text-sm sm:text-base"
-                                    aria-label={`Access ${resource.title}`}
-                                >
-                                    <svg className="w-4 h-4 sm:w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v-1a4 4 0 014-4h4a4 4 0 014 4v1m-6-4H9.7m6.3 4a1 1 0 11-2 0 1 1 0 012 0z" />
-                                    </svg>
-                                    Access Resource
-                                    <svg className="w-4 h-4 sm:w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                    </svg>
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
+               <div className="border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+  <div className="p-3 sm:p-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center sm:gap-4">
+    {/* Resource Info */}
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-xs sm:text-sm">
+      <div className="flex items-center text-gray-500 dark:text-gray-400">
+        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        Added: {new Date(resource.publishedAt).toLocaleDateString('en-US', {
+          day: 'numeric',
+          month: 'short', 
+          year: 'numeric'
+        })}
+      </div>
+      <div className="flex items-center text-gray-500 dark:text-gray-400">
+        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a.994.994 0 01-1.414 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+        </svg>
+        {resource.resourceType}
+      </div>
+    </div>
+    
+    {/* CTA Buttons - Responsive */}
+    <div className="flex gap-2 w-full sm:w-auto">
+      {resource.resourceFormat === 'text' && Array.isArray(resource.promptContent) && resource.promptContent.length > 0 ? (
+        <button
+          onClick={() => {
+            const allPrompts = resource.promptContent
+              .map(p => `${p.promptTitle ? `${p.promptTitle}:\n` : ''}${p.promptText}`)
+              .join('\n\n');
+            handleCopy(allPrompts, 'copy-all-prompts');
+          }}
+          className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-sm"
+        >
+          {copyStates['copy-all-prompts'] ? (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
+              </svg>
+              <span className="hidden sm:inline">All Copied!</span>
+              <span className="sm:hidden">Copied!</span>
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+              </svg>
+              <span className="hidden sm:inline">Copy All Prompts</span>
+              <span className="sm:hidden">Copy All</span>
+            </>
+          )}
+        </button>
+      ) : resource.resourceFormat === 'aitool' ? (
+        <button
+          onClick={handleResourceAccess}
+          className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white py-3 px-4 sm:px-8 rounded-xl transition-all duration-300 font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group text-sm"
+          aria-label={`Launch ${resource.title} AI tool`}
+        >
+          <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+            <span className="text-sm">🚀</span>
+          </div>
+          <span className="hidden sm:inline">Launch AI Tool</span>
+          <span className="sm:hidden">Launch</span>
+          <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          </svg>
+        </button>
+      ) : (
+        <button
+          onClick={handleResourceAccess}
+          className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 sm:px-8 rounded-xl transition-all duration-300 font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group text-sm"
+          aria-label={`Access ${resource.title}`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+          <span className="hidden sm:inline">Access Resource</span>
+          <span className="sm:hidden">Access</span>
+        </button>
+      )}
+    </div>
+  </div>
+</div>
             </div>
         </div>
     );

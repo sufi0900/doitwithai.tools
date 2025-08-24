@@ -79,8 +79,8 @@ const DigitalMarketing = ({ initialData = {} }) => {
   const seoRelatedPosts = seoTrendRelatedData || []; // This already correctly handles arrays
 
   return (
-    <section>
-      <div className="container">
+    <section className="py-4 lg:py-6">
+      <div className="container px-4">
         <Breadcrumb
           pageName="Boost SEO"
           pageName2="with AI"
@@ -90,120 +90,79 @@ const DigitalMarketing = ({ initialData = {} }) => {
           link="/ai-seo"
           linktext="SEO with AI"
         />
-
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={3}>
-            <Grid container spacing={2} paddingX={1}>
-              {/* Conditional rendering for related posts (left side) */}
-              {isLoading && seoRelatedPosts.length === 0 ? (
-                // Show skeletons if loading and no data
-                <>
-               
-                </>
-              ) : (
-                seoRelatedPosts.slice(0, 2).map((post) => (
-                  <Grid key={post._id} item xs={12}>
-                    <HomeMediumCard
-                      key={post._id}
-                      title={post.title}
-                      overview={post.overview}
-                      mainImage={urlForImage(post.mainImage).url()}
-                      slug={`/ai-seo/${post.slug.current}`}
-                      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                      ReadTime={post.readTime?.minutes}
-                      tags={post.tags}
-                    />
-                  </Grid>
-                ))
-              )}
-            </Grid>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Grid container spacing={2}>
-              {/* Conditional rendering for big post (center) */}
-              {isLoading && !seoBigPost ? (
-                <Grid item xs={12}>
-                  <BigSkeleton />
-                </Grid>
-              ) : seoBigPost ? (
-                <Grid key={seoBigPost._id} item xs={12}>
-                  <BigCard
-                    key={seoBigPost._id}
-                    title={seoBigPost.title}
-                    overview={seoBigPost.overview}
-                    mainImage={urlForImage(seoBigPost.mainImage).url()}
-                    slug={`/ai-seo/${seoBigPost.slug.current}`}
-                    publishedAt={new Date(seoBigPost.publishedAt).toLocaleDateString('en-US', {
+        
+        {/* IMPROVED RESPONSIVE LAYOUT */}
+        <Grid container spacing={{ xs: 2, sm: 3, md: 4 }} alignItems="stretch">
+          {/* Side cards - Stack on mobile, show on sides for desktop */}
+          <Grid item xs={12} md={3} className="order-2 md:order-1">
+            <div className="space-y-3 lg:space-y-4">
+              {seoRelatedPosts.slice(0, 2).map((post) => (
+                <div key={post._id}>
+                  <HomeMediumCard
+                    key={post._id}
+                    title={post.title}
+                    overview={post.overview}
+                    mainImage={urlForImage(post.mainImage).url()}
+                    slug={`/ai-seo/${post.slug.current}`}
+                    publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric'
                     })}
-                    ReadTime={seoBigPost.readTime?.minutes}
-                    tags={seoBigPost.tags}
+                    ReadTime={post.readTime?.minutes}
+                    tags={post.tags}
                   />
-                </Grid>
-              ) : null} {/* Or a "No big post found" message */}
-            </Grid>
+                </div>
+              ))}
+            </div>
           </Grid>
 
-          <Grid item xs={12} md={3}>
-            <Grid container spacing={2} paddingX={1}>
-              {/* Conditional rendering for related posts (right side) */}
-              {isLoading && seoRelatedPosts.length === 0 ? (
-                // Show skeletons if loading and no data
-                <>
-                  {/* <Grid item xs={12}><MedSkeleton /></Grid>
-                  <Grid item xs={12}><MedSkeleton /></Grid> */}
-                </>
-              ) : (
-                seoRelatedPosts.slice(2, 4).map((post) => (
-                  <Grid key={post._id} item xs={12}>
-                    <HomeMediumCard
-                      key={post._id}
-                      title={post.title}
-                      overview={post.overview}
-                      mainImage={urlForImage(post.mainImage).url()}
-                      slug={`/ai-seo/${post.slug.current}`}
-                      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                      ReadTime={post.readTime?.minutes}
-                      tags={post.tags}
-                    />
-                  </Grid>
-                ))
-              )}
-            </Grid>
+          {/* Main card - Show first on mobile */}
+          <Grid item xs={12} md={6} className="order-1 md:order-2">
+            {isLoading && !seoBigPost ? (
+              <BigSkeleton />
+            ) : seoBigPost ? (
+              <BigCard
+                key={seoBigPost._id}
+                title={seoBigPost.title}
+                overview={seoBigPost.overview}
+                mainImage={urlForImage(seoBigPost.mainImage).url()}
+                slug={`/ai-seo/${seoBigPost.slug.current}`}
+                publishedAt={new Date(seoBigPost.publishedAt).toLocaleDateString('en-US', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
+                })}
+                ReadTime={seoBigPost.readTime?.minutes}
+                tags={seoBigPost.tags}
+              />
+            ) : null}
+          </Grid>
+
+          {/* Right side cards */}
+          <Grid item xs={12} md={3} className="order-3">
+            <div className="space-y-3 lg:space-y-4">
+              {seoRelatedPosts.slice(2, 4).map((post) => (
+                <div key={post._id}>
+                  <HomeMediumCard
+                    key={post._id}
+                    title={post.title}
+                    overview={post.overview}
+                    mainImage={urlForImage(post.mainImage).url()}
+                    slug={`/ai-seo/${post.slug.current}`}
+                    publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    })}
+                    ReadTime={post.readTime?.minutes}
+                    tags={post.tags}
+                  />
+                </div>
+              ))}
+            </div>
           </Grid>
         </Grid>
-
-        {/* Error/No data messages for DigitalMarketing component */}
-        {hasError && (!seoBigPost && seoRelatedPosts.length === 0) && (
-          <div className="text-center py-8">
-            <p className="text-red-500 mb-4">Failed to load AI SEO posts.</p>
-            {/* <button
-              onClick={handleRefresh} // Uncomment if you add handleRefresh
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Retry
-            </button> */}
-          </div>
-        )}
-
-        {!isLoading && !hasError && !seoBigPost && seoRelatedPosts.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500 dark:text-gray-400">No AI SEO posts found at this time.</p>
-           
-          </div>
-        )}
-
       </div>
     </section>
   );

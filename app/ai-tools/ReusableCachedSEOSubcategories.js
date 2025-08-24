@@ -8,7 +8,7 @@ import {
   CardActionArea,
 } from "@mui/material";
 import { ArrowForward } from "@mui/icons-material";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer"; // Added for the new tag
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
@@ -184,7 +184,7 @@ const ReusableCachedSEOSubcategories = ({
                 transform: "translateY(-4px) scale(1.02)",
                 boxShadow: "0 20px 40px -12px rgba(37, 99, 235, 0.25)",
               },
-              height: "220px", // Fixed height for consistent layout
+              height: { xs: "auto", md: "220px" }, // Responsive height
               borderRadius: "16px",
               overflow: "hidden",
               position: "relative",
@@ -200,18 +200,25 @@ const ReusableCachedSEOSubcategories = ({
               href={`/ai-seo/category/${subcategory.slug}`}
               sx={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
             >
-              <CardContent sx={{ flex: 1, p: "24px !important", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <CardContent sx={{ 
+                flex: 1, 
+                p: { xs: "16px !important", sm: "20px !important", md: "24px !important" }, 
+                display: "flex", 
+                flexDirection: "column", 
+                justifyContent: "space-between",
+                pt: { xs: "40px !important", sm: "48px !important", md: "24px !important" }, // Add padding-top to avoid badge overlap
+              }}>
                 <div>
-                  <h2 className="line-clamp-2 text-xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                  <h2 className="line-clamp-2 text-lg font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
                     {subcategory.title}
                   </h2>
-                  <p className="line-clamp-3 text-base text-gray-600 dark:text-gray-400 mb-3 transition-colors duration-300">
+                  <p className="line-clamp-3 text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 sm:text-base transition-colors duration-300">
                     {subcategory.description}
                   </p>
                 </div>
                 
                 <div className="pt-2">
-                  <div className="group/button relative inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 overflow-hidden w-fit">
+                  <div className="group/button relative inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 overflow-hidden w-fit sm:px-6 sm:py-2.5 sm:text-sm">
                     {/* Shimmer Effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover/button:translate-x-[100%] transition-transform duration-700 ease-out" />
                     
@@ -219,7 +226,7 @@ const ReusableCachedSEOSubcategories = ({
                     <span className="relative z-10">Explore Category</span>
                     <ArrowForward
                       className="relative z-10 transition-all duration-300 group-hover/button:translate-x-1 group-hover/button:scale-110"
-                      sx={{ fontSize: 18 }}
+                      sx={{ fontSize: { xs: 16, sm: 18 } }}
                     />
                     
                     {/* Glow Effect */}
@@ -230,14 +237,14 @@ const ReusableCachedSEOSubcategories = ({
               
               {/* Static "Subcategory" Tag */}
               <div 
-                className="absolute right-4 top-4 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-1.5 text-xs font-semibold capitalize text-white shadow-md backdrop-blur-sm border border-white/20"
+                className="absolute right-2 top-2 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 text-[10px] font-semibold capitalize text-white shadow-md backdrop-blur-sm border border-white/20 sm:right-3 sm:top-3 sm:px-3 sm:py-1.5 sm:text-xs"
               >
-                <LocalOfferIcon style={{fontSize:"10px"}} />   
+                <LocalOfferIcon style={{ fontSize: "8px" }} className="sm:fontSize-[10px]" />   
                 AI Subcategory
               </div>
             </CardActionArea>
             {/* Corner Accent */}
-            <div className="absolute top-0 right-0 w-10 h-10 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-2xl transform scale-0 group-hover:scale-100 transition-transform duration-500" />
+            <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-xl transform scale-0 group-hover:scale-100 transition-transform duration-500 sm:w-10 sm:h-10 sm:rounded-bl-2xl" />
           </Card>
         ))}
       </div>
@@ -245,11 +252,6 @@ const ReusableCachedSEOSubcategories = ({
         <div className="text-center py-8">
           <p className="text-gray-500 dark:text-gray-400">No subcategories found.</p>
           <button onClick={() => handleRefresh(true)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Refresh All Subcategories</button>
-        </div>
-      )}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded dark:bg-gray-800 mt-4">
-          SubcatPage: {currentPage} | PageCacheKey: {pageCacheKey} | TotalCountCacheKey: {totalCountCacheKey} | Group: {subcategoriesGroup} | PageStale: {isSubcategoryStale ? 'Yes' : 'No'} | TotalStale: {isTotalCountStale ? 'Yes' : 'No'} | TotalSubcategories: {totalSubcategories} | SubcategoriesTotalPages: {subcategoriesTotalPages} | Has More: {hasMoreSubcategories ? 'Yes' : 'No'}
         </div>
       )}
     </div>

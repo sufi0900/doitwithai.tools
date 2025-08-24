@@ -6,7 +6,7 @@ import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import FeatureSkeleton from "@/components/Blog/Skeleton/FeatureCard";
-import VerticalFeaturePost from "./FeatureResourcePost"; // Assuming this path for rendering
+import HorizentalFeaturePost from "./FeatureResourcePost"; 
 
 const ReusableCachedFeaturedFreeResources = ({ initialData = null }) => { // Accept initialData prop
   const memoizedQuery = useMemo(() => `*[_type=="freeResources"&&isOwnPageFeature==true]|order(publishedAt desc)[0]{
@@ -87,7 +87,7 @@ const ReusableCachedFeaturedFreeResources = ({ initialData = null }) => { // Acc
         </div>
       )}
       {/* Since the query fetches a single item, render it directly */}
-      <VerticalFeaturePost key={featuredResource._id} resource={featuredResource} />
+      <HorizentalFeaturePost key={featuredResource._id} resource={featuredResource} />
     </div>
   );
 };

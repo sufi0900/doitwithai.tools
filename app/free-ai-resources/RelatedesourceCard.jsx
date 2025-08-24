@@ -239,7 +239,7 @@ const ResourceCard = ({ resource, wrapperClassName = "" }) => {
                         </div>
                     </div>
                     {/* Enhanced Meta Information */}
-                    <div className="flex items-center justify-between py-3 border-t border-gray-100 dark:border-gray-700 flex-shrink-0 relative z-10">
+                    <div className="flex items-center justify-between mt-8 border-t border-gray-100 dark:border-gray-700 flex-shrink-0 relative z-10">
                         {resource.publishedAt && (
                             <div className="flex items-center gap-2">
                                 <div className="p-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-800/50 transition-colors duration-300">

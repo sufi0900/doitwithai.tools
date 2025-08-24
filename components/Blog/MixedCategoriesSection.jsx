@@ -7,7 +7,7 @@ import { Grid } from "@mui/material";
 import Link from "next/link";
 import { Code, DollarSign, Wrench } from "lucide-react";
 import HomeBigCard from "@/components/Blog/HomeBigCard";
-import HomeSmallCard from "@/components/Blog/CategoryRightSideCards";
+import CategoryRightSideCards from "@/components/Blog/CategoryRightSideCards";
 import SingleBlog from "@/components/Blog/HomeSmallCard";
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
@@ -205,7 +205,7 @@ const MixedCategoriesSection = ({ initialData = {} }) => {
                                     aiCodeData.map((post) => {
                                         const { categoryColor, CategoryIcon, categoryType } = getCategoryProps(post._type);
                                         return (
-                                            <HomeSmallCard
+                                            <CategoryRightSideCards
                                                 key={post._id}
                                                 post={post}
                                                 categoryType={categoryType}
@@ -223,7 +223,7 @@ const MixedCategoriesSection = ({ initialData = {} }) => {
                                     aiEarnData.map((post) => {
                                         const { categoryColor, CategoryIcon, categoryType } = getCategoryProps(post._type);
                                         return (
-                                            <HomeSmallCard
+                                            <CategoryRightSideCards
                                                 key={post._id}
                                                 post={post}
                                                 categoryType={categoryType}
@@ -238,56 +238,33 @@ const MixedCategoriesSection = ({ initialData = {} }) => {
                     </Grid>
                 </Grid>
 
-                <div className="text-center mt-12">
-                    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-                        <Link href="/ai-code" passHref>
-                            <button className="
-                                px-4 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm
-                                rounded-lg
-                                bg-green-600
-                                text-white font-semibold 
-                                shadow-sm
-                                hover:bg-green-700
-                                transition-colors duration-300 ease-in-out
-                                focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700
-                                flex items-center gap-2
-                            ">
-                                <Code className="w-4 h-4" />Explore AI Code
-                            </button>
-                        </Link>
-                        <Link href="/ai-tools" passHref>
-                            <button className="
-                                px-5 py-2.5 text-sm sm:px-6 sm:py-3 sm:text-base
-                                rounded-full
-                                bg-blue-600
-                                text-white font-bold 
-                                shadow-md hover:shadow-lg
-                                hover:bg-blue-700
-                                transition-colors duration-300 ease-in-out
-                                focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700
-                                flex items-center gap-2
-                            ">
-                                <Wrench className="w-4 h-4" />Discover AI Tools
-                            </button>
-                        </Link>
-                        <Link href="/ai-learn-earn" passHref>
-                            <button className="
-                                px-4 py-2 text-xs sm:px-5 sm:py-2.5 sm:text-sm
-                                rounded-lg
-                                bg-purple-600
-                                text-white font-semibold
-                                shadow-sm
-                                hover:bg-purple-700
-                                transition-colors duration-300 ease-in-out
-                                focus:outline-none focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-700
-                                flex items-center gap-2
-                            ">
-                                <DollarSign className="w-4 h-4" />Learn & Earn with AI
-                            </button>
-                        </Link>
-                    </div>
-                </div>
+          <div className="text-center mt-8 lg:mt-12 px-4">
+  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+    <Link href="/ai-code" passHref>
+      <button className="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg bg-green-600 text-white font-semibold shadow-sm hover:bg-green-700 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-green-300 dark:focus:ring-green-700 flex items-center justify-center gap-2">
+        <Code className="w-4 h-4" />
+        Explore AI Code
+      </button>
+    </Link>
+
+    <Link href="/ai-tools" passHref>
+      <button className="w-full sm:w-auto px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm rounded-full bg-blue-600 text-white font-bold shadow-md hover:shadow-lg hover:bg-blue-700 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-300 dark:focus:ring-blue-700 flex items-center justify-center gap-2">
+        <Wrench className="w-4 h-4" />
+        Discover AI Tools
+      </button>
+    </Link>
+
+    <Link href="/ai-learn-earn" passHref>
+      <button className="w-full sm:w-auto px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-lg bg-purple-600 text-white font-semibold shadow-sm hover:bg-purple-700 transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-700 flex items-center justify-center gap-2">
+        <DollarSign className="w-4 h-4" />
+        Learn & Earn with AI
+      </button>
+    </Link>
+  </div>
+</div>
+
             </div>
+            
         </section>
     );
 };

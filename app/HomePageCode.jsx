@@ -45,21 +45,20 @@ export default function HomePage({ initialServerData }) {
       {/* --- No Suspense needed here as data is prefetched --- */}
       <FeaturePost initialData={featurePost} />
 
-      <>
+   
         <AISEO initialData={aiSeo} />
         {/* --- No Suspense needed here as data is prefetched --- */}
         <MixedCategoriesSection initialData={mixedCategories} />
         {/* --- FreeResourcesPage here refers to the homepage's specific featured resources --- */}
         <FreeResourcesPage initialData={freeResourcesFeatured} />
-      </>
+      
 
       <HomepageCategories />  
       <MBrands /> 
       <RecentPost initialData={recentPosts} />
 
-        <div className='mt-10'>
           <Contact /> 
-          </div>
+        
     </>
   );
 }

@@ -48,7 +48,7 @@ const CategoryRightSideCards = ({ post, categoryType, categoryColor, CategoryIco
 
           {/* Category Tag - Absolute position on the image */}
           {categoryType && (
-             <div className="absolute right-3 top-3 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold capitalize text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:scale-105 backdrop-blur-sm border border-white/20">
+            <div className="absolute right-3 top-3 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold capitalize text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:scale-105 backdrop-blur-sm border border-white/20">
               {CategoryIcon && <CategoryIcon size={14} style={{ fontSize: "14px", marginRight: "4px" }} />}
               <span>{categoryType}</span>
             </div>
@@ -69,8 +69,8 @@ const CategoryRightSideCards = ({ post, categoryType, categoryColor, CategoryIco
 
           {/* Bottom content block (metadata, read more button) */}
           <div className="mt-auto">
-            {/* Metadata (Date and Read Time) */}
-            <div className="flex items-center justify-start gap-3 text-xs text-gray-600 dark:text-gray-400 mb-3">
+            {/* ⚡ Here's the key change: Make the meta info responsive */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-start gap-2 text-xs text-gray-600 dark:text-gray-400 mb-3">
               <div className="flex items-center gap-1.5">
                 <div className="p-1 rounded-full bg-blue-50 dark:bg-blue-900/30 group-hover:bg-blue-100 dark:group-hover:bg-blue-800/50 transition-colors duration-300">
                   <CalendarMonth 
@@ -82,7 +82,9 @@ const CategoryRightSideCards = ({ post, categoryType, categoryColor, CategoryIco
                   {formatDate(post.publishedAt)}
                 </p>
               </div>
-              <div className="w-px h-3 bg-gray-300 dark:bg-gray-600" />
+              
+              <div className="w-px h-3 bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+              
               <div className="flex items-center gap-1.5">
                 <div className="p-1 rounded-full bg-green-50 dark:bg-green-900/30 group-hover:bg-green-100 dark:group-hover:bg-green-800/50 transition-colors duration-300">
                   <AccessTimeIcon 
@@ -110,9 +112,6 @@ const CategoryRightSideCards = ({ post, categoryType, categoryColor, CategoryIco
                 className="relative z-10 transition-all duration-300 group-hover/button:translate-x-0.5 group-hover/button:scale-110" 
                 sx={{ fontSize: 14 }}
               />
-              
-              {/* Glow Effect */}
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-400 to-purple-500 opacity-0 group-hover/button:opacity-20 transition-opacity duration-300 blur-sm" />
             </Link>
           </div>
         </div>

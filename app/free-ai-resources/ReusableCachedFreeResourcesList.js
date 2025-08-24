@@ -3,14 +3,14 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react'; // Import useMemo
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import SkelCard from "@/components/Blog/Skeleton/Card";
-import ResourceCard from "./ResourceCard";
+import UnifiedResourceCard from "./UnifiedResourceCard";
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for refreshGroup
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 
 // Constants for the resource type and limit
 const DOCUMENT_TYPE = "freeResources";
-const RESOURCE_LIMIT = 6;
+const RESOURCE_LIMIT = 21;
 
 
 const ReusableCachedFreeResourcesList = ({
@@ -234,9 +234,13 @@ const getDynamicQueryConfig = useCallback(() => {
         </div>
       ) : itemsToDisplay.length > 0 ? (
         <div className="flex flex-wrap -mx-3">
-          {itemsToDisplay.map((resource) => (
-            <ResourceCard key={resource._id} resource={resource} />
-          ))}
+       {itemsToDisplay.map((resource) => (
+  <UnifiedResourceCard
+    key={resource._id}
+    resource={resource}
+    variant="grid"
+  />
+))}
         </div>
       ) : ( // No resources found (not loading, no error)
         <div className="text-center py-8">

@@ -100,34 +100,115 @@ async function getFreeResourcesInitialData() {
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
 
   // Enhanced query with all necessary fields for schema markup
-  const featuredResourceQuery = `*[_type == "freeResources" && isOwnPageFeature == true] | order(publishedAt desc)[0] {
-    _id,
-    title,
-    slug,
-    tags,
-    mainImage,
-    overview,
-    resourceType,
-    resourceFormat,
-    resourceLink,
-    resourceLinkType,
-    previewSettings,
-    "resourceFile": resourceFile.asset->,
-    content,
-    publishedAt,
-    promptContent,
-    "relatedArticle": relatedArticle->{title, slug, _type, tags, excerpt},
-    aiToolDetails,
-    seoTitle,
-    seoDescription,
-    seoKeywords,
+const featuredResourceQuery = `*[_type=="freeResources" && isOwnPageFeature==true] | order(publishedAt desc)[0]{
+  _id,
+  title,
+  slug,
+  tags,
+  mainImage,
+  overview,
+  resourceType,
+  resourceFormat,
+  resourceLink,
+  resourceLinkType,
+  previewSettings,
+  "resourceFile": resourceFile.asset->,
+  content,
+  publishedAt,
+  promptContent,
+  "relatedArticle": relatedArticle->{title, slug, _type, tags, excerpt},
+  aiToolDetails,
+  
+  // Enhanced SEO fields
+  seoKeywords,
+  seoDescription,
+  structuredData,
+  
+  // Image format specific fields
+  imageMetadata{
     altText,
-    features,
-    structuredData,
-    imageMetadata,
-    videoMetadata
-  }`;
+    caption,
+    imageKeywords
+  },
+  
+  // Video format specific fields
+  videoMetadata{
+    videoDescription,
+    duration,
+    transcript,
+    videoKeywords
+  },
+  
+  // Document format specific fields
+  documentMetadata{
+    documentSummary,
+    documentType,
+    pageCount,
+    topicsCovered,
+    documentKeywords,
+    targetAudience
+  },
+  
+  // Prompt/Text format specific fields
+  promptMetadata{
+    promptCategory,
+    aiPlatforms,
+    useCases,
+    promptKeywords
+  }
+}`;
 
+const listQuery = `*[_type=="freeResources"] | order(publishedAt desc)[0...${INITIAL_RESOURCE_LIST_LIMIT + 1}]{
+  _id,
+  title,
+  slug,
+  tags,
+  mainImage,
+  overview,
+  resourceType,
+  resourceFormat,
+  resourceLink,
+  resourceLinkType,
+  previewSettings,
+  "resourceFile": resourceFile.asset->,
+  content,
+  publishedAt,
+  promptContent,
+  "relatedArticle": relatedArticle->{title, slug, _type, tags, excerpt},
+  aiToolDetails,
+  
+  // Enhanced SEO fields
+  seoKeywords,
+  seoDescription,
+  structuredData,
+  
+  // Format-specific metadata
+  imageMetadata{
+    altText,
+    caption,
+    imageKeywords
+  },
+  videoMetadata{
+    videoDescription,
+    duration,
+    transcript,
+    videoKeywords
+  },
+  documentMetadata{
+    documentSummary,
+    documentType,
+    pageCount,
+    topicsCovered,
+    documentKeywords,
+    targetAudience
+  },
+  promptMetadata{
+    promptCategory,
+    aiPlatforms,
+    useCases,
+    promptKeywords
+  }
+}`;
   const countsQuery = `{
     "all": count(*[_type == "freeResources"]),
     "image": count(*[_type == "freeResources" && resourceFormat == "image"]),
@@ -137,32 +218,7 @@ async function getFreeResourcesInitialData() {
     "aitool": count(*[_type == "freeResources" && resourceFormat == "aitool"])
   }`;
 
-  const listQuery = `*[_type == "freeResources"] | order(publishedAt desc)[0...${INITIAL_RESOURCE_LIST_LIMIT + 1}] {
-    _id,
-    title,
-    slug,
-    tags,
-    mainImage,
-    overview,
-    resourceType,
-    resourceFormat,
-    resourceLink,
-    resourceLinkType,
-    previewSettings,
-    "resourceFile": resourceFile.asset->,
-    content,
-    publishedAt,
-    promptContent,
-    "relatedArticle": relatedArticle->{title, slug, _type, tags, excerpt},
-    aiToolDetails,
-    seoTitle,
-    seoDescription,
-    seoKeywords,
-    altText,
-    structuredData,
-    imageMetadata,
-    videoMetadata
-  }`;
+
 
   try {
     const [featuredResource, resourceCounts, resourceList] = await Promise.all([
@@ -197,15 +253,16 @@ async function getFreeResourcesInitialData() {
 }
 
 // Enhanced schema markup generation
+// Enhanced schema markup generation function
 function generateResourceSchemas(resources) {
   if (!resources || resources.length === 0) return [];
-
+  
   return resources.map((resource, index) => {
     const baseSchema = {
       "@context": "https://schema.org",
       "@type": getSchemaType(resource.resourceFormat),
       "name": resource.title,
-      "description": resource.overview || resource.seoDescription,
+      "description": resource.seoDescription || resource.overview,
       "datePublished": resource.publishedAt,
       "dateModified": resource.publishedAt,
       "author": {
@@ -215,7 +272,7 @@ function generateResourceSchemas(resources) {
       },
       "publisher": {
         "@type": "Organization",
-        "name": "Do It With AI Tools",
+        "name": "DoItWithAITools",
         "url": getBaseUrl()
       },
       "keywords": resource.seoKeywords || resource.tags,
@@ -234,10 +291,10 @@ function generateResourceSchemas(resources) {
           "thumbnailUrl": resource.previewSettings?.previewImage?.asset?.url,
           "caption": resource.imageMetadata?.caption,
           "text": resource.imageMetadata?.altText,
-          "keywords": resource.imageMetadata?.imageKeywords,
+          "keywords": resource.imageMetadata?.imageKeywords || resource.seoKeywords,
           "representativeOfPage": resource.isOwnPageFeature || false,
           "acquireLicensePage": `${getBaseUrl()}/free-ai-resources`,
-          "creditText": "Do It With AI Tools",
+          "creditText": "DoItWithAITools",
           "creator": {
             "@type": "Person",
             "name": "Sufian Mustafa"
@@ -253,7 +310,8 @@ function generateResourceSchemas(resources) {
           "uploadDate": resource.publishedAt,
           "duration": resource.videoMetadata?.duration ? convertDurationToISO8601(resource.videoMetadata.duration) : undefined,
           "transcript": resource.videoMetadata?.transcript,
-          "keywords": resource.videoMetadata?.videoKeywords,
+          "description": resource.videoMetadata?.videoDescription || resource.overview,
+          "keywords": resource.videoMetadata?.videoKeywords || resource.seoKeywords,
           "embedUrl": resource.resourceLink,
           "interactionStatistic": {
             "@type": "InteractionCounter",
@@ -269,7 +327,15 @@ function generateResourceSchemas(resources) {
           "url": resource.resourceFile?.url || resource.resourceLink,
           "fileFormat": getFileFormat(resource.resourceFile?.originalFilename),
           "encodingFormat": getMimeType(resource.resourceFile?.originalFilename),
-          "downloadUrl": resource.resourceFile?.url || resource.resourceLink
+          "downloadUrl": resource.resourceFile?.url || resource.resourceLink,
+          "abstract": resource.documentMetadata?.documentSummary,
+          "numberOfPages": resource.documentMetadata?.pageCount,
+          "audience": {
+            "@type": "Audience",
+            "audienceType": resource.documentMetadata?.targetAudience
+          },
+          "about": resource.documentMetadata?.topicsCovered,
+          "keywords": resource.documentMetadata?.documentKeywords || resource.seoKeywords
         };
 
       case 'text':
@@ -286,14 +352,18 @@ function generateResourceSchemas(resources) {
             "position": stepIndex + 1,
             "name": prompt.promptTitle,
             "text": prompt.promptText
-          }))
+          })),
+          "about": resource.promptMetadata?.promptCategory,
+          "keywords": resource.promptMetadata?.promptKeywords || resource.seoKeywords,
+          "applicationCategory": resource.promptMetadata?.aiPlatforms,
+          "usageInfo": resource.promptMetadata?.useCases
         };
 
       case 'aitool':
         return {
           ...baseSchema,
           "@type": "SoftwareApplication",
-          "applicationCategory": "AI Tool",
+          "applicationCategory": "AITool",
           "operatingSystem": "Web Browser",
           "url": resource.aiToolDetails?.toolUrl,
           "offers": {
@@ -303,7 +373,8 @@ function generateResourceSchemas(resources) {
             "availability": "https://schema.org/InStock"
           },
           "featureList": resource.aiToolDetails?.features,
-          "description": resource.aiToolDetails?.toolDescription
+          "description": resource.aiToolDetails?.toolDescription || resource.overview,
+          "keywords": resource.seoKeywords || resource.tags
         };
 
       default:
@@ -311,7 +382,6 @@ function generateResourceSchemas(resources) {
     }
   });
 }
-
 // Helper functions for schema generation
 function getSchemaType(format) {
   const typeMap = {
@@ -335,37 +405,7 @@ function convertDurationToISO8601(duration) {
   return undefined;
 }
 
-function getFileFormat(filename) {
-  if (!filename) return undefined;
-  const ext = filename.split('.').pop()?.toLowerCase();
-  const formatMap = {
-    'pdf': 'PDF',
-    'doc': 'Microsoft Word',
-    'docx': 'Microsoft Word',
-    'xls': 'Microsoft Excel',
-    'xlsx': 'Microsoft Excel',
-    'ppt': 'Microsoft PowerPoint',
-    'pptx': 'Microsoft PowerPoint',
-    'txt': 'Plain Text'
-  };
-  return formatMap[ext] || ext?.toUpperCase();
-}
 
-function getMimeType(filename) {
-  if (!filename) return undefined;
-  const ext = filename.split('.').pop()?.toLowerCase();
-  const mimeMap = {
-    'pdf': 'application/pdf',
-    'doc': 'application/msword',
-    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'xls': 'application/vnd.ms-excel',
-    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'ppt': 'application/vnd.ms-powerpoint',
-    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    'txt': 'text/plain'
-  };
-  return mimeMap[ext];
-}
 
 // Main page schema markup
 function generateMainPageSchema(pageMetadata, initialServerData) {
@@ -503,41 +543,7 @@ export default async function Page() {
 
   return (
     <>
-      <Head>
-        <NextSeo
-          title={metadata.title}
-          description={metadata.description}
-          canonical={metadata.alternates.canonical}
-          openGraph={{
-            type: 'website',
-            locale: 'en_US',
-            url: metadata.openGraph.url,
-            siteName: metadata.openGraph.siteName,
-            title: metadata.openGraph.title,
-            description: metadata.openGraph.description,
-            images: metadata.openGraph.images,
-          }}
-          twitter={{
-            card: metadata.twitter.card,
-            site: metadata.twitter.creator,
-            creator: metadata.twitter.creator,
-            title: metadata.twitter.title,
-            description: metadata.twitter.description,
-            image: metadata.twitter.image,
-          }}
-          additionalMetaTags={[
-            { name: 'keywords', content: metadata.keywords },
-            { name: 'author', content: metadata.author },
-            { name: 'robots', content: 'index,follow' },
-            { name: 'googlebot', content: 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1' },
-            { name: 'theme-color', content: '#2563eb' },
-            { name: 'application-name', content: 'doitwithai.tools' },
-            { name: 'msapplication-TileColor', content: '#2563eb' },
-            { name: 'apple-mobile-web-app-capable', content: 'yes' },
-            { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
-          ]}
-        />
-      </Head>
+     
 
       {/* Enhanced Schema Markup with individual resource schemas */}
       <Script
@@ -548,9 +554,9 @@ export default async function Page() {
         strategy="beforeInteractive"
       />
 
-      <StaticFreeResourcePageShell>
+      {/* <StaticFreeResourcePageShell> */}
         <AllBlogs initialServerData={initialServerData} />
-      </StaticFreeResourcePageShell>
+      {/* </StaticFreeResourcePageShell> */}
     </>
   );
 }

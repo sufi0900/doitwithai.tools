@@ -1,6 +1,7 @@
 import React, { useMemo, useCallback } from 'react'; // Added useMemo, useCallback
 import dynamic from 'next/dynamic';
-import ResourceCard from '@/app/free-ai-resources/RelatedesourceCard';
+// import UnifiedResourceCard from '@/app/free-ai-resources/UnifiedResourceCard';
+import ResourceCard from '@/app/free-ai-resources/UnifiedResourceCard';
 // import Link from 'next/link';
 import ResourceSkeleton from '@/app/free-ai-resources/ResourceSkeleton';
 import ResourceModalsProvider from '@/app/free-ai-resources/ResourceModalsProvider';
@@ -21,7 +22,7 @@ const DynamicResourceCarousel = dynamic(() => import('@/app/free-ai-resources/Re
   ),
 });
 
-const FeaturedResourcesHorizontal  = ({ initialData = {} }) => { // Accept initialData prop
+const HomeFeaturedResourceComponent  = ({ initialData = {} }) => { // Accept initialData prop
 
   // Memoize the query
   // Memoize the query
@@ -170,16 +171,20 @@ const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|
             </button>
           </div>
         )}
-        <DynamicResourceCarousel>
-          {featuredResources.map((resource) => (
-            <ResourceCard key={resource._id} resource={resource} wrapperClassName="h-full mb-4 " />
-          ))}
-        </DynamicResourceCarousel>
-     
+      <DynamicResourceCarousel>
+  {featuredResources.map((resource) => (
+    <ResourceCard
+      key={resource._id}
+      resource={resource}
+      variant="carousel"
+      wrapperClassName="h-[120px] mb-4"
+    />
+  ))}
+</DynamicResourceCarousel>
       </div>
       <ResourceModalsProvider resources={featuredResources} />
     </section>
   );
 };
 
-export default FeaturedResourcesHorizontal;
+export default HomeFeaturedResourceComponent;
