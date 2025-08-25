@@ -12,10 +12,8 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 // Reusable Blog/Caching Components
 import ReusableCachedMixedBlogs from "./ReusableCachedAllBlogsGeneral";
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
-import PageCacheStatusButton from "@/React_Query_Caching/PageCacheStatusButton";
 import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
 import SearchResults from '@/React_Query_Caching/SearchResults';
-import UnifiedCacheMonitor from "@/React_Query_Caching/UnifiedCacheMonitor";
 
 
 export const revalidate = false;
@@ -99,7 +97,6 @@ export default function AllBlogsAggregated({ initialServerData }) {
 
   return (
     <PageCacheProvider pageType="blogs" pageId="all-posts">
-      <UnifiedCacheMonitor />
 
       <section className="mb-12">
         <div className="rounded-2xl p-6 md:p-8 shadow-md bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">

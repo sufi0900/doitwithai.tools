@@ -24,8 +24,6 @@ const DynamicResourceCarousel = dynamic(() => import('@/app/free-ai-resources/Re
 
 const HomeFeaturedResourceComponent  = ({ initialData = {} }) => { // Accept initialData prop
 
-  // Memoize the query
-  // Memoize the query
 const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...30]{
   _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,
   "relatedArticle": relatedArticle-> {

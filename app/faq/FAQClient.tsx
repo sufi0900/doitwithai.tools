@@ -2,11 +2,11 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import React, { useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import FAQCategorySection from './FAQCategorySection';
 import FAQCTASection from './FAQCTASection';
 import { faqsData } from './faqs'; // Import the centralized data
+import { ChevronDown, Zap } from 'lucide-react'; // ⬅️ Add Zap icon here
 
 export default function FAQComponent () {
   const [activeIndex, setActiveIndex] = useState<number[]>([]);
@@ -43,35 +43,46 @@ export default function FAQComponent () {
       </div>
 
       {/* Main FAQ Accordion */}
-      <div className="max-w-4xl mx-auto grid gap-6 mb-12">
-        {faqsData.map((faq, index) => (
-          <div
-            key={index}
-            className="rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]"
-          >
-            <div
-              onClick={() => toggleFAQ(index)}
-              className={`flex justify-between items-center p-5 cursor-pointer bg-white dark:bg-gray-800 transition-all duration-300 ${activeIndex.includes(index) ? 'border-b-2 border-blue-500 dark:border-blue-400' : ''}`}
-            >
-              <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white">
-                {faq.question}
-              </h3>
-              <ChevronDown
-                className={`transition-transform duration-300 text-gray-500 dark:text-gray-400 ${activeIndex.includes(index) ? 'rotate-180 text-blue-500 dark:text-blue-400' : ''}`}
-                size={24}
-              />
-            </div>
+  
 
-            <div
-              className={`overflow-hidden transition-all duration-300 bg-gray-50 dark:bg-gray-900 ${activeIndex.includes(index) ? 'max-h-[500px] py-5 px-6' : 'max-h-0'}`}
-            >
-              <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                {faq.answer}
-              </p>
-            </div>
-          </div>
-        ))}
+<div className="max-w-4xl mx-auto grid gap-6 mb-12">
+  {faqsData.map((faq, index) => (
+    <div
+      key={index}
+      className="rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:scale-[1.01]"
+    >
+      <div
+        onClick={() => toggleFAQ(index)}
+        className={`flex justify-between items-center p-5 cursor-pointer bg-white dark:bg-gray-800 transition-all duration-300 ${activeIndex.includes(index) ? 'border-b-2 border-blue-500 dark:border-blue-400' : ''}`}
+      >
+        {/* ⬅️ ADD THIS NEW DIV */}
+        <div className="flex items-center space-x-3">
+          <Zap 
+            className="text-blue-500 dark:text-blue-400" 
+            size={20} 
+          />
+          <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white">
+            {faq.question}
+          </h3>
+        </div>
+        
+        <ChevronDown
+          className={`transition-transform duration-300 text-gray-500 dark:text-gray-400 ${activeIndex.includes(index) ? 'rotate-180 text-blue-500 dark:text-blue-400' : ''}`}
+          size={24}
+        />
       </div>
+
+      <div
+        className={`overflow-hidden transition-all duration-300 bg-gray-50 dark:bg-gray-900 ${activeIndex.includes(index) ? 'max-h-[500px] py-5 px-6' : 'max-h-0'}`}
+      >
+        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+          {faq.answer}
+        </p>
+      </div>
+    </div>
+  ))}
+</div>
+
    
       {/* CTA */}
       {/* <FAQCTASection /> */}

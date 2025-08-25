@@ -3,7 +3,7 @@
 /* eslint-disable react/no-unescaped-entities */
 import React from 'react';
 
-// Components
+
 
 export default function StaticBlogsPageShell({ initialServerData, children }) {
   // Determine current count for display in Hero Section Stats Bar

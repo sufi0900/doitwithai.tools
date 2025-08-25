@@ -36,7 +36,7 @@ const Breadcrumb = ({
                       </span>
                       
                       {/* Space and second part */}
-                      <span className="mx-2 sm:mx-3"></span>
+                      <span className="mx-1.5 sm:mx-2"></span>
                       
                       <span className="relative text-gray-700 dark:text-gray-300 transition-all duration-300 group-hover:text-gray-900 dark:group-hover:text-white">
                         {pageName2}

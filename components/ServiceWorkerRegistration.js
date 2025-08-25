@@ -388,37 +388,8 @@ export default function ServiceWorkerRegistration() {
   // Don't render anything during SSR
   if (!mounted) return null;
 
-  // Optional: Show SW status indicator in development
-  if (process.env.NODE_ENV === 'development') {
-    return (
-      <div style={{
-        position: 'fixed',
-        bottom: '10px',
-        right: '10px',
-        background: getStatusColor(swStatus),
-        color: 'white',
-        padding: '5px 10px',
-        borderRadius: '5px',
-        fontSize: '12px',
-        zIndex: 9999
-      }}>
-        SW: {swStatus}
-      </div>
-    );
-  }
+
 
   return null;
 }
 
-function getStatusColor(status) {
-  switch (status) {
-    case 'registered': return '#4CAF50';
-    case 'active': return '#4CAF50';
-    case 'updated': return '#2196F3';
-    case 'update-available': return '#FF9800';
-    case 'failed': return '#f44336';
-    case 'unsupported': return '#9E9E9E';
-    default: return '#9E9E9E';
-  }
-}
-            // No worries! The page you were trying to reach isn't available offline. You may, however, be able to access the last page you visited if it was cached.

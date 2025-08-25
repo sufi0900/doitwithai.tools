@@ -197,7 +197,7 @@ const ReusableCachedSEOSubcategories = ({
           >
             <CardActionArea 
               component={Link} 
-              href={`/ai-seo/category/${subcategory.slug}`}
+              href={`/ai-seo/categories/${subcategory.slug}`}
               sx={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
             >
               <CardContent sx={{ 

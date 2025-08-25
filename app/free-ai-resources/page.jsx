@@ -100,7 +100,7 @@ async function getFreeResourcesInitialData() {
   console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
 
   // Enhanced query with all necessary fields for schema markup
-const featuredResourceQuery = `*[_type=="freeResources" && isOwnPageFeature==true] | order(publishedAt desc)[0]{
+ const featuredResourceQuery = `*[_type=="freeResources" && isOwnPageFeature==true] | order(publishedAt desc)[0]{
   _id,
   title,
   slug,
@@ -219,7 +219,6 @@ const listQuery = `*[_type=="freeResources"] | order(publishedAt desc)[0...${INI
   }`;
 
 
-
   try {
     const [featuredResource, resourceCounts, resourceList] = await Promise.all([
       client.fetch(featuredResourceQuery, {}, { next: { tags: ["freeResources"] } }),
@@ -253,16 +252,15 @@ const listQuery = `*[_type=="freeResources"] | order(publishedAt desc)[0...${INI
 }
 
 // Enhanced schema markup generation
-// Enhanced schema markup generation function
 function generateResourceSchemas(resources) {
   if (!resources || resources.length === 0) return [];
-  
+
   return resources.map((resource, index) => {
     const baseSchema = {
       "@context": "https://schema.org",
       "@type": getSchemaType(resource.resourceFormat),
       "name": resource.title,
-      "description": resource.seoDescription || resource.overview,
+      "description": resource.overview || resource.seoDescription,
       "datePublished": resource.publishedAt,
       "dateModified": resource.publishedAt,
       "author": {
@@ -272,7 +270,7 @@ function generateResourceSchemas(resources) {
       },
       "publisher": {
         "@type": "Organization",
-        "name": "DoItWithAITools",
+        "name": "Do It With AI Tools",
         "url": getBaseUrl()
       },
       "keywords": resource.seoKeywords || resource.tags,
@@ -291,10 +289,10 @@ function generateResourceSchemas(resources) {
           "thumbnailUrl": resource.previewSettings?.previewImage?.asset?.url,
           "caption": resource.imageMetadata?.caption,
           "text": resource.imageMetadata?.altText,
-          "keywords": resource.imageMetadata?.imageKeywords || resource.seoKeywords,
+          "keywords": resource.imageMetadata?.imageKeywords,
           "representativeOfPage": resource.isOwnPageFeature || false,
           "acquireLicensePage": `${getBaseUrl()}/free-ai-resources`,
-          "creditText": "DoItWithAITools",
+          "creditText": "Do It With AI Tools",
           "creator": {
             "@type": "Person",
             "name": "Sufian Mustafa"
@@ -306,12 +304,11 @@ function generateResourceSchemas(resources) {
           ...baseSchema,
           "@type": "VideoObject",
           "contentUrl": resource.resourceFile?.url || resource.resourceLink,
-          "thumbnailUrl": resource.previewSettings?.previewImage?.asset?.url,
+
           "uploadDate": resource.publishedAt,
           "duration": resource.videoMetadata?.duration ? convertDurationToISO8601(resource.videoMetadata.duration) : undefined,
           "transcript": resource.videoMetadata?.transcript,
-          "description": resource.videoMetadata?.videoDescription || resource.overview,
-          "keywords": resource.videoMetadata?.videoKeywords || resource.seoKeywords,
+          "keywords": resource.videoMetadata?.videoKeywords,
           "embedUrl": resource.resourceLink,
           "interactionStatistic": {
             "@type": "InteractionCounter",
@@ -327,15 +324,7 @@ function generateResourceSchemas(resources) {
           "url": resource.resourceFile?.url || resource.resourceLink,
           "fileFormat": getFileFormat(resource.resourceFile?.originalFilename),
           "encodingFormat": getMimeType(resource.resourceFile?.originalFilename),
-          "downloadUrl": resource.resourceFile?.url || resource.resourceLink,
-          "abstract": resource.documentMetadata?.documentSummary,
-          "numberOfPages": resource.documentMetadata?.pageCount,
-          "audience": {
-            "@type": "Audience",
-            "audienceType": resource.documentMetadata?.targetAudience
-          },
-          "about": resource.documentMetadata?.topicsCovered,
-          "keywords": resource.documentMetadata?.documentKeywords || resource.seoKeywords
+          "downloadUrl": resource.resourceFile?.url || resource.resourceLink
         };
 
       case 'text':
@@ -352,18 +341,14 @@ function generateResourceSchemas(resources) {
             "position": stepIndex + 1,
             "name": prompt.promptTitle,
             "text": prompt.promptText
-          })),
-          "about": resource.promptMetadata?.promptCategory,
-          "keywords": resource.promptMetadata?.promptKeywords || resource.seoKeywords,
-          "applicationCategory": resource.promptMetadata?.aiPlatforms,
-          "usageInfo": resource.promptMetadata?.useCases
+          }))
         };
 
       case 'aitool':
         return {
           ...baseSchema,
           "@type": "SoftwareApplication",
-          "applicationCategory": "AITool",
+          "applicationCategory": "AI Tool",
           "operatingSystem": "Web Browser",
           "url": resource.aiToolDetails?.toolUrl,
           "offers": {
@@ -373,8 +358,7 @@ function generateResourceSchemas(resources) {
             "availability": "https://schema.org/InStock"
           },
           "featureList": resource.aiToolDetails?.features,
-          "description": resource.aiToolDetails?.toolDescription || resource.overview,
-          "keywords": resource.seoKeywords || resource.tags
+          "description": resource.aiToolDetails?.toolDescription
         };
 
       default:
@@ -382,6 +366,7 @@ function generateResourceSchemas(resources) {
     }
   });
 }
+
 // Helper functions for schema generation
 function getSchemaType(format) {
   const typeMap = {
@@ -405,7 +390,37 @@ function convertDurationToISO8601(duration) {
   return undefined;
 }
 
+function getFileFormat(filename) {
+  if (!filename) return undefined;
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const formatMap = {
+    'pdf': 'PDF',
+    'doc': 'Microsoft Word',
+    'docx': 'Microsoft Word',
+    'xls': 'Microsoft Excel',
+    'xlsx': 'Microsoft Excel',
+    'ppt': 'Microsoft PowerPoint',
+    'pptx': 'Microsoft PowerPoint',
+    'txt': 'Plain Text'
+  };
+  return formatMap[ext] || ext?.toUpperCase();
+}
 
+function getMimeType(filename) {
+  if (!filename) return undefined;
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const mimeMap = {
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'ppt': 'application/vnd.ms-powerpoint',
+    'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'txt': 'text/plain'
+  };
+  return mimeMap[ext];
+}
 
 // Main page schema markup
 function generateMainPageSchema(pageMetadata, initialServerData) {
@@ -543,7 +558,41 @@ export default async function Page() {
 
   return (
     <>
-     
+      <Head>
+        <NextSeo
+          title={metadata.title}
+          description={metadata.description}
+          canonical={metadata.alternates.canonical}
+          openGraph={{
+            type: 'website',
+            locale: 'en_US',
+            url: metadata.openGraph.url,
+            siteName: metadata.openGraph.siteName,
+            title: metadata.openGraph.title,
+            description: metadata.openGraph.description,
+            images: metadata.openGraph.images,
+          }}
+          twitter={{
+            card: metadata.twitter.card,
+            site: metadata.twitter.creator,
+            creator: metadata.twitter.creator,
+            title: metadata.twitter.title,
+            description: metadata.twitter.description,
+            image: metadata.twitter.image,
+          }}
+          additionalMetaTags={[
+            { name: 'keywords', content: metadata.keywords },
+            { name: 'author', content: metadata.author },
+            { name: 'robots', content: 'index,follow' },
+            { name: 'googlebot', content: 'index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1' },
+            { name: 'theme-color', content: '#2563eb' },
+            { name: 'application-name', content: 'doitwithai.tools' },
+            { name: 'msapplication-TileColor', content: '#2563eb' },
+            { name: 'apple-mobile-web-app-capable', content: 'yes' },
+            { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }
+          ]}
+        />
+      </Head>
 
       {/* Enhanced Schema Markup with individual resource schemas */}
       <Script
@@ -554,9 +603,9 @@ export default async function Page() {
         strategy="beforeInteractive"
       />
 
-      {/* <StaticFreeResourcePageShell> */}
+      <StaticFreeResourcePageShell>
         <AllBlogs initialServerData={initialServerData} />
-      {/* </StaticFreeResourcePageShell> */}
+      </StaticFreeResourcePageShell>
     </>
   );
 }

@@ -1,5 +1,5 @@
 // UnifiedResourceCard.js - Single card for both grid and carousel
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import ResourceCardBase from './ResourceCardBase';
 import Link from 'next/link';
 import { ArrowForward, PlayArrow, Description, Image as ImageIcon, Psychology } from '@mui/icons-material';
@@ -25,7 +25,16 @@ export const openModalById = (id) => {
 
 const UnifiedResourceCard = ({ resource, wrapperClassName = "", variant = "grid", cardHeight = "auto" }) => {
 
-  
+      const videoRef = useRef(null);
+
+// optional cleanup: pause if component unmounts
+useEffect(() => {
+  return () => {
+    if (videoRef.current) {
+      try { videoRef.current.pause(); } catch(e) {}
+    }
+  };
+}, []);
   // Handle resource access with proper URL handling
   const handleResourceAccess = (resource) => {
     if (resource.resourceFormat === 'aitool' && resource.aiToolDetails?.toolUrl) {
@@ -134,6 +143,10 @@ const getCardHeight = () => {
 
   // Video Card Layout - Unified
   const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleResourceAccess }) => (
+    
+
+
+    
     <div className={`${getCardHeight()} flex flex-col bg-white dark:bg-gray-800 rounded-2xl overflow-hidden group shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 ${variant === 'carousel' ? 'hover:-translate-y-3 hover:scale-[1.02]' : ''}`}>
       {/* Enhanced Shimmer Effect for Carousel */}
       {variant === 'carousel' && (
@@ -156,18 +169,33 @@ const getCardHeight = () => {
       {/* Video Preview Area */}
       <div className="relative flex-grow bg-black overflow-hidden">
         <div className="w-full h-full flex items-center justify-center">
-          {resource.mainImage ? (
-            <img
-              src={resource.mainImage}
-              alt={resource.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-              <PlayArrow sx={{ fontSize: 64, color: 'white', opacity: 0.5 }} />
-            </div>
-          )}
+        {resource.videoUrl || resource.resourceFile?.url ? (
+  <video
+    ref={videoRef}
+    src={resource.videoUrl || resource.resourceFile?.url}
+    poster={resource.mainImage}                // optional fallback thumb if you have one
+    preload="metadata"                         // load metadata so first frame is available
+    muted                                       // keep preview silent
+    playsInline                                 // prevents fullscreen behavior on iOS
+    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+    // when metadata loads, ensure video is at time 0 and paused (shows first frame)
+    onLoadedMetadata={() => {
+      if (!videoRef.current) return;
+      try {
+        videoRef.current.currentTime = 0;
+      } catch (e) {
+        // some browsers may throw if seek not allowed yet — ignore safely
+      }
+      try { videoRef.current.pause(); } catch(e) {}
+    }}
+  />
+) : (
+  // keep your existing fallback
+  <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+    <PlayArrows x={{ fontSize: 64, color: 'white', opacity: 0.5 }} />
+  </div>
+)}
+
 
           {/* Enhanced Play Button Overlay */}
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">

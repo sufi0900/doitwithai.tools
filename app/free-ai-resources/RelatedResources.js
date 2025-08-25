@@ -1,6 +1,6 @@
 //components/RelatedResources.js
 import React from 'react';
-import ResourceCard from './RelatedesourceCard';
+import ResourceCard from './UnifiedResourceCard';
 import ResourceSkeleton from './ResourceSkeleton';
 import ResourceModalsProvider from './ResourceModalsProvider';
 import dynamic from 'next/dynamic';
