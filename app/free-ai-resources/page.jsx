@@ -599,8 +599,7 @@ export default async function Page() {
         id="FreeResourcesSchema"
         type="application/ld+json"
         dangerouslySetInnerHTML={generateMainPageSchema(metadata, initialServerData)}
-        key="FreeResources-jsonld"
-        strategy="beforeInteractive"
+  
       />
 
       <StaticFreeResourcePageShell>

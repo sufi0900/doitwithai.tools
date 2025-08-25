@@ -192,7 +192,7 @@ const getCardHeight = () => {
 ) : (
   // keep your existing fallback
   <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-    <PlayArrows x={{ fontSize: 64, color: 'white', opacity: 0.5 }} />
+    <PlayArrow x={{ fontSize: 64, color: 'white', opacity: 0.5 }} />
   </div>
 )}
 
