@@ -8,7 +8,7 @@ import Head from 'next/head';
 import Link from "next/link";
 
 function getBaseUrl() {
-  // For production, always use your custom domain
+  
   if (process.env.NODE_ENV === 'production') {
     return 'https://doitwithai.tools';  // Remove trailing slash
   }
@@ -88,29 +88,70 @@ function authorSchema() {
   return {
     __html: JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "Person",
-      "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person", // Consistent @id
-      "name": "Sufian Mustafa",
-      "url": `${getBaseUrl()}/author/sufian-mustafa`,
-      "image": {
-        "@type": "ImageObject",
-        "@id": `${getBaseUrl()}/sufi.jpeg#image`,
-        "url": `${getBaseUrl()}/sufi.jpeg`,
-        "width": 500,
-        "height": 500,
-        "caption": "Sufian Mustafa - AI-Powered Web Developer"
-      },
-      "jobTitle": "AI-Assisted Web Creator and Content Creator",
-      "description": "Sufian Mustafa is a passionate web developer and AI enthusiast who creates and curates content for doitwithai.tools, combining modern web technologies with the power of artificial intelligence.",
-      "email": "sufianmustafa0900@gmail.com", // Plain email, no mailto:
-      "sameAs": [
-        "https://www.linkedin.com/in/sufian-mustafa/",
-        "https://x.com/SufianWebDev",
-        "https://dev.to/sufian",
-        "https://medium.com/@sufianmustafa0900",
-        "https://github.com/sufi0900"
-      ],
-   
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${getBaseUrl()}/author/sufian-mustafa#webpage`, // Unique ID for the page
+          "url": `${getBaseUrl()}/author/sufian-mustafa`,
+          "name": "Sufian Mustafa: Author, Developer, & SEO Lead for doitwithai.tools",
+          "description": "Meet the creator behind doitwithai.tools. Sufian Mustafa developed this platform & all its content using a unique, strategic blend of AI and web development",
+          "inLanguage": "en-US",
+          "breadcrumb": {
+            "@id": `${getBaseUrl()}/author/sufian-mustafa#breadcrumb`
+          },
+          "mainEntityOfPage": {
+            "@id": `${getBaseUrl()}/author/sufian-mustafa#person` // Link to the Person schema below
+          },
+        },
+        {
+          "@type": "Person",
+          "@id": `${getBaseUrl()}/author/sufian-mustafa#person`, // Same ID as in mainEntityOfPage
+          "name": "Sufian Mustafa",
+          "url": `${getBaseUrl()}/author/sufian-mustafa`,
+          "image": {
+            "@type": "ImageObject",
+            "@id": `${getBaseUrl()}/sufi.jpeg#image`,
+            "url": `${getBaseUrl()}/sufi.jpeg`,
+            "width": 500,
+            "height": 500,
+            "caption": "Sufian Mustafa - AI-Powered Web Developer"
+          },
+          "jobTitle": "AI-Assisted Web Creator and Content Creator",
+          "description": "Sufian Mustafa is a passionate web developer and AI enthusiast who creates and curates content for doitwithai.tools, combining modern web technologies with the power of artificial intelligence.",
+          "email": "sufianmustafa0900@gmail.com",
+          "sameAs": [
+            "https://www.linkedin.com/in/sufian-mustafa/",
+            "https://x.com/SufianWebDev",
+            "https://dev.to/sufian",
+            "https://medium.com/@sufianmustafa0900",
+            "https://github.com/sufi0900"
+          ]
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": `${getBaseUrl()}/author/sufian-mustafa#breadcrumb`, // Same ID as in breadcrumb
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": `${getBaseUrl()}/`
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Authors",
+              "item": `${getBaseUrl()}/author`
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Sufian Mustafa",
+              "item": `${getBaseUrl()}/author/sufian-mustafa`
+            }
+          ]
+        }
+      ]
     })
   };
 }
