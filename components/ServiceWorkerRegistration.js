@@ -21,6 +21,9 @@ export default function ServiceWorkerRegistration() {
       }
 
       try {
+        // Initialize IndexedDB for offline page tracking
+        await initOfflinePagesDB();
+
         // Wait for React hydration to complete
         await new Promise(resolve => {
           if (document.readyState === 'complete') {
@@ -76,6 +79,37 @@ export default function ServiceWorkerRegistration() {
     registerSW();
   }, [mounted]);
 
+  // Initialize IndexedDB for offline page tracking
+  const initOfflinePagesDB = () => {
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) {
+        console.warn('IndexedDB not supported');
+        resolve(false);
+        return;
+      }
+
+      const request = indexedDB.open('offlinePages', 1);
+      
+      request.onerror = () => {
+        console.warn('Failed to open IndexedDB');
+        resolve(false);
+      };
+      
+      request.onsuccess = () => {
+        console.log('IndexedDB initialized for offline pages');
+        resolve(true);
+      };
+      
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('pages')) {
+          const store = db.createObjectStore('pages', { keyPath: 'url' });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+      };
+    });
+  };
+
   // Simplified listener setup
   const setupServiceWorkerListeners = async (registration) => {
     // Listen for updates
@@ -121,15 +155,24 @@ export default function ServiceWorkerRegistration() {
     });
   };
 
-  // Simplified essential page caching
+  // Cache essential pages + homepage + current page for offline access
   const cacheEssentialPages = async () => {
     try {
-      // Only cache truly essential static pages
+      const currentPath = window.location.pathname;
+      
+      // Essential pages that MUST be available offline
       const essentialPages = [
+        { url: '/', priority: 'critical' }, // Homepage is critical
+        { url: '/offline.html', priority: 'critical' }, // Offline fallback
+        { url: currentPath, priority: 'critical' }, // Current page for offline access
         { url: '/about', priority: 'high' },
-        { url: '/contact', priority: 'medium' },
-        { url: '/offline.html', priority: 'high' } // Offline fallback
+        { url: '/contact', priority: 'medium' }
       ];
+
+      // Remove duplicates
+      const uniquePages = essentialPages.filter((page, index, self) => 
+        index === self.findIndex(p => p.url === page.url)
+      );
 
       const prefetchPage = async (pageInfo) => {
         const { url, priority } = pageInfo;
@@ -138,33 +181,57 @@ export default function ServiceWorkerRegistration() {
             method: 'GET',
             headers: {
               'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              'Cache-Control': 'no-cache',
+              'Cache-Control': priority === 'critical' ? 'no-cache' : 'max-age=3600',
               'Sec-Fetch-Dest': 'document',
               'Sec-Fetch-Mode': 'navigate',
-              'Sec-Fetch-Site': 'same-origin'
+              'Sec-Fetch-Site': 'same-origin',
+              'X-Offline-Cache': 'true'
             },
             mode: 'same-origin',
             credentials: 'same-origin',
-            cache: 'force-cache'
+            cache: priority === 'critical' ? 'reload' : 'force-cache'
           });
 
           if (response.ok) {
             await response.text();
-            console.log(`✅ Essential page cached: ${url}`);
+            console.log(`✅ ${priority} page cached for offline: ${url}`);
+            
+            // Send message to service worker to ensure it's in offline cache
+            if (navigator.serviceWorker.controller && priority === 'critical') {
+              navigator.serviceWorker.controller.postMessage({
+                type: 'ENSURE_OFFLINE_CACHE',
+                url: url,
+                priority: priority
+              });
+            }
+            
             return { success: true, url };
           } else {
             throw new Error(`HTTP ${response.status}`);
           }
         } catch (error) {
-          console.warn(`❌ Failed to cache essential page ${url}:`, error);
+          console.warn(`❌ Failed to cache ${priority} page ${url}:`, error);
           return { success: false, url, error };
         }
       };
 
-      const prefetchPromises = essentialPages.map(prefetchPage);
+      const prefetchPromises = uniquePages.map(prefetchPage);
       await Promise.allSettled(prefetchPromises);
       
-      console.log('✅ Essential pages cached');
+      // Store last visited page info for offline access
+      if (typeof window !== 'undefined') {
+        const currentPageInfo = {
+          url: currentPath,
+          timestamp: Date.now(),
+          title: document.title || 'Page',
+          isStatic: ['/about', '/faq', '/contact', '/privacy', '/terms'].includes(currentPath)
+        };
+        
+        localStorage.setItem('lastVisitedPage', JSON.stringify(currentPageInfo));
+        console.log('✅ Last visited page stored for offline access:', currentPath);
+      }
+      
+      console.log('✅ Essential pages cached (including homepage and current page)');
     } catch (error) {
       console.error('Failed to cache essential pages:', error);
     }
@@ -245,23 +312,8 @@ export default function ServiceWorkerRegistration() {
   if (!mounted) return null;
 
   // Optional: Show SW status indicator in development
-  if (process.env.NODE_ENV === 'development') {
-    return (
-      <div style={{
-        position: 'fixed',
-        bottom: '10px',
-        right: '10px',
-        background: getStatusColor(swStatus),
-        color: 'white',
-        padding: '5px 10px',
-        borderRadius: '5px',
-        fontSize: '12px',
-        zIndex: 9999
-      }}>
-        SW: {swStatus}
-      </div>
-    );
-  }
+
 
   return null;
 }
+

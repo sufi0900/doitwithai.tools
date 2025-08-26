@@ -89,38 +89,32 @@ export default function RootLayout({ children }) {
     const handler = (e) => {
       const a = e.target.closest("a");
       if (!a) return;
+      
       const href = a.getAttribute("href");
-      if (href?.startsWith("/") && !href.startsWith("//")) {
+      if (!href?.startsWith("/") || href.startsWith("//")) return;
+
+      // Only prefetch static pages, not dynamic content
+      const staticPages = ["/about", "/faq", "/contact", "/privacy", "/terms"];
+      const isStaticPage = staticPages.includes(href) || staticPages.includes(href.replace(/\/$/, ''));
+      
+      if (isStaticPage) {
         setTimeout(() => {
           navigator.serviceWorker?.controller?.postMessage({
-            type: "PRECACHE_PAGE",
+            type: "PRECACHE_STATIC_PAGE",
             path: href,
             url: window.location.origin + href,
           });
         }, 100);
       }
     };
+    
     document.addEventListener("click", handler);
     return () => document.removeEventListener("click", handler);
   }, []);
 
+  // Scroll to top on navigation
   useEffect(() => {
-    // Scroll to the top of the page on every navigation change
     window.scrollTo(0, 0);
-  }, [pathname]);
-
-
-  // Cache static pages
-  useEffect(() => {
-    const staticPages = ["/about", "/faq", "/contact", "/privacy", "/terms"];
-    if (staticPages.includes(pathname)) {
-      fetch(pathname)
-        .then((r) => (r.ok ? r.text() : null))
-        .then((html) => {
-          /* optional caching logic */
-        })
-        .catch(() => {});
-    }
   }, [pathname]);
 
   // Update refreshCount on component mount or hydration
