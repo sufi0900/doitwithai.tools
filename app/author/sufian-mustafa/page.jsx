@@ -110,28 +110,7 @@ function authorSchema() {
         "https://medium.com/@sufianmustafa0900",
         "https://github.com/sufi0900"
       ],
-      "affiliation": {
-        "@type": "Organization",
-        "@id": "https://www.doitwithai.tools#organization",
-        "name": "Do It With AI Tools",
-        "url": `${getBaseUrl()}`
-      },
-      "worksFor": {
-        "@type": "Organization",
-        "@id": "https://www.doitwithai.tools#organization"
-      },
-      "mainEntityOfPage": {
-        "@type": "WebPage",
-        "@id": `${getBaseUrl()}/author/sufian-mustafa#webpage`,
-        "url": `${getBaseUrl()}/author/sufian-mustafa`
-      },
-      "knowsAbout": [
-        "Artificial Intelligence",
-        "Web Development",
-        "SEO",
-        "Content Creation",
-        "Digital Marketing"
-      ]
+   
     })
   };
 }
@@ -201,7 +180,6 @@ const AuthorPage = () => {
   id="AuthorSchema"
   type="application/ld+json"
   dangerouslySetInnerHTML={authorSchema()}
-  strategy="afterInteractive"
 />
         <Script
           id="BreadcrumbSchema"
