@@ -1,7 +1,7 @@
 // app/ai-tools/[slug]/page.jsx
 
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
-import ArticleChildComp from "@/app/ai-code/[slug]/code";
+import ArticleChildComp from "@/app/ai-code/[slug]/ArticleChildComp";
 import SeoAndSchemaWrapper from "@/app/ai-code/[slug]/SeoAndSchemaWrapper"; // NEW IMPORT
 import { getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData";
 
