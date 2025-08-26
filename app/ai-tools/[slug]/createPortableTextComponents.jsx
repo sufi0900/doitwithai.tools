@@ -447,11 +447,12 @@ image: ({ value, index }) => {
         </code>
       ),
 
-      strong: ({ children }) => (
-        <strong className="text-black dark:text-white font-bold">
-          {children}
-        </strong>
-      ),
+    // new strong renderer — inherits color from parent (link or paragraph)
+strong: ({ children }) => (
+  <strong className="font-bold text-current">
+    {children}
+  </strong>
+),
 
       em: ({ children }) => <em>{children}</em>,
 
