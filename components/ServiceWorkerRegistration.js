@@ -1,9 +1,67 @@
 "use client";
 import { useEffect, useState } from 'react';
 
+// New React component for the update notification
+const UpdateNotification = ({ onReload, onClose }) => {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        background: '#2563eb',
+        color: 'white',
+        padding: '16px',
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        zIndex: 10000,
+        maxWidth: '300px',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        animation: 'slideIn 0.5s ease-out forwards'
+      }}
+    >
+      <div style={{ fontWeight: '600', marginBottom: '8px' }}>🚀 Update Available</div>
+      <div style={{ fontSize: '14px', marginBottom: '12px', opacity: '0.9' }}>
+        A new version is ready. Refresh to get the latest features.
+      </div>
+      <div>
+        <button
+          onClick={onReload}
+          style={{
+            background: 'white',
+            color: '#2563eb',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            marginRight: '8px',
+          }}
+        >
+          Update Now
+        </button>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'transparent',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.3)',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Later
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default function ServiceWorkerRegistration() {
   const [mounted, setMounted] = useState(false);
   const [swStatus, setSwStatus] = useState('checking');
+  const [showUpdate, setShowUpdate] = useState(false); // New state to control notification visibility
 
   // Handle hydration
   useEffect(() => {
@@ -21,7 +79,6 @@ export default function ServiceWorkerRegistration() {
       }
 
       try {
-        // Wait for React hydration to complete
         await new Promise(resolve => {
           if (document.readyState === 'complete') {
             setTimeout(resolve, 2000);
@@ -32,7 +89,6 @@ export default function ServiceWorkerRegistration() {
           }
         });
 
-        // Register service worker
         const registration = await navigator.serviceWorker.register('/sw.js?v=3', {
           scope: '/',
           updateViaCache: 'none'
@@ -41,25 +97,22 @@ export default function ServiceWorkerRegistration() {
         console.log('✅ Service Worker registered:', registration);
         setSwStatus('registered');
 
-        // Handle updates with user prompt (no forced reload)
         registration.addEventListener('updatefound', () => {
           console.log('SW: Update found');
           const newWorker = registration.installing;
           
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
+              // The new worker is installed and ready to take over
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 console.log('SW: New version available');
                 setSwStatus('update-available');
-                
-                // Show user-friendly update notification
-                showUpdateNotification();
+                setShowUpdate(true); // Set state to display the pop-up
               }
             });
           }
         });
 
-        // Listen for messages from SW
         navigator.serviceWorker.addEventListener('message', (event) => {
           console.log('SW Message:', event.data);
           
@@ -71,9 +124,7 @@ export default function ServiceWorkerRegistration() {
           }
         });
 
-        // Initialize essential caching only
         await initializeEssentialCache(registration);
-
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
         setSwStatus('failed');
@@ -83,61 +134,6 @@ export default function ServiceWorkerRegistration() {
     registerSW();
   }, [mounted]);
 
-  // Show user-friendly update notification
-  const showUpdateNotification = () => {
-    const notification = document.createElement('div');
-    notification.id = 'sw-update-notification';
-    notification.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #2563eb;
-        color: white;
-        padding: 16px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        max-width: 300px;
-        font-family: system-ui, -apple-system, sans-serif;
-      ">
-        <div style="font-weight: 600; margin-bottom: 8px;">🚀 Update Available</div>
-        <div style="font-size: 14px; margin-bottom: 12px; opacity: 0.9;">
-          A new version is ready. Refresh to get the latest features.
-        </div>
-        <div>
-          <button onclick="location.reload()" style="
-            background: white;
-            color: #2563eb;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-right: 8px;
-          ">Update Now</button>
-          <button onclick="document.getElementById('sw-update-notification').remove()" style="
-            background: transparent;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-          ">Later</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(notification);
-
-    // Auto-hide after 10 seconds
-    setTimeout(() => {
-      const elem = document.getElementById('sw-update-notification');
-      if (elem) elem.remove();
-    }, 10000);
-  };
-
-  // Handle storage full scenario
   const handleStorageFull = () => {
     if (navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
@@ -146,34 +142,28 @@ export default function ServiceWorkerRegistration() {
     }
   };
 
-  // Initialize only essential caching
   const initializeEssentialCache = async (registration) => {
     if (!registration.active) return;
 
     try {
-      // Cache root page and critical static pages only
       const essentialPages = [
-        '/', // Always cache root
+        '/',
         '/about',
         '/contact'
       ];
 
-      // Send message to SW to cache essential pages
       navigator.serviceWorker.controller?.postMessage({
         type: 'CACHE_ESSENTIAL_PAGES',
         pages: essentialPages
       });
 
-      // Ensure offline page is cached
       await cacheOfflinePage();
-
       console.log('✅ Essential cache initialized');
     } catch (error) {
       console.error('Failed to initialize essential cache:', error);
     }
   };
 
-  // Cache offline page
   const cacheOfflinePage = async () => {
     try {
       await fetch('/offline.html', {
@@ -186,15 +176,13 @@ export default function ServiceWorkerRegistration() {
     }
   };
 
-  // Smart page caching on navigation (limited)
   useEffect(() => {
     if (!mounted) return;
 
     let cachedPagesCount = 0;
-    const MAX_DYNAMIC_PAGES = 10; // Limit dynamic page caching
+    const MAX_DYNAMIC_PAGES = 10;
 
     const handleNavigation = async (newPath) => {
-      // Skip if already cached or limit reached
       if (cachedPagesCount >= MAX_DYNAMIC_PAGES) {
         console.log('Cache limit reached, skipping:', newPath);
         return;
@@ -206,7 +194,7 @@ export default function ServiceWorkerRegistration() {
           mode: 'same-origin',
           credentials: 'same-origin',
           headers: {
-            'X-Cache-Priority': 'low' // Indicate low priority caching
+            'X-Cache-Priority': 'low'
           }
         });
 
@@ -219,9 +207,7 @@ export default function ServiceWorkerRegistration() {
       }
     };
 
-    // Monitor navigation
     let currentPath = window.location.pathname;
-
     const checkNavigation = () => {
       const newPath = window.location.pathname;
       if (newPath !== currentPath) {
@@ -230,7 +216,6 @@ export default function ServiceWorkerRegistration() {
       }
     };
 
-    // Listen for navigation changes
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
 
@@ -255,10 +240,8 @@ export default function ServiceWorkerRegistration() {
     };
   }, [mounted]);
 
-  // Expose cache management functions
   useEffect(() => {
     if (mounted) {
-      // Controlled cache update function
       window.updateSWCache = (url, data) => {
         if (navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({
@@ -269,7 +252,6 @@ export default function ServiceWorkerRegistration() {
         }
       };
 
-      // Cache cleanup function
       window.cleanSWCache = () => {
         if (navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({
@@ -278,7 +260,6 @@ export default function ServiceWorkerRegistration() {
         }
       };
 
-      // Get cache status
       window.getCacheStatus = async () => {
         const estimate = await navigator.storage?.estimate?.();
         return {
@@ -290,7 +271,6 @@ export default function ServiceWorkerRegistration() {
     }
   }, [mounted]);
 
-  // Monitor storage usage
   useEffect(() => {
     if (!mounted) return;
 
@@ -303,11 +283,9 @@ export default function ServiceWorkerRegistration() {
           
           console.log(`Storage usage: ${usageMB}MB / ${quotaMB}MB`);
           
-          // Warn if usage exceeds 100MB
           if (estimate.usage > 100 * 1024 * 1024) {
             console.warn('High storage usage detected, consider cleaning cache');
             
-            // Auto-clean if over 150MB
             if (estimate.usage > 150 * 1024 * 1024) {
               handleStorageFull();
             }
@@ -318,18 +296,23 @@ export default function ServiceWorkerRegistration() {
       }
     };
 
-    // Check storage every 5 minutes
     const storageInterval = setInterval(checkStorageUsage, 5 * 60 * 1000);
-    checkStorageUsage(); // Check immediately
+    checkStorageUsage();
 
     return () => clearInterval(storageInterval);
   }, [mounted]);
 
-  // Don't render anything during SSR
   if (!mounted) return null;
 
-  // Optional: Show SW status indicator in development
-
-
-  return null;
+  return (
+    <>
+      {/* Conditionally render the pop-up component based on state */}
+      {showUpdate && (
+        <UpdateNotification
+          onReload={() => window.location.reload()}
+          onClose={() => setShowUpdate(false)}
+        />
+      )}
+    </>
+  );
 }
