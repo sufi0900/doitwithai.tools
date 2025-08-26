@@ -1,4 +1,3 @@
-// ServiceWorkerRegistration.js - Optimized version with storage management
 "use client";
 import { useEffect, useState } from 'react';
 
@@ -6,6 +5,7 @@ export default function ServiceWorkerRegistration() {
   const [mounted, setMounted] = useState(false);
   const [swStatus, setSwStatus] = useState('checking');
 
+  // Handle hydration
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -21,20 +21,18 @@ export default function ServiceWorkerRegistration() {
       }
 
       try {
-        // Wait for React hydration without excessive delay
+        // Wait for React hydration to complete
         await new Promise(resolve => {
           if (document.readyState === 'complete') {
-            setTimeout(resolve, 1000); // Reduced from 3000ms
+            setTimeout(resolve, 2000);
           } else {
             window.addEventListener('load', () => {
-              setTimeout(resolve, 500); // Reduced from 2000ms
+              setTimeout(resolve, 1500);
             });
           }
         });
 
-        // Check storage quota before proceeding
-        await checkStorageQuota();
-
+        // Register service worker
         const registration = await navigator.serviceWorker.register('/sw.js?v=3', {
           scope: '/',
           updateViaCache: 'none'
@@ -43,37 +41,38 @@ export default function ServiceWorkerRegistration() {
         console.log('✅ Service Worker registered:', registration);
         setSwStatus('registered');
 
-        // Setup update handling without auto-reload
+        // Handle updates with user prompt (no forced reload)
         registration.addEventListener('updatefound', () => {
+          console.log('SW: Update found');
           const newWorker = registration.installing;
+          
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                setSwStatus('update-available');
-                // Don't auto-reload, just notify
                 console.log('SW: New version available');
+                setSwStatus('update-available');
+                
+                // Show user-friendly update notification
+                showUpdateNotification();
               }
             });
           }
         });
 
-        // Handle messages from SW
+        // Listen for messages from SW
         navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data.type === 'STORAGE_WARNING') {
-            handleStorageWarning(event.data);
+          console.log('SW Message:', event.data);
+          
+          if (event.data.type === 'CACHE_UPDATED') {
+            console.log('Cache updated for:', event.data.url);
+          } else if (event.data.type === 'STORAGE_FULL') {
+            console.warn('Storage limit reached, cleaning cache...');
+            handleStorageFull();
           }
         });
 
-        // Controlled controller change (no auto-reload)
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          console.log('SW: Controller changed');
-          // Remove auto-reload for better UX
-        });
-
-        // Initialize with essential caching only
-        await initializeEssentialCaching(registration);
-        await ensureRootPageCached();
-        await setupNavigationCaching();
+        // Initialize essential caching only
+        await initializeEssentialCache(registration);
 
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
@@ -84,191 +83,253 @@ export default function ServiceWorkerRegistration() {
     registerSW();
   }, [mounted]);
 
-  // Storage quota management
-  const checkStorageQuota = async () => {
-    if ('storage' in navigator && 'estimate' in navigator.storage) {
-      const estimate = await navigator.storage.estimate();
-      const usedMB = (estimate.usage / 1024 / 1024).toFixed(2);
-      const quotaMB = (estimate.quota / 1024 / 1024).toFixed(2);
-      
-      console.log(`Storage used: ${usedMB}MB of ${quotaMB}MB`);
-      
-      // Warn if using more than 100MB
-      if (estimate.usage > 100 * 1024 * 1024) {
-        console.warn('High storage usage detected');
-        await navigator.serviceWorker.controller?.postMessage({
-          type: 'CLEANUP_CACHE'
-        });
-      }
-    }
+  // Show user-friendly update notification
+  const showUpdateNotification = () => {
+    const notification = document.createElement('div');
+    notification.id = 'sw-update-notification';
+    notification.innerHTML = `
+      <div style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #2563eb;
+        color: white;
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        max-width: 300px;
+        font-family: system-ui, -apple-system, sans-serif;
+      ">
+        <div style="font-weight: 600; margin-bottom: 8px;">🚀 Update Available</div>
+        <div style="font-size: 14px; margin-bottom: 12px; opacity: 0.9;">
+          A new version is ready. Refresh to get the latest features.
+        </div>
+        <div>
+          <button onclick="location.reload()" style="
+            background: white;
+            color: #2563eb;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 8px;
+          ">Update Now</button>
+          <button onclick="document.getElementById('sw-update-notification').remove()" style="
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+          ">Later</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+
+    // Auto-hide after 10 seconds
+    setTimeout(() => {
+      const elem = document.getElementById('sw-update-notification');
+      if (elem) elem.remove();
+    }, 10000);
   };
 
-  // Handle storage warnings from SW
-  const handleStorageWarning = (data) => {
-    console.warn('Storage warning:', data.message);
-    // Optionally show user notification
-  };
-
-  // Essential caching only (critical pages)
-  const initializeEssentialCaching = async (registration) => {
-    const essentialPages = [
-      '/', // Always cache root
-      '/offline.html'
-    ];
-
-    try {
-      for (const page of essentialPages) {
-        await fetch(page, {
-          mode: 'same-origin',
-          credentials: 'same-origin'
-        });
-      }
-      console.log('✅ Essential pages cached');
-    } catch (error) {
-      console.error('Failed to cache essential pages:', error);
-    }
-  };
-
-  // Ensure root page is always cached
-  const ensureRootPageCached = async () => {
-    try {
-      await fetch('/', {
-        method: 'GET',
-        mode: 'same-origin',
-        credentials: 'same-origin',
-        headers: {
-          'X-Purpose': 'root-page-cache'
-        }
+  // Handle storage full scenario
+  const handleStorageFull = () => {
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'CLEAN_OLD_CACHE'
       });
-      console.log('✅ Root page cached for offline access');
-    } catch (error) {
-      console.error('Failed to cache root page:', error);
     }
   };
 
-  // Smart navigation caching with limits
-  const setupNavigationCaching = () => {
+  // Initialize only essential caching
+  const initializeEssentialCache = async (registration) => {
+    if (!registration.active) return;
+
+    try {
+      // Cache root page and critical static pages only
+      const essentialPages = [
+        '/', // Always cache root
+        '/about',
+        '/contact'
+      ];
+
+      // Send message to SW to cache essential pages
+      navigator.serviceWorker.controller?.postMessage({
+        type: 'CACHE_ESSENTIAL_PAGES',
+        pages: essentialPages
+      });
+
+      // Ensure offline page is cached
+      await cacheOfflinePage();
+
+      console.log('✅ Essential cache initialized');
+    } catch (error) {
+      console.error('Failed to initialize essential cache:', error);
+    }
+  };
+
+  // Cache offline page
+  const cacheOfflinePage = async () => {
+    try {
+      await fetch('/offline.html', {
+        mode: 'same-origin',
+        credentials: 'same-origin'
+      });
+      console.log('✅ Offline page cached');
+    } catch (error) {
+      console.log('Failed to cache offline page:', error);
+    }
+  };
+
+  // Smart page caching on navigation (limited)
+  useEffect(() => {
+    if (!mounted) return;
+
     let cachedPagesCount = 0;
     const MAX_DYNAMIC_PAGES = 10; // Limit dynamic page caching
-    const cachedUrls = new Set();
 
-    const handleNavigation = async (url) => {
-      if (cachedUrls.has(url)) return;
-      
-      const pathname = new URL(url, window.location.origin).pathname;
-      const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-      
-      // Always cache static pages
-      if (staticPages.includes(pathname)) {
-        try {
-          await fetch(pathname, { mode: 'same-origin' });
-          cachedUrls.add(url);
-          console.log(`✅ Static page cached: ${pathname}`);
-        } catch (error) {
-          console.error(`Failed to cache static page ${pathname}:`, error);
-        }
-        return;
-      }
-
-      // Limit dynamic page caching
+    const handleNavigation = async (newPath) => {
+      // Skip if already cached or limit reached
       if (cachedPagesCount >= MAX_DYNAMIC_PAGES) {
-        console.log('Dynamic page cache limit reached, skipping:', pathname);
+        console.log('Cache limit reached, skipping:', newPath);
         return;
       }
 
-      // Cache dynamic pages with limit
-      if (pathname.startsWith('/ai-') || pathname.startsWith('/free-ai-')) {
-        try {
-          await fetch(pathname, { mode: 'same-origin' });
-          cachedUrls.add(url);
+      try {
+        const response = await fetch(newPath, {
+          method: 'GET',
+          mode: 'same-origin',
+          credentials: 'same-origin',
+          headers: {
+            'X-Cache-Priority': 'low' // Indicate low priority caching
+          }
+        });
+
+        if (response.ok) {
           cachedPagesCount++;
-          console.log(`✅ Dynamic page cached (${cachedPagesCount}/${MAX_DYNAMIC_PAGES}): ${pathname}`);
-          
-          // Send message to SW about cache count
-          navigator.serviceWorker.controller?.postMessage({
-            type: 'UPDATE_CACHE_COUNT',
-            count: cachedPagesCount
-          });
-        } catch (error) {
-          console.error(`Failed to cache dynamic page ${pathname}:`, error);
+          console.log(`✅ Cached page (${cachedPagesCount}/${MAX_DYNAMIC_PAGES}):`, newPath);
         }
+      } catch (error) {
+        console.log('Failed to cache page:', newPath, error);
       }
     };
 
-    // Intercept navigation with debouncing
-    let navigationTimeout;
-    const debouncedNavigation = (url) => {
-      clearTimeout(navigationTimeout);
-      navigationTimeout = setTimeout(() => handleNavigation(url), 300);
+    // Monitor navigation
+    let currentPath = window.location.pathname;
+
+    const checkNavigation = () => {
+      const newPath = window.location.pathname;
+      if (newPath !== currentPath) {
+        currentPath = newPath;
+        setTimeout(() => handleNavigation(newPath), 1000);
+      }
     };
 
-    // Override history methods
+    // Listen for navigation changes
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
 
     history.pushState = function(...args) {
       const result = originalPushState.apply(this, args);
-      debouncedNavigation(window.location.href);
+      setTimeout(checkNavigation, 500);
       return result;
     };
 
     history.replaceState = function(...args) {
       const result = originalReplaceState.apply(this, args);
-      debouncedNavigation(window.location.href);
+      setTimeout(checkNavigation, 500);
       return result;
     };
 
-    window.addEventListener('popstate', () => {
-      debouncedNavigation(window.location.href);
-    });
-
-    // Cache current page
-    handleNavigation(window.location.href);
+    window.addEventListener('popstate', checkNavigation);
 
     return () => {
-      clearTimeout(navigationTimeout);
       history.pushState = originalPushState;
       history.replaceState = originalReplaceState;
+      window.removeEventListener('popstate', checkNavigation);
     };
-  };
+  }, [mounted]);
 
-  // Link prefetching with storage awareness
+  // Expose cache management functions
+  useEffect(() => {
+    if (mounted) {
+      // Controlled cache update function
+      window.updateSWCache = (url, data) => {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'SELECTIVE_CACHE_UPDATE',
+            url,
+            data
+          });
+        }
+      };
+
+      // Cache cleanup function
+      window.cleanSWCache = () => {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'CLEAN_OLD_CACHE'
+          });
+        }
+      };
+
+      // Get cache status
+      window.getCacheStatus = async () => {
+        const estimate = await navigator.storage?.estimate?.();
+        return {
+          usage: estimate?.usage || 0,
+          quota: estimate?.quota || 0,
+          usageInMB: ((estimate?.usage || 0) / 1024 / 1024).toFixed(2)
+        };
+      };
+    }
+  }, [mounted]);
+
+  // Monitor storage usage
   useEffect(() => {
     if (!mounted) return;
 
-    const handleLinkHover = async (e) => {
-      const link = e.target.closest('a');
-      if (!link) return;
-
-      const href = link.getAttribute('href');
-      if (!href?.startsWith('/') || href.startsWith('//')) return;
-
-      // Check storage before prefetching
-      if ('storage' in navigator) {
-        const estimate = await navigator.storage.estimate();
-        if (estimate.usage > 50 * 1024 * 1024) { // 50MB limit for prefetch
-          return;
-        }
-      }
-
-      // Prefetch with low priority
+    const checkStorageUsage = async () => {
       try {
-        await fetch(href, {
-          mode: 'same-origin',
-          priority: 'low'
-        });
+        if (navigator.storage?.estimate) {
+          const estimate = await navigator.storage.estimate();
+          const usageMB = (estimate.usage / 1024 / 1024).toFixed(2);
+          const quotaMB = (estimate.quota / 1024 / 1024).toFixed(2);
+          
+          console.log(`Storage usage: ${usageMB}MB / ${quotaMB}MB`);
+          
+          // Warn if usage exceeds 100MB
+          if (estimate.usage > 100 * 1024 * 1024) {
+            console.warn('High storage usage detected, consider cleaning cache');
+            
+            // Auto-clean if over 150MB
+            if (estimate.usage > 150 * 1024 * 1024) {
+              handleStorageFull();
+            }
+          }
+        }
       } catch (error) {
-        // Ignore prefetch errors
+        console.error('Failed to check storage:', error);
       }
     };
 
-    document.addEventListener('mouseenter', handleLinkHover, true);
-    return () => document.removeEventListener('mouseenter', handleLinkHover, true);
+    // Check storage every 5 minutes
+    const storageInterval = setInterval(checkStorageUsage, 5 * 60 * 1000);
+    checkStorageUsage(); // Check immediately
+
+    return () => clearInterval(storageInterval);
   }, [mounted]);
 
+  // Don't render anything during SSR
   if (!mounted) return null;
 
-  
+  // Optional: Show SW status indicator in development
+
+
   return null;
 }
-

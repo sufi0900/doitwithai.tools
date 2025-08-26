@@ -1,9 +1,9 @@
-// next.config.js - Optimized with strict storage limits
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: false, // Changed to false for better UX
   disable: process.env.NODE_ENV === 'development',
+  
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
   buildExcludes: [
     /app-build-manifest\.json$/,
@@ -11,34 +11,24 @@ const withPWA = require('next-pwa')({
     /_buildManifest\.js$/,
     /_ssgManifest\.js$/
   ],
+  
   fallbacks: {
-    document: '/offline.html'
+    document: '/offline.html',
+    image: '/offline.html',
+    audio: '/offline.html', 
+    video: '/offline.html',
+    font: '/offline.html'
   },
+  
   runtimeCaching: [
-    // 1. ESSENTIAL PAGES - Always cached (Root + Offline)
+    // 1. Essential pages - Cache First (Root page, critical static pages)
     {
-      urlPattern: /^https:\/\/.*\/$/,
-      handler: 'StaleWhileRevalidate',
-      options: {
-        cacheName: 'root-page-v1',
-        expiration: {
-          maxEntries: 1, // Only root page
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-
-    // 2. STATIC PAGES - Limited caching
-    {
-      urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+      urlPattern: /^https:\/\/.*\/(|about|contact|offline\.html)(?:\/)?$/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'static-pages-v4',
+        cacheName: 'essential-pages-v1',
         expiration: {
-          maxEntries: 10, // Reduced from unlimited
+          maxEntries: 5, // Limit to essential pages only
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
         },
         cacheableResponse: {
@@ -47,44 +37,32 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 3. DYNAMIC PAGES - Strict limits with LRU eviction
+    // 2. Static pages - Stale While Revalidate (with limits)
     {
-      urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn|free-ai-resources|ai-news)\/.*$/i,
-      handler: 'NetworkFirst',
+      urlPattern: /^https:\/\/.*\/(faq|privacy|terms)(?:\/)?$/i,
+      handler: 'StaleWhileRevalidate',
       options: {
-        cacheName: 'dynamic-pages-v4',
-        networkTimeoutSeconds: 3,
+        cacheName: 'static-pages-v1',
         expiration: {
-          maxEntries: 15, // Strict limit - only 15 recent articles
-          maxAgeSeconds: 24 * 60 * 60, // 1 day
-          purgeOnQuotaError: true, // Auto-cleanup on storage errors
+          maxEntries: 10, // Reduced from 50
+          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
-        plugins: [
-          {
-            cacheDidUpdate: async ({ cacheName, request }) => {
-              // Monitor cache size
-              const cache = await caches.open(cacheName);
-              const keys = await cache.keys();
-              console.log(`Dynamic cache size: ${keys.length}/15 entries`);
-            }
-          }
-        ]
       },
     },
 
-    // 4. CATEGORY PAGES - Limited
+    // 3. Category pages - Network First with limits
     {
       urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'category-pages-v2',
+        cacheName: 'category-pages-v1',
         networkTimeoutSeconds: 3,
         expiration: {
-          maxEntries: 5, // Only 5 category pages
-          maxAgeSeconds: 12 * 60 * 60, // 12 hours
+          maxEntries: 20, // Reduced from 100
+          maxAgeSeconds: 6 * 60 * 60, // 6 hours only
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -92,17 +70,39 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 5. NEXT.JS DATA - Heavily limited
+    // 4. Article/Slug pages - Limited dynamic caching
     {
-      urlPattern: /\/_next\/data\/.*/i,
+      urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^\/]+\/?$/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'next-data-v4',
+        cacheName: 'article-pages-v1',
         networkTimeoutSeconds: 5,
         expiration: {
-          maxEntries: 25, // Reduced from 200
-          maxAgeSeconds: 6 * 60 * 60, // 6 hours instead of 7 days
-          purgeOnQuotaError: true,
+          maxEntries: 15, // Strict limit on article caching
+          maxAgeSeconds: 3 * 60 * 60, // 3 hours only
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+        plugins: [{
+          cacheKeyWillBeUsed: async ({ request }) => {
+            // Normalize URLs to prevent duplicate caches
+            const url = new URL(request.url);
+            return url.origin + url.pathname.replace(/\/$/, '') || '/';
+          }
+        }]
+      },
+    },
+
+    // 5. Next.js data - Reduced caching
+    {
+      urlPattern: /\/_next\/data\/.*/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'next-data-v1',
+        expiration: {
+          maxEntries: 50, // Reduced from 200
+          maxAgeSeconds: 2 * 60 * 60, // 2 hours only
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -110,17 +110,16 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 6. API ROUTES - Very limited
+    // 6. API routes - Very limited caching
     {
       urlPattern: /^https:\/\/.*\/api\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'api-cache-v4',
-        networkTimeoutSeconds: 5,
+        cacheName: 'api-cache-v1',
+        networkTimeoutSeconds: 8,
         expiration: {
-          maxEntries: 20, // Reduced from 100
-          maxAgeSeconds: 15 * 60, // 15 minutes instead of 30
-          purgeOnQuotaError: true,
+          maxEntries: 25, // Reduced from 100
+          maxAgeSeconds: 15 * 60, // 15 minutes only
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -128,17 +127,16 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 7. SANITY API - Minimal caching
+    // 7. Sanity API - Short-term caching
     {
       urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'sanity-api-v4',
-        networkTimeoutSeconds: 8,
+        cacheName: 'sanity-api-v1',
+        networkTimeoutSeconds: 10,
         expiration: {
-          maxEntries: 15, // Reduced significantly
-          maxAgeSeconds: 10 * 60, // 10 minutes
-          purgeOnQuotaError: true,
+          maxEntries: 30, // Reduced from 100
+          maxAgeSeconds: 10 * 60, // 10 minutes only
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -146,16 +144,15 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 8. STATIC ASSETS - Reasonable limits
+    // 8. Static assets - Long-term but limited
     {
       urlPattern: /\/_next\/static\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'next-static-v4',
+        cacheName: 'next-static-v1',
         expiration: {
-          maxEntries: 50, // Reduced from 100
+          maxEntries: 60, // Reduced from 100
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-          purgeOnQuotaError: true,
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -163,50 +160,31 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 9. IMAGES - Limited with size awareness
+    // 9. Images - Limited but longer caching
     {
       urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'images-v4',
+        cacheName: 'images-v1',
         expiration: {
-          maxEntries: 30, // Significantly reduced
+          maxEntries: 50, // Reduced from 200
           maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-          purgeOnQuotaError: true,
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
-        plugins: [
-          {
-            requestWillFetch: async ({ request }) => {
-              // Skip caching large images
-              try {
-                const response = await fetch(request.clone(), { method: 'HEAD' });
-                const contentLength = response.headers.get('content-length');
-                if (contentLength && parseInt(contentLength) > 500 * 1024) { // 500KB limit
-                  throw new Error('Image too large for caching');
-                }
-              } catch (error) {
-                // Skip caching this image
-                throw error;
-              }
-              return request;
-            }
-          }
-        ]
       },
     },
 
-    // 10. FONTS - Essential only
+    // 10. Google Fonts
     {
       urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'fonts-v2',
+        cacheName: 'google-fonts-v1',
         expiration: {
-          maxEntries: 10, // Reduced from 30
-          maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+          maxEntries: 10,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -214,81 +192,94 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 11. FALLBACK - Last resort with cleanup
+    // 11. Fallback for all other requests - Very limited
     {
       urlPattern: /^https?:\/\/.*/,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'fallback-v4',
+        cacheName: 'general-fallback-v1',
         networkTimeoutSeconds: 3,
         expiration: {
-          maxEntries: 10, // Very limited
-          maxAgeSeconds: 60 * 60, // 1 hour
-          purgeOnQuotaError: true,
+          maxEntries: 20, // Very limited
+          maxAgeSeconds: 30 * 60, // 30 minutes only
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
-        plugins: [
-          {
-            handlerDidError: async () => {
-              return caches.match('/offline.html');
-            },
-            cacheDidUpdate: async ({ cacheName }) => {
-              // Monitor total cache usage
-              const estimate = await navigator.storage.estimate();
-              if (estimate.usage > 50 * 1024 * 1024) { // 50MB total limit
-                console.warn('Cache size limit approaching, triggering cleanup');
-                // Trigger cache cleanup
-                const cacheNames = await caches.keys();
-                for (const name of cacheNames) {
-                  if (name.includes('dynamic-pages') || name.includes('fallback')) {
-                    const cache = await caches.open(name);
-                    const keys = await cache.keys();
-                    // Remove oldest entries
-                    for (let i = 0; i < Math.floor(keys.length * 0.3); i++) {
-                      await cache.delete(keys[i]);
-                    }
-                  }
-                }
-              }
+        plugins: [{
+          handlerDidError: async ({ request }) => {
+            console.log('Handler error for:', request.url);
+            // Try to serve from any cache first
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+              return cachedResponse;
             }
+            // Fallback to offline page
+            return caches.match('/offline.html');
           }
-        ]
+        }]
       },
     },
-  ]
+  ],
 });
 
 const nextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
+  
+  // Optimize CSS and fonts
   optimizeFonts: true,
+  
   images: {
-    deviceSizes: [640, 750, 828, 1080, 1200],
-    imageSizes: [16, 32, 48, 64, 96, 128],
+    domains: ['your-sanity-domain.com'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp'],
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "cdn.sanity.io",
-        port: "",
-      },
-    ],
+    remotePatterns: [{
+      protocol: "https",
+      hostname: "cdn.sanity.io",
+      port: "",
+    }],
   },
+  
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', '*.vercel.app'],
     },
-    optimizeCss: true
+    optimizeCss: true,
   },
-  // Remove trailingSlash to prevent duplicate caching
+  
+  trailingSlash: true,
+  
   async rewrites() {
     return [
       {
         source: '/sw.js',
         destination: '/sw.js',
+      },
+    ];
+  },
+
+  // Add headers for cache control
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+        ],
       },
     ];
   },
