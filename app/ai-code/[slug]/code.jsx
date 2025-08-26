@@ -274,7 +274,7 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
 
   return (
     <>
-      <UnifiedCacheMonitor serverData={serverData} params={params} />
+      {/* <UnifiedCacheMonitor serverData={serverData} params={params} /> */}
 
       {/* Main Blog Layout - Show immediately when data is available */}
       <BlogLayout

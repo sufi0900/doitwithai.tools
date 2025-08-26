@@ -457,8 +457,10 @@ const AuthorPage = () => {
 
         {/* Email */}
         <a
-            href="mailto:sufianmustafa0900@gmail.com"
-            aria-label="Send Email"
+  href="mailto:sufianmustafa0900@gmail.com"
+                    target="_blank"
+                    rel="noreferrer"
+                                aria-label="Send Email"
             className="group flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all duration-300 hover:!bg-blue-600 hover:!text-white hover:scale-110 hover:shadow-lg active:scale-95"
         >
             <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">

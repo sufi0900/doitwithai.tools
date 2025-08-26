@@ -98,7 +98,10 @@
         }
 .connection-status {
     display: none; /* Initially hidden */
-    /* your existing styles */
+     display: flex; /* Use flexbox for proper alignment */
+    align-items: center; /* Vertically center the dot and text */
+    justify-content: center; /* Horizontally center the entire element */
+    gap: 0.5rem;
 }
 
 .connection-status.show {
@@ -323,7 +326,6 @@
             border-radius: 16px;
             font-size: 1rem;
             font-weight: 600;
-            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
             transition: all 0.3s ease;
@@ -354,6 +356,8 @@
 
         .status-indicator {
             width: 12px;
+                display: inline-block; /* Ensure it respects vertical alignment */
+
             height: 12px;
             border-radius: 50%;
             animation: pulse 2s ease-in-out infinite;
@@ -638,7 +642,7 @@
         <div class="brand-subtitle">DoItWithAI.Tools</div>
         <h1 class="offline-title">You're Currently Offline</h1>
         <p class="offline-message">
-       No worries! The page you were trying to reach isn't available offline. You may, however, be able to access the last page you visited if it was cached.
+        The page you were trying to reach isn't available offline. You may, however, be able to access the last page you visited if it was cached.
 
         </p>
         
