@@ -48,7 +48,7 @@ const Breadcrumb = ({
 
                 {/* Enhanced Description */}
                 <div className="relative">
-                  <p className="text-sm sm:text-base lg:text-lg leading-relaxed sm:leading-relaxed lg:leading-relaxed text-gray-600 dark:text-gray-300 font-medium max-w-none lg:max-w-[600px]">
+                  <p className="text-sm sm:text-base lg:text-lg leading-relaxed sm:leading-relaxed lg:leading-relaxed text-gray-600 dark:text-gray-300 font-medium max-w-none ">
                     {description}
                   </p>
                   

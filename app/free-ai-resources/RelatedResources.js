@@ -63,15 +63,16 @@ const RelatedResources = ({ resources, isLoading = false, slidesToShow = 2 }) =>
         </h2>
         {/* FIX: Add a negative margin to the container to offset the card padding */}
         <div className="-mx-3">
-          <DynamicResourceCarousel slidesToShow={slidesToShow}>
-            {resources.map((resource) => (
-              <ResourceCard 
-                key={resource._id} 
-                resource={resource} 
-                wrapperClassName="h-full"
-              />
-            ))}
-          </DynamicResourceCarousel>
+         <DynamicResourceCarousel>
+          {resources.map((resource) => (
+            <ResourceCard
+              key={resource._id}
+              resource={resource}
+              variant="carousel"
+              wrapperClassName="h-[120px] mb-4"
+            />
+          ))}
+        </DynamicResourceCarousel>
         </div>
       </div>
       <ResourceModalsProvider resources={resources} />

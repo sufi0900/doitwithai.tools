@@ -169,7 +169,7 @@ const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|
             </button>
           </div>
         )}
-      <DynamicResourceCarousel>
+      <DynamicResourceCarousel maxDots={5}>
   {featuredResources.map((resource) => (
     <ResourceCard
       key={resource._id}

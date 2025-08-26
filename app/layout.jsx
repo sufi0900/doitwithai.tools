@@ -232,7 +232,7 @@ export default function RootLayout({ children }) {
               </CacheProvider>
 
               <Toaster position="bottom-center" />
-              <ServiceWorkerRegistration />
+              {/* <ServiceWorkerRegistration /> */}
             </>
           )}
         </Providers>
