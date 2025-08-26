@@ -2,15 +2,15 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 import { Providers } from "./providers";
+
 import "../styles/index.css"
 import "../components/Hero/critical-hero.css"
 import { useEffect, useState } from "react";
 import { useOnlineStatus } from "./useOnlineStatus";
-import { useStorageMonitor } from "@/components/useStorageMonitor"; // Add this import
 import { Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import Hero from "@/components/Hero";
+import Hero from "@/components/Hero"; 
 import Header from "@/components/Header";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider";
@@ -40,8 +40,6 @@ const inter = Inter({
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isOnline = useOnlineStatus();
-  // 1. Add storage monitoring
-  const { storageInfo, clearStorage } = useStorageMonitor();
   const [hydrated, setHydrated] = useState(false);
   const [isOfflineRetrying, setIsOfflineRetrying] = useState(false);
   const [refreshCount, setRefreshCount] = useState(0);
@@ -212,38 +210,8 @@ export default function RootLayout({ children }) {
           </div>
         )}
 
-        {/* 2. Add the storage warning component */}
-        {storageInfo.warning && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[1000] max-w-md w-full mx-4">
-            <div className="relative overflow-hidden rounded-xl shadow-2xl bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 p-[2px]">
-              <div className="relative bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-gray-800 dark:to-gray-900 rounded-xl p-4">
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex-shrink-0">
-                    <svg className="h-6 w-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.342 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-gray-900 dark:text-gray-100">
-                      <p className="font-bold text-base leading-tight">⚠️ Storage Warning</p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-                        Your offline cache is at **{storageInfo.percentage.toFixed(0)}%**.
-                        <span className="block mt-1">Consider clearing it to improve performance.</span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <button onClick={clearStorage} className="px-4 py-2.5 rounded-lg font-semibold text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 bg-red-600 hover:bg-red-700 text-white shadow-lg">
-                      Clear Cache
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         <Providers>
+
           {isSlugPage ? (
             <ConditionalGlobalHeader />
           ) : (
