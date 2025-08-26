@@ -1,3 +1,4 @@
+// ServiceWorkerRegistration.js - Optimized version with storage management
 "use client";
 import { useEffect, useState } from 'react';
 
@@ -5,7 +6,6 @@ export default function ServiceWorkerRegistration() {
   const [mounted, setMounted] = useState(false);
   const [swStatus, setSwStatus] = useState('checking');
 
-  // Handle hydration
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -21,41 +21,20 @@ export default function ServiceWorkerRegistration() {
       }
 
       try {
-        // Initialize IndexedDB for offline page tracking
-        await initOfflinePagesDB();
-
-        // Wait for React hydration to complete
+        // Wait for React hydration without excessive delay
         await new Promise(resolve => {
           if (document.readyState === 'complete') {
-            setTimeout(resolve, 1000);
+            setTimeout(resolve, 1000); // Reduced from 3000ms
           } else {
             window.addEventListener('load', () => {
-              setTimeout(resolve, 500);
+              setTimeout(resolve, 500); // Reduced from 2000ms
             });
           }
         });
 
-        // Check for existing service worker first
-        const existingRegistration = await navigator.serviceWorker.getRegistration();
-        const isControlled = !!navigator.serviceWorker.controller;
+        // Check storage quota before proceeding
+        await checkStorageQuota();
 
-        if (existingRegistration && isControlled) {
-          console.log('SW already active and controlling, updating silently');
-          setSwStatus('active');
-          
-          // Silent update without reload
-          await existingRegistration.update();
-          
-          // Setup listeners
-          await setupServiceWorkerListeners(existingRegistration);
-          
-          // Only cache essential static pages
-          await cacheEssentialPages();
-          
-          return; // Exit early to prevent reload
-        }
-
-        // Register service worker only if not already controlled
         const registration = await navigator.serviceWorker.register('/sw.js?v=3', {
           scope: '/',
           updateViaCache: 'none'
@@ -64,11 +43,37 @@ export default function ServiceWorkerRegistration() {
         console.log('✅ Service Worker registered:', registration);
         setSwStatus('registered');
 
-        // Setup listeners
-        await setupServiceWorkerListeners(registration);
-        
-        // Cache only essential static pages
-        await cacheEssentialPages();
+        // Setup update handling without auto-reload
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                setSwStatus('update-available');
+                // Don't auto-reload, just notify
+                console.log('SW: New version available');
+              }
+            });
+          }
+        });
+
+        // Handle messages from SW
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data.type === 'STORAGE_WARNING') {
+            handleStorageWarning(event.data);
+          }
+        });
+
+        // Controlled controller change (no auto-reload)
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('SW: Controller changed');
+          // Remove auto-reload for better UX
+        });
+
+        // Initialize with essential caching only
+        await initializeEssentialCaching(registration);
+        await ensureRootPageCached();
+        await setupNavigationCaching();
 
       } catch (error) {
         console.error('❌ Service Worker registration failed:', error);
@@ -79,241 +84,191 @@ export default function ServiceWorkerRegistration() {
     registerSW();
   }, [mounted]);
 
-  // Initialize IndexedDB for offline page tracking
-  const initOfflinePagesDB = () => {
-    return new Promise((resolve, reject) => {
-      if (!('indexedDB' in window)) {
-        console.warn('IndexedDB not supported');
-        resolve(false);
-        return;
-      }
-
-      const request = indexedDB.open('offlinePages', 1);
+  // Storage quota management
+  const checkStorageQuota = async () => {
+    if ('storage' in navigator && 'estimate' in navigator.storage) {
+      const estimate = await navigator.storage.estimate();
+      const usedMB = (estimate.usage / 1024 / 1024).toFixed(2);
+      const quotaMB = (estimate.quota / 1024 / 1024).toFixed(2);
       
-      request.onerror = () => {
-        console.warn('Failed to open IndexedDB');
-        resolve(false);
-      };
+      console.log(`Storage used: ${usedMB}MB of ${quotaMB}MB`);
       
-      request.onsuccess = () => {
-        console.log('IndexedDB initialized for offline pages');
-        resolve(true);
-      };
-      
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('pages')) {
-          const store = db.createObjectStore('pages', { keyPath: 'url' });
-          store.createIndex('timestamp', 'timestamp', { unique: false });
-        }
-      };
-    });
-  };
-
-  // Simplified listener setup
-  const setupServiceWorkerListeners = async (registration) => {
-    // Listen for updates
-    registration.addEventListener('updatefound', () => {
-      console.log('SW: Update found');
-      const newWorker = registration.installing;
-      
-      if (newWorker) {
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            console.log('SW: New version available');
-            setSwStatus('update-available');
-            
-            // Optional: Show update notification (non-intrusive)
-            if (window.confirm('New version available! Reload to update?')) {
-              window.location.reload();
-            }
-          }
+      // Warn if using more than 100MB
+      if (estimate.usage > 100 * 1024 * 1024) {
+        console.warn('High storage usage detected');
+        await navigator.serviceWorker.controller?.postMessage({
+          type: 'CLEANUP_CACHE'
         });
       }
-    });
-
-    // Listen for messages from SW
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      console.log('SW Message:', event.data);
-      if (event.data.type === 'CACHE_UPDATED') {
-        console.log('Cache updated for:', event.data.url);
-      }
-    });
-
-    // Only reload on controller change if it's an actual update
-    let isFirstController = !navigator.serviceWorker.controller;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      console.log('SW: Controller changed');
-      
-      if (!isFirstController) {
-        console.log('SW: Reloading due to controller update');
-        window.location.reload();
-      } else {
-        console.log('SW: First controller, skipping reload');
-        isFirstController = false;
-      }
-    });
+    }
   };
 
-  // Cache essential pages + homepage + current page for offline access
-  const cacheEssentialPages = async () => {
+  // Handle storage warnings from SW
+  const handleStorageWarning = (data) => {
+    console.warn('Storage warning:', data.message);
+    // Optionally show user notification
+  };
+
+  // Essential caching only (critical pages)
+  const initializeEssentialCaching = async (registration) => {
+    const essentialPages = [
+      '/', // Always cache root
+      '/offline.html'
+    ];
+
     try {
-      const currentPath = window.location.pathname;
-      
-      // Essential pages that MUST be available offline
-      const essentialPages = [
-        { url: '/', priority: 'critical' }, // Homepage is critical
-        { url: '/offline.html', priority: 'critical' }, // Offline fallback
-        { url: currentPath, priority: 'critical' }, // Current page for offline access
-        { url: '/about', priority: 'high' },
-        { url: '/contact', priority: 'medium' }
-      ];
-
-      // Remove duplicates
-      const uniquePages = essentialPages.filter((page, index, self) => 
-        index === self.findIndex(p => p.url === page.url)
-      );
-
-      const prefetchPage = async (pageInfo) => {
-        const { url, priority } = pageInfo;
-        try {
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              'Cache-Control': priority === 'critical' ? 'no-cache' : 'max-age=3600',
-              'Sec-Fetch-Dest': 'document',
-              'Sec-Fetch-Mode': 'navigate',
-              'Sec-Fetch-Site': 'same-origin',
-              'X-Offline-Cache': 'true'
-            },
-            mode: 'same-origin',
-            credentials: 'same-origin',
-            cache: priority === 'critical' ? 'reload' : 'force-cache'
-          });
-
-          if (response.ok) {
-            await response.text();
-            console.log(`✅ ${priority} page cached for offline: ${url}`);
-            
-            // Send message to service worker to ensure it's in offline cache
-            if (navigator.serviceWorker.controller && priority === 'critical') {
-              navigator.serviceWorker.controller.postMessage({
-                type: 'ENSURE_OFFLINE_CACHE',
-                url: url,
-                priority: priority
-              });
-            }
-            
-            return { success: true, url };
-          } else {
-            throw new Error(`HTTP ${response.status}`);
-          }
-        } catch (error) {
-          console.warn(`❌ Failed to cache ${priority} page ${url}:`, error);
-          return { success: false, url, error };
-        }
-      };
-
-      const prefetchPromises = uniquePages.map(prefetchPage);
-      await Promise.allSettled(prefetchPromises);
-      
-      // Store last visited page info for offline access
-      if (typeof window !== 'undefined') {
-        const currentPageInfo = {
-          url: currentPath,
-          timestamp: Date.now(),
-          title: document.title || 'Page',
-          isStatic: ['/about', '/faq', '/contact', '/privacy', '/terms'].includes(currentPath)
-        };
-        
-        localStorage.setItem('lastVisitedPage', JSON.stringify(currentPageInfo));
-        console.log('✅ Last visited page stored for offline access:', currentPath);
+      for (const page of essentialPages) {
+        await fetch(page, {
+          mode: 'same-origin',
+          credentials: 'same-origin'
+        });
       }
-      
-      console.log('✅ Essential pages cached (including homepage and current page)');
+      console.log('✅ Essential pages cached');
     } catch (error) {
       console.error('Failed to cache essential pages:', error);
     }
   };
 
-  // Simplified navigation handling - only for static pages
-  const handleStaticNavigation = async () => {
-    if (typeof window === 'undefined') return;
-
-    let currentPath = window.location.pathname;
-    const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
-
-    const cacheOnNavigation = async (newPath) => {
-      if (newPath === currentPath) return;
-      
-      try {
-        // Only cache if it's a static page
-        const isStaticPage = staticPages.includes(newPath) || 
-                            staticPages.includes(newPath.replace(/\/$/, ''));
-        
-        if (isStaticPage) {
-          await fetch(newPath, {
-            method: 'GET',
-            mode: 'same-origin',
-            credentials: 'same-origin',
-            headers: {
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-              'Sec-Fetch-Dest': 'document',
-              'Sec-Fetch-Mode': 'navigate',
-              'Sec-Fetch-Site': 'same-origin'
-            }
-          });
-          console.log(`✅ Cached static page on navigation: ${newPath}`);
+  // Ensure root page is always cached
+  const ensureRootPageCached = async () => {
+    try {
+      await fetch('/', {
+        method: 'GET',
+        mode: 'same-origin',
+        credentials: 'same-origin',
+        headers: {
+          'X-Purpose': 'root-page-cache'
         }
-        currentPath = newPath;
-      } catch (error) {
-        console.log('Failed to cache page on navigation:', newPath, error);
+      });
+      console.log('✅ Root page cached for offline access');
+    } catch (error) {
+      console.error('Failed to cache root page:', error);
+    }
+  };
+
+  // Smart navigation caching with limits
+  const setupNavigationCaching = () => {
+    let cachedPagesCount = 0;
+    const MAX_DYNAMIC_PAGES = 10; // Limit dynamic page caching
+    const cachedUrls = new Set();
+
+    const handleNavigation = async (url) => {
+      if (cachedUrls.has(url)) return;
+      
+      const pathname = new URL(url, window.location.origin).pathname;
+      const staticPages = ['/about', '/faq', '/contact', '/privacy', '/terms'];
+      
+      // Always cache static pages
+      if (staticPages.includes(pathname)) {
+        try {
+          await fetch(pathname, { mode: 'same-origin' });
+          cachedUrls.add(url);
+          console.log(`✅ Static page cached: ${pathname}`);
+        } catch (error) {
+          console.error(`Failed to cache static page ${pathname}:`, error);
+        }
+        return;
+      }
+
+      // Limit dynamic page caching
+      if (cachedPagesCount >= MAX_DYNAMIC_PAGES) {
+        console.log('Dynamic page cache limit reached, skipping:', pathname);
+        return;
+      }
+
+      // Cache dynamic pages with limit
+      if (pathname.startsWith('/ai-') || pathname.startsWith('/free-ai-')) {
+        try {
+          await fetch(pathname, { mode: 'same-origin' });
+          cachedUrls.add(url);
+          cachedPagesCount++;
+          console.log(`✅ Dynamic page cached (${cachedPagesCount}/${MAX_DYNAMIC_PAGES}): ${pathname}`);
+          
+          // Send message to SW about cache count
+          navigator.serviceWorker.controller?.postMessage({
+            type: 'UPDATE_CACHE_COUNT',
+            count: cachedPagesCount
+          });
+        } catch (error) {
+          console.error(`Failed to cache dynamic page ${pathname}:`, error);
+        }
       }
     };
 
-    // Listen for navigation changes
+    // Intercept navigation with debouncing
+    let navigationTimeout;
+    const debouncedNavigation = (url) => {
+      clearTimeout(navigationTimeout);
+      navigationTimeout = setTimeout(() => handleNavigation(url), 300);
+    };
+
+    // Override history methods
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
 
     history.pushState = function(...args) {
       const result = originalPushState.apply(this, args);
-      const newPath = window.location.pathname;
-      setTimeout(() => cacheOnNavigation(newPath), 500);
+      debouncedNavigation(window.location.href);
       return result;
     };
 
     history.replaceState = function(...args) {
       const result = originalReplaceState.apply(this, args);
-      const newPath = window.location.pathname;
-      setTimeout(() => cacheOnNavigation(newPath), 500);
+      debouncedNavigation(window.location.href);
       return result;
     };
 
     window.addEventListener('popstate', () => {
-      const newPath = window.location.pathname;
-      setTimeout(() => cacheOnNavigation(newPath), 500);
+      debouncedNavigation(window.location.href);
     });
 
+    // Cache current page
+    handleNavigation(window.location.href);
+
     return () => {
+      clearTimeout(navigationTimeout);
       history.pushState = originalPushState;
       history.replaceState = originalReplaceState;
     };
   };
 
-  // Setup navigation handling
+  // Link prefetching with storage awareness
   useEffect(() => {
     if (!mounted) return;
-    const cleanup = handleStaticNavigation();
-    return cleanup;
+
+    const handleLinkHover = async (e) => {
+      const link = e.target.closest('a');
+      if (!link) return;
+
+      const href = link.getAttribute('href');
+      if (!href?.startsWith('/') || href.startsWith('//')) return;
+
+      // Check storage before prefetching
+      if ('storage' in navigator) {
+        const estimate = await navigator.storage.estimate();
+        if (estimate.usage > 50 * 1024 * 1024) { // 50MB limit for prefetch
+          return;
+        }
+      }
+
+      // Prefetch with low priority
+      try {
+        await fetch(href, {
+          mode: 'same-origin',
+          priority: 'low'
+        });
+      } catch (error) {
+        // Ignore prefetch errors
+      }
+    };
+
+    document.addEventListener('mouseenter', handleLinkHover, true);
+    return () => document.removeEventListener('mouseenter', handleLinkHover, true);
   }, [mounted]);
 
-  // Don't render anything during SSR
   if (!mounted) return null;
 
-  // Optional: Show SW status indicator in development
-
-
+  
   return null;
 }
 

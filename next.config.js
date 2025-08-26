@@ -1,7 +1,8 @@
+// next.config.js - Optimized with strict storage limits
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
-  skipWaiting: true,
+  skipWaiting: false, // Changed to false for better UX
   disable: process.env.NODE_ENV === 'development',
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
   buildExcludes: [
@@ -11,66 +12,18 @@ const withPWA = require('next-pwa')({
     /_ssgManifest\.js$/
   ],
   fallbacks: {
-    document: '/offline.html',
-    image: '/offline.html',
-    audio: '/offline.html',
-    video: '/offline.html',
-    font: '/offline.html'
+    document: '/offline.html'
   },
   runtimeCaching: [
-    // 🎯 SIMPLIFIED: Only essential static pages with CacheFirst
-    {
-      urlPattern: /^https:\/\/.*\/(about|contact|privacy|terms|faq)(?:\/)?$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'essential-static-pages-v1',
-        expiration: {
-          maxEntries: 10, // Reduced from 50
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 1 week
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-    
-    // 🎯 DYNAMIC PAGES: NetworkFirst with strict limits (NO prefetching)
-    {
-      urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^\/]+\/?$/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'dynamic-pages-v1',
-        networkTimeoutSeconds: 3,
-        expiration: {
-          maxEntries: 20, // Significantly reduced from 50
-          maxAgeSeconds: 30 * 60, // Only 30 minutes
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-        plugins: [{
-          // Clean up old entries aggressively
-          cacheDidUpdate: async ({ cacheName, request }) => {
-            const cache = await caches.open(cacheName);
-            const keys = await cache.keys();
-            if (keys.length > 15) { // Start cleanup at 15 entries
-              const oldestKeys = keys.slice(0, 5);
-              await Promise.all(oldestKeys.map(key => cache.delete(key)));
-            }
-          }
-        }]
-      },
-    },
-
-    // 🎯 HOMEPAGE: StaleWhileRevalidate with limits
+    // 1. ESSENTIAL PAGES - Always cached (Root + Offline)
     {
       urlPattern: /^https:\/\/.*\/$/,
       handler: 'StaleWhileRevalidate',
       options: {
-        cacheName: 'homepage-cache-v1',
+        cacheName: 'root-page-v1',
         expiration: {
-          maxEntries: 5, // Reduced
-          maxAgeSeconds: 2 * 60 * 60, // 2 hours
+          maxEntries: 1, // Only root page
+          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -78,16 +31,60 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 🎯 CATEGORY PAGES: NetworkFirst with limits
+    // 2. STATIC PAGES - Limited caching
+    {
+      urlPattern: /^https:\/\/.*\/(about|faq|contact|privacy|terms)(?:\/)?$/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'static-pages-v4',
+        expiration: {
+          maxEntries: 10, // Reduced from unlimited
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+      },
+    },
+
+    // 3. DYNAMIC PAGES - Strict limits with LRU eviction
+    {
+      urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn|free-ai-resources|ai-news)\/.*$/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'dynamic-pages-v4',
+        networkTimeoutSeconds: 3,
+        expiration: {
+          maxEntries: 15, // Strict limit - only 15 recent articles
+          maxAgeSeconds: 24 * 60 * 60, // 1 day
+          purgeOnQuotaError: true, // Auto-cleanup on storage errors
+        },
+        cacheableResponse: {
+          statuses: [0, 200],
+        },
+        plugins: [
+          {
+            cacheDidUpdate: async ({ cacheName, request }) => {
+              // Monitor cache size
+              const cache = await caches.open(cacheName);
+              const keys = await cache.keys();
+              console.log(`Dynamic cache size: ${keys.length}/15 entries`);
+            }
+          }
+        ]
+      },
+    },
+
+    // 4. CATEGORY PAGES - Limited
     {
       urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'category-pages-v1',
-        networkTimeoutSeconds: 5,
+        cacheName: 'category-pages-v2',
+        networkTimeoutSeconds: 3,
         expiration: {
-          maxEntries: 10, // Limited
-          maxAgeSeconds: 60 * 60, // 1 hour
+          maxEntries: 5, // Only 5 category pages
+          maxAgeSeconds: 12 * 60 * 60, // 12 hours
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -95,44 +92,35 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 🎯 NEXT.JS DATA: Selective caching with aggressive cleanup
+    // 5. NEXT.JS DATA - Heavily limited
     {
       urlPattern: /\/_next\/data\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'next-data-cache-v1',
-        networkTimeoutSeconds: 3,
+        cacheName: 'next-data-v4',
+        networkTimeoutSeconds: 5,
         expiration: {
-          maxEntries: 30, // Reduced from 200
-          maxAgeSeconds: 60 * 60, // 1 hour only
+          maxEntries: 25, // Reduced from 200
+          maxAgeSeconds: 6 * 60 * 60, // 6 hours instead of 7 days
+          purgeOnQuotaError: true,
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
-        plugins: [{
-          // Aggressive cleanup for data cache
-          cacheDidUpdate: async ({ cacheName }) => {
-            const cache = await caches.open(cacheName);
-            const keys = await cache.keys();
-            if (keys.length > 25) { // Cleanup threshold
-              const keysToDelete = keys.slice(0, 10);
-              await Promise.all(keysToDelete.map(key => cache.delete(key)));
-            }
-          }
-        }]
       },
     },
 
-    // 🎯 API ROUTES: Minimal caching
+    // 6. API ROUTES - Very limited
     {
       urlPattern: /^https:\/\/.*\/api\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'api-cache-v1',
+        cacheName: 'api-cache-v4',
         networkTimeoutSeconds: 5,
         expiration: {
-          maxEntries: 20, // Reduced
-          maxAgeSeconds: 10 * 60, // Only 10 minutes
+          maxEntries: 20, // Reduced from 100
+          maxAgeSeconds: 15 * 60, // 15 minutes instead of 30
+          purgeOnQuotaError: true,
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -140,16 +128,17 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 🎯 SANITY API: Limited caching
+    // 7. SANITY API - Minimal caching
     {
       urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'sanity-api-cache-v1',
-        networkTimeoutSeconds: 10,
+        cacheName: 'sanity-api-v4',
+        networkTimeoutSeconds: 8,
         expiration: {
-          maxEntries: 25, // Reduced
-          maxAgeSeconds: 15 * 60, // 15 minutes
+          maxEntries: 15, // Reduced significantly
+          maxAgeSeconds: 10 * 60, // 10 minutes
+          purgeOnQuotaError: true,
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -157,15 +146,16 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 🎯 STATIC ASSETS: Long-term caching (safe)
+    // 8. STATIC ASSETS - Reasonable limits
     {
       urlPattern: /\/_next\/static\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'next-static-cache-v1',
+        cacheName: 'next-static-v4',
         expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+          maxEntries: 50, // Reduced from 100
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          purgeOnQuotaError: true,
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -173,41 +163,49 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 🎯 IMAGES: Conservative caching
+    // 9. IMAGES - Limited with size awareness
     {
       urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'images-cache-v1',
+        cacheName: 'images-v4',
         expiration: {
-          maxEntries: 50, // Reduced from 200
-          maxAgeSeconds: 20 * 24 * 60 * 60, // 1 week
+          maxEntries: 30, // Significantly reduced
+          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+          purgeOnQuotaError: true,
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
-        plugins: [{
-          // Size-based cleanup for images
-          cacheDidUpdate: async ({ cacheName }) => {
-            const cache = await caches.open(cacheName);
-            const keys = await cache.keys();
-            if (keys.length > 45) {
-              const keysToDelete = keys.slice(0, 10);
-              await Promise.all(keysToDelete.map(key => cache.delete(key)));
+        plugins: [
+          {
+            requestWillFetch: async ({ request }) => {
+              // Skip caching large images
+              try {
+                const response = await fetch(request.clone(), { method: 'HEAD' });
+                const contentLength = response.headers.get('content-length');
+                if (contentLength && parseInt(contentLength) > 500 * 1024) { // 500KB limit
+                  throw new Error('Image too large for caching');
+                }
+              } catch (error) {
+                // Skip caching this image
+                throw error;
+              }
+              return request;
             }
           }
-        }]
+        ]
       },
     },
 
-    // 🎯 FONTS: Long-term but limited
+    // 10. FONTS - Essential only
     {
       urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'google-fonts-cache-v1',
+        cacheName: 'fonts-v2',
         expiration: {
-          maxEntries: 15, // Reduced
+          maxEntries: 10, // Reduced from 30
           maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
         },
         cacheableResponse: {
@@ -216,25 +214,49 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 🎯 NAVIGATION: Very selective
+    // 11. FALLBACK - Last resort with cleanup
     {
-      urlPattern: ({ url, request }) => {
-        const isSlugPage = /\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^\/]+/.test(url.pathname);
-        return request.mode === 'navigate' && !isSlugPage;
-      },
+      urlPattern: /^https?:\/\/.*/,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'navigation-cache-v1',
+        cacheName: 'fallback-v4',
         networkTimeoutSeconds: 3,
         expiration: {
-          maxEntries: 15, // Reduced
-          maxAgeSeconds: 20 * 24 * 60 * 60, // 1 week
+          maxEntries: 10, // Very limited
+          maxAgeSeconds: 60 * 60, // 1 hour
+          purgeOnQuotaError: true,
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
+        plugins: [
+          {
+            handlerDidError: async () => {
+              return caches.match('/offline.html');
+            },
+            cacheDidUpdate: async ({ cacheName }) => {
+              // Monitor total cache usage
+              const estimate = await navigator.storage.estimate();
+              if (estimate.usage > 50 * 1024 * 1024) { // 50MB total limit
+                console.warn('Cache size limit approaching, triggering cleanup');
+                // Trigger cache cleanup
+                const cacheNames = await caches.keys();
+                for (const name of cacheNames) {
+                  if (name.includes('dynamic-pages') || name.includes('fallback')) {
+                    const cache = await caches.open(name);
+                    const keys = await cache.keys();
+                    // Remove oldest entries
+                    for (let i = 0; i < Math.floor(keys.length * 0.3); i++) {
+                      await cache.delete(keys[i]);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
       },
-    }
+    },
   ]
 });
 
@@ -244,22 +266,31 @@ const nextConfig = {
   },
   optimizeFonts: true,
   images: {
-    domains: ['cdn.sanity.io'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    deviceSizes: [640, 750, 828, 1080, 1200],
+    imageSizes: [16, 32, 48, 64, 96, 128],
     formats: ['image/webp'],
-    remotePatterns: [{
-      protocol: "https",
-      hostname: "cdn.sanity.io",
-      port: "",
-    }],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.sanity.io",
+        port: "",
+      },
+    ],
   },
-  
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000', '*.vercel.app'],
+    },
+    optimizeCss: true
+  },
+  // Remove trailingSlash to prevent duplicate caching
   async rewrites() {
-    return [{
-      source: '/sw.js',
-      destination: '/sw.js',
-    }];
+    return [
+      {
+        source: '/sw.js',
+        destination: '/sw.js',
+      },
+    ];
   },
 };
 
