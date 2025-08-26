@@ -66,7 +66,7 @@ const withPWA = require('next-pwa')({
       handler: 'StaleWhileRevalidate',
       options: {
         cacheName: 'dynamic-content-v3',
-        networkTimeoutSeconds: 5,
+        // REMOVED: networkTimeoutSeconds: 5,
         expiration: {
           maxEntries: 10, // STRICT LIMIT: Only 10 dynamic pages
           maxAgeSeconds: 24 * 60 * 60, // 1 day only
@@ -106,7 +106,7 @@ const withPWA = require('next-pwa')({
       handler: 'StaleWhileRevalidate',
       options: {
         cacheName: 'category-pages-v2',
-        networkTimeoutSeconds: 3,
+        // REMOVED: networkTimeoutSeconds: 3,
         expiration: {
           maxEntries: 4, // Only 4 category pages
           maxAgeSeconds: 2 * 60 * 60, // 2 hours
