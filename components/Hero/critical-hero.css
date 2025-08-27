@@ -1395,3 +1395,15 @@ p span.font-bold:hover {
     0 16px 64px rgba(59, 130, 246, 0.3), /* Even further out, higher blur */
     0 0 80px rgba(59, 130, 246, 0.2);   /* Ambient glow, slightly less intense */
 }
+@media (max-width: 639px) {
+  .ai-benefit-card:first-child::before {
+    animation: none;
+    display: none;
+  }
+}
+@media (max-width: 639px) {
+  .press-button::after {
+    animation: none;
+    display: none;
+  }
+}

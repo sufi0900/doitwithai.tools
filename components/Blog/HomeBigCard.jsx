@@ -102,10 +102,11 @@ export default function HomeBigCard({
         className="space-y-4"
       >
         {/* Enhanced Title */}
-        <h1 className="line-clamp-2 text-xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-2xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
-          {title}     
-        </h1>
-
+       <Link href={slug}>
+    <h1 className="line-clamp-2 text-xl font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-2xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+      {title}     
+    </h1>
+  </Link>
         {/* Enhanced Overview */}
         <p className="line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300 sm:text-base group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
           {overview} 
