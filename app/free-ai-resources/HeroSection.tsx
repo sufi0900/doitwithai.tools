@@ -302,20 +302,22 @@ const FreeAIResourcesHero = () => {
 
             {/* Primary CTA */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto">
-              <button
-               onClick={() => {
+             <button
+  onClick={() => {
     document.getElementById('resource-formats').scrollIntoView({
       behavior: 'smooth',
       block: 'start'
     });
   }}
-                className="download-button w-full sm:w-auto inline-flex items-center justify-center min-h-[56px] px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 no-shift group"
-                aria-label="Browse all free AI resources"
-              >
-                <Download className="w-6 h-6 mr-3 group-hover:animate-bounce" />
-                Browse All Resources
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-              </button>
+  className="download-button w-full sm:w-auto inline-flex items-center justify-center min-h-[56px] px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 no-shift group relative z-10" // Add `relative z-10`
+  aria-label="Browse all free AI resources"
+>
+  <Download className="w-6 h-6 mr-3 group-hover:animate-bounce pointer-events-none" />
+  <span className="pointer-events-none">Browse All Resources</span>
+  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300 pointer-events-none" />
+</button>
+
+
             </div>
 
             {/* Bottom Trust Text */}
