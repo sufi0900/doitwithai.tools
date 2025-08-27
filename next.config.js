@@ -1,7 +1,7 @@
 const withPWA = require('next-pwa')({
   dest: 'public',
-  register: true,
-  skipWaiting: false, // Changed to false for better UX
+  register: false, // We'll handle registration manually
+  skipWaiting: false,
   disable: process.env.NODE_ENV === 'development',
   
   publicExcludes: ['!robots.txt', '!sitemap.xml'],
@@ -21,14 +21,14 @@ const withPWA = require('next-pwa')({
   },
   
   runtimeCaching: [
-    // 1. Essential pages - Cache First (Root page, critical static pages)
+    // 1. CRITICAL: Homepage only - Cache First
     {
-      urlPattern: /^https:\/\/.*\/(|about|contact|offline\.html)(?:\/)?$/i,
+      urlPattern: /^https:\/\/.*\/(?:\?.*)?$/i, // Root page with optional query params
       handler: 'CacheFirst',
       options: {
-        cacheName: 'essential-pages-v1',
+        cacheName: 'homepage-v1',
         expiration: {
-          maxEntries: 5, // Limit to essential pages only
+          maxEntries: 1, // Only homepage
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
         },
         cacheableResponse: {
@@ -37,15 +37,15 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 2. Static pages - Stale While Revalidate (with limits)
+    // 2. CRITICAL: Offline page - Cache First
     {
-      urlPattern: /^https:\/\/.*\/(faq|privacy|terms)(?:\/)?$/i,
-      handler: 'StaleWhileRevalidate',
+      urlPattern: /^https:\/\/.*\/offline\.html$/i,
+      handler: 'CacheFirst',
       options: {
-        cacheName: 'static-pages-v1',
+        cacheName: 'offline-page-v1',
         expiration: {
-          maxEntries: 10, // Reduced from 50
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+          maxEntries: 1,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -53,73 +53,51 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 3. Category pages - Network First with limits
-    {
-      urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)(?:\/)?$/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'category-pages-v1',
-        networkTimeoutSeconds: 3,
-        expiration: {
-          maxEntries: 20, // Reduced from 100
-          maxAgeSeconds: 6 * 60 * 60, // 6 hours only
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-
-    // 4. Article/Slug pages - Limited dynamic caching
+    // 3. RECENT PAGES: Only 5 most recent article pages
     {
       urlPattern: /^https:\/\/.*\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^\/]+\/?$/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'article-pages-v1',
-        networkTimeoutSeconds: 5,
+        cacheName: 'recent-pages-v1',
+        networkTimeoutSeconds: 3,
         expiration: {
-          maxEntries: 15, // Strict limit on article caching
-          maxAgeSeconds: 3 * 60 * 60, // 3 hours only
+          maxEntries: 5, // STRICT: Only 5 recent pages
+          maxAgeSeconds: 2 * 60 * 60, // 2 hours only
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
         plugins: [{
           cacheKeyWillBeUsed: async ({ request }) => {
-            // Normalize URLs to prevent duplicate caches
             const url = new URL(request.url);
             return url.origin + url.pathname.replace(/\/$/, '') || '/';
+          },
+          // Custom LRU eviction for recent pages
+          cacheDidUpdate: async ({ cacheName, request }) => {
+            const cache = await caches.open(cacheName);
+            const keys = await cache.keys();
+            
+            // If we exceed 5 entries, remove the oldest
+            if (keys.length > 5) {
+              const oldestKey = keys[0];
+              await cache.delete(oldestKey);
+              console.log('🗑️ Evicted oldest page from recent cache');
+            }
           }
         }]
       },
     },
 
-    // 5. Next.js data - Reduced caching
+    // 4. MINIMAL: Essential Next.js data only
     {
-      urlPattern: /\/_next\/data\/.*/i,
-      handler: 'StaleWhileRevalidate',
-      options: {
-        cacheName: 'next-data-v1',
-        expiration: {
-          maxEntries: 50, // Reduced from 200
-          maxAgeSeconds: 2 * 60 * 60, // 2 hours only
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-
-    // 6. API routes - Very limited caching
-    {
-      urlPattern: /^https:\/\/.*\/api\/.*/i,
+      urlPattern: /\/_next\/data\/.*\/(|ai-tools|ai-seo|ai-code|ai-learn-earn)/i,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'api-cache-v1',
-        networkTimeoutSeconds: 8,
+        cacheName: 'essential-data-v1',
+        networkTimeoutSeconds: 2,
         expiration: {
-          maxEntries: 25, // Reduced from 100
-          maxAgeSeconds: 15 * 60, // 15 minutes only
+          maxEntries: 6, // Homepage + 5 recent pages
+          maxAgeSeconds: 1 * 60 * 60, // 1 hour only
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -127,47 +105,39 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 7. Sanity API - Short-term caching
-    {
-      urlPattern: /^https:\/\/.*\.sanity\.io\/.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'sanity-api-v1',
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 30, // Reduced from 100
-          maxAgeSeconds: 10 * 60, // 10 minutes only
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-      },
-    },
-
-    // 8. Static assets - Long-term but limited
+    // 5. CRITICAL: Next.js static assets (minimal)
     {
       urlPattern: /\/_next\/static\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'next-static-v1',
+        cacheName: 'next-static-minimal-v1',
         expiration: {
-          maxEntries: 60, // Reduced from 100
+          maxEntries: 20, // Very limited
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
+        plugins: [{
+          cacheDidUpdate: async ({ cacheName }) => {
+            // Monitor cache size
+            const cache = await caches.open(cacheName);
+            const keys = await cache.keys();
+            console.log(`📦 Static cache size: ${keys.length} entries`);
+          }
+        }]
       },
     },
 
-    // 9. Images - Limited but longer caching
+    // 6. MINIMAL: Critical images only
     {
       urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|svg|gif|webp|ico)$/i,
-      handler: 'CacheFirst',
+      handler: 'NetworkFirst',
       options: {
-        cacheName: 'images-v1',
+        cacheName: 'critical-images-v1',
+        networkTimeoutSeconds: 3,
         expiration: {
-          maxEntries: 50, // Reduced from 200
+          maxEntries: 10, // Very limited - only critical images
           maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
         },
         cacheableResponse: {
@@ -176,48 +146,19 @@ const withPWA = require('next-pwa')({
       },
     },
 
-    // 10. Google Fonts
+    // 7. FONTS: Google Fonts only
     {
       urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'google-fonts-v1',
+        cacheName: 'fonts-v1',
         expiration: {
-          maxEntries: 10,
+          maxEntries: 5,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
         },
         cacheableResponse: {
           statuses: [0, 200],
         },
-      },
-    },
-
-    // 11. Fallback for all other requests - Very limited
-    {
-      urlPattern: /^https?:\/\/.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'general-fallback-v1',
-        networkTimeoutSeconds: 3,
-        expiration: {
-          maxEntries: 20, // Very limited
-          maxAgeSeconds: 30 * 60, // 30 minutes only
-        },
-        cacheableResponse: {
-          statuses: [0, 200],
-        },
-        plugins: [{
-          handlerDidError: async ({ request }) => {
-            console.log('Handler error for:', request.url);
-            // Try to serve from any cache first
-            const cachedResponse = await caches.match(request);
-            if (cachedResponse) {
-              return cachedResponse;
-            }
-            // Fallback to offline page
-            return caches.match('/offline.html');
-          }
-        }]
       },
     },
   ],
@@ -228,7 +169,6 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // Optimize CSS and fonts
   optimizeFonts: true,
   
   images: {
@@ -261,7 +201,7 @@ const nextConfig = {
     ];
   },
 
-  // Add headers for cache control
+  // Force no-cache on service worker
   async headers() {
     return [
       {
