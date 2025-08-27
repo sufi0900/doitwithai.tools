@@ -7,159 +7,73 @@ export default function ServiceWorkerRegistration() {
   const [mounted, setMounted] = useState(false);
   const [swStatus, setSwStatus] = useState('checking');
   const [storageInfo, setStorageInfo] = useState(null);
-  const [deviceType, setDeviceType] = useState('unknown');
 
   // Handle hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Device detection
-  const detectDevice = () => {
-    // Check for mobile device
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const isTablet = /iPad|Android(?=.*Mobile)/i.test(navigator.userAgent);
-    const hasSmallScreen = window.innerWidth <= 768;
-    const hasTouchScreen = 'ontouchstart' in window;
-    
-    // Check device memory if available
-    const deviceMemory = navigator.deviceMemory || 4; // Default to 4GB if not available
-    const isLowMemoryDevice = deviceMemory < 4;
-    
-    // Check storage quota if available
-    const checkStorageQuota = async () => {
-      try {
-        if ('storage' in navigator && 'estimate' in navigator.storage) {
-          const estimate = await navigator.storage.estimate();
-          const quota = estimate.quota || 0;
-          const quotaInGB = quota / (1024 * 1024 * 1024);
-          return quotaInGB < 10; // Less than 10GB available
-        }
-      } catch (error) {
-        console.log('Could not check storage quota:', error);
-      }
-      return false;
-    };
-    
-    return {
-      isMobile: isMobile || isTablet || hasSmallScreen,
-      isLowMemory: isLowMemoryDevice,
-      hasTouchScreen,
-      deviceMemory,
-      checkStorageQuota
-    };
-  };
-
   useEffect(() => {
     if (!mounted) return;
 
-    const initializeServiceWorker = async () => {
-      const deviceInfo = detectDevice();
-      const isLowStorage = await deviceInfo.checkStorageQuota();
-      
-      // Determine if we should enable SW
-      const shouldEnableSW = !deviceInfo.isMobile || 
-                            (deviceInfo.deviceMemory >= 4 && !isLowStorage);
-      
-      setDeviceType(deviceInfo.isMobile ? 'mobile' : 'desktop');
-      
-      console.log('Device Detection:', {
-        isMobile: deviceInfo.isMobile,
-        deviceMemory: deviceInfo.deviceMemory,
-        isLowStorage,
-        shouldEnableSW
-      });
-
-      if (!shouldEnableSW) {
-        console.log('🚫 Service Worker disabled for this device (mobile/low-memory)');
-        setSwStatus('disabled-mobile');
-        
-        // Unregister any existing service worker
-        if ('serviceWorker' in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          for (let registration of registrations) {
-            await registration.unregister();
-            console.log('Unregistered existing service worker');
-          }
-        }
+    const registerSW = async () => {
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+        console.log('Service Worker not supported');
+        setSwStatus('unsupported');
         return;
       }
 
-      // Proceed with SW registration for desktop/high-memory devices
-      await registerServiceWorker();
+      try {
+        // Wait for React hydration to complete
+        await new Promise(resolve => {
+          if (document.readyState === 'complete') {
+            setTimeout(resolve, 1000); // Reduced delay
+          } else {
+            window.addEventListener('load', () => {
+              setTimeout(resolve, 500);
+            });
+          }
+        });
+
+        // Check storage quota first
+        await checkStorageQuota();
+
+        // Check for existing service worker
+        const existingRegistration = await navigator.serviceWorker.getRegistration();
+        if (existingRegistration) {
+          console.log('Existing SW found, updating...');
+          await existingRegistration.update();
+          setSwStatus('updated');
+        }
+
+        // Register service worker
+        const registration = await navigator.serviceWorker.register('/sw.js?v=3', {
+          scope: '/',
+          updateViaCache: 'none'
+        });
+
+        console.log('✅ Service Worker registered:', registration);
+        setSwStatus('registered');
+
+        // Setup SW event listeners
+        setupSWEventListeners(registration);
+
+        // Initialize essential caching only
+        await initializeEssentialCache();
+
+        // Setup storage monitoring
+        setupStorageMonitoring();
+
+      } catch (error) {
+        console.error('❌ Service Worker registration failed:', error);
+        setSwStatus('failed');
+      }
     };
 
-    initializeServiceWorker();
+    registerSW();
   }, [mounted]);
 
-  const registerServiceWorker = async () => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-      console.log('Service Worker not supported');
-      setSwStatus('unsupported');
-      return;
-    }
-
-    try {
-      // Wait for React hydration
-      await new Promise(resolve => {
-        if (document.readyState === 'complete') {
-          setTimeout(resolve, 500);
-        } else {
-          window.addEventListener('load', () => {
-            setTimeout(resolve, 500);
-          });
-        }
-      });
-
-      // Check and cleanup existing cache if needed
-      await performInitialCleanup();
-
-      // Register service worker with strict parameters
-      const registration = await navigator.serviceWorker.register('/sw.js?v=4', {
-        scope: '/',
-        updateViaCache: 'none'
-      });
-
-      console.log('✅ Service Worker registered:', registration);
-      setSwStatus('registered');
-
-      // Setup SW event listeners
-      setupServiceWorkerListeners(registration);
-
-      // Initialize minimal cache (homepage + offline page only)
-      await initializeMinimalCache();
-
-      // Setup aggressive storage monitoring
-      setupStrictStorageMonitoring();
-
-    } catch (error) {
-      console.error('❌ Service Worker registration failed:', error);
-      setSwStatus('failed');
-    }
-  };
-
-  // Perform initial cleanup of any existing large caches
-  const performInitialCleanup = async () => {
-    try {
-      const cacheNames = await caches.keys();
-      const cachesToKeep = ['homepage-cache-v1', 'offline-page-v1'];
-      
-      // Delete all old/large caches
-      for (const cacheName of cacheNames) {
-        if (!cachesToKeep.includes(cacheName)) {
-          await caches.delete(cacheName);
-          console.log(`🧹 Deleted cache: ${cacheName}`);
-        }
-      }
-      
-      // Check storage after cleanup
-      await checkStorageQuota();
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  };
-
-  // Check storage quota with strict limits
+  // Check storage quota and availability
   const checkStorageQuota = async () => {
     try {
       if ('storage' in navigator && 'estimate' in navigator.storage) {
@@ -175,12 +89,17 @@ export default function ServiceWorkerRegistration() {
           percentage: quota > 0 ? Math.round((usage / quota) * 100) : 0
         });
 
-        console.log(`📊 Storage: ${usageInMB}MB / ${quotaInMB}MB (${Math.round((usage / quota) * 100)}%)`);
+        console.log(`📊 Storage Usage: ${usageInMB}MB / ${quotaInMB}MB (${Math.round((usage / quota) * 100)}%)`);
 
-        // STRICT limits - Clean up if usage exceeds 50MB OR 50% of quota
-        if (usageInMB > 50 || (usage / quota > 0.5)) {
-          console.warn('⚠️ Storage limit exceeded, initiating aggressive cleanup');
-          await performAggressiveCleanup();
+        // If usage is above 80%, clean up
+        if (usage / quota > 0.8) {
+          await requestCacheCleanup();
+        }
+
+        // If usage is above 50MB, warn and clean
+        if (usageInMB > 50) {
+          console.warn('⚠️ High storage usage detected, initiating cleanup');
+          await requestCacheCleanup();
         }
       }
     } catch (error) {
@@ -188,74 +107,20 @@ export default function ServiceWorkerRegistration() {
     }
   };
 
-  // Aggressive cleanup function
-  const performAggressiveCleanup = async () => {
-    try {
-      const cacheNames = await caches.keys();
-      
-      // Keep only homepage and offline page
-      const essentialCaches = ['homepage-cache-v1', 'offline-page-v1'];
-      
-      for (const cacheName of cacheNames) {
-        if (!essentialCaches.includes(cacheName)) {
-          await caches.delete(cacheName);
-          console.log(`🗑️ Deleted cache: ${cacheName}`);
-        } else {
-          // Even for essential caches, clean old entries
-          const cache = await caches.open(cacheName);
-          const requests = await cache.keys();
-          
-          // Keep only the most recent entry
-          if (requests.length > 1) {
-            for (let i = 0; i < requests.length - 1; i++) {
-              await cache.delete(requests[i]);
-            }
-          }
-        }
-      }
-      
-      // Clear IndexedDB data if it exists
-      if ('indexedDB' in window) {
-        try {
-          const databases = await indexedDB.databases();
-          for (const db of databases) {
-            if (db.name && !db.name.includes('essential')) {
-              indexedDB.deleteDatabase(db.name);
-              console.log(`🗑️ Deleted IndexedDB: ${db.name}`);
-            }
-          }
-        } catch (error) {
-          console.log('IndexedDB cleanup skipped:', error);
-        }
-      }
-      
-      // Notify service worker to clean up
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'AGGRESSIVE_CLEANUP',
-          maxTotalSize: 20 * 1024 * 1024, // 20MB max total
-          keepOnlyEssential: true
-        });
-      }
-      
-    } catch (error) {
-      console.error('Aggressive cleanup failed:', error);
-    }
-  };
-
-  // Setup service worker listeners
-  const setupServiceWorkerListeners = (registration) => {
+  // Setup service worker event listeners
+  const setupSWEventListeners = (registration) => {
     // Listen for updates
     registration.addEventListener('updatefound', () => {
+      console.log('SW: Update found');
       const newWorker = registration.installing;
       if (newWorker) {
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('SW: New version available');
             setSwStatus('update-available');
-            // Auto-update without asking user to minimize disruption
-            setTimeout(() => {
+            if (window.confirm('New version available! Reload to update?')) {
               window.location.reload();
-            }, 1000);
+            }
           }
         });
       }
@@ -263,115 +128,163 @@ export default function ServiceWorkerRegistration() {
 
     // Listen for messages from SW
     navigator.serviceWorker.addEventListener('message', (event) => {
+      console.log('SW Message:', event.data);
+      
       switch (event.data.type) {
-        case 'STORAGE_WARNING':
-          console.warn('Storage warning:', event.data.message);
-          performAggressiveCleanup();
+        case 'CACHE_UPDATED':
+          console.log('Cache updated for:', event.data.url);
           break;
-        case 'CACHE_LIMIT_REACHED':
-          console.log('Cache limit reached, oldest entries removed');
+        case 'STORAGE_WARNING':
+          console.warn('Storage warning from SW:', event.data.message);
+          break;
+        case 'CACHE_CLEANED':
+          console.log('Cache cleaned:', event.data.message);
+          checkStorageQuota(); // Refresh storage info
           break;
       }
     });
 
     // Handle controller change
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('SW: Controller changed');
       window.location.reload();
     });
   };
 
-  // Initialize minimal cache (homepage + offline page only)
-  const initializeMinimalCache = async () => {
+  // Initialize only essential cache (homepage + static pages)
+  const initializeEssentialCache = async () => {
     try {
+      const essentialPages = [
+        { url: '/', priority: 'critical' },
+        { url: '/about', priority: 'high' },
+        { url: '/contact', priority: 'medium' },
+        { url: '/offline.html', priority: 'critical' }
+      ];
+
+      // Send message to SW to cache essential pages only
       if (navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
-          type: 'CACHE_ESSENTIALS_ONLY',
-          pages: [
-            { url: '/', priority: 'critical' },
-            { url: '/offline.html', priority: 'critical' }
-          ]
+          type: 'CACHE_ESSENTIAL_PAGES',
+          pages: essentialPages
         });
       }
-      console.log('✅ Minimal cache initialized (homepage + offline only)');
+
+      console.log('✅ Essential pages cache initialized');
     } catch (error) {
-      console.error('Failed to initialize minimal cache:', error);
+      console.error('Failed to initialize essential cache:', error);
     }
   };
 
-  // Strict storage monitoring
-  const setupStrictStorageMonitoring = () => {
-    const monitorStorage = async () => {
-      await checkStorageQuota();
-    };
-
-    // Monitor every 2 minutes for strict control
-    const interval = setInterval(monitorStorage, 2 * 60 * 1000);
-    
-    return () => clearInterval(interval);
+  // Request cache cleanup from service worker
+  const requestCacheCleanup = async () => {
+    try {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'CLEANUP_CACHE',
+          options: {
+            maxDynamicPages: 10,
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+            maxTotalSize: 50 * 1024 * 1024 // 50MB
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to request cache cleanup:', error);
+    }
   };
 
-  // Smart page caching for recently visited pages (max 5)
-  useEffect(() => {
-    if (!mounted || swStatus !== 'registered' || deviceType === 'mobile') return;
-
-    let recentPages = [];
-    const MAX_RECENT_PAGES = 5;
-
-    const handleNavigation = (url) => {
-      // Only cache article pages
-      const isArticlePage = /\/(ai-tools|ai-seo|ai-code|ai-learn-earn|free-ai-resources|ai-news)\/[^/]+$/.test(url);
+  // Setup periodic storage monitoring
+  const setupStorageMonitoring = () => {
+    const monitorStorage = async () => {
+      await checkStorageQuota();
       
-      if (isArticlePage && navigator.serviceWorker.controller) {
-        // Update recent pages list
-        recentPages = recentPages.filter(page => page !== url);
-        recentPages.unshift(url);
-        recentPages = recentPages.slice(0, MAX_RECENT_PAGES);
-        
-        navigator.serviceWorker.controller.postMessage({
-          type: 'CACHE_RECENT_PAGE',
-          url: url,
-          recentPages: recentPages
-        });
+      // If storage is getting full, clean up
+      if (storageInfo && storageInfo.percentage > 70) {
+        await requestCacheCleanup();
       }
     };
 
-    // Listen for navigation events
+    // Monitor every 5 minutes
+    const interval = setInterval(monitorStorage, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  };
+
+  // Smart page caching on navigation (limited)
+  useEffect(() => {
+    if (!mounted) return;
+
+    let cachedPagesCount = 0;
+    const MAX_CACHED_PAGES = 10;
+
+    const handleNavigation = async (url) => {
+      try {
+        // Only cache if we haven't exceeded limit
+        if (cachedPagesCount >= MAX_CACHED_PAGES) {
+          console.log('Max cached pages reached, skipping cache for:', url);
+          return;
+        }
+
+        // Only cache article pages, not all pages
+        const isArticlePage = /\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^/]+$/.test(url);
+        
+        if (isArticlePage && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'CACHE_PAGE_SMART',
+            url: url,
+            priority: 'low',
+            maxCount: MAX_CACHED_PAGES
+          });
+          cachedPagesCount++;
+        }
+      } catch (error) {
+        console.log('Failed to cache page on navigation:', error);
+      }
+    };
+
+    // Listen for client-side navigation
     const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
     history.pushState = function(...args) {
       const result = originalPushState.apply(this, args);
-      setTimeout(() => handleNavigation(window.location.pathname), 1000);
+      const newUrl = window.location.pathname;
+      setTimeout(() => handleNavigation(newUrl), 1000);
+      return result;
+    };
+
+    history.replaceState = function(...args) {
+      const result = originalReplaceState.apply(this, args);
+      const newUrl = window.location.pathname;
+      setTimeout(() => handleNavigation(newUrl), 1000);
       return result;
     };
 
     window.addEventListener('popstate', () => {
-      setTimeout(() => handleNavigation(window.location.pathname), 1000);
+      const newUrl = window.location.pathname;
+      setTimeout(() => handleNavigation(newUrl), 1000);
     });
 
     return () => {
       history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
     };
-  }, [mounted, swStatus, deviceType]);
+  }, [mounted]);
 
-  // Expose cache management functions
+  // Expose cache management functions globally
   useEffect(() => {
     if (mounted) {
       window.swCacheManager = {
-        cleanup: performAggressiveCleanup,
+        cleanup: requestCacheCleanup,
         checkQuota: checkStorageQuota,
-        getStorageInfo: () => storageInfo,
-        getDeviceType: () => deviceType,
-        getSwStatus: () => swStatus
+        getStorageInfo: () => storageInfo
       };
     }
-  }, [mounted, storageInfo, deviceType, swStatus]);
+  }, [mounted, storageInfo]);
 
-  // Don't render during SSR
+  // Don't render anything during SSR
   if (!mounted) return null;
 
-  // Show minimal status info for debugging
-  return (
-    <div className="fixed bottom-2 right-2 text-xs text-gray-500 bg-white/80 px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity pointer-events-none">
-      SW: {swStatus} | Device: {deviceType} | Storage: {storageInfo?.usage || 0}MB
-    </div>
-  );
+
+  return null;
 }
