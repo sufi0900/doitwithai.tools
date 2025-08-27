@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { urlForImage } from "@/sanity/lib/image";
 import { getFileUrl, renderPreviewContent, getResourceAltText } from "./resourceUtils";
 import Image from 'next/image';
+import PlayArrow from '@mui/icons-material/PlayArrow'; // Add this line
+
 
 const ResourceModal = ({ resource, isOpen, onClose }) => {
  
@@ -80,7 +82,13 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
             window.open(resource.aiToolDetails.toolUrl, '_blank');
             return;
         }
-
+  if (resource.resourceFormat === 'video' && resource.resourceFile) {
+    const videoUrl = getResourceFileUrl(resource.resourceFile);
+    if (videoUrl) {
+      window.open(videoUrl, '_blank');
+      return;
+    }
+  }
         if (resource.resourceLinkType === 'direct' && resource.resourceFile) {
             const fileUrl = getResourceFileUrl(resource.resourceFile);
             const fileName = resource.resourceFile.originalFilename || `${resource.title.replace(/\s+/g, '-').toLowerCase()}`;
@@ -355,23 +363,59 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
     )}
      </div>
                                 )}
-                               {resource.resourceFormat === 'video' && resource.resourceFile && (
-  <div className="relative rounded-xl overflow-hidden shadow-lg">
-    <video
-        src={getFileUrl(resource.resourceFile)}
-        controls
-        className="w-full h-auto object-contain max-h-[60vh]"
-        itemProp="contentUrl"
-        preload="metadata"
-        poster={resource.mainImage ? urlForImage(resource.mainImage).url() : undefined}
-        title={resource.title}
-        playsInline
-        controlsList="nodownload"
-        onLoadStart={() => console.log('Video loading started')}
-        onError={(e) => console.error('Video load error:', e)}
-      />
+
+
+
+
+{/* New section for video redirection */}
+{resource.resourceFormat === 'video' && resource.resourceFile && (
+  <div className="relative rounded-xl overflow-hidden shadow-lg aspect-video">
+    <div className="w-full h-full flex items-center justify-center relative">
+      {resource.previewSettings?.previewImage ? (
+        <Image
+          src={urlForImage(resource.previewSettings.previewImage).url()}
+          alt={resource.previewSettings.previewImage?.alt || altText}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+          priority={true}
+        />
+      ) : resource.mainImage ? (
+        <img
+          src={urlForImage(resource.mainImage).url()}
+          alt={resource.mainImage?.alt || altText}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+          <div className="text-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-2 sm:mb-4 rounded-2xl flex items-center justify-center shadow-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM13 9a1 1 0 100-2 1 1 0 000 2zm-3-1a1 1 0 100-2 1 1 0 000 2z" />
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 font-medium text-base sm:text-lg">Video Preview</p>
+            <p className="text-gray-500 dark:text-gray-500 text-xs sm:text-sm mt-0.5 sm:mt-1">Click below to watch the video</p>
+          </div>
+        </div>
+      )}
+    </div>
+    {/* Overlay with CTA */}
+    <div className="absolute inset-0 flex items-center justify-center">
+      <div className="relative">
+       <button
+  onClick={() => handleResourceAccess()}
+  className="relative w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-full flex items-center justify-center shadow-2xl transform hover:scale-110 transition-all duration-300 cursor-pointer border-4 border-white/20"
+  aria-label="Watch video"
+>
+  <PlayArrow sx={{ fontSize: 40, color: 'white', ml: '3px' }} />
+</button>
+      </div>
+    </div>
   </div>
 )}
+
                                 {resource.resourceFormat === 'text' && Array.isArray(resource.promptContent) && (
                                     <div className="space-y-4 sm:space-y-6">
                                         {resource.promptContent.map((promptItem, index) => (
@@ -617,9 +661,20 @@ const ResourceModal = ({ resource, isOpen, onClose }) => {
           className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-3 px-4 sm:px-8 rounded-xl transition-all duration-300 font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 group text-sm"
           aria-label={`Access ${resource.title}`}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-          </svg>
+         <svg 
+  xmlns="http://www.w3.org/2000/svg" 
+  className="w-4 h-4" 
+  fill="none" 
+  viewBox="0 0 24 24" 
+  stroke="currentColor" 
+  strokeWidth={2}
+>
+  <path 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+  />
+</svg>
           <span className="hidden sm:inline">Access Resource</span>
           <span className="sm:hidden">Access</span>
         </button>

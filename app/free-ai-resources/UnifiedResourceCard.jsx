@@ -1,5 +1,5 @@
 // UnifiedResourceCard.js - Single card for both grid and carousel
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import ResourceCardBase from './ResourceCardBase';
 import Link from 'next/link';
 import { ArrowForward, PlayArrow, Description, Image as ImageIcon, Psychology } from '@mui/icons-material';
@@ -141,18 +141,45 @@ const getCardHeight = () => {
     </div>
   );
 
-  // Video Card Layout - Unified
-  const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleResourceAccess }) => (
-    
+// Optimized VideoCardLayout - Replace your existing VideoCardLayout
+const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleResourceAccess }) => {
+  const [isInView, setIsInView] = useState(false);
+  const cardRef = useRef(null);
 
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      {
+        rootMargin: '50px', // Start loading when 50px away from viewport
+        threshold: 0.1
+      }
+    );
 
-    
-    <div className={`${getCardHeight()} flex flex-col bg-white dark:bg-gray-800 rounded-2xl overflow-hidden group shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 ${variant === 'carousel' ? 'hover:-translate-y-3 hover:scale-[1.02]' : ''}`}>
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div 
+      ref={cardRef}
+      className={`${getCardHeight()} flex flex-col bg-white dark:bg-gray-800 rounded-2xl overflow-hidden group shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 ${
+        variant === 'carousel' ? 'hover:-translate-y-3 hover:scale-[1.02]' : ''
+      }`}
+    >
       {/* Enhanced Shimmer Effect for Carousel */}
       {variant === 'carousel' && (
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transform transition-transform duration-1000 ease-out z-10" />
       )}
-      
+
       {/* Video Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-2">
@@ -166,71 +193,61 @@ const getCardHeight = () => {
         </h3>
       </div>
 
-      {/* Video Preview Area */}
+      {/* OPTIMIZED Video Preview Area */}
       <div className="relative flex-grow bg-black overflow-hidden">
-        <div className="w-full h-full flex items-center justify-center">
-        {resource.videoUrl || resource.resourceFile?.url ? (
-  <video
-    ref={videoRef}
-    src={resource.videoUrl || resource.resourceFile?.url}
-    poster={resource.mainImage}                // optional fallback thumb if you have one
-    preload="metadata"                         // load metadata so first frame is available
-    muted                                       // keep preview silent
-    playsInline                                 // prevents fullscreen behavior on iOS
-    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-    // when metadata loads, ensure video is at time 0 and paused (shows first frame)
-    onLoadedMetadata={() => {
-      if (!videoRef.current) return;
-      try {
-        videoRef.current.currentTime = 0;
-      } catch (e) {
-        // some browsers may throw if seek not allowed yet — ignore safely
-      }
-      try { videoRef.current.pause(); } catch(e) {}
-    }}
-  />
-) : (
-  // keep your existing fallback
-  <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-    <PlayArrow x={{ fontSize: 64, color: 'white', opacity: 0.5 }} />
-  </div>
-)}
-
+        <div className="w-full h-full flex items-center justify-center relative">
+          {/* Only render preview content when in view */}
+          {isInView ? renderPreviewContent() : (
+            // Loading placeholder
+            <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Loading...</p>
+              </div>
+            </div>
+          )}
 
           {/* Enhanced Play Button Overlay */}
           <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
             <div className="relative">
-              <div className="absolute inset-0 w-20 h-20 bg-blue-500 rounded-full animate-ping opacity-20"></div>
-              <div className="relative w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-300 cursor-pointer border-4 border-white/20">
-                <PlayArrow sx={{ fontSize: 32, color: 'white', marginLeft: '3px' }} />
+              <div className="absolute inset-0 w-16 h-16 bg-blue-500 rounded-full animate-pulse opacity-20"></div>
+              <div className="relative w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-all duration-300 cursor-pointer border-4 border-white/20">
+                <PlayArrow sx={{ fontSize: 28, color: 'white', marginLeft: '3px' }} />
               </div>
             </div>
           </div>
+
+          {/* Video Duration Badge (if available) */}
+          {resource.videoMetadata?.duration && (
+            <div className="absolute bottom-3 right-3 bg-black/80 text-white text-xs px-2 py-1 rounded">
+              {resource.videoMetadata.duration}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="p-4 mt-auto flex gap-2">
-           <button 
-             onClick={() => openModal(true)} 
-             className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium px-4 py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
-           >
-             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-             </svg>
-             Preview
-           </button>
-           <button 
-             onClick={() => handleResourceAccess(resource)} 
-             className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-4 py-2.5 rounded-lg transition-all duration-200 shadow-lg"
-           >
-             <PlayArrow sx={{ fontSize: 16 }} />
-             Watch Now
-           </button>
-         </div>
+        <button
+          onClick={() => openModal(true)}
+          className="flex-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium px-4 py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+          </svg>
+          Preview
+        </button>
+        <button
+          onClick={() => handleResourceAccess(resource)}
+          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-4 py-2.5 rounded-lg transition-all duration-200 shadow-lg"
+        >
+          <PlayArrow sx={{ fontSize: 16 }} />
+          Watch Now
+        </button>
+      </div>
     </div>
   );
-
+};
   // Text/Prompt Card Layout - Unified
   const TextCardLayout = ({ resource, openModal }) => (
     <div className={`${getCardHeight()} flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden group shadow-lg hover:shadow-xl transition-all duration-300 ${variant === 'carousel' ? 'hover:-translate-y-3 hover:scale-[1.02]' : ''}`}>

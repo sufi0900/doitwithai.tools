@@ -17,16 +17,11 @@ const BlogLayout = dynamic(() => import("@/app/ai-tools/[slug]/BlogLayout"), {
   ssr: false
 });
 
-const UnifiedCacheMonitor = dynamic(() => import("@/React_Query_Caching/UnifiedCacheMonitor"), {
-  loading: () => null,
-  ssr: false
-});
+
 
 export default function ArticleChildComp({ serverData, params, schemaType }) {
   const currentSlug = params.slug;
 
-  // REMOVED: const [showSkeleton, setShowSkeleton] = useState(false);
-  // REMOVED: const [skeletonTimeout, setSkeletonTimeout] = useState(null);
 
   // REPLACED with immediate skeleton logic:
   const [showSkeleton, setShowSkeleton] = useState(!serverData); // Show skeleton immediately if no serverData

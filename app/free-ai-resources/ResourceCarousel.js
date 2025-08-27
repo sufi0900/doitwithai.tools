@@ -454,15 +454,7 @@ const ResourceCarousel = ({
         </div>
       )}
 
-      {/* Debug info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs p-2 rounded">
-          <div>Slide: {currentSlide + 1}/{numChildren}</div>
-          <div>In View: {isInView ? 'Yes' : 'No'}</div>
-          <div>Playing: {isCarouselPlaying ? 'Yes' : 'No'}</div>
-          <div>Active Dot: {activeDotIndex + 1}</div>
-        </div>
-      )}
+    
     </div>
   );
 };

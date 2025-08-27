@@ -299,22 +299,20 @@ export const renderPreviewContent = (resource) => {
   const altText = getResourceAltText(resource);
   
   // Check if we have custom preview settings
-  if (resource.previewSettings && resource.previewSettings.useCustomPreview) {
-    // Check for preview image
-    if (resource.previewSettings.previewImage) {
-      return (
-        <img 
-        src={urlForImage(resource.previewSettings.previewImage).url()} 
+ if (resource.previewSettings?.previewImage) {
+    return (
+      <img
+        src={urlForImage(resource.previewSettings.previewImage).url()}
         alt={resource.previewSettings.previewImage?.alt || altText}
         className="absolute top-0 left-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
         itemProp="contentUrl"
-          loading="lazy"
-          width="400"
-          height="300"
-        />
-      );
-    }
+        loading="lazy"
+        width="400"
+        height="300"
+      />
+    );
   }
+
   
       // Enhanced preview content based on resource format
       switch (resource.resourceFormat) {
@@ -354,41 +352,50 @@ export const renderPreviewContent = (resource) => {
           }
           return renderResourceIcon('image', true);
           
-          case 'video':
-            if (resource.resourceFile && getFileUrl(resource.resourceFile) && 
-                getFileUrl(resource.resourceFile).match(/\.(mp4|webm|ogg|mov|avi)$/i)) {
-                  const videoUrl = getFileUrl(resource.resourceFile);
+        case 'video':
+  // First check for custom preview image (your previewSettings)
+  if (resource.previewSettings?.previewImage) {
+    return (
+      <img
+        src={urlForImage(resource.previewSettings.previewImage).url()}
+        alt={resource.previewSettings.previewImage?.alt || altText}
+        className="absolute top-0 left-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+        loading="lazy"
+        width="400"
+        height="300"
+      />
+    );
+  }
+  
+  // If mainImage exists, use it as poster
+  if (resource.mainImage) {
+    return (
+      <img
+        src={urlForImage(resource.mainImage).url()}
+        alt={resource.mainImage?.alt || altText}
+        className="absolute top-0 left-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-105"
+        loading="lazy"
+        width="400"
+        height="300"
+      />
+    );
+  }
+  
+  // REMOVE THE AUTOPLAY VIDEO - This was causing the performance issues
+  // Instead return a video placeholder with play icon
+  return (
+    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+      <div className="text-center">
+        <div className="w-16 h-16 mx-auto mb-2 bg-white/20 rounded-full flex items-center justify-center">
+          <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </div>
+        <p className="text-white text-sm font-medium">Video Preview</p>
+      </div>
+    </div>
+  );
 
-              return (
-                <>
-                <video 
-                  src={getFileUrl(resource.resourceFile)} 
-                  autoPlay={true}
-                  loop={true}
-                  className="absolute top-0 left-0 w-full h-full object-cover"
-                  controls
-                  muted
-                  preload="metadata"
-                  title={resource.title}
-               
-                  itemProp="contentUrl"
-
-                />
-                <meta itemProp="encodingFormat" content={videoUrl.split('.').pop()} />
-                </>
-              );
-            } else if (resource.resourceLink && 
-                      (resource.resourceLink.includes('youtube.com') || 
-                       resource.resourceLink.includes('vimeo.com'))) {
-              return (
-                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gray-900">
-                  <div className="w-full h-full flex items-center justify-center">
-                   {/* Your existing video embed code */}
-                  </div>
-                </div>
-              );
-            }
-          
           case 'text': // For prompt resources
           if (resource.promptContent && Array.isArray(resource.promptContent)) {
             return (

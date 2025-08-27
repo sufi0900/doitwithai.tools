@@ -11,10 +11,8 @@ import { useCachedSearch } from '@/React_Query_Caching/useCachedSearch';
 import SkelCard from "@/components/Blog/Skeleton/Card";
 import { useUnifiedCache } from "@/React_Query_Caching/useUnifiedCache";
 import { urlForImage } from "@/sanity/lib/image";
-// import Link from "next/link";
-// Import our new cached components
+
 import ReusableCachedFeaturedFreeResources from './ReusableCachedFeaturedFreeResources';
-// import ReusableCachedFreeResourcesCounts from './ReusableCachedFreeResourcesCounts';
 import ReusableCachedFreeResourcesList from './ReusableCachedFreeResourcesList';
 
 const RESOURCE_LIMIT = 6;
@@ -496,7 +494,7 @@ export default function FreeResourcesPage({ initialServerData }) {
 
         {/* Category Filter Buttons with Counts */}
         {!searchHook.isSearchActive && !filteredByArticle && (
-          <div className="mb-10 flex flex-wrap justify-center gap-2 sm:justify-start lg:justify-center">
+          <div id="resource-formats" className="mb-10 flex flex-wrap justify-center gap-2 sm:justify-start lg:justify-center">
             {resourceFormats.map((format) => (
               <button
                 key={format.value}

@@ -63,13 +63,40 @@ const getDynamicQueryConfig = useCallback(() => {
     queryParams.resourceFormat = selectedFormat;
   }
 
-  const listQuery = `*[${filters}${searchFilter}] | order(${orderBy})[${start}...${start + RESOURCE_LIMIT + 1}] {
-    _id, title, slug, tags, mainImage, overview, resourceType, resourceFormat, 
-    resourceLink, resourceLinkType, previewSettings, 
-    "resourceFile": resourceFile.asset->, content, publishedAt, promptContent,
-    "relatedArticle": relatedArticle->{title, slug, _type}, 
-    aiToolDetails, seoTitle, seoDescription, seoKeywords, altText, structuredData
-  }`;
+// Update your query in ReusableCachedFreeResourcesList.jsx
+const listQuery = `*[${filters}${searchFilter}]|order(${orderBy})[${start}...${start+RESOURCE_LIMIT+1}]{
+  _id,
+  title,
+  slug,
+  tags,
+  mainImage,
+  overview,
+  resourceType,
+  resourceFormat,
+  resourceLink,
+  resourceLinkType,
+  previewSettings{
+    useCustomPreview,
+    previewImage{
+      asset->,
+      alt,
+      caption
+    }
+  },
+  "resourceFile": resourceFile.asset->,
+  content,
+  publishedAt,
+  promptContent,
+  "relatedArticle": relatedArticle->{title, slug, _type},
+  aiToolDetails,
+  seoTitle,
+  seoDescription,
+  seoKeywords,
+  altText,
+  structuredData,
+  imageMetadata,
+  videoMetadata
+}`;
 
   const totalCountQuery = `count(*[${filters}${searchFilter}])`;
 
