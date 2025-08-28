@@ -606,20 +606,18 @@ strong: ({ children }) => (
 
       em: ({ children }) => <em>{children}</em>,
 
-      link: ({ children, value }) => {
-        const rel = !value.href.startsWith('/') ? 'noreferrer noopener' : undefined;
-        return (
-          <a
-            href={value.href}
-            rel={rel}
-              target="_blank" // This is the new attribute
-
-            className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
-          >
-            {children}
-          </a>
-        );
-      },
+    link: ({ children, value }) => {
+  return (
+    <a
+      href={value.href}
+      target="_blank"
+      rel="noreferrer noopener" // ✅ Apply this to all links with target="_blank"
+      className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
+    >
+      {children}
+    </a>
+  );
+},
     },
 
     button: ({ value }) => {
