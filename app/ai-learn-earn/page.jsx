@@ -5,7 +5,7 @@ import { NextSeo } from "next-seo";
 import Head from 'next/head';
 
 // Import the new reusable component
-import BlogListingPageContent from "@/app/ai-tools/AllBlogs";
+import BlogListingPageContent from "@/app/ai-tools/BlogListingPageContent";
 
 // --- NEW IMPORT for StaticPageShell ---
 import StaticPageShell from "@/app/ai-seo/StaticPageShell"; // <--- ADD THIS IMPORT

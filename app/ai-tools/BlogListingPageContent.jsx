@@ -125,31 +125,33 @@ export default function BlogListingPageContent({
               onDataLoad={handleSubcategoriesDataLoad}
             />
           )}
-         {!searchHook.isSearchActive && (
-            <div className="mt-16 flex justify-center">
-              <nav className="flex flex-col sm:flex-col md:flex-row items-center gap-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-700">
-                <button
-                  onClick={handlePreviousSubcategories}
-                  disabled={isPreviousButtonDisabledSubcategories}
-                  className={`flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium w-full sm:w-auto transition-all duration-200${isPreviousButtonDisabledSubcategories ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500' : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'}`}
-                >
-                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                  Previous
-                </button>
-                <div className="flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm w-full sm:w-auto">
-                  {currentPageSubcategories}
-                </div>
-                <button
-                  onClick={handleNextSubcategories}
-                  disabled={isNextButtonDisabledSubcategories}
-                  className={`flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium w-full sm:w-auto transition-all duration-200${isNextButtonDisabledSubcategories ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500' : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'}`}
-                >
-                  Next
-                  <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </button>
-              </nav>
-            </div>
-          )}
+      {!searchHook.isSearchActive && (
+  <div className="mt-16 flex justify-center">
+    <nav className="flex items-center gap-1 sm:gap-2 rounded-lg bg-gray-100 p-1 sm:p-2 dark:bg-gray-700 w-full max-w-sm sm:max-w-md md:max-w-none md:w-auto">
+      <button
+        onClick={handlePreviousSubcategories}
+        disabled={isPreviousButtonDisabledSubcategories}
+        className={`flex items-center justify-center rounded-lg px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm font-medium flex-1 md:flex-none md:w-auto transition-all duration-200 ${isPreviousButtonDisabledSubcategories ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500' : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'}`}
+      >
+        <svg className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        <span className="hidden xs:inline sm:inline">Previous</span>
+        <span className="xs:hidden sm:hidden">Prev</span>
+      </button>
+      <div className="flex items-center justify-center rounded-lg bg-blue-600 px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm font-medium text-white shadow-sm min-w-[40px] sm:min-w-[50px]">
+        {currentPageSubcategories}
+      </div>
+      <button
+        onClick={handleNextSubcategories}
+        disabled={isNextButtonDisabledSubcategories}
+        className={`flex items-center justify-center rounded-lg px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm font-medium flex-1 md:flex-none md:w-auto transition-all duration-200 ${isNextButtonDisabledSubcategories ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500' : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'}`}
+      >
+        <span className="hidden xs:inline sm:inline">Next</span>
+        <span className="xs:hidden sm:hidden">Next</span>
+        <svg className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+      </button>
+    </nav>
+  </div>
+)}
         </section>
       )}
       {/* SearchSection - Updated with left alignment and theme colors */}
@@ -260,29 +262,31 @@ export default function BlogListingPageContent({
             initialTotalCount={finalInitialData?.totalCount}
           />
           {/* MainBlogPaginationControls */}
-        <div className="mt-16 flex justify-center">
-  <nav className="flex flex-col sm:flex-col md:flex-row items-center gap-2 rounded-lg bg-gray-100 p-2 dark:bg-gray-700 w-full md:w-auto">
+      <div className="mt-16 flex justify-center">
+  <nav className="flex items-center gap-1 sm:gap-2 rounded-lg bg-gray-100 p-1 sm:p-2 dark:bg-gray-700 w-full max-w-sm sm:max-w-md md:max-w-none md:w-auto">
     {/* Previous Button */}
     <button
       onClick={handlePrevious}
       disabled={currentPage === 1}
       className={`flex items-center justify-center rounded-lg 
-                  px-4 py-2 sm:px-3 sm:py-2 text-sm sm:text-xs font-medium w-full md:w-auto
+                  px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm font-medium 
+                  flex-1 md:flex-none md:w-auto
                   transition-all duration-200
                   ${currentPage === 1
         ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500'
         : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'}`}
     >
-      <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
       </svg>
-      Previous
+      <span className="hidden xs:inline sm:inline">Previous</span>
+      <span className="xs:hidden sm:hidden">Prev</span>
     </button>
 
     {/* Current Page */}
     <div className="flex items-center justify-center rounded-lg bg-blue-600 
-                    px-4 py-2 sm:px-3 sm:py-2 text-sm sm:text-xs font-medium text-white shadow-sm 
-                    w-full md:w-auto">
+                    px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm font-medium text-white shadow-sm 
+                    min-w-[40px] sm:min-w-[50px]">
       {currentPage}
     </div>
 
@@ -291,19 +295,22 @@ export default function BlogListingPageContent({
       onClick={handleNext}
       disabled={isNextButtonDisabled}
       className={`flex items-center justify-center rounded-lg 
-                  px-4 py-2 sm:px-3 sm:py-2 text-sm sm:text-xs font-medium w-full md:w-auto
+                  px-2 sm:px-3 md:px-4 py-2 text-xs sm:text-sm font-medium 
+                  flex-1 md:flex-none md:w-auto
                   transition-all duration-200
                   ${isNextButtonDisabled
         ? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-600 dark:text-gray-500'
         : 'bg-white text-gray-700 shadow-sm hover:bg-blue-50 hover:text-blue-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-blue-400'}`}
     >
-      Next
-      <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <span className="hidden xs:inline sm:inline">Next</span>
+      <span className="xs:hidden sm:hidden">Next</span>
+      <svg className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
     </button>
   </nav>
 </div>
+
 
         </section>
       )}

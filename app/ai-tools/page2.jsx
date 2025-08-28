@@ -1,5 +1,5 @@
 import React from 'react'
-import Allblogs from "./AllBlogs"
+import Allblogs from "./BlogListingPageContent"
 import Head from "next/head";
 import Script from "next/script";
 import { NextSeo } from "next-seo";

@@ -493,15 +493,14 @@ const OptimizedImage = ({
               )}
 
               {/* Desktop error state */}
-              {desktopModalState.hasError && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-gradient-to-br from-red-900/80 to-black/80">
-                  <svg className="w-16 h-16 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <p className="text-white text-lg font-semibold">Failed to load image</p>
-                </div>
-              )}
-
+             {!desktopModalState.imageLoaded && !desktopModalState.hasError && (
+  <div className="absolute inset-0 flex flex-col items-center justify-center z-50 bg-gradient-to-br from-gray-900/80 to-black/80">
+    <div className="animated-spinner mb-4" />
+    <p className="text-white text-lg font-semibold tracking-wide animate-pulse">
+      Loading Image...
+    </p>
+  </div>
+)}
               <div
                 ref={modalRef}
                 className={`relative max-h-[95vh] max-w-[95vw] overflow-hidden rounded-2xl shadow-2xl ${

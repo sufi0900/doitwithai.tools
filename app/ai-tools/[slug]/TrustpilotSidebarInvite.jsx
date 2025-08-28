@@ -20,7 +20,7 @@ const TrustpilotSidebarInvite = () => {
           </div>
           <div className="flex-1">
             <h3 className="text-base font-bold text-gray-800 dark:text-white">
-              Excellent
+              Trustpilot
             </h3>
             <div className="flex items-center gap-0.5 mt-1">
               {[1, 2, 3, 4, 5].map((star) => (

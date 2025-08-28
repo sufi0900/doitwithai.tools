@@ -10,11 +10,8 @@
   import PortableTextComponents from './createPortableTextComponents';
   import ArticleHeader from './ArticleHeader';
   import StickyArticleNavbar from './StickyArticleNavbar';
-  import Link from 'next/link';
-  import Image from 'next/image';
-  import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
+
   import CommentSection from './CommentSection'; // Adjust path as needed
-  import { useCodeEnhancer } from './useCodeEnhancer';
 
   // Lazy load non-critical components
   const FAQSection = lazy(() => import('./FAQSection'));
@@ -144,7 +141,6 @@
     handleScroll();
 
     return () => {
-      // ... cleanup code (ensure all event listeners and timers are cleared)
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('load', handleLoad);
@@ -350,6 +346,8 @@
                 relatedPosts={relatedPosts}
                 loading={relatedPostsLoading}
                 schemaSlugMap={schemaSlugMap}
+                                articleSchemaType={data?._type} // Pass the schema type here
+
               />
             </Suspense>
           </SmartShimmer>

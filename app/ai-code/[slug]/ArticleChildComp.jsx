@@ -151,8 +151,8 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     staleTime: 15 * 60 * 1000,
   }), [currentPostId, schemaType, finalArticleData]);
 
-  const correctRelatedResourcesQuery = useMemo(() => 
-    `*[_type == "freeResources" && references($articleId)]{
+   const correctRelatedResourcesQuery = useMemo(() => 
+    `*[_type == "freeResources" && references($articleId)] | order(_createdAt desc)[0...9]{
       _id, title, tags, mainImage, overview, resourceType, resourceFormat, 
       resourceLink, resourceLinkType, previewSettings,
       "resourceFile": resourceFile.asset->, content, publishedAt, promptContent,

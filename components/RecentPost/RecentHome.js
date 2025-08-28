@@ -79,15 +79,28 @@ export default function RecentPosts({ initialData = [] }) { // Accept initialDat
   }, [refresh]);
 
   return (
-     <section className="pb-[20px] mt-[40px]">
-      <div className="container">
-      <h2 className="mb-8 mt-8 text-3xl font-bold tracking-wide text-black dark:text-white sm:text-4xl">
-        <span className="relative mr-2 inline-block">
-          Latest
-          <span className="absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
-        </span>
-        <span className="text-blue-500">Posts</span>
-      </h2>
+  <section className="pb-4 sm:pb-[20px] mt-6 sm:mt-[40px]">
+  <div className="container mx-auto px-3 sm:px-4">
+    <div className="mb-6 sm:mb-8 mt-6 sm:mt-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center sm:gap-0">
+  
+  {/* Responsive heading with proper mobile typography */}
+  <h2 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-bold tracking-wide text-black dark:text-white leading-tight">
+    <span className="relative mr-1 sm:mr-2 inline-block">
+      Latest
+      {/* Responsive underline that scales with text size */}
+      <span className="absolute bottom-[-3px] xs:bottom-[-4px] sm:bottom-[-6px] md:bottom-[-8px] left-0 h-0.5 sm:h-1 w-full bg-blue-500"></span>
+    </span>
+    <span className="text-blue-500">Posts</span>
+  </h2>
+  
+  {/* Responsive "Read All Blogs" button */}
+  <Link href="/blogs" passHref>
+    <span className="inline-flex w-full sm:w-auto items-center justify-center rounded-md border-2 border-blue-500 bg-transparent px-4 sm:px-6 py-2 sm:py-2.5 text-center text-sm sm:text-base font-medium text-blue-500 transition-all duration-300 ease-in-out hover:bg-blue-500 hover:text-white min-h-[44px] sm:min-h-auto">
+      <span className="truncate">Read All Blogs</span>
+      <span className="ml-1 sm:ml-2 flex-shrink-0">➔</span>
+    </span>
+  </Link>
+</div>
         
         {/* NEW: Stale Data Warning */}
         {isStale && recentData && recentData.length > 0 && (

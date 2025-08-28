@@ -199,6 +199,13 @@ const BlogSidebar = ({
     }
   }, [relatedResources, resourcesLoading]);
 
+  // Dynamically determine the URL for the related posts
+  const viewAllUrl = useMemo(() => {
+    return schemaSlugMap[currentPostType] 
+      ? `/${schemaSlugMap[currentPostType]}` 
+      : '/articles';
+  }, [schemaSlugMap, currentPostType]);
+
   return (
     <div className="w-full px-3 mt-4 lg:w-4/12">
       {/* Enhanced Search Section */}
@@ -253,8 +260,7 @@ const BlogSidebar = ({
           error={searchHook.searchError}
           isSearchActive={searchHook.isSearchActive}
           searchText={searchHook.searchText}
-  schemaSlugMap={schemaSlugMap} // Pass the entire map instead
-          
+          schemaSlugMap={schemaSlugMap}
           showNoResults={searchHook.showNoResults}
           cacheSource={searchHook.cacheSource}
           isStale={searchHook.isStale}
@@ -262,10 +268,9 @@ const BlogSidebar = ({
           onRefreshSearch={searchHook.refreshSearch}
           className="mb-6"
           minSearchLength={3}
-          isSidebarView={true} // This is the new prop that activates the smaller card
+          isSidebarView={true}
         />
       )}
-
 
       <div className="space-y-6">
         {/* Related Posts Section */}
@@ -281,24 +286,40 @@ const BlogSidebar = ({
           {(relatedPostsLoading || internalRelatedPostsLoading) ? (
             <SidebarLoader />
           ) : relatedPosts && relatedPosts.length > 0 ? (
-            <ul className="p-4 space-y-3">
-              {relatedPosts.map((post, index) => (
-                <li key={post._id} className="group/item relative">
-                  <div className="absolute left-0 top-0 h-full w-0.5 bg-[#2563eb] scale-y-0 group-hover/item:scale-y-100 transition-transform duration-300 origin-top rounded-full"></div>
-                  <div className="pl-3 group-hover/item:pl-4 transition-all duration-300">
-                    <RelatedPost
-                      title={post.title}
-                      image={urlForImage(post.mainImage).url()}
-                      slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-                      date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    />
+            <>
+              <ul className="p-4 space-y-3">
+                {relatedPosts.map((post, index) => (
+                  <li key={post._id} className="group/item relative">
+                    <div className="absolute left-0 top-0 h-full w-0.5 bg-[#2563eb] scale-y-0 group-hover/item:scale-y-100 transition-transform duration-300 origin-top rounded-full"></div>
+                    <div className="pl-3 group-hover/item:pl-4 transition-all duration-300">
+                      <RelatedPost
+                        title={post.title}
+                        image={urlForImage(post.mainImage).url()}
+                        slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                        date={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      />
+                    </div>
+                    {index < relatedPosts.length - 1 && (
+                      <div className="mt-3 h-px bg-gray-200 dark:bg-gray-700"></div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              
+              {/* Added: Dynamic "View All Posts" button */}
+              <div className="p-4 pt-0">
+                <Link href={viewAllUrl} className="block">
+                  <div className="group/cta relative overflow-hidden rounded-lg bg-gradient-to-r from-[#2563eb] to-[#1d4ed8] p-3 text-center transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] opacity-0 group-hover/cta:opacity-100 transition-opacity duration-300"></div>
+                    <span className="relative flex items-center justify-center gap-2 text-sm font-medium text-white">
+                      <RocketIcon className="w-4 h-4" />
+                      View All Related Posts
+                      <ArrowRightIcon className="w-4 h-4 group-hover/cta:translate-x-1 transition-transform duration-300" />
+                    </span>
                   </div>
-                  {index < relatedPosts.length - 1 && (
-                    <div className="mt-3 h-px bg-gray-200 dark:bg-gray-700"></div>
-                  )}
-                </li>
-              ))}
-            </ul>
+                </Link>
+              </div>
+            </>
           ) : (
             <p className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm">No related posts found.</p>
           )}

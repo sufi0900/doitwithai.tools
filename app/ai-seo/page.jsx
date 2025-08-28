@@ -3,7 +3,7 @@ import Script from "next/script";
 
 
 // Your existing BlogListingPageContent import
-import BlogListingPageContent from "@/app/ai-tools/AllBlogs";
+import BlogListingPageContent from "@/app/ai-tools/BlogListingPageContent";
 
 // Your existing ReusableCachedSEOSubcategories import
 import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";

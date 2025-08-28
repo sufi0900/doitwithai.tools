@@ -4,7 +4,7 @@ import { NextSeo } from "next-seo";
 import { redisHelpers } from '@/app/lib/redis';
 import { client } from "@/sanity/lib/client";
 
-import BlogListingPageContent from "@/app/ai-tools/AllBlogs";
+import BlogListingPageContent from "@/app/ai-tools/BlogListingPageContent";
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 
 // NEW IMPORT for StaticPageShell

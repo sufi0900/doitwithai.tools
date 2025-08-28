@@ -6,7 +6,7 @@ import { CalendarMonth, ArrowForward } from "@mui/icons-material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { urlForImage } from "@/sanity/lib/image";
-import ImageOptimizer from "./ImageOptimizer";
+import ImageOptimizer from "@/app/ai-seo/[slug]/OptimizedImage";
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
