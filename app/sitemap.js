@@ -9,8 +9,7 @@ const SCHEMA_TYPE_TO_URL_PREFIX = {
     'aitool': 'ai-tools', 
     'coding': 'ai-code',
     'seo': 'ai-seo',
-    'news': 'news', // assuming this stays as 'news'
-    'freeairesources': 'free-ai-resource' // assuming this is the correct prefix
+    'freeResources': 'free-ai-resource' 
 };
 
 export default async function sitemap() {
@@ -94,7 +93,32 @@ export default async function sitemap() {
                 lastModified: new Date(),
                 changeFrequency: 'weekly',
                 priority: 0.7,
-            }
+            },
+            // Newly added static pages
+            {
+                url: `${baseURL}/navigation`,
+                lastModified: new Date(),
+                changeFrequency: 'monthly',
+                priority: 0.6,
+            },
+            {
+                url: `${baseURL}/author/sufian-mustafa`,
+                lastModified: new Date(),
+                changeFrequency: 'monthly',
+                priority: 0.5,
+            },
+            {
+                url: `${baseURL}/faq`,
+                lastModified: new Date(),
+                changeFrequency: 'monthly',
+                priority: 0.6,
+            },
+            {
+                url: `${baseURL}/categories`,
+                lastModified: new Date(),
+                changeFrequency: 'weekly',
+                priority: 0.7,
+            },
         ];
 
         // Combine dynamic and static entries
