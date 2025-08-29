@@ -25,25 +25,41 @@ const DynamicResourceCarousel = dynamic(() => import('@/app/free-ai-resources/Re
 const HomeFeaturedResourceComponent  = ({ initialData = {} }) => { // Accept initialData prop
 
 const query = useMemo(() => `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...30]{
-  _id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,
-  "relatedArticle": relatedArticle-> {
-    title,
-    slug,
-    _type,
-    tags,
-    aiToolDetails,
-    excerpt
-  },
-  resourceLinkType,
-  content,
-  publishedAt,
-  "resourceFile":resourceFile.asset->,
-  promptContent,
-  previewSettings,
-  // Add aiToolDetails here to fetch it for the main resource
-  aiToolDetails, 
-  _updatedAt
-}`, []);
+    _id,
+    title,
+    slug,
+    tags,
+    mainImage,
+    overview,
+    resourceType,
+    resourceFormat,
+    resourceLink,
+    "relatedArticle": relatedArticle-> {
+      title,
+      slug,
+      _type,
+      tags,
+      aiToolDetails,
+      excerpt
+    },
+    resourceLinkType,
+    content,
+    publishedAt,
+    "resourceFile":resourceFile.asset->,
+    promptContent,
+    previewSettings {
+      useCustomPreview,
+      previewImage {
+        asset->{
+          url,
+          metadata
+        },
+        alt
+      }
+    },
+    aiToolDetails, 
+    _updatedAt
+  }`, []);
 
   const memoizedParams = useMemo(() => ({}), []);
 

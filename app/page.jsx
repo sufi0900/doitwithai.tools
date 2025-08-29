@@ -121,16 +121,42 @@ async function getHomePageInitialData() {
     aiCodeQuery: `*[_type=="coding"&&displaySettings.isHomePageCoding==true][0...2]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
     aiEarnQuery: `*[_type=="makemoney"&&displaySettings.isHomePageAiEarnTrendBig==true][0...2]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
     recentPosts: `*[_type in ["makemoney","aitool","coding","freeairesources","seo","news"]]|order(publishedAt desc)[0...5]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt}`,
-    freeResourcesFeatured: `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...${HOMEPAGE_FREE_RESOURCES_LIMIT}]{_id,title,slug,tags,mainImage,overview,resourceType,resourceFormat,resourceLink,resourceLinkType,content,publishedAt,"resourceFile":resourceFile.asset->,promptContent,previewSettings,   "relatedArticle": relatedArticle-> {
-    title,
-    slug,
-    _type,
-    tags,
-    excerpt
-  },
-  aiToolDetails,
-   _updatedAt  }`,
-  };
+      freeResourcesFeatured: `*[_type=="freeResources"&&isHomePageFeature==true]|order(publishedAt desc)[0...${HOMEPAGE_FREE_RESOURCES_LIMIT}]{
+      _id,
+      title,
+      slug,
+      tags,
+      mainImage,
+      overview,
+      resourceType,
+      resourceFormat,
+      resourceLink,
+      resourceLinkType,
+      content,
+      publishedAt,
+      "resourceFile": resourceFile.asset->,
+      promptContent,
+      previewSettings {
+        useCustomPreview,
+        previewImage {
+          asset->{
+            url,
+            metadata
+          },
+          alt
+        }
+      },
+      "relatedArticle": relatedArticle-> {
+        title,
+        slug,
+        _type,
+        tags,
+        excerpt
+      },
+      aiToolDetails,
+      _updatedAt
+    }`,
+  };
 
   try {
     const [
@@ -348,6 +374,42 @@ function organizationSchema() {
     };
   }
 
+function videoSchemaMarkup(resources) {
+  const videoResources = resources.filter(res => res.resourceFormat === 'video');
+
+  if (!videoResources.length) {
+    return null;
+  }
+
+  return {
+    __html: JSON.stringify(videoResources.map(resource => {
+      const thumbnailUrl = resource.previewSettings?.previewImage?.asset?.url || resource.mainImage?.asset?.url || null;
+      const videoUrl = resource.resourceFile?.url || null;
+      
+      if (!thumbnailUrl || !videoUrl) {
+        return null;
+      }
+
+      return {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": resource.title,
+        "description": resource.overview,
+        "uploadDate": resource.publishedAt,
+        "thumbnailUrl": thumbnailUrl,
+        "contentUrl": videoUrl,
+        "embedUrl": videoUrl,
+        "duration": "PT5M", // Placeholder: You should fetch video duration from Sanity metadata
+        "interactionStatistic": {
+          "@type": "InteractionCounter",
+          "interactionType": { "@type": "WatchAction" }
+        }
+      };
+    }).filter(Boolean))
+  };
+}
+
+
   return (
     <>
     <Head>
@@ -455,7 +517,13 @@ function organizationSchema() {
         dangerouslySetInnerHTML={faqSchema()}
         
       />
-
+  {featuredResources.length > 0 && (
+        <Script
+          id="VideoObjectSchema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={videoSchemaMarkup(featuredResources)}
+        />
+      )}
       <PageCacheProvider pageType="homepage" pageId="main">
         <HomePageCode initialServerData={initialServerData} />
       </PageCacheProvider>

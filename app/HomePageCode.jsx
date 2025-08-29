@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from "next/dynamic";
 // import { useQuery } from "@tanstack/react-query";
 // import { client } from "@/sanity/lib/client";
-import Grid from "@mui/material/Grid";
+// import Grid from "@mui/material/Grid";
 
 // Import the new context and hook
 // import { GlobalOfflineStatusProvider } from "@/components/Blog/GlobalOfflineStatusContext";

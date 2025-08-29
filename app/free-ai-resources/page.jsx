@@ -149,7 +149,6 @@ async function getFreeResourcesInitialData() {
     targetAudience
   },
   
-  // Prompt/Text format specific fields
   promptMetadata{
     promptCategory,
     aiPlatforms,
@@ -299,23 +298,25 @@ function generateResourceSchemas(resources) {
           }
         };
 
-      case 'video':
-        return {
-          ...baseSchema,
-          "@type": "VideoObject",
-          "contentUrl": resource.resourceFile?.url || resource.resourceLink,
-
-          "uploadDate": resource.publishedAt,
-          "duration": resource.videoMetadata?.duration ? convertDurationToISO8601(resource.videoMetadata.duration) : undefined,
-          "transcript": resource.videoMetadata?.transcript,
-          "keywords": resource.videoMetadata?.videoKeywords,
-          "embedUrl": resource.resourceLink,
-          "interactionStatistic": {
-            "@type": "InteractionCounter",
-            "interactionType": "https://schema.org/WatchAction",
-            "userInteractionCount": 0
-          }
-        };
+     case 'video':
+  return {
+    ...baseSchema,
+    "@type": "VideoObject",
+    "name": resource.title,
+    "description": resource.overview || resource.videoMetadata?.videoDescription, // Use video-specific description
+    "uploadDate": resource.publishedAt,
+    "contentUrl": resource.resourceFile?.url || resource.resourceLink,
+    "embedUrl": resource.resourceLink,
+    "thumbnailUrl": resource.previewSettings?.previewImage?.asset?.url || resource.mainImage?.asset?.url,
+    "duration": resource.videoMetadata?.duration ? convertDurationToISO8601(resource.videoMetadata.duration) : undefined,
+    "transcript": resource.videoMetadata?.transcript,
+    "keywords": resource.videoMetadata?.videoKeywords,
+    "interactionStatistic": {
+      "@type": "InteractionCounter",
+      "interactionType": "https://schema.org/WatchAction",
+      "userInteractionCount": 0
+    }
+  };
 
       case 'document':
         return {
