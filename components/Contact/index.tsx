@@ -142,121 +142,125 @@ const Contact = () => {
                 </p>
               </div>
 
-              <form ref={form} onSubmit={sendEmail} className="space-y-6">
-                <div className="-mx-4 flex flex-wrap">
-                  {/* Name Input with Enhanced Styling */}
-                  <div className="w-full px-4 md:w-1/2">
-                    <div className="group relative">
-                      <label
-                        htmlFor="name"
-                        className={`absolute left-4 transition-all duration-300 pointer-events-none ${
-                          focusedFields.name || formData.name
-                            ? "-top-2 text-xs bg-white dark:bg-gray-dark px-2 text-primary font-medium"
-                            : "top-3 text-sm text-body-color dark:text-body-color-dark"
-                        }`}
-                      >
-                        Your Name *
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        name="user_name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        onFocus={() => handleFocus("name")}
-                        onBlur={() => handleBlur("name")}
-                        className="w-full rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-base text-body-color outline-none transition-all duration-300 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(74,108,247,0.1)] dark:border-gray-600 dark:bg-gray-800 dark:text-body-color-dark dark:focus:border-primary dark:focus:bg-gray-800"
-                        required
-                      />
-                      <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 scale-x-0 transition-transform duration-300 group-focus-within:scale-x-100"></div>
-                    </div>
-                  </div>
+             <form ref={form} onSubmit={sendEmail}>
+  <div className="flex flex-col gap-6">
+    
+    {/* Use a single grid for the fields to manage layout and spacing */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Name Input with Enhanced Styling */}
+      <div>
+        <div className="group relative">
+          <label
+            htmlFor="name"
+            className={`absolute left-4 transition-all duration-300 pointer-events-none ${
+              focusedFields.name || formData.name
+                ? "-top-2 text-xs bg-white dark:bg-gray-dark px-2 text-primary font-medium"
+                : "top-4 text-sm text-body-color dark:text-body-color-dark"
+            }`}
+          >
+            Your Name *
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="user_name"
+            value={formData.name}
+            onChange={handleChange}
+            onFocus={() => handleFocus("name")}
+            onBlur={() => handleBlur("name")}
+            className="w-full rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-base text-body-color outline-none transition-all duration-300 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(74,108,247,0.1)] dark:border-gray-600 dark:bg-gray-800 dark:text-body-color-dark dark:focus:border-primary dark:focus:bg-gray-800"
+            required
+          />
+          <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 scale-x-0 transition-transform duration-300 group-focus-within:scale-x-100"></div>
+        </div>
+      </div>
 
-                  {/* Email Input with Enhanced Styling */}
-                  <div className="w-full px-4 md:w-1/2">
-                    <div className="group relative">
-                      <label
-                        htmlFor="email"
-                        className={`absolute left-4 transition-all duration-300 pointer-events-none ${
-                          focusedFields.email || formData.email
-                            ? "-top-2 text-xs bg-white dark:bg-gray-dark px-2 text-primary font-medium"
-                            : "top-3 text-sm text-body-color dark:text-body-color-dark"
-                        }`}
-                      >
-                        Your Email *
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="user_email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        onFocus={() => handleFocus("email")}
-                        onBlur={() => handleBlur("email")}
-                        className="w-full rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-base text-body-color outline-none transition-all duration-300 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(74,108,247,0.1)] dark:border-gray-600 dark:bg-gray-800 dark:text-body-color-dark dark:focus:border-primary dark:focus:bg-gray-800"
-                        required
-                      />
-                      <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 scale-x-0 transition-transform duration-300 group-focus-within:scale-x-100"></div>
-                    </div>
-                  </div>
+      {/* Email Input with Enhanced Styling */}
+      <div>
+        <div className="group relative">
+          <label
+            htmlFor="email"
+            className={`absolute left-4 transition-all duration-300 pointer-events-none ${
+              focusedFields.email || formData.email
+                ? "-top-2 text-xs bg-white dark:bg-gray-dark px-2 text-primary font-medium"
+                : "top-4 text-sm text-body-color dark:text-body-color-dark"
+            }`}
+          >
+            Your Email *
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="user_email"
+            value={formData.email}
+            onChange={handleChange}
+            onFocus={() => handleFocus("email")}
+            onBlur={() => handleBlur("email")}
+            className="w-full rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-base text-body-color outline-none transition-all duration-300 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(74,108,247,0.1)] dark:border-gray-600 dark:bg-gray-800 dark:text-body-color-dark dark:focus:border-primary dark:focus:bg-gray-800"
+            required
+          />
+          <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 scale-x-0 transition-transform duration-300 group-focus-within:scale-x-100"></div>
+        </div>
+      </div>
+    </div>
 
-                  {/* Message Input with Enhanced Styling */}
-                  <div className="w-full mt-4 px-4">
-                    <div className="group relative">
-                      <label
-                        htmlFor="message"
-                        className={`absolute left-4 transition-all duration-300 pointer-events-none ${
-                          focusedFields.message || formData.message
-                            ? "-top-2 text-xs bg-white dark:bg-gray-dark px-2 text-primary font-medium"
-                            : "top-3 text-sm text-body-color dark:text-body-color-dark"
-                        }`}
-                      >
-                        Your Message *
-                      </label>
-                      <textarea
-                        name="message"
-                        rows={5}
-                        value={formData.message}
-                        onChange={handleChange}
-                        onFocus={() => handleFocus("message")}
-                        onBlur={() => handleBlur("message")}
-                        className="w-full resize-none rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-base text-body-color outline-none transition-all duration-300 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(74,108,247,0.1)] dark:border-gray-600 dark:bg-gray-800 dark:text-body-color-dark dark:focus:border-primary dark:focus:bg-gray-800"
-                        required
-                      ></textarea>
-                      <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 scale-x-0 transition-transform duration-300 group-focus-within:scale-x-100"></div>
-                    </div>
-                  </div>
-
-                  {/* Enhanced Submit Button */}
-                  <div className="w-full mt-6 px-6">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-primary to-primary/90 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-[0_8px_30px_rgba(74,108,247,0.4)] hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-primary/20 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-                    >
-                      <span className="relative z-10 flex items-center justify-center gap-2">
-                        {isSubmitting ? (
-                          <>
-                            <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Sending Message...
-                          </>
-                        ) : (
-                          <>
-                            Send Message
-                            <svg className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                          </>
-                        )}
-                      </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-                    </button>
-                  </div>
-                </div>
-              </form>
+    {/* Message Input with Enhanced Styling */}
+    <div>
+      <div className="group relative">
+        <label
+          htmlFor="message"
+          className={`absolute left-4 transition-all duration-300 pointer-events-none ${
+            focusedFields.message || formData.message
+              ? "-top-2 text-xs bg-white dark:bg-gray-dark px-2 text-primary font-medium"
+              : "top-4 text-sm text-body-color dark:text-body-color-dark"
+          }`}
+        >
+          Your Message *
+        </label>
+        <textarea
+          name="message"
+          rows={5}
+          value={formData.message}
+          onChange={handleChange}
+          onFocus={() => handleFocus("message")}
+          onBlur={() => handleBlur("message")}
+          className="w-full resize-none rounded-xl border-2 border-gray-200 bg-white px-6 py-4 text-base text-body-color outline-none transition-all duration-300 focus:border-primary focus:bg-white focus:shadow-[0_0_0_4px_rgba(74,108,247,0.1)] dark:border-gray-600 dark:bg-gray-800 dark:text-body-color-dark dark:focus:border-primary dark:focus:bg-gray-800"
+          required
+        ></textarea>
+        <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 scale-x-0 transition-transform duration-300 group-focus-within:scale-x-100"></div>
+      </div>
+    </div>
+    
+    {/* Enhanced Submit Button */}
+    <div>
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-primary to-primary/90 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-[0_8px_30px_rgba(74,108,247,0.4)] hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-primary/20 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+      >
+        <span className="relative z-10 flex items-center justify-center gap-2">
+          {isSubmitting ? (
+            <>
+              <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Sending Message...
+            </>
+          ) : (
+            <>
+              Send Message
+              <svg className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </>
+          )}
+        </span>
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+      </button>
+    </div>
+  </div>
+</form>
 
               {/* Trust indicators */}
               <div className="mt-8 flex items-center justify-center gap-6 text-sm text-body-color dark:text-body-color-dark">

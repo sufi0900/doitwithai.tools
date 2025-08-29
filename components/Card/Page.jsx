@@ -177,7 +177,7 @@ export default function CardComponent({
             {/* Shimmer effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover/button:translate-x-[100%] transition-transform duration-700 ease-out" />
             
-            <span className="relative z-10">Read More</span>
+            <span className="relative z-10">Read Full Article</span>
             
             <ArrowForward
               className="relative z-10 transition-all duration-300 group-hover/button:translate-x-0.5 group-hover/button:scale-110"

@@ -13,23 +13,28 @@ const ArticleHeader = ({ articleTitle, isSticky = false }) => {
 
   const titleRef = useRef(null);
   const headerRef = useRef(null);
-
+  
+  // --- New: Effect for header sticky behavior based on scroll ---
   useEffect(() => {
     setMounted(true);
-
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const scrollThreshold = 100;
       setShowGlobalHeader(currentScrollY <= scrollThreshold || !isSticky);
     };
-
     handleScroll();
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isSticky]);
+  
+  // --- NEW: Toggle tooltip on click and calculate position dynamically ---
+  const handleTitleClick = useCallback(() => {
+    // If the tooltip is already shown, hide it on the next click.
+    if (showTooltip) {
+      setShowTooltip(false);
+      return;
+    }
 
-  const handleMouseEnter = useCallback((e) => {
     if (titleRef.current) {
       const rect = titleRef.current.getBoundingClientRect();
       setTooltipPosition({
@@ -38,20 +43,26 @@ const ArticleHeader = ({ articleTitle, isSticky = false }) => {
       });
       setShowTooltip(true);
     }
-  }, []);
+  }, [showTooltip]);
 
-  const handleMouseLeave = useCallback(() => {
-    setShowTooltip(false);
-  }, []);
+  // --- NEW: Close tooltip on scroll ---
+  useEffect(() => {
+    if (!showTooltip) return;
+
+    const handleScrollClose = () => {
+      setShowTooltip(false);
+    };
+
+    window.addEventListener('scroll', handleScrollClose, { once: true });
+    return () => window.removeEventListener('scroll', handleScrollClose);
+  }, [showTooltip]);
 
   // Handle logo click with proper new tab support
   const handleLogoClick = useCallback((e) => {
     if (e.ctrlKey || e.metaKey || e.button === 1) {
-      // Ctrl+click or middle click - open in new tab
       window.open("/", "_blank");
       e.preventDefault();
     } else {
-      // Normal click - navigate in same tab
       window.location.href = "/";
     }
   }, []);
@@ -76,12 +87,9 @@ const ArticleHeader = ({ articleTitle, isSticky = false }) => {
         ${isSticky && !showGlobalHeader ? 'translate-y-0 opacity-100 shadow-lg shadow-blue-500/10 dark:shadow-indigo-900/30' : '-translate-y-full opacity-0 pointer-events-none'}`}
       >
         <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-blue-50/20 via-white/20 to-indigo-50/20 dark:from-gray-900/20 dark:via-gray-800/20 dark:to-gray-900/20" />
-
         <div className="container relative z-10 mx-auto">
-          {/* Fixed height container for consistent navbar size */}
           <div className="flex h-16 items-center justify-between gap-2 px-2 sm:gap-3 sm:px-4">
             
-            {/* Logo - single optimized image for both modes */}
             <div className="group flex-shrink-0">
               <div className="relative">
                 <Avatar
@@ -107,28 +115,22 @@ const ArticleHeader = ({ articleTitle, isSticky = false }) => {
               </div>
             </div>
 
-            {/* Article Title - Responsive with truncation for mobile */}
             <div className="flex flex-grow justify-center px-1 sm:px-2 min-w-0">
               <div className="group relative w-full max-w-full">
                 <h2
                   ref={titleRef}
-                  className="relative cursor-help text-center font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 via-blue-900 to-gray-800 dark:from-white dark:via-blue-100 dark:to-white 
+                  className="relative cursor-pointer text-center font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 via-blue-900 to-gray-800 dark:from-white dark:via-blue-100 dark:to-white 
                   text-xs sm:text-sm md:text-base lg:text-lg 
                   px-2 py-2 leading-tight
                   truncate sm:line-clamp-2 sm:truncate-none
                   whitespace-nowrap sm:whitespace-normal"
-                  onMouseEnter={handleMouseEnter}
-                  onMouseLeave={handleMouseLeave}
-                  title={articleTitle}
+                  onClick={handleTitleClick} // --- CHANGED: Use onClick instead of onMouseEnter/onMouseLeave
                 >
                   {articleTitle || "Article"}
                 </h2>
-                {/* REMOVED: The div that creates the underline */}
-                {/* <div className="absolute bottom-1 left-1/2 h-0.5 w-8 sm:w-12 -translate-x-1/2 transform rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 opacity-70" /> */}
               </div>
             </div>
 
-            {/* ThemeToggler - Responsive sizing */}
             <div className="flex-shrink-0">
               <div className="group relative transition-all duration-200 scale-90 sm:scale-100">
                 <ThemeToggler />
@@ -136,12 +138,10 @@ const ArticleHeader = ({ articleTitle, isSticky = false }) => {
             </div>
           </div>
           
-          {/* Bottom accent line */}
           <div className="absolute bottom-0 left-1/2 h-px w-16 sm:w-24 -translate-x-1/2 transform bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
         </div>
       </header>
 
-      {/* Enhanced tooltip with better responsive behavior */}
       {showTooltip && articleTitle && (
         <div 
           className="fixed z-[9999] pointer-events-none" 

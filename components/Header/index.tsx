@@ -204,6 +204,7 @@ const Header = () => {
                         <Link
                           href={menuItem.path}
                           prefetch={true}
+                          onClick={() => setNavbarOpen(false)} // 👈 ADDED onClick
                           className={`
                             relative flex p-3 transition-all duration-300 ease-in-out items-center justify-center rounded-xl border border-transparent
                             ${usePathName === menuItem.path
@@ -244,6 +245,7 @@ const Header = () => {
                                 href={submenuItem.path}
                                 key={submenuIndex}
                                 prefetch={true}
+                                onClick={() => setNavbarOpen(false)} // 👈 ADDED onClick
                                 className="block py-3 pl-6 pr-4 text-sm text-gray-700 hover:text-[#5271FF] dark:text-gray-300 dark:hover:text-[#5271FF] transition-all duration-200 ease-in-out border-l-2 border-transparent hover:border-[#5271FF]/50"
                               >
                                 <span className="flex items-center">
@@ -263,8 +265,6 @@ const Header = () => {
           </div>
         </div>
       </header>
-
-      {/* Add custom CSS for animations */}
       <style jsx>{`
         @keyframes ping-star {
           0%, 100% {

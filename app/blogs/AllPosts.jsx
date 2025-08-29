@@ -250,25 +250,26 @@ export default function AllBlogsAggregated({ initialServerData }) {
 
       {/* Pagination - Only show if NOT in search results view */}
       {!searchHook.isSearchActive && (
-      <div className="flex justify-center mt-12">
-  <nav className="flex items-center space-x-2 rounded-lg p-2 bg-transparent">
+     <div className="flex justify-center mt-8 sm:mt-12">
+  <nav className="flex items-center space-x-1 xs:space-x-2 rounded-lg p-1 xs:p-2 bg-transparent w-full max-w-sm xs:max-w-none">
     <button
       onClick={handlePrevious}
       disabled={currentPage === 1}
-      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+      className={`flex items-center justify-center gap-1 xs:gap-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg xs:rounded-xl font-medium text-xs xs:text-sm sm:text-base transition-all duration-300 min-w-[70px] xs:min-w-[80px] sm:min-w-[100px] ${
         currentPage === 1
           ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 cursor-not-allowed'
-          : 'bg-transparent text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-300' // Added border and shadow
+          : 'bg-transparent text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-300 hover:scale-[1.02] active:scale-[0.98]'
       }`}
     >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-3 h-3 xs:w-4 xs:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
       </svg>
-      Previous
+      <span className="hidden xs:inline">Previous</span>
+      <span className="xs:hidden">Prev</span>
     </button>
 
-    <div className="flex items-center gap-2">
-      <span className="px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold shadow-md">
+    <div className="flex items-center mx-2 xs:mx-3 sm:mx-4">
+      <span className="px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg xs:rounded-xl font-semibold text-xs xs:text-sm sm:text-base shadow-md min-w-[40px] xs:min-w-[50px] text-center">
         {currentPage}
       </span>
     </div>
@@ -276,14 +277,15 @@ export default function AllBlogsAggregated({ initialServerData }) {
     <button
       onClick={handleNext}
       disabled={currentPage >= totalPages}
-      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+      className={`flex items-center justify-center gap-1 xs:gap-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg xs:rounded-xl font-medium text-xs xs:text-sm sm:text-base transition-all duration-300 min-w-[70px] xs:min-w-[80px] sm:min-w-[100px] ${
         currentPage >= totalPages
           ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 cursor-not-allowed'
-          : 'bg-transparent text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-300' // Added border and shadow
+          : 'bg-transparent text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-300 hover:scale-[1.02] active:scale-[0.98]'
       }`}
     >
-      Next
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <span className="hidden xs:inline">Next</span>
+      <span className="xs:hidden">Next</span>
+      <svg className="w-3 h-3 xs:w-4 xs:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
     </button>

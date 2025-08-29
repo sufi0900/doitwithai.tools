@@ -140,18 +140,14 @@ const TrendingPage = ({ initialData = {} }) => {
               {/* On mobile: single column, On lg: 2 columns */}
               {isLoading && relatedPosts.length === 0 ? (
                 <>
-                  <Grid item xs={12} sm={6} lg={6}>
+                
+                  <Grid item xs={12} sm={12} lg={12}>
+                  
+                    <MedSkeleton />
                     <MedSkeleton />
                   </Grid>
-                  <Grid item xs={12} sm={6} lg={6}>
-                    <MedSkeleton />
-                  </Grid>
-                  <Grid item xs={12} sm={6} lg={6}>
-                    <MedSkeleton />
-                  </Grid>
-                  <Grid item xs={12} sm={6} lg={6}>
-                    <MedSkeleton />
-                  </Grid>
+                 
+                 
                 </>
               ) : (
                 relatedPosts.slice(0, 4).map((post) => (

@@ -312,31 +312,35 @@ export default function FreeResourcesPage() {
 
         {/* Pagination (visible only if not in search view and if there are items to paginate) */}
         {!searchHook.isSearchActive && totalItems > 0 && (
-          <div className="flex justify-center items-center space-x-4 mb-10">
-            <button
-              onClick={handlePrevious}
-              disabled={currentPage === 1}
-              className={`px-4 py-2 rounded-md transition-colors ${
-                currentPage === 1
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              Previous
-            </button>
-            <span className="text-gray-700 dark:text-gray-300">Page {currentPage} of {totalPages}</span>
-            <button
-              onClick={handleNext}
-              disabled={!hasMorePages || currentPage >= totalPages}
-              className={`px-4 py-2 rounded-md transition-colors ${
-                !hasMorePages || currentPage >= totalPages
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
-            >
-              Next
-            </button>
-          </div>
+         <div className="flex flex-col xs:flex-row justify-center items-center gap-2 xs:gap-4 mb-8 sm:mb-10 px-4">
+  <button
+    onClick={handlePrevious}
+    disabled={currentPage === 1}
+    className={`w-full xs:w-auto px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-md xs:rounded-lg text-xs xs:text-sm sm:text-base font-medium transition-all duration-300 min-w-[80px] xs:min-w-[90px] ${
+      currentPage === 1
+        ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+        : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md'
+    }`}
+  >
+    Previous
+  </button>
+  
+  <span className="text-xs xs:text-sm sm:text-base text-gray-700 dark:text-gray-300 font-medium px-2 xs:px-4 py-1 whitespace-nowrap">
+    Page {currentPage} of {totalPages}
+  </span>
+  
+  <button
+    onClick={handleNext}
+    disabled={!hasMorePages || currentPage >= totalPages}
+    className={`w-full xs:w-auto px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-md xs:rounded-lg text-xs xs:text-sm sm:text-base font-medium transition-all duration-300 min-w-[80px] xs:min-w-[90px] ${
+      !hasMorePages || currentPage >= totalPages
+        ? 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+        : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md'
+    }`}
+  >
+    Next
+  </button>
+</div>
         )}
       </div>
     </PageCacheProvider>
