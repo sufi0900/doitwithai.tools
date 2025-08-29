@@ -185,14 +185,18 @@ export default async function Page() { // Make this an async component to await 
               "@type": "ListItem",
               "position": 1,
               "name": "Home",
-              "item": `${getBaseUrl()}/`
+  "item": `${getBaseUrl()}/`,
+               "id": `${getBaseUrl()}/` // Add the id property here
+
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": breadcrumbProps.pageName,
-              "item": `${getBaseUrl()}${breadcrumbProps.link}`
-            }
+               "item": `${getBaseUrl()}${breadcrumbProps.link}`,
+               "id": `${getBaseUrl()}${breadcrumbProps.link}`
+              
+              }
           ]
         }
       })
