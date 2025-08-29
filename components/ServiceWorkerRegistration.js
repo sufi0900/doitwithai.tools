@@ -1,117 +1,193 @@
-// SmartServiceWorkerRegistration.js
+// ServiceWorkerRegistration.js
 "use client";
 
 import { useEffect, useState } from 'react';
 
-export default function SmartServiceWorkerRegistration() {
+export default function ServiceWorkerRegistration() {
   const [mounted, setMounted] = useState(false);
   const [swStatus, setSwStatus] = useState('checking');
   const [storageInfo, setStorageInfo] = useState(null);
-  const [deviceType, setDeviceType] = useState('unknown');
+  const [deviceInfo, setDeviceInfo] = useState({ type: 'desktop', memory: null });
 
+  // Handle hydration
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Device detection function
+  // Device detection and memory check
   const detectDevice = () => {
-    if (typeof window === 'undefined') return 'unknown';
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isTablet = /ipad|android(?!.*mobile)|tablet/i.test(userAgent);
     
-    const userAgent = navigator.userAgent;
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-    const isTablet = /iPad|Android(?=.*\bMobile\b)/i.test(userAgent);
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const hasSmallScreen = window.screen.width <= 768 || window.innerWidth <= 768;
+    // Get device memory if available (Chrome only)
+    const deviceMemory = navigator.deviceMemory || null;
     
-    // More aggressive mobile detection
-    if (isMobile || isTablet || (isTouchDevice && hasSmallScreen)) {
-      return 'mobile';
+    // Check screen size as additional mobile indicator
+    const smallScreen = window.innerWidth <= 768;
+    
+    const deviceType = isMobile ? 'mobile' : (isTablet ? 'tablet' : 'desktop');
+    
+    return {
+      type: deviceType,
+      memory: deviceMemory,
+      isMobile: isMobile || smallScreen,
+      isLowMemory: deviceMemory && deviceMemory <= 4,
+    };
+  };
+
+  // Check if service worker should be enabled for this device
+  const shouldEnableServiceWorker = (device) => {
+    // Completely disable for mobile devices
+    if (device.isMobile) {
+      console.log('📱 Mobile device detected - Service Worker disabled');
+      return false;
     }
     
-    return 'desktop';
+    // Disable for low memory devices
+    if (device.isLowMemory) {
+      console.log('⚠️ Low memory device detected - Service Worker disabled');
+      return false;
+    }
+    
+    // Enable for desktop/tablet with sufficient memory
+    return true;
+  };
+
+  // Get storage strategy based on device
+  const getStorageStrategy = (device) => {
+    if (device.isMobile) {
+      return {
+        enabled: false,
+        maxStorage: 0,
+        maxPages: 0,
+        cacheStrategy: 'none'
+      };
+    }
+    
+    if (device.type === 'tablet') {
+      return {
+        enabled: true,
+        maxStorage: 25 * 1024 * 1024, // 25MB
+        maxPages: 3,
+        cacheStrategy: 'minimal'
+      };
+    }
+    
+    // Desktop
+    return {
+      enabled: true,
+      maxStorage: 50 * 1024 * 1024, // 50MB
+      maxPages: 5,
+      cacheStrategy: 'limited'
+    };
   };
 
   useEffect(() => {
     if (!mounted) return;
 
     const device = detectDevice();
-    setDeviceType(device);
+    setDeviceInfo(device);
 
-    // CRITICAL: Disable service worker completely on mobile devices
-    if (device === 'mobile') {
-      console.log('📱 Mobile device detected - Service Worker DISABLED for storage conservation');
-      setSwStatus('disabled-mobile');
-      
-      // Clean up any existing service worker on mobile
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          registrations.forEach(registration => {
-            registration.unregister().then(success => {
-              if (success) {
-                console.log('🗑️ Existing SW unregistered from mobile device');
-              }
-            });
-          });
-        });
+    const registerSW = async () => {
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+        console.log('Service Worker not supported');
+        setSwStatus('unsupported');
+        return;
       }
-      return;
-    }
 
-    // Only register on desktop devices
-    registerServiceWorkerForDesktop();
+      // Check if SW should be enabled for this device
+      if (!shouldEnableServiceWorker(device)) {
+        setSwStatus('disabled-mobile');
+        // Unregister any existing service worker
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+        console.log('📱 Service Worker disabled for mobile device');
+        return;
+      }
+
+      try {
+        // Get storage strategy for this device
+        const strategy = getStorageStrategy(device);
+        
+        // Wait for React hydration to complete
+        await new Promise(resolve => {
+          if (document.readyState === 'complete') {
+            setTimeout(resolve, 500);
+          } else {
+            window.addEventListener('load', () => {
+              setTimeout(resolve, 300);
+            });
+          }
+        });
+
+        // Check storage quota first
+        await checkStorageQuota(strategy);
+
+        // Check for existing service worker and clean up if needed
+        const existingRegistration = await navigator.serviceWorker.getRegistration();
+        if (existingRegistration) {
+          console.log('Existing SW found, cleaning and updating...');
+          await cleanupExistingCache();
+          await existingRegistration.update();
+        }
+
+        // Register service worker with device-specific configuration
+        const registration = await navigator.serviceWorker.register(
+          `/sw.js?device=${device.type}&strategy=${strategy.cacheStrategy}&v=4`, 
+          {
+            scope: '/',
+            updateViaCache: 'none'
+          }
+        );
+
+        console.log('✅ Service Worker registered for', device.type, ':', registration);
+        setSwStatus('registered');
+
+        // Send device strategy to service worker
+        navigator.serviceWorker.controller?.postMessage({
+          type: 'SET_DEVICE_STRATEGY',
+          strategy: strategy,
+          device: device
+        });
+
+        // Setup SW event listeners
+        setupSWEventListeners(registration);
+
+        // Initialize essential cache only
+        await initializeEssentialCache(strategy);
+
+        // Setup storage monitoring
+        setupStorageMonitoring(strategy);
+
+      } catch (error) {
+        console.error('❌ Service Worker registration failed:', error);
+        setSwStatus('failed');
+      }
+    };
+
+    registerSW();
   }, [mounted]);
 
-  const registerServiceWorkerForDesktop = async () => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-      console.log('❌ Service Worker not supported');
-      setSwStatus('unsupported');
-      return;
-    }
-
+  // Clean up existing cache before new registration
+  const cleanupExistingCache = async () => {
     try {
-      console.log('🖥️ Desktop device detected - Initializing Service Worker...');
-
-      // Wait for page to be ready
-      await new Promise(resolve => {
-        if (document.readyState === 'complete') {
-          setTimeout(resolve, 500);
-        } else {
-          window.addEventListener('load', () => {
-            setTimeout(resolve, 500);
-          });
-        }
-      });
-
-      // Check initial storage before registering
-      const initialCheck = await checkStorageQuota();
-      if (initialCheck && initialCheck.usage > 50) {
-        console.warn('⚠️ Storage already exceeds 50MB, cleaning before SW registration');
-        await forceCleanupAllCaches();
-      }
-
-      // Register service worker with storage monitoring
-      const registration = await navigator.serviceWorker.register('/sw.js?v=4', {
-        scope: '/',
-        updateViaCache: 'none'
-      });
-
-      console.log('✅ Service Worker registered for desktop:', registration);
-      setSwStatus('registered');
-
-      // Setup all monitoring and controls
-      setupServiceWorkerControls(registration);
-      await initializeCriticalCacheOnly();
-      setupStorageMonitoring();
-      setupPeriodicCleanup();
-
+      const cacheNames = await caches.keys();
+      await Promise.all(
+        cacheNames.map(cacheName => {
+          console.log('Deleting old cache:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
     } catch (error) {
-      console.error('❌ Service Worker registration failed:', error);
-      setSwStatus('failed');
+      console.error('Failed to cleanup existing cache:', error);
     }
   };
 
-  // Check storage and enforce 50MB limit
-  const checkStorageQuota = async () => {
+  // Check storage quota with device-specific limits
+  const checkStorageQuota = async (strategy) => {
     try {
       if ('storage' in navigator && 'estimate' in navigator.storage) {
         const estimate = await navigator.storage.estimate();
@@ -119,300 +195,257 @@ export default function SmartServiceWorkerRegistration() {
         const quota = estimate.quota || 0;
         const usageInMB = Math.round(usage / 1024 / 1024);
         const quotaInMB = Math.round(quota / 1024 / 1024);
-        const percentage = quota > 0 ? Math.round((usage / quota) * 100) : 0;
         
         setStorageInfo({
           usage: usageInMB,
           quota: quotaInMB,
-          percentage: percentage
+          percentage: quota > 0 ? Math.round((usage / quota) * 100) : 0,
+          maxAllowed: Math.round(strategy.maxStorage / 1024 / 1024)
         });
 
-        console.log(`📊 Storage: ${usageInMB}MB / ${quotaInMB}MB (${percentage}%)`);
+        console.log(`📊 Storage Usage: ${usageInMB}MB / ${quotaInMB}MB (${Math.round((usage / quota) * 100)}%)`);
+        console.log(`📱 Device limit: ${Math.round(strategy.maxStorage / 1024 / 1024)}MB`);
 
-        // CRITICAL: Enforce 50MB hard limit
-        if (usageInMB >= 50) {
-          console.error('🚨 STORAGE LIMIT EXCEEDED: 50MB limit reached!');
-          await forceCleanupAllCaches();
-          return { usage: usageInMB, quota: quotaInMB, percentage, exceeded: true };
+        // If usage exceeds device-specific limit, clean up
+        if (usage > strategy.maxStorage) {
+          console.warn('⚠️ Exceeded device storage limit, initiating cleanup');
+          await requestCacheCleanup(strategy);
         }
 
-        // Warning at 40MB
-        if (usageInMB >= 40) {
-          console.warn('⚠️ STORAGE WARNING: Approaching 50MB limit');
-          await aggressiveCleanup();
+        // If usage is above 70% of our limit, clean up
+        if (usage > (strategy.maxStorage * 0.7)) {
+          await requestCacheCleanup(strategy);
         }
-
-        return { usage: usageInMB, quota: quotaInMB, percentage, exceeded: false };
       }
     } catch (error) {
       console.error('Failed to check storage quota:', error);
     }
-    return null;
   };
 
-  // Initialize only critical cache (homepage + offline)
-  const initializeCriticalCacheOnly = async () => {
-    try {
-      const criticalPages = [
-        { url: '/', priority: 'critical', cache: 'homepage-v1' },
-        { url: '/offline.html', priority: 'critical', cache: 'offline-page-v1' }
-      ];
-
-      if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'CACHE_CRITICAL_ONLY',
-          pages: criticalPages,
-          maxSize: 5 * 1024 * 1024 // 5MB limit for critical cache
-        });
-      }
-
-      console.log('✅ Critical cache initialized (Homepage + Offline page only)');
-    } catch (error) {
-      console.error('Failed to initialize critical cache:', error);
-    }
-  };
-
-  // Setup service worker event listeners and controls
-  const setupServiceWorkerControls = (registration) => {
-    // Listen for storage warnings from SW
-    navigator.serviceWorker.addEventListener('message', async (event) => {
-      console.log('SW Message:', event.data);
-      
-      switch (event.data.type) {
-        case 'STORAGE_CRITICAL':
-          console.error('🚨 CRITICAL: Storage limit reached from SW');
-          await forceCleanupAllCaches();
-          break;
-        case 'STORAGE_WARNING':
-          console.warn('⚠️ Storage warning from SW');
-          await aggressiveCleanup();
-          break;
-        case 'CACHE_ADDED':
-          // Check storage after each cache addition
-          setTimeout(checkStorageQuota, 1000);
-          break;
-        case 'CLEANUP_COMPLETE':
-          console.log('✅ Cache cleanup completed');
-          checkStorageQuota();
-          break;
-      }
-    });
-
-    // Update detection
+  // Setup service worker event listeners
+  const setupSWEventListeners = (registration) => {
+    // Listen for updates
     registration.addEventListener('updatefound', () => {
+      console.log('SW: Update found');
       const newWorker = registration.installing;
       if (newWorker) {
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('SW: New version available');
             setSwStatus('update-available');
+            
+            // Auto-reload for critical updates, but ask for non-critical
+            const shouldAutoReload = deviceInfo.type === 'desktop';
+            if (shouldAutoReload) {
+              setTimeout(() => window.location.reload(), 2000);
+            } else if (window.confirm('New version available! Reload to update?')) {
+              window.location.reload();
+            }
           }
         });
       }
     });
+
+    // Listen for messages from SW
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      console.log('SW Message:', event.data);
+      
+      switch (event.data.type) {
+        case 'CACHE_UPDATED':
+          console.log('Cache updated for:', event.data.url);
+          break;
+        case 'STORAGE_WARNING':
+          console.warn('Storage warning from SW:', event.data.message);
+          checkStorageQuota(getStorageStrategy(deviceInfo));
+          break;
+        case 'CACHE_CLEANED':
+          console.log('Cache cleaned:', event.data.message);
+          checkStorageQuota(getStorageStrategy(deviceInfo));
+          break;
+        case 'STORAGE_EXCEEDED':
+          console.error('Storage limit exceeded:', event.data.message);
+          requestCacheCleanup(getStorageStrategy(deviceInfo));
+          break;
+      }
+    });
+
+    // Handle controller change
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('SW: Controller changed');
+      // Only reload if not mobile to avoid disrupting mobile experience
+      if (!deviceInfo.isMobile) {
+        window.location.reload();
+      }
+    });
   };
 
-  // Aggressive cleanup when approaching limits
-  const aggressiveCleanup = async () => {
+  // Initialize only essential cache (very limited for non-desktop)
+  const initializeEssentialCache = async (strategy) => {
+    if (!strategy.enabled) return;
+
+    try {
+      const essentialPages = [
+        { url: '/', priority: 'critical' },
+        { url: '/offline.html', priority: 'critical' }
+      ];
+
+      // Add about page only for desktop
+      if (deviceInfo.type === 'desktop') {
+        essentialPages.push({ url: '/about', priority: 'medium' });
+      }
+
+      // Send message to SW to cache essential pages only
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'CACHE_ESSENTIAL_PAGES',
+          pages: essentialPages,
+          strategy: strategy
+        });
+      }
+
+      console.log(`✅ Essential pages cache initialized for ${deviceInfo.type}`);
+    } catch (error) {
+      console.error('Failed to initialize essential cache:', error);
+    }
+  };
+
+  // Request cache cleanup with device-specific limits
+  const requestCacheCleanup = async (strategy) => {
+    if (!strategy.enabled) return;
+
     try {
       if (navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
-          type: 'AGGRESSIVE_CLEANUP',
+          type: 'CLEANUP_CACHE',
           options: {
-            maxRecentPages: 3, // Reduce from 5 to 3
-            maxStaticAssets: 10, // Reduce static assets
-            maxImages: 5, // Reduce images
-            maxAge: 1 * 60 * 60 * 1000, // 1 hour only
-            forceCleanup: true
+            maxDynamicPages: strategy.maxPages,
+            maxAge: deviceInfo.type === 'mobile' ? 1 * 60 * 60 * 1000 : 3 * 60 * 60 * 1000, // 1h mobile, 3h others
+            maxTotalSize: strategy.maxStorage,
+            aggressive: true
           }
         });
       }
-      
-      console.log('🧹 Aggressive cleanup initiated');
     } catch (error) {
-      console.error('Failed to perform aggressive cleanup:', error);
+      console.error('Failed to request cache cleanup:', error);
     }
   };
 
-  // Force cleanup all caches (nuclear option)
-  const forceCleanupAllCaches = async () => {
-    try {
-      const cacheNames = await caches.keys();
-      const criticalCaches = ['homepage-v1', 'offline-page-v1'];
-      
-      // Delete all non-critical caches
-      for (const cacheName of cacheNames) {
-        if (!criticalCaches.includes(cacheName)) {
-          await caches.delete(cacheName);
-          console.log(`🗑️ Deleted cache: ${cacheName}`);
-        }
-      }
+  // Setup storage monitoring with device-aware intervals
+  const setupStorageMonitoring = (strategy) => {
+    if (!strategy.enabled) return;
 
-      // Clean critical caches but keep essential entries
-      for (const criticalCache of criticalCaches) {
-        const cache = await caches.open(criticalCache);
-        const requests = await cache.keys();
-        
-        // Keep only the essential entries
-        if (criticalCache === 'homepage-v1') {
-          const homepagePattern = /^https:\/\/.*\/(?:\?.*)?$/;
-          for (const request of requests) {
-            if (!homepagePattern.test(request.url)) {
-              await cache.delete(request);
-            }
-          }
-        } else if (criticalCache === 'offline-page-v1') {
-          const offlinePattern = /offline\.html$/;
-          for (const request of requests) {
-            if (!offlinePattern.test(request.url)) {
-              await cache.delete(request);
-            }
-          }
-        }
-      }
-
-      // Clear IndexedDB if exists
-      if ('indexedDB' in window) {
-        try {
-          const databases = await indexedDB.databases();
-          for (const db of databases) {
-            if (db.name && (db.name.includes('cache') || db.name.includes('sw'))) {
-              indexedDB.deleteDatabase(db.name);
-              console.log(`🗑️ Deleted IndexedDB: ${db.name}`);
-            }
-          }
-        } catch (e) {
-          console.log('IndexedDB cleanup completed');
-        }
-      }
-
-      console.log('🧹 FORCE CLEANUP COMPLETED - All non-critical caches cleared');
-      
-      // Recheck storage
-      setTimeout(checkStorageQuota, 2000);
-      
-    } catch (error) {
-      console.error('Failed to force cleanup caches:', error);
-    }
-  };
-
-  // Setup periodic storage monitoring and cleanup
-  const setupStorageMonitoring = () => {
     const monitorStorage = async () => {
-      const info = await checkStorageQuota();
+      await checkStorageQuota(strategy);
       
-      if (info) {
-        // Enforce strict limits
-        if (info.exceeded || info.usage >= 50) {
-          console.error('🚨 STORAGE LIMIT BREACH - Initiating emergency cleanup');
-          await forceCleanupAllCaches();
-        } else if (info.usage >= 40) {
-          console.warn('⚠️ STORAGE WARNING - Initiating aggressive cleanup');
-          await aggressiveCleanup();
-        }
+      // If storage is getting full, clean up
+      if (storageInfo && storageInfo.usage > (strategy.maxStorage * 0.6) / 1024 / 1024) {
+        await requestCacheCleanup(strategy);
       }
     };
 
-    // Check every 2 minutes
-    const interval = setInterval(monitorStorage, 2 * 60 * 1000);
-    
-    // Also check on visibility change (when user returns to tab)
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        setTimeout(monitorStorage, 1000);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    // More frequent monitoring for tablets/mobile, less for desktop
+    const interval = deviceInfo.type === 'desktop' ? 10 * 60 * 1000 : 2 * 60 * 1000;
+    const monitorInterval = setInterval(monitorStorage, interval);
+
+    return () => clearInterval(monitorInterval);
   };
 
-  // Setup periodic cleanup (every 30 minutes)
-  const setupPeriodicCleanup = () => {
-    const periodicCleanup = async () => {
-      console.log('🔄 Periodic cleanup initiated');
-      await aggressiveCleanup();
-    };
-
-    const interval = setInterval(periodicCleanup, 30 * 60 * 1000); // 30 minutes
-    
-    return () => clearInterval(interval);
-  };
-
-  // Smart page caching with strict limits
+  // Smart page caching on navigation (very limited)
   useEffect(() => {
-    if (!mounted || deviceType !== 'desktop') return;
+    if (!mounted) return;
 
-    let recentPagesCount = 0;
-    const MAX_RECENT_PAGES = 5;
+    const strategy = getStorageStrategy(deviceInfo);
+    if (!strategy.enabled) return;
 
-    const handleSmartCaching = async (url) => {
+    let cachedPagesCount = 0;
+
+    const handleNavigation = async (url) => {
       try {
-        // Only cache article pages
+        // Only cache if we haven't exceeded device-specific limit
+        if (cachedPagesCount >= strategy.maxPages) {
+          console.log(`Max cached pages (${strategy.maxPages}) reached for ${deviceInfo.type}, skipping cache for:`, url);
+          return;
+        }
+
+        // Only cache article pages for desktop, nothing for mobile
         const isArticlePage = /\/(ai-tools|ai-seo|ai-code|ai-learn-earn)\/[^/]+$/.test(url);
         
-        if (isArticlePage && recentPagesCount < MAX_RECENT_PAGES) {
-          // Check storage before caching
-          const storageCheck = await checkStorageQuota();
-          if (storageCheck && storageCheck.usage >= 45) {
-            console.warn('⚠️ Storage near limit - skipping page cache');
-            return;
-          }
-
-          if (navigator.serviceWorker.controller) {
-            navigator.serviceWorker.controller.postMessage({
-              type: 'CACHE_RECENT_PAGE',
-              url: url,
-              maxCount: MAX_RECENT_PAGES,
-              storageLimit: 50 * 1024 * 1024 // 50MB
-            });
-            recentPagesCount++;
-          }
+        if (isArticlePage && deviceInfo.type === 'desktop' && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'CACHE_PAGE_SMART',
+            url: url,
+            priority: 'low',
+            maxCount: strategy.maxPages,
+            device: deviceInfo.type
+          });
+          cachedPagesCount++;
         }
       } catch (error) {
-        console.log('Failed to cache page smartly:', error);
+        console.log('Failed to cache page on navigation:', error);
       }
     };
 
-    // Listen for navigation
+    // Only setup navigation caching for desktop
+    if (deviceInfo.type !== 'desktop') return;
+
+    // Listen for client-side navigation (desktop only)
     const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
     history.pushState = function(...args) {
       const result = originalPushState.apply(this, args);
-      setTimeout(() => handleSmartCaching(window.location.pathname), 2000);
+      const newUrl = window.location.pathname;
+      setTimeout(() => handleNavigation(newUrl), 1000);
       return result;
     };
 
+    history.replaceState = function(...args) {
+      const result = originalReplaceState.apply(this, args);
+      const newUrl = window.location.pathname;
+      setTimeout(() => handleNavigation(newUrl), 1000);
+      return result;
+    };
+
+    window.addEventListener('popstate', () => {
+      const newUrl = window.location.pathname;
+      setTimeout(() => handleNavigation(newUrl), 1000);
+    });
+
     return () => {
       history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
     };
-  }, [mounted, deviceType]);
+  }, [mounted, deviceInfo]);
 
-  // Expose global cache management
+  // Expose cache management functions globally
   useEffect(() => {
-    if (mounted && deviceType === 'desktop') {
+    if (mounted) {
       window.swCacheManager = {
-        cleanup: aggressiveCleanup,
-        forceCleanup: forceCleanupAllCaches,
-        checkStorage: checkStorageQuota,
+        cleanup: () => requestCacheCleanup(getStorageStrategy(deviceInfo)),
+        checkQuota: () => checkStorageQuota(getStorageStrategy(deviceInfo)),
         getStorageInfo: () => storageInfo,
-        getDeviceType: () => deviceType
+        getDeviceInfo: () => deviceInfo,
+        forceCleanup: async () => {
+          // Emergency cleanup - delete all caches
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map(name => caches.delete(name)));
+          console.log('🧹 Emergency cleanup completed');
+        }
       };
     }
-  }, [mounted, deviceType, storageInfo]);
+  }, [mounted, storageInfo, deviceInfo]);
 
-  // Don't render anything during SSR or on mobile
+  // Don't render anything during SSR
   if (!mounted) return null;
-  
-  // Show mobile status in development
-  if (process.env.NODE_ENV === 'development' && deviceType === 'mobile') {
-    return (
-      <div className="fixed top-20 right-4 bg-orange-500 text-white text-xs p-2 rounded z-50">
-        📱 SW Disabled (Mobile)
-      </div>
-    );
+
+  // Show debug info only in development
+  if (process.env.NODE_ENV === 'development' && storageInfo) {
+    console.log('📊 SW Debug Info:', {
+      device: deviceInfo,
+      storage: storageInfo,
+      status: swStatus,
+      strategy: getStorageStrategy(deviceInfo)
+    });
   }
 
   return null;
