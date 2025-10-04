@@ -1,0 +1,1409 @@
+/* Enhanced entrance animations for better visual impact */
+
+/* 5. ENHANCED HOVER EFFECTS (Unchanged as they contribute to professionalism) */
+.ai-benefit-card {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-origin: center;
+  perspective: 1000px;
+}
+
+
+/* 6. AUDIENCE BADGE HOVER EFFECTS (Unchanged as they contribute to professionalism) */
+.audience-badge {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+}
+
+
+
+/* 7. STAGGERED ANIMATION CLASSES (Updated with new keyframes and FOUC fix) */
+/* Initially hide elements that will be animated to prevent FOUC */
+.audience-badge,
+.ai-benefit-card,
+.value-indicator {
+    opacity: 0; /* Ensures they are hidden before animation */
+    transform: translateY(20px); /* Sets a common starting point for fade-in/slide-up */
+}
+
+
+.hero-animations-active .badge-1 {
+  animation: fadeInSlightlyUp 0.7s ease-out 0.2s both;
+}
+
+.hero-animations-active .badge-2 {
+  animation: fadeInSlightlyUp 0.7s ease-out 0.4s both;
+}
+
+.hero-animations-active .badge-3 {
+  animation: fadeInSlightlyUp 0.7s ease-out 0.6s both;
+}
+
+.hero-animations-active .badge-4 {
+  animation: fadeInSlightlyUp 0.7s ease-out 0.8s both;
+}
+
+.hero-animations-active .badge-5 {
+  animation: fadeInSlightlyUp 0.7s ease-out 1.0s both;
+}
+
+/* 8. BENEFIT CARDS STAGGERED (Updated with new keyframes and FOUC fix) */
+.hero-animations-active .card-1 {
+  animation: cardFadeInUp 0.9s ease-out 0.6s both;
+}
+
+.hero-animations-active .card-2 {
+  animation: cardFadeInUp 0.9s ease-out 0.8s both;
+}
+
+.hero-animations-active .card-3 {
+  animation: cardFadeInUp 0.9s ease-out 1.0s both;
+}
+
+/* 9. VALUE INDICATORS WAVE (Updated with FOUC fix) */
+.hero-animations-active .value-1 {
+  animation: waveIn 0.6s ease-out 1.2s both;
+}
+
+.hero-animations-active .value-2 {
+  animation: waveIn 0.6s ease-out 1.4s both;
+}
+
+.hero-animations-active .value-3 {
+  animation: waveIn 0.6s ease-out 1.6s both;
+}
+
+.hero-animations-active .value-4 {
+  animation: waveIn 0.6s ease-out 1.8s both;
+}
+
+/* 10. ICON ENTRANCE ANIMATIONS (iconPop removed) */
+.hero-animations-active .ai-icon-pulse {
+  /* Removed iconPop, will inherit default staggered-item animation or can be made static */
+  /* If you want icons to still fade in, ensure they are `.animated-staggered-item` */
+  opacity: 1; /* Ensure visible if no specific animation applied */
+  transform: translateY(0);
+}
+
+
+
+/* Remaining original CSS rules below (cleaned of conflicting animations) */
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-shimmer-custom { animation: shimmer 2s ease-in-out infinite; will-change: transform; animation-delay: 2s}
+
+
+.animated-staggered-item {
+  /* The specific animations for badges, cards, and values handle their initial states. */
+  /* This rule is now primarily for other elements that don't have a dedicated staggered animation */
+  /* Ensure it doesn't cause a flicker for elements with custom entry animations */
+}
+
+.hero-section {
+  min-height: 100vh;
+  contain: layout style paint;
+  will-change: auto;
+}
+.hover-optimized {
+  transition: transform 0.2s ease-out;
+}
+.hover-optimized:hover {
+  transform: scale(1.05);
+}
+.float-animation {
+  animation: float 2s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Ensure critical content loads immediately */
+.hero-section .ai-heading,
+.hero-section .primary-content,
+.hero-section .press-button {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Add reduced motion styles */
+.reduced-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+
+  /* SVG Performance Optimizations */
+svg {
+  contain: strict;
+  will-change: auto;
+  shape-rendering: geometricPrecision;
+}
+
+/* GPU acceleration for smooth animations */
+.hero-section circle,
+.hero-section path {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+  /* Enhanced brand color visibility */
+.brand-highlight {
+  color: #2563eb;
+  text-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+}
+
+
+
+/* Enhanced focus indicators */
+.hero-section a:focus-visible,
+.hero-section button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+/* Touch optimization */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.badge {
+  /* @apply inline-flex items-center px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800/40 text-gray-800 dark:text-gray-200 text-sm font-medium whitespace-nowrap shadow-sm transition-all; */
+  /* Replaced @apply with direct CSS due to not being able to interpret Tailwind directives directly */
+  display: inline-flex;
+  align-items: center;
+  padding-left: 1rem; /* px-4 */
+  padding-right: 1rem; /* px-4 */
+  padding-top: 0.5rem; /* py-2 */
+  padding-bottom: 0.5rem; /* py-2 */
+  border-radius: 9999px; /* rounded-full */
+  background-color: #f3f4f6; /* bg-gray-100 */
+  color: #1f2937; /* text-gray-800 */
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  white-space: nowrap; /* whitespace-nowrap */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.dark .badge {
+  background-color: rgba(31, 41, 55, 0.4); /* dark:bg-gray-800/40 */
+  color: #e5e7eb; /* dark:text-gray-200 */
+}
+
+
+/* 1. Base Styles for Hover Effects */
+/* This ensures smooth transitions for all elements with the 'transition-all' utility */
+:root {
+  --animation-play-state: running; /* Custom property for animation control */
+}
+
+
+/* Audience Badges */
+.audience-badge {
+  transition: all 0.3s ease-out;
+  position: relative;
+  overflow: hidden; /* Ensures the pseudo-element glow stays within bounds */
+  z-index: 1; /* Ensures content is above pseudo-element */
+  cursor: pointer; /* Added pointer cursor */
+}
+
+.audience-badge::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  opacity: 0;
+  z-index: -1;
+  transform: scale(0);
+}
+
+
+
+.audience-badge:hover::before {
+  transform: scale(1);
+  opacity: 1;
+}
+/* Dark mode adjustment for Audience Badge glow */
+.dark .audience-badge::before {
+  background: radial-gradient(circle at center, rgba(147, 197, 253, 0.15) 0%, transparent 70%); /* Subtle light blue glow for dark mode */
+}
+
+
+/* AI Benefit Cards */
+.ai-benefit-card {
+  /* Keep this general transition for all cards */
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  transform-style: preserve-3d;
+  cursor: pointer;
+
+}
+
+.ai-benefit-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 0px transparent;
+  transition: box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  pointer-events: none;
+  z-index: 2;
+}
+
+
+
+/* Pulsing effect for icons inside benefit cards */
+.ai-icon-pulse {
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-icon-pulse::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle at center, currentColor 0%, transparent 70%); /* Uses icon color */
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease-out, height 0.4s ease-out, opacity 0.4s ease-out; /* Ensured consistency */
+  z-index: -1;
+  will-change: width, height, opacity;
+}
+
+.ai-benefit-card:hover .ai-icon-pulse::before {
+  width: 150%;
+  height: 150%;
+  opacity: 0.3; /* Subtle glow */
+}
+
+
+
+/* Value Indicators (small badges below CTA) - Enhanced Hover Effect */
+.value-indicator {
+  transition: all 0.2s ease-in-out; /* Keeps existing transition for lift and shadow */
+  position: relative;
+  overflow: hidden; /* Ensures the radial glow stays within badge bounds */
+  z-index: 1;
+  cursor: pointer;
+}
+
+
+/* Trust Text (footer text) (UNTOUCHED FROM YOUR ORIGINAL) */
+.trust-text {
+  transition: color 0.2s ease-in-out, text-shadow 0.2s ease-in-out;
+  cursor: pointer; /* Added pointer cursor */
+}
+
+.trust-text:hover {
+  color: #3b82f6; /* Tailwind blue-500 */
+  text-shadow: 0 0 5px rgba(59, 130, 246, 0.3); /* Subtle blue glow */
+}
+
+/* Animation Cleanup utility classes for non-reduced motion (UNTOUCHED FROM YOUR ORIGINAL) */
+.hero-animations-active .animated-staggered-item {
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); /* Ease-out-back */
+}
+
+/* Keyframe for fadeInUp animation (UNTOUCHED FROM YOUR ORIGINAL) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* For continuous animations (like SVGs) controlled by JS observer (UNTOUCHED FROM YOUR ORIGINAL) */
+.animate-svg {
+  animation-play-state: var(--animation-play-state, running) !important;
+}
+
+/* Prevent layout shifts during transform on hover (UNTOUCHED FROM YOUR ORIGINAL) */
+.no-shift {
+  will-change: transform, box-shadow, background-color, border-color, color, text-shadow; /* Optimize for these properties */
+  backface-visibility: hidden;
+  perspective: 1000px;
+  transform: translateZ(0);
+}
+
+
+.press-button {
+  position: relative;
+  overflow: hidden;
+  background-color: #2563eb;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 4px 16px rgba(59, 130, 246, 0.2);
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+
+  cursor: pointer;
+  z-index: 1;
+  border-radius: 0.5rem;
+  color: white;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+
+/* Active state for even more pressed feeling */
+.press-button:active {
+  background: linear-gradient(135deg,
+    rgb(30, 64, 175) 0%,  /* blue-800 */
+    rgb(30, 58, 138) 100% /* blue-900 */
+  );
+  
+  box-shadow:
+    inset 0 3px 12px rgba(0, 0, 0, 0.25),
+    inset 0 2px 6px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(59, 130, 246, 0.5),
+    0 1px 4px rgba(59, 130, 246, 0.4),
+    0 2px 8px rgba(59, 130, 246, 0.5);
+  
+  transform: translateY(1px); /* Subtle press down */
+}
+
+/* Text and content layer */
+.press-button > * {
+  position: relative;
+  z-index: 3;
+}
+
+/* Enhanced overlay for more realistic press */
+.press-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg,
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.05) 50%,
+    rgba(0, 0, 0, 0.15) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 2;
+  border-radius: 0.5rem;
+}
+
+.press-button:hover::before {
+  opacity: 1;
+}
+
+/* SECONDARY BUTTON - Enhanced with Better Contrast */
+.press-button-secondary {
+  position: relative;
+  overflow: hidden;
+  /* Updated to background-color for smooth transition */
+  background-color: rgba(249, 250, 251, 0.8); /* Very light gray base */
+  border: 2px solid rgba(156, 163, 175, 0.3);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.1);
+  /* Updated transition to include background-color */
+  transition: background-color 0.25s cubic-bezier(0.4, 0.0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0.0, 0.2, 1),
+              transform 0.25s ease;
+  cursor: pointer;
+  z-index: 1;
+  border-radius: 0.5rem;
+}
+
+
+.press-button-secondary:active {
+  background: rgba(209, 213, 219, 0.95);
+  transform: translateY(1px);
+  
+  box-shadow:
+    inset 0 3px 12px rgba(0, 0, 0, 0.15),
+    inset 0 2px 6px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(107, 114, 128, 0.4),
+    0 1px 4px rgba(107, 114, 128, 0.3);
+}
+
+/* DARK MODE ENHANCEMENTS */
+.dark .press-button {
+  background-color:#2563eb;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
+
+.dark .press-button-secondary {
+  /* Updated to background-color */
+  background-color: rgba(31, 41, 55, 0.8);
+  border-color: rgba(75, 85, 99, 0.4);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.dark .press-button-secondary:hover {
+  /* Updated to background-color */
+  background-color: rgba(55, 65, 81, 0.9);
+  border-color: rgba(107, 114, 128, 0.5);
+  
+  /* NEW GLOW STRATEGY FOR DARK MODE - Secondary Button */
+  box-shadow:
+    /* Removed inset shadows as per your finding */
+    
+    /* Border on hover for contrast */
+    0 0 0 1px rgba(156, 163, 175, 0.4),
+
+    /* Shifted outer glows to create a "behind" effect */
+    0 8px 32px rgba(156, 163, 175, 0.3),
+    0 16px 64px rgba(156, 163, 175, 0.2),
+    0 0 80px rgba(156, 163, 175, 0.15);
+}
+
+/* ENHANCED SHIMMER EFFECT - Stronger and More Visible */
+.press-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 120%;
+  height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 10%,
+    rgba(255, 255, 255, 0.3) 25%,
+    rgba(255, 255, 255, 0.6) 45%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.6) 55%,
+    rgba(255, 255, 255, 0.3) 75%,
+    rgba(255, 255, 255, 0.1) 90%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  animation: buttonShimmer 3.5s ease-in-out infinite;
+  z-index: 2; /* Keep it above button background, below ::before overlay if used for dimming */
+  pointer-events: none;
+  border-radius: 0.5rem;
+}
+
+@keyframes buttonShimmer {
+  0% {
+    left: -120%;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    left: 120%;
+    opacity: 1;
+  }
+  100% {
+    left: 120%;
+    opacity: 0;
+  }
+}
+
+/* Hide shimmer on hover but keep it subtle */
+.press-button:hover::after {
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+/* Ensure shimmer doesn't interfere with press effect */
+.press-button:active::after {
+  opacity: 0;
+}
+
+
+/* Focus states for accessibility */
+.press-button:focus-visible,
+.press-button-secondary:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
+}
+
+
+
+
+/* Original badge for larger devices (stays with "S") */
+.new-launch-badge {
+  opacity: 0;
+  transform: scale(0.8);
+  transform-origin: center;
+  position: absolute;
+  top: -0.35em;
+  left: 100%;
+  margin-left: 0.1em;
+  
+  min-width: 28px;
+  min-height: 18px;
+  font-size: 0.25em;
+  padding: 0.1em 0.4em;
+  line-height: 1.2;
+  white-space: nowrap;
+  
+  background: linear-gradient(to right, #22c55e, #16a34a);
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  border-radius: 9999px;
+  box-shadow: 
+    0 2px 8px rgba(34, 197, 94, 0.3),
+    0 0 0 1px rgba(34, 197, 94, 0.1);
+  
+  transition: opacity 0.4s ease-out 0.3s, transform 0.4s ease-out 0.3s;
+  will-change: opacity, transform;
+}
+/* Original .new-launch-badge-mobile (now primarily for layout and opacity/initial scale) */
+.new-launch-badge-mobile {
+  display: none; /* Hidden by default */
+  opacity: 0;
+  /* REMOVE transform: scale(0.8); from here */
+  
+  /* Mobile-optimized styling - keep all visual styles here */
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem; /* 14px */
+  padding: 0.375rem 0.875rem; /* 6px 14px */
+  border-radius: 9999px;
+  box-shadow: 
+    0 4px 12px rgba(34, 197, 94, 0.25),
+    0 2px 4px rgba(34, 197, 94, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  
+  /* Positioning */
+  margin-top: 0.75rem;
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
+  
+  transition: opacity 0.4s ease-out 0.4s; /* REMOVE transform from transition */
+  will-change: opacity; /* REMOVE transform from will-change */
+}
+
+/* NEW: Inner element for the animation */
+.new-launch-badge-inner {
+  display: flex; /* Inherit from parent, or set explicitly */
+  align-items: center;
+  justify-content: center;
+
+  transition: transform 0.4s ease-out 0.4s; /* Transition for initial scale */
+  will-change: transform;
+  
+
+}
+
+/* Show mobile badge only on small devices */
+@media (max-width: 625px) {
+  .new-launch-badge {
+    display: none !important; /* Hide original badge */
+  }
+  
+  .new-launch-badge-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Breakpoint safety: Ensure no overlap between 570px-465px */
+@media (min-width: 475px) and (max-width: 635px) {
+  .new-launch-badge {
+    display: inline-flex !important; /* Keep original badge */
+  }
+  
+  .new-launch-badge-mobile {
+    display: none !important; /* Hide mobile badge */
+  }
+}
+
+/* Animation states */
+.hero-animations-active .new-launch-badge {
+  opacity: 1;
+  transform: scale(1);
+  animation: newBadgePulse 2s ease-in-out infinite 0.6s;
+}
+
+.hero-animations-active .new-launch-badge-mobile {
+  opacity: 1;
+  transform: scale(1);
+  animation: newBadgePulseMobile 2.5s ease-in-out infinite 0.8s;
+}
+
+/* Mobile badge pulse animation */
+@keyframes newBadgePulseMobile {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1); /* Badge itself scales */
+    box-shadow:
+      0 4px 12px rgba(34, 197, 94, 0.25),
+      0 2px 4px rgba(34, 197, 94, 0.1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.02); /* Badge itself scales more */
+    box-shadow:
+      0 6px 16px rgba(34, 197, 94, 0.35),
+      0 3px 6px rgba(34, 197, 94, 0.15);
+  }
+}
+/* ADD THIS NEW RULE for the content inside the animated mobile badge */
+.new-launch-badge-mobile > svg,
+.new-launch-badge-mobile > span { /* Target the SVG icon and the text span */
+  transform: scale(1) !important; /* Force scale 1 for these children */
+  transition: transform 0s !important; /* Ensure no transition on their transform property */
+  will-change: auto; /* Revert to auto if previously set */
+}
+
+/* Original badge animations */
+@keyframes newBadgePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.03);
+  }
+}
+
+/* Responsive adjustments for original badge */
+@media (min-width: 1024px) {
+  .new-launch-badge {
+    top: -0.25em;
+    margin-left: 0.08em;
+    min-width: 36px;
+    min-height: 22px;
+    font-size: 0.22em;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .new-launch-badge {
+    top: -0.28em;
+    margin-left: 0.09em;
+    min-width: 32px;
+    min-height: 20px;
+    font-size: 0.24em;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 767px) {
+  .new-launch-badge {
+    top: -0.32em;
+    margin-left: 0.1em;
+    min-width: 28px;
+    min-height: 18px;
+    font-size: 0.26em;
+    padding: 0.1em 0.35em;
+  }
+}
+
+/* Hover effects */
+.ai-heading:hover .new-launch-badge {
+  transform: scale(1.15);
+  box-shadow: 
+    0 4px 12px rgba(34, 197, 94, 0.4),
+    0 0 0 1px rgba(34, 197, 94, 0.2);
+}
+
+.new-launch-badge-mobile:hover {
+  transform: scale(1.08);
+  box-shadow: 
+    0 6px 16px rgba(34, 197, 94, 0.4),
+    0 3px 6px rgba(34, 197, 94, 0.2);
+}
+
+/* Dark mode enhancements */
+.dark .new-launch-badge,
+.dark .new-launch-badge-mobile {
+  box-shadow: 
+    0 2px 8px rgba(34, 197, 94, 0.4),
+    0 0 0 1px rgba(34, 197, 94, 0.2);
+}
+
+
+
+/* svgss */
+
+/* Professionalsubtle pulse - very gentle */
+@keyframes svgNodePulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+/* Remove the aggressive floating animation (now a subtle float) */
+@keyframes svgFloatSlow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translateY(0px);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-1px);
+  }
+}
+
+/* Professional glow pulse - very subtle */
+@keyframes svgGlowPulse {
+  0%, 100% {
+    opacity: 0.4;
+    filter: blur(0px);
+  }
+  50% {
+    opacity: 0.6;
+    filter: blur(0.5px);
+  }
+}
+
+/* Professional infinite line movement - single direction */
+@keyframes svgDataFlow {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.3;
+  }
+}
+
+/* Slower, more elegant line animation */
+@keyframes svgDataFlowSlow {
+  0% {
+    stroke-dashoffset: 150;
+    opacity: 0.2;
+  }
+  30% {
+    opacity: 0.5;
+  }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    stroke-dashoffset: -150;
+    opacity: 0.2;
+  }
+}
+
+/* 1. Enhanced left side solid circle animation */
+@keyframes subtleCirclePulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+  25% {
+    opacity: 0.6;
+    transform: scale(1.02);
+    filter: blur(0.5px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+    filter: blur(1px);
+  }
+  75% {
+    opacity: 0.6;
+    transform: scale(1.02);
+    filter: blur(0.5px);
+  }
+}
+
+/* 2. Gentle striking animation for ML nodes */
+@keyframes gentleStrike {
+  0%, 100% {
+    transform: translateX(0) translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(8px) translateY(4px);
+    opacity: 0.9;
+  }
+}
+
+@keyframes gentleStrikeReverse {
+  0%, 100% {
+    transform: translateX(0) translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(-8px) translateY(-4px);
+    opacity: 0.9;
+  }
+}
+
+/* 3. Smooth rotation around circle edge */
+@keyframes smoothOrbitRotation {
+  0% {
+    transform-origin: 220px 63px;
+    transform: rotate(0deg);
+    opacity: 0.8;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.9;
+  }
+  100% {
+    transform-origin: 220px 63px;
+    transform: rotate(360deg);
+    opacity: 0.8;
+  }
+}
+
+/* New CSS to control SVG background visibility and animation */
+.svg-background-element {
+  opacity: 0; /* Hidden by default */
+  transition: opacity 0.5s ease-out 0.8s; /* Transition in with a delay */
+}
+/* CRITICAL FIX: Hide ALL SVG backgrounds initially */
+.background-svg-container {
+  opacity: 0 !important; /* !important to override Tailwind opacity-30/opacity-100 */
+  transition: opacity 0.5s ease-out;
+}
+/* Show SVG backgrounds only when hero animations are active */
+.hero-animations-active .background-svg-container {
+  opacity: 1 !important; /* Mobile opacity */
+  transition-delay: 0.8s; /* Delay appearance */
+}
+/* When hero animations are active, make SVG backgrounds visible */
+.hero-animations-active .svg-background-element {
+  opacity: 1;
+}
+
+/* Ensure individual SVG elements within these backgrounds also transition their animations */
+.svg-background-element .svg-animated-element {
+  /* Set initial states if not already handled by keyframes */
+  opacity: 0;
+  transform: scale(0.8);
+  /* Apply transitions that will be triggered when hero-animations-active is added to parent */
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.hero-animations-active .svg-background-element .svg-animated-element {
+  opacity: 1;
+  transform: scale(1);
+  /* The animation property itself will then take over for continuous animation */
+  /* This ensures the initial appearance is smooth */
+  animation-play-state: running; /* Ensure animations start playing */
+}
+
+/* Override for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .svg-background-element {
+    opacity: 1 !important; /* Always visible */
+    transition: none !important; /* No transition */
+  }
+  .svg-background-element .svg-animated-element {
+    animation: none !important; /* No animation */
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+/* 4. Neural network connections flow animation */
+@keyframes neuralFlow {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0.3;
+  }
+  30% {
+    opacity: 0.7;
+  }
+  70% {
+    opacity: 0.7;
+  }
+  100% {
+    stroke-dashoffset: -100;
+    opacity: 0.3;
+  }
+}
+
+@keyframes neuralFlowReverse {
+  0% {
+    stroke-dashoffset: -100;
+    opacity: 0.3;
+  }
+  30% {
+    opacity: 0.7;
+  }
+  70% {
+    opacity: 0.7;
+  }
+  100% {
+    stroke-dashoffset: 100;
+    opacity: 0.3;
+  }
+}
+
+/* Reduce animation intensity on secondary elements */
+.svg-animated-element:not(.primary-focus) {
+  animation-duration: 18s; /* Slower */
+  opacity: 0.3; /* More subtle */
+}
+
+/* Highlight primary data flow lines */
+.primary-data-flow {
+  stroke-width: 3px;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.3));
+}
+
+/* Hide top-right SVG on screens smaller than large (lg) breakpoint */
+.top-right-svg {
+  display: block; /* Ensure it's visible by default before media query */
+  opacity: 0; /* Keep initial opacity for smooth transition on larger screens */
+  transition: opacity 0.5s ease-out 0.8s; /* Maintain existing transition */
+}
+
+@media (max-width: 1023px) { /* Tailor to your 'lg' breakpoint, usually 1024px */
+  .top-right-svg {
+    display: none !important; /* Hide completely */
+    opacity: 0 !important; /* Ensure opacity is zero if display:none fails or is overridden */
+  }
+}
+
+
+@media (max-width: 1023px) {
+  .hero-animations-active .top-right-svg {
+    opacity: 0 !important;
+    display: none !important;
+  }
+}
+.herobg{
+  box-shadow: rgba(0, 0, 0, 0.15) 0px 3px 3px 0px;
+}
+
+/* 1. AUDIENCE BADGES - Individual staggered animations (Revised for Decency & FOUC fix) */
+@keyframes fadeInSlightlyUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px); /* Subtle lift from just below */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 2. BENEFIT CARDS - Enhanced with bounce and scale effects (Revised for Decency & FOUC fix) */
+@keyframes cardFadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px); /* Gentle slide up */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 3. ENHANCED ICON ANIMATIONS (iconPop removed) */
+@keyframes iconFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* 4. VALUE INDICATORS - Updated waveIn animation for a more professional feel */
+@keyframes waveIn {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.ai-benefit-card:hover {
+  transform: translateY(-12px) scale(1.03);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(37, 99, 235, 0.15);
+}
+
+.ai-benefit-card:hover .ai-icon-pulse {
+  animation: iconFloat 2s ease-in-out infinite;
+}
+.audience-badge:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+/* 11. REDUCED MOTION OVERRIDES (from AI expert) */
+@media (prefers-reduced-motion: reduce) {
+  .ai-benefit-card:hover,
+  .audience-badge:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .hero-animations-active .ai-icon-pulse {
+    animation: none;
+  }
+}
+/* Define specific badge colors for the ring on hover if needed */
+.audience-badge.bg-blue-100:hover { --badge-hover-ring-color: rgba(59, 130, 246, 0.5); } /* Blue-600 with opacity */
+.audience-badge.bg-purple-100:hover { --badge-hover-ring-color: rgba(168, 85, 247, 0.5); } /* Purple-600 with opacity */
+.audience-badge.bg-orange-100:hover { --badge-hover-ring-color: rgba(249, 115, 22, 0.5); } /* Orange-600 with opacity */
+.audience-badge.bg-pink-100:hover { --badge-hover-ring-color: rgba(236, 72, 153, 0.5); } /* Pink-600 with opacity */
+.audience-badge.bg-green-100:hover { --badge-hover-ring-color: rgba(34, 197, 94, 0.5); } /* Green-600 with opacity */
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .new-launch-badge,
+  .new-launch-badge-mobile {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    transition-delay: 0s !important;
+  }
+  
+  .ai-heading:hover .new-launch-badge,
+  .new-launch-badge-mobile:hover {
+    transform: none;
+  }
+}
+.ai-benefit-card:hover {
+  transform: translateY(-5px) scale(1.02); /* More pronounced lift and scale */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+  /* This variable will be set by specific card classes on hover */
+  border-color: var(--card-hover-border-color, currentColor);
+}
+
+.ai-benefit-card:hover::after {
+  box-shadow: inset 0 0 15px 3px var(--card-inset-glow-color, rgba(0,0,0,0.1)); /* Inner glow */
+}
+
+/* Define colors for specific card types */
+
+/* FIRST CARD SPECIFIC FIX: Ensure its initial border and hover border are controlled */
+/* The initial border is now solely from HTML's `border-blue-200` */
+.ai-benefit-card:first-child:hover {
+  /* Only change border color to blue-600 on hover, like the others */
+  border-color: #2563eb; /* Blue-600 */
+  --card-inset-glow-color: rgba(59, 130, 246, 0.2); /* Blue-500 with opacity */
+  --card-hover-border-color: #2563eb; /* Explicitly set hover border color */
+}
+
+
+.ai-benefit-card.card-purple:hover {
+  border-color: #9333ea; /* Purple-600 */
+  --card-inset-glow-color: rgba(168, 85, 247, 0.2); /* Purple-500 with opacity */
+  --card-hover-border-color: #9333ea; /* Explicitly set hover border color */
+}
+.ai-benefit-card.card-green:hover {
+  border-color: #16a34a; /* Green-600 */
+  --card-inset-glow-color: rgba(34, 197, 94, 0.2); /* Green-500 with opacity */
+  --card-hover-border-color: #16a34a; /* Explicitly set hover border color */
+}
+p span.font-semibold:hover,
+p span.font-bold:hover {
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2); /* Subtle shadow for text */
+  cursor: pointer; /* Added pointer cursor */
+}
+/* Audience Badges - Hover effect (refined, no scale/translate) */
+.audience-badge:hover {
+  transform: translateY(-2px); /* Slight lift */
+
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15), /* Slightly more pronounced shadow for depth */
+              0 0 0 2px var(--badge-hover-ring-color, transparent); /* Keep the subtle ring */
+}
+/* Add reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .hero-section * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Reduce animation complexity for better performance */
+@media (prefers-reduced-motion: reduce) {
+  .animated-staggered-item,
+  [style*="animation"] {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+/* Disable effects for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .press-button,
+  .press-button-secondary {
+    transition: none;
+  }
+  
+  .press-button::after {
+    animation: none;
+  }
+  
+  .press-button:active,
+  .press-button-secondary:active {
+    transform: none;
+  }
+}
+/* RESPONSIVE OPTIMIZATIONS */
+@media (max-width: 768px) {
+  .press-button:hover,
+  .press-button-secondary:hover {
+    /* Reduced glow for mobile performance */
+    box-shadow:
+      /* Inset shadows remain removed */
+      0 0 0 1px rgba(59, 130, 246, 0.4),
+      0 2px 8px rgba(59, 130, 246, 0.3),
+      0 4px 16px rgba(59, 130, 246, 0.4);
+  }
+}
+/* Better contrast for dark mode */
+@media (prefers-color-scheme: dark) {
+  .brand-highlight {
+    color: #60a5fa;
+    text-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
+  }
+}
+
+/* ACCESSIBILITY: Respect reduced motion preferences (UNTOUCHED FROM YOUR ORIGINAL) */
+@media (prefers-reduced-motion: reduce) {
+  .ai-benefit-card:first-child::before,
+  .press-button:first-of-type::after {
+    animation: none;
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+            .press-button:first-of-type::after {
+                animation: none;
+                display: none;
+            }
+            .press-button, .press-button-secondary {
+                transition: none;
+            }
+ }
+
+/* Enhanced CSS with Dual Badge System */
+/* Specific pulse colors */
+.ai-icon-pulse.pulse-blue::before { background: radial-gradient(circle at center, rgba(59, 130, 246, 0.5) 0%, transparent 70%); }
+.ai-icon-pulse.pulse-purple::before { background: radial-gradient(circle at center, rgba(168, 85, 247, 0.5) 0%, transparent 70%); }
+.ai-icon-pulse.pulse-green::before { background: radial-gradient(circle at center, rgba(34, 197, 94, 0.5) 0%, transparent 70%); }
+
+/* Shimmer visibility for light/dark mode for first child (UNTOUCHED FROM YOUR ORIGINAL) */
+/* 2. IMPROVED: More noticeable, two-line, and subtle BLUE-ONLY shimmer for Benefit Card (Light Mode - Enhanced Presence) */
+.ai-benefit-card:first-child::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  /* Refined gradient for a more noticeable, two-line, and subtle BLUE-ONLY shimmer in light mode */
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(59, 130, 246, 0.08) 15%,   /* Slightly more noticeable blue tint start */
+    rgba(59, 130, 246, 0.25) 30%,   /* First subtle blue highlight */
+    rgba(59, 130, 246, 0.45) 45%,   /* Peak of first blue shimmer line (enhanced presence) */
+    rgba(59, 130, 246, 0.25) 55%,   /* Valley between lines / start of second */
+    rgba(59, 130, 246, 0.45) 70%,   /* Peak of second blue shimmer line (enhanced presence) */
+    rgba(59, 130, 246, 0.08) 85%,   /* Slightly more noticeable blue tint end */
+    transparent 100%
+  );
+  transform: skewX(-20deg); /* Consistent less aggressive angle */
+  animation: shimmerHighlight 5s ease-in-out infinite;
+  z-index: 3;
+  pointer-events: none;
+}
+/* Dark mode variant */
+/* Dark mode variant (updated for a more decent shimmer) */
+.dark .ai-benefit-card:first-child::before {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(147, 197, 253, 0.1) 25%,    /* Subtle blue tint */
+    rgba(255, 255, 255, 0.5) 40%,    /* Softer white highlight */
+    rgba(147, 197, 253, 0.3) 50%,    /* Subtle blue peak */
+    rgba(255, 255, 255, 0.5) 60%,    /* Softer white highlight */
+    rgba(147, 197, 253, 0.1) 75%,    /* Subtle blue tint */
+    transparent 100%
+  );
+}
+
+@keyframes shimmerHighlight {
+  0% {
+    left: -100%;
+    opacity: 0; /* Expert's version: starts hidden */
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    left: 100%;
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+
+
+
+
+/* Pulsing icon on hover (UNTOUCHED FROM YOUR ORIGINAL) */
+.ai-benefit-card:hover .ai-icon-pulse::before {
+  width: 150%;
+  height: 150%;
+  opacity: 0.3; /* Subtle glow */
+}
+
+
+
+/* Dark mode adjustment for Value Indicator hover ring */
+.dark .value-indicator:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), /* Enhanced shadow for dark mode */
+              0 0 0 2px rgba(147, 197, 253, 0.5); /* Lighter blue ring for dark mode (Tailwind blue-300 with opacity) */
+}
+
+.value-indicator::before {
+  content: '';
+  position: absolute;
+  top: 50%;       /* Center vertically */
+  left: 50%;      /* Center horizontally */
+  width: 100%;    /* Initial width to cover the badge when scaled */
+  height: 100%;   /* Initial height to cover the badge when scaled */
+  border-radius: 50%; /* Ensures the expanding effect is circular */
+  /* Radial gradient for a soft, glowing wash effect from the center */
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  transform: translate(-50%, -50%) scale(0); /* Start hidden and perfectly centered */
+  opacity: 0;
+  transition: transform 0.4s ease-out, opacity 0.4s ease-out; /* Smooth transition for the glow */
+  z-index: -1; /* Ensures the glow remains behind the badge content */
+}
+
+/* FIX: Dark mode specific glow for value indicators */
+.dark .value-indicator::before {
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, transparent 70%); /* Subtle dark transparent glow */
+}
+
+
+.value-indicator:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.15), /* Enhanced shadow for light mode */
+    0 0 0 2px var(--value-indicator-hover-ring-color, transparent);
+  outline: 1px solid var(--value-indicator-hover-ring-color, transparent);
+  outline-offset: 1px;
+  border-color: var(--value-indicator-hover-ring-color, transparent);
+}
+
+.value-indicator:hover::before {
+  transform: translate(-50%, -50%) scale(1.3); /* Scale up to ensure full badge coverage, even for wider badges */
+  opacity: 1; /* Make the glow fully visible */
+}
+/* Define specific ring colors for Value Indicators on hover (Light Mode - Keeping current enhanced visibility) */
+.value-indicator.bg-blue-100:hover { --value-indicator-hover-ring-color: rgba(59, 130, 246, 0.8); }   /* Blue-600 with higher opacity */
+.value-indicator.bg-green-100:hover { --value-indicator-hover-ring-color: rgba(34, 197, 94, 0.8); }  /* Green-600 with higher opacity */
+.value-indicator.bg-purple-100:hover { --value-indicator-hover-ring-color: rgba(168, 85, 247, 0.8); } /* Purple-600 with higher opacity */
+.value-indicator.bg-teal-100:hover { --value-indicator-hover-ring-color: rgba(13, 148, 136, 0.8); }   /* Teal-600 with higher opacity */
+
+/* Define specific ring colors for Value Indicators on hover (Dark Mode - NEW: Improved Distinction and Visibility) */
+.dark .value-indicator.bg-blue-100:hover { --value-indicator-hover-ring-color: rgba(96, 165, 250, 0.9); }   /* Blue-400: Clearer blue */
+.dark .value-indicator.bg-green-100:hover { --value-indicator-hover-ring-color: rgba(74, 222, 128, 0.9); }  /* Green-400: More distinct green */
+.dark .value-indicator.bg-purple-100:hover { --value-indicator-hover-ring-color: rgba(192, 132, 252, 0.9); } /* Purple-400: Clearer purple */
+.dark .value-indicator.bg-teal-100:hover { --value-indicator-hover-ring-color: rgba(34, 211, 238, 0.9); }   /* Cyan-400: Ensures distinctness from other blue/green shades */
+/* Press-in effect with much stronger glow for light mode */
+.press-button:hover {
+  /* Darker background for press illusion */
+  background-color: #1055e9;
+  
+  /* Strong multi-layer glow effect - ADJUSTED FOR MORE NOTICEABLE GLOW IN LIGHT MODE */
+  box-shadow:
+    /* Inner shadow for pressed feeling - KEPT OUT AS PER YOUR FINDING */
+    
+    /* Outer glows - multiple layers for intensity */
+    0 0 0 1px rgba(59, 130, 246, 0.4),        /* Border glow */
+    0 2px 8px rgba(59, 130, 246, 0.4),        /* Close glow - increased opacity */
+    0 6px 20px rgba(59, 130, 246, 0.5),       /* Medium glow - increased spread/opacity */
+    0 12px 40px rgba(59, 130, 246, 0.6),      /* Far glow - increased spread/opacity */
+    0 0 80px rgba(59, 130, 246, 0.4);         /* Ambient glow - increased spread/opacity */
+}
+/* Secondary button press effect with strong glow */
+.press-button-secondary:hover {
+  /* Darker background for press feeling */
+  background-color: rgba(229, 231, 235, 0.95);
+  border-color: rgba(107, 114, 128, 0.4);
+  
+  /* Multi-layer glow effect */
+  box-shadow:
+    /* Removed inset shadows as per your finding */
+    
+    /* Outer glows */
+    0 0 0 1px rgba(107, 114, 128, 0.3),
+    0 2px 8px rgba(107, 114, 128, 0.2),
+    0 4px 16px rgba(107, 114, 128, 0.3),
+    0 8px 32px rgba(107, 114, 128, 0.4),
+    0 0 50px rgba(107, 114, 128, 0.25);
+}
+.dark .press-button:hover {
+  background-color: #2158ce; /* Main button color */
+  
+  /* NEW GLOW STRATEGY FOR DARK MODE */
+  box-shadow:
+    /* No inset shadows here based on your finding */
+    
+    /* Border on hover for distinction */
+    0 0 0 1px rgba(59, 130, 246, 0.6), /* Visible border to separate glow */
+    
+    /* Shifted outer glows to create a "behind" effect */
+    0 8px 32px rgba(59, 130, 246, 0.4), /* Moved closer to the bottom/farther out */
+    0 16px 64px rgba(59, 130, 246, 0.3), /* Even further out, higher blur */
+    0 0 80px rgba(59, 130, 246, 0.2);   /* Ambient glow, slightly less intense */
+}
+@media (max-width: 639px) {
+  .ai-benefit-card:first-child::before {
+    animation: none;
+    display: none;
+  }
+}
+@media (max-width: 639px) {
+  .press-button::after {
+    animation: none;
+    display: none;
+  }
+}

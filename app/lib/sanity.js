@@ -1,23 +1,37 @@
+// ../app/lib/sanity - UPDATED VERSION
 import { createClient } from "next-sanity";
-export const revalidate = false;
 import { groq } from 'next-sanity';
 
+export const revalidate = false;
 export const dynamic = "force-dynamic";
+
 export const client = createClient({
-  projectId: 'qyshio4a', // find this at manage.sanity.io or your sanity.json
-  dataset: 'production', // or the name of your dataset
-  useCdn: false, // `false` if you want to ensure fresh data
+  projectId: 'qyshio4a',
+  dataset: 'production',
+  useCdn: false,
 });
 
+// Updated function to include _updatedAt for better sitemap lastModified dates
 export async function fetchURLs() {
   const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]] {
     "slug": slug.current,
     "title": title, 
-    _type
+    _type,
+    _updatedAt,
+    publishedAt
   }`;
-  const posts = await client.fetch(query);
-  return posts;
+  
+  try {
+    const posts = await client.fetch(query);
+    
+    // Filter out posts without slugs to avoid broken URLs
+    return posts.filter(post => post.slug && post.slug.trim() !== '');
+  } catch (error) {
+    console.error('Error fetching URLs from Sanity:', error);
+    return [];
+  }
 }
+
 export const getSubcategoriesQuery = groq`
   *[_type == "seoSubcategory"] {
     title,

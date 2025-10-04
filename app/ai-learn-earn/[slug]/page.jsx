@@ -1,188 +1,71 @@
+// app/ai-learn-earn/[slug]/page.jsx
 
-import ChildComp from "./code";
+import { getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData";
 
-import { client } from "@/sanity/lib/client";
-import Script from "next/script";
-import Head from "next/head";
-import { NextSeo } from "next-seo";
-export const revalidate = false;
-export const dynamic = "force-dynamic";
-import { urlForImage } from "@/sanity/lib/image";
+import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
+import ArticleChildComp from "@/app/ai-code/[slug]/ArticleChildComp";
+import SeoAndSchemaWrapper from "@/app/ai-code/[slug]/SeoAndSchemaWrapper"; // NEW IMPORT
 
 
-async function getData(slug) {
-const query = `*[_type == "makemoney" && slug.current == "${slug}"][0]`;
-  // Add cache-busting timestamp to ensure fresh data
-  const timestamp = new Date().getTime();
-  const data = await client.fetch(query, {}, { cache: 'no-store', next: { tags: ['makemoney', slug] } });
-  return data;
+import ArticleMicrodata from "@/app/ai-code/[slug]/ArticleMicrodata"; // New microdata component
+import { getArticleData, generatePageMetadata } from "@/app/ai-code/[slug]/articleData"; // New utility functions
+
+// --- Revalidation ---
+export const revalidate = 7200;
+
+
+export async function generateStaticParams() {
+  // Fetch all slugs for the "coding" schema type
+  const slugs = await getAllArticleSlugs("makemoney");
+
+  // Map the array of objects to the format Next.js expects: [{ slug: '...' }, { slug: '...' }]
+  return slugs.map((item) => ({
+    slug: item.slug,
+  }));
 }
+
+
+
+// --- Data Fetching (using reusable utility) ---
+async function getData(slug) {
+  // Use the reusable getArticleData, specifying the 'makemoney' schema type
+  return getArticleData(slug, "makemoney");
+}
+
+// --- Metadata Generation (using reusable utility) ---
 export async function generateMetadata({ params }) {
   const data = await getData(params.slug);
-  return {
-    title: `${data.metatitle}`,
-    description: `${data.metadesc}`,
-    author: "Sufian Mustafa",
-   
-
-    image: {
-      url: urlForImage(data.mainImage).url(),
-      width: 800,
-      height: 600,
-    },
-    openGraph: {
-      images: [
-        {
-          url: urlForImage(data.mainImage).url(),
-          width: 800,
-          height: 600,
-        }
-      ]
-    }
-  
-  };
-  
+  // Use the reusable generatePageMetadata, passing base path and category for this page
+  return generatePageMetadata(data, params, "ai-learn-earn", "AI in Learn & Earn");
 }
+
+// --- Main Page Component ---
 export default async function ParentPage({ params }) {
-  function schemaBlogPostingMarkup() {
-    return {
-      __html: `
-      {
-        "@context": "https://schema.org",
-        "@type": "BlogPosting",
-        "name": "${data.metatitle}",
-        "headline": "${data.schematitle}",
-
-        "description": "${data.schemadesc}",
-        "url": "https://www.doitwithai.tools/ai-learn-earn/${params.slug}",
-
-        "author": {
-          "@type": "Person",
-          "name": "Sufian Mustafa",
-          "url": "https://www.doitwithai.tools/author/sufian-mustafa"
-
-        },
-        "image": {
-          "@type": "ImageObject",
-          "url": "${urlForImage(data.mainImage).url()}",
-          "width": 800,
-          "height": 600
-        }
-      }`
-    };
-  }
-  function schemaBreadcrumbMarkup() {
-    return {
-      __html: `
-      {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "item": {
-              "@id": "https://www.doitwithai.tools/",
-              "name": "Home"
-            }
-          },
-          {
-            "@type": "ListItem",
-            "position": 2,
-            "item": {
-              "@id": "https://www.doitwithai.tools/ai-learn-earn",
-              "name": "AI Tools"
-            }
-          },
-          {
-            "@type": "ListItem",
-            "position": 3,
-            "item": {
-              "@id": "https://www.doitwithai.tools/ai-learn-earn/${params.slug}",
-              "name": "${data.schematitle}"
-            }
-          }
-        ]
-      }`
-    };
-  }
-
-  const metadata = await generateMetadata({ params });
-
-  const data = await getData(params.slug);
-  const title = `${data.metatitle}`;
-  const overview = `${data.metadesc}`;
-
-
-
-  const image = `${data.image}`;
-  const author = `${data.author}`;
-  const canonicalUrl = `https://www.doitwithai.tools/ai-learn-earn/${params.slug}`;
+  const data = await getData(params.slug); // This might be null if server fetch fails
 
   return (
     <>
-      <Head>
-      <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta property="og:site_name" content="AiToolTrend" />
-        <meta property="og:locale" content="en_US" />
-  <title>{title}</title>
-  <meta name="description" content={overview}/>
-  <meta name="author" content="sufian mustafa" />
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={overview} />
-  <meta property="og:image" content={image} />
-  <meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-
-  {/*  */}
-  <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={overview} />
-        <meta property="og:image" content={image}/>
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="doitwithai.tools" />
-        <meta property="twitter:url" content={canonicalUrl} />
-        <meta name="twitter:title" content={title} />
-        <meta name="twitter:description" content={overview} />
-        <meta name="twitter:image" content={image} />
-        <link rel="canonical" href={canonicalUrl}/>
-        <meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
-
-        <NextSeo
-         title={title}
-         description={overview}
-          author={author}
-          type= "website"
-          locale= 'en_IE'
-          site_name= 'AiToolTrend'
-
-          canonical={canonicalUrl}
-          openGraph={{
-            ...metadata.openGraph,
-            images: metadata.image, // Pass single image object
-          }}
-        />
-      
-
-    </Head>
-    <Script
-        id="BreadcrumbListSchema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={schemaBreadcrumbMarkup()}
-        key="BreadcrumbList-jsonld"
+      {/* SEO and Schema Tags (reusable component) */}
+      <SeoAndSchemaWrapper
+        data={data}
+        params={params}
+        schemaType="makemoney" // Specify the schema type for this page
+        basePath="ai-learn-earn" // Specify the base path for canonical URLs and breadcrumbs
+        articleSection="AI in Learn & Earn" // Specific section text for schema/OG
+        category="AI in Learn & Earn"       // Specific category text for meta tags
       />
-       <Script
-        id="BlogPostingSchema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={schemaBlogPostingMarkup()}
-        key="BlogPosting-jsonld"
-      />
-      <section>
-        <ChildComp data={data} params={params} />
-      </section>
+
+      {/* Page Content Provider */}
+      <PageCacheProvider pageType={data?._type || 'makemoney'} pageId={params.slug}>
+        {/* Main Content Area */}
+        <main role="main" itemScope itemType="https://schema.org/Article">
+          {/* Microdata properties (reusable component) */}
+          <ArticleMicrodata data={data} />
+
+          {/* The actual client component that renders the article content */}
+          <ArticleChildComp serverData={data} params={params} schemaType="makemoney" />
+        </main>
+      </PageCacheProvider>
     </>
   );
 }

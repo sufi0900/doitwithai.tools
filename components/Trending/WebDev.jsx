@@ -65,12 +65,12 @@ const WebDev = () => {
           description="The future of coding is here! Explore how AI can become your powerful coding partner. Our blog teaches you to leverage tools like ChatGPT to generate website code (HTML, CSS, React, etc.) and build beautiful UI components.  Learn to optimize existing code (MERN Stack, Next.js), solve coding challenges, and streamline your development process.  We even offer free website templates built with AI!  Unlock the potential of AI and code like never before!"
           firstlinktext="Home"
           firstlink="/"
-          link="/coding" 
+          link="/ai-code" 
           linktext="code-with-ai"
         />
         <Grid container spacing={2}>
           {/* Blog Cards */}
-          <Grid item lg={8} xl={8} md={8} sm={12} xs={12} sx={{zIndex:"5"}} className="overflow-visible">
+          <Grid item lg={12} xl={12} md={12} sm={12} xs={12} sx={{zIndex:"5"}} className="overflow-visible">
             <Grid container spacing={3} paddingRight={1} className="overflow-visible">
               {aiEarnTrendBigData.slice(0, 4).map((post) => (
                 <Grid key={post._id} item xs={12} className="overflow-visible">
@@ -90,15 +90,9 @@ const WebDev = () => {
             </Grid>
           </Grid>
           {/* Newsletter Box */}
-          <Grid item lg={4} xl={4} md={4} sm={12} xs={12} sx={{zIndex:"2"}}>
-            <NewsLatterBox />
-          </Grid>
+         
         </Grid>
-        <div className="mt-6 flex justify-center md:justify-end">
-          <button className="rounded-lg bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
-          Explore All Blogs
-          </button>
-        </div>
+        
       </div>
     </section>
   );

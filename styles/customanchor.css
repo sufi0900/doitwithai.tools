@@ -1,101 +1,64 @@
-/* Light Mode Anchor Styles */
-.light .customanchor a {
-  font-weight: bold; /* Bold text for stronger emphasis */
-  color: #133efc; /* Strong blue color */
-  transition: 0.3s; /* Smooth transition */
-  text-decoration: none; /* Default no underline */
-  position: relative; /* Enable positioning for pseudo-element */
-  animation: pulseAnimation 2s infinite; /* Infinite animation */
+/* Custom anchor styles */
+.customanchor a {
+  /* Use a consistent font weight and color */
+  font-weight: 600;
+  color: #1e40af; /* A dark blue for light mode */
+  text-decoration: none; /* Remove the default underline */
+  position: relative; /* Needed for the pseudo-element */
+  transition: all 0.2s ease-in-out;
+  /* Add some padding bottom to prevent overlap with descenders */
+  padding-bottom: 2px;
 }
 
-/* Dark Mode Anchor Styles */
-.dark .customanchor a {
-  font-weight: bold; /* Bold text for stronger emphasis */
-  color: #3b82f6; /* Lighter blue for better visibility */
-  transition: 0.3s; /* Smooth transition */
-  text-decoration: none; /* Default no underline */
-  position: relative; /* Enable positioning for pseudo-element */
-  animation: pulseAnimation 2s infinite; /* Infinite animation */
-}
-
-/* Pulse Animation Keyframes */
-@keyframes pulseAnimation {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.5);
-    opacity: 0.80;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 2;
-  }
-}
-
-
-/* Underline Effect */
+/* Create a smooth, continuous underline with a pseudo-element */
 .customanchor a::after {
-  content: ""; /* Pseudo-element for the underline */
-  position: absolute; /* Position it absolutely within the anchor */
-  left: 0; /* Align to the left */
-  right: 0; /* Stretch to the right */
-  bottom: -2px; /* Position it just below the text */
-  height: 2px; /* Set height of the underline */
-  background-color: currentColor; /* Use the text color */
-  transform: scaleX(0); /* Start with a scale of 0 (invisible) */
-  transition: transform 0.3s ease; /* Smooth transition */
+  content: '';
+  position: absolute;
+  bottom: -1px; /* Position it below the text baseline, not at bottom: 0 */
+  left: 0;
+  width: 100%;
+  height: 1.5px; /* Adjust the thickness of the underline */
+  background-color: currentColor; /* Matches the text color */
+  transition: all 0.2s ease-in-out;
+  /* Ensure the underline doesn't get cut off */
+  border-radius: 0.5px;
 }
 
-/* Show underline on hover */
-.customanchor a:hover::after {
-  transform: scaleX(1); /* Scale to full width on hover */
-}
-
-/* Optional: Hover Styles (original styles) */
+/* Custom anchor hover styles */
 .customanchor a:hover {
-  padding: 2px 5px;
-  border-radius: 8px;
-  box-shadow: rgba(0, 0, 0, 0.19) 0px 10px 20px,
-              rgba(0, 0, 0, 0.23) 0px 6px 6px;
-  outline: none;
-  color: #fff;
-  background-color: #1e40af;
+  color: #1d4ed8;
 }
 
-
- .imgdesc a,  .imgdesc link {
-  font-weight: 500;
-  color: #0331ff;
-  text-decoration: underline;
-  text-underline-position: under;
-  transition: 0.3s;
+/* Animate the underline on hover instead of removing it */
+.customanchor a:hover::after {
+  height: 0; /* Make it slightly thicker on hover */
 }
 
-
-.imgdesc a:hover {
-  font-weight: 500;
-  padding: 2px 5px;
-  border-radius: 8px; 
-  text-decoration: none !important; /* Use !important to override other styles */
-  box-shadow:
-    rgba(0, 0, 0, 0.19) 0px 10px 20px,
-    rgba(0, 0, 0, 0.23) 0px 6px 6px;
-  outline: none;
-
-  color: #fff;
-  background-color: #1e40af;
+/* Dark mode-specific styles for anchors */
+.dark .customanchor a {
+  color: #60a5fa; /* A lighter blue for dark mode */
 }
+
+/* Dark mode hover styles */
+.dark .customanchor a:hover {
+  color: #93c5fd;
+}
+
+/* Dark mode hover effect */
+.dark .customanchor a:hover::after {
+  height: 0;
+}
+
 .nonebtn a:hover, .nonebtn link:hover, .nonebtn:hover{
   background-color: none;
   background: none;
 }
-.btn1 a {
+.btn1 a, .btn1 {
   color: white;
   
+  
 }
-.btn2,   {
+.btn2   {
 
   box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px; 
 

@@ -2,4 +2,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://www.doitwithai.tools/api/sitemap.xml
+Sitemap:https://doitwithai.tools/api/sitemap.xml

@@ -1,210 +1,188 @@
-
+// components/Trending/page.jsx
 "use client";
-import React, { useEffect, useState } from "react";
 
-import {
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { Grid } from "@mui/material";
+import { urlForImage } from "@/sanity/lib/image";
+import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard";
+import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard";
+import MediumCard from "@/components/Blog/HomeMediumCard";
+import BigCard from "@/components/Blog/HomeBigCard";
+import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
+import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
+import { usePageCache } from '@/React_Query_Caching/usePageCache';
+import { cacheSystem } from '@/React_Query_Caching/cacheSystem';
 
-  Grid,
+const TrendingPage = ({ initialData = {} }) => {
+  const queries = useMemo(() => ({
+    trendBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendBig==true][0...1]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+    trendRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendRelated==true][0...3]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+  }), []);
 
-} from "@mui/material";
+  const commonSchemaTypes = useMemo(() => ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"], []);
 
-import { client } from "@/sanity/lib/client";
-import { urlForImage } from "@/sanity/lib/image"; 
-import BigSkeleton from "@/components/Blog/Skeleton/HomeBigCard"
-import MedSkeleton from "@/components/Blog/Skeleton/HomeMedCard"
-import MediumCard from "@/components/Blog/HomeMediumCard"
-import BigCard from "@/components/Blog/HomeBigCard"
-import Breadcrumb from "../Common/Breadcrumb";
-const TrendingPage = () => {
-  const [isLoading, setIsLoading] = useState(true); 
+  const bigCardOptions = useMemo(() => ({
+    componentName: 'TrendingBig',
+ 
+    enableOffline: true,
+    group: 'homepage-trending',
+    initialData: initialData.trending?.trendBigData, // Access from initialData.trending
+    schemaType: commonSchemaTypes,
+  }), [initialData.trending?.trendBigData, commonSchemaTypes]);
 
-  const [trendBigData, setTrendBigData] = useState([]);
-  const [trendRelatedData, setTrendRelatedData] = useState([]);
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const isHomePageTrendBig = `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageTrendBig == true] {
-          _id,
-          _type,  
-          title,
-          overview,
-          mainImage,
-          slug,
-          publishedAt,
-          readTime,
-          tags,
-          "displaySettings": displaySettings
-        }`;
-    
-        const isHomePageTrendRelated = `*[_type in ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"] && displaySettings.isHomePageTrendRelated == true] {
-          _id,
-          _type,
-          title,
-          overview,
-          mainImage,
-          slug,
-          publishedAt,
-          readTime,
-          tags,
-          "displaySettings": displaySettings
-        }`;
-    
-        const isHomePageTrendBigData = await client.fetch(isHomePageTrendBig);
-        const isHomePageTrendRelatedData = await client.fetch(isHomePageTrendRelated);
-        
-        console.log("Trend Big Data:", isHomePageTrendBigData); // Debug
-        console.log("Trend Related Data:", isHomePageTrendRelatedData); // Debug
-        
-        setTrendBigData(isHomePageTrendBigData);
-        setTrendRelatedData(isHomePageTrendRelatedData);
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Failed to fetch data", error);
-        setIsLoading(false);
-      }
-    };
-    
+  const relatedCardOptions = useMemo(() => ({
+    componentName: 'TrendingRelated',
 
-    fetchData();
-  }, []); 
+    enableOffline: true,
+    group: 'homepage-trending',
+    initialData: initialData.trending?.trendRelatedData, // Access from initialData.trending
+    schemaType: commonSchemaTypes,
+  }), [initialData.trending?.trendRelatedData, commonSchemaTypes]);
 
+  const { data: trendBigData, isLoading: isBigLoading, error: bigError, isStale: isBigStale, refresh: refreshBig } = useUnifiedCache(
+    CACHE_KEYS.HOMEPAGE.TRENDING_BIG,
+    queries.trendBig,
+    {},
+    bigCardOptions
+  );
 
+  const { data: trendRelatedData, isLoading: isRelatedLoading, error: relatedError, isStale: isRelatedStale, refresh: refreshRelated } = useUnifiedCache(
+    CACHE_KEYS.HOMEPAGE.TRENDING_RELATED,
+    queries.trendRelated,
+    {},
+    relatedCardOptions
+  );
 
-  const schemaSlugMap = {
+  usePageCache(CACHE_KEYS.HOMEPAGE.TRENDING_BIG, refreshBig, queries.trendBig, 'TrendingBig');
+  usePageCache(CACHE_KEYS.HOMEPAGE.TRENDING_RELATED, refreshRelated, queries.trendRelated, 'TrendingRelated');
+
+  const schemaSlugMap = useMemo(() => ({
     makemoney: "ai-learn-earn",
     aitool: "ai-tools",
     coding: "ai-code",
     seo: "ai-seo",
-  };
+    news: "ai-news",
+    freeairesources: "free-ai-resources",
+  }), []);
+
+  const isLoading = isBigLoading || isRelatedLoading;
+  const hasError = bigError || relatedError;
+  const isStale = isBigStale || isRelatedStale;
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      if (typeof cacheSystem !== 'undefined' && cacheSystem.refreshGroup) {
+        console.log("Manually refreshing homepage-trending group.");
+        await cacheSystem.refreshGroup('homepage-trending');
+      } else {
+        console.warn("cacheSystem.refreshGroup is not available. Performing individual refreshes.");
+        await refreshBig(true);
+        await refreshRelated(true);
+      }
+    } catch (error) {
+      console.error('TrendingPage refresh failed:', error);
+    }
+  }, [refreshBig, refreshRelated]);
+
+  // Now trendBigData is always an array (or undefined before initial load from useUnifiedCache).
+  // So you can directly access the first element or use slice.
+  const bigPost = trendBigData && trendBigData.length > 0 ? trendBigData[0] : null;
+  const relatedPosts = trendRelatedData || [];
 
   return (
-    <section className="pb-[20px] pt-[20px]">
-      <div className="container ">
-      {/* <Breadcrumb
-          pageName="Trending"
-          pageName2="Posts"
-          description="Ready to take your work and creativity to the next level? The AI revolution is here, and it's changing the way we work!  Whether you're a seasoned pro or just curious to learn more Our blog explores Best AI Tools for Productivity. These AI tools free you from booring  tasks, boost  your skills, and supercharge  your creativity."
-          link="" 
-          linktext=""
-          firstlinktext=""
-          firstlink="/"
+    <section className="pb-[30px] md:py-4 lg:py-4">
+      <div className="container px-4">
+        <div className="flex justify-between items-center mb-6 md:mb-8">
+          <h1 className="text-xl font-bold tracking-wide text-black dark:text-white sm:text-2xl md:text-3xl lg:text-4xl">
+            <span className="group inline-block cursor-pointer">
+              <span className="relative text-blue-500">
+                Trending
+                <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
+              </span>
+              {" "}
+              <span className="relative inline-block">
+                Posts
+                <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
+              </span>
+            </span>
+          </h1>
+        </div>
 
-        /> */}
-      <h1 className="mb-8 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
-                  <span className="group inline-block cursor-pointer">
-                    <span className="relative text-blue-500">
-                    Trending
+        {/* IMPROVED RESPONSIVE GRID LAYOUT */}
+        <Grid container spacing={{ xs: 2, sm: 2, md: 3 }}>
+          {/* Main Trending Post - Full width on mobile, half on desktop */}
+          <Grid item xs={12} lg={6}>
+            <div className="mb-4 lg:mb-0">
+              {isLoading && !bigPost ? (
+                <BigSkeleton />
+              ) : bigPost ? (
+                <BigCard
+                  key={bigPost._id}
+                  title={bigPost.title}
+                  overview={bigPost.overview}
+                  mainImage={urlForImage(bigPost.mainImage).url()}
+                  slug={`/${schemaSlugMap[bigPost._type]}/${bigPost.slug.current}`}
+                  publishedAt={new Date(bigPost.publishedAt).toLocaleDateString('en-US', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  })}
+                  ReadTime={bigPost.readTime?.minutes}
+                  tags={bigPost.tags}
+                />
+              ) : null}
+            </div>
+          </Grid>
 
-                      <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
-                    </span>
-                    {/* Add space between the texts */}{" "}
-                    {/* Add space between the texts */}
-                    <span className="relative  inline-block ">
-                      {" "}
-                      {/* Apply smaller font size */}
-                   Posts
-                      <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
-                    </span>
-                  </span>
-                </h1>
-        <Grid container spacing={2}>
-          {/* Trending Post */}
-
-      
-           
-                {isLoading ? (
-                          
-                   <Grid  item  xs={12} lg={6} spacing={2} justifyContent="center">
-      <BigSkeleton/>
-      
+          {/* Related Posts - Better mobile layout */}
+          <Grid item xs={12} lg={6}>
+            <Grid container spacing={{ xs: 2, sm: 2, md: 2 }}>
+              {/* On mobile: single column, On lg: 2 columns */}
+              {isLoading && relatedPosts.length === 0 ? (
+                <>
+                
+                  <Grid item xs={12} sm={12} lg={12}>
+                  
+                    <MedSkeleton />
+                    <MedSkeleton />
+                  </Grid>
+                 
+                 
+                </>
+              ) : (
+                relatedPosts.slice(0, 4).map((post) => (
+                  <Grid key={post._id} item xs={12} sm={6} lg={6}>
+                    <MediumCard
+                      title={post.title}
+                      overview={post.overview}
+                      mainImage={urlForImage(post.mainImage).url()}
+                      slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
+                      publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                      ReadTime={post.readTime?.minutes}
+                      tags={post.tags}
+                    />
+                  </Grid>
+                ))
+              )}
+            </Grid>
+          </Grid>
         </Grid>
-      ) : (
-        trendBigData.slice(0, 1).map((post) => (
-          <Grid  key={post} item xs={12} lg={6}>
-          <BigCard          key={post}
-          title={post.title}
-          overview={post.overview}
-          mainImage={urlForImage(post.mainImage).url()}
-          slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`} // <-- FIX HERE
-          publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-          ReadTime={post.readTime?.minutes}
-          tags={post.tags}
-/>    
-</Grid>
-            )) )}  
-              <Grid item xs={12} sm={12}  lg={3} xl={3}>
-                <Grid container flex spacing={2} className="mb-2 flex ">
- {isLoading ? ( 
-     <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginLeft: {lg:"80px"} , display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
-     <Grid item xs={12}  sx={{ display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
-       <MedSkeleton />
-     </Grid>
-     <Grid item xs={12} sx={{ display: 'inline-block' }}>
-       <MedSkeleton />
-     </Grid>
-   </Grid>
-   
-    
-     
-        ) : (
-
-          trendRelatedData.slice(0, 2).map((post) => (
-            <Grid key={post}  item xs={12}>
-
-                                 <MediumCard          key={post}
-             title={post.title}
-             overview={post.overview}
-             mainImage={urlForImage(post.mainImage).url()}
-             slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-             publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-             ReadTime={post.readTime?.minutes}
-             tags={post.tags}
-/> 
-</Grid>
- ))
-)}
-               
-       
-                </Grid>
-              </Grid>
-              <Grid item xs={12} sm={12}  lg={3} xl={3}>
-              <Grid container flex spacing={2} className="mb-2 flex ">
- {isLoading ? ( 
-        <Grid container spacing={2} marginTop={"0px"} className="mb-2" sx={{  marginRight: {lg:"20px"} , display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
-        <Grid item xs={12}  sx={{ display: 'inline-block', justifyContent:"center", alignItems:"center", textAlign:"center" }}>
-          <MedSkeleton />
-        </Grid>
-        <Grid item xs={12} sx={{ display: 'inline-block' }}>
-          <MedSkeleton />
-        </Grid>
-      </Grid>
-        ) : (
-
-          trendRelatedData.slice(2, 4).map((post) => (
-            <Grid key={post}  item xs={12}>
-
-                                 <MediumCard          key={post}
-             title={post.title}
-             overview={post.overview}
-             mainImage={urlForImage(post.mainImage).url()}
-             slug={`/${schemaSlugMap[post._type]}/${post.slug.current}`}
-             publishedAt={new Date(post.publishedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-             ReadTime={post.readTime?.minutes}
-             tags={post.tags}
-/> 
-</Grid>
- ))
-)}
-               
-       
-                </Grid>
-              </Grid>
-
-             
-      
-         
-        
-        </Grid>
+        {/* No posts found message, only if not loading, no error, and no data at all */}
+        {!isLoading && !hasError && !bigPost && relatedPosts.length === 0 && (
+          <div className="text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400">No trending posts found at this time.</p>
+            <button
+              onClick={handleRefresh}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mt-4"
+            >
+              Refresh Trending Content
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

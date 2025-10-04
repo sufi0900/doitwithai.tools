@@ -57,25 +57,23 @@
   animation-play-state: paused;
 }
 
-/* Tailwind CSS */
-@keyframes marquee2 {
+@keyframes marquee-reverse {
   0% {
-    transform: translateX(0%);
+    transform: translateX(-50%);
   }
   100% {
-    transform: translateX(
-      calc(-100% + 100vw)
-    ); /* Adjusted to float from left to right */
+    transform: translateX(0%);
   }
 }
 
-.animate2-marquee2 {
-  animation: marquee2 15s linear infinite;
+.animate-marquee-reverse {
+  animation: marquee-reverse 30s linear infinite;
 }
 
-.animate2-marquee2:hover {
+.animate-marquee-reverse:hover {
   animation-play-state: paused;
 }
+
 .flex2 {
   display: flex;
   justify-content: center;
@@ -204,6 +202,10 @@
   color: #1dd855; /* Change the bullet color on hover */
 
 }
+/* .custom-bullet-list {
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+
+} */
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
@@ -212,10 +214,7 @@
     background-position: -200% 0;
   }
 }
-.custom-bullet-list {
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
 
-}
 
 
 .fixed.inset-0.z-50 {
@@ -229,7 +228,7 @@
   color: #2563eb;
   z-index: 999; /* Lower than the modal */
 }
-.asd,  {
+.asd {
   box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
 }
 .readingbar
@@ -629,3 +628,295 @@ button[aria-label="Close modal"] {
   box-shadow: 0 0 15px rgba(82, 113, 255, 0.3);
   border: 1px solid rgba(82, 113, 255, 0.3);
 }
+.carouselNav {
+  box-shadow: rgb(204, 219, 232) 3px 3px 6px 0px inset, 
+              rgba(255, 255, 255, 0.5) -3px -3px 6px 1px inset;
+}
+
+/* Dark mode - adjusted colors for dark backgrounds */
+.dark .carouselNav {
+  box-shadow: rgba(0, 0, 0, 0.6) 3px 3px 6px 0px inset, 
+              rgba(255, 255, 255, 0.1) -3px -3px 6px 1px inset;
+}
+
+/* Alternative dark mode option - more subtle */
+.dark .carouselNav.subtle {
+  box-shadow: rgba(0, 0, 0, 0.4) 2px 2px 4px 0px inset, 
+              rgba(255, 255, 255, 0.08) -2px -2px 4px 1px inset;
+}
+
+/* Alternative dark mode option - more pronounced */
+.dark .carouselNav.pronounced {
+  box-shadow: rgba(0, 0, 0, 0.8) 4px 4px 8px 0px inset, 
+              rgba(255, 255, 255, 0.15) -4px -4px 8px 1px inset;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Enhance existing shimmer animation */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+
+
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2.5s infinite linear;
+  }
+  
+  @keyframes subtle-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+  
+  .animate-subtle-pulse {
+    animation: subtle-pulse 2s ease-in-out infinite;
+  }
+
+  :root {
+  --scrollbar-width: 0px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --scrollbar-width: 17px; /* Adjust based on your scrollbar width */
+  }
+}
+
+/* Smooth modal transitions */
+.modal-enter {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 200ms, transform 200ms;
+}
+
+/* styles.css */
+.scrollbar-visible::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background-color: rgba(107, 114, 128, 0.8); /* gray-500 */
+  border-radius: 4px;
+}
+.scrollbar-visible::-webkit-scrollbar-track {
+  background-color: rgba(229, 231, 235, 0.3); /* gray-200 */
+}
+
+.scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: #64748b #f1f5f9;
+}
+
+.scroll-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  display: block !important;  
+}
+
+
+.sanity-code-input pre,
+.sanity-code-input code {
+  all: unset; /* The magic property! Resets all inherited styles. */
+  font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace; /* Re-apply font-family if unset breaks it */
+}
+/* Inline code styling for Sanity's default code marks */
+
+code {
+  @apply bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded  font-mono;
+  font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+}
+
+/* Code blocks within pre tags */
+pre code {
+  @apply bg-transparent text-inherit px-0 py-0 rounded-none;
+  display: block;
+  overflow-x: auto;
+}
+
+/* Pre element styling */
+pre {
+  @apply bg-gray-900 dark:bg-black text-gray-100 p-4 rounded-lg overflow-x-auto my-4;
+  font-family: 'Fira Code', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+}
+
+/* Alternative dark theme for code blocks */
+.prose pre {
+  @apply bg-gray-900 border border-gray-700;
+}
+
+.prose code {
+  @apply bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded ;
+  font-weight: 500;
+}
+
+/* Ensure code doesn't break on small screens */
+code, pre {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+/* Add this to your global CSS or Tailwind config */
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Ensure proper aspect ratio maintenance */
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+/* Enhanced loading states */
+.video-loading-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.video-loading-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.5s infinite;
+}
+@media (max-width: 475px) {
+  .xs\:hidden {
+    display: none;
+  }
+  .xs\:inline {
+    display: inline;
+  }
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animated-spinner {
+  width: 64px;
+  height: 64px;
+  border: 8px solid transparent;
+  border-top-color: #3b82f6; /* Tailwind blue-500 */
+  border-bottom-color: #60a5fa; /* Tailwind blue-400 */
+  border-radius: 50%;
+  animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; /* Smooth easing */
+}
+
+.dark .animated-spinner {
+  border-top-color: #60a5fa; /* Lighter blue for dark mode */
+  border-bottom-color: #93c5fd; /* Tailwind blue-300 */
+}
+.social-card {
+
+  /* transition: transform 0.3s ease , box-shadow 0.3s ease; */
+  }
+  
+  .social-card:hover {
+    /* transform: translateY(-8px); */
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  }
+  
+  .social-icon {
+    transition: none;
+  }
+  
+  .social-title {
+    transition: color ease;
+  }
+  
+  .social-card:hover .social-title {
+    color: #2563eb;
+  }
+  
+  .dark .social-card:hover .social-title {
+    color: #60a5fa;
+  }
+  
+  .social-description {
+    transition: color  ease;
+  }
+  
+  .social-card:hover .social-description {
+    color: #334155;
+  }
+  
+  .dark .social-card:hover .social-description {
+    color: #e2e8f0;
+  }
+  
+  .social-arrow {
+    transition:  ease, color  ease;
+  }
+  
+  .social-card:hover .social-arrow {
+    transform: translateX(4px);
+    color: #1d4ed8;
+  }
+  
+  .dark .social-card:hover .social-arrow {
+    color: #3b82f6;
+  }

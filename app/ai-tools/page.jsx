@@ -1,43 +1,172 @@
-import React from 'react'
-import Allblogs from "./AllBlogs"
+import React from 'react';
 import Script from "next/script";
-import Head from "next/head";
 import { NextSeo } from "next-seo";
+import { redisHelpers } from '@/app/lib/redis';
+import { client } from "@/sanity/lib/client";
 
-export const revalidate = false;
-export const dynamic = "force-dynamic";
+import BlogListingPageContent from "@/app/ai-tools/BlogListingPageContent";
+import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 
+// NEW IMPORT for StaticPageShell
+import StaticPageShell from "@/app/ai-seo/StaticPageShell";
+import Head from 'next/head';
+
+// --- Next.js Server-Side Configuration ---
+export const revalidate = 3600; // Revalidate every 1 hour
+
+// Enhanced utility functions
+function getBaseUrl() {
+  // For production, always use your custom domain
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://doitwithai.tools';  // Remove trailing slash
+  }
+  
+  // For development
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  return 'http://localhost:3000';
+}
+
+function generateOGImageURL(params) {
+  const baseURL = `${getBaseUrl()}/api/og`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseURL}?${searchParams.toString()}`;
+}
+
+async function getData(schemaType, pageSlugPrefix) {
+  const cacheKey = `blogList:${schemaType}:main`;
+  const startTime = Date.now();
+
+  try {
+    const cachedData = await redisHelpers.get(cacheKey);
+    if (cachedData) {
+      console.log(`[Redis Cache Hit] for ${cacheKey} in ${Date.now() - startTime}ms`);
+      return { ...cachedData, __source: 'server-redis' };
+    }
+  } catch (redisError) {
+    console.error(`Redis error for ${cacheKey}:`, redisError.message);
+  }
+
+  console.log(`[Sanity Fetch] for ${cacheKey} starting...`);
+
+  const featuresQuery = `*[_type=="${schemaType}" && displaySettings.isOwnPageFeature==true][0]`;
+  const firstPageBlogsQuery = `*[_type=="${schemaType}"] | order(publishedAt desc)[0...6]`;
+  const totalCountQuery = `count(*[_type=="${schemaType}"])`;
+
+  try {
+    const [featuredPost, firstPageBlogs, totalCount] = await Promise.all([
+      client.fetch(featuresQuery, {}, { next: { tags: [schemaType] } }),
+      client.fetch(firstPageBlogsQuery, {}, { next: { tags: [schemaType] } }),
+      client.fetch(totalCountQuery, {}, { next: { tags: [schemaType] } })
+    ]);
+
+    const data = {
+      featuredPost,
+      firstPageBlogs,
+      totalCount,
+      timestamp: Date.now()
+    };
+
+    console.log(`[Sanity Fetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
+
+    try {
+      await redisHelpers.set(cacheKey, data, { ex: 3600 });
+      console.log(`[Redis Cache Set] for ${cacheKey}`);
+    } catch (redisSetError) {
+      console.error(`Redis set error for ${cacheKey}:`, redisSetError.message);
+    }
+
+    return { ...data, __source: 'server-network' };
+  } catch (error) {
+    console.error(`Server-side fetch for ${schemaType} failed:`, error.message);
+    return null;
+  }
+}
+
+// --- SEO Metadata (Next.js App Router Standard) ---
 export const metadata = {
-  title: "Best AI Tools",
-  description:
-    "Explore a comprehensive list of blogs on the Best AI Tools for Productivity (Freemium), providing detailed reviews of the top artificial intelligence solutions",
-    
-  author: "Sufian Mustafa",
-  openGraph: {
-    images: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
-  },
-  images: [
-    {
-      url: 'https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg',
-      width: 800,
-      height: 600,
-    },
-    
-  ],
+  title: "Best AI Tools for SEO, Productivity & Scaling | Do It With AI Tools",
+  description: "Explore curated blogs on the best AI tools, featuring reviews of freemium software to boost content creation, enhance SEO, and scale your business effectively.",
+  author: "Sufian Mustafa",
+  openGraph: {
+    title: "Best AI Tools for SEO, Productivity & Scaling | Do It With AI Tools",
+    description: "Explore curated list of blogs on the best AI tools, with detailed reviews of freemium AI software designed to boost your productivity & enhance your SEO.",
+    url: `${getBaseUrl()}/ai-tools`,
+    type: "website",
+    images: [{
+      url: generateOGImageURL({
+      title: 'Find the best AI tools to supercharge your content creation, SEO, and business scale.',
+        // description field is removed
+        category: 'AI Tools',
+        ctaText: 'Explore AI Tools',
+        features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
+      }),
+      width: 1200,
+      height: 630,
+      alt: 'Best AI Tools for Productivity',
+    }],
+    siteName: "doitwithai.tools",
+    locale: 'en_US',
+  },
+  twitter: {
+    card: "summary_large_image",
+    domain: "doitwithai.tools",
+    url: `${getBaseUrl()}/ai-tools`,
+    title: "Best AI Tools for SEO, Productivity & Scaling | Do It With AI Tools",
+  description: "Explore curated blogs on the best AI tools, featuring reviews of freemium software to boost content creation, enhance SEO, and scale your business effectively.",
+    image: generateOGImageURL({
+      title: 'Find the best AI tools to supercharge your content creation, SEO, and business scale.',
+      // description field is removed
+      category: 'AI Tools',
+      ctaText: 'Explore AI Tools',
+      features: 'Automate Tasks,Enhance Creativity,Save Time and Effort',
+    }),
+  },
+  alternates: {
+    canonical: `${getBaseUrl()}/ai-tools`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
-export default function Page() {
-  
-  function schemaMarkup() {
- 
-    
+export default async function Page() {
+  const schemaType = "aitool";
+  const pageSlugPrefix = "ai-tools";
+  const pageTitle = "AI Tools";
+  const pageTitleHighlight = "AI Tools";
+  const pageDescription = "Explore the newest and most effective AI tools to boost your productivity.";
+
+  const serverData = await getData(schemaType, pageSlugPrefix);
+
+  const breadcrumbProps = {
+    pageName: "Best AI Tools",
+    pageName2: "for SEO & productivity",
+    description: "Discover our reviews of the best freemium AI tools and strategic workflows designed to enhance productivity and creativity. Learn how to use these AI tools to master content creation, optimize your SEO, and effectively scale your projects and business.",
+    firstlinktext: "Home",
+    firstlink: "/",
+    link: "/ai-tools",
+    linktext: "ai-tools",
+  };
+
+  function schemaMarkup(pageMetadata, breadcrumbProps) {
     return {
-      __html: `   {
+      __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        "name": "Best AI Tools",
-        "description": "Explore an extensive collection of artificial intelligence tools and resources, all designed for boosting your productivity and creativity. Everybody, from students to business owners and researchers in different fields of study, will find something to interest them on our site, whether it's image creation, video editing, AI extensions, or any other aspect of AI technology. Explore all of the blogs from different AI domains or dive into specific subcategories to find articles that are relevant to your interests. Take use of the greatest artificial intelligence solutions to increase your output and creativity!",
-        "url": "https://www.doitwithai.tools/ai-tools",
+        "name": pageMetadata.title,
+        "description": pageMetadata.description,
+        "url": pageMetadata.openGraph.url,
         "breadcrumb": {
           "@type": "BreadcrumbList",
           "itemListElement": [
@@ -45,76 +174,70 @@ export default function Page() {
               "@type": "ListItem",
               "position": 1,
               "name": "Home",
-              "item": "https://www.doitwithai.tools/"
+              "item": `${getBaseUrl()}/`
             },
             {
               "@type": "ListItem",
               "position": 2,
-              "name": "AI Tools",
-              "item": "https://www.doitwithai.tools/ai-tools"
+              "name": breadcrumbProps.pageName,
+              "item": `${getBaseUrl()}${breadcrumbProps.link}`
             }
           ]
-        },
-      }`
+        }
+      })
     };
   }
+
   return (
     <>
     <Head>
-        <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <meta property="og:site_name" content="AiToolTrend" />
-        <meta property="og:locale" content="en_US" />
-  <title>{metadata.title}</title>
-  <meta name="description" content={metadata.description}/>
-  <meta name="author" content="sufian mustafa" />
-  <meta property="og:title" content={metadata.title} />
-  <meta property="og:description" content={metadata.description} />
-  <meta property="og:image" content={metadata.image} />
-  <meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
+      <NextSeo
+        title={metadata.title}
+        description={metadata.description}
+        canonical={metadata.alternates.canonical}
+        openGraph={{
+          title: metadata.openGraph.title,
+          description: metadata.openGraph.description,
+          url: metadata.openGraph.url,
+          type: "ItemList",
+          images: metadata.openGraph.images,
+          siteName: metadata.openGraph.siteName,
+          locale: metadata.openGraph.locale,
+        }}
+        twitter={{
+          card: metadata.twitter.card,
+          site: metadata.twitter.site,
+          handle: metadata.twitter.creator,
+          title: metadata.twitter.title,
+          description: metadata.twitter.description,
+          image: metadata.twitter.image,
+        }}
+        additionalMetaTags={[
+          { name: 'author', content: metadata.author },
+          { name: 'keywords', content: metadata.keywords },
+          { name: 'robots', content: 'index, follow' },
+        ]}
+      />
 
-  {/*  */}
-  <meta property="og:url" content="https://www.doitwithai.tools/ai-tools" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content={metadata.title} />
-        <meta property="og:description" content={metadata.description} />
-        <meta property="og:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta property="twitter:domain" content="doitwithai.tools" />
-        <meta property="twitter:url" content="https://www.doitwithai.tools/ai-tools" />
-        <meta name="twitter:title" content={metadata.title} />
-        <meta name="twitter:description" content={metadata.description} />
-        <meta name="twitter:image" content="https://res.cloudinary.com/dtvtphhsc/image/upload/v1713980491/studio-b7f33b608e28a75955602f7f0e02a8b6-5jzms2ck_wdjynr.jpg" />
-  <link rel="canonical" href="https://www.doitwithai.tools/ai-tools"/>
-        <NextSeo
-         title={metadata.title}
-         description={metadata.description}
-          author={metadata.author}
-          type= "website"
-          locale= 'en_IE'
-          site_name= 'AiToolTrend'
-
-          canonical="https://www.doitwithai.tools/ai-tools"
-          openGraph={{
-            title: metadata.title,
-            description: metadata.description,
-            url: "https://www.doitwithai.tools/ai-tools",
-            type: "ItemList",
-            images: metadata.images
-          }}
-        />
-      
-
-    </Head>
-    <Script
-    id="BreadcrumbListSchema"
-    type="application/ld+json"
-     dangerouslySetInnerHTML={schemaMarkup()}
-     key="AiTools-jsonld"
-   />
-   <Allblogs/> 
-   </>
-  )
+         </Head>
+      <Script
+        id="BreadcrumbListSchema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
+        key={`${pageSlugPrefix}-jsonld`}
+      />
+      <StaticPageShell breadcrumbProps={breadcrumbProps}>
+        <PageCacheProvider pageType={schemaType} pageId="main">
+          <BlogListingPageContent
+            schemaType={schemaType}
+            pageSlugPrefix={pageSlugPrefix}
+            pageTitle={pageTitle}
+            pageTitleHighlight={pageTitleHighlight}
+            pageDescription={pageDescription}
+            serverData={serverData}
+          />
+        </PageCacheProvider>
+      </StaticPageShell>
+    </>
+  );
 }
-

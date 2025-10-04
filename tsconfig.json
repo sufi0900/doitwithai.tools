@@ -30,7 +30,7 @@
     "**/*.ts",
     "**/*.tsx",
     "app/blog/[slug]/page.jsx",
-    "app/blog/page.jsx"
-, "app/page.jsx", "app/sitemap.xml/page.ts", "app/sitemap.js", "app/about/page.jsx", "sanitystudio/styles/theme.js", "app/ai-seo/[slug]/OptimizedGif.jsx", "app/ai-seo/[slug]/OptimizedVideo.jsx", "theme.js", "app/free-resources/HeroSection.js", "components/Blog/FeatureResourcePost.jsx"  ],
+    "app/blog/page.tsx"
+, "app/page.jsx", "app/sitemap.xml/page.ts", "app/sitemap.js", "app/about/page.jsx", "sanitystudio/styles/theme.js", "app/ai-seo/[slug]/OptimizedGif.jsx", "app/ai-seo/[slug]/OptimizedVideo.jsx", "theme.js", "app/free-ai-resources/HeroSection.tsx", "components/Blog/FeatureResourcePost.jsx", "app/faq/page.jsx", "app/faq/FAQClient.jsx", "app/layout.jsx", "app/DeferredResources.js", "app/contact/page.jsx", "components/Blog/HomeMediumCard.jsx", "components/Blog/HomeBigCard.jsx", "app/ai-seo/categories/[category]/page.jsx", "app/ai-seo/categories/[category]/code.jsx", "app/ai-seo/categories/[category]/code.jsx"  ],
   "exclude": ["node_modules"]
 }
