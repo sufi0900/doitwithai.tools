@@ -13,6 +13,7 @@ import { usePathname } from "next/navigation";
 import Hero from "@/components/Hero"; 
 import Header from "@/components/Header";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next"
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider";
 
 // EVERYTHING else lazy-loaded
@@ -233,6 +234,7 @@ export default function RootLayout({ children }) {
 
               <Toaster position="bottom-center" />
               <SpeedInsights/>
+              <Analytics />
             </>
           )}
         </Providers>
