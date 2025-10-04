@@ -53,12 +53,12 @@ export default function HomePage({ initialServerData }) {
         <FreeResourcesPage initialData={freeResourcesFeatured} />
       
 
-      <HomepageCategories />  
+      {/* <HomepageCategories />   */}
       <MBrands /> 
       <RecentPost initialData={recentPosts} />
 
           <Contact /> 
         
     </>
-  );
+  ); 
 }

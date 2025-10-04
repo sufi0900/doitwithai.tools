@@ -463,7 +463,7 @@ function breadcrumbSchema() {
           }
         ]}
       />
-</Head>
+    </Head>
       {/* Enhanced Schema.org JSON-LD structured data */}
       <Script
         id="WebsiteSchema"
@@ -501,7 +501,7 @@ function breadcrumbSchema() {
 
 
       <PageCacheProvider pageType="homepage" pageId="main">
-        {/* <HomePageCode initialServerData={initialServerData} /> */}
+        <HomePageCode initialServerData={initialServerData} />
       </PageCacheProvider>
     </>
   )
