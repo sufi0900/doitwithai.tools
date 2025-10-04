@@ -30,6 +30,7 @@
     "@tiptap/react": "^2.10.4",
     "@tiptap/starter-kit": "^2.10.4",
     "@upstash/redis": "^1.35.1",
+    "@vercel/speed-insights": "^1.2.0",
     "animate.css": "^4.1.1",
     "aos": "^2.3.4",
     "axios": "^1.7.9",

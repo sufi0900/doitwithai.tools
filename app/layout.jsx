@@ -12,7 +12,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import Hero from "@/components/Hero"; 
 import Header from "@/components/Header";
-// import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider";
 
 // EVERYTHING else lazy-loaded
@@ -232,7 +232,7 @@ export default function RootLayout({ children }) {
               </CacheProvider>
 
               <Toaster position="bottom-center" />
-              {/* <ServiceWorkerRegistration /> */}
+              <SpeedInsights/>
             </>
           )}
         </Providers>
