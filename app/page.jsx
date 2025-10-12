@@ -224,7 +224,7 @@ export default async function Page() {
     const freeResourcesFeatured = initialServerData?.freeResourcesFeatured || [];
 
 // DoItWithAI.tools provides AI-driven insights and strategies to help businesses, marketers, and creators master generative AI for content creation and SEO. We deliver expert insights, strategic guidance, simple tutorials, and free resources that show you how to scale projects, streamline workflows, and improve visibility across modern search engine GEO (Generative Engine Optimization) and AEO (Answer Engine Optimization). 
- function schemaMarkup() {
+function schemaMarkup() {
   return {
     __html: `{
       "@context": "https://schema.org",
@@ -232,7 +232,7 @@ export default async function Page() {
       "name": "Do It With AI Tools",
       "alternateName": ["doitwithai.tools", "Do It With AI", "DoItWithAI", "DIWAI Tools", "AI Content & SEO Hub"],
       "url": "${getBaseUrl()}/",
-"description": "Do It With AI Tools offers expert AI insights to help you master generative AI for content creation, boost SEO performance, enhance productivity, and strategically scale your business. Discover proven workflows, practical strategies, and free resources to create high-quality content that ranks on traditional search engines and leverages AI-powered search and answer engines effectively. Ideal for marketers, content creators, and businesses aiming to grow with AI."
+      "description": "Do It With AI Tools offers expert AI insights to help you master generative AI for content creation, boost SEO performance, enhance productivity, and strategically scale your business. Discover proven workflows, practical strategies, and free resources to create high-quality content that ranks on traditional search engines and leverages AI-powered search and answer engines effectively. Ideal for marketers, content creators, and businesses aiming to grow with AI.",
       "publisher": {
         "@type": "Organization",
         "name": "Do It With AI Tools",
