@@ -6,11 +6,9 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import CardComponent from "@/components/Card/Page";
 import SkelCard from "@/components/Blog/Skeleton/Card";
 import { urlForImage } from "@/sanity/lib/image";
-// import { useSanityCache } from '@/React_Query_Caching/useSanityCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
-// Corrected usePageCache import path
 import { usePageCache } from '@/React_Query_Caching/usePageCache'; 
-import { cacheSystem } from '@/React_Query_Caching/cacheSystem'; // Needed for clearGroup/refreshGroup
+import { cacheSystem } from '@/React_Query_Caching/cacheSystem';
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 
 const ReusableCachedMixedBlogs = ({
@@ -18,7 +16,7 @@ const ReusableCachedMixedBlogs = ({
   limit = 5,
   selectedCategory = 'all',
   sortBy = 'publishedAt desc',
-  onDataLoad, // Callback to send data back to parent
+  onDataLoad,
   schemaSlugMap = {
     makemoney: "ai-learn-earn",
     aitool: "ai-tools",
@@ -27,14 +25,28 @@ const ReusableCachedMixedBlogs = ({
   },
   initialPageData = null,
   initialTotalCount = null,
-  
 }) => {
- const [paginationStaleWarning, setPaginationStaleWarning] = useState(false);
+  const [paginationStaleWarning, setPaginationStaleWarning] = useState(false);
+  const [filterChangeDetected, setFilterChangeDetected] = useState(false);
+  
+  // Track previous values to detect changes
+  const [prevSelectedCategory, setPrevSelectedCategory] = useState(selectedCategory);
+  const [prevSortBy, setPrevSortBy] = useState(sortBy);
+
+  // Detect filter changes
+  useEffect(() => {
+    if (selectedCategory !== prevSelectedCategory || sortBy !== prevSortBy) {
+      setFilterChangeDetected(true);
+      console.log('Filter change detected:', { selectedCategory, sortBy });
+      setPrevSelectedCategory(selectedCategory);
+      setPrevSortBy(sortBy);
+    }
+  }, [selectedCategory, prevSelectedCategory, sortBy, prevSortBy]);
+
   const start = useMemo(() => (currentPage - 1) * limit, [currentPage, limit]);
 
   // Function to build the category filter string for GROQ
   const getCategoryFilter = useCallback((category) => {
-    // Collect all schema types for the query and tags
     const allSchemaTypes = ["makemoney", "aitool", "coding", "seo"];
     return category === 'all'
       ? `_type in ["${allSchemaTypes.join('","')}"]`
@@ -48,43 +60,52 @@ const ReusableCachedMixedBlogs = ({
       : [category];
   }, []);
 
-  // Memoize the page Query string
-  const pageQuery = useMemo(() => `*[${getCategoryFilter(selectedCategory)}]|order(${sortBy}){formattedDate,tags,readTime,_id,_type,title,slug,mainImage,overview,body,publishedAt}[${start}...${start + limit}]`, [getCategoryFilter, selectedCategory, sortBy, start, limit]);
+  // Memoize the page Query string - will update when selectedCategory or sortBy change
+  const pageQuery = useMemo(() => {
+    const query = `*[${getCategoryFilter(selectedCategory)}]|order(${sortBy}){formattedDate,tags,readTime,_id,_type,title,slug,mainImage,overview,body,publishedAt}[${start}...${start + limit}]`;
+    console.log('Page query updated:', query);
+    return query;
+  }, [getCategoryFilter, selectedCategory, sortBy, start, limit]);
 
   // Memoize the totalCount Query string
-  const totalCountQuery = useMemo(() => `count(*[${getCategoryFilter(selectedCategory)}])`, [getCategoryFilter, selectedCategory]);
+  const totalCountQuery = useMemo(() => {
+    const query = `count(*[${getCategoryFilter(selectedCategory)}])`;
+    console.log('Total count query updated:', query);
+    return query;
+  }, [getCategoryFilter, selectedCategory]);
 
-  // Define a distinct group for all mixed blogs for cache invalidation
-  const allBlogsGroup = useMemo(() => 'all-blogs-mixed-content-group', []); // Memoized to be stable
+  const allBlogsGroup = useMemo(() => 'all-blogs-mixed-content-group', []);
 
-  // Use unique cache keys based on the NEW CACHE_KEYS definitions
-  const pageCacheKey = useMemo(() => CACHE_KEYS.PAGE.MIXED_BLOGS_PAGINATED(currentPage, selectedCategory, sortBy), [currentPage, selectedCategory, sortBy]);
-  const totalCountCacheKey = useMemo(() => CACHE_KEYS.PAGE.MIXED_BLOGS_TOTAL_COUNT(selectedCategory, sortBy), [selectedCategory, sortBy]);
+  // CRITICAL FIX: Create unique cache keys that change with filters
+  const pageCacheKey = useMemo(() => {
+    const key = CACHE_KEYS.PAGE.MIXED_BLOGS_PAGINATED(currentPage, selectedCategory, sortBy);
+    console.log('Page cache key:', key);
+    return key;
+  }, [currentPage, selectedCategory, sortBy]);
 
-  // Memoize options objects for useUnifiedCache calls
+  const totalCountCacheKey = useMemo(() => {
+    const key = CACHE_KEYS.PAGE.MIXED_BLOGS_TOTAL_COUNT(selectedCategory, sortBy);
+    console.log('Total count cache key:', key);
+    return key;
+  }, [selectedCategory, sortBy]);
+
   const stablePageOptions = useMemo(() => ({
     componentName: `MixedBlogsPage_${currentPage}_${selectedCategory}_${sortBy}`,
     enableOffline: true,
     group: allBlogsGroup,
-    // *** Pass initial data for the first page and "all" category ***
     initialData: currentPage === 1 && selectedCategory === 'all' ? initialPageData : null,
-    // *** IMPORTANT: Pass the array of schema types ***
     schemaType: getQuerySchemaTypes(selectedCategory),
- 
   }), [currentPage, selectedCategory, sortBy, allBlogsGroup, initialPageData, getQuerySchemaTypes]);
 
   const stableTotalOptions = useMemo(() => ({
     componentName: `MixedBlogsTotal_${selectedCategory}_${sortBy}`,
     enableOffline: true,
     group: allBlogsGroup,
-    // *** Pass initial total count for the "all" category ***
     initialData: selectedCategory === 'all' ? initialTotalCount : null,
-    // *** IMPORTANT: Pass the array of schema types ***
     schemaType: getQuerySchemaTypes(selectedCategory),
-
   }), [selectedCategory, sortBy, allBlogsGroup, initialTotalCount, getQuerySchemaTypes]);
 
-  // *** FIRST useUnifiedCache call: Fetch paginated data ***
+  // Fetch paginated data
   const {
     data: postsData,
     isLoading: isPostsLoading,
@@ -92,14 +113,14 @@ const ReusableCachedMixedBlogs = ({
     refresh: refreshPosts,
     isStale: isPostsStale,
     cacheSource: postsCacheSource,
-  } = useUnifiedCache( // *** CHANGED ***
+  } = useUnifiedCache(
     pageCacheKey,
     pageQuery,
-    {}, // Params are empty as queries are self-contained
+    {},
     stablePageOptions
   );
 
-  // *** SECOND useUnifiedCache call: Fetch total count ***
+  // Fetch total count
   const {
     data: totalData,
     isLoading: isTotalLoading,
@@ -107,44 +128,47 @@ const ReusableCachedMixedBlogs = ({
     refresh: refreshTotal,
     isStale: isTotalStale,
     cacheSource: totalCacheSource,
-  } = useUnifiedCache( // *** CHANGED ***
+  } = useUnifiedCache(
     totalCountCacheKey,
     totalCountQuery,
-    {}, // Params are empty
+    {},
     stableTotalOptions
   );
 
-  // Register the cache keys with usePageCache hook for UI status
+  // Register cache keys with usePageCache
   usePageCache(pageCacheKey, refreshPosts, pageQuery, `MixedBlogsPage${currentPage}(${selectedCategory},${sortBy})`);
   usePageCache(totalCountCacheKey, refreshTotal, totalCountQuery, `MixedBlogsTotalCount(${selectedCategory},${sortBy})`);
- const postsToDisplay = postsData || [];
 
+  const postsToDisplay = postsData || [];
+  const isLoading = isPostsLoading || isTotalLoading;
+  const hasExistingData = postsToDisplay.length > 0;
 
-  // Combine loading states
-const isLoading = isPostsLoading || isTotalLoading;
-const hasExistingData = postsToDisplay.length > 0;
-
-  // Calculate totalPages from fetched totalCount and limit
+  // Calculate pagination info
   const totalCount = typeof totalData === 'number' ? totalData : 0;
   const totalPages = Math.ceil(totalCount / limit);
 
-  // Handle stale warning and trigger refresh for both queries
+  // Handle stale warning
   useEffect(() => {
     if (isPostsStale || isTotalStale) {
       setPaginationStaleWarning(true);
       if (typeof window !== 'undefined' && window.navigator.onLine) {
-        refreshPosts(false); // Background refresh
-        refreshTotal(false); // Background refresh
+        refreshPosts(false);
+        refreshTotal(false);
       }
-    } else if ((postsData && !isPostsStale) && (totalData && !isTotalStale) && paginationStaleWarning) {
+    } else if ((postsData && !isPostsStale) && (totalData !== undefined && !isTotalStale) && paginationStaleWarning) {
       setPaginationStaleWarning(false);
     }
   }, [isPostsStale, isTotalStale, postsData, totalData, paginationStaleWarning, refreshPosts, refreshTotal]);
 
-  // Effect to notify parent about loaded data and pagination details
+  // Clear filter change flag after data loads
   useEffect(() => {
-    // Only call onDataLoad if data is stable and not currently loading.
-    // Also, ensure initial data is "seen" before subsequent fetches overwrite it.
+    if (!isLoading && filterChangeDetected) {
+      setFilterChangeDetected(false);
+    }
+  }, [isLoading, filterChangeDetected]);
+
+  // Report data to parent
+  useEffect(() => {
     if (onDataLoad && postsData !== null && typeof totalData === 'number' && !isLoading) {
       onDataLoad(currentPage, totalPages, totalCount);
     }
@@ -157,34 +181,40 @@ const hasExistingData = postsToDisplay.length > 0;
           console.log("Refreshing entire group:", allBlogsGroup);
           await cacheSystem.refreshGroup(allBlogsGroup);
         } else {
-          console.warn("cacheSystem is not defined or refreshGroup method is missing. Cannot refresh cache group.");
-          await refreshPosts(true); // Fallback to individual force refresh
+          console.warn("cacheSystem.refreshGroup not available");
+          await refreshPosts(true);
           await refreshTotal(true);
         }
       } else {
-        await refreshPosts(true); // Force refresh current page
-        await refreshTotal(true); // Force refresh current page's total count
+        await refreshPosts(true);
+        await refreshTotal(true);
       }
     } catch (error) {
       console.error('Refresh failed:', error);
     }
   }, [allBlogsGroup, refreshPosts, refreshTotal]);
 
-  // Determine if there's an error and NO data to display as a fallback
   const hasErrorAndNoData = (postsError || totalError) && (!postsData || postsData.length === 0);
-
- 
 
   return (
     <div className="space-y-4">
-      {paginationStaleWarning && (
+      {filterChangeDetected && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/20 dark:border-blue-800 text-center text-blue-800 dark:text-blue-200 font-medium flex items-center justify-center">
+          <svg className="h-5 w-5 text-blue-600 animate-spin mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Applying filters...
+        </div>
+      )}
+
+      {paginationStaleWarning && !filterChangeDetected && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-900/20 dark:border-yellow-800 text-center text-yellow-800 dark:text-yellow-200 font-medium">
           Updating blog data...
         </div>
       )}
 
       {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded dark:bg-gray-800">
+        <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded dark:bg-gray-800 overflow-auto">
           Page: {currentPage} | Category: {selectedCategory} | Sort: {sortBy} |
           Page CacheKey: {pageCacheKey} | Total Count CacheKey: {totalCountCacheKey} |
           Group: {allBlogsGroup} | Page Stale: {isPostsStale ? 'Yes' : 'No'} | Total Stale: {isTotalStale ? 'Yes' : 'No'} |
@@ -195,13 +225,13 @@ const hasExistingData = postsToDisplay.length > 0;
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8 mb-16">
-        {isLoading && postsToDisplay.length === 0 ? ( // Show skeleton only if loading AND no data is present yet
+        {isLoading && postsToDisplay.length === 0 ? (
           Array.from({ length: limit }).map((_, index) => (
             <div key={index} className="animate-pulse">
               <SkelCard />
             </div>
           ))
-        ) : hasErrorAndNoData ? ( // Show error message if there's an error AND no data
+        ) : hasErrorAndNoData ? (
           <div className="col-span-full text-center py-8">
             <p className="text-red-500 mb-4">Failed to load blog posts. {postsError?.message || totalError?.message || ''}</p>
             <div className="space-x-2">
@@ -215,11 +245,11 @@ const hasExistingData = postsToDisplay.length > 0;
                 onClick={() => handleRefresh(true)}
                 className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
               >
-                Refresh All Blog Data (Full Re-sync)
+                Refresh All Blog Data
               </button>
             </div>
           </div>
-        ) : postsToDisplay.length > 0 ? ( // If data exists, display posts
+        ) : postsToDisplay.length > 0 ? (
           postsToDisplay.map((post) => (
             <CardComponent
               key={post._id}
@@ -236,14 +266,14 @@ const hasExistingData = postsToDisplay.length > 0;
               })}
             />
           ))
-        ) : ( // If no data, no loading, and no error, show "No posts found"
+        ) : (
           <div className="col-span-full text-center py-8">
             <p className="text-gray-500 dark:text-gray-400 mb-4">No posts found for this selection.</p>
             <button
               onClick={() => handleRefresh(true)}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
-              Refresh All Blog Data (Full Re-sync)
+              Refresh All Blog Data
             </button>
           </div>
         )}

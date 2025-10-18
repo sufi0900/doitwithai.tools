@@ -91,7 +91,7 @@ export const metadata = {
   }
 };
 
-const HOMEPAGE_FREE_RESOURCES_LIMIT = 3;
+const HOMEPAGE_FREE_RESOURCES_LIMIT = 10;
 
 async function getHomePageInitialData() {
   const cacheKey = 'homepage:initialData';
