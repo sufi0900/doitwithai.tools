@@ -70,7 +70,7 @@ const Marquee = () => {
 
   return (
     <div className="container">
-      <div className="relative border-b border-body-color/[.15] pb-8 dark:border-white/[.15] md:pb-10 lg:pb-12">
+      <div className="relative border-b border-body-color/[.15] pb-8 dark:border-white/[.15] md:pb-10 lg:pb-12 lg:mt-16 mt-10 ">
         {/* Section header */}
         <h1 className="mb-8 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
             <span className="group inline-block cursor-pointer">

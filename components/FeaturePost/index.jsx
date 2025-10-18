@@ -96,7 +96,7 @@ const queries = useMemo(() => ({
   const featureRelatedPosts = featurePostRelatedData || [];
 
   return (
-    <section id="blog" className="py-4 lg:py-6">
+    <section id="blog" className="py-4 lg:py-16">
       <div className="container px-4">
         <div className="flex justify-between items-center mb-6 md:mb-8">
           <h1 className="text-xl font-bold tracking-wide text-black dark:text-white sm:text-2xl md:text-3xl lg:text-4xl">

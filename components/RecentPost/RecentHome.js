@@ -79,7 +79,7 @@ export default function RecentPosts({ initialData = [] }) { // Accept initialDat
   }, [refresh]);
 
   return (
-  <section className="pb-4 sm:pb-[20px] mt-6 sm:mt-[40px]">
+  <section className="pb-4 sm:pb-[20px] mt-6 sm:mt-[40px] lg:mt-16">
   <div className="container mx-auto px-3 sm:px-4">
     <div className="mb-6 sm:mb-8 mt-6 sm:mt-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center sm:gap-0">
   
