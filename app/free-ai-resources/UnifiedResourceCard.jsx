@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import ResourceCardBase from './ResourceCardBase';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { ArrowForward, PlayArrow, Description, Image as ImageIcon, Psychology } from '@mui/icons-material';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 
@@ -493,21 +494,20 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
     </div>
   );
 
-  return (
-   <ResourceCardBase
-      resource={resource}
-      renderUI={({ resource, renderPreviewContent, handleResourceAccess, openModal }) => {
-        // 👇 FIX: Create a new handler that uses the correct modal logic based on variant.
-        const handleOpenModal = () => {
-          if (variant === 'carousel') {
-            // For carousel, fire a global event to be caught by a top-level modal.
-            openModalById(resource._id);
-          } else {
-            // For grid, use the local modal from ResourceCardBase.
-            openModal(true);
-          }
-        };
-
+  const memoizedCardBase = useMemo(() => (
+    <ResourceCardBase
+      resource={resource}
+      renderUI={({ resource, renderPreviewContent, handleResourceAccess, openModal }) => {
+        // 👇 FIX: Create a new handler that uses the correct modal logic based on variant.
+        const handleOpenModal = () => {
+          if (variant === 'carousel') {
+            // For carousel, fire a global event to be caught by a top-level modal.
+            openModalById(resource._id);
+          } else {
+            // For grid, use the local modal from ResourceCardBase.
+            openModal(true);
+          }
+        };
         return (
           <div className={`w-full ${variant === 'grid' ? 'sm:w-1/2 lg:w-1/3 p-3' : ''} ${wrapperClassName}`}>
             <div className={`transition-all duration-300 ${variant === 'grid' ? 'hover:transform hover:scale-[1.02]' : ''}`}>
@@ -580,10 +580,13 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
     </div>
   </div>
 
-       );
-      }}
-    />
-  );
-};
+ );
+      }}
+    />
+), [resource._id, variant, wrapperClassName]);
 
+// Replace the final return with the memoized version
+return memoizedCardBase;
+
+};
 export default UnifiedResourceCard;
