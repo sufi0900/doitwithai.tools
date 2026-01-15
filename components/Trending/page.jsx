@@ -16,7 +16,7 @@ import { cacheSystem } from '@/React_Query_Caching/cacheSystem';
 const TrendingPage = ({ initialData = {} }) => {
   const queries = useMemo(() => ({
     trendBig: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendBig==true][0...1]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
-    trendRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendRelated==true][0...3]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+    trendRelated: `*[_type in ["makemoney","freeairesources","news","coding","aitool","seo"]&&displaySettings.isHomePageTrendRelated==true][0...4]{_id,_type,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
   }), []);
 
   const commonSchemaTypes = useMemo(() => ["makemoney", "freeairesources", "news", "coding", "aitool", "seo"], []);
@@ -93,7 +93,7 @@ const TrendingPage = ({ initialData = {} }) => {
     <section className="pb-[30px] md:py-4 lg:py-4">
       <div className="container px-4">
         <div className="flex justify-between items-center mb-6 md:mb-8">
-          <h1 className="text-xl font-bold tracking-wide text-black dark:text-white sm:text-2xl md:text-3xl lg:text-4xl">
+          <h2 className="text-xl font-bold tracking-wide text-black dark:text-white sm:text-2xl md:text-3xl lg:text-4xl">
             <span className="group inline-block cursor-pointer">
               <span className="relative text-blue-500">
                 Trending
@@ -105,7 +105,7 @@ const TrendingPage = ({ initialData = {} }) => {
                 <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
               </span>
             </span>
-          </h1>
+          </h2>
         </div>
 
         {/* IMPROVED RESPONSIVE GRID LAYOUT */}

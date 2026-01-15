@@ -1407,3 +1407,48 @@ p span.font-bold:hover {
     display: none;
   }
 }
+
+/* AI Star Icon - Main Container Animation */
+.hero-animations-active .ai-star-icon {
+  opacity: 1;
+  transform: scale(1);
+  transition-delay: 1.2s;
+  /* 5s loop: 3s active + 2s rest */
+  animation: rotateAndRest 3s ease-in-out infinite 1.7s;
+}
+
+/* Star Rotation & Pause Logic */
+@keyframes rotateAndRest {
+  0% { transform: rotate(0deg) scale(1); }
+  /* First 60% of the time (3s): Rotate and slightly grow */
+  30% { transform: rotate(180deg) scale(1.1); }
+  60% { transform: rotate(360deg) scale(1); }
+  /* Last 40% of the time (2s): Stay perfectly still */
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Sparkle Logic synchronized with the rotation */
+.hero-animations-active .star-main,
+.hero-animations-active .star-secondary,
+.hero-animations-active .star-tertiary {
+  animation: sparkleAndRest 3s ease-in-out infinite;
+}
+
+/* Offset the small stars so they don't sparkle at the exact same time */
+.hero-animations-active .star-secondary { animation-delay: 0.2s; }
+.hero-animations-active .star-tertiary { animation-delay: 0.4s; }
+
+@keyframes sparkleAndRest {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 0px transparent); }
+  /* Sparkle active during rotation */
+  30% { opacity: 0.7; filter: drop-shadow(0 0 8px #5271ff); }
+  60% { opacity: 1; filter: drop-shadow(0 0 0px transparent); }
+  /* Stay solid during the rest period */
+  61% { opacity: 1; }
+}
+
+/* Ensure the SVG center is the pivot point */
+.ai-star-icon {
+  transform-origin: center;
+  display: inline-block;
+}

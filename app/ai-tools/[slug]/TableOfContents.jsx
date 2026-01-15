@@ -53,9 +53,9 @@ const TableOfContents = ({ tableOfContents }) => {
       >
         <div className="rounded-lg border border-gray-300 shadow-md bg-white dark:bg-gray-800 transition-colors duration-300 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-            <h1 className="text-xl sm:text-3xl font-semibold text-gray-800 dark:text-white">
+            <h2 className="text-xl sm:text-3xl font-semibold text-gray-800 dark:text-white">
               Table of Contents
-            </h1>
+            </h2>
           </div>
           
           <div className="p-4 sm:p-6">

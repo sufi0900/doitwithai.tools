@@ -10,6 +10,7 @@ export default function SingleBlog({
   mainImage,
   title,
   overview,
+  readTime,
   slug,
 }) {
   const formattedDate = new Date(publishedAt).toLocaleDateString();

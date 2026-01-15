@@ -2,8 +2,7 @@
 /*eslint-disable react/no-unescaped-entities*/
 "use client";
 
-import { useEffect, useRef, useCallback, useState } from 'react';
-import AnimatedBinaryText from './AnimatedBinaryText'; // Adjust path if needed
+import { useEffect, useRef,  useState } from 'react';
 import { useAnimationCleanup } from './useAnimationCleanup'; // Adjust path
 
 // Key Changes for FCP Optimization (already implemented, retaining here for context):
@@ -190,55 +189,91 @@ useEffect(() => {
       <div className="container mx-auto flex flex-col items-center justify-center px-2 lg:px-8 max-w-7xl">
         <div className="hero-section w-full">
 
-          {/* CRITICAL CONTENT - NO ANIMATION DELAYS */}
-          <header className="text-center mb-8">
-
+ <header className="text-center mb-8">
+  {/* SEO-Optimized H1: Brand + Value Proposition */}
   <h1
     id="hero-heading"
-    className="ai-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-gray-900 dark:text-white no-shift"
+    className="ai-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-gray-900 dark:text-white no-shift leading-tight"
     itemProp="headline"
   >
-    <span className="block">Welcome to</span>
-    
-    {/* Main title with original badge for larger devices */}
-    <span className="text-blue-600 dark:text-blue-400 transition-all duration-300 relative inline-block">
-      DO IT WITH AI&nbsp;
-      <span className="inline-flex items-center whitespace-nowrap last-group">
-        TOOLS
-        <span className="new-launch-badge inline-flex items-center justify-center text-xs font-bold text-white bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-sm ml-1">
-          NEW!
-        </span>
+    <span className="block text-blue-600 dark:text-blue-400 transition-all duration-300 mb-2">
+      Do It With AI Tools
+    </span>
+    <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 dark:text-gray-100">
+      Helps You Master AI for SEO and Productivity
+      {/* Animated AI Star Icon */}
+      <span className="inline-block ml-2 align-middle" aria-hidden="true">
+        <svg
+          width="1em"
+          height="1em"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="ai-star-icon"
+          style={{
+            display: 'inline-block',
+            verticalAlign: 'middle',
+            // animation: 'sparkle 2s ease-in-out infinite'
+          }}
+        >
+          {/* Main star shape */}
+          <path
+            d="M12 2L14.09 8.26L20 10L14.09 11.74L12 18L9.91 11.74L4 10L9.91 8.26L12 2Z"
+            fill="#5271ff"
+            className="star-main"
+          >
+            <animate
+              attributeName="opacity"
+              values="1;0.6;1"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </path>
+          {/* Secondary sparkle */}
+          <path
+            d="M19 4L19.5 5.5L21 6L19.5 6.5L19 8L18.5 6.5L17 6L18.5 5.5L19 4Z"
+            fill="#5271ff"
+            className="star-secondary"
+          >
+            <animate
+              attributeName="opacity"
+              values="0.5;1;0.5"
+              dur="2s"
+              repeatCount="indefinite"
+              begin="0.3s"
+            />
+          </path>
+          {/* Tertiary sparkle */}
+          <path
+            d="M7 20L7.35 21L8.5 21.35L7.35 21.7L7 23L6.65 21.7L5.5 21.35L6.65 21L7 20Z"
+            fill="#5271ff"
+            className="star-tertiary"
+          >
+            <animate
+              attributeName="opacity"
+              values="0.4;1;0.4"
+              dur="2s"
+              repeatCount="indefinite"
+              begin="0.6s"
+            />
+          </path>
+        </svg>
       </span>
     </span>
-    
-  <div className="new-launch-badge-mobile">
-  {/* This outer div will manage flex layout but won't animate its transform */}
-  
-  <div className="new-launch-badge-inner"> {/* NEW ELEMENT FOR ANIMATION */}
-    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-    </svg>
-    {/* This span holds the text and will now be a child of the animating inner div */}
-    <span className="inline-flex items-center justify-center text-xs font-bold text-white bg-gradient-to-r from-green-500 to-green-600 rounded-full shadow-sm ml-1">
-      NEW LAUNCH!
-    </span>
-  </div>
-</div>
   </h1>
-            
-<p className="primary-content hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-6 text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-200 sm:text-xl lg:text-lg xl:text-xl no-shift">
-  <span className="block sm:inline">
-    <span className="font-semibold text-blue-600 dark:text-blue-400">More than just another AI blog</span>
-    — we're your modern resource hub for mastering
-  </span>
-  <br className="hidden sm:inline"/>
-  <span className="block sm:inline">
-    generative AI tools that <span className="font-bold text-blue-600 dark:text-blue-400">boost SEO, scale businesses, and 10x productivity.</span>
-  </span>
-</p>
-
-
-          </header>
+  
+  {/* Supporting Description */}
+  <p className="primary-content hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-6 text-lg font-medium leading-relaxed text-gray-600 dark:text-gray-200 sm:text-xl lg:text-lg xl:text-xl no-shift max-w-4xl mx-auto">
+    <span className="block sm:inline">
+      <span className="font-semibold text-blue-600 dark:text-blue-400">More than just another AI blog</span>
+      — we're your modern resource hub for mastering
+    </span>
+    <br className="hidden sm:inline"/>
+    <span className="block sm:inline">
+      generative AI tools that <span className="font-bold text-blue-600 dark:text-blue-400">boost SEO, scale businesses, and 10x productivity.</span>
+    </span>
+  </p>
+</header>
 
           {/* --- AUDIENCE TARGETING BADGES SECTION START --- */}
           {/* Removed conditional rendering as CSS handles initial state */}

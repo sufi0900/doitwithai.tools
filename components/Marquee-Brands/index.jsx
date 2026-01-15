@@ -72,7 +72,7 @@ const Marquee = () => {
     <div className="container">
       <div className="relative border-b border-body-color/[.15] pb-8 dark:border-white/[.15] md:pb-10 lg:pb-12 lg:mt-16 mt-10 ">
         {/* Section header */}
-        <h1 className="mb-8 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
+        <h2 className="mb-8 text-2xl font-bold tracking-wide text-black dark:text-white md:text-3xl lg:text-4xl">
             <span className="group inline-block cursor-pointer">
               <span className="relative text-blue-500">AI Tools We Use
                 <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-full bg-blue-500"></span>
@@ -82,7 +82,7 @@ const Marquee = () => {
                 <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
               </span>
             </span>
-          </h1>
+          </h2>
 
         {/* Enhanced gradient background */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-purple-50/30 dark:from-blue-900/10 dark:via-transparent dark:to-purple-900/10" />

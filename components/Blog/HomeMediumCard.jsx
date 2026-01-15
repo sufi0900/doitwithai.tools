@@ -101,9 +101,9 @@ export default function MediumCard({
         >
           {/* Title */}
           <div className="mb-3">
-            <h5 className="line-clamp-2 text-base font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 min-h-[2.4rem] lg:min-h-[3rem]">
+            <h3 className="line-clamp-2 text-base font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300 min-h-[2.4rem] lg:min-h-[3rem]">
               {title}
-            </h5>
+            </h3>
           </div>
 
           {/* Overview */}

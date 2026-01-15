@@ -17,7 +17,7 @@ import { usePageCache } from '@/React_Query_Caching/usePageCache';
 const DigitalMarketing = ({ initialData = {} }) => {
   const queries = useMemo(() => ({
     seoTrendBig: `*[_type=="seo"&&displaySettings.isHomePageSeoTrendBig==true][0...1]{_id,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
-    seoTrendRelated: `*[_type=="seo"&&displaySettings.isHomePageSeoTrendRelated==true][0...3]{_id,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
+    seoTrendRelated: `*[_type=="seo"&&displaySettings.isHomePageSeoTrendRelated==true][0...4]{_id,title,overview,mainImage,slug,publishedAt,readTime,tags,_updatedAt,"displaySettings":displaySettings}`,
   }), []);
 
   const commonOptions = useMemo(() => ({

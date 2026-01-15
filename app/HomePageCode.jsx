@@ -11,7 +11,7 @@ import dynamic from "next/dynamic";
 import Trending from  "@/components/Trending/page"
 // Dynamic imports for components
 // const Trending = dynamic(() => import("@/components/Trending/page"), { ssr: true });
-import HomepageCategories from "@/components/Blog/HomepageCategories";
+// import HomepageCategories from "@/components/Blog/HomepageCategories";
 import FreeResourcesPage from "@/components/FreeAIResources/page";
 
 const FeaturePost = dynamic(() => import("@/components/FeaturePost"), { ssr: true });

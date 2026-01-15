@@ -177,9 +177,9 @@ export default function RecentPosts({ initialData = [] }) { // Accept initialDat
                 {/* Content Section */}
                 <div className="p-5 flex flex-col flex-grow">
                   {/* Enhanced Title with Better Visibility */}
-                  <h5 className="mb-2 line-clamp-2 text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+                  <h2 className="mb-2 line-clamp-2 text-xl md:text-2xl font-bold tracking-tight text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
                     {post.title}
-                  </h5>
+                  </h2>
                   
                   {/* Overview */}
                   <p className="mb-3 line-clamp-3 md:line-clamp-4 font-normal text-gray-700 dark:text-gray-400 flex-grow">

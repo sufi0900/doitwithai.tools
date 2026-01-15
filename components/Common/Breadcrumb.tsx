@@ -27,7 +27,7 @@ const Breadcrumb = ({
               <div className="max-w-full lg:max-w-[650px] space-y-4 sm:space-y-6">
                 {/* Enhanced Title */}
                 <Link href={link} className="group inline-block">
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight text-gray-900 dark:text-white leading-relaxed sm:leading-relaxed lg:leading-relaxed xl:leading-relaxed">
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight text-gray-900 dark:text-white leading-relaxed sm:leading-relaxed lg:leading-relaxed xl:leading-relaxed">
                     <span className="group/title inline-block cursor-pointer">
                       {/* First part with blue styling */}
                       <span className="relative text-blue-600 dark:text-blue-400 transition-colors duration-300 group-hover:text-blue-700 dark:group-hover:text-blue-300">
@@ -43,7 +43,7 @@ const Breadcrumb = ({
                         <span className="absolute bottom-[-4px] sm:bottom-[-6px] left-0 h-0.5 sm:h-1 w-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300 group/title-hover:w-full"></span>
                       </span>
                     </span>
-                  </h1>
+                  </h2>
                 </Link>
 
                 {/* Enhanced Description */}

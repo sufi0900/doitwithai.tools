@@ -45,9 +45,9 @@ export default function HomeSmallCard({
         <div className="flex flex-col justify-between p-4 leading-normal flex-1 relative z-10 w-full">
           {/* Title */}
           <div className="mb-2">
-            <h5 className="line-clamp-2 text-base font-semibold text-start text-gray-900 dark:text-white sm:leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+            <h3 className="line-clamp-2 text-base font-semibold text-start text-gray-900 dark:text-white sm:leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
               {title}
-            </h5>
+            </h3>
           </div>
 
           {/* Overview */}

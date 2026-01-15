@@ -99,7 +99,7 @@ const queries = useMemo(() => ({
     <section id="blog" className="py-4 lg:py-16">
       <div className="container px-4">
         <div className="flex justify-between items-center mb-6 md:mb-8">
-          <h1 className="text-xl font-bold tracking-wide text-black dark:text-white sm:text-2xl md:text-3xl lg:text-4xl">
+          <h2 className="text-xl font-bold tracking-wide text-black dark:text-white sm:text-2xl md:text-3xl lg:text-4xl">
             <span className="group inline-block cursor-pointer">
               <span className="relative text-blue-500">
                 Featured
@@ -111,7 +111,7 @@ const queries = useMemo(() => ({
                 <span className="underline-span absolute bottom-[-8px] left-0 h-1 w-0 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
               </span>
             </span>
-          </h1>
+          </h2>
         </div>
         <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
           {/* Small cards - Full width on mobile, left side on desktop */}
