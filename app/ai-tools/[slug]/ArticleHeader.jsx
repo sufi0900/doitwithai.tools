@@ -81,66 +81,72 @@ const ArticleHeader = ({ articleTitle, isSticky = false }) => {
 
   return (
     <>
-      <header
-        ref={headerRef}
-        className={`fixed left-0 top-0 z-50 w-full border-b border-gray-200/50 bg-white/95 transition-all duration-300 ease-out backdrop-blur-xl dark:border-gray-700/50 dark:bg-gray-900/95 
-        ${isSticky && !showGlobalHeader ? 'translate-y-0 opacity-100 shadow-lg shadow-blue-500/10 dark:shadow-indigo-900/30' : '-translate-y-full opacity-0 pointer-events-none'}`}
-      >
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-blue-50/20 via-white/20 to-indigo-50/20 dark:from-gray-900/20 dark:via-gray-800/20 dark:to-gray-900/20" />
-        <div className="container relative z-10 mx-auto">
-          <div className="flex h-16 items-center justify-between gap-2 px-2 sm:gap-3 sm:px-4">
-            
-            <div className="group flex-shrink-0">
-              <div className="relative">
-                <Avatar
-                  onClick={handleLogoClick}
-                  onMouseDown={(e) => e.button === 1 && handleLogoClick(e)}
-                  sx={{
-                    width: { xs: 40, sm: 48 },
-                    height: { xs: 40, sm: 48 },
-                    background: "transparent",
-                    cursor: "pointer",
-                  }}
-                  className="transition-transform duration-200 group-hover:scale-110"
-                >
-                  <Image
-                    src="/logoForHeader.png"
-                    alt="Logo"
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-contain"
-                    priority
-                  />
-                </Avatar>
-              </div>
-            </div>
-
-            <div className="flex flex-grow justify-center px-1 sm:px-2 min-w-0">
-              <div className="group relative w-full max-w-full">
-                <h2
-                  ref={titleRef}
-                  className="relative cursor-pointer text-center font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 via-blue-900 to-gray-800 dark:from-white dark:via-blue-100 dark:to-white 
-                  text-xs sm:text-sm md:text-base lg:text-lg 
-                  px-2 py-2 leading-tight
-                  truncate sm:line-clamp-2 sm:truncate-none
-                  whitespace-nowrap sm:whitespace-normal"
-                  onClick={handleTitleClick} // --- CHANGED: Use onClick instead of onMouseEnter/onMouseLeave
-                >
-                  {articleTitle || "Article"}
-                </h2>
-              </div>
-            </div>
-
-            <div className="flex-shrink-0">
-              <div className="group relative transition-all duration-200 scale-90 sm:scale-100">
-                <ThemeToggler />
-              </div>
-            </div>
-          </div>
-          
-          <div className="absolute bottom-0 left-1/2 h-px w-16 sm:w-24 -translate-x-1/2 transform bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
+    <header
+  ref={headerRef}
+  role="banner"
+  aria-label={`Article navigation: ${articleTitle}`}
+  className={`fixed left-0 top-0 z-50 w-full border-b border-gray-200/50 bg-white/95 transition-all duration-300 ease-out backdrop-blur-xl dark:border-gray-700/50 dark:bg-gray-900/95 
+  ${isSticky && !showGlobalHeader ? 'translate-y-0 opacity-100 shadow-lg shadow-blue-500/10 dark:shadow-indigo-900/30' : '-translate-y-full opacity-0 pointer-events-none'}`}
+>
+  <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-blue-50/20 via-white/20 to-indigo-50/20 dark:from-gray-900/20 dark:via-gray-800/20 dark:to-gray-900/20" />
+  <div className="container relative z-10 mx-auto">
+    <div className="flex h-16 items-center justify-between gap-2 px-2 sm:gap-3 sm:px-4">
+      
+      <div className="group flex-shrink-0">
+        <div className="relative">
+          <Avatar
+            onClick={handleLogoClick}
+            onMouseDown={(e) => e.button === 1 && handleLogoClick(e)}
+            sx={{
+              width: { xs: 40, sm: 48 },
+              height: { xs: 40, sm: 48 },
+              background: "transparent",
+              cursor: "pointer",
+            }}
+            className="transition-transform duration-200 group-hover:scale-110"
+          >
+            <Image
+              src="/logoForHeader.png"
+              alt="Return to Do It With AI Tools homepage"
+              width={48}
+              height={48}
+              className="w-full h-full object-contain"
+              priority
+            />
+          </Avatar>
         </div>
-      </header>
+      </div>
+
+      <div className="flex flex-grow justify-center px-1 sm:px-2 min-w-0">
+        <div className="group relative w-full max-w-full">
+          {/* CHANGED: Use div with aria-label instead of h2 */}
+          <div
+            ref={titleRef}
+            role="heading"
+            aria-level="2"
+            aria-label={articleTitle || "Article"}
+            className="relative cursor-pointer text-center font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 via-blue-900 to-gray-800 dark:from-white dark:via-blue-100 dark:to-white 
+            text-xs sm:text-sm md:text-base lg:text-lg 
+            px-2 py-2 leading-tight
+            truncate sm:line-clamp-2 sm:truncate-none
+            whitespace-nowrap sm:whitespace-normal"
+            onClick={handleTitleClick}
+          >
+            {articleTitle || "Article"}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-shrink-0">
+        <div className="group relative transition-all duration-200 scale-90 sm:scale-100">
+          <ThemeToggler />
+        </div>
+      </div>
+    </div>
+    
+    <div className="absolute bottom-0 left-1/2 h-px w-16 sm:w-24 -translate-x-1/2 transform bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
+  </div>
+</header>
 
       {showTooltip && articleTitle && (
         <div 

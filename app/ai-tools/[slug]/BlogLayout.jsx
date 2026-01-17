@@ -220,8 +220,7 @@ import Image from 'next/image';
   // Keep the rest of your existing code, but ADD this wrapper to prevent layout shift:
   return (
     <div className="min-h-screen"> {/* ADD this wrapper */}
-      <ArticleHeader articleTitle={data?.title} isSticky={false} />
-      <StickyArticleNavbar articleTitle={data?.title} />
+
       
       <section className={`overflow-hidden pb-[120px] transition-all duration-500 ease-out ${
         mounted && showGlobalHeader ? 'pt-[38px]' : 'pt-[10px]' // Keep original pt values for main content section
@@ -232,7 +231,8 @@ import Image from 'next/image';
           <article id="main-content" className="lg:m-4 flex flex-wrap">
             {/* Main Article Content - Priority for FCP */}
             <BlogHeader data={data} imgdesc={imgdesc} />
-            
+                  <ArticleHeader articleTitle={data?.title} isSticky={false} />
+      <StickyArticleNavbar articleTitle={data?.title} />
             <div className=" mb-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
             
             <div className="w-full lg:w-8/12">
