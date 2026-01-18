@@ -39,7 +39,9 @@ export const metadata = {
   publisher: "Do It With AI Tools",
 
   keywords: "AI content creation, AI SEO, generative AI, content optimization, ChatGPT content, AI writing tools, SEO with AI, content marketing AI, prompt engineering, AI content strategy, AI productivity, business scale",
-
+ other: {
+    'ai-content-declaration': 'human-created, ai-assisted',
+  },
   openGraph: {
     title: "Your Modern AI Hub for SEO & Business Scale",
     description: "Do It With AI Tools offers AI insights to master generative AI that boost SEO & content creation, grow your business, and improve overall productivity.",
