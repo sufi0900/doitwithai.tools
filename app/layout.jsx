@@ -144,11 +144,35 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
 
+
+  {/* Ahrefs Web Analytics */}
+
          <Script
     src="https://analytics.ahrefs.com/analytics.js"
     data-key="vodw9TgfqC4efMfrAO9xrw"
     strategy="afterInteractive"
   />
+
+
+{/* Google Analytics (GA4) */}
+<Script
+  src="https://www.googletagmanager.com/gtag/js?id=G-SHX78424XN"
+  strategy="afterInteractive"
+/>
+
+<Script id="ga4-init" strategy="afterInteractive">
+  {`
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-SHX78424XN', {
+      page_path: window.location.pathname,
+    });
+  `}
+</Script>
+
+
+
       </head>
       <body className={`${inter.className} bg-[#f0fdfa] dark:bg-black`}>
         <noscript>JavaScript is required for this app to work properly.</noscript>
