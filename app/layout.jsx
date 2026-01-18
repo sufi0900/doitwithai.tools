@@ -15,6 +15,7 @@ import Header from "@/components/Header";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next"
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider";
+import Script from "next/script";
 
 // EVERYTHING else lazy-loaded
 const ConditionalGlobalHeader = dynamic(
@@ -142,6 +143,12 @@ export default function RootLayout({ children }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
+
+         <Script
+    src="https://analytics.ahrefs.com/analytics.js"
+    data-key="vodw9TgfqC4efMfrAO9xrw"
+    strategy="afterInteractive"
+  />
       </head>
       <body className={`${inter.className} bg-[#f0fdfa] dark:bg-black`}>
         <noscript>JavaScript is required for this app to work properly.</noscript>
