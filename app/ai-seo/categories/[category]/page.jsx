@@ -4,13 +4,12 @@ import SubCategoryContent from "./code";
 import { client } from "@/sanity/lib/client";
 import { urlForImage } from "@/sanity/lib/image";
 import { notFound } from 'next/navigation';
-import Script from "next/script"; // Import Script for JSON-LD
+import Script from "next/script";
 
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
 function getBaseUrl() {
-  // Your getBaseUrl function from the reference code
   if (process.env.NODE_ENV === 'production') {
     return 'https://doitwithai.tools';
   }
@@ -26,9 +25,7 @@ function generateOGImageURL(params) {
   return `${baseURL}?${searchParams.toString()}`;
 }
 
-// ... (existing generateStaticParams function)
-
-// FIXED: Better query to handle multiple categories per article
+// Fetch subcategory posts
 async function fetchSubcategoryPosts(slug) {
   const query = `*[_type == "seo" && $slug in subcategories[]->slug.current] | order(publishedAt desc) {
     _id,
@@ -52,16 +49,16 @@ async function fetchSubcategoryPosts(slug) {
   }
 }
 
-// Fetch subcategory information (now including new SEO fields)
+// Fetch subcategory information
 async function fetchSubcategoryInfo(slug) {
   const query = `*[_type == "seoSubcategory" && slug.current == $slug][0] {
     _id,
     title,
     description,
     slug,
-    metaTitle,      // NEW
-    metaDescription,  // NEW
-    keywords        // NEW
+    metaTitle,
+    metaDescription,
+    keywords
   }`;
   try {
     return await client.fetch(query, { slug });
@@ -71,19 +68,24 @@ async function fetchSubcategoryInfo(slug) {
   }
 }
 
-// NEW: Dynamically generate metadata
+// Generate metadata dynamically
 export async function generateMetadata({ params }) {
   const { category } = params;
   const subcategoryInfo = await fetchSubcategoryInfo(category);
 
   if (!subcategoryInfo) {
-    return notFound();
+    return {
+      title: 'Category Not Found',
+      description: 'The requested category could not be found.'
+    };
   }
 
   const { title, metaTitle, metaDescription, keywords } = subcategoryInfo;
-  const pageTitle = metaTitle || `${title} | SEO Articles`;
-  const pageDescription = metaDescription || `Explore all articles related to ${title}, including the latest AI-powered SEO strategies and tools.`;
-  const pageKeywords = keywords || `AI SEO, ${title}, digital marketing, AI for content`;
+  
+  // Use custom meta or fallback to defaults
+  const pageTitle = metaTitle || `${title} - AI SEO Guides & Strategies`;
+  const pageDescription = metaDescription || `Explore comprehensive ${title} guides, strategies, and expert insights for AI-powered search optimization.`;
+  const pageKeywords = keywords || `AI SEO, ${title}, search optimization, SEO strategies, AI tools`;
   const canonicalUrl = `${getBaseUrl()}/ai-seo/categories/${category}`;
 
   return {
@@ -91,24 +93,26 @@ export async function generateMetadata({ params }) {
     description: pageDescription,
     author: "Sufian Mustafa",
     keywords: pageKeywords,
-   openGraph: {
+    
+    openGraph: {
       title: pageTitle,
       url: canonicalUrl,
       type: "website",
       images: [{
         url: generateOGImageURL({
-          title: `AI SEO Subcategories: ${title}`,
-          category: 'Keyword Focus',
-          ctaText: 'Explore All SEO Insights',
-        features: 'SEO Categories,Boost SEO,Content Strategy' // Relevant features
+          title: title,
+          ctaText: 'Explore Guides',
+          features: 'AI SEO,Expert Guides,Free Resources',
         }),
         width: 1200,
         height: 630,
-        alt: `AI SEO Subcategories: ${title}`,
+        alt: `${title} - AI SEO guides and strategies`,
       }],
-      siteName: "doitwithai.tools",
+      siteName: "Do It With AI Tools",
       locale: 'en_US',
+      description: pageDescription,
     },
+    
     twitter: {
       card: "summary_large_image",
       site: "@doitwithai",
@@ -116,17 +120,18 @@ export async function generateMetadata({ params }) {
       domain: "doitwithai.tools",
       url: canonicalUrl,
       title: pageTitle,
+      description: pageDescription,
       image: generateOGImageURL({
-        title: `AI SEO Subcategories: ${title}`,
-        category: 'Keyword Focus',
-          ctaText: 'Explore All SEO Insights',
-        features: 'SEO Categories,Boost SEO,Content Strategy' // Relevant features
+        title: title,
+        ctaText: 'Explore Guides',
+        features: 'AI SEO,Expert Guides,Free Resources',
       }),
     },
 
     alternates: {
       canonical: canonicalUrl,
     },
+    
     robots: {
       index: true,
       follow: true,
@@ -141,7 +146,6 @@ export async function generateMetadata({ params }) {
   };
 }
 
-
 export default async function CategoryPage({ params }) {
   const { category } = params;
 
@@ -154,10 +158,10 @@ export default async function CategoryPage({ params }) {
     notFound();
   }
 
-  // Define breadcrumb data for JSON-LD and page content
+  // Enhanced breadcrumb data
   const breadcrumbData = [
     { name: "Home", item: `${getBaseUrl()}/` },
-    { name: "AI-SEO", item: `${getBaseUrl()}/ai-seo` },
+    { name: "AI SEO", item: `${getBaseUrl()}/ai-seo` },
     { name: subcategoryInfo.title, item: `${getBaseUrl()}/ai-seo/categories/${category}` }
   ];
 
@@ -172,37 +176,70 @@ export default async function CategoryPage({ params }) {
     subcategories: post.subcategories || []
   }));
 
+  // Enhanced schema markup
   const schemaMarkup = {
     __html: JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "CollectionPage",
-      "name": subcategoryInfo.metaTitle || subcategoryInfo.title,
-      "description": subcategoryInfo.metaDescription || subcategoryInfo.description,
-      "url": `${getBaseUrl()}/ai-seo/categories/${category}`,
-      "breadcrumb": {
-        "@type": "BreadcrumbList",
-        "itemListElement": breadcrumbData.map((item, index) => ({
-          "@type": "ListItem",
-          "position": index + 1,
-          "name": item.name,
-          "item": item.item
-        }))
-      }
+      "@graph": [
+        // CollectionPage schema
+        {
+          "@type": "CollectionPage",
+          "@id": `${getBaseUrl()}/ai-seo/categories/${category}#webpage`,
+          "url": `${getBaseUrl()}/ai-seo/categories/${category}`,
+          "name": subcategoryInfo.metaTitle || subcategoryInfo.title,
+          "description": subcategoryInfo.metaDescription || subcategoryInfo.description,
+          "isPartOf": {
+            "@id": `${getBaseUrl()}/ai-seo#webpage`
+          },
+          "breadcrumb": {
+            "@id": `${getBaseUrl()}/ai-seo/categories/${category}#breadcrumb`
+          },
+          "inLanguage": "en-US"
+        },
+        
+        // BreadcrumbList schema
+        {
+          "@type": "BreadcrumbList",
+          "@id": `${getBaseUrl()}/ai-seo/categories/${category}#breadcrumb`,
+          "itemListElement": breadcrumbData.map((item, index) => ({
+            "@type": "ListItem",
+            "position": index + 1,
+            "name": item.name,
+            "item": item.item
+          }))
+        },
+        
+        // ItemList for articles (if posts exist)
+        ...(posts.length > 0 ? [{
+          "@type": "ItemList",
+          "name": `${subcategoryInfo.title} Articles`,
+          "description": `Collection of ${posts.length} articles about ${subcategoryInfo.title}`,
+          "numberOfItems": posts.length,
+          "itemListElement": transformedPosts.slice(0, 10).map((post, index) => ({
+            "@type": "ListItem",
+            "position": index + 1,
+            "url": `${getBaseUrl()}/ai-seo/${post.slug.current}`
+          }))
+        }] : [])
+      ]
     })
   };
 
   return (
     <>
       <Script
-        id={`BreadcrumbListSchema-${category}`}
+        id={`SubcategorySchema-${category}`}
         type="application/ld+json"
         dangerouslySetInnerHTML={schemaMarkup}
         key={`jsonld-${category}`}
+        strategy="afterInteractive"
       />
+      
       <SubCategoryContent 
         posts={transformedPosts}
         subcategoryInfo={subcategoryInfo}
         totalPosts={posts.length}
+        breadcrumbData={breadcrumbData}
       />
     </>
   );

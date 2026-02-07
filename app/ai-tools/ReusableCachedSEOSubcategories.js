@@ -1,15 +1,6 @@
-// components/Blog/ReusableCachedSEOSubcategories.js
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardActionArea,
-} from "@mui/material";
-import { ArrowForward } from "@mui/icons-material";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-
 import { useUnifiedCache } from '@/React_Query_Caching/useUnifiedCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
@@ -124,10 +115,8 @@ const ReusableCachedSEOSubcategories = ({
     try {
       if (refreshAllGroup) {
         if (typeof cacheSystem !== 'undefined' && cacheSystem.refreshGroup) {
-          console.log(`Manually refreshing entire group: ${subcategoriesGroup}`);
           await cacheSystem.refreshGroup(subcategoriesGroup);
         } else {
-          console.warn("cacheSystem is not defined or refreshGroup method is missing. Cannot refresh group.");
           await refreshSubcategories(true);
           await refreshTotalCount(true);
         }
@@ -146,11 +135,17 @@ const ReusableCachedSEOSubcategories = ({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: limit }).map((_, index) => (
-          <div key={index} className="flex flex-col p-6 bg-white border border-gray-200 rounded-lg shadow animate-pulse dark:bg-gray-800 dark:border-gray-700 h-48">
-            <div className="h-6 bg-gray-300 rounded w-3/4 mb-4 dark:bg-gray-700"></div>
-            <div className="h-4 bg-gray-300 rounded w-full mb-3 dark:bg-gray-700"></div>
-            <div className="h-4 bg-gray-300 rounded w-2/3 mb-4 dark:bg-gray-700"></div>
-            <div className="mt-auto h-8 bg-blue-300 rounded w-1/3 dark:bg-blue-700"></div>
+          <div key={index} className="group relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 shadow-lg animate-pulse">
+            <div className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-14 h-14 bg-gray-300 dark:bg-gray-600 rounded-2xl"></div>
+                <div className="w-16 h-6 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+              </div>
+              <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-3"></div>
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full mb-2"></div>
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-5/6"></div>
+            </div>
+            <div className="h-16 bg-blue-300 dark:bg-blue-700"></div>
           </div>
         ))}
       </div>
@@ -158,100 +153,120 @@ const ReusableCachedSEOSubcategories = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="">
       {paginationStaleWarning && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-900/20 dark:border-yellow-800">
           <div className="flex items-center space-x-2">
-            <svg className="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" /></svg>
+            <svg className="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
             <span className="text-yellow-800 dark:text-yellow-200 font-medium">Updating subcategory data...</span>
           </div>
         </div>
       )}
+      
       {hasError && subcategoriesToDisplay.length === 0 && (
         <div className="text-center py-8">
           <p className="text-red-500 mb-4">Failed to load subcategories.</p>
-          <button onClick={() => handleRefresh(false)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Retry Current Page</button>
-          <button onClick={() => handleRefresh(true)} className="ml-2 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">Refresh All Subcategories</button>
+          <button onClick={() => handleRefresh(false)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Retry</button>
         </div>
       )}
+      
+      {/* NAVIGATION-FOCUSED Cards Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {subcategoriesToDisplay.map((subcategory) => (
-          <Card
+        {subcategoriesToDisplay.map((subcategory, index) => (
+          <Link
             key={subcategory.slug}
-            sx={{
-              transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-              "&:hover": {
-                transform: "translateY(-4px) scale(1.02)",
-                boxShadow: "0 20px 40px -12px rgba(37, 99, 235, 0.25)",
-              },
-              height: { xs: "auto", md: "220px" }, // Responsive height
-              borderRadius: "16px",
-              overflow: "hidden",
-              position: "relative",
-              background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-              border: "1px solid #e2e8f0",
-              display: "flex",
-              flexDirection: "column",
+            href={`/ai-seo/categories/${subcategory.slug}`}
+            className="group relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 shadow-lg hover:shadow-2xl transition-all duration-400 transform hover:scale-[1.03] cursor-pointer"
+            style={{
+              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
-            className="group cursor-pointer shadow-md hover:shadow-xl dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
-            <CardActionArea 
-              component={Link} 
-              href={`/ai-seo/categories/${subcategory.slug}`}
-              sx={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
-            >
-              <CardContent sx={{ 
-                flex: 1, 
-                p: { xs: "16px !important", sm: "20px !important", md: "24px !important" }, 
-                display: "flex", 
-                flexDirection: "column", 
-                justifyContent: "space-between",
-                pt: { xs: "40px !important", sm: "48px !important", md: "24px !important" }, // Add padding-top to avoid badge overlap
-              }}>
-                <div>
-                  <h2 className="line-clamp-2 text-lg font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
-                    {subcategory.title}
-                  </h2>
-                  <p className="line-clamp-3 text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3 sm:text-base transition-colors duration-300">
-                    {subcategory.description}
-                  </p>
-                </div>
+            {/* Animated Gradient Background on Hover */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
+            
+            {/* Top Section: Icon + Badge */}
+            <div className="relative z-10 p-6 pb-4">
+              <div className="flex items-start justify-between mb-4">
+                {/* Prominent Icon */}
+               {/* Google News Style Collage Icon Stack - Balanced for Visibility */}
+<div className="relative w-16 h-16 group-hover:scale-110 transition-all duration-500">
+  
+  {/* Back Layer 1: Bottom-Left Fan (Purple) */}
+  <div className="absolute inset-0 bg-purple-500/30 dark:bg-purple-400/20 rounded-2xl 
+    -rotate-12 -translate-x-3 translate-y-1 
+    group-hover:-rotate-[20deg] group-hover:-translate-x-5 
+    transition-all duration-500 ease-out" 
+  />
+  
+  {/* Back Layer 2: Top-Right Fan (Blue) */}
+  <div className="absolute inset-0 bg-blue-400/40 dark:bg-blue-400/20 rounded-2xl 
+    rotate-12 translate-x-3 -translate-y-1 
+    group-hover:rotate-[22deg] group-hover:translate-x-5 
+    transition-all duration-500 ease-out" 
+  />
+  
+  {/* Front Primary Layer (Centered) */}
+  <div className="relative flex items-center justify-center w-full h-full 
+    bg-gradient-to-br from-blue-600 to-blue-700 
+    rounded-2xl shadow-2xl z-10 border border-white/10">
+    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  </div>
+</div>
                 
-                <div className="pt-2">
-                  <div className="group/button relative inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-800 overflow-hidden w-fit sm:px-6 sm:py-2.5 sm:text-sm">
-                    {/* Shimmer Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover/button:translate-x-[100%] transition-transform duration-700 ease-out" />
-                    
-                    {/* Button Content */}
-                    <span className="relative z-10">Explore Category</span>
-                    <ArrowForward
-                      className="relative z-10 transition-all duration-300 group-hover/button:translate-x-1 group-hover/button:scale-110"
-                      sx={{ fontSize: { xs: 16, sm: 18 } }}
-                    />
-                    
-                    {/* Glow Effect */}
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400 to-purple-500 opacity-0 group-hover/button:opacity-30 transition-opacity duration-300 blur-sm" />
+                {/* Article Count Badge */}
+                {subcategory.blogCount !== undefined && (
+                  <div className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-full">
+                    <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                      {subcategory.blogCount} {subcategory.blogCount === 1 ? 'guide' : 'guides'}
+                    </span>
                   </div>
-                </div>
-              </CardContent>
-              
-              {/* Static "Subcategory" Tag */}
-              <div 
-                className="absolute right-2 top-2 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 px-2 py-1 text-[10px] font-semibold capitalize text-white shadow-md backdrop-blur-sm border border-white/20 sm:right-3 sm:top-3 sm:px-3 sm:py-1.5 sm:text-xs"
-              >
-                <LocalOfferIcon style={{ fontSize: "8px" }} className="sm:fontSize-[10px]" />   
-                AI Subcategory
+                )}
               </div>
-            </CardActionArea>
-            {/* Corner Accent */}
-            <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-xl transform scale-0 group-hover:scale-100 transition-transform duration-500 sm:w-10 sm:h-10 sm:rounded-bl-2xl" />
-          </Card>
+              
+              {/* Title - More Prominent */}
+              <h3 className="text-xl font-bold leading-tight text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                {subcategory.title}
+              </h3>
+              
+              {/* Description - Shorter, More Scannable */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                {subcategory.description}
+              </p>
+            </div>
+            
+            {/* Bottom CTA Section - FULL WIDTH, CLICKABLE BUTTON FEEL */}
+            <div className="relative z-10 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 px-6 py-4 transition-all duration-300">
+              <div className="flex items-center justify-between text-white">
+                <span className="text-base font-bold">Explore Topic</span>
+                <svg 
+                  className="w-6 h-6 transform group-hover:translate-x-2 transition-transform duration-300" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  strokeWidth="2.5"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </div>
+              
+              {/* Shimmer Effect on Hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+            </div>
+            
+            {/* Pulse Border Effect */}
+            <div className="absolute inset-0 rounded-2xl border-2 border-blue-500 opacity-0 group-hover:opacity-100 animate-pulse-border transition-opacity duration-400" />
+          </Link>
         ))}
       </div>
+      
       {subcategoriesToDisplay.length === 0 && !isSubcategoryLoading && !isTotalCountLoading && !hasError && (
         <div className="text-center py-8">
           <p className="text-gray-500 dark:text-gray-400">No subcategories found.</p>
-          <button onClick={() => handleRefresh(true)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Refresh All Subcategories</button>
+          <button onClick={() => handleRefresh(true)} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 mt-4">Refresh</button>
         </div>
       )}
     </div>

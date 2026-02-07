@@ -8,7 +8,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     
     // Simplified parameters - removed features
-    const title = searchParams.get('title') || 'Boost Your SEO and Daily Productivity with Cutting-Edge AI Tools';
+    const title = searchParams.get('title') || 'Master Generative AI for SEO, Content & Business Growth';
     const category = searchParams.get('category') || 'AI Tools';
     const badge = searchParams.get('badge') || 'NEW!';
     const bgColor = searchParams.get('bgColor') || 'blue';

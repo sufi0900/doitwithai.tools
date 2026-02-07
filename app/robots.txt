@@ -48,3 +48,4 @@ Disallow: /studio/
 
 # Sitemap
 Sitemap: https://doitwithai.tools/sitemap.xml
+Sitemap: https://doitwithai.tools/image-sitemap.xml

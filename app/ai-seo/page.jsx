@@ -1,24 +1,12 @@
 import React from 'react';
 import Script from "next/script";
 
-
-// Your existing BlogListingPageContent import
 import BlogListingPageContent from "@/app/ai-tools/BlogListingPageContent";
-
-// Your existing ReusableCachedSEOSubcategories import
 import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";
-
-// NEW IMPORT for StaticPageShell
 import StaticPageShell from "./StaticPageShell";
-
-// ---NEW IMPORTS for UnifiedCaching---
 import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
-
-// Import Sanity client and Redis helpers
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis';
-
-// ---END NEW IMPORTS---
 
 export const revalidate = false;
 export const dynamic = "force-dynamic";
@@ -26,16 +14,12 @@ const SUBCATEGORIES_LIMIT = 2;
 const BLOGS_PAGE_LIMIT = 5;
 
 function getBaseUrl() {
-  // For production, always use your custom domain
   if (process.env.NODE_ENV === 'production') {
-    return 'https://doitwithai.tools';  // Remove trailing slash
+    return 'https://doitwithai.tools';
   }
-  
-  // For development
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  
   return 'http://localhost:3000';
 }
 
@@ -48,6 +32,7 @@ function generateOGImageURL(params) {
 async function getData(schemaType, pageSlugPrefix) {
   const cacheKey = `blogList:${schemaType}:main`;
   const startTime = Date.now();
+  
   try {
     const cachedData = await redisHelpers.get(cacheKey);
     if (cachedData) {
@@ -57,13 +42,19 @@ async function getData(schemaType, pageSlugPrefix) {
   } catch (redisError) {
     console.error(`Redis error for ${cacheKey}:`, redisError.message);
   }
+  
   console.log(`[SanityFetch] for ${cacheKey} starting...`);
 
   const featuresQuery = `*[_type=="${schemaType}"&&displaySettings.isOwnPageFeature==true][0]`;
-  const firstPageBlogsQuery = `*[_type=="${schemaType}"]|order(publishedAtdesc)[0...${BLOGS_PAGE_LIMIT + 1}]`;
+  const firstPageBlogsQuery = `*[_type=="${schemaType}"]|order(publishedAt desc)[0...${BLOGS_PAGE_LIMIT + 1}]`;
   const totalCountBlogsQuery = `count(*[_type=="${schemaType}"])`;
-
-  const firstPageSEOSubcategoriesQuery = `*[_type=="seoSubcategory"]|order(orderRank asc){_id,title,"slug":slug.current,description,"blogCount":count(*[_type=="${schemaType}"&&references(^._id)])}[0...${SUBCATEGORIES_LIMIT + 1}]`;
+  const firstPageSEOSubcategoriesQuery = `*[_type=="seoSubcategory"]|order(orderRank asc){
+    _id,
+    title,
+    "slug":slug.current,
+    description,
+    "blogCount":count(*[_type=="${schemaType}"&&references(^._id)])
+  }[0...${SUBCATEGORIES_LIMIT + 1}]`;
   const totalSEOSubcategoryCountQuery = `count(*[_type=="seoSubcategory"])`;
 
   try {
@@ -83,6 +74,7 @@ async function getData(schemaType, pageSlugPrefix) {
       totalSEOSubcategoryCount,
       timestamp: Date.now()
     };
+    
     console.log(`[SanityFetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
 
     if (data.featuredPost || data.firstPageBlogs?.length > 0 || data.firstPageSEOSubcategories?.length > 0) {
@@ -100,29 +92,40 @@ async function getData(schemaType, pageSlugPrefix) {
   }
 }
 
+// ============================================
+// OPTIMIZED METADATA
+// ============================================
 export const metadata = {
-  title: "Master Modern SEO with AI Tools & Strategies | Do It With AI Tools",
-  description: "Discover blogs packed with advanced AI insights and tools to scale your business, optimize content creation, and master modern SEO success across GEO and AEO.",
+  // Updated meta title (no brand name, 60 chars)
+  title: "AI SEO Hub: Free Tools, Guides, and Prompts to Win Search",
+  
+  // Updated meta description (160 chars)
+  description: "Learn AI SEO, AEO, and GEO with free step-by-step guides, smart tools, and useful prompts designed to improve content quality and earn AI citations.",
+  
   author: "Sufian Mustafa",
-  keywords: "modern SEO, AI SEO, GEO, AEO, content scaling, AI tools, digital marketing, keyword research, content optimization, link building, AI strategies",
+  
+  // Comprehensive but not overdone keywords
+  keywords: "AI SEO, search engine optimization, AI search optimization, GEO, AEO, content optimization, AI tools, SEO strategies, free SEO resources, AI content, search visibility, topical authority, semantic SEO",
   
   openGraph: {
-    title: "Master Modern SEO with AI Tools & Strategies",
+    // Match meta title
+    title: "Free AI SEO Hub for Modern Search and Content Optimization",
     url: `${getBaseUrl()}/ai-seo`,
     type: "website",
     images: [{
       url: generateOGImageURL({
-        title: "Scale Your Business with Modern SEO and AI-Driven Strategies",
-        ctaText: "Explore AI SEO",
-        features: "Modern SEO,Content Scaling,GEO & AEO",
+        title: "AI SEO Hub: Free Guides, Tools & Strategies",
+        ctaText: "Start Learning",
+        features: "Expert Guides,Free Tools,AI Optimization",
       }),
       width: 1200,
       height: 630,
-      alt: "Master Modern SEO with AI Tools & Strategies | doitwithai.tools",
+      alt: "AI SEO Hub - Free guides, tools and strategies for modern search optimization",
     }],
-    siteName: "doitwithai.tools",
+    siteName: "Do It With AI Tools",
     locale: "en_US",
-    description: "Discover advanced AI insights, proven strategies, and tools to master modern SEO, GEO, and AEO while scaling your content and business growth."
+    // Match meta description
+    description: "Access our free AI SEO learning hub for expert guides, smart tools, and custom prompts to boost your content rankings and maximize AI citation."
   },
 
   twitter: {
@@ -131,11 +134,13 @@ export const metadata = {
     creator: "@doitwithai",
     domain: "doitwithai.tools",
     url: `${getBaseUrl()}/ai-seo`,
-    title: "Master Modern SEO with AI Tools & Strategies",
+    // Shorter for Twitter
+    title: "AI SEO Hub: Free Guides, Tools & Strategies",
+    description: "Free AI SEO learning hub with expert guides, tools, and prompts for better search rankings and AI citations.",
     image: generateOGImageURL({
-      title: "Scale Your Business with Modern SEO and AI-Driven Strategies",
-      ctaText: "Explore AI SEO",
-      features: "Modern SEO,Content Scaling,GEO & AEO",
+      title: "AI SEO Hub: Free Guides, Tools & Strategies",
+      ctaText: "Start Learning",
+      features: "Expert Guides,Free Tools,AI Optimization",
     }),
   },
 
@@ -156,77 +161,188 @@ export const metadata = {
   },
 };
 
+// ============================================
+// ENHANCED SCHEMA MARKUP
+// ============================================
+function schemaMarkup(pageMetadata, breadcrumbProps, subcategories = []) {
+  // Build subcategory list for ItemList schema
+  const subcategoryList = subcategories.map((cat, index) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "name": cat.title,
+    "url": `${getBaseUrl()}/ai-seo/categories/${cat.slug}`
+  }));
 
-export default async function Page() {
-  const schemaType = "seo";
-  const pageSlugPrefix = "ai-seo";
+  return {
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@graph": [
+        // 1. Main CollectionPage
+        {
+          "@type": "CollectionPage",
+          "@id": `${getBaseUrl()}/ai-seo#webpage`,
+          "url": `${getBaseUrl()}/ai-seo`,
+          "name": pageMetadata.title,
+          "description": pageMetadata.description,
+          "isPartOf": {
+            "@id": `${getBaseUrl()}#website`
+          },
+          "about": {
+            "@type": "Thing",
+            "name": "AI SEO",
+            "alternateName": ["AI Search Optimization", "Search Engine Optimization with AI"],
+            "description": "Optimizing content for modern search engines using artificial intelligence techniques and strategies"
+          },
+          "inLanguage": "en-US",
+          "breadcrumb": {
+            "@id": `${getBaseUrl()}/ai-seo#breadcrumb`
+          }
+        },
 
-  // We still fetch serverData here as it's passed to BlogListingPageContent
-  const serverData = await getData(schemaType, pageSlugPrefix);
+        // 2. Website Schema
+        {
+          "@type": "WebSite",
+          "@id": `${getBaseUrl()}#website`,
+          "url": getBaseUrl(),
+          "name": "Do It With AI Tools",
+          "description": "Free AI tools, guides, and resources for SEO, content creation, and productivity",
+          "publisher": {
+            "@id": `${getBaseUrl()}#organization`
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": `${getBaseUrl()}/search?q={search_term_string}`
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
 
-  const pageTitle = "SEO Insights";
-  const pageTitleHighlight = "SEO Insights";
-  const pageDescription = "Stay ahead of the curve with our latest AI-powered SEO strategies and insights.";
-  const mockParams = {
-    slug: `${schemaType}-listing`,
-    pageType: 'listing'
-  };
-  const breadcrumbProps = {
-    pageName: "AI in SEO",
-    pageName2: "& Modern Content Creation",
-    description: "Explore our comprehensive articles featuring advanced AI insights and battle-tested AI tools to scale your entire content creation and search visibility process. Our articles cover modern SEO strategies, including GEO, AEO, and strategic human-AI workflows for massive growth.",
-    firstlinktext: "Home",
-    firstlink: "/",
-    link: "/ai-seo",
-    linktext: "seo-with-ai",
-  };
+        // 3. Organization Schema
+        {
+          "@type": "Organization",
+          "@id": `${getBaseUrl()}#organization`,
+          "name": "Do It With AI Tools",
+          "url": getBaseUrl(),
+          "logo": {
+            "@type": "ImageObject",
+            "url": `${getBaseUrl()}/logo.png`
+          }
+        },
 
-  function schemaMarkup(pageMetadata, breadcrumbProps) {
-    return {
-      __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "name": pageMetadata.title,
-        "description": pageMetadata.description,
-        "url": pageMetadata.openGraph.url,  
-        "breadcrumb": {
+        // 4. Person Schema (Author)
+        {
+          "@type": "Person",
+          "@id": `${getBaseUrl()}/about#person`,
+          "name": "Sufian Mustafa",
+          "url": `${getBaseUrl()}/author/sufian-mustafa`,
+          "jobTitle": "Founder & AI SEO Specialist",
+          "worksFor": {
+            "@id": `${getBaseUrl()}#organization`
+          },
+          "knowsAbout": ["AI SEO", "Search Optimization", "Content Strategy", "AI Tools"]
+        },
+
+        // 5. BreadcrumbList
+        {
           "@type": "BreadcrumbList",
+          "@id": `${getBaseUrl()}/ai-seo#breadcrumb`,
           "itemListElement": [
             {
               "@type": "ListItem",
               "position": 1,
               "name": "Home",
-  "item": `${getBaseUrl()}/`,
-               "id": `${getBaseUrl()}/` // Add the id property here
-
+              "item": `${getBaseUrl()}/`
             },
             {
               "@type": "ListItem",
               "position": 2,
               "name": breadcrumbProps.pageName,
-             "item": `${getBaseUrl()}${breadcrumbProps.link}`,
-               "id": `${getBaseUrl()}${breadcrumbProps.link}`
-              
+              "item": `${getBaseUrl()}${breadcrumbProps.link}`
+            }
+          ]
+        },
+
+        // 6. ItemList for Subcategories (if available)
+        ...(subcategoryList.length > 0 ? [{
+          "@type": "ItemList",
+          "name": "AI SEO Topics",
+          "description": "Comprehensive AI SEO categories and guides",
+          "numberOfItems": subcategoryList.length,
+          "itemListElement": subcategoryList
+        }] : []),
+
+        // 7. Enhanced FAQPage
+        {
+          "@type": "FAQPage",
+          "@id": `${getBaseUrl()}/ai-seo#faq`,
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is AI SEO?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "AI SEO is optimizing content for AI-powered search engines and tools. It focuses on creating content that AI models can understand, cite, and reference when answering user queries."
               }
+            },
+            {
+              "@type": "Question",
+              "name": "Is this AI SEO resource hub free?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, all AI SEO guides, tools, prompts, and resources are completely free with no paywalls or subscriptions required."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Who should use this AI SEO hub?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "This hub is designed for content creators, marketers, SEO professionals, and anyone interested in learning modern search optimization techniques with AI."
+              }
+            }
           ]
         }
-      })
-    };
-  }
+      ]
+    })
+  };
+}
 
+export default async function Page() {
+  const schemaType = "seo";
+  const pageSlugPrefix = "ai-seo";
 
+  const serverData = await getData(schemaType, pageSlugPrefix);
+
+  const pageTitle = "SEO Insights";
+  const pageTitleHighlight = "AI SEO Insights";
+  const pageDescription = "Stay ahead with our latest AI-powered SEO strategies and insights.";
+  
+  const breadcrumbProps = {
+    pageName: "AI SEO",
+    pageName2: "Resource Hub",
+    // Match meta description
+    description: "Access our free AI SEO learning hub for expert guides, smart tools, and custom prompts to boost your content rankings and maximize AI citation.",
+    firstlinktext: "Home",
+    firstlink: "/",
+    link: "/ai-seo",
+    linktext: "ai-seo",
+  };
+
+  // Extract subcategories for schema
+  const subcategoriesForSchema = serverData?.firstPageSEOSubcategories?.slice(0, SUBCATEGORIES_LIMIT) || [];
 
   return (
     <>
-   
-    <Script
-        id="BreadcrumbListSchema"
+      <Script
+        id="EnhancedAISEOSchema"
         type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps)}
+        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps, subcategoriesForSchema)}
         key={`${pageSlugPrefix}-jsonld`}
+        strategy="afterInteractive"
       />
 
-      {/* <UnifiedCacheMonitor serverData={serverData} params={mockParams} /> */}
       <PageCacheProvider pageType="listing" pageId={`${schemaType}-listing`}>
         <StaticPageShell breadcrumbProps={breadcrumbProps}>
           <BlogListingPageContent
@@ -236,11 +352,11 @@ export default async function Page() {
             pageTitleHighlight={pageTitleHighlight}
             pageDescription={pageDescription}
             showSubcategoriesSection={true}
-            subcategoriesSectionTitle="SubCategories"
-            subcategoriesSectionDescription="of SEO"
+            subcategoriesSectionTitle="Browse by"
+            subcategoriesSectionDescription="AI SEO Topic"
             SubcategoriesComponent={ReusableCachedSEOSubcategories}
             subcategoriesLimit={SUBCATEGORIES_LIMIT}
-            serverData={serverData} // Still pass serverData for dynamic content
+            serverData={serverData}
           />
         </StaticPageShell>
       </PageCacheProvider>

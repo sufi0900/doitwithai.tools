@@ -1,3 +1,4 @@
+//homepage hero section component
 /*eslint-disable@next/next/no-img-element*/
 /*eslint-disable react/no-unescaped-entities*/
 "use client";
@@ -197,7 +198,7 @@ useEffect(() => {
     itemProp="headline"
   >
     <span className="block text-blue-600 dark:text-blue-400 transition-all duration-300 mb-2">
-      Do It With AI Tools
+      Do It With AI Tools {" "}
     </span>
     <span className="block text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-gray-800 dark:text-gray-100">
       Helps You Master AI for SEO and Productivity
@@ -343,42 +344,43 @@ useEffect(() => {
   <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800 dark:text-white">Why DoItWithAI.tools Stands Out</h2>
   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
     
-    {/* Benefit 1 - SEO + AI Search */}
-    <div className="ai-benefit-card card-1 group p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40 rounded-xl backdrop-blur-sm border border-blue-200 dark:border-blue-700 cursor-pointer ring-blue-200 dark:ring-blue-700 no-shift">
+    {/* Benefit 1 - Efficiency & Practicality */}
+    <div className="ai-benefit-card card-1 group p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40 rounded-xl backdrop-blur-sm border border-blue-200 dark:border-blue-700 cursor-pointer ring-blue-200 dark:ring-blue-700 no-shift shadow-sm hover:shadow-md hover:shadow-blue-100/50 dark:hover:shadow-none transition-all duration-300">
       <div className="ai-icon-pulse flex items-center justify-center w-12 h-12 mb-3 bg-[#2563eb] dark:bg-blue-600 rounded-lg mx-auto">
         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
       </div>
-      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-200">Rank Higher with AI-Powered SEO</h3>
-      <p className="text-gray-700 dark:text-gray-300  text-base">
-        Master ChatGPT & other AI tools for SEO that
-        <span className="font-semibold text-blue-800 dark:text-blue-300 group-hover:text-blue-900 dark:group-hover:text-blue-100 transition-colors duration-200"> saves 10+ hours weekly&nbsp;</span>
-{/* and AI tools for SEO to save 10+ hours weekly, rank higher, and optimize content for AI-powered search.    */}
-   and optimizes content for AI-powered search.
-   </p>
+      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-200">Deep AI SEO, Explained Simply</h3>
+      <p className="text-gray-700 dark:text-gray-300 text-base">
+        We turn complex AI and SEO topics into clear, practical guides that 
+        <span className="font-semibold text-blue-800 dark:text-blue-300 group-hover:text-blue-900 dark:group-hover:text-blue-100 transition-colors duration-200">&nbsp;save you 10+ hours of research&nbsp;</span>
+        and help you apply ideas with confidence.
+      </p>
     </div>
 
-    {/* Benefit 2 - Productivity + Scaling */}
-    <div className="ai-benefit-card card-2 card-purple group p-6 bg-white/80 dark:bg-gray-800/80 rounded-xl backdrop-blur-sm border border-gray-200 dark:border-gray-700 cursor-pointer no-shift">
+    {/* Benefit 2 - Trust & Collaboration */}
+    <div className="ai-benefit-card card-2 card-purple group p-6 bg-white/80 dark:bg-gray-800/80 rounded-xl backdrop-blur-sm border border-gray-300 dark:border-gray-700 cursor-pointer no-shift shadow-sm hover:shadow-md hover:shadow-purple-100/50 dark:hover:shadow-none transition-all duration-300">
       <div className="ai-icon-pulse pulse-purple flex items-center justify-center w-12 h-12 mb-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg mx-auto">
         <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10l3-3m0 0l-3-3m3 3H4"/></svg>
       </div>
-      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-200">10x Your Business Growth</h3>
+      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-200">Master Human + AI Collaboration</h3>
       <p className="text-gray-600 dark:text-gray-300">
-        Discover AI tools, workflows, and free AI resources that help you
-        <span className="font-semibold text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-200">&nbsp;grow your business&nbsp;</span>
-and boost overall Productivity     </p>
+        We bridge the gap between AI tools and human judgment so your content 
+        <span className="font-semibold text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-200">&nbsp;stays helpful, natural, and trusted&nbsp;</span>
+        by both users and search engines.
+      </p>
     </div>
 
-    {/* Benefit 3 - Human + AI */}
-    <div className="ai-benefit-card card-3 card-green group p-6 bg-white/80 dark:bg-gray-800/80 rounded-xl backdrop-blur-sm border border-gray-200 dark:border-gray-700 cursor-pointer no-shift">
+    {/* Benefit 3 - Access & Skill Levels */}
+    <div className="ai-benefit-card card-3 card-green group p-6 bg-white/80 dark:bg-gray-800/80 rounded-xl backdrop-blur-sm border border-gray-300 dark:border-gray-700 cursor-pointer no-shift shadow-sm hover:shadow-md hover:shadow-green-100/50 dark:hover:shadow-none transition-all duration-300">
       <div className="ai-icon-pulse pulse-green flex items-center justify-center w-12 h-12 mb-3 bg-green-100 dark:bg-green-900/30 rounded-lg mx-auto">
         <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
       </div>
-      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-200">Master Human+AI Collaboration</h3>
+      <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-200">Free Learning for Every Skill Level</h3>
       <p className="text-gray-600 dark:text-gray-300">
-      We bridge the gap between AI potential and real use through
-        <span className="font-medium text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-200">&nbsp;simple human + AI tutorials&nbsp;</span>
-for all skill level to  work smarter with AI.      </p>
+        Whether you are a beginner or advanced user, you get weekly updated
+        <span className="font-medium text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-200">&nbsp;free guides, tools, and prompts&nbsp;</span>
+        with no signup to stay ahead of AI SEO trends.
+      </p>
     </div>
   </div>
 </div>

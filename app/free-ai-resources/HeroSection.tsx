@@ -1,10 +1,12 @@
+// /app/free-ai-resources/HeroSection.tsx
+// UPDATED: Generic SEO content + 4 cards layout matching AI SEO page
+
 "use client";
 
 import { useEffect, useRef } from 'react';
-import { Download, Gift, Sparkles, Users, Clock, CheckCircle, ArrowRight } from 'lucide-react';
-import { useAnimationCleanup } from '@/components/Hero/useAnimationCleanup'; // Adjust path as needed
+import { Download, Target, Clock, Award, Sparkles, CheckCircle, ArrowRight, Zap, TrendingUp, RefreshCw, Layout } from 'lucide-react';
+import { useAnimationCleanup } from '@/components/Hero/useAnimationCleanup';
 
-// Critical content selectors for FCP optimization
 const criticalContentSelectors = {
   mainHeading: '.resources-heading',
   primarySubheading: '.resources-content',
@@ -15,11 +17,9 @@ const FreeAIResourcesHero = () => {
   const heroRef = useRef<HTMLElement>(null);
   const { addCleanup } = useAnimationCleanup();
 
-  // Animation setup similar to homepage but optimized for resources page
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     
-    // Ensure critical elements are never hidden by initial CSS animations
     const criticalElements = document.querySelectorAll(
       `${criticalContentSelectors.mainHeading}, ${criticalContentSelectors.primarySubheading}, ${criticalContentSelectors.primaryCTA}`
     );
@@ -28,13 +28,11 @@ const FreeAIResourcesHero = () => {
       (el as HTMLElement).style.transform = 'none';
     });
 
-    // Defer heavy animations until after FCP
     const deferAnimations = () => {
       if (heroRef.current) {
         heroRef.current.classList.add('resources-animations-active');
         if (prefersReducedMotion) {
           heroRef.current.classList.add('reduced-motion');
-          // Make all animated items instantly visible for reduced motion
           document.querySelectorAll(
             '.resource-badge, .benefit-card, .stat-card, .download-button-secondary, .background-resource-svg'
           ).forEach(el => {
@@ -46,7 +44,6 @@ const FreeAIResourcesHero = () => {
       }
     };
 
-    // Use requestIdleCallback for better performance
     if ('requestIdleCallback' in window) {
       (window as any).requestIdleCallback(deferAnimations, { timeout: 200 });
     } else {
@@ -54,7 +51,6 @@ const FreeAIResourcesHero = () => {
     }
   }, [addCleanup]);
 
-  // Intersection Observer for background animations
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
@@ -81,34 +77,49 @@ const FreeAIResourcesHero = () => {
     return () => observer.disconnect();
   }, [addCleanup]);
 
-  // Resource statistics
+  // GENERIC STATISTICS
   const resourceStats = [
-    { icon: Download, label: 'Free Resources', value: 'Growing', color: 'text-blue-600 dark:text-blue-400' },
-    { icon: Sparkles, label: 'Quality Focus', value: 'Curated', color: 'text-green-600 dark:text-green-400' },
-    { icon: Clock, label: 'Updated Weekly', value: 'Fresh', color: 'text-purple-600 dark:text-purple-400' },
+    { 
+      icon: Zap, 
+      label: 'SEO Resources', 
+      value: '100+', 
+      color: 'text-blue-600 dark:text-blue-400' 
+    },
+    { 
+      icon: TrendingUp, 
+      label: 'Quality First', 
+      value: 'Curated', 
+      color: 'text-green-600 dark:text-green-400' 
+    },
+    { 
+      icon: Clock, 
+      label: 'Updated Weekly', 
+      value: 'Fresh', 
+      color: 'text-purple-600 dark:text-purple-400' 
+    },
   ];
 
-  // Resource categories
+  // GENERIC RESOURCE CATEGORIES (3 Cards)
   const resourceCategories = [
     {
-      icon: Gift,
-      title: 'AI Prompts Library',
-      description: 'Carefully crafted prompts for ChatGPT, Claude, and other AI models to get you started.',
-      badge: 'Growing',
-      badgeColor: 'bg-green-500',
-    },
-    {
-      icon: Download,
-      title: 'Templates & Tools',
-      description: 'Ready-to-use spreadsheets, documents, and automation templates for productivity.',
-      badge: 'New',
+      icon: Sparkles,
+      title: 'AI SEO Prompts & Guides',
+      description: 'Ready-to-use AI prompts and comprehensive guides designed to help you optimize content, improve search visibility, and rank higher across all platforms.',
+      badge: 'Growing Library',
       badgeColor: 'bg-blue-500',
     },
     {
-      icon: Sparkles,
-      title: 'Curated Resources',
-      description: 'High-quality resources and tools to help you get started with AI efficiently.',
-      badge: 'Curated',
+      icon: Download,
+      title: 'SEO Templates & Resources',
+      description: 'Downloadable templates, checklists, and resources to streamline your SEO workflow, track progress, and implement proven optimization strategies.',
+      badge: 'Instant Download',
+      badgeColor: 'bg-green-500',
+    },
+    {
+      icon: Target,
+      title: 'AI SEO Tools & Automation',
+      description: 'Curated collection of free AI-powered tools and automation resources to enhance your SEO efforts and save time on repetitive tasks.',
+      badge: 'Expert Curated',
       badgeColor: 'bg-purple-500',
     },
   ];
@@ -122,7 +133,7 @@ const FreeAIResourcesHero = () => {
       aria-describedby="resources-description"
       role="banner"
     >
-      {/* Animated Background Elements */}
+      {/* Animated Background */}
       <div className="absolute inset-0 z-[-1] opacity-20 lg:opacity-60 background-resource-svg">
         <svg
           width="100%"
@@ -134,10 +145,9 @@ const FreeAIResourcesHero = () => {
           preserveAspectRatio="xMidYMid slice"
           style={{ transform: 'translateZ(0)', willChange: 'auto' }}
           role="img"
-          aria-label="Abstract resource download pattern with floating elements"
+          aria-label="Abstract SEO resource pattern"
         >
           <g aria-hidden="true">
-            {/* Resource Flow Lines */}
             <path
               d="M200 200 Q400 150, 600 200 T1000 200"
               stroke="#3B82F6"
@@ -156,37 +166,9 @@ const FreeAIResourcesHero = () => {
               className="svg-animated-element"
               style={{ animation: 'svgDataFlowSlow 10s linear infinite', animationDelay: '2s' }}
             />
-            
-            {/* Floating Resource Icons */}
-            <circle
-              cx="300"
-              cy="180"
-              r="8"
-              fill="#3B82F6"
-              opacity="0.6"
-              className="svg-animated-element"
-              style={{ animation: 'svgFloatSlow 6s ease-in-out infinite' }}
-            />
-            <circle
-              cx="500"
-              cy="320"
-              r="6"
-              fill="#8B5CF6"
-              opacity="0.7"
-              className="svg-animated-element"
-              style={{ animation: 'svgFloatSlow 8s ease-in-out infinite', animationDelay: '3s' }}
-            />
-            <circle
-              cx="800"
-              cy="250"
-              r="10"
-              fill="#10B981"
-              opacity="0.5"
-              className="svg-animated-element"
-              style={{ animation: 'svgGlowPulse 4s ease-in-out infinite' }}
-            />
-            
-            {/* Download Pattern */}
+            <circle cx="300" cy="180" r="8" fill="#3B82F6" opacity="0.6" className="svg-animated-element" style={{ animation: 'svgFloatSlow 6s ease-in-out infinite' }} />
+            <circle cx="500" cy="320" r="6" fill="#8B5CF6" opacity="0.7" className="svg-animated-element" style={{ animation: 'svgFloatSlow 8s ease-in-out infinite', animationDelay: '3s' }} />
+            <circle cx="800" cy="250" r="10" fill="#10B981" opacity="0.5" className="svg-animated-element" style={{ animation: 'svgGlowPulse 4s ease-in-out infinite' }} />
             <g className="svg-animated-element" style={{ animation: 'svgGlowPulse 3s ease-in-out infinite' }}>
               <rect x="100" y="500" width="80" height="60" rx="8" fill="#3B82F6" opacity="0.1" />
               <circle cx="140" cy="530" r="4" fill="#3B82F6" opacity="0.8" />
@@ -197,12 +179,13 @@ const FreeAIResourcesHero = () => {
 
       <div className="container mx-auto flex flex-col items-center justify-center px-2 lg:px-8 max-w-7xl">
         <div className="resources-section w-full">
-          {/* Header Section */}
+          
+          {/* HEADER */}
           <header className="text-center mb-12">
             <div className="mb-6">
               <span className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold shadow-lg">
-                <Gift className="w-4 h-4 mr-2" />
-                100% Free Forever
+                <Target className="w-4 h-4 mr-2" />
+                100% Free SEO Resources
               </span>
             </div>
 
@@ -211,9 +194,9 @@ const FreeAIResourcesHero = () => {
               className="resources-heading text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-gray-900 dark:text-white no-shift"
               itemProp="headline"
             >
-              <span className="block mb-2">Free AI</span>
+              <span className="block mb-2">Free AI </span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 dark:from-blue-400 dark:via-purple-400 dark:to-blue-600">
-                Resource Library
+               SEO Resource Library
               </span>
             </h1>
 
@@ -222,12 +205,12 @@ const FreeAIResourcesHero = () => {
               id="resources-description"
             >
               Access our comprehensive collection of{' '}
-              <span className="font-bold text-blue-600 dark:text-blue-400">AI prompts, templates, and premium tools</span>{' '}
-              - all completely free and ready to supercharge your productivity.
+              <span className="font-bold text-blue-600 dark:text-blue-400">AI-powered SEO resources</span>{' '}
+              including prompts, templates, and automation tools - all completely free and ready to boost your search rankings.
             </p>
           </header>
 
-          {/* Statistics Section */}
+          {/* STATISTICS */}
           <div className="flex flex-wrap justify-center gap-6 mb-12">
             {resourceStats.map((stat, index) => (
               <div
@@ -245,95 +228,124 @@ const FreeAIResourcesHero = () => {
             ))}
           </div>
 
-          {/* Resource Categories */}
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {resourceCategories.map((category, index) => (
-              <div
-                key={category.title}
-                className={`benefit-card card-${index + 1} group relative p-6 bg-white/80 dark:bg-gray-800/80 rounded-2xl backdrop-blur-sm border border-gray-200 dark:border-gray-600 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 cursor-pointer no-shift`}
-              >
-                {/* Badge */}
-                <div className={`absolute -top-3 -right-3 px-3 py-1 ${category.badgeColor} text-white text-xs font-bold rounded-full shadow-lg`}>
-                  {category.badge}
-                </div>
+          {/* WHY STAND OUT - 4 CARDS IN SINGLE ROW (Matches AI SEO Page) */}
+<div className="mb-12">
+  <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800 dark:text-white text-center">
+    Why Our Free AI SEO Resource Library Stands Out
+  </h2>
 
-                <div className="flex items-center justify-center w-14 h-14 mb-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto group-hover:scale-110 transition-transform duration-300">
-                  <category.icon className="w-7 h-7 text-white" />
-                </div>
+<div className="grid md:grid-cols-3 gap-6 mb-8">
+  {/* Card 1: Quality & Battle-Tested (Blue Theme) */}
+  <div className="ai-seo-benefit-card card-1 group p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40 rounded-xl backdrop-blur-sm border border-blue-200 dark:border-blue-700 ring-blue-200 dark:ring-blue-700 no-shift shadow-sm hover:shadow-md hover:shadow-blue-200/50 dark:hover:shadow-none transition-all duration-300 cursor-pointer">
+    <div className="ai-icon-pulse flex items-center justify-center w-12 h-12 mb-3 bg-[#5271ff] rounded-lg mx-auto transform group-hover:-translate-y-1 transition-transform duration-300">
+      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+      </svg>
+    </div>
+    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors duration-200 text-center">
+      Quality Focused & Battle Tested
+    </h3>
+    <p className="text-gray-600 dark:text-gray-300 text-center">
+      Every resource is <span className="font-semibold text-blue-800 dark:text-blue-300">carefully curated and battle-tested</span> by experienced SEO professional to ensure you get real value, not generic content or recycled ideas.
+    </p>
+  </div>
 
-                <h3 className="text-xl font-bold mb-3 text-gray-900 dark:text-white text-center group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
-                  {category.title}
-                </h3>
+  {/* Card 2: Resource Formats (Purple Theme) */}
+  <div className="ai-seo-benefit-card card-2 group p-6 bg-white/80 dark:bg-gray-800/80 rounded-xl backdrop-blur-sm border border-gray-300 dark:border-gray-700 cursor-pointer no-shift shadow-sm hover:shadow-md hover:shadow-purple-200/50 dark:hover:shadow-none transition-all duration-300">
+    <div className="ai-icon-pulse pulse-purple flex items-center justify-center w-12 h-12 mb-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg mx-auto transform group-hover:-translate-y-1 transition-transform duration-300">
+      <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+      </svg>
+    </div>
+    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-200 text-center">
+      5 Useful Resource Formats
+    </h3>
+    <p className="text-gray-600 dark:text-gray-300 text-center">
+      Get AI SEO tools, prompts, Templates, infographics, and videos <span className="font-semibold text-purple-600 dark:text-purple-400"> all in one centralized hub </span> designed to support different learning styles.
+    </p>
+  </div>
 
-                <p className="text-gray-600 dark:text-gray-300 text-center leading-relaxed">
-                  {category.description}
-                </p>
-              </div>
-            ))}
-          </div>
+  {/* Card 3: Free & Downloadable (Green Theme) */}
+  <div className="ai-seo-benefit-card card-3 group p-6 bg-white/80 dark:bg-gray-800/80 rounded-xl backdrop-blur-sm border border-gray-300 dark:border-gray-700 cursor-pointer no-shift shadow-sm hover:shadow-md hover:shadow-green-200/50 dark:hover:shadow-none transition-all duration-300">
+    <div className="ai-icon-pulse pulse-green flex items-center justify-center w-12 h-12 mb-3 bg-green-100 dark:bg-green-900/30 rounded-lg mx-auto transform group-hover:-translate-y-1 transition-transform duration-300">
+      <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      </svg>
+    </div>
+    <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-200 text-center">
+      Free Forever, Always Fresh
+    </h3>
+    <p className="text-gray-600 dark:text-gray-300 text-center">
+      Access our entire AI SEO resource library for free, with 
+      <span className="font-semibold text-green-600 dark:text-green-400"> no signup or limits</span>, 
+      instant downloads, and regularly updates to stay ahead of AI SEO trends.
+    </p>
+  </div>
+</div>
+</div>
 
-          {/* Call to Action */}
+
+          {/* CTA SECTION */}
           <div className="text-center">
             <div className="max-w-2xl mx-auto mb-8">
               <h2 className="text-2xl md:text-3xl font-bold mb-4 text-gray-800 dark:text-gray-100">
                 Ready to Access{' '}
-                <span className="text-blue-600 dark:text-blue-400">Everything for Free</span>?
+                <span style={{color: '#5271ff'}} className="dark:text-blue-400">Everything for Free</span>?
               </h2>
               <p className="text-lg text-gray-700 dark:text-gray-300">
-                No signup required. No hidden fees. Just instant access to quality AI resources.
+                No signup required. No hidden fees. Just instant access to SEO-focused AI resources.
               </p>
             </div>
 
-            {/* Trust Indicators */}
+            {/* TRUST INDICATORS */}
             <div className="flex flex-wrap justify-center gap-4 mb-8">
               <span className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">
                 <CheckCircle className="w-4 h-4 mr-2" />
-                No Email Required
+                Quality Guaranteed
               </span>
               <span className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium">
-                <Download className="w-4 h-4 mr-2" />
-                Instant Download
+                <Target className="w-4 h-4 mr-2" />
+                SEO-Focused
               </span>
               <span className="inline-flex items-center px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium">
-                <Clock className="w-4 h-4 mr-2" />
-                Updated Weekly
+                <Zap className="w-4 h-4 mr-2" />
+                Instant Access
               </span>
             </div>
 
-            {/* Primary CTA */}
+            {/* PRIMARY CTA */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-lg mx-auto">
-             <button
-  onClick={() => {
-    document.getElementById('resource-formats').scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    });
-  }}
-  className="download-button w-full sm:w-auto inline-flex items-center justify-center min-h-[56px] px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 no-shift group relative z-10" // Add `relative z-10`
-  aria-label="Browse all free AI resources"
->
-  <Download className="w-6 h-6 mr-3 group-hover:animate-bounce pointer-events-none" />
-  <span className="pointer-events-none">Browse All Resources</span>
-  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300 pointer-events-none" />
-</button>
-
-
+              <button
+                onClick={() => {
+                  document.getElementById('resource-formats')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                  });
+                }}
+                className="download-button w-full sm:w-auto inline-flex items-center justify-center min-h-[56px] px-8 py-4 text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 no-shift group relative z-10"
+                style={{background: 'linear-gradient(to right, #5271ff, #8B5CF6)'}}
+                aria-label="Browse all free AI SEO resources"
+              >
+                <Download className="w-6 h-6 mr-3 group-hover:animate-bounce pointer-events-none" />
+                <span className="pointer-events-none">Browse All Resources</span>
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-300 pointer-events-none" />
+              </button>
             </div>
 
             {/* Bottom Trust Text */}
             <div className="mt-8 mb-8 text-center">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                🎯 Perfect for: Content Creators • Marketers • Developers • AI Enthusiasts
+                🎯 Perfect for: SEO Professionals • Content Marketers • Digital Agencies • Bloggers
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                Growing collection of curated AI resources
+                Curated AI-powered SEO resources for better rankings
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Additional decorative elements */}
+      {/* Decorative elements */}
       <div className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-20 left-20 w-40 h-40 bg-gradient-to-br from-green-400/20 to-blue-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
     </section>

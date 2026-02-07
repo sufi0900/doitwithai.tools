@@ -25,49 +25,64 @@ function generateOGImageURL(params) {
   return `${baseURL}?${searchParams.toString()}`;
 }
 
+// OPTIMIZED METADATA for "free AI SEO resources"
 export const metadata = {
-  title: "Free AI Resources: Tools, Templates & Prompts | doitwithai.tools",
-  description: "Access a massive collection of free AI tools, prompts, and templates. Supercharge your productivity and projects with our zero-cost, high-quality resources.",
-  author: "Sufian Mustafa",
-  keywords: "free AI resources, free AI images, AI prompts, AI solutions, free AI templates, AI for productivity, AI tools free",
+  // PRIMARY KEYWORD: "free AI SEO resources"
+  title: "Free AI SEO Resource Hub: Tools, Prompts, Templates & More",
+  description: "Access free AI SEO resources, including prompts, templates, tools, infographics, and videos designed to improve content quality and visibility in AI search.",
+  
+  authors: [{ 
+    name: "Sufian Mustafa",
+    url: `${getBaseUrl()}/about`
+  }],
+  creator: "Sufian Mustafa",
+  publisher: "Do It With AI Tools",
+  
+  // KEYWORD-RICH: Focus on "free AI SEO resources" variations
+  keywords: "free AI SEO resources, free AI SEO tools, AI SEO prompts, ChatGPT SEO prompts, free SEO templates, AI keyword research, free AI content optimization, SEO automation tools free, AI SEO checklist, free GEO resources, free AEO resources",
+  
   openGraph: {
-    title: "Free AI Resources: Tools, Templates & Prompts | doitwithai.tools",
-    description: "Your ultimate collection of high-quality AI tools, templates, prompts, and guides to kickstart your AI journey and solve real-world problems.",
+    title: "Free AI SEO Resources: Prompts, Templates & Tools for Rankings",
+    description: "Access our growing library of 100% free AI SEO resources. ChatGPT prompts for SEO, keyword research templates, content optimization tools, and ranking strategies.",
     url: `${getBaseUrl()}/free-ai-resources`,
     type: "website",
+    siteName: "Do It With AI Tools",
+    locale: "en_US",
     images: [{
       url: generateOGImageURL({
-        title: 'Access our massive collection of free AI tools, prompts, and templates to supercharge your projects.',
-        category: 'Free AI Resources',
-        ctaText: 'Download Free Resources Now',
-        features: 'Zero Cost, High Quality, Instant Access',
+        title: 'Free AI SEO Resources: Prompts, Templates & Tools',
+        category: 'Free AI SEO Resources',
+        ctaText: 'Download Free SEO Resources',
+        features: 'ChatGPT Prompts, SEO Templates, Ranking Tools',
         bgColor: 'green'
       }),
       width: 1200,
       height: 630,
-      alt: 'Free AI Resources',
+      alt: 'Free AI SEO Resources for Content Creators and Marketers - Do It With AI Tools',
     }],
-    siteName: "doitwithai.tools",
-    locale: 'en_US',
   },
+  
   twitter: {
     card: "summary_large_image",
+    site: "@doitwithai",
+    creator: "@doitwithai",
     domain: "doitwithai.tools",
     url: `${getBaseUrl()}/free-ai-resources`,
-    title: "Free AI Resources: Tools, Templates & Prompts | doitwithai.tools",
-    description: "Supercharge your projects with a massive collection of high-quality, zero-cost AI tools, prompts, and templates.",
-    image: generateOGImageURL({
-      title: 'Access our massive collection of free AI tools, prompts, and templates to supercharge your projects.',
-      category: 'Free AI Resources',
-      ctaText: 'Download Free Resources Now',
-      features: 'Zero Cost, High Quality, Instant Access',
+    title: "Free AI SEO Resources: Prompts, Templates & Ranking Tools",
+    description: "Download 100% free AI SEO resources including ChatGPT prompts, templates, and tools to boost your search rankings with AI-powered optimization.",
+    images: [generateOGImageURL({
+      title: 'Free AI SEO Resources: Prompts, Templates & Tools',
+      category: 'Free AI SEO Resources',
+      ctaText: 'Download Free SEO Resources',
+      features: 'ChatGPT Prompts, SEO Templates, Ranking Tools',
       bgColor: 'green'
-    }),
-    creator: "@doitwithai",
+    })],
   },
+  
   alternates: {
     canonical: `${getBaseUrl()}/free-ai-resources`,
   },
+  
   robots: {
     index: true,
     follow: true,
@@ -79,6 +94,13 @@ export const metadata = {
       'max-snippet': -1,
     },
   },
+  
+  // ADDITIONAL SEO
+  other: {
+    'ai-content-declaration': 'human-created, ai-assisted',
+    'resource-type': 'free AI SEO resources',
+    'primary-keyword': 'free AI SEO resources'
+  }
 };
 
 const INITIAL_RESOURCE_LIST_LIMIT = 6;
@@ -380,6 +402,101 @@ function getSchemaType(format) {
   return typeMap[format] || 'CreativeWork';
 }
 
+
+// ENHANCED SCHEMA for "free AI SEO resources"
+function generateFreeAISEOResourcesSchema() {
+  const baseUrl = getBaseUrl();
+  
+  return {
+    __html: `{
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "Free AI SEO Resources - Do It With AI Tools",
+      "description": "Comprehensive collection of free AI SEO resources including ChatGPT prompts for SEO, keyword research templates, content optimization tools, and ranking strategies. All resources are 100% free and designed to help you leverage AI for better search engine optimization.",
+      "url": "${baseUrl}/free-ai-resources",
+      "inLanguage": "en-US",
+      
+      "mainEntity": {
+        "@type": "ItemList",
+        "name": "Free AI SEO Resources Collection",
+        "description": "Curated collection of free AI-powered SEO resources",
+        "numberOfItems": "50+",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "ChatGPT SEO Prompts",
+            "description": "Free AI prompts for SEO keyword research, content optimization, and meta tag generation"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "AI SEO Templates",
+            "description": "Free downloadable templates for SEO audits, content calendars, and keyword tracking"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Free SEO Tools",
+            "description": "AI-powered free tools for SEO analysis, content optimization, and ranking strategies"
+          },
+          {
+            "@type": "ListItem",
+            "position": 4,
+            "name": "SEO Checklists & Guides",
+            "description": "Comprehensive free guides for AI-powered SEO, GEO, and AEO optimization"
+          }
+        ]
+      },
+      
+      "about": {
+        "@type": "Thing",
+        "name": "AI SEO Resources",
+        "description": "Free resources for leveraging artificial intelligence in search engine optimization"
+      },
+      
+      "keywords": "free AI SEO resources, ChatGPT SEO prompts, AI SEO tools free, SEO templates, keyword research AI, content optimization resources",
+      
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "Do It With AI Tools",
+        "url": "${baseUrl}",
+        "description": "Modern AI hub for SEO and productivity"
+      },
+      
+      "author": {
+        "@type": "Person",
+        "name": "Sufian Mustafa",
+        "jobTitle": "Founder & AI SEO Strategist",
+        "url": "${baseUrl}/about",
+        "worksFor": {
+          "@type": "Organization",
+          "name": "Do It With AI Tools"
+        }
+      },
+      
+      "publisher": {
+        "@type": "Organization",
+        "name": "Do It With AI Tools",
+        "url": "${baseUrl}",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "${baseUrl}/logoForHeader.png"
+        }
+      },
+      
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock",
+        "description": "All AI SEO resources are completely free to download and use"
+      }
+    }`
+  };
+}
+
+
 function convertDurationToISO8601(duration) {
   // Convert MM:SS or HH:MM:SS to ISO 8601 duration (PT#M#S or PT#H#M#S)
   const parts = duration.split(':');
@@ -449,28 +566,12 @@ function generateMainPageSchema(pageMetadata, initialServerData) {
             "query-input": "required name=search_term_string"
           }
         },
-        "breadcrumb": {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": `${getBaseUrl()}/`
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Free AI Resources",
-              "item": `${getBaseUrl()}/free-ai-resources`
-            }
-          ]
-        },
+       
         "mainEntity": {
           "@type": "ItemList",
-          "name": "Free AI Resources Collection",
-          "description": "Comprehensive collection of free AI tools, images, videos, prompts, and documents",
-          "numberOfItems": initialServerData?.resourceCounts?.all || 0,
+         "name": "Free AI SEO Resource Hub with Tools, Prompts, Guides, Infographics, and Videos - Do It With AI Tools",
+      "description": "Access a free library of AI SEO resources designed to support content creation and modern AI search visibility. This page includes expert prompts, powerful AI tools, templates, and infographics alongside video guides. All resources are free and built to help creators, marketers, and teams understand and apply AI SEO strategies.",
+      "numberOfItems": initialServerData?.resourceCounts?.all || 0,
           "itemListElement": resourceSchemas.map((schema, index) => ({
             "@type": "ListItem",
             "position": index + 1,
@@ -514,15 +615,13 @@ function generateMainPageSchema(pageMetadata, initialServerData) {
         "name": "Do It With AI Tools",
         "url": getBaseUrl(),
         "logo": `${getBaseUrl()}/logo.png`,
-        "description": "Your comprehensive platform for AI tools, resources, and practical strategies",
+        "description": "Your comprehensive platform for AI SEO tools, resources, and practical strategies",
         "foundingDate": "2024",
         "founder": {
           "@type": "Person",
           "name": "Sufian Mustafa"
         },
-        "sameAs": [
-          "https://twitter.com/doitwithai"
-        ],
+       
         "contactPoint": {
           "@type": "ContactPoint",
           "contactType": "customer service",
@@ -535,7 +634,7 @@ function generateMainPageSchema(pageMetadata, initialServerData) {
         "@type": "WebSite",
         "name": "Do It With AI Tools",
         "url": getBaseUrl(),
-        "description": "Comprehensive AI tools, resources, and strategies for everyone",
+        "description": "Comprehensive AI SEO tools, resources, and strategies for everyone",
         "inLanguage": "en-US",
         "potentialAction": {
           "@type": "SearchAction",
@@ -553,6 +652,33 @@ function generateMainPageSchema(pageMetadata, initialServerData) {
     ])
   };
 }
+
+// BREADCRUMB SCHEMA
+function generateBreadcrumbSchema() {
+  const baseUrl = getBaseUrl();
+  
+  return {
+    __html: `{
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "${baseUrl}/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Free AI SEO Resources",
+          "item": "${baseUrl}/free-ai-resources"
+        }
+      ]
+    }`
+  };
+}
+
 
 export default async function Page() {
   const initialServerData = await getFreeResourcesInitialData();
@@ -602,7 +728,13 @@ export default async function Page() {
         dangerouslySetInnerHTML={generateMainPageSchema(metadata, initialServerData)}
   
       />
-
+ {/* Breadcrumb Schema */}
+      <Script
+        id="BreadcrumbSchema"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={generateBreadcrumbSchema()}
+        strategy="beforeInteractive"
+      />
       <StaticFreeResourcePageShell>
         <AllBlogs initialServerData={initialServerData} />
       </StaticFreeResourcePageShell>

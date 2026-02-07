@@ -1,5 +1,5 @@
 import { client } from "@/sanity/lib/client";
-import Link from "next/link";
+// import Link from "next/link";
 
 async function fetchSubcategories() {
   const query = `*[_type == "seoSubcategory"] {

@@ -107,9 +107,9 @@ export default function FeatureHorizentalPost({
           <CardContent sx={{ p: "0px !important", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <div className="space-y-3 sm:space-y-4">
               <Link href={slug}>
-                <h1 className="line-clamp-2 text-lg font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl md:text-2xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+                <h2 className="line-clamp-2 text-lg font-bold leading-tight text-gray-900 dark:text-gray-100 sm:text-xl md:text-2xl group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
                   {title}
-                </h1>
+                </h2>
               </Link>
               <p className="line-clamp-3 text-sm sm:text-base leading-relaxed text-gray-600 dark:text-gray-300 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors duration-300">
                 {overview}

@@ -63,31 +63,30 @@ const HeroSection = ({ animationPhase, pulseIntensity }) => (
     </div>
   </div>
 );
-
 // Creator & Mission Section - UPDATED with specific focus
 const CreatorMissionSection = () => (
   <div className="mb-32">
     <div className="bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-800 dark:to-blue-900/20 rounded-3xl overflow-hidden shadow-xl border border-blue-100 dark:border-blue-800/20">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-        {/* Image Section - UNCHANGED */}
-        <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-12 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-64 h-64 mx-auto mb-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
-              <Image
-                src="/sufi.png"
-                alt="Sufian Mustafa - Creator of DoItWithAITools"
-                width={256}
-                height={256}
-                priority
-                className="object-cover w-full h-full"
-              />        
-            </div>
+        {/* Image Section */}
+       <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-12 flex items-center justify-center">
+  <div className="text-center">
+    {/* Added overflow-hidden and removed padding issues */}
+    <div className="w-64 h-64 mx-auto mb-8 relative rounded-full overflow-hidden border-4 border-white/30 shadow-2xl backdrop-blur-sm bg-white/10">
+      <Image
+        src="/sufian-mustafa-founder-doitwithaitools.png"
+        alt="Sufian Mustafa - Creator of DoItWithAITools"
+        fill // This makes it fill the parent container exactly
+        priority
+        className="object-cover"
+      />        
+    </div>
 
             <div className="flex justify-center gap-4">
               <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30">
                 <div className="flex items-center gap-2 text-white">
                   <Award className="w-5 h-5" />
-                  <span className="font-semibold">AI Strategist</span>
+                  <span className="font-semibold">AI SEO Strategist</span>
                 </div>
               </div>
               <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/30">
@@ -98,74 +97,90 @@ const CreatorMissionSection = () => (
               </div>
             </div>
 
-            <div className="mt-8 bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
-              <div className="flex items-center gap-4 justify-center">
-                <div className="flex items-center gap-2">
-                  <Users className="w-6 h-6" />
-                  <span className="font-semibold">Growing Community</span>
-                </div>
-                {/* <div className="w-px h-8 bg-white/30"></div>
-                <span className="text-blue-100">10K+ Readers</span> */}
-              </div>
-            </div>
+          <div className="mt-8 bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
+  <div className="flex items-center gap-4 justify-center">
+    <div className="flex items-center gap-2 text-white">
+<svg 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        className="w-6 h-6 text-white"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+      <span className="font-semibold">
+        Founder of{" "}
+        <Link 
+          href="https://doitwithai.tools" 
+          target="_blank"
+          className="text-white decoration-white/40 underline-offset-4 hover:underline hover:text-blue-100 transition-all duration-300"
+        >
+          Do It With AI Tools
+        </Link>
+      </span>
+    </div>
+  </div>
+</div>
           </div>
           <div className="absolute top-6 right-6 w-20 h-20 bg-white/10 rounded-full blur-sm"></div>
           <div className="absolute bottom-8 left-8 w-16 h-16 bg-white/10 rounded-full blur-sm"></div>
         </div>
 
-        {/* Content Section - UPDATED with specific positioning */}
+        {/* Content Section - FIXED: No first-person, smooth flow, no duplication */}
         <div className="p-12">
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-full text-sm font-semibold mb-4">
-              <User className="w-4 h-4" />
+          {/* FIXED: Made "Meet the Creator" more prominent */}
+          <div className="mb-8">
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-800 dark:text-white mb-4">
               Meet the Creator
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 dark:text-white mb-6">
-              Making Modern AI Strategies Accessible
             </h2>
+            <div className="inline-flex items-center gap-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-2 rounded-full text-sm font-semibold">
+              <User className="w-4 h-4" />
+              Making Modern AI Strategies Accessible
+            </div>
           </div>
 
+          {/* FIXED: Generic tone, smooth narrative, no duplication */}
           <div className="prose prose-lg max-w-none text-slate-600 dark:text-slate-300 leading-relaxed space-y-6">
             <p>
-              I'm <Link href="/author/sufian-mustafa" className="font-semibold text-blue-600 dark:text-blue-400 underline hover:no-underline">Sufian Mustafa</Link>, 
-              the creator and developer behind DoItWithAITools. As a web developer, AI strategist, and SEO specialist, 
-              I've experienced firsthand how generative AI transforms content creation, search optimization, and business outcomes.
+              <Link href="/author/sufian-mustafa" className="font-semibold text-blue-600 dark:text-blue-400 underline hover:no-underline">Sufian Mustafa</Link> 
+              {' '}is the founder and developer behind DoItWithAITools. As a web developer, AI strategist, and SEO specialist, 
+              he brings firsthand experience in how generative AI transforms content creation, search optimization, and business outcomes.
             </p>
             
             <p>
-              At <span className="font-bold text-blue-600 dark:text-blue-400">DoItWithAITools</span>, we focus on what matters most: 
-              helping content creators, marketers, SEO specialists, and business owners master AI-powered strategies for 
-              creating high-quality content optimized for traditional search engines (SEO), AI-powered search (GEO), and answer engines (AEO).
+              The platform was created with a clear focus: helping content creators, marketers, SEO specialists, and business owners 
+              master AI-powered strategies for creating high-quality content optimized for traditional search engines (SEO), 
+              AI-powered search (GEO), and answer engines (AEO). Every guide, tool, and resource reflects real-world testing 
+              and proven workflows designed to deliver measurable results.
             </p>
 
-            {/* Mission highlight box - UPDATED */}
+            {/* Mission Box - REDESIGNED for better flow */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-8 rounded-2xl border border-blue-200 dark:border-blue-800/30 not-prose">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-600 rounded-xl">
+                <div className="p-3 bg-blue-600 rounded-xl flex-shrink-0">
                   <Target className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400 mb-2">Our Mission</h3>
-                  <p className="text-gray-700 dark:text-gray-200">
-                    To be your modern AI hub that makes cutting-edge content creation and SEO strategies accessible to everyone, 
-                    with practical workflows that help you scale your business and boost productivity through proven AI-powered methods.
+                  <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400 mb-3">Our Mission</h3>
+                  <p className="text-gray-700 dark:text-gray-200 leading-relaxed">
+                    To make cutting-edge AI and SEO strategies accessible to everyone through battle-tested workflows, 
+                    comprehensive free resources, and practical guidance that helps businesses scale, content creators rank higher, 
+                    and professionals stay ahead of modern search evolution.
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* <p>
-              We bridge the gap between complex AI technology and real-world content success. From 
-              <span className="font-semibold text-blue-600 dark:text-blue-400"> AI-powered content strategies</span> to 
-              modern SEO optimization and productivity workflows, we provide comprehensive solutions for the next generation of digital success.
-            </p> */}
           </div>
         </div>
       </div>
     </div>
   </div>
 );
-
 // AI Collaboration - SLIGHT UPDATE to add content context
 const AICollaborationSection = () => (
   <div className="mb-32">
@@ -208,67 +223,20 @@ const AICollaborationSection = () => (
   </div>
 );
 
-// Categories Section - UPDATED descriptions for content/SEO/business focus
-// const CategoriesSection = ({ categories }) => (
-//   <div className="mb-32">
-//     <div className="text-center mb-16">
-//       <div className="inline-flex items-center gap-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-6 py-3 rounded-full text-sm font-semibold mb-6">
-//         <Lightbulb className="w-5 h-5" />
-//         What We Offer
-//       </div>
-//       <h2 className="text-4xl md:text-5xl font-bold text-slate-800 dark:text-white mb-6">
-//         Your Complete Modern AI Hub
-//       </h2>
-//       <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
-//         Five strategic categories designed to help you master AI for content creation, SEO optimization, and business growth
-//       </p>
-//     </div>
-    
-//     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-//       {categories.map((category, index) => (
-//         <Link href={category.link} key={index}>
-//           <div className={`bg-gradient-to-br ${category.color} rounded-3xl p-8 shadow-lg hover:shadow-2xl transform hover:-translate-y-3 transition-all duration-300 ${category.borderColor} border cursor-pointer h-full group relative overflow-hidden`}>
-//             <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full blur-xl"></div>
-            
-//             <div className="relative z-10">
-//               <div className="flex items-center mb-6">
-//                 <div className="p-4 bg-white/70 dark:bg-slate-700/70 rounded-2xl mr-4 group-hover:bg-white dark:group-hover:bg-slate-600 transition-all duration-300 group-hover:scale-110">
-//                   {category.icon}
-//                 </div>
-//                 <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-//                   {category.title}
-//                 </h3>
-//               </div>
-              
-//               <p className="text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
-//                 {category.description}
-//               </p>
-              
-//               <div className="flex items-center text-sm font-medium text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300">
-//                 Explore {category.title}
-//                 <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
-//               </div>
-//             </div>
-//           </div>
-//         </Link>
-//       ))}
-//     </div>
-//   </div>
-// );
-
 // Why Choose Us - UPDATED with modern SEO/content focus
 const WhyChooseUsSection = ({ features }) => (
   <div className="mb-32">
+    {/* FIXED: Made "Why Choose Us" the main heading */}
     <div className="text-center mb-16">
+      <h2 className="text-4xl md:text-5xl font-bold text-slate-800 dark:text-white mb-4">
+        Why Choose Us
+      </h2>
       <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-6 py-3 rounded-full text-sm font-semibold mb-6">
         <Award className="w-5 h-5" />
-        Why Choose Us
-      </div>
-      <h2 className="text-4xl md:text-5xl font-bold text-slate-800 dark:text-white mb-6">
         Your Modern AI Content & SEO Partner
-      </h2>
+      </div>
       <p className="text-lg text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
-        Not just another AI blog — we're your strategic partner specializing in modern content creation, next-generation SEO, and business scaling
+        Not just another AI blog — a strategic partner specializing in modern content creation, next-generation SEO, and business scaling
       </p>
     </div>
     
@@ -293,7 +261,6 @@ const WhyChooseUsSection = ({ features }) => (
     </div>
   </div>
 );
-
 // CTA Section - UNCHANGED (already effective)
 const CombinedCTASection = () => {
   return (
@@ -415,26 +382,26 @@ export default function ImprovedAboutPage() {
   
 
   // UPDATED features with modern SEO/content focus
-  const features = [
+ const features = [
     {
       icon: <Verified className="text-blue-600" fontSize="large" />,
-      title: "Modern SEO Expertise",
-      description: "Every strategy is tested across traditional search (SEO), AI-powered search engines (GEO), and answer engines (AEO). We focus on what works today and tomorrow, not outdated tactics."
+      title: "Battle-Tested Quality",
+      description: "We don't just dump random resources. Every guide is carefully created with deep thinking and rigorously tested on our own workflows to ensure you get real-world results, not generic content."
     },
     {
       icon: <Lightbulb className="text-blue-600" />,
-      title: "Content Creation Mastery",
-      description: "Learn how to create high-quality content using AI that maintains your authentic voice while optimizing for all modern search platforms. Practical workflows for content creators and marketers."
+      title: "Deep AI SEO Insights",
+      description: "Master modern search with expert strategies for traditional SEO, AI-powered search (GEO), and AEO. We provide the tools, tested prompts, and examples needed to stay ahead of evolving AI trends."
     },
     {
       icon: <Handshake className="text-blue-600" fontSize="large" />,
-      title: "Business Scaling Focus",
-      description: "We prioritize strategies that help you scale—saving 10+ hours weekly, boosting productivity, and growing your business with proven AI workflows and free implementation resources."
+      title: "Free & Accessible Hub",
+      description: "Get instant access to professional templates, infographics, and docs with no signups, paywalls, or limits. Our resources are designed for all skill levels to help you build and grow without barriers."
     },
     {
-      icon: <Favorite className="text-blue-600" fontSize="large" />,
-      title: "Human-AI Collaboration",
-      description: "Our approach combines human expertise with AI capabilities. Every recommendation, workflow, and strategy respects your goals while showing you how to leverage AI as a strategic partner."
+      icon: <AutoAwesome className="text-blue-600" fontSize="large" />,
+      title: "Fresh Weekly Updates",
+      description: "The AI landscape moves fast, and so do we. All resources are regularly updated to reflect the latest changes in AI models and search behavior, ensuring your strategy always stays ahead of the curve."
     }
   ];
 
