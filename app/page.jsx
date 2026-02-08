@@ -451,9 +451,19 @@ function imageGallerySchema() {
         },
         {
           "@type": "ImageObject",
-          "contentUrl": "${getBaseUrl()}/doitwithai-tools-logo-full.png",
+          "contentUrl": "${getBaseUrl()}/Logo-of-Do-it-with-ai-tools.ico",
           "name": "Do It With AI Tools Full Logo",
           "description": "Full version logo for Do It With AI Tools brand",
+          "width": 1200,
+          "height": 630,
+          "caption": "Do It With AI Tools Complete Brand Logo",
+          "keywords": "do it with ai, do it with ai tools, ai seo tools"
+        },
+        {
+          "@type": "ImageObject",
+          "contentUrl": "${getBaseUrl()}/Png-Logo-of-Do-it-with-ai-tools.png",
+          "name": "Do It With AI Tools Png Logo",
+          "description": "Full png version logo for Do It With AI Tools brand",
           "width": 1200,
           "height": 630,
           "caption": "Do It With AI Tools Complete Brand Logo",
@@ -484,6 +494,16 @@ function imageGallerySchema() {
           "contentUrl": "${getBaseUrl()}/doitwithai-logo-square.png",
           "name": "Do It With AI Tools Square Logo",
           "description": "Square format logo for Do It With AI Tools social media profiles",
+          "width": 512,
+          "height": 512,
+          "caption": "Do It With AI Tools Square Logo for Social Media",
+          "keywords": "do it with ai tools logo, ai brand identity"
+        },
+        {
+          "@type": "ImageObject",
+          "contentUrl": "${getBaseUrl()}/doitwithai-transparent-logo-square.png",
+          "name": "Do It With AI Tools Transparent Square Logo",
+          "description": "Transparent square format logo for Do It With AI Tools social media profiles",
           "width": 512,
           "height": 512,
           "caption": "Do It With AI Tools Square Logo for Social Media",
