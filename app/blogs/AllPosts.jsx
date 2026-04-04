@@ -34,7 +34,7 @@ export default function AllBlogsAggregated({ initialServerData }) {
     makemoney: "AI Learn & Earn"
   }), []);
 
-  const cardsPerPage = 5;
+  const cardsPerPage = 24;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(

@@ -1,42 +1,5 @@
-# Allow all AI crawlers for maximum visibility
-User-agent: GPTBot
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-
-User-agent: Claude-Web
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-
-User-agent: Googlebot
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-
-User-agent: Googlebot-Image
-Allow: /
-
-User-agent: CCBot
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-
-User-agent: anthropic-ai
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
-
-User-agent: PerplexityBot
-Allow: /
-Disallow: /admin/
-Disallow: /api/
-Disallow: /_next/
+# Dedicated to making doitwithai.tools accessible to all AI and Search Bots
+# Optimized for Google, GPT, Claude, and Perplexity
 
 User-agent: *
 Allow: /
@@ -45,7 +8,31 @@ Disallow: /api/
 Disallow: /_next/
 Disallow: /studio/
 
+# Explicitly allow AI Bots (Ensures they bypass any general restrictions)
+User-agent: GPTBot
+Allow: /
 
-# Sitemap
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+# Sitemap links for better indexing
 Sitemap: https://doitwithai.tools/sitemap.xml
 Sitemap: https://doitwithai.tools/image-sitemap.xml

@@ -2,13 +2,15 @@
 
   "use client"
   import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-  import BlogHeader from './BlogHeader';
+  import FeatureImg from './BlogHeader';
   import TableOfContents from './TableOfContents';
   import TagsAndShare from './TagsAndShare';
   import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
   import { PortableText } from "@portabletext/react";
   import PortableTextComponents from './createPortableTextComponents';
-  import ArticleHeader from './ArticleHeader';
+  // import ArticleHeader from './ArticleHeader';
+  import AuthorBioCard from './AuthorBioCard'; // Adjust path as needed
+
   import StickyArticleNavbar from './StickyArticleNavbar';
 
   import CommentSection from './CommentSection'; // Adjust path as needed
@@ -230,8 +232,8 @@ import Image from 'next/image';
         
           <article id="main-content" className="lg:m-4 flex flex-wrap">
             {/* Main Article Content - Priority for FCP */}
-            <BlogHeader data={data} imgdesc={imgdesc} />
-                  <ArticleHeader articleTitle={data?.title} isSticky={false} />
+            <FeatureImg data={data} imgdesc={imgdesc} />
+                  {/* <ArticleHeader articleTitle={data?.title} isSticky={false} /> */}
       <StickyArticleNavbar articleTitle={data?.title} />
             <div className=" mb-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>
             
@@ -243,11 +245,11 @@ import Image from 'next/image';
                     <div className="relative mr-4 h-12 w-12 overflow-hidden rounded-full ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-800 transition-all duration-300 group-hover:ring-4">
                       <Link href="/author/sufian-mustafa">
                         <Image
-                          src="/sufi.png"
+                          src="/sufian-mustafa-founder-doitwithaitools.png"
                           alt="Sufian Mustafa - AI Tools Expert"
                           fill
                           className="object-cover transition-transform duration-300 group-hover:scale-110"
-                          priority // Critical for FCP
+                          priority 
                         />
                       </Link>
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
@@ -309,9 +311,14 @@ import Image from 'next/image';
                       fallback={<ComponentSkeleton height="300px" />}
                       delay={100} // Small delay to avoid flash if already loaded
                     >
+
+
+
                       <Suspense fallback={<ComponentSkeleton height="300px" />}>
                         <FAQSection faqs={data.faqs} />
                       </Suspense>
+                      {/* ADD AUTHOR BIO CARD HERE */}
+<AuthorBioCard />
                     </SmartShimmer>
                   </div>
                   <SmartShimmer

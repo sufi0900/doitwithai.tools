@@ -11,7 +11,7 @@ import { redisHelpers } from '@/app/lib/redis';
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 const SUBCATEGORIES_LIMIT = 2;
-const BLOGS_PAGE_LIMIT = 5;
+const BLOGS_PAGE_LIMIT = 12;
 
 function getBaseUrl() {
   if (process.env.NODE_ENV === 'production') {

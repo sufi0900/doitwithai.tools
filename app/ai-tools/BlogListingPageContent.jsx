@@ -32,7 +32,7 @@ export default function BlogListingPageContent({
     forceRefresh: false,
   }), [serverData, schemaType]);
 
-  const initialDataQuery = useMemo(() => `{"featuredPost":*[_type=="${schemaType}"&&displaySettings.isOwnPageFeature==true][0],"firstPageBlogs":*[_type=="${schemaType}"]|order(publishedAtdesc)[0...6],"totalCount":count(*[_type=="${schemaType}"])}`, [schemaType]);
+  const initialDataQuery = useMemo(() => `{"featuredPost":*[_type=="${schemaType}"&&displaySettings.isOwnPageFeature==true][0],"firstPageBlogs":*[_type=="${schemaType}"]|order(publishedAtdesc)[0...12],"totalCount":count(*[_type=="${schemaType}"])}`, [schemaType]);
   const initialDataParams = useMemo(() => ({ schemaType }), [schemaType]);
 
   const { data: cachedInitialData, isLoading: initialDataLoading, error: initialDataError, refresh: refreshInitialData, isStale: initialDataIsStale } = useUnifiedCache(CACHE_KEYS.PAGE.BLOG_LISTING_INITIAL(schemaType), initialDataQuery, initialDataParams, { ...initialDataCacheOptions, schemaType });
@@ -230,7 +230,7 @@ export default function BlogListingPageContent({
       </div>
       <ReusableCachedAllBlogs
         currentPage={currentPage}
-        limit={5}
+        limit={12}
         documentType={schemaType}
         pageSlugPrefix={pageSlugPrefix}
         onDataLoad={handleAllBlogsDataLoad}
