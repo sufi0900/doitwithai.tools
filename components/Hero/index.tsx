@@ -438,7 +438,7 @@ useEffect(() => {
                 {/* SECONDARY CTA - Animated */}
                 {/* Removed conditional rendering for showCTA from this element */}
                 <a
-                  href="/free-resources"
+                  href="/free-ai-resources"
                   className="press-button-secondary w-full sm:w-auto inline-flex items-center justify-center min-h-[48px] px-8 py-4 border border-gray-400 dark:border-gray-600 bg-transparent text-gray-800 dark:text-white font-semibold rounded-lg no-shift"
                   aria-label="Get free AI resources and join our community"
                   itemProp="url"

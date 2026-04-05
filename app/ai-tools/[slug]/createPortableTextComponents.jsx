@@ -8,6 +8,7 @@ import { Rocket } from 'lucide-react';
 import { CopyBlock, dracula } from "react-code-blocks";
 import { Clipboard, Check } from "lucide-react";
 import { getFileUrl } from "./sanityFileUrl"; // path as you saved it
+import Link from 'next/link';
 // import Image from 'next/image';
 
 const PortableTextComponents = () => {
@@ -68,6 +69,103 @@ const PortableTextComponents = () => {
       </div>
     );
   };
+
+const RichTableComponent = ({ value }) => {
+  const caption = value?.caption;
+  const rows = value?.rows || [];
+
+  return (
+    <div className="card2 mx-2 sm:mx-0 sm:m-2 mb-6 mt-6 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+      {caption && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
+          <p className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white text-center">
+            {caption}
+          </p>
+        </div>
+      )}
+      
+      <div className="relative overflow-x-auto">
+        <table className="w-full text-left text-xs sm:text-sm">
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr
+                key={rowIndex}
+                className={`${
+                  rowIndex % 2 === 0
+                    ? "bg-white dark:bg-gray-800"
+                    : "bg-gray-50 dark:bg-gray-900"
+                } border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors duration-200`}
+              >
+                {row.cells?.map((cell, cellIndex) => {
+                  const isHeader = cell.isHeader;
+                  const CellTag = isHeader ? 'th' : 'td';
+                  
+                  return (
+                    <CellTag
+                      key={cellIndex}
+                      className={`px-3 sm:px-4 md:px-6 py-3 sm:py-3 md:py-4 text-xs sm:text-sm md:text-base break-words ${
+                        isHeader
+                          ? 'font-bold text-gray-900 dark:text-white bg-blue-50 dark:bg-gray-700'
+                          : 'font-medium text-gray-700 dark:text-gray-300'
+                      }`}
+                      scope={isHeader ? 'row' : undefined}
+                    >
+                      {cell.content ? (
+                        <PortableText
+                          value={cell.content}
+                          components={{
+                            block: {
+                              normal: ({ children }) => <span>{children}</span>,
+                            },
+                            marks: {
+                              strong: ({ children }) => (
+                                <strong className="font-bold text-gray-900 dark:text-white">
+                                  {children}
+                                </strong>
+                              ),
+                              em: ({ children }) => (
+                                <em className="italic">{children}</em>
+                              ),
+                              code: ({ children }) => (
+                                <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-blue-600 dark:text-blue-400">
+                                  {children}
+                                </code>
+                              ),
+                              link: ({ value, children }) => {
+                                const target = value?.blank ? '_blank' : '_self';
+                                const rel = value?.blank ? 'noopener noreferrer' : undefined;
+                                
+                                return (
+                                  <Link
+                                    href={value?.href || '#'}
+                                    target={target}
+                                    rel={rel}
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline hover:no-underline transition-colors duration-200 font-semibold"
+                                  >
+                                    {children}
+                                  </Link>
+                                );
+                              },
+                            },
+                          }}
+                        />
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-600 italic text-xs">
+                          Empty
+                        </span>
+                      )}
+                    </CellTag>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 
   const imgdesc = {
     block: {
@@ -326,35 +424,8 @@ image: ({ value, index }) => {
     </div>
   );
 },
-      table: ({ value }) => (
-        <div className="card2 mx-2 sm:mx-0 sm:m-2 mb-4 mt-4 rounded-xl shadow-md overflow-hidden">
-          <div className="relative overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              <tbody>
-                {value.rows.map((row, rowIndex) => (
-                  <tr
-                    key={rowIndex}
-                    className={`${rowIndex % 2 === 0
-                      ? "bg-green-100 dark:bg-gray-800"
-                      : "bg-white dark:bg-gray-900"
-                      } ${rowIndex % 4 === 0 ? "bg-green-100 dark:bg-gray-800" : ""
-                      } border-b hover:bg-gray-200 dark:hover:bg-gray-700`}
-                  >
-                    {row.cells.map((cell, cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-xs sm:text-sm md:text-base font-medium text-gray-900 dark:text-white break-words"
-                      >
-                        {cell}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ),
+        richTable: RichTableComponent,
+
     },
 
     block: {
