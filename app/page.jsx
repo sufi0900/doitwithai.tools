@@ -619,18 +619,10 @@ function brandSchema() {
         "@type": "Person",
         "name": "Sufian Mustafa",
         "url": "${getBaseUrl()}/about"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "reviewCount": "127",
-        "bestRating": "5",
-        "worstRating": "1"
       }
     }`
   };
 }
-
 
   function videoSchemaMarkup(resources) {
     const videoResources = resources.filter(res => res.resourceFormat === 'video');
