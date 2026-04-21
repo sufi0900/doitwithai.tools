@@ -7,7 +7,7 @@ import StaticPageShell from "./StaticPageShell";
 import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis';
-
+import AISEOHeroSection from "@/app/ai-seo/AISEOHeroSection";
 export const revalidate = false;
 export const dynamic = "force-dynamic";
 const SUBCATEGORIES_LIMIT = 2;
@@ -344,7 +344,10 @@ export default async function Page() {
       />
 
       <PageCacheProvider pageType="listing" pageId={`${schemaType}-listing`}>
-        <StaticPageShell breadcrumbProps={breadcrumbProps}>
+        <StaticPageShell showBreadcrumb={false}>
+             <section >
+        <AISEOHeroSection />
+      </section>
           <BlogListingPageContent
             schemaType={schemaType}
             pageSlugPrefix={pageSlugPrefix}
