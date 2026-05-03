@@ -174,93 +174,70 @@ const ReusableCachedSEOSubcategories = ({
       
       {/* NAVIGATION-FOCUSED Cards Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {subcategoriesToDisplay.map((subcategory, index) => (
-          <Link
-            key={subcategory.slug}
-            href={`/ai-seo/categories/${subcategory.slug}`}
-            className="group relative overflow-hidden rounded-2xl bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 shadow-lg hover:shadow-2xl transition-all duration-400 transform hover:scale-[1.03] cursor-pointer"
-            style={{
-              transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            }}
-          >
-            {/* Animated Gradient Background on Hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
-            
-            {/* Top Section: Icon + Badge */}
-            <div className="relative z-10 p-6 pb-4">
-              <div className="flex items-start justify-between mb-4">
-                {/* Prominent Icon */}
-               {/* Google News Style Collage Icon Stack - Balanced for Visibility */}
-<div className="relative w-16 h-16 group-hover:scale-110 transition-all duration-500">
-  
-  {/* Back Layer 1: Bottom-Left Fan (Purple) */}
-  <div className="absolute inset-0 bg-purple-500/30 dark:bg-purple-400/20 rounded-2xl 
-    -rotate-12 -translate-x-3 translate-y-1 
-    group-hover:-rotate-[20deg] group-hover:-translate-x-5 
-    transition-all duration-500 ease-out" 
-  />
-  
-  {/* Back Layer 2: Top-Right Fan (Blue) */}
-  <div className="absolute inset-0 bg-blue-400/40 dark:bg-blue-400/20 rounded-2xl 
-    rotate-12 translate-x-3 -translate-y-1 
-    group-hover:rotate-[22deg] group-hover:translate-x-5 
-    transition-all duration-500 ease-out" 
-  />
-  
-  {/* Front Primary Layer (Centered) */}
-  <div className="relative flex items-center justify-center w-full h-full 
-    bg-gradient-to-br from-blue-600 to-blue-700 
-    rounded-2xl shadow-2xl z-10 border border-white/10">
-    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  </div>
-</div>
-                
-                {/* Article Count Badge */}
-                {subcategory.blogCount !== undefined && (
-                  <div className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-full">
-                    <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
-                      {subcategory.blogCount} {subcategory.blogCount === 1 ? 'guide' : 'guides'}
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              {/* Title - More Prominent */}
-              <h3 className="text-xl font-bold leading-tight text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
-                {subcategory.title}
-              </h3>
-              
-              {/* Description - Shorter, More Scannable */}
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                {subcategory.description}
-              </p>
-            </div>
-            
-            {/* Bottom CTA Section - FULL WIDTH, CLICKABLE BUTTON FEEL */}
-            <div className="relative z-10 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 px-6 py-4 transition-all duration-300">
-              <div className="flex items-center justify-between text-white">
-                <span className="text-base font-bold">Explore Topic</span>
-                <svg 
-                  className="w-6 h-6 transform group-hover:translate-x-2 transition-transform duration-300" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                  strokeWidth="2.5"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </div>
-              
-              {/* Shimmer Effect on Hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
-            </div>
-            
-            {/* Pulse Border Effect */}
-            <div className="absolute inset-0 rounded-2xl border-2 border-blue-500 opacity-0 group-hover:opacity-100 animate-pulse-border transition-opacity duration-400" />
-          </Link>
-        ))}
+       {subcategoriesToDisplay.map((subcategory, index) => (
+  <Link
+    key={subcategory.slug}
+    href={`/ai-seo/categories/${subcategory.slug}`}
+    // ADDED: flex flex-col and h-full
+    className="group relative flex flex-col h-full overflow-hidden rounded-2xl bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 shadow-lg hover:shadow-2xl transition-all duration-400 transform hover:scale-[1.03] cursor-pointer"
+    style={{
+      transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+    }}
+  >
+    {/* Animated Gradient Background */}
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
+    
+    {/* Top Section: Icon + Badge + Text */}
+    {/* ADDED: flex-grow here ensures this section fills empty space */}
+    <div className="relative z-10 p-6 pb-4 flex-grow">
+      <div className="flex items-start justify-between mb-4">
+        {/* Icon Stack */}
+        <div className="relative w-16 h-16 group-hover:scale-110 transition-all duration-500">
+          <div className="absolute inset-0 bg-purple-500/30 dark:bg-purple-400/20 rounded-2xl -rotate-12 -translate-x-3 translate-y-1 group-hover:-rotate-[20deg] group-hover:-translate-x-5 transition-all duration-500 ease-out" />
+          <div className="absolute inset-0 bg-blue-400/40 dark:bg-blue-400/20 rounded-2xl rotate-12 translate-x-3 -translate-y-1 group-hover:rotate-[22deg] group-hover:translate-x-5 transition-all duration-500 ease-out" />
+          <div className="relative flex items-center justify-center w-full h-full bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl shadow-2xl z-10 border border-white/10">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+        </div>
+        
+        {/* Count Badge */}
+        {subcategory.blogCount !== undefined && (
+          <div className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-full">
+            <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
+              {subcategory.blogCount} {subcategory.blogCount === 1 ? 'guide' : 'guides'}
+            </span>
+          </div>
+        )}
+      </div>
+      
+      {/* Title - Fixed Space Fix */}
+      {/* ADDED: min-h-[3.5rem] ensures 1-line titles take up same space as 2-line titles */}
+      <h3 className="text-xl font-bold leading-tight text-gray-900 dark:text-white mb-2 line-clamp-2 min-h-[3.5rem] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-300">
+        {subcategory.title}
+      </h3>
+      
+      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
+        {subcategory.description}
+      </p>
+    </div>
+    
+    {/* Bottom CTA Section */}
+    {/* This will now ALWAYS be pushed to the bottom because of flex-grow above */}
+    <div className="relative z-10 bg-gradient-to-r from-blue-600 to-blue-700 group-hover:from-blue-700 group-hover:to-blue-800 px-6 py-4 transition-all duration-300">
+      <div className="flex items-center justify-between text-white">
+        <span className="text-base font-bold">Explore Topic</span>
+        <svg className="w-6 h-6 transform group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+    </div>
+    
+    <div className="absolute inset-0 rounded-2xl border-2 border-blue-500 opacity-0 group-hover:opacity-100 animate-pulse-border transition-opacity duration-400" />
+  </Link>
+))}
       </div>
       
       {subcategoriesToDisplay.length === 0 && !isSubcategoryLoading && !isTotalCountLoading && !hasError && (
