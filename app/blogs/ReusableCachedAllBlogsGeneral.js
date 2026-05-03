@@ -253,7 +253,7 @@ const ReusableCachedMixedBlogs = ({
           postsToDisplay.map((post) => (
             <CardComponent
               key={post._id}
-              ReadTime={post.readTime?.minutes}
+              readTime={post.readTime?.minutes}
               overview={post.overview}
               title={post.title}
               tags={post.tags}

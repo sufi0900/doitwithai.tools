@@ -52,12 +52,18 @@ useEffect(() => {
 };
 
   // Get resource type label
-  const getResourceTypeLabel = () => {
-    if (resource.tags && resource.tags.length > 0) {
-      return resource.tags[0];
-    }
-    return resource.resourceType?.charAt(0).toUpperCase() + resource.resourceType?.slice(1) || 'Resource';
-  };
+ const getResourceTypeLabel = () => {
+  // 1. Check for the custom label field first
+  if (resource.resourceType) {
+    return resource.resourceType;
+  }
+  // 2. Fallback to tags if no custom label exists
+  if (resource.tags && resource.tags.length > 0) {
+    return resource.tags[0];
+  }
+  // 3. Final fallback
+  return 'Resource';
+};
 
   // Get resource icon based on format
   const getResourceIcon = () => {
@@ -109,9 +115,12 @@ const getCardHeight = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       
       {/* Resource Type Badge */}
-      <div className="absolute top-4 left-4 z-20 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600/90 to-blue-700/90 px-3 py-2 text-xs font-semibold uppercase text-white shadow-lg backdrop-blur-sm border border-white/20">
-        {getResourceIcon()}
-        {getResourceTypeLabel()}
+<div className="absolute top-3 left-3 z-20 inline-flex items-center justify-center gap-2 rounded-lg xs:rounded-xl bg-gradient-to-br from-indigo-600 via-blue-700 to-slate-900 px-3.5 py-2 text-[11px] xs:text-xs font-bold uppercase text-white shadow-2xl backdrop-blur-md border border-white/20 leading-none transition-all duration-300 group-hover:scale-105">
+  {/* Emoji Container - Larger and centered */}
+  <span className="text-sm leading-none flex items-center justify-center filter drop-shadow-sm">
+    🖼️
+  </span>       
+   {getResourceTypeLabel()}
       </div>
 
       {/* Content Overlay */}
@@ -183,12 +192,21 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
 
       {/* Video Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        
         <div className="flex items-center justify-between mb-2">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold uppercase text-white shadow-lg">
-            {getResourceIcon()}
-            {getResourceTypeLabel()}
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-sm font-semibold uppercase text-white shadow-lg">
+     
+
+       <span className="text-sm leading-none flex items-center justify-center filter drop-shadow-sm">
+      <span className="text-sm leading-none flex items-center justify-center filter drop-shadow-sm">
+🎥
+  </span>  
+          {getResourceTypeLabel()}
+  </span>  
+     
           </div>
         </div>
+
         <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           {resource.title}
         </h3>
@@ -260,7 +278,9 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold uppercase text-white mb-3 shadow-lg">
-          {getResourceIcon()}
+      <span className="text-sm leading-none flex items-center justify-center filter drop-shadow-sm">
+    ✏️
+  </span>  
           {getResourceTypeLabel()}
         </div>
         <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
@@ -350,7 +370,9 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         <div className="absolute top-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold uppercase text-white shadow-lg">
-          {getResourceIcon()}
+       <span className="text-sm leading-none flex items-center justify-center filter drop-shadow-sm">
+ 📄
+  </span> 
           {getResourceTypeLabel()}
         </div>
       </div>
@@ -417,14 +439,17 @@ const VideoCardLayout = ({ resource, renderPreviewContent, openModal, handleReso
       <div className="absolute inset-0 bg-gradient-to-br from-purple-600/30 to-cyan-500/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300"/>
       
       {/* AI Tool Badge with glow effect */}
-      <div className="absolute top-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-1.5 text-xs font-semibold uppercase text-white shadow-lg backdrop-blur-sm border border-white/20 group-hover:shadow-purple-500/50 group-hover:shadow-xl transition-all duration-300">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/>
-          <path d="M12 6a6 6 0 100 12 6 6 0 000-12zm0 10a4 4 0 110-8 4 4 0 010 8z"/>
-        </svg>
-        AI Tool
-      </div>
-      
+<div className="absolute top-3 left-3 z-20 inline-flex items-center justify-center gap-1.5 rounded-lg xs:rounded-xl bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-1.5 text-[10px] xs:text-xs font-semibold uppercase text-white shadow-lg backdrop-blur-sm border border-white/20 group-hover:shadow-purple-500/50 group-hover:shadow-xl transition-all duration-300 leading-none">
+  {/* Emoji with optical alignment tweak */}
+  <span className="text-base leading-none flex items-center justify-center relative ">
+    🤖
+  </span>
+
+  {/* Text with normalized line height */}
+  <span className="leading-none flex items-center">
+    {getResourceTypeLabel()}
+  </span>
+</div>
       {/* Floating particles effect */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
         <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-white rounded-full animate-pulse"></div>

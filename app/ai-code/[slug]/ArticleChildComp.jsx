@@ -45,7 +45,8 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
         </p>
       ),
       a: ({ children }) => (
-        <a className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+        <a             className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
+>
           {children}
         </a>
       ),

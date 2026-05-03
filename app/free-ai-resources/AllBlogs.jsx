@@ -587,33 +587,48 @@ export default function FreeResourcesPage({ initialServerData }) {
                 {/* Search Pagination */}
                 {searchTotalPages > 1 && (
                   <div className="flex justify-center items-center space-x-4 mb-6">
-                    <nav className="flex items-center space-x-2 rounded-lg p-2 bg-transparent shadow-md border border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={handleSearchPrevious}
-                        disabled={searchCurrentPage === 1}
-                        className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 ${
-                          searchCurrentPage === 1
-                            ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 cursor-not-allowed'
-                            : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-600'
-                        }`}
-                      >
-                        Previous
-                      </button>
-                      <span className="px-4 py-2 rounded-full bg-blue-600 text-white font-semibold shadow-sm">
-                        {searchCurrentPage} of {searchTotalPages}
-                      </span>
-                      <button
-                        onClick={handleSearchNext}
-                        disabled={searchCurrentPage >= searchTotalPages}
-                        className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 ${
-                          searchCurrentPage >= searchTotalPages
-                            ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 cursor-not-allowed'
-                            : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-600'
-                        }`}
-                      >
-                        Next
-                      </button>
-                    </nav>
+                 <nav className="flex items-center justify-center space-x-1 xs:space-x-2 rounded-lg p-1 xs:p-2 bg-transparent">
+  {/* Previous Button */}
+  <button
+    onClick={handleSearchPrevious}
+    disabled={searchCurrentPage === 1}
+    className={`flex items-center justify-center gap-1 xs:gap-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg xs:rounded-xl font-medium text-xs xs:text-sm sm:text-base transition-all duration-300 min-w-[70px] xs:min-w-[80px] sm:min-w-[100px] ${
+      searchCurrentPage === 1
+        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 cursor-not-allowed opacity-70'
+        : 'bg-transparent text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-300 hover:scale-[1.02] active:scale-[0.98]'
+    }`}
+  >
+    <svg className="w-3 h-3 xs:w-4 xs:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+    </svg>
+    <span className="hidden xs:inline">Previous</span>
+    <span className="xs:hidden">Prev</span>
+  </button>
+
+  {/* Current Status Indicator */}
+  <div className="flex items-center mx-1 xs:mx-2 sm:mx-3">
+    <span className="px-3 xs:px-4 sm:px-5 py-2 xs:py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg xs:rounded-xl font-semibold text-xs xs:text-sm sm:text-base shadow-md min-w-[60px] xs:min-w-[80px] text-center">
+      {searchCurrentPage} <span className="text-blue-200 font-normal mx-0.5">of</span> {searchTotalPages}
+    </span>
+  </div>
+
+  {/* Next Button */}
+  <button
+    onClick={handleSearchNext}
+    disabled={searchCurrentPage >= searchTotalPages}
+    className={`flex items-center justify-center gap-1 xs:gap-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg xs:rounded-xl font-medium text-xs xs:text-sm sm:text-base transition-all duration-300 min-w-[70px] xs:min-w-[80px] sm:min-w-[100px] ${
+      searchCurrentPage >= searchTotalPages
+        ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 cursor-not-allowed opacity-70'
+        : 'bg-transparent text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-300 hover:scale-[1.02] active:scale-[0.98]'
+    }`}
+  >
+    <span className="hidden xs:inline">Next</span>
+    <span className="xs:hidden">Next</span>
+    <svg className="w-3 h-3 xs:w-4 xs:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+</nav>
                   </div>
                 )}
               </>
@@ -640,33 +655,48 @@ export default function FreeResourcesPage({ initialServerData }) {
         {/* Pagination (visible only if not in search or filtered view and if there are items to paginate) */}
         {!searchHook.isSearchActive && !filteredByArticle && totalItems > 0 && (
           <div className="flex justify-center items-center space-x-4 mb-10">
-            <nav className="flex items-center space-x-2 rounded-lg p-2 bg-transparent shadow-md border border-gray-200 dark:border-gray-700">
-              <button
-                onClick={handlePrevious}
-                disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-200
-                  ${currentPage === 1
-                    ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 cursor-not-allowed'
-                    : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-600'}`
-                }
-              >
-                Previous
-              </button>
-              <span className="px-4 py-2 rounded-full bg-blue-600 text-white font-semibold shadow-sm">
-                {currentPage}
-              </span>
-              <button
-                onClick={handleNext}
-                disabled={!hasMorePages || currentPage >= totalPages}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-200
-                  ${!hasMorePages || currentPage >= totalPages
-                    ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 cursor-not-allowed'
-                    : 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900 hover:text-blue-600'}`
-                }
-              >
-                Next
-              </button>
-            </nav>
+          <nav className="flex items-center justify-center space-x-1 xs:space-x-2 rounded-lg p-1 xs:p-2 bg-transparent">
+  {/* Previous Button */}
+  <button
+    onClick={handlePrevious}
+    disabled={currentPage === 1}
+    className={`flex items-center justify-center gap-1 xs:gap-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg xs:rounded-xl font-medium text-xs xs:text-sm sm:text-base transition-all duration-300 min-w-[70px] xs:min-w-[80px] sm:min-w-[100px] ${
+      currentPage === 1
+        ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 cursor-not-allowed opacity-60'
+        : 'bg-transparent text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-300 hover:scale-[1.02] active:scale-[0.98]'
+    }`}
+  >
+    <svg className="w-3 h-3 xs:w-4 xs:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+    </svg>
+    <span className="hidden xs:inline">Previous</span>
+    <span className="xs:hidden">Prev</span>
+  </button>
+
+  {/* Current Page Indicator */}
+  <div className="flex items-center mx-1 xs:mx-2 sm:mx-3">
+    <span className="px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg xs:rounded-xl font-semibold text-xs xs:text-sm sm:text-base shadow-md min-w-[40px] xs:min-w-[50px] text-center">
+      {currentPage}
+    </span>
+  </div>
+
+  {/* Next Button */}
+  <button
+    onClick={handleNext}
+    disabled={!hasMorePages || currentPage >= totalPages}
+    className={`flex items-center justify-center gap-1 xs:gap-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg xs:rounded-xl font-medium text-xs xs:text-sm sm:text-base transition-all duration-300 min-w-[70px] xs:min-w-[80px] sm:min-w-[100px] ${
+      !hasMorePages || currentPage >= totalPages
+        ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 cursor-not-allowed opacity-60'
+        : 'bg-transparent text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-300 hover:scale-[1.02] active:scale-[0.98]'
+    }`}
+  >
+    <span className="hidden xs:inline">Next</span>
+    <span className="xs:hidden">Next</span>
+    <svg className="w-3 h-3 xs:w-4 xs:h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+</nav>
           </div>
         )}
       </div>

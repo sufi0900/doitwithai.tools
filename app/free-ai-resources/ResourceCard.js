@@ -4,7 +4,7 @@ import ResourceCardBase from './ResourceCardBase';
 import Link from 'next/link';
 import { ArrowForward, PlayArrow, Description, Image as ImageIcon, Psychology } from '@mui/icons-material';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 const ResourceCard = ({ resource }) => {
 
 // Helper function to handle resource access
@@ -324,12 +324,13 @@ const AIToolCardLayout = ({ resource, renderPreviewContent, openModal, handleRes
       
       {/* AI Tool Badge with glow effect */}
       <div className="absolute top-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-1.5 text-xs font-semibold uppercase text-white shadow-lg backdrop-blur-sm border border-white/20 group-hover:shadow-purple-500/50 group-hover:shadow-xl transition-all duration-300">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/>
-          <path d="M12 6a6 6 0 100 12 6 6 0 000-12zm0 10a4 4 0 110-8 4 4 0 010 8z"/>
-        </svg>
-        AI Tool
-      </div>
+  {/* Accurate AI Robot Icon */}
+                                                    <span className="text-sm">🤖</span>
+                                             
+  
+  {/* Your dynamic label from Sanity */}
+  {getResourceTypeLabel()}
+</div>
       
       {/* Floating particles effect */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">

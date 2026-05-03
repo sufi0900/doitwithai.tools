@@ -167,22 +167,30 @@ const RichTableComponent = ({ value }) => {
 };
 
 
-  const imgdesc = {
-    block: {
-      normal: ({ children }) => (
-        <p
-          className="hover:text-gray-950 customanchor dark:hover:text-gray-50 mb-2 sm:mb-4 mt-1 text-xs sm:text-sm md:text-base font-medium leading-relaxed text-gray-800 dark:text-gray-300 transition-all duration-300 ease-in-out">
-          {children}
-        </p>
-      ),
-      a: ({ children }) => (
-        <a className="dark-bg-green-50 rounded-bl-xl rounded-br-xl text-center text-xs sm:text-sm md:text-base text-blue-500 underline hover:text-blue-600 dark:text-gray-400 hover:underline">
+ const imgdesc = {
+  block: {
+    normal: ({ children }) => (
+<p className="text-sm  sm:text-base leading-[1.7] text-gray-800 dark:text-gray-300 hover:text-gray-950 dark:hover:text-gray-50 mb-1 mt-1 font-medium transition-all duration-300 ease-in-out">
+        {children}
+      </p>
+    ),
+  },
+  marks: {
+    link: ({ children, value }) => {
+      const isExternal = value.href && !value.href.startsWith('/');
+      return (
+        <a
+          href={value.href}
+          rel={isExternal ? 'noreferrer noopener' : undefined}
+          target={isExternal ? '_blank' : undefined}
+          className="text-blue-600 dark:text-blue-400 font-semibold transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
+        >
           {children}
         </a>
-      )
+      );
     },
-  }
-
+  },
+};
   // Enhanced VideoComponent in portableTextComponents
   const VideoComponent = ({ value }) => {
     const [fileUrl, setFileUrl] = useState(null);
@@ -402,11 +410,13 @@ image: ({ value, index }) => {
                     </div>
                     
                     {/* Caption text container */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words -mt-1">
-                        <PortableText value={value.imageDescription} components={imgdesc}/>
-                      </p>
-                    </div>
+                   {/* Updated Caption text container */}
+<div className="flex-1 min-w-0">
+  {/* Changed <p> to <div> to avoid nested <p> tags */}
+  <div>
+    <PortableText value={value.imageDescription} components={imgdesc} />
+  </div>
+</div>
                     
                   </div>
                 </div>
