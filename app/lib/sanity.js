@@ -13,7 +13,7 @@ export const client = createClient({
 
 // Updated function to include _updatedAt for better sitemap lastModified dates
 export async function fetchURLs() {
-  const query = `*[_type in ["makemoney", "aitool", "news", "coding", "freeairesources", "seo"]] {
+  const query = `*[_type in ["makemoney", "aitool", "seo", "news", "coding", "freeairesources", "seo"]] {
     "slug": slug.current,
     "title": title, 
     _type,
