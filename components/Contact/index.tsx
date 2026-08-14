@@ -52,10 +52,10 @@ const Contact = () => {
     if (form.current) {
       emailjs
         .sendForm(
-          "service_ugauc93",
+          "service_pcouu9h",
           "template_adfk5bp",
           form.current,
-          "Jwo8Jvergs2aiHjIX"
+          "bEkDwHTfe-uaxKGlf"
         )
         .then(
           (result) => {
