@@ -1,3 +1,5 @@
+//  Card.jsx
+
 "use client";
 import { urlForImage } from "@/sanity/lib/image";
 import Link from "next/link";
@@ -17,6 +19,18 @@ export default function CardComponent({
   slug,
   tags,
 }) {
+  // A tag's `link` is optional in the Sanity schema.  Do not assume that
+  // every imported article has one (or that the first tag is usable).
+  const primaryTag = Array.isArray(tags)
+    ? tags.find(
+        (tag) => typeof tag?.name === "string" && tag.name.trim().length > 0
+      )
+    : null;
+  const primaryTagHref =
+    typeof primaryTag?.link === "string" && primaryTag.link.trim().length > 0
+      ? primaryTag.link
+      : null;
+
   return (
     <Card
       sx={{
@@ -38,24 +52,24 @@ export default function CardComponent({
       }}
       className="group cursor-pointer shadow-md hover:shadow-xl dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
     >
-      <Link href={slug}>
-        {/* Image Section - Better aspect ratio control */}
-        <Box
-          position="relative"
-          sx={{
-            overflow: "hidden",
-            background: "linear-gradient(135deg, #2563eb10, #8b5cf610)",
-            flexShrink: 0,
-            width: "100%",
-            height: { 
-              xs: "200px", 
-              sm: "220px", 
-              md: "240px",
-              lg: "250px",
-              xl: "260px"
-            },
-          }}
-        >
+      {/* Image Section - Better aspect ratio control */}
+      <Box
+        position="relative"
+        sx={{
+          overflow: "hidden",
+          background: "linear-gradient(135deg, #2563eb10, #8b5cf610)",
+          flexShrink: 0,
+          width: "100%",
+          height: {
+            xs: "200px",
+            sm: "220px",
+            md: "240px",
+            lg: "250px",
+            xl: "260px"
+          },
+        }}
+      >
+        <Link href={slug} className="block h-full">
           <div className="w-full h-full">
             <div className="absolute inset-0 h-full w-full transition-all duration-500 ease-out group-hover:scale-110">
             <OptimizedImage
@@ -72,22 +86,28 @@ export default function CardComponent({
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
-          
-          {/* Tag positioning */}
-          {tags && tags.length > 0 && (
+        </Link>
+
+        {/* Tag positioning. Render an unlinked label when the tag has no URL. */}
+        {primaryTag &&
+          (primaryTagHref ? (
             <Link
-              href={tags[0].link}
+              href={primaryTagHref}
               className="absolute right-3 top-3 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold capitalize text-white shadow-md transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:scale-105 backdrop-blur-sm border border-white/20"
             >
               <LocalOfferIcon style={{ fontSize: "10px" }} />
-              {tags[0].name}
+              {primaryTag.name}
             </Link>
-          )}
-          
-          {/* Bottom gradient line */}
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
-        </Box>
-      </Link>
+          ) : (
+            <span className="absolute right-3 top-3 z-20 inline-flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-1.5 text-xs font-semibold capitalize text-white shadow-md backdrop-blur-sm border border-white/20">
+              <LocalOfferIcon style={{ fontSize: "10px" }} />
+              {primaryTag.name}
+            </span>
+          ))}
+
+        {/* Bottom gradient line */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+      </Box>
 
       {/* Content Section - Better content distribution */}
       <CardContent

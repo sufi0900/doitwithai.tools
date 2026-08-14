@@ -1,3 +1,6 @@
+
+// MAIN AI SEO PAGE of doitwithai.tools
+
 import React from 'react';
 import Script from "next/script";
 

@@ -73,6 +73,8 @@ const PortableTextComponents = () => {
 const RichTableComponent = ({ value }) => {
   const caption = value?.caption;
   const rows = value?.rows || [];
+    const headerRows = Number(value?.headerRows ?? 0);
+
 
   return (
     <div className="card2 mx-2 sm:mx-0 sm:m-2 mb-6 mt-6 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -88,17 +90,12 @@ const RichTableComponent = ({ value }) => {
         <table className="w-full text-left text-xs sm:text-sm">
           <tbody>
             {rows.map((row, rowIndex) => (
-              <tr
-                key={rowIndex}
-                className={`${
-                  rowIndex % 2 === 0
-                    ? "bg-white dark:bg-gray-800"
-                    : "bg-gray-50 dark:bg-gray-900"
-                } border-b border-gray-200 dark:border-gray-700 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors duration-200`}
-              >
-                {row.cells?.map((cell, cellIndex) => {
-                  const isHeader = cell.isHeader;
-                  const CellTag = isHeader ? 'th' : 'td';
+               <tr key={row._key || rowIndex}>
+    {row.cells?.map((cell, cellIndex) => {
+      const isHeader =
+        rowIndex < headerRows || Boolean(cell.isHeader);
+
+      const CellTag = isHeader ? "th" : "td";
                   
                   return (
                     <CellTag
@@ -478,9 +475,16 @@ image: ({ value, index }) => {
           {children}
         </h5>
       ),
-          h6: ({ children }) => (
-        <div className="relative z-10 mb-10 overflow-hidden rounded-md bg-primary bg-opacity-10 p-8 md:p-9 lg:p-8 xl:p-9">
-          <h4 className="text-center  text-lg sm:text-xl lg:text-2xl font-medium leading-relaxed  dark:text-gray-400 text-body-color">
+      // H6 - Small heading
+h6: ({ children }) => (
+  <h6 className="mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-base font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0">
+    {children}
+  </h6>
+),
+        blockquote: ({ children }) => (
+         <div className="relative z-10 mb-6 sm:mb-8 overflow-hidden rounded-md bg-primary bg-opacity-10 px-5 py-6 sm:px-7 sm:py-7 md:px-8 md:py-8">
+    <blockquote className="text-center text-sm sm:text-base md:text-lg lg:text-xl italic font-medium leading-relaxed sm:leading-relaxed text-gray-700 dark:text-gray-300 px-2 sm:px-4">
+
           <span className="absolute left-0 top-0 z-[-1]">
                         <svg
                           width="132"
@@ -625,7 +629,7 @@ image: ({ value, index }) => {
                   </defs>
                 </svg>
               </span>
-          </h4>
+          </blockquote>
         </div>
       ),
     },

@@ -1,3 +1,4 @@
+//ReusableCachedMixedBlogs
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
@@ -200,9 +201,7 @@ const ReusableCachedMixedBlogs = ({
     <div className="space-y-4">
       {filterChangeDetected && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 dark:bg-blue-900/20 dark:border-blue-800 text-center text-blue-800 dark:text-blue-200 font-medium flex items-center justify-center">
-          <svg className="h-5 w-5 text-blue-600 animate-spin mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
+        
           Applying filters...
         </div>
       )}

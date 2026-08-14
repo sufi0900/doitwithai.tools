@@ -1,4 +1,4 @@
-// app/ai-seo/[slug]/page.jsx
+// app/ai-seo/[slug]/page.jsx of doitwithai.tools
 
 import { getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData";
 

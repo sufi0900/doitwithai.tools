@@ -1,3 +1,4 @@
+// useCachedSearch.js currently same for both doitwithai and sufian portfolio
 'use client';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSanityCache } from './useSanityCache';

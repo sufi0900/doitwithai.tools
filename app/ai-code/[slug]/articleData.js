@@ -1,4 +1,4 @@
-// lib/articleData.js
+// @/app/ai-code/[slug]/articleData.js
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis'; // Adjust path as needed
 import { urlForImage } from "@/sanity/lib/image";

@@ -1,4 +1,4 @@
-// ai-seo/categories/[category]/page.jsx
+// ai-seo and /blogs/categories/[category]/page.jsx of doitwithai.tools and sufianportfolio.com
 
 import SubCategoryContent from "./code";
 import { client } from "@/sanity/lib/client";
@@ -94,55 +94,10 @@ export async function generateMetadata({ params }) {
     author: "Sufian Mustafa",
     keywords: pageKeywords,
     
-    openGraph: {
-      title: pageTitle,
-      url: canonicalUrl,
-      type: "website",
-      images: [{
-        url: generateOGImageURL({
-          title: title,
-          ctaText: 'Explore Guides',
-          features: 'AI SEO,Expert Guides,Free Resources',
-        }),
-        width: 1200,
-        height: 630,
-        alt: `${title} - AI SEO guides and strategies`,
-      }],
-      siteName: "Do It With AI Tools",
-      locale: 'en_US',
-      description: pageDescription,
-    },
-    
-    twitter: {
-      card: "summary_large_image",
-      site: "@doitwithai",
-      creator: "@doitwithai",
-      domain: "doitwithai.tools",
-      url: canonicalUrl,
-      title: pageTitle,
-      description: pageDescription,
-      image: generateOGImageURL({
-        title: title,
-        ctaText: 'Explore Guides',
-        features: 'AI SEO,Expert Guides,Free Resources',
-      }),
-    },
 
-    alternates: {
-      canonical: canonicalUrl,
-    },
-    
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
+
+
+
   };
 }
 
@@ -177,64 +132,10 @@ export default async function CategoryPage({ params }) {
   }));
 
   // Enhanced schema markup
-  const schemaMarkup = {
-    __html: JSON.stringify({
-      "@context": "https://schema.org",
-      "@graph": [
-        // CollectionPage schema
-        {
-          "@type": "CollectionPage",
-          "@id": `${getBaseUrl()}/ai-seo/categories/${category}#webpage`,
-          "url": `${getBaseUrl()}/ai-seo/categories/${category}`,
-          "name": subcategoryInfo.metaTitle || subcategoryInfo.title,
-          "description": subcategoryInfo.metaDescription || subcategoryInfo.description,
-          "isPartOf": {
-            "@id": `${getBaseUrl()}/ai-seo#webpage`
-          },
-          "breadcrumb": {
-            "@id": `${getBaseUrl()}/ai-seo/categories/${category}#breadcrumb`
-          },
-          "inLanguage": "en-US"
-        },
-        
-        // BreadcrumbList schema
-        {
-          "@type": "BreadcrumbList",
-          "@id": `${getBaseUrl()}/ai-seo/categories/${category}#breadcrumb`,
-          "itemListElement": breadcrumbData.map((item, index) => ({
-            "@type": "ListItem",
-            "position": index + 1,
-            "name": item.name,
-            "item": item.item
-          }))
-        },
-        
-        // ItemList for articles (if posts exist)
-        ...(posts.length > 0 ? [{
-          "@type": "ItemList",
-          "name": `${subcategoryInfo.title} Articles`,
-          "description": `Collection of ${posts.length} articles about ${subcategoryInfo.title}`,
-          "numberOfItems": posts.length,
-          "itemListElement": transformedPosts.slice(0, 10).map((post, index) => ({
-            "@type": "ListItem",
-            "position": index + 1,
-            "url": `${getBaseUrl()}/ai-seo/${post.slug.current}`
-          }))
-        }] : [])
-      ]
-    })
-  };
 
   return (
     <>
-      <Script
-        id={`SubcategorySchema-${category}`}
-        type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup}
-        key={`jsonld-${category}`}
-        strategy="afterInteractive"
-      />
-      
+   
       <SubCategoryContent 
         posts={transformedPosts}
         subcategoryInfo={subcategoryInfo}

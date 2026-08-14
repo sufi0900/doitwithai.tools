@@ -8,6 +8,7 @@
   import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
   import { PortableText } from "@portabletext/react";
   import PortableTextComponents from './createPortableTextComponents';
+  import ReviewLionxeHeader from '@/app/ai-tools/[slug]/ReviewLionxeHeader'; //Adjust path as needed
   // import ArticleHeader from './ArticleHeader';
   import AuthorBioCard from './AuthorBioCard'; // Adjust path as needed
 
@@ -233,6 +234,12 @@ import Image from 'next/image';
           <article id="main-content" className="lg:m-4 flex flex-wrap">
             {/* Main Article Content - Priority for FCP */}
             <FeatureImg data={data} imgdesc={imgdesc} />
+
+
+            {currentPostType === "aitool" && (
+  <ReviewLionxeHeader data={data} />
+)}
+
                   {/* <ArticleHeader articleTitle={data?.title} isSticky={false} /> */}
       <StickyArticleNavbar articleTitle={data?.title} />
             <div className=" mb-4 border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10"></div>

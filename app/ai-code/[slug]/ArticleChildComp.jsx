@@ -1,4 +1,4 @@
-//ArticleChildComp which is reusbale for all the sanity schemas
+//ArticleChildComp of doitwithai.tools which is reusbale for all the sanity schemas
 "use client";
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
