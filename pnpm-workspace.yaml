@@ -1,5 +1,8 @@
+packages:
+  - "."
+
 allowBuilds:
   core-js: false
   esbuild: true
-  puppeteer: false
+  puppeteer: true
   unrs-resolver: true
