@@ -322,29 +322,38 @@ export default async function Page() {
   const pageTitleHighlight = "AI SEO Insights";
   const pageDescription = "Stay ahead with our latest AI-powered SEO strategies and insights.";
   
+  // const breadcrumbProps = {
+  //   pageName: "AI SEO",
+  //   pageName2: "Resource Hub",
+  //   // Match meta description
+  //   description: "Access our free AI SEO learning hub for expert guides, smart tools, and custom prompts to boost your content rankings and maximize AI citation.",
+  //   firstlinktext: "Home",
+  //   firstlink: "/",
+  //   link: "/ai-seo",
+  //   linktext: "ai-seo",
+  // };
+
+
   const breadcrumbProps = {
-    pageName: "AI SEO",
-    pageName2: "Resource Hub",
-    // Match meta description
-    description: "Access our free AI SEO learning hub for expert guides, smart tools, and custom prompts to boost your content rankings and maximize AI citation.",
-    firstlinktext: "Home",
-    firstlink: "/",
-    link: "/ai-seo",
-    linktext: "ai-seo",
-  };
-
+  pageName: "AI SEO",
+  link: "/ai-seo",
+};
   // Extract subcategories for schema
-  const subcategoriesForSchema = serverData?.firstPageSEOSubcategories?.slice(0, SUBCATEGORIES_LIMIT) || [];
+const subcategoriesForSchema =
+  serverData?.firstPageSEOSubcategories?.slice(0, SUBCATEGORIES_LIMIT) || [];
 
+const schemaMarkupData = schemaMarkup(
+  metadata,
+  breadcrumbProps,
+  subcategoriesForSchema
+);
   return (
     <>
-      <Script
-        id="EnhancedAISEOSchema"
-             key={`${pageSlugPrefix}-jsonld`}
-                  strategy="afterInteractive"
-      type="application/ld+json"
+    <script
+  id="enhanced-ai-seo-schema"
+  type="application/ld+json"
   dangerouslySetInnerHTML={{
-    __html: JSON.stringify(schemaData).replace(/</g, "\\u003c"),
+    __html: schemaMarkupData.__html.replace(/</g, "\\u003c"),
   }}
 />
 
