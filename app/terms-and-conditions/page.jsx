@@ -9,7 +9,7 @@ const page = () => {
 
 <p className="mb-4 mt-1 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">Welcome to Doitwihtai.tools!</p>
 
-<p className="mb-4 mt-1 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">These terms and conditions outline the rules and regulations for the use of Doitwihtai.tools"s Website, located at <a className="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline" href=" https://www.doitwithai.tools/">Doitwithai.tools</a> </p>
+<p className="mb-4 mt-1 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">These terms and conditions outline the rules and regulations for the use of Doitwihtai.tools"s Website, located at <a className="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline" href=" https://doitwithai.tools/">Doitwithai.tools</a> </p>
 
 <p className="mb-4 mt-1 text-lg font-medium leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:text-lg xl:text-xl">By accessing this website we assume you accept these terms and conditions. Do not continue to use Doitwihtai.tools if you do not agree to take all of the terms and conditions stated on this page.</p>
 

@@ -22,7 +22,7 @@ export default function ArticleMicrodata({ data }) {
       </div>
       <div itemProp="publisher" itemScope itemType="https://schema.org/Organization">
         <meta itemProp="name" content="DoItWithAI.tools" />
-        <meta itemProp="url" content="https://www.doitwithai.tools" />
+        <meta itemProp="url" content="https://doitwithai.tools" />
       </div>
       {imageUrl && (
         <div itemProp="image" itemScope itemType="https://schema.org/ImageObject">

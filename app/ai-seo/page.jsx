@@ -340,11 +340,13 @@ export default async function Page() {
     <>
       <Script
         id="EnhancedAISEOSchema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={schemaMarkup(metadata, breadcrumbProps, subcategoriesForSchema)}
-        key={`${pageSlugPrefix}-jsonld`}
-        strategy="afterInteractive"
-      />
+             key={`${pageSlugPrefix}-jsonld`}
+                  strategy="afterInteractive"
+      type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify(schemaData).replace(/</g, "\\u003c"),
+  }}
+/>
 
       <PageCacheProvider pageType="listing" pageId={`${schemaType}-listing`}>
         <StaticPageShell showBreadcrumb={false}>

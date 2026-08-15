@@ -1,4 +1,4 @@
-// export const siteUrl = 'https://www.doitwithai.tools';
+// export const siteUrl = 'https://doitwithai.tools';
 // export const generateRobotsTxt = true;
 // export const sitemapSize = 7000;
 // export const outDir = './public';

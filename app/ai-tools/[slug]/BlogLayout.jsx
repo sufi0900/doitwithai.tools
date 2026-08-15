@@ -91,7 +91,7 @@ import Image from 'next/image';
     const isLargeDevice = useDeviceSize();
 
     // ADD this new state for preventing layout shift:
-    const [layoutReady, setLayoutReady] = useState(false);
+    // const [layoutReady, setLayoutReady] = useState(false);
 
   // Add this hook at the top of your component, after imports
 
@@ -106,7 +106,7 @@ import Image from 'next/image';
     // KEY CHANGES for BlogLayout.js - main useEffect
     useEffect(() => {
       setMounted(true);
-      setLayoutReady(true); // Mark layout as ready immediately
+      // setLayoutReady(true); // Mark layout as ready immediately
       
       // Mark content as ready if we have data
       if (data && !loading) {
@@ -176,8 +176,8 @@ import Image from 'next/image';
   }, [data, schemaSlugMap]);
 
   // KEY CHANGES for BlogLayout.js - early return loading section
-  if (!layoutReady || (!data && loading)) {
-    return (
+if (!data && loading) {
+      return (
       <>
         {/* Static navbar to prevent layout shift */}
         <div className="sticky top-0 z-40 w-full bg-white dark:bg-gray-900 shadow-md">

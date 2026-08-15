@@ -16,7 +16,7 @@ const ResourceListSchema = ({ resources, baseUrl }) => {
                 resource.resourceFormat === 'text' ? 'TextDigitalDocument' : 'DigitalDocument',
         "name": resource.title,
         "description": resource.overview || `${resource.resourceType} resource`,
-        "url": baseUrl || "https://www.doitwithai.tools/free-ai-resources"
+        "url": baseUrl || "https://doitwithai.tools/free-ai-resources"
       }
     }))
   };

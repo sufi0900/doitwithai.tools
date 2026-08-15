@@ -1,5 +1,12 @@
-# public/robots.txt
-User-agent: *
-Disallow:
+# Public content is available to search engines and AI services.
 
-Sitemap: https://www.doitwithai.tools/api/sitemap.xml
+User-agent: *
+Allow: /
+Allow: /_next/
+Allow: /api/og
+Disallow: /admin/
+Disallow: /studio/
+Disallow: /api/
+
+Sitemap: https://doitwithai.tools/sitemap.xml
+Sitemap: https://doitwithai.tools/image-sitemap.xml

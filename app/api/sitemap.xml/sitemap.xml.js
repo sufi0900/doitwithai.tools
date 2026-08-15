@@ -7,7 +7,7 @@
 //   posts.forEach(post => {
 //     sitemap += `
 //       <url>
-//         <loc>${`https://www.doitwithai.tools/${post._type}/${post.slug}`}</loc>
+//         <loc>${`https://doitwithai.tools/${post._type}/${post.slug}`}</loc>
 //         <changefreq>weekly</changefreq>
 //         <priority>0.9</priority>
 //       </url>

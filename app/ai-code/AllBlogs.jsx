@@ -306,7 +306,7 @@ export default function FreeResourcesPage() {
         {!searchHook.isSearchActive && totalItems > 0 && (
           <ResourceListSchema
             resources={listResources}
-            baseUrl="https://www.doitwithai.tools/free-ai-resources"
+            baseUrl="https://doitwithai.tools/free-ai-resources"
           />
         )}
 

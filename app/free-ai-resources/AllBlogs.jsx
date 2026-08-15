@@ -649,7 +649,7 @@ export default function FreeResourcesPage({ initialServerData }) {
 
         {/* ResourceListSchema: Only show for main content, not search results */}
         {!searchHook.isSearchActive && !filteredByArticle && totalItems > 0 && (
-          <ResourceListSchema resources={listResources} baseUrl="https://www.doitwithai.tools/free-ai-resources" />
+          <ResourceListSchema resources={listResources} baseUrl="https://doitwithai.tools/free-ai-resources" />
         )}
 
         {/* Pagination (visible only if not in search or filtered view and if there are items to paginate) */}

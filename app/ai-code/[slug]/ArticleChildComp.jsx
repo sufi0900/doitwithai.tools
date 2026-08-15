@@ -12,11 +12,7 @@ import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 
 // Dynamic imports with better loading strategy
-const BlogLayout = dynamic(() => import("@/app/ai-tools/[slug]/BlogLayout"), {
-  loading: () => null, // Don't show loading here - we'll handle it ourselves
-  ssr: false
-});
-
+import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout";
 
 
 export default function ArticleChildComp({ serverData, params, schemaType }) {

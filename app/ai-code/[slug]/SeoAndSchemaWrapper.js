@@ -29,7 +29,7 @@ export default function SeoAndSchemaWrapper({
   category // e.g., 'AI in SEO & Digital Marketing'
 }) {
   const currentSlug = params.slug;
-  const canonicalUrl = `https://www.doitwithai.tools/${basePath}/${currentSlug}`;
+  const canonicalUrl = `https://doitwithai.tools/${basePath}/${currentSlug}`;
   const imageUrl = data?.mainImage ? urlForImage(data.mainImage).url() : null;
   const readingTime = data ? Math.ceil((data.wordCount || 1000) / 250) : null;
 
@@ -84,9 +84,9 @@ export default function SeoAndSchemaWrapper({
         "dateCreated": data._createdAt || data.publishedAt,
         "author": {
           "@type": "Person",
-          "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person",
+          "@id": "https://doitwithai.tools/author/sufian-mustafa#person",
           "name": "Sufian Mustafa",
-          "url": "https://www.doitwithai.tools/author/sufian-mustafa",
+          "url": "https://doitwithai.tools/author/sufian-mustafa",
           "jobTitle": "AI Technology Expert",
           "knowsAbout": ["Artificial Intelligence", "AI Tools", "SEO", "Content Marketing", "Digital Marketing"], // Expanded
           "sameAs": [
@@ -96,12 +96,12 @@ export default function SeoAndSchemaWrapper({
         },
         "publisher": {
           "@type": "Organization",
-          "@id": "https://www.doitwithai.tools#organization",
+          "@id": "https://doitwithai.tools#organization",
           "name": "DoItWithAI.tools", // Consistent brand name
-          "url": "https://www.doitwithai.tools",
+          "url": "https://doitwithai.tools",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://www.doitwithai.tools/logoForHeader.png", // Ensure this is 512x512
+            "url": "https://doitwithai.tools/logoForHeader.png", // Ensure this is 512x512
             "width": 512,
             "height": 512
           },
@@ -126,7 +126,7 @@ export default function SeoAndSchemaWrapper({
         },
         "isPartOf": {
           "@type": "WebSite",
-          "@id": "https://www.doitwithai.tools#website"
+          "@id": "https://doitwithai.tools#website"
         },
         "hasPart": headingStructure,
         "keywords": data.tags?.map(tag => tag?.name).join(",") || "",
@@ -140,7 +140,7 @@ export default function SeoAndSchemaWrapper({
         "copyrightYear": new Date().getFullYear(),
         "copyrightHolder": {
           "@type": "Organization",
-          "@id": "https://www.doitwithai.tools#organization"
+          "@id": "https://doitwithai.tools#organization"
         },
         "license": "https://creativecommons.org/licenses/by/4.0/",
         "accessibilityFeature": ["alternativeText", "readingOrder", "structuralNavigation", "tableOfContents"],
@@ -247,13 +247,13 @@ export default function SeoAndSchemaWrapper({
             "@type": "ListItem",
             "position": 1,
             "name": "Home",
-            "item": { "@type": "WebPage", "@id": "https://www.doitwithai.tools/", "url": "https://www.doitwithai.tools/" }
+            "item": { "@type": "WebPage", "@id": "https://doitwithai.tools/", "url": "https://doitwithai.tools/" }
           },
           {
             "@type": "ListItem",
             "position": 2,
             "name": specificBreadcrumbName, // Specific breadcrumb name
-            "item": { "@type": "WebPage", "@id": `https://www.doitwithai.tools${specificBreadcrumbUrl}`, "url": `https://www.doitwithai.tools${specificBreadcrumbUrl}` } // Specific breadcrumb URL
+            "item": { "@type": "WebPage", "@id": `https://doitwithai.tools${specificBreadcrumbUrl}`, "url": `https://doitwithai.tools${specificBreadcrumbUrl}` } // Specific breadcrumb URL
           },
           {
             "@type": "ListItem",
@@ -310,13 +310,13 @@ export default function SeoAndSchemaWrapper({
         "inLanguage": "en-US",
         "isPartOf": {
           "@type": "WebSite",
-          "@id": "https://www.doitwithai.tools#website"
+          "@id": "https://doitwithai.tools#website"
         },
         "primaryImageOfPage": imageUrl ? { "@type": "ImageObject", "url": imageUrl } : undefined,
         "datePublished": data.publishedAt,
         "dateModified": data._updatedAt || data.publishedAt,
         "author": { "@type": "Person", "name": "Sufian Mustafa" },
-        "publisher": { "@type": "Organization", "@id": "https://www.doitwithai.tools#organization" },
+        "publisher": { "@type": "Organization", "@id": "https://doitwithai.tools#organization" },
         "mainContentOfPage": { "@type": "WebPageElement", "cssSelector": "main" },
         "breadcrumb": { "@type": "BreadcrumbList", "@id": `${canonicalUrl}#breadcrumb` },
         "speakable": { "@type": "SpeakableSpecification", "cssSelector": ["h1", "h2", ".overview"] }
@@ -329,15 +329,15 @@ export default function SeoAndSchemaWrapper({
       __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "@id": "https://www.doitwithai.tools#website",
-        "url": "https://www.doitwithai.tools",
+        "@id": "https://doitwithai.tools#website",
+        "url": "https://doitwithai.tools",
         "name": "DoItWithAITools",
         "alternateName": ["DoItWithAI.tools", "DIWAITools"],
         "description": "DoItWithAITools is an AI-focused content hub empowering creators, developers, marketers, and entrepreneurs with accessible, actionable AI knowledge and resources to boost productivity and SEO.",
         "inLanguage": "en-US",
         "isPartOf": {
           "@type": "WebSite",
-          "@id": "https://www.doitwithai.tools#website"
+          "@id": "https://doitwithai.tools#website"
         },
         "about": {
           "@type": "Thing",
@@ -350,11 +350,11 @@ export default function SeoAndSchemaWrapper({
         },
         "publisher": {
           "@type": "Organization",
-          "@id": "https://www.doitwithai.tools#organization"
+          "@id": "https://doitwithai.tools#organization"
         },
         "potentialAction": [{
           "@type": "SearchAction",
-          "target": { "@type": "EntryPoint", "urlTemplate": "https://www.doitwithai.tools/search?q={search_term_string}" },
+          "target": { "@type": "EntryPoint", "urlTemplate": "https://doitwithai.tools/search?q={search_term_string}" },
           "query-input": "required name=search_term_string"
         }],
         "sameAs": [
@@ -371,25 +371,25 @@ export default function SeoAndSchemaWrapper({
       __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Organization",
-        "@id": "https://www.doitwithai.tools#organization",
+        "@id": "https://doitwithai.tools#organization",
         "name": "DoItWithAITools",
         "legalName": "DoItWithAITools",
         "alternateName": ["DoItWithAI.tools", "DIWAITools"],
-        "url": "https://www.doitwithai.tools",
+        "url": "https://doitwithai.tools",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://www.doitwithai.tools/logoForHeader.png",
+          "url": "https://doitwithai.tools/logoForHeader.png",
           "width": 512,
           "height": 512,
           "caption": "DoItWithAITools Logo"
         },
         "image": {
           "@type": "ImageObject",
-          "url": "https://www.doitwithai.tools/logoForHeader.png"
+          "url": "https://doitwithai.tools/logoForHeader.png"
         },
         "description": "DoitwithAITools is your central platform to master SEO using cutting-edge AI insights and discover how artificial intelligence can revolutionize your daily tasks. We empower businesses, creators, and marketers double SEO performance and boost overall productivity by strategically automating repetitive tasks using our free AI resources. Explore our in-depth strategies and tools, designed for anyone looking to unlock the full potential of AI in real-world workflows.",
         "foundingDate": "2024",
-        "founder": { "@type": "Person", "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person", "name": "Sufian Mustafa" },
+        "founder": { "@type": "Person", "@id": "https://doitwithai.tools/author/sufian-mustafa#person", "name": "Sufian Mustafa" },
         "address": { "@type": "PostalAddress", "addressCountry": "PK", "addressRegion": "Khyber Pakhtunkhwa" },
         "contactPoint": [{
           "@type": "ContactPoint",
@@ -439,7 +439,7 @@ export default function SeoAndSchemaWrapper({
           "url": `${canonicalUrl}#${item.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
         })),
         "totalTime": `PT${readingTime}M`,
-        "author": { "@type": "Person", "@id": "https://www.doitwithai.tools/author/sufian-mustafa#person" }
+        "author": { "@type": "Person", "@id": "https://doitwithai.tools/author/sufian-mustafa#person" }
       })
     };
   }
@@ -465,7 +465,7 @@ export default function SeoAndSchemaWrapper({
         "countriesSupported": "Worldwide",
         "inLanguage": "en-US",
         "isAccessibleForFree": true, // Adjust based on your tool's pricing
-        "creator": { "@type": "Organization", "@id": "https://www.doitwithai.tools#organization" },
+        "creator": { "@type": "Organization", "@id": "https://doitwithai.tools#organization" },
         "datePublished": data.publishedAt,
         "dateModified": data._updatedAt || data.publishedAt,
         "screenshot": imageUrl ? { "@type": "ImageObject", "url": imageUrl } : undefined,
@@ -562,7 +562,7 @@ export default function SeoAndSchemaWrapper({
 
             {/* Canonical and Alternate Links */}
             <link rel="canonical" href={canonicalUrl} />
-            <link rel="alternate" type="application/rss+xml" title="DoItWithAI.tools RSS Feed" href="https://www.doitwithai.tools/rss.xml" />
+            <link rel="alternate" type="application/rss+xml" title="DoItWithAI.tools RSS Feed" href="https://doitwithai.tools/rss.xml" />
           </>
         )}
 

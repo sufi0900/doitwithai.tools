@@ -108,7 +108,7 @@ Do It With AI Tools is your modern AI hub to master SEO, boost productivity, and
                         className="font-medium text-[#2563eb] hover:text-[#1d4ed8] underline
                                    dark:text-blue-400 dark:hover:text-blue-300 hover:no-underline
                                    transition-colors duration-300 break-words"
-                        href="https://www.doitwithai.tools/"
+                        href="https://doitwithai.tools/"
                       >
                         doitwithai.tools
                       </Link>

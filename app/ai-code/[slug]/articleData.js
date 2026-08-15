@@ -96,13 +96,13 @@ export function generatePageMetadata(data, params, basePath, metadataCategory) {
   }
 
   const imageUrl = data.mainImage ? urlForImage(data.mainImage).url() : null;
-  const canonicalUrl = `https://www.doitwithai.tools/${basePath}/${params.slug}`;
+  const canonicalUrl = `https://doitwithai.tools/${basePath}/${params.slug}`;
 
   return {
     title: `${data.metatitle || data.title || 'DoItWithAI.tools'}`,
     description: data.metadesc || data.overview || 'AI tools and resources',
     keywords: data.tags?.map(tag => tag?.name).join(',') || '',
-    authors: [{ name: "Sufian Mustafa", url: "https://www.doitwithai.tools/author/sufian-mustafa" }],
+    authors: [{ name: "Sufian Mustafa", url: "https://doitwithai.tools/author/sufian-mustafa" }],
     creator: "Sufian Mustafa",
     publisher: "DoItWithAI.tools",
     category: metadataCategory,
