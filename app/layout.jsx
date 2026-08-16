@@ -1,3 +1,6 @@
+//layout.jsx
+
+
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
@@ -86,33 +89,48 @@ export default function RootLayout({ children }) {
     };
   }, []);
 
-  // Precache on link click
-  useEffect(() => {
-    const handler = (e) => {
-      const a = e.target.closest("a");
-      if (!a) return;
-      
-      const href = a.getAttribute("href");
-      if (!href?.startsWith("/") || href.startsWith("//")) return;
+ useEffect(() => {
+  const cleanupKey = "legacy-pwa-cleanup-v1";
 
-      // Only prefetch static pages, not dynamic content
-      const staticPages = ["/about", "/faq", "/contact", "/privacy", "/terms"];
-      const isStaticPage = staticPages.includes(href) || staticPages.includes(href.replace(/\/$/, ''));
-      
-      if (isStaticPage) {
-        setTimeout(() => {
-          navigator.serviceWorker?.controller?.postMessage({
-            type: "PRECACHE_STATIC_PAGE",
-            path: href,
-            url: window.location.origin + href,
-          });
-        }, 100);
-      }
-    };
-    
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, []);
+  const cleanupLegacyPwa = async () => {
+    if (localStorage.getItem(cleanupKey) === "done") return;
+
+    const hadActiveController =
+      "serviceWorker" in navigator &&
+      Boolean(navigator.serviceWorker.controller);
+
+    if ("serviceWorker" in navigator) {
+      const registrations =
+        await navigator.serviceWorker.getRegistrations();
+
+      await Promise.all(
+        registrations.map((registration) => registration.unregister())
+      );
+    }
+
+    // Cache Storage here is the old Workbox/PWA cache.
+    // It is separate from Redis and your Vercel cache.
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+
+      await Promise.all(
+        cacheNames.map((cacheName) => caches.delete(cacheName))
+      );
+    }
+
+    localStorage.setItem(cleanupKey, "done");
+
+    // An unregistered worker may continue controlling the current tab
+    // until that tab reloads.
+    if (hadActiveController) {
+      window.location.reload();
+    }
+  };
+
+  cleanupLegacyPwa().catch((error) => {
+    console.error("Legacy service-worker cleanup failed:", error);
+  });
+}, []);
 
   // Scroll to top on navigation
   useEffect(() => {
@@ -251,7 +269,7 @@ export default function RootLayout({ children }) {
           )}
           {isHomePage && <Hero />}
 
-          {hydrated && (
+        
             <>
               <CacheProvider>
                 <main className={isHomePage ? "" : "pt-[80px]"}>
@@ -267,7 +285,7 @@ export default function RootLayout({ children }) {
               <SpeedInsights/>
               <Analytics />
             </>
-          )}
+        
         </Providers>
       </body>
     </html>

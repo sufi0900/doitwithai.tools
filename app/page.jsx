@@ -1,3 +1,5 @@
+//root page.jsx
+
 import React from 'react'
 import HomePageCode from "./HomePageCode"
 import Script from "next/script";

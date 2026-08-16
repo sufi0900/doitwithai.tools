@@ -1,90 +1,90 @@
 {
   "version": "1.0.0",
-  "generated": "2026-08-14T10:35:54.296Z",
+  "generated": "2026-08-16T10:38:06.434Z",
   "static_pages": [
     {
       "url": "/",
       "title": "Home",
       "priority": "high",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.295Z"
+      "lastModified": "2026-08-16T10:38:06.433Z"
     },
     {
       "url": "/about",
       "title": "About",
       "priority": "medium",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/faq",
       "title": "FAQ",
       "priority": "medium",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/contact",
       "title": "Contact",
       "priority": "medium",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/privacy",
       "title": "Privacy Policy",
       "priority": "low",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/terms",
       "title": "Terms of Service",
       "priority": "low",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/ai-tools",
       "title": "AI Tools",
       "priority": "high",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/ai-seo",
       "title": "AI SEO",
       "priority": "high",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/ai-code",
       "title": "AI Code",
       "priority": "high",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/ai-learn-earn",
       "title": "AI Learn & Earn",
       "priority": "high",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/free-ai-resources",
       "title": "Free AI Resources",
       "priority": "medium",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     },
     {
       "url": "/ai-news",
       "title": "AI News",
       "priority": "medium",
       "type": "static",
-      "lastModified": "2026-08-14T10:35:54.296Z"
+      "lastModified": "2026-08-16T10:38:06.434Z"
     }
   ],
   "total_pages": 12

@@ -11,8 +11,7 @@ import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis';
 import AISEOHeroSection from "@/app/ai-seo/AISEOHeroSection";
-export const revalidate = false;
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 const SUBCATEGORIES_LIMIT = 2;
 const BLOGS_PAGE_LIMIT = 12;
 

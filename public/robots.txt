@@ -1,17 +1,37 @@
-# Public content is available to search engines and AI services.
+# Search and AI-search access
 
-# Allow all AI crawlers
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
 User-agent: GPTBot
 Allow: /
-Disallow: /private/
 Disallow: /admin/
+Disallow: /private/
 
-User-agent: Claude-Web
+User-agent: ClaudeBot
 Allow: /
-Disallow: /private/
 Disallow: /admin/
+Disallow: /private/
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+Disallow: /private/
 
 User-agent: *
+Allow: /
 Disallow: /admin/
 Disallow: /private/
 
