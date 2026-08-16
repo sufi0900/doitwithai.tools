@@ -1,6 +1,6 @@
 # Public content is available to search engines and AI services.
 
-User-agent: *
+User-agent: GPTBot 
 Allow: /
 Allow: /_next/
 Allow: /api/og
