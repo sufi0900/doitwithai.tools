@@ -1,12 +1,19 @@
 # Public content is available to search engines and AI services.
 
-User-agent: GPTBot 
+# Allow all AI crawlers
+User-agent: GPTBot
 Allow: /
-Allow: /_next/
-Allow: /api/og
+Disallow: /private/
 Disallow: /admin/
-Disallow: /studio/
-Disallow: /api/
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /private/
+Disallow: /admin/
+
+User-agent: *
+Disallow: /admin/
+Disallow: /private/
 
 Sitemap: https://doitwithai.tools/sitemap.xml
 Sitemap: https://doitwithai.tools/image-sitemap.xml
