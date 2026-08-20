@@ -9,7 +9,7 @@ const SCHEMA_TYPE_TO_URL_PREFIX = {
     'aitool': 'ai-tools', 
     'coding': 'ai-code',
     'seo': 'ai-seo',
-    'freeResources': 'free-ai-resource' 
+    'freeResources': 'free-ai-resources' 
 };
 
 export default async function sitemap() {
@@ -64,7 +64,7 @@ export default async function sitemap() {
                 priority: 0.9,
             },
             {
-                url: `${baseURL}/free-ai-resource`,
+                url: `${baseURL}/free-ai-resources`,
                 lastModified: new Date(),
                 changeFrequency: 'weekly',
                 priority: 0.8,
