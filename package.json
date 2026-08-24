@@ -13,7 +13,8 @@
     "build": " next build",
     "generate-manifest": "node scripts/generate-pages-manifest.js",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "ai:sync-knowledge": "node --import tsx scripts/sync-site-assistant-knowledge.ts"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
@@ -52,6 +53,7 @@
     "next-seo": "^6.5.0",
     "next-sitemap": "^4.2.3",
     "next-themes": "^0.2.1",
+    "openai": "^7.5.0",
     "react": "^18.2.0",
     "react-code-blocks": "^0.1.6",
     "react-dom": "^18.2.0",
@@ -68,7 +70,8 @@
     "sitemap": "^7.1.1",
     "slick-carousel": "^1.8.1",
     "styled-components": "^6.1.8",
-    "workbox-webpack-plugin": "^7.3.0"
+    "workbox-webpack-plugin": "^7.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.0",

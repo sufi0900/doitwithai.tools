@@ -13,27 +13,25 @@ const menuData: Menu[] = [
     path: "/ai-seo",
     newTab: false,
   },
-   {
+  {
     id: 3,
     title: "Free AI Resources",
     path: "/free-ai-resources",
     newTab: false,
   },
-    {
-        id: 43,
-        title: "All Blogs",
-        path: "/blogs",
-        newTab: false,
-      },
-        {
-        id: 42,
-        title: "Contact Us",
-        path: "/contact",
-        newTab: false,
-      },
- 
- 
-  
+  {
+    id: 43,
+    title: "All Blogs",
+    path: "/blogs",
+    newTab: false,
+  },
+  {
+    id: 42,
+    title: "Contact Us",
+    path: "/contact",
+    newTab: false,
+  },
+
   {
     id: 6,
     title: "Pages",
@@ -45,20 +43,26 @@ const menuData: Menu[] = [
         path: "/about",
         newTab: false,
       },
-    
-     {
-    id: 3,
-    title: "AiTools",
-    path: "/ai-tools",
-    newTab: false,
-  },
-  {
-    id: 4,
-    title: "Earn with AI",
-    path: "/ai-learn-earn",
-    newTab: false,
-  },
-     
+      {
+        id: 48,
+        title: "AI SEO Tools",
+        path: "/ai-seo-tools",
+        newTab: false,
+      },
+
+      {
+        id: 3,
+        title: "AiTools",
+        path: "/ai-tools",
+        newTab: false,
+      },
+      {
+        id: 4,
+        title: "Earn with AI",
+        path: "/ai-learn-earn",
+        newTab: false,
+      },
+
       {
         id: 46,
         title: "Category",
@@ -71,7 +75,7 @@ const menuData: Menu[] = [
         path: "/faq",
         newTab: false,
       },
-      
+
       {
         id: 47,
         title: "author",
@@ -90,7 +94,6 @@ const menuData: Menu[] = [
       //   path: "/error",
       //   newTab: false,
       // },
-     
     ],
   },
 ];
