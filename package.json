@@ -23,6 +23,7 @@
     "@heroicons/react": "^2.2.0",
     "@mui/icons-material": "^5.15.14",
     "@mui/material": "^5.15.14",
+    "@next/env": "^16.3.2",
     "@sanity/image-url": "^1.0.2",
     "@sanity/table": "^1.1.2",
     "@sanity/vision": "^3.36.2",

@@ -26,6 +26,9 @@ importers:
       '@mui/material':
         specifier: ^5.15.14
         version: 5.18.0(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(react@18.3.1))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@next/env':
+        specifier: ^16.3.2
+        version: 16.3.2
       '@sanity/image-url':
         specifier: ^1.0.2
         version: 1.2.0
@@ -1640,6 +1643,9 @@ packages:
 
   '@next/env@14.2.35':
     resolution: {integrity: sha512-DuhvCtj4t9Gwrx80dmz2F4t/zKQ4ktN8WrMwOuVzkJfBilwAwGr6v16M5eI8yCuZ63H9TTuEU09Iu2HqkzFPVQ==}
+
+  '@next/env@16.3.2':
+    resolution: {integrity: sha512-8k4YoG8cM7LWlkfzGNYCRBbFNlernLiMw4s0btVl+CmmWqn3VpYypA72/5Feb1UWdxe6tHqr5KHP4p4Y4m9luA==}
 
   '@next/eslint-plugin-next@13.1.6':
     resolution: {integrity: sha512-o7cauUYsXjzSJkay8wKjpKJf2uLzlggCsGUkPu3lP09Pv97jYlekTC20KJrjQKmSv5DXV0R/uks2ZXhqjNkqAw==}
@@ -10990,6 +10996,8 @@ snapshots:
   '@next/env@13.5.11': {}
 
   '@next/env@14.2.35': {}
+
+  '@next/env@16.3.2': {}
 
   '@next/eslint-plugin-next@13.1.6':
     dependencies:
