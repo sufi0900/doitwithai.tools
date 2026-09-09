@@ -15,35 +15,35 @@ import {
 const features = [
   {
     icon: Search,
-    title: "Search-engine lens",
-    text: "Creates descriptive, concise, intent-aligned options with early natural keyword placement and duplicate-risk checks.",
+    title: "Search-focused",
+    text: "Prioritizes descriptive, concise titles aligned with the page topic, target keyword, and stated search intent.",
   },
   {
     icon: UserRound,
-    title: "Human lens",
-    text: "Focuses on useful promises, specificity, readable phrasing, and credible reasons to click—without empty hype.",
+    title: "Reader-focused",
+    text: "Prioritizes readable wording, useful specificity, and a clear representation of what the page offers.",
   },
   {
     icon: Bot,
-    title: "AI-readable lens",
-    text: "Explores direct answer patterns, unambiguous entities, and supported format or authority cues for machine interpretation.",
+    title: "Context-focused",
+    text: "Prioritizes explicit wording for the main topic and any relevant product, service, location, or named entity.",
   },
   {
     icon: Gauge,
-    title: "Unified recommendation",
-    text: "Ranks the strongest cross-audience options after applying deterministic character, pixel, keyword, and quality checks.",
+    title: "Balanced",
+    text: "Combines page alignment, reader clarity, and contextual detail while applying the tool’s measurable checks.",
   },
 ];
 
 const practices = [
-  "Preferred 45–58 character working range with a 60-character guardrail",
-  "Browser-measured pixel width for conservative mobile and desktop targets",
-  "Primary keyword presence and first-eight-word placement",
-  "Search-intent, page-type, audience, tone, and location alignment",
-  "Keyword-stuffing, all-caps, punctuation, and clickbait guardrails",
-  "Comparison against current, competitor, or existing site titles",
-  "Optional brand, freshness, secondary keyword, and prohibited-term controls",
-  "Human-editable final title with an always-visible quality review",
+  "A 45–58 character tool guideline with a 60-character warning",
+  "Browser-measured width estimates for mobile and desktop previews",
+  "Primary keyword presence and optional early-placement checks",
+  "Alignment with the supplied page type, audience, tone, and location",
+  "Warnings for excessive capitalization, punctuation, and repeated keywords",
+  "Similarity checks against supplied current, competitor, or site titles",
+  "Optional brand, secondary keyword, freshness, and prohibited-term controls",
+  "An editable final title with a visible quality review",
 ];
 
 const steps = [
@@ -86,7 +86,7 @@ export default function ToolEducation() {
           <p className="mt-4 text-base leading-8 text-slate-600 dark:text-slate-300">
             Most title tools stop after producing a handful of phrases. This
             workflow combines AI ideation with a fixed editorial system so you
-            can understand why an option exists, what it optimizes, and what
+            can understand why an option exists, what it emphasizes, and what
             still needs human judgment.
           </p>
         </div>
@@ -125,13 +125,10 @@ export default function ToolEducation() {
             id="best-practices-built-in"
             className="mt-3 text-3xl font-black tracking-tight"
           >
-            Best practices become visible checks
+            Editorial checks made visible
           </h2>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            Language generation is handled by the AI model. Exact counts, pixel
-            estimates, keyword placement, duplicate similarity, and visible
-            warnings are handled by application code. This separation makes the
-            result easier to trust and refine.
+           The AI model generates the title ideas. Application code then calculates character counts, estimates rendered width, checks keyword placement, compares titles for similarity, and displays relevant warnings. You can review and edit the final title before using it.
           </p>
           <Link
             href="/ai-seo/meta-title"
@@ -200,15 +197,10 @@ export default function ToolEducation() {
               id="limits-title-tool"
               className="text-2xl font-black text-slate-950 dark:text-white"
             >
-              Pixel-aware, not pixel-promising
-            </h2>
+A practical title-width preview            </h2>
           </div>
           <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            Google does not publish a fixed title character limit. Title links
-            are truncated as needed to fit the device, and Google may generate a
-            different title from the page title, H1, Open Graph title, or other
-            prominent text. The simulator therefore uses conservative browser
-            measurements as a practical editing signal, not a guarantee.
+           Google does not publish a fixed character limit for title elements. Title links may be shortened to fit the available device width, and Google can generate them from the title element, visible page title, headings, Open Graph metadata, and other page signals. This tool therefore provides a browser-measured editing preview rather than an exact reproduction of a future Google result.
           </p>
         </div>
         <div>
