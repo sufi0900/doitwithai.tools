@@ -1,5 +1,7 @@
 # Meta Description and H1 Heading implementation
 
+The UI and output contract described below were superseded by the six-option workflow in `WRITING_TOOLS_REDESIGN.md`. This document records the original phase and its CMS draft changes.
+
 This branch now contains five executable tools, including two new writing generators:
 
 | Tool | Canonical route | Supporting article |

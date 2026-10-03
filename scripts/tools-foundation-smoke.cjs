@@ -1,93 +1,365 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs/promises');
-const puppeteer = require('puppeteer');
+const assert = require("node:assert/strict");
+const fs = require("node:fs/promises");
+const puppeteer = require("puppeteer");
 
-const origin = process.env.SMOKE_ORIGIN || 'http://localhost:3000';
+const origin = process.env.SMOKE_ORIGIN || "http://localhost:3000";
 async function run() {
-  const browser = await puppeteer.launch({ headless: process.env.SMOKE_BROWSER_SHELL ? 'shell' : true, pipe: true, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  const browser = await puppeteer.launch({
+    headless: process.env.SMOKE_BROWSER_SHELL ? "shell" : true,
+    pipe: true,
+    args: ["--no-sandbox", "--disable-dev-shm-usage"],
+  });
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 1000 });
+    await page.emulateMediaFeatures([
+      { name: "prefers-reduced-motion", value: "reduce" },
+    ]);
     const errors = [];
-    page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(`${origin}/tools`, { waitUntil: 'networkidle2' });
-    await page.waitForSelector('#tool-search');
-    assert.equal(await page.$$eval('section[aria-label="Tool finder"] article', (nodes) => nodes.length), 5);
-    assert.equal(await page.$eval('link[rel="canonical"]', (node) => node.href), 'https://doitwithai.tools/tools');
-    await page.type('#tool-search', 'slug');
-    await page.waitForFunction(() => document.querySelectorAll('section[aria-label="Tool finder"] article').length === 1);
-    await page.click('#tool-search', { clickCount: 3 });
-    await page.keyboard.press('Backspace');
-    await page.select('#tool-category', 'content-writing');
-    await page.waitForFunction(() => document.querySelectorAll('section[aria-label="Tool finder"] article').length === 4);
-    await page.type('#tool-search', 'zzzyyy');
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto(`${origin}/tools`, { waitUntil: "networkidle2" });
+    await page.waitForSelector("#tool-search");
+    assert.equal(
+      await page.$$eval(
+        'section[aria-label="Tool finder"] article',
+        (nodes) => nodes.length,
+      ),
+      5,
+    );
+    assert.equal(
+      await page.$eval('link[rel="canonical"]', (node) => node.href),
+      "https://doitwithai.tools/tools",
+    );
+    const actions = await page.$$eval(
+      'section[aria-label="Tool finder"] [data-open-tool]',
+      (nodes) =>
+        nodes.map((node) => {
+          const guide = node.parentElement.querySelector('a[href^="/ai-seo/"]');
+          return {
+            height: node.getBoundingClientRect().height,
+            buttonTop: node.getBoundingClientRect().top,
+            guideTop: guide.getBoundingClientRect().top,
+            background: getComputedStyle(node).backgroundColor,
+          };
+        }),
+    );
+    for (const action of actions) {
+      assert.ok(action.height >= 52);
+      assert.ok(action.buttonTop < action.guideTop);
+      assert.equal(action.background, "rgb(82, 113, 255)");
+    }
+    await page.type("#tool-search", "slug");
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll('section[aria-label="Tool finder"] article')
+          .length === 1,
+    );
+    await page.click("#tool-search", { clickCount: 3 });
+    await page.keyboard.press("Backspace");
+    await page.select("#tool-category", "content-writing");
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll('section[aria-label="Tool finder"] article')
+          .length === 4,
+    );
+    await page.type("#tool-search", "zzzyyy");
     await page.waitForSelector('section[aria-label="Tool finder"] button');
     await page.click('section[aria-label="Tool finder"] button');
-    await page.waitForFunction(() => document.querySelectorAll('section[aria-label="Tool finder"] article').length === 5);
-    await page.select('#tool-sort', 'recent');
-    await page.waitForFunction(() => document.querySelector('section[aria-label="Tool finder"] article h2').textContent.includes('H1 Heading'));
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll('section[aria-label="Tool finder"] article')
+          .length === 5,
+    );
+    await page.select("#tool-sort", "recent");
+    await page.waitForFunction(() =>
+      document
+        .querySelector('section[aria-label="Tool finder"] article h2')
+        .textContent.includes("H1 Heading"),
+    );
     await page.setViewport({ width: 390, height: 844 });
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+      true,
+    );
     if (process.env.SMOKE_SCREENSHOT_DIR) {
       await fs.mkdir(process.env.SMOKE_SCREENSHOT_DIR, { recursive: true });
-      await page.screenshot({ path: `${process.env.SMOKE_SCREENSHOT_DIR}/tools-mobile.png`, fullPage: true });
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/tools-mobile.png`,
+        fullPage: true,
+      });
     }
-    await page.goto(`${origin}/tools/categories/productivity`, { waitUntil: 'networkidle2' });
-    assert.match(await page.$eval('main', (node) => node.textContent), /Tools are coming/);
-    assert.match(await page.$eval('meta[name="robots"]', (node) => node.content), /noindex/);
-    await page.goto(`${origin}/guides`, { waitUntil: 'networkidle2' });
-    assert.match(await page.$eval('main', (node) => node.textContent), /New guides are being prepared/);
-    assert.match(await page.$eval('meta[name="robots"]', (node) => node.content), /noindex/);
-    for (const slug of ['meta-description', 'h1-heading']) {
+    await page.goto(`${origin}/tools/categories/productivity`, {
+      waitUntil: "networkidle2",
+    });
+    assert.match(
+      await page.$eval("main", (node) => node.textContent),
+      /Tools are coming/,
+    );
+    assert.match(
+      await page.$eval('meta[name="robots"]', (node) => node.content),
+      /noindex/,
+    );
+    await page.goto(`${origin}/guides`, { waitUntil: "networkidle2" });
+    assert.match(
+      await page.$eval("main", (node) => node.textContent),
+      /New guides are being prepared/,
+    );
+    assert.match(
+      await page.$eval('meta[name="robots"]', (node) => node.content),
+      /noindex/,
+    );
+    for (const slug of ["meta-description", "h1-heading"]) {
+      console.log(`Checking ${slug} workspace`);
       await page.setRequestInterception(true);
-      const intercept = request => {
-        if (request.url().includes(`/api/ai-tools/${slug}`)) return request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ result: { candidates: [
-          { text: 'Container gardening basics with practical seed and watering guidance.', approach: 'Topic led', explanation: 'Summarizes the supported page topics.' },
-          { text: 'Plan a container garden using seed selection and watering examples.', approach: 'Action led', explanation: 'Focuses on the main task in the brief.' },
-          { text: 'Explore seed selection and watering for your first container garden.', approach: 'Reader led', explanation: 'Provides context for new gardeners.' },
-        ] } }) });
+      let fail = false;
+      const texts =
+        slug === "meta-description"
+          ? [
+              "Learn how to write meta titles with AI using practical prompts, worked examples, and a checklist for reviewing claims before publishing.",
+              "Explore AI-assisted meta titles with keyword guidance, illustrative search previews, and a human review checklist.",
+              "Write clearer meta titles with AI using examples and prompts, then check wording and unsupported claims before publishing.",
+              "Build a practical meta title workflow with worked examples, keyword placement guidance, and an editorial review checklist.",
+              "Try the prompts and worked examples in this meta title guide, then review your draft for relevance and accurate claims.",
+              "Use a human review checklist to refine your AI-written meta titles. Explore examples, keyword guidance, and reusable prompts.",
+            ]
+          : [
+              "How to Write Meta Titles with AI",
+              "Meta Titles with AI: Examples and Review Checks",
+              "Write Clear Meta Titles with AI and Human Review",
+              "Create Meta Title Drafts with Prompts and Worked Examples",
+              "A Meta Title Guide for Content Marketers",
+              "New to AI-Assisted Titles? Start with Examples and Review",
+            ];
+      const approaches =
+        slug === "meta-description"
+          ? ["Clear summary", "Reader benefit", "Next step"]
+          : ["Topic first", "Task first", "Audience first"];
+      const intercept = (request) => {
+        if (request.url().includes(`/api/ai-tools/${slug}`)) {
+          const body = JSON.parse(request.postData());
+          assert.ok(body.brief.length >= 40);
+          assert.equal(body.pageType, "guide");
+          assert.ok(body.currentText);
+          return request.respond({
+            status: fail ? 503 : 200,
+            contentType: "application/json",
+            body: JSON.stringify(
+              fail
+                ? { error: { message: "Test provider unavailable." } }
+                : {
+                    result: {
+                      candidates: texts.map((text, index) => ({
+                        text,
+                        approach: approaches[Math.floor(index / 2)],
+                        explanation:
+                          "Uses the page’s supported examples, prompts, and human review guidance.",
+                      })),
+                    },
+                  },
+            ),
+          });
+        }
         return request.continue();
       };
-      page.on('request', intercept);
-      await page.goto(`${origin}/tools/${slug}-generator`, { waitUntil: 'networkidle2' });
-      assert.equal(await page.$eval('link[rel="canonical"]', node => node.href), `https://doitwithai.tools/tools/${slug}-generator`);
-      await page.type(`[name="brief"]`, 'An educational page for new gardeners with seed selection and container watering examples.');
-      await page.type('[name="keyword"]', 'container garden');
-      await page.click('form button');
+      page.on("request", intercept);
+      await page.setViewport({ width: 1440, height: 1000 });
+      await page.goto(`${origin}/tools/${slug}-generator`, {
+        waitUntil: "networkidle2",
+      });
+      assert.equal(
+        await page.$eval('link[rel="canonical"]', (node) => node.href),
+        `https://doitwithai.tools/tools/${slug}-generator`,
+      );
+      await page.click('form button[type="submit"]');
+      await page.waitForSelector('form [role="alert"]');
+      await page.click('form button[type="button"]');
+      await page.click("form details summary");
+      await page.type(
+        '[name="currentText"]',
+        "A practical guide to meta titles",
+      );
+      await page.evaluate(() => window.scrollTo(0, 0));
+      if (process.env.SMOKE_SCREENSHOT_DIR)
+        await page.screenshot({
+          path: `${process.env.SMOKE_SCREENSHOT_DIR}/${slug}-desktop.png`,
+          fullPage: false,
+        });
+      await page.click('form button[type="submit"]');
       await page.waitForSelector(`#${slug}-results`);
-      assert.equal(await page.$$eval('section[aria-labelledby] article', nodes => nodes.length), 3);
-      const editor = `section[aria-labelledby="${slug}-results"] article textarea`;
+      await page.waitForFunction(
+        (id) => document.activeElement.id === id,
+        {},
+        `${slug}-results`,
+      );
+      assert.ok(
+        await page.$eval(
+          `#${slug}-results`,
+          (node) => node.getBoundingClientRect().top >= 100,
+        ),
+        "Result heading should remain below the fixed desktop navigation",
+      );
+      assert.equal(
+        await page.$$eval("[data-writing-option]", (nodes) => nodes.length),
+        6,
+      );
+      if (process.env.SMOKE_SCREENSHOT_DIR) {
+        const options = await page.$(
+          `section[aria-labelledby="${slug}-results"]`,
+        );
+        await options.screenshot({
+          path: `${process.env.SMOKE_SCREENSHOT_DIR}/${slug}-options.png`,
+        });
+      }
+      const editor = `#${slug}-editor`;
       await page.click(editor, { clickCount: 3 });
-      await page.keyboard.press('Backspace');
-      await page.type(editor, 'A clear container garden heading');
-      assert.match(await page.$eval(`section[aria-labelledby="${slug}-results"] article`, node => node.textContent), /32 characters/);
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
-      page.off('request', intercept);
+      await page.keyboard.press("Backspace");
+      await page.type(editor, "A Clear Guide to Meta Title Writing");
+      assert.match(
+        await page.$eval(`#${slug}-lab`, (node) => node.textContent),
+        /35 characters/,
+      );
+      await page.click('[data-writing-option="2"] button');
+      assert.equal(await page.$eval(editor, (node) => node.value), texts[2]);
+      await page.click('[data-writing-option="0"] button');
+      assert.equal(
+        await page.$eval(editor, (node) => node.value),
+        "A Clear Guide to Meta Title Writing",
+      );
+      const labButtons = await page.$$(`#${slug}-lab button`);
+      for (const button of labButtons)
+        if (
+          (await button.evaluate((node) => node.textContent)).includes(
+            "Compare with your existing",
+          )
+        )
+          await button.click();
+      assert.match(
+        await page.$eval(`#${slug}-lab`, (node) => node.textContent),
+        /Before/,
+      );
+      if (slug === "h1-heading")
+        await page.type(
+          `#${slug}-outline`,
+          "Prepare the page brief\nReview your title draft",
+        );
+      else await page.type(`#${slug}-preview-title`, " updated");
+      if (slug === "h1-heading")
+        assert.match(
+          await page.$eval(
+            "[data-writing-preview]",
+            (node) => node.textContent,
+          ),
+          /Review your title draft/,
+        );
+      await page.click('[data-writing-option="0"] button');
+      assert.equal(
+        await page.evaluate((slug) => document.activeElement.id, slug),
+        `${slug}-editor`,
+      );
+      if (process.env.SMOKE_SCREENSHOT_DIR) {
+        const lab = await page.$(`#${slug}-lab`);
+        await lab.screenshot({
+          path: `${process.env.SMOKE_SCREENSHOT_DIR}/${slug}-desktop-lab.png`,
+        });
+      }
+      await page.setViewport({ width: 390, height: 844 });
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+        true,
+      );
+      await page.evaluate(
+        (slug) => document.getElementById(`${slug}-lab`).scrollIntoView(),
+        slug,
+      );
+      if (process.env.SMOKE_SCREENSHOT_DIR)
+        await page.screenshot({
+          path: `${process.env.SMOKE_SCREENSHOT_DIR}/${slug}-mobile-lab.png`,
+          fullPage: false,
+        });
+      await page.evaluate(() => document.documentElement.classList.add("dark"));
+      await page.waitForFunction(
+        (selector) => {
+          const node = document.querySelector(selector);
+          return (
+            getComputedStyle(node).backgroundColor === "rgb(2, 6, 23)" &&
+            getComputedStyle(node).color === "rgb(255, 255, 255)"
+          );
+        },
+        {},
+        editor,
+      );
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+        true,
+      );
+      if (process.env.SMOKE_SCREENSHOT_DIR)
+        await page.screenshot({
+          path: `${process.env.SMOKE_SCREENSHOT_DIR}/${slug}-dark-lab.png`,
+          fullPage: false,
+        });
+      await page.evaluate(() =>
+        document.documentElement.classList.remove("dark"),
+      );
+      fail = true;
+      await page.click(
+        `section[aria-labelledby="${slug}-results"] > div:first-child button`,
+      );
+      await page.waitForSelector(
+        `${"#" + slug + "-workspace"} > [role="alert"]`,
+      );
+      assert.equal(
+        await page.$eval(editor, (node) => node.value),
+        "A Clear Guide to Meta Title Writing",
+      );
+      page.off("request", intercept);
       await page.setRequestInterception(false);
     }
     assert.deepEqual(errors, []);
 
     const redirects = [
-      ['/ai-seo-tools', '/tools'],
-      ['/ai-seo/meta-title-generator', '/tools/meta-title-generator'],
-      ['/ai-seo/slug-url-generator', '/tools/slug-generator'],
-      ['/ai-seo/schema-markup-generator', '/tools/schema-markup-generator'],
-      ['/tools/categories/seo', '/tools/categories/ai-seo'],
+      ["/ai-seo-tools", "/tools"],
+      ["/ai-seo/meta-title-generator", "/tools/meta-title-generator"],
+      ["/ai-seo/slug-url-generator", "/tools/slug-generator"],
+      ["/ai-seo/schema-markup-generator", "/tools/schema-markup-generator"],
+      ["/tools/categories/seo", "/tools/categories/ai-seo"],
     ];
     for (const [source, destination] of redirects) {
-      const response = await fetch(`${origin}${source}`, { redirect: 'manual' });
+      const response = await fetch(`${origin}${source}`, {
+        redirect: "manual",
+      });
       assert.ok([301, 308].includes(response.status));
-      assert.equal(new URL(response.headers.get('location'), origin).pathname, destination);
+      assert.equal(
+        new URL(response.headers.get("location"), origin).pathname,
+        destination,
+      );
     }
     const missing = await fetch(`${origin}/guides/not-a-published-guide`);
     assert.equal(missing.status, 404);
     const sitemap = await (await fetch(`${origin}/sitemap.xml`)).text();
-    for (const slug of ['meta-title-generator', 'slug-generator', 'schema-markup-generator', 'meta-description-generator', 'h1-heading-generator']) assert.ok(sitemap.includes(`/tools/${slug}`));
-    assert.ok(!sitemap.includes('/ai-seo-tools'));
-    assert.ok(!sitemap.includes('/tools/categories/productivity'));
-    console.log('Passed: desktop/mobile finder, filters, sort, empty states, redirects, guide 404, sitemap, both new generator forms with mocked AI responses, editable checks, and browser errors.');
+    for (const slug of [
+      "meta-title-generator",
+      "slug-generator",
+      "schema-markup-generator",
+      "meta-description-generator",
+      "h1-heading-generator",
+    ])
+      assert.ok(sitemap.includes(`/tools/${slug}`));
+    assert.ok(!sitemap.includes("/ai-seo-tools"));
+    assert.ok(!sitemap.includes("/tools/categories/productivity"));
+    console.log(
+      "Passed: desktop/mobile finder, filters, sort, empty states, redirects, guide 404, sitemap, both new generator forms with mocked AI responses, editable checks, and browser errors.",
+    );
   } finally {
     await browser.close();
   }
 }
-run().catch((error) => { console.error(error); process.exitCode = 1; });
+run().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

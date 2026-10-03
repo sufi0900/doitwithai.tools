@@ -1,67 +1,165 @@
 "use client";
-import { useRef, useState, type FormEvent } from "react";
-import { writingChecks, writingInputSchema, writingOutputSchema, type WritingKind, type WritingOutput } from "./schema";
+import { useEffect, useRef, useState } from "react";
+import {
+  AlertCircle,
+  BrainCircuit,
+  CheckCircle2,
+  LayoutTemplate,
+  PencilLine,
+  Sparkles,
+} from "lucide-react";
+import {
+  validateWritingOutput,
+  type WritingInput,
+  type WritingKind,
+  type WritingOutput,
+} from "./schema";
+import WritingForm from "./WritingForm";
+import WritingResults from "./WritingResults";
 export default function WritingClient({ kind }: { kind: WritingKind }) {
-  const [result, setResult] = useState<WritingOutput | null>(null);
+  const [result, setResult] = useState<{
+    output: WritingOutput;
+    input: WritingInput;
+    generation: number;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
-  const [keyword, setKeyword] = useState("");
-  const [title, setTitle] = useState("");
-  const [copied, setCopied] = useState<number | null>(null);
-  const resultsRef = useRef<HTMLHeadingElement>(null);
-  const label = kind === "meta-description" ? "meta descriptions" : "H1 headings";
-  const field = "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-950 focus:outline-none focus:ring-2 focus:ring-[#5271FF]";
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const input = writingInputSchema.safeParse(Object.fromEntries(form));
-    if (!input.success) { setMessage("Please provide at least 40 characters of page context."); return; }
-    setBusy(true); setMessage(""); setCopied(null); setResult(null);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const controllerRef = useRef<AbortController | null>(null);
+  useEffect(() => () => controllerRef.current?.abort(), []);
+  async function generate(input: WritingInput) {
+    if (controllerRef.current) return;
     const controller = new AbortController();
+    controllerRef.current = controller;
+    setBusy(true);
+    setError("");
+    setStatus("Creating six options from your page brief.");
     const timeout = window.setTimeout(() => controller.abort(), 40_000);
     try {
-      const response = await fetch(`/api/ai-tools/${kind}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input.data), signal: controller.signal });
+      const response = await fetch(`/api/ai-tools/${kind}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+        signal: controller.signal,
+      });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message || "Generation is unavailable.");
-      setResult(writingOutputSchema.parse(data.result)); setKeyword(input.data.keyword); setTitle(input.data.pageTitle);
-      setMessage("Three options are ready. Review and edit them before use.");
-      window.setTimeout(() => resultsRef.current?.focus(), 0);
-    } catch (e) { setMessage(e instanceof Error && e.name !== "AbortError" ? e.message : "The request timed out. Please try again later."); }
-    finally { window.clearTimeout(timeout); setBusy(false); }
+      if (!response.ok)
+        throw new Error(data.error?.message || "Generation is unavailable.");
+      const output = validateWritingOutput(data.result, kind);
+      setResult({ output, input, generation: Date.now() });
+      setStatus(
+        "Six options are ready. Choose a direction and refine it in your lab.",
+      );
+      window.setTimeout(() => {
+        const heading = document.getElementById(`${kind}-results`);
+        heading?.focus({ preventScroll: true });
+        heading?.scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+            .matches
+            ? "auto"
+            : "smooth",
+          block: "start",
+        });
+      }, 80);
+    } catch (e) {
+      setStatus("");
+      setError(
+        e instanceof Error && e.name !== "AbortError"
+          ? e.message
+          : "The request timed out. Your existing drafts are still available.",
+      );
+    } finally {
+      window.clearTimeout(timeout);
+      controllerRef.current = null;
+      setBusy(false);
+    }
   }
-  async function copy(text: string, index: number) {
-    try { await navigator.clipboard.writeText(text); setCopied(index); }
-    catch { setMessage("Copy is unavailable. Select the text and copy it manually."); }
-  }
-  return <div className="mx-auto max-w-5xl">
-    <form onSubmit={submit} aria-busy={busy} className="rounded-3xl bg-white p-5 text-slate-950 shadow-xl sm:p-8">
-      <label className="block font-semibold" htmlFor={`${kind}-brief`}>What does your page actually offer?</label>
-      <p id={`${kind}-help`} className="mt-2 text-sm text-slate-600">Include the topic, useful details, and facts the page supports. Avoid confidential information. Your brief is sent to our AI provider.</p>
-      <textarea id={`${kind}-brief`} name="brief" aria-describedby={`${kind}-help`} required minLength={40} maxLength={5000} rows={6} className={field} placeholder="Describe the page, its audience, and the information or features it contains." />
-      <div className="mt-5 grid gap-5 sm:grid-cols-2">
-        <label className="font-semibold">Primary keyword (optional)<input name="keyword" maxLength={100} className={field} /></label>
-        <label className="font-semibold">Audience (optional)<input name="audience" maxLength={200} className={field} /></label>
-        <label className="font-semibold">Page title (optional)<input name="pageTitle" maxLength={160} className={field} /></label>
-        <label className="font-semibold">Tone<select name="tone" className={field}><option value="clear">Clear</option><option value="professional">Professional</option><option value="friendly">Friendly</option></select></label>
+  return (
+    <section id={`${kind}-workspace`} className="scroll-mt-24">
+      <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          [Sparkles, "6", "Purposeful writing options"],
+          [LayoutTemplate, "3", "Distinct writing directions"],
+          [
+            PencilLine,
+            "Live",
+            kind === "meta-description"
+              ? "Snippet editing lab"
+              : "Heading hierarchy lab",
+          ],
+          [CheckCircle2, "You", "Final editorial judgment"],
+        ].map(([Icon, value, label]) => {
+          const FeatureIcon = Icon as typeof Sparkles;
+          return (
+            <div
+              key={label as string}
+              className="rounded-2xl border border-white/15 bg-white/[0.07] p-4 backdrop-blur"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-2xl font-black text-white">
+                  {value as string}
+                </p>
+                <FeatureIcon className="h-5 w-5 text-blue-300" aria-hidden />
+              </div>
+              <p className="mt-2 text-[11px] font-semibold leading-5 text-blue-100/70">
+                {label as string}
+              </p>
+            </div>
+          );
+        })}
       </div>
-      <button disabled={busy} className="mt-6 rounded-xl bg-[#5271FF] px-6 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-60">{busy ? "Generating options…" : `Generate ${label}`}</button>
-      <p role="status" aria-live="polite" className="mt-4 text-sm text-slate-700">{message}</p>
-    </form>
-    {result && <section className="mt-8 rounded-3xl bg-slate-50 p-5 text-slate-950 sm:p-8" aria-labelledby={`${kind}-results`}>
-      <h2 id={`${kind}-results`} ref={resultsRef} tabIndex={-1} className="text-2xl font-bold">Compare your options</h2>
-      <p className="mt-2 text-sm text-slate-600">Checks describe the text. They do not predict rankings, clicks, or AI citations.</p>
-      <div className="mt-6 space-y-5">{result.candidates.map((candidate, index) => {
-        const checks = writingChecks(candidate.text, keyword, kind);
-        return <article key={index} className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h3 className="font-bold">Option {index + 1}: {candidate.approach}</h3>
-          <label className="mt-4 block text-sm font-semibold">Edit option {index + 1}<textarea value={candidate.text} maxLength={320} rows={3} className={field} onChange={e => { const candidates = result.candidates.map((c, i) => i === index ? { ...c, text: e.target.value } : c); setResult({ candidates }); setCopied(null); }} /></label>
-          <p className="mt-3 text-sm text-slate-600">{checks.count} characters. {checks.lengthNote}</p>
-          {checks.keywordIncluded !== null && <p className="mt-2 text-sm">Keyword word check: {checks.keywordIncluded ? "all entered words appear" : "some entered words are absent"}. This is a literal text check.</p>}
-          <p className="mt-3 text-sm text-slate-600">AI explanation for the original option: {candidate.explanation}</p>
-          {kind === "meta-description" && <div className="mt-4 rounded-xl bg-slate-50 p-4"><p className="text-xs text-slate-600">Illustrative snippet preview</p><p className="mt-2 break-words text-lg text-blue-700">{title || "Your page title"}</p><p className="mt-1 break-words text-sm text-slate-700">{candidate.text}</p></div>}
-          <button type="button" onClick={() => copy(candidate.text, index)} className="mt-4 rounded-lg border border-slate-300 px-4 py-2 font-semibold">{copied === index ? "Copied" : "Copy text"}</button>
-        </article>;
-      })}</div>
-    </section>}
-  </div>;
+      <WritingForm kind={kind} busy={busy} onGenerate={generate} />
+      <div
+        role="status"
+        aria-live="polite"
+        className="mt-5 text-center text-xs font-semibold text-blue-100/80"
+      >
+        {status}
+      </div>
+      {busy && (
+        <div className="mt-6 flex items-center gap-4 rounded-2xl border border-blue-400/20 bg-white/[0.06] p-5">
+          <BrainCircuit
+            aria-hidden
+            className="animate-pulse motion-reduce:animate-none h-6 w-6 shrink-0 text-blue-300"
+          />
+          <div>
+            <p className="text-sm font-extrabold text-white">
+              Writing alternatives for your page
+            </p>
+            <p className="mt-1 text-xs leading-6 text-slate-300">
+              You can compare directions, edit locally, and export once the
+              options arrive.
+            </p>
+          </div>
+        </div>
+      )}
+      {error && (
+        <div
+          role="alert"
+          className="mt-6 flex items-start gap-3 rounded-2xl border border-red-300/30 bg-red-950/30 p-5 text-red-100"
+        >
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
+          <div>
+            <p className="text-sm font-bold">Generation paused</p>
+            <p className="mt-1 text-sm leading-6">{error}</p>
+            {result && (
+              <p className="mt-2 text-xs">
+                Your previous options and local edits have been preserved.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+      {result && (
+        <WritingResults
+          key={result.generation}
+          kind={kind}
+          output={result.output}
+          input={result.input}
+          busy={busy}
+          onRegenerate={() => generate(result.input)}
+        />
+      )}
+    </section>
+  );
 }
