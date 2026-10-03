@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "categories": [
+    {"slug":"seo","name":"SEO tools","description":"Improve how your pages are described, discovered, and understood. Compare titles, create readable URLs, and prepare structured data.","guidePath":"/ai-seo"},
+    {"slug":"content-writing","name":"Content writing tools","description":"Turn your page's ideas into clear titles and descriptive URLs. Review every generated suggestion against your original content before publishing.","guidePath":"/blogs"}
+  ],
+  "tools": [
+    {"id":"meta-title-generator","slug":"meta-title-generator","name":"Meta Title Generator","description":"Compare AI-assisted title ideas with pixel checks and a search-result preview.","categories":["seo","content-writing"],"tags":["title tags","SERP","content"],"legacyPath":"/ai-seo/meta-title-generator","kind":"AI-assisted","status":"live"},
+    {"id":"slug-generator","slug":"slug-generator","name":"Slug Generator","description":"Create short, readable URL slugs that reflect your page's subject and intent.","categories":["seo","content-writing"],"tags":["URLs","permalinks","content"],"legacyPath":"/ai-seo/slug-url-generator","kind":"AI-assisted","status":"live"},
+    {"id":"schema-markup-generator","slug":"schema-markup-generator","name":"Schema Markup Generator","description":"Prepare and validate structured data for your pages. Review the output before adding it to your website.","categories":["seo"],"tags":["JSON-LD","structured data","technical SEO"],"legacyPath":"/ai-seo/schema-markup-generator","kind":"AI-assisted","status":"live"}
+  ]
+}

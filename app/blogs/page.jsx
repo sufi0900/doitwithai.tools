@@ -1,7 +1,7 @@
 // app/blogs/page.jsx
 import React from 'react';
-import StaticBlogsPageShell from './StaticBlogsPageShell';
-import AllBlogsAggregated from './AllPosts';
+import StaticBlogsPageShell from '@/features/blogs/BlogIndexShell';
+import AllBlogsAggregated from '@/features/blogs/BlogIndexClient';
 import Script from "next/script";
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis';
@@ -31,11 +31,11 @@ function generateOGImageURL(params) {
   return `${baseURL}?${searchParams.toString()}`;
 }
 
-const INITIAL_BLOGS_LIMIT = 5;
+const INITIAL_BLOGS_LIMIT = 24;
 
 // --- Server-side data fetching function ---
 async function getAllBlogsInitialData() {
-  const cacheKey = 'blogList:all-blogs:main';
+  const cacheKey = 'blogList:all-blogs:main:v2';
   const startTime = Date.now();
 
   try {
@@ -54,7 +54,8 @@ async function getAllBlogsInitialData() {
     _type == "makemoney" ||
     _type == "aitool" ||
     _type == "coding" ||
-    _type == "seo"
+    _type == "seo" ||
+    _type == "blogPost"
   ] | order(publishedAt desc)[0...${INITIAL_BLOGS_LIMIT + 1}]{
     formattedDate,
     tags,
@@ -66,6 +67,7 @@ async function getAllBlogsInitialData() {
     mainImage,
     overview,
     body,
+    content,
     publishedAt
   }`;
 
@@ -73,18 +75,22 @@ async function getAllBlogsInitialData() {
     _type == "makemoney" ||
     _type == "aitool" ||
     _type == "coding" ||
-    _type == "seo"
+    _type == "seo" ||
+    _type == "blogPost"
   ])`;
 
   try {
-    const [firstPageBlogs, totalCount] = await Promise.all([
-      client.fetch(firstPageBlogsQuery, {}, { next: { tags: ["makemoney", "aitool", "coding", "seo"] } }),
-      client.fetch(totalCountQuery, {}, { next: { tags: ["makemoney", "aitool", "coding", "seo"] } })
+    const categoryQuery = `*[_type == "blogCategory"] | order(title asc){title, "slug": slug.current}`;
+    const [firstPageBlogs, totalCount, blogCategories] = await Promise.all([
+      client.fetch(firstPageBlogsQuery, {}, { next: { tags: ["makemoney", "aitool", "coding", "seo", "blogPost"] } }),
+      client.fetch(totalCountQuery, {}, { next: { tags: ["makemoney", "aitool", "coding", "seo", "blogPost"] } }),
+      client.fetch(categoryQuery, {}, { next: { tags: ["blogCategory"] } })
     ]);
 
     const data = {
       firstPageBlogs,
       totalCount,
+      blogCategories,
       timestamp: Date.now()
     };
 
@@ -435,9 +441,13 @@ function websiteSchema() {
       />
       
       {/* Main Content delivered via the StaticBlogsPageShell */}
-      <StaticBlogsPageShell initialServerData={initialServerData}>
+      <StaticBlogsPageShell
+        initialServerData={initialServerData}
+        categoryCount={4 + (initialServerData?.blogCategories?.length || 0)}
+      >
         <AllBlogsAggregated
           initialServerData={initialServerData}
+          blogCategories={initialServerData?.blogCategories || []}
         />
       </StaticBlogsPageShell>
     </>

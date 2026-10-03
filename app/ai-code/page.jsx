@@ -4,10 +4,10 @@ import { NextSeo } from "next-seo";
 import Head from 'next/head';
 
 // Import the new reusable component
-import BlogListingPageContent from "@/app/ai-tools/BlogListingPageContent";
+import BlogListingPageContent from "@/features/content-listing/LegacyContentListing";
 
 // --- NEW IMPORTS for StaticPageShell ---
-import StaticPageShell from "@/app/ai-seo/StaticPageShell";
+import StaticPageShell from "@/features/content-listing/ContentListingShell";
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis';
 // --- END NEW IMPORTS ---

@@ -13,7 +13,7 @@ export const client = createClient({
 
 // Updated function to include _updatedAt for better sitemap lastModified dates
 export async function fetchURLs() {
-  const query = `*[_type in ["makemoney", "aitool", "seo", "news", "coding", "freeairesources", "seo"]] {
+  const query = `*[_type in ["makemoney", "aitool", "seo", "news", "coding", "freeairesources", "blogPost"]] {
     "slug": slug.current,
     "title": title, 
     _type,
@@ -28,6 +28,20 @@ export async function fetchURLs() {
     return posts.filter(post => post.slug && post.slug.trim() !== '');
   } catch (error) {
     console.error('Error fetching URLs from Sanity:', error);
+    return [];
+  }
+}
+
+export async function fetchBlogCategorySlugs() {
+  const query = `*[_type == "blogCategory" && defined(slug.current)]{
+    "slug": slug.current,
+    _updatedAt
+  }`;
+
+  try {
+    return await client.fetch(query);
+  } catch (error) {
+    console.error('Error fetching blog category URLs from Sanity:', error);
     return [];
   }
 }

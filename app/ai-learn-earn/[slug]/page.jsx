@@ -1,14 +1,14 @@
 // app/ai-learn-earn/[slug]/page.jsx
 
-import { getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData";
+import { getAllArticleSlugs } from "@/features/articles/legacy/articleData";
 
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
-import ArticleChildComp from "@/app/ai-code/[slug]/ArticleChildComp";
-import SeoAndSchemaWrapper from "@/app/ai-code/[slug]/SeoAndSchemaWrapper"; // NEW IMPORT
+import ArticleChildComp from "@/features/articles/legacy/ArticleChildComp";
+import SeoAndSchemaWrapper from "@/features/articles/legacy/SeoAndSchemaWrapper";
 
 
-import ArticleMicrodata from "@/app/ai-code/[slug]/ArticleMicrodata"; // New microdata component
-import { getArticleData, generatePageMetadata } from "@/app/ai-code/[slug]/articleData"; // New utility functions
+import ArticleMicrodata from "@/features/articles/legacy/ArticleMicrodata";
+import { getArticleData, generatePageMetadata } from "@/features/articles/legacy/articleData";
 
 // --- Revalidation ---
 export const revalidate = 7200;

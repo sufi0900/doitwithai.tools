@@ -1,0 +1,5 @@
+import Link from "next/link";
+import { tools, toolPath } from "./catalog";
+export default function HomeTools() {
+  return <section aria-labelledby="home-tools-title" className="bg-slate-50 py-14 dark:bg-[#171C28]"><div className="container"><div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="mb-2 text-sm font-semibold text-primary dark:text-blue-200">Built to help you do the work</p><h2 id="home-tools-title" className="text-3xl font-bold text-slate-900 dark:text-white">Explore our tools</h2></div><Link href="/tools" className="rounded-lg bg-primary px-5 py-3 font-semibold text-white">Browse all tools →</Link></div><div className="grid gap-5 md:grid-cols-3">{tools.map((tool) => <Link key={tool.id} href={toolPath(tool.slug)} className="rounded-2xl border border-slate-200 bg-white p-6 hover:border-primary dark:border-slate-700 dark:bg-[#1D2430]"><h3 className="text-lg font-bold text-slate-900 dark:text-white">{tool.name} →</h3><p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{tool.description}</p></Link>)}</div></div></section>;
+}

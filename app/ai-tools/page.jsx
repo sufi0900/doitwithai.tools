@@ -4,11 +4,11 @@ import { NextSeo } from "next-seo";
 import { redisHelpers } from '@/app/lib/redis';
 import { client } from "@/sanity/lib/client";
 
-import BlogListingPageContent from "@/app/ai-tools/BlogListingPageContent";
+import BlogListingPageContent from "@/features/content-listing/LegacyContentListing";
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
 
 // NEW IMPORT for StaticPageShell
-import StaticPageShell from "@/app/ai-seo/StaticPageShell";
+import StaticPageShell from "@/features/content-listing/ContentListingShell";
 import Head from 'next/head';
 
 // --- Next.js Server-Side Configuration ---

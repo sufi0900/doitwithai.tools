@@ -2,7 +2,7 @@
 import React from 'react';
 // import { urlForImage } from '@/sanity/lib/image';
 import CardComponent from '@/components/Card/Page';
-import SidebarSearchCard from '@/app/ai-tools/[slug]/SidebarSearchCard';
+import SidebarSearchCard from '@/features/articles/legacy/components/SidebarSearchCard';
 
 const SearchResults = ({ 
   searchResults = [], 
@@ -119,7 +119,8 @@ const SearchResults = ({
         makemoney: "ai-learn-earn",
         aitool: "ai-tools", 
         coding: "ai-code",
-        seo: "ai-seo"
+        seo: "ai-seo",
+        blogPost: "blogs"
       };
       
       const routePrefix = schemaSlugMap[post._type];

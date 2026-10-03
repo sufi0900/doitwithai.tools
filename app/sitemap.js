@@ -1,7 +1,11 @@
 // sitemap.js - FIXED VERSION
-import { fetchURLs } from "../app/lib/sanity";
+import { fetchBlogCategorySlugs, fetchURLs } from "../app/lib/sanity";
+import registry from "../features/tool-catalog/registry.json";
 
 const baseURL = "https://doitwithai.tools";
+const liveTools = registry.tools.filter(tool => tool.status === "live");
+const retiredToolURLs = new Set(liveTools.map(tool => `${baseURL}${tool.legacyPath}`));
+const toolEntries = ["/tools", "/tools/categories", ...registry.categories.map(category => `/tools/categories/${category.slug}`), ...liveTools.map(tool => `/tools/${tool.slug}`)].map(path => ({ url: `${baseURL}${path}`, changeFrequency: "monthly", priority: 0.8 }));
 
 // Define the correct URL mapping for your schema types
 const SCHEMA_TYPE_TO_URL_PREFIX = {
@@ -9,13 +13,17 @@ const SCHEMA_TYPE_TO_URL_PREFIX = {
   aitool: "ai-tools",
   coding: "ai-code",
   seo: "ai-seo",
+  blogPost: "blogs",
   freeResources: "free-ai-resources",
 };
 
 export default async function sitemap() {
   try {
     // Fetch all posts from Sanity.io
-    const posts = await fetchURLs();
+    const [posts, blogCategories] = await Promise.all([
+      fetchURLs(),
+      fetchBlogCategorySlugs(),
+    ]);
 
     // Map the fetched posts to the sitemap format with correct URL prefixes
     const sitemapEntries = posts.map((post) => {
@@ -28,6 +36,13 @@ export default async function sitemap() {
         priority: 0.7,
       };
     });
+
+    const blogCategoryEntries = blogCategories.map((category) => ({
+      url: `${baseURL}/blogs/category/${category.slug}`,
+      lastModified: new Date(category._updatedAt || Date.now()),
+      changeFrequency: "weekly",
+      priority: 0.75,
+    }));
 
     // Add all your static routes (THIS WAS MISSING!)
     const staticRoutes = [
@@ -146,7 +161,7 @@ export default async function sitemap() {
     ];
 
     // Combine dynamic and static entries
-    const allEntries = [...sitemapEntries, ...staticRoutes];
+    const allEntries = [...sitemapEntries, ...blogCategoryEntries, ...staticRoutes, ...toolEntries].filter(entry => !retiredToolURLs.has(entry.url));
 
     // Remove duplicates and sort by priority
     const uniqueEntries = allEntries.filter(
@@ -160,6 +175,7 @@ export default async function sitemap() {
 
     // Return at least static routes if dynamic fetch fails
     return [
+      ...toolEntries,
       {
         url: baseURL,
         lastModified: new Date(),

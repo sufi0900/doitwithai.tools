@@ -1,5 +1,5 @@
 import React from 'react'
-import AboutPageClient from './AboutPageClient'
+import AboutPageContent from '@/features/about/AboutPageContent'
 import Script from "next/script";
 import { NextSeo } from 'next-seo';
 import Head from 'next/head';
@@ -227,7 +227,7 @@ export default function AboutPage() {
         ]}
       />
       </Head>
-      <AboutPageClient />
+      <AboutPageContent />
       
       <Script
         id="about-page-schema"
