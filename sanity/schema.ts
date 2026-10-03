@@ -10,8 +10,10 @@ import { seoSubcategory } from "./seoSubcategory";
 import { blogCategory } from "./blog-category";
 import { blogPost } from "./blog-post";
 import { blogTag } from "./blog-tag";
+import { guide } from "./guide";
+import { freeResources } from "./legacy-free-resources";
 
 
 export const schema: { types: SchemaTypeDefinition[] } = {
-  types: [blogPost, blogCategory, blogTag, blog, aitool, makemoney, news, coding, brands, seo, seoSubcategory ],
+  types: [freeResources, guide, blogPost, blogCategory, blogTag, blog, aitool, makemoney, news, coding, brands, seo, seoSubcategory ],
 };

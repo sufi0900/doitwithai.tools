@@ -1,3 +1,4 @@
+import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -115,7 +116,7 @@ const structuredData = {
       "@id": `${pageUrl}#application`,
       name: "Do It With AI Tools SEO Slug Generator",
       url: pageUrl,
-      applicationCategory: "SEOApplication",
+      applicationCategory: "BusinessApplication",
       operatingSystem: "Any",
       browserRequirements: "Requires JavaScript",
       isAccessibleForFree: true,
@@ -274,6 +275,7 @@ export default function SlugUrlGeneratorPage() {
           ))}
         </div>
       </section>
+      <ToolResources slug="slug-generator" />
     </>
   );
 }

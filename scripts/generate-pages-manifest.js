@@ -1,6 +1,7 @@
 // 1. Create: scripts/generate-pages-manifest.js
 const fs = require('fs');
 const path = require('path');
+const registry = require('../features/tool-catalog/registry.json');
 
 function generatePagesManifest() {
   const pagesDir = path.join(process.cwd(), 'app');
@@ -13,13 +14,17 @@ function generatePagesManifest() {
     { url: '/faq', title: 'FAQ', priority: 'medium' },
     { url: '/contact', title: 'Contact', priority: 'medium' },
     { url: '/privacy', title: 'Privacy Policy', priority: 'low' },
-    { url: '/terms', title: 'Terms of Service', priority: 'low' },
+    { url: '/terms-and-conditions', title: 'Terms of Service', priority: 'low' },
     { url: '/ai-tools', title: 'AI Tools', priority: 'high' },
     { url: '/ai-seo', title: 'AI SEO', priority: 'high' },
     { url: '/ai-code', title: 'AI Code', priority: 'high' },
     { url: '/ai-learn-earn', title: 'AI Learn & Earn', priority: 'high' },
     { url: '/free-ai-resources', title: 'Free AI Resources', priority: 'medium' },
-    { url: '/ai-news', title: 'AI News', priority: 'medium' }
+    { url: '/tools', title: 'Tools', priority: 'high' },
+    { url: '/tools/categories', title: 'Tool Categories', priority: 'medium' },
+    { url: '/guides', title: 'Practical Guides', priority: 'medium' },
+    ...registry.tools.filter(tool => tool.status === 'live').map(tool => ({ url: `/tools/${tool.slug}`, title: tool.name, priority: 'high' })),
+    ...registry.categories.filter(category => registry.tools.some(tool => tool.status === 'live' && tool.categories.includes(category.slug))).map(category => ({ url: `/tools/categories/${category.slug}`, title: category.name, priority: 'medium' }))
   ];
 
   // Add all static pages to the manifest
@@ -28,8 +33,7 @@ function generatePagesManifest() {
       url: page.url,
       title: page.title,
       priority: page.priority,
-      type: 'static',
-      lastModified: new Date().toISOString()
+      type: 'static'
     });
   });
 

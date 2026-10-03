@@ -1,3 +1,4 @@
+import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -116,7 +117,7 @@ const structuredData = {
       "@id": `${pageUrl}#application`,
       name: "Do It With AI Tools Schema Markup Generator",
       url: pageUrl,
-      applicationCategory: "SEOApplication",
+      applicationCategory: "BusinessApplication",
       operatingSystem: "Any",
       browserRequirements: "Requires JavaScript",
       isAccessibleForFree: true,
@@ -281,6 +282,7 @@ export default function SchemaMarkupGeneratorPage() {
           </div>
         </div>
       </section>
+      <ToolResources slug="schema-markup-generator" />
     </>
   );
 }

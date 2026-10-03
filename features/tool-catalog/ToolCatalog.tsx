@@ -3,21 +3,14 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Search, Sparkles } from "lucide-react";
-import { categories, tools, toolPath } from "./catalog";
+import { categories, tools, toolPath, categoryPath } from "./catalog";
+import { findTools } from "./catalog-core.mjs";
 
 export default function ToolCatalog({ category }: { category?: string }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(category || "all");
   const [sort, setSort] = useState("featured");
-  const results = useMemo(() => {
-    const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
-    const matches = tools.filter((tool) => {
-      const text = [tool.name, tool.description, ...tool.tags, ...tool.categories].join(" ").toLocaleLowerCase();
-      return (!category || tool.categories.includes(category)) &&
-        (selected === "all" || tool.categories.includes(selected)) && words.every((word) => text.includes(word));
-    });
-    return sort === "name" ? [...matches].sort((a, b) => a.name.localeCompare(b.name)) : matches;
-  }, [query, selected, sort, category]);
+  const results = useMemo(() => findTools(tools, { query, category, selected, sort }), [query, selected, sort, category]);
 
   return (
     <section aria-label="Tool finder" className="mt-10">
@@ -26,7 +19,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
           <label htmlFor="tool-search" className="mb-2 block text-sm font-semibold">Search tools</label>
           <div className="relative">
             <Search aria-hidden="true" className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-            <input id="tool-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Title, URL, structured data…" className="w-full rounded-xl border border-slate-300 bg-transparent py-3 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:border-slate-600" />
+            <input id="tool-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Title, URL, structured data..." className="w-full rounded-xl border border-slate-300 bg-transparent py-3 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:border-slate-600" />
           </div>
         </div>
         <div>
@@ -39,7 +32,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
         <div>
           <label htmlFor="tool-sort" className="mb-2 block text-sm font-semibold">Sort by</label>
           <select id="tool-sort" value={sort} onChange={(event) => setSort(event.target.value)} className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm dark:border-slate-600 dark:bg-[#1D2430]">
-            <option value="featured">Featured</option><option value="name">Name A–Z</option>
+            <option value="featured">Featured first</option><option value="recent">Recently added</option><option value="name">Name A–Z</option>
           </select>
         </div>
       </div>
@@ -51,6 +44,10 @@ export default function ToolCatalog({ category }: { category?: string }) {
             <h2 className="text-xl font-bold"><Link href={toolPath(tool.slug)} className="hover:text-primary">{tool.name}</Link></h2>
             <p className="mt-3 flex-1 text-sm leading-7 text-slate-600 dark:text-slate-300">{tool.description}</p>
             <div className="my-5 flex flex-wrap gap-2">{tool.tags.map((tag) => <span key={tag} className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">{tag}</span>)}</div>
+            <div className="mb-4 flex flex-wrap gap-3 text-xs font-semibold text-primary dark:text-blue-200">
+              {tool.categories.map((slug) => <Link key={slug} href={categoryPath(slug)}>{categories.find((item) => item.slug === slug)?.name}</Link>)}
+            </div>
+            {tool.relatedGuides.map((guide) => <Link key={guide.path} href={guide.path} className="mb-4 text-sm underline underline-offset-4">{guide.title}</Link>)}
             <Link href={toolPath(tool.slug)} className="inline-flex items-center gap-2 font-semibold text-primary dark:text-blue-200">Open tool <ArrowRight aria-hidden="true" className="h-4 w-4" /><span className="sr-only">: {tool.name}</span></Link>
           </article>
         ))}

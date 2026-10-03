@@ -1,91 +1,121 @@
 {
   "version": "1.0.0",
-  "generated": "2026-09-17T17:34:43.175Z",
+  "generated": "2026-10-03T17:38:04.843Z",
   "static_pages": [
     {
       "url": "/",
       "title": "Home",
       "priority": "high",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
       "url": "/about",
       "title": "About",
       "priority": "medium",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
       "url": "/faq",
       "title": "FAQ",
       "priority": "medium",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
       "url": "/contact",
       "title": "Contact",
       "priority": "medium",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
       "url": "/privacy",
       "title": "Privacy Policy",
       "priority": "low",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
-      "url": "/terms",
+      "url": "/terms-and-conditions",
       "title": "Terms of Service",
       "priority": "low",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
       "url": "/ai-tools",
       "title": "AI Tools",
       "priority": "high",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
       "url": "/ai-seo",
       "title": "AI SEO",
       "priority": "high",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
       "url": "/ai-code",
       "title": "AI Code",
       "priority": "high",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
       "url": "/ai-learn-earn",
       "title": "AI Learn & Earn",
       "priority": "high",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
       "url": "/free-ai-resources",
       "title": "Free AI Resources",
       "priority": "medium",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
     },
     {
-      "url": "/ai-news",
-      "title": "AI News",
+      "url": "/tools",
+      "title": "Tools",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/categories",
+      "title": "Tool Categories",
       "priority": "medium",
-      "type": "static",
-      "lastModified": "2026-09-17T17:34:43.175Z"
+      "type": "static"
+    },
+    {
+      "url": "/guides",
+      "title": "Practical Guides",
+      "priority": "medium",
+      "type": "static"
+    },
+    {
+      "url": "/tools/meta-title-generator",
+      "title": "Meta Title Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/slug-generator",
+      "title": "Slug Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/schema-markup-generator",
+      "title": "Schema Markup Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/categories/ai-seo",
+      "title": "AI SEO",
+      "priority": "medium",
+      "type": "static"
+    },
+    {
+      "url": "/tools/categories/content-writing",
+      "title": "Content Writing",
+      "priority": "medium",
+      "type": "static"
     }
   ],
-  "total_pages": 12
+  "total_pages": 19
 }

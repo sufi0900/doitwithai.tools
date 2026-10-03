@@ -35,3 +35,10 @@ yarn-error.log*
 .env.local
 
 push-error.txt
+
+# Local credentials and generated files
+.env*
+!.env.example
+!**/.env*.example
+*.tsbuildinfo
+/.sanity

@@ -1,3 +1,4 @@
+import ArticleTools from "@/features/tool-catalog/ArticleTools";
 import { notFound } from "next/navigation";
 import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import ArticleChildComp from "@/features/articles/legacy/ArticleChildComp";
@@ -40,6 +41,7 @@ export default async function BlogPostPage({ params }) {
       <main role="main" itemScope itemType="https://schema.org/Article">
         <ArticleMicrodata data={data} />
         <ArticleChildComp serverData={data} params={params} schemaType="blogPost" />
+        <ArticleTools slugs={data.relatedToolSlugs} />
       </main>
     </PageCacheProvider>
   </>;

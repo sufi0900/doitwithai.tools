@@ -1,4 +1,5 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
+import { toolRelationshipFields } from "./tool-relationships";
 
 const portableText = defineField({
   name: "content",
@@ -47,6 +48,7 @@ export const blogPost = defineType({
       defineField({ name: "caption", title: "Caption", type: "string" }),
     ], validation: Rule => Rule.required() }),
     portableText,
+    ...toolRelationshipFields,
     defineField({ name: "faqs", title: "FAQs", type: "array", group: "content", of: [defineArrayMember({ type: "object", fields: [
       defineField({ name: "question", title: "Question", type: "string", validation: Rule => Rule.required() }),
       defineField({ name: "answer", title: "Answer", type: "text", rows: 4, validation: Rule => Rule.required() }),

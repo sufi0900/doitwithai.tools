@@ -1,3 +1,4 @@
+import { toolRelationshipFields } from "./tool-relationships";
 import { metaValidation, titleValidation, commonImageFields } from './objects/commonFields';
 import {
   EditAttributes,
@@ -80,6 +81,7 @@ const contentBlocks = {
           type: 'object',
           title: 'Link',
           fields: [
+    ...toolRelationshipFields,
             {
               name: 'href',
               type: 'url',

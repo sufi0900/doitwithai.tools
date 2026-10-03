@@ -17,12 +17,17 @@ test('registry has unique, route-safe IDs, slugs and category membership', () =>
     assert.ok(tool.categories.every(slug => categories.some(category => category.slug === slug)));
     assert.ok(fs.existsSync(path.join(root, 'app', 'tools', tool.slug, 'page.tsx')));
   }
-  for (const category of categories) assert.ok(tools.some(tool => tool.categories.includes(category.slug)));
+  assert.deepEqual(categories.map(item => item.slug), ['ai-seo', 'content-writing', 'productivity']);
+  for (const tool of tools) {
+    assert.match(tool.addedAt, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(tool.relatedToolSlugs.every(slug => tools.some(item => item.slug === slug)));
+    for (const guide of tool.relatedGuides) assert.ok(guide.path.startsWith('/ai-seo/'));
+  }
 });
-test('only three executable tool URLs redirect, without loops or wildcard article redirects', async () => {
+test('legacy tools, hub and category redirect without loops or wildcard article redirects', async () => {
   const redirects = await config.redirects();
-  assert.equal(redirects.length, 3);
-  assert.deepEqual(redirects.map(rule => rule.source).sort(), ['/ai-seo/meta-title-generator', '/ai-seo/schema-markup-generator', '/ai-seo/slug-url-generator']);
+  assert.equal(redirects.length, 5);
+  assert.deepEqual(redirects.map(rule => rule.source).sort(), ['/ai-seo-tools', '/ai-seo/meta-title-generator', '/ai-seo/schema-markup-generator', '/ai-seo/slug-url-generator', '/tools/categories/seo']);
   for (const rule of redirects) {
     assert.equal(rule.permanent, true);
     assert.ok(!rule.source.includes(':') && !rule.source.includes('*'));

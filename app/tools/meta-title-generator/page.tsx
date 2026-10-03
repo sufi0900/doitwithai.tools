@@ -1,3 +1,4 @@
+import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Bot, Gauge, Search, Sparkles, UserRound } from "lucide-react";
@@ -98,7 +99,7 @@ const structuredData = {
       "@id": `${pageUrl}#application`,
       name: "Do It With AI Tools Meta Title Generator",
       url: pageUrl,
-      applicationCategory: "SEOApplication",
+      applicationCategory: "BusinessApplication",
       operatingSystem: "Any",
       browserRequirements: "Requires JavaScript",
       isAccessibleForFree: true,
@@ -259,6 +260,7 @@ Generate meta title ideas
           ))}
         </div>
       </section>
+      <ToolResources slug="meta-title-generator" />
     </>
   );
 }

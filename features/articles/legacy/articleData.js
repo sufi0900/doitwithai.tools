@@ -2,14 +2,15 @@
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis'; // Adjust path as needed
 import { urlForImage } from "@/sanity/lib/image";
+import { articleMetrics } from "./content-metrics.mjs";
 
 
 
 
 export async function getAllArticleSlugs(schemaTypeName) {
-  const query = `*[_type == "${schemaTypeName}"]{ "slug": slug.current }`;
+  const query = `*[_type == $type && defined(slug.current)]{ "slug": slug.current }`;
   try {
-    const slugs = await client.fetch(query);
+    const slugs = await client.fetch(query, { type: schemaTypeName }, { perspective: "published" });
     console.log(`[SanityFetch] Fetched ${slugs.length} slugs for type "${schemaTypeName}".`);
     return slugs;
   } catch (error) {
@@ -27,7 +28,7 @@ export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeN
     const cachedData = await redisHelpers.get(cacheKey);
     if (cachedData) {
       console.log(`[RedisCacheHit] for ${cacheKey} in ${Date.now() - startTime}ms`);
-      return { ...cachedData, __source: 'server-redis' };
+      return { ...cachedData, ...articleMetrics(cachedData.content), __source: 'server-redis' };
     }
   } catch (redisError) {
     console.error(`Redis error for ${cacheKey}:`, redisError.message);
@@ -35,7 +36,7 @@ export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeN
 
   console.log(`[SanityFetch] for ${cacheKey} starting...`);
 
- const query = `*[_type=="${schemaTypeName}" && slug.current=="${slug}"][0]{
+ const query = `*[_type==$type && slug.current==$slug][0]{
   _id,
   title,
   slug,
@@ -49,14 +50,13 @@ export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeN
   schematitle,
   schemadesc,
   overview,
+  relatedToolSlugs,
   content[]{
     ...,
     _type=="image"=>{asset->{_id,url},alt,caption,imageDescription[]{...}},
     _type=="gif"=>{asset->{_id,url},alt,caption},
     _type=="video"=>{asset->{_id,url},alt,caption},
   },
-  "wordCount": length(pt::text(content)),
-  "estimatedReadingTime": round(length(pt::text(content))/250),
   "headings": content[_type=="block" && style in ["h1","h2","h3","h4","h5","h6"]]{"text":pt::text(@),"level":style,"anchor":lower(pt::text(@))},
   tableOfContents[], 
   faqs[]{question,answer},
@@ -66,10 +66,11 @@ export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeN
 }`;
 
   try {
-    data = await client.fetch(query, {}, { next: { tags: [tagName, slug] } });
+    data = await client.fetch(query, { type: schemaTypeName, slug }, { perspective: "published", next: { tags: [tagName, slug] } });
     console.log(`[SanityFetch] for ${cacheKey} completed in ${Date.now() - startTime}ms`);
 
     if (data) {
+      Object.assign(data, articleMetrics(data.content));
       try {
         await redisHelpers.set(cacheKey, data, { ex: 86400 });
         console.log(`[RedisCacheSet] for ${cacheKey}`);
@@ -81,7 +82,7 @@ export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeN
     return null;
   } catch (error) {
     console.error(`Server-side fetch for slug ${slug} with schema type ${schemaTypeName} failed:`, error.message);
-    return null;
+    throw error;
   }
 }
 
