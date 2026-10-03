@@ -7,6 +7,7 @@ import {
   Heading1,
   Link2,
   ListTree,
+  ScanText,
   Sparkles,
   Type,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const icons = {
   "meta-description-generator": AlignLeft,
   "h1-heading-generator": Heading1,
   "article-outline-generator": ListTree,
+  "readability-checker": ScanText,
 };
 export default function ToolCard({
   tool,

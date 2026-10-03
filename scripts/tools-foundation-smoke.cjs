@@ -24,7 +24,7 @@ async function run() {
         'section[aria-label="Tool finder"] article',
         (nodes) => nodes.length,
       ),
-      6,
+      7,
     );
     assert.equal(
       await page.$eval('link[rel="canonical"]', (node) => node.href),
@@ -62,7 +62,7 @@ async function run() {
     await page.waitForFunction(
       () =>
         document.querySelectorAll('section[aria-label="Tool finder"] article')
-          .length === 5,
+          .length === 6,
     );
     await page.type("#tool-search", "zzzyyy");
     await page.waitForSelector('section[aria-label="Tool finder"] button');
@@ -70,13 +70,13 @@ async function run() {
     await page.waitForFunction(
       () =>
         document.querySelectorAll('section[aria-label="Tool finder"] article')
-          .length === 6,
+          .length === 7,
     );
     await page.select("#tool-sort", "recent");
     await page.waitForFunction(() =>
       document
         .querySelector('section[aria-label="Tool finder"] article h2')
-        .textContent.includes("Article Outline"),
+        .textContent.includes("Readability"),
     );
     await page.setViewport({ width: 390, height: 844 });
     assert.equal(
@@ -112,6 +112,201 @@ async function run() {
       await page.$eval('meta[name="robots"]', (node) => node.content),
       /noindex/,
     );
+    console.log("Checking readability workspace");
+    await page.setViewport({ width: 1440, height: 1000 });
+    let readabilityCalls = 0,
+      readabilityFail = false;
+    const readabilityTexts = [
+      "Start with the reader's main question. Gather examples before drafting each section. The draft may need 2 review passes. AI does not guarantee rankings.",
+      "Identify the main question first. Gather useful examples. The draft may require 2 review passes. AI does not guarantee rankings.",
+      "Before drafting:\n- Identify the reader's main question.\n- Gather examples.\n\nThe draft may need 2 review passes. AI does not guarantee rankings.",
+    ];
+    await page.setRequestInterception(true);
+    const readabilityIntercept = (request) => {
+      if (request.url().endsWith("/api/ai-tools/readability")) {
+        readabilityCalls++;
+        const body = JSON.parse(request.postData());
+        assert.ok(body.text.length >= 40);
+        return request.respond({
+          status: readabilityFail ? 503 : 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            readabilityFail
+              ? { error: { message: "Readability provider unavailable." } }
+              : {
+                  result: {
+                    candidates: readabilityTexts.map((text, i) => ({
+                      approach: [
+                        "Light edit",
+                        "Plain language",
+                        "Easy to scan",
+                      ][i],
+                      text,
+                      changes: [
+                        "Shortened the opening passage.",
+                        "Kept the original review qualifications.",
+                      ],
+                      review:
+                        "Confirm the revision preserves meaning and important details.",
+                    })),
+                  },
+                },
+          ),
+        });
+      }
+      return request.continue();
+    };
+    page.on("request", readabilityIntercept);
+    await page.goto(`${origin}/tools/readability-checker`, {
+      waitUntil: "networkidle2",
+    });
+    const clickReadabilityButton = async (text) => {
+      assert.ok(
+        await page.evaluate((text) => {
+          const b = [...document.querySelectorAll("button")].find(
+            (n) => n.textContent.trim() === text,
+          );
+          if (b && !b.disabled) {
+            b.click();
+            return true;
+          }
+          return false;
+        }, text),
+      );
+    };
+    await page.click("[data-readability-generate]");
+    await page.waitForSelector('[role="alert"]');
+    assert.equal(readabilityCalls, 0);
+    await clickReadabilityButton("Try an example");
+    const readabilityOriginal = await page.$eval(
+      'textarea[name="text"]',
+      (n) => n.value,
+    );
+    assert.equal(
+      await page.$eval("[data-readability-highlight]", (n) => n.textContent),
+      readabilityOriginal,
+    );
+    assert.equal(readabilityCalls, 0);
+    assert.ok(await page.$("[data-readability-highlight] .bg-amber-100"));
+    await page.type('[name="terms"]', "AI");
+    if (process.env.SMOKE_SCREENSHOT_DIR)
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/readability-hero.png`,
+      });
+    await page.click("[data-readability-generate]");
+    await page.waitForSelector('[aria-label="Editable readability revision"]');
+    assert.equal(readabilityCalls, 1);
+    assert.equal(
+      await page.$$eval("[data-readability-option]", (nodes) => nodes.length),
+      3,
+    );
+    assert.equal(
+      await page.$eval("[data-readability-original]", (n) => n.textContent),
+      readabilityOriginal,
+    );
+    await page.$eval('[aria-label="Editable readability revision"]', (n) => {
+      n.focus();
+      n.select();
+    });
+    const editedReadability =
+      "Reviewed text may need 2 passes. AI does not guarantee rankings.";
+    await page.type(
+      '[aria-label="Editable readability revision"]',
+      editedReadability,
+    );
+    await page.$$eval("[data-readability-option]", (nodes) => nodes[1].click());
+    await page.$$eval("[data-readability-option]", (nodes) => nodes[0].click());
+    assert.equal(
+      await page.$eval(
+        '[aria-label="Editable readability revision"]',
+        (n) => n.value,
+      ),
+      editedReadability,
+    );
+    await clickReadabilityButton("Use revision as source");
+    assert.equal(
+      await page.$eval('textarea[name="text"]', (n) => n.value),
+      editedReadability,
+    );
+    assert.equal(
+      await page.$eval("[data-readability-original]", (n) => n.textContent),
+      readabilityOriginal,
+    );
+    await clickReadabilityButton("Undo replacement");
+    assert.equal(
+      await page.$eval('textarea[name="text"]', (n) => n.value),
+      readabilityOriginal,
+    );
+    await page.evaluate(() =>
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (text) => {
+            window.__readabilityCopied = text;
+          },
+        },
+      }),
+    );
+    await clickReadabilityButton("Copy revision");
+    await page.waitForFunction(
+      () =>
+        window.__readabilityCopied ===
+        "Reviewed text may need 2 passes. AI does not guarantee rankings.",
+    );
+    await page.$eval('[aria-label="Readability revisions"]', (n) =>
+      n.scrollIntoView({ block: "start" }),
+    );
+    if (process.env.SMOKE_SCREENSHOT_DIR)
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/readability-desktop.png`,
+      });
+    await page.setViewport({ width: 390, height: 844 });
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+      false,
+    );
+    if (process.env.SMOKE_SCREENSHOT_DIR)
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/readability-mobile.png`,
+      });
+    await page.evaluate(() => {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    });
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(
+          document.querySelector(
+            '[aria-label="Editable readability revision"]',
+          ),
+        ).backgroundColor === "rgb(2, 6, 23)",
+    );
+    if (process.env.SMOKE_SCREENSHOT_DIR)
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/readability-dark.png`,
+      });
+    readabilityFail = true;
+    await page.click("[data-readability-generate]");
+    await page.waitForFunction(() =>
+      document
+        .querySelector('[role="alert"]')
+        ?.textContent.includes("Readability provider unavailable"),
+    );
+    assert.equal(
+      await page.$eval(
+        '[aria-label="Editable readability revision"]',
+        (n) => n.value,
+      ),
+      editedReadability,
+    );
+    page.off("request", readabilityIntercept);
+    await page.setRequestInterception(false);
+    await page.evaluate(() => {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    });
     console.log("Checking article outline workspace");
     await page.setViewport({ width: 1440, height: 1000 });
     const planHeading = (name) => ({
@@ -587,12 +782,13 @@ async function run() {
       "meta-description-generator",
       "h1-heading-generator",
       "article-outline-generator",
+      "readability-checker",
     ])
       assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes("/ai-seo-tools"));
     assert.ok(!sitemap.includes("/tools/categories/productivity"));
     console.log(
-      "Passed: desktop/mobile finder, filters, sort, empty states, redirects, guide 404, sitemap, outline and writing generator forms with mocked AI responses, editable checks, and browser errors.",
+      "Passed: desktop/mobile finder, filters, sort, empty states, redirects, guide 404, sitemap, readability, outline, and writing workflows with mocked AI responses, editable checks, and browser errors.",
     );
   } finally {
     await browser.close();

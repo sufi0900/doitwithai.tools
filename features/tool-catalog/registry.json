@@ -160,6 +160,29 @@
         "meta-title-generator",
         "meta-description-generator"
       ]
+    },
+    {
+      "id": "readability-checker",
+      "slug": "readability-checker",
+      "name": "Readability Checker and Improver",
+      "description": "Inspect long passages locally and compare editable AI revisions while reviewing meaning and important details.",
+      "categories": ["ai-seo", "content-writing"],
+      "tags": ["readability", "editing", "plain language"],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-04",
+      "featuredOrder": 7,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/ai-readability-tools",
+          "title": "Readability prompts and editing tools"
+        }
+      ],
+      "relatedToolSlugs": [
+        "article-outline-generator",
+        "h1-heading-generator",
+        "meta-description-generator"
+      ]
     }
   ]
 }
