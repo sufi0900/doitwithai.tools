@@ -6,6 +6,7 @@ import {
   Braces,
   Heading1,
   Link2,
+  ListTree,
   Sparkles,
   Type,
 } from "lucide-react";
@@ -21,6 +22,7 @@ const icons = {
   "schema-markup-generator": Braces,
   "meta-description-generator": AlignLeft,
   "h1-heading-generator": Heading1,
+  "article-outline-generator": ListTree,
 };
 export default function ToolCard({
   tool,

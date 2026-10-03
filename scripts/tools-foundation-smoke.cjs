@@ -24,7 +24,7 @@ async function run() {
         'section[aria-label="Tool finder"] article',
         (nodes) => nodes.length,
       ),
-      5,
+      6,
     );
     assert.equal(
       await page.$eval('link[rel="canonical"]', (node) => node.href),
@@ -62,7 +62,7 @@ async function run() {
     await page.waitForFunction(
       () =>
         document.querySelectorAll('section[aria-label="Tool finder"] article')
-          .length === 4,
+          .length === 5,
     );
     await page.type("#tool-search", "zzzyyy");
     await page.waitForSelector('section[aria-label="Tool finder"] button');
@@ -70,13 +70,13 @@ async function run() {
     await page.waitForFunction(
       () =>
         document.querySelectorAll('section[aria-label="Tool finder"] article')
-          .length === 5,
+          .length === 6,
     );
     await page.select("#tool-sort", "recent");
     await page.waitForFunction(() =>
       document
         .querySelector('section[aria-label="Tool finder"] article h2')
-        .textContent.includes("H1 Heading"),
+        .textContent.includes("Article Outline"),
     );
     await page.setViewport({ width: 390, height: 844 });
     assert.equal(
@@ -112,6 +112,186 @@ async function run() {
       await page.$eval('meta[name="robots"]', (node) => node.content),
       /noindex/,
     );
+    console.log("Checking article outline workspace");
+    await page.setViewport({ width: 1440, height: 1000 });
+    const planHeading = (name) => ({
+      options: [
+        name + " Practical Steps",
+        name + " Reader Questions",
+        name + " Useful Examples",
+      ],
+      purpose: "Explain this part of the reader's task.",
+      starter: "Begin with a relevant question and clarify scope.",
+      points: ["Explain the reader's task", "Add a supported example"],
+      evidenceNeeded: "Gather a verified example before drafting.",
+    });
+    const outlineFixture = {
+      angle: "A practical human-led planning workflow for new writers.",
+      h1: [
+        "Plan an Article With AI",
+        "An AI Article Planning Workflow",
+        "Create a Reader-Focused Article Plan",
+      ],
+      introduction: planHeading("Start Your Article Plan"),
+      sections: Array.from({ length: 5 }, (_, i) => ({
+        ...planHeading(`Planning Stage ${i + 1}`),
+        subheadings: [planHeading(`Stage ${i + 1} Details`)],
+      })),
+      closing: planHeading("Prepare Your Draft for Review"),
+      review: [
+        "Verify every important claim before drafting.",
+        "Review the sequence against the reader's task.",
+      ],
+    };
+    let outlineFail = false;
+    await page.setRequestInterception(true);
+    const outlineIntercept = (request) => {
+      if (request.url().endsWith("/api/ai-tools/article-outline")) {
+        const body = JSON.parse(request.postData());
+        assert.ok(body.context.length >= 40);
+        return request.respond({
+          status: outlineFail ? 503 : 200,
+          contentType: "application/json",
+          body: JSON.stringify(
+            outlineFail
+              ? { error: { message: "Outline provider unavailable." } }
+              : { result: outlineFixture },
+          ),
+        });
+      }
+      return request.continue();
+    };
+    page.on("request", outlineIntercept);
+    await page.goto(`${origin}/tools/article-outline-generator`, {
+      waitUntil: "networkidle2",
+    });
+    if (process.env.SMOKE_SCREENSHOT_DIR)
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/outline-hero.png`,
+      });
+    await page.click("form button:not([type])");
+    await page.waitForSelector('form [role="alert"]');
+    await page.click('form button[type="button"]');
+    await page.click("form button:not([type])");
+    await page.waitForSelector('[aria-label="Selected H1"]');
+    assert.equal(
+      await page.$$eval(
+        '[aria-label="Editable article outline"] input',
+        (nodes) => nodes.filter((n) => n.type !== "checkbox").length,
+      ),
+      13,
+    );
+    await page.$eval('[aria-label="Selected H1"]', (node) => {
+      node.focus();
+      node.select();
+    });
+    await page.type('[aria-label="Selected H1"]', "My Reviewed Article Plan");
+    await page.click('[aria-label="Move section 1 down"]');
+    assert.equal(
+      await page.$eval('[aria-label="Section 1 heading"]', (n) => n.value),
+      "Planning Stage 2 Practical Steps",
+    );
+    await page.click('[aria-label="Remove subsection 1 from section 1"]');
+    const clickPlanButton = async (text) => {
+      const found = await page.evaluate((text) => {
+        const button = [
+          ...document.querySelectorAll(
+            '[aria-label="Editable article outline"] button',
+          ),
+        ].find((n) => n.textContent.trim() === text);
+        if (button) {
+          button.click();
+          return true;
+        }
+        return false;
+      }, text);
+      assert.ok(found);
+    };
+    await clickPlanButton("Preview headings");
+    await page.waitForFunction(() =>
+      document
+        .querySelector('[aria-label="Editable article outline"]')
+        .textContent.includes("H1 · My Reviewed Article Plan"),
+    );
+    await clickPlanButton("Edit outline");
+    await page.waitForSelector('[aria-label="Selected H1"]');
+    assert.equal(
+      await page.$eval('[aria-label="Selected H1"]', (n) => n.value),
+      "My Reviewed Article Plan",
+    );
+    if (process.env.SMOKE_SCREENSHOT_DIR) {
+      await page.$eval('[aria-label="Editable article outline"]', (n) =>
+        n.scrollIntoView({ block: "start" }),
+      );
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/outline-desktop.png`,
+      });
+    }
+    await page.setViewport({ width: 390, height: 844 });
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+      false,
+    );
+    if (process.env.SMOKE_SCREENSHOT_DIR)
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/outline-mobile.png`,
+      });
+    await page.evaluate(() => {
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+    });
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.querySelector('[aria-label="Selected H1"]'))
+          .backgroundColor === "rgb(2, 6, 23)",
+    );
+    if (process.env.SMOKE_SCREENSHOT_DIR)
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/outline-dark.png`,
+      });
+    await page.evaluate(() =>
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (text) => {
+            window.__outlineCopied = text;
+          },
+        },
+      }),
+    );
+    await clickPlanButton("Copy outline");
+    await page.waitForFunction(() =>
+      window.__outlineCopied?.includes("# My Reviewed Article Plan"),
+    );
+    assert.ok(
+      await page.evaluate(() => window.__outlineCopied.includes("Purpose:")),
+    );
+    await page.click(
+      '[aria-label="Editable article outline"] input[type="checkbox"]',
+    );
+    await clickPlanButton("Copy outline");
+    await page.waitForFunction(
+      () => !window.__outlineCopied.includes("Purpose:"),
+    );
+    outlineFail = true;
+    await page.click("form button:not([type])");
+    await page.waitForFunction(() =>
+      document
+        .querySelector('form [role="alert"]')
+        ?.textContent.includes("Outline provider unavailable"),
+    );
+    assert.equal(
+      await page.$eval('[aria-label="Selected H1"]', (n) => n.value),
+      "My Reviewed Article Plan",
+    );
+    page.off("request", outlineIntercept);
+    await page.setRequestInterception(false);
+    await page.evaluate(() => {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
+    });
     for (const slug of ["meta-description", "h1-heading"]) {
       console.log(`Checking ${slug} workspace`);
       await page.setRequestInterception(true);
@@ -406,12 +586,13 @@ async function run() {
       "schema-markup-generator",
       "meta-description-generator",
       "h1-heading-generator",
+      "article-outline-generator",
     ])
       assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes("/ai-seo-tools"));
     assert.ok(!sitemap.includes("/tools/categories/productivity"));
     console.log(
-      "Passed: desktop/mobile finder, filters, sort, empty states, redirects, guide 404, sitemap, both new generator forms with mocked AI responses, editable checks, and browser errors.",
+      "Passed: desktop/mobile finder, filters, sort, empty states, redirects, guide 404, sitemap, outline and writing generator forms with mocked AI responses, editable checks, and browser errors.",
     );
   } finally {
     await browser.close();
