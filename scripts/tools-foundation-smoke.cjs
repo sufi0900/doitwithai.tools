@@ -37,6 +37,8 @@ async function run() {
           const guide = node.parentElement.querySelector('a[href^="/ai-seo/"]');
           return {
             height: node.getBoundingClientRect().height,
+            width: node.getBoundingClientRect().width,
+            cardWidth: node.closest("article").getBoundingClientRect().width,
             buttonTop: node.getBoundingClientRect().top,
             guideTop: guide.getBoundingClientRect().top,
             background: getComputedStyle(node).backgroundColor,
@@ -44,9 +46,9 @@ async function run() {
         }),
     );
     for (const action of actions) {
-      assert.ok(action.height >= 52);
+      assert.ok(action.height >= 44);
+      assert.ok(action.width < action.cardWidth * 0.7);
       assert.ok(action.buttonTop < action.guideTop);
-      assert.equal(action.background, "rgb(82, 113, 255)");
     }
     await page.type("#tool-search", "slug");
     await page.waitForFunction(
@@ -172,6 +174,34 @@ async function run() {
         await page.$eval('link[rel="canonical"]', (node) => node.href),
         `https://doitwithai.tools/tools/${slug}-generator`,
       );
+      assert.equal(
+        await page.$$eval(
+          "[data-writing-education] section",
+          (nodes) => nodes.length,
+        ),
+        5,
+      );
+      assert.equal(
+        await page.$$eval(
+          "[data-writing-education] ol li",
+          (nodes) => nodes.length,
+        ),
+        5,
+      );
+      assert.ok(
+        await page.$(
+          '[data-writing-education] a[href="/tools/meta-title-generator"]',
+        ),
+      );
+      if (process.env.SMOKE_SCREENSHOT_DIR) {
+        const education = await page.$(`[id="${slug}-examples"]`);
+        await education.evaluate((node) =>
+          node.scrollIntoView({ block: "center" }),
+        );
+        await page.screenshot({
+          path: `${process.env.SMOKE_SCREENSHOT_DIR}/${slug}-education.png`,
+        });
+      }
       await page.click('form button[type="submit"]');
       await page.waitForSelector('form [role="alert"]');
       await page.click('form button[type="button"]');
@@ -186,6 +216,34 @@ async function run() {
           path: `${process.env.SMOKE_SCREENSHOT_DIR}/${slug}-desktop.png`,
           fullPage: false,
         });
+      assert.equal(
+        await page.$$eval(
+          "[data-writing-education] section",
+          (nodes) => nodes.length,
+        ),
+        5,
+      );
+      assert.equal(
+        await page.$$eval(
+          "[data-writing-education] ol li",
+          (nodes) => nodes.length,
+        ),
+        5,
+      );
+      assert.ok(
+        await page.$(
+          '[data-writing-education] a[href="/tools/meta-title-generator"]',
+        ),
+      );
+      if (process.env.SMOKE_SCREENSHOT_DIR) {
+        const education = await page.$(`[id="${slug}-examples"]`);
+        await education.evaluate((node) =>
+          node.scrollIntoView({ block: "center" }),
+        );
+        await page.screenshot({
+          path: `${process.env.SMOKE_SCREENSHOT_DIR}/${slug}-education.png`,
+        });
+      }
       await page.click('form button[type="submit"]');
       await page.waitForSelector(`#${slug}-results`);
       await page.waitForFunction(

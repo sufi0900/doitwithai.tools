@@ -32,7 +32,7 @@ export default function ToolCard({
   const Icon = icons[tool.slug] || Sparkles;
   const Heading = headingLevel === 3 ? "h3" : "h2";
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:border-[#5271ff]/40 hover:shadow-xl hover:shadow-[#5271ff]/5 dark:border-slate-700 dark:bg-[#1D2430] sm:p-7">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:border-[#5271ff]/40 hover:shadow-lg hover:shadow-slate-200/40 dark:border-slate-700 dark:bg-[#1D2430] sm:p-7">
       <div
         aria-hidden
         className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#5271ff] via-blue-400 to-cyan-300 opacity-0 transition group-hover:opacity-100"
@@ -59,12 +59,12 @@ export default function ToolCard({
       <Link
         data-open-tool
         href={toolPath(tool.slug)}
-        className="mt-6 flex min-h-[52px] w-full items-center justify-between gap-3 rounded-xl bg-[#5271ff] px-5 py-3.5 text-[19px] font-extrabold text-white shadow-md shadow-[#5271ff]/15 transition hover:bg-[#425fe4] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300"
+        className="mt-6 inline-flex min-h-11 w-fit items-center justify-center gap-3 rounded-lg border border-[#5271ff]/25 bg-[#5271ff]/[0.04] px-4 py-2.5 text-sm font-bold text-[#4662df] transition hover:border-[#5271ff]/50 hover:bg-[#5271ff]/[0.09] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 dark:border-blue-400/30 dark:bg-blue-400/10 dark:text-blue-200 dark:hover:bg-blue-400/20"
       >
         <span>
           Open tool<span className="sr-only">: {tool.name}</span>
         </span>
-        <span className="grid h-6 w-6 place-items-center rounded-lg bg-white/15">
+        <span className="inline-flex items-center">
           <ArrowRight
             aria-hidden
             className="h-4 w-4 transition group-hover:translate-x-0.5 motion-reduce:transform-none"

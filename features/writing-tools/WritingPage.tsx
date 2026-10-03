@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import WritingClient from "./WritingClient";
+import WritingEducation from "./WritingEducation";
 import type { WritingKind } from "./schema";
 export const writingPages = {
   "meta-description": {
@@ -274,6 +275,7 @@ export default function WritingPage({ kind }: { kind: WritingKind }) {
           </div>
         </div>
       </section>
+      <WritingEducation kind={kind} />
       <section
         aria-labelledby={`${kind}-faq`}
         className="mx-auto max-w-5xl px-4 py-16 sm:px-6"
