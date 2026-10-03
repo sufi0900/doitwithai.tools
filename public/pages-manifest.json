@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-03T17:38:04.843Z",
+  "generated": "2026-10-03T18:10:13.506Z",
   "static_pages": [
     {
       "url": "/",
@@ -105,6 +105,18 @@
       "type": "static"
     },
     {
+      "url": "/tools/meta-description-generator",
+      "title": "Meta Description Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/h1-heading-generator",
+      "title": "H1 Heading Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -117,5 +129,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 19
+  "total_pages": 21
 }

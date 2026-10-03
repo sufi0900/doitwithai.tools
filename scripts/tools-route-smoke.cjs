@@ -10,7 +10,7 @@ async function run() {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     assert.equal(ready, true, 'Local server did not become ready');
-    for (const path of ['/tools', '/tools/categories/ai-seo', '/tools/categories/content-writing', '/tools/categories/productivity', '/guides']) {
+    for (const path of ['/tools', '/tools/meta-description-generator', '/tools/h1-heading-generator', '/tools/categories/ai-seo', '/tools/categories/content-writing', '/tools/categories/productivity', '/guides']) {
       const response = await fetch(origin + path);
       assert.equal(response.status, 200, path);
       const html = await response.text();
@@ -30,7 +30,7 @@ async function run() {
     assert.equal((await fetch(`${origin}/guides/not-a-published-guide`)).status, 404);
     assert.equal((await fetch(`${origin}/guides?page=invalid`)).status, 404);
     const sitemap = await (await fetch(`${origin}/sitemap.xml`)).text();
-    for (const slug of ['meta-title-generator', 'slug-generator', 'schema-markup-generator']) assert.ok(sitemap.includes(`/tools/${slug}`));
+    for (const slug of ['meta-title-generator', 'slug-generator', 'schema-markup-generator', 'meta-description-generator', 'h1-heading-generator']) assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes('/ai-seo-tools'));
     assert.ok(!sitemap.includes('/tools/categories/productivity'));
     assert.ok(!sitemap.includes('/news/'));
@@ -42,7 +42,7 @@ async function run() {
         browser.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`Browser checks exited with ${code}`)));
       });
     }
-    console.log('Passed: five route responses, five permanent redirects, canonical URLs, empty index policy, guide 404s, and sitemap discovery.');
+    console.log('Passed: seven route responses, five permanent redirects, canonical URLs, empty index policy, guide 404s, and sitemap discovery.');
   } finally {
     server.kill('SIGTERM');
   }

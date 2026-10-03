@@ -33,9 +33,8 @@ function getClientKey(request: NextRequest) {
     ?.split(",")[0]
     ?.trim();
   const address = forwarded || request.headers.get("x-real-ip") || "unknown";
-  const userAgent = request.headers.get("user-agent") || "unknown";
   return createHash("sha256")
-    .update(`${address}:${userAgent}`)
+    .update(address)
     .digest("hex")
     .slice(0, 24);
 }
@@ -47,8 +46,11 @@ async function incrementWindow(key: string, ttlSeconds: number) {
     const count = await activeRedis.incr(key);
     if (count === 1) await activeRedis.expire(key, ttlSeconds);
     const ttl = await activeRedis.ttl(key);
+    if (ttl < 0) await activeRedis.expire(key, ttlSeconds);
     return { count, ttl: ttl > 0 ? ttl : ttlSeconds };
   }
+
+  if (process.env.NODE_ENV === "production") throw new Error("Shared Redis rate limiting is required in production");
 
   const now = Date.now();
   const existing = memoryStore.get(key);
@@ -57,6 +59,10 @@ async function incrementWindow(key: string, ttlSeconds: number) {
       ? { count: 1, expiresAt: now + ttlSeconds * 1_000 }
       : { ...existing, count: existing.count + 1 };
 
+  if (!existing && memoryStore.size >= 10_000) {
+    for (const [entryKey, value] of memoryStore) if (value.expiresAt <= now) memoryStore.delete(entryKey);
+    if (memoryStore.size >= 10_000) throw new Error("Local rate-limit capacity exceeded");
+  }
   memoryStore.set(key, next);
 
   if (memoryStore.size > 2_000) {
@@ -71,6 +77,10 @@ async function incrementWindow(key: string, ttlSeconds: number) {
   };
 }
 
+function validLimit(fallback: number, value: number) {
+  return Number.isFinite(value) && value >= 1 ? Math.floor(value) : fallback;
+}
+
 export async function checkAiToolRateLimit(
   request: NextRequest,
   toolId: string,
@@ -78,13 +88,13 @@ export async function checkAiToolRateLimit(
 ): Promise<LimitResult> {
   const clientKey = getClientKey(request);
 
-  const dailyLimit = Math.max(
-    1,
+  const dailyLimit = validLimit(
+    5,
     options.dailyLimit ?? Number(process.env.AI_TOOLS_DAILY_LIMIT || 5),
   );
 
-  const burstLimit = Math.max(
-    1,
+  const burstLimit = validLimit(
+    3,
     options.burstLimit ?? Number(process.env.AI_TOOLS_BURST_LIMIT || 3),
   );
 

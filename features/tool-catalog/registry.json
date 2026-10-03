@@ -48,7 +48,9 @@
       ],
       "relatedToolSlugs": [
         "slug-generator",
-        "schema-markup-generator"
+        "schema-markup-generator",
+        "meta-description-generator",
+        "h1-heading-generator"
       ]
     },
     {
@@ -78,7 +80,9 @@
       ],
       "relatedToolSlugs": [
         "meta-title-generator",
-        "schema-markup-generator"
+        "schema-markup-generator",
+        "meta-description-generator",
+        "h1-heading-generator"
       ]
     },
     {
@@ -107,7 +111,65 @@
       ],
       "relatedToolSlugs": [
         "meta-title-generator",
-        "slug-generator"
+        "slug-generator",
+        "meta-description-generator",
+        "h1-heading-generator"
+      ]
+    },
+    {
+      "id": "meta-description-generator",
+      "slug": "meta-description-generator",
+      "name": "Meta Description Generator",
+      "description": "Draft and compare page-specific meta descriptions with character checks and an illustrative preview.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "snippets",
+        "content"
+      ],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-03",
+      "featuredOrder": 4,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/meta-description",
+          "title": "How to write meta descriptions"
+        }
+      ],
+      "relatedToolSlugs": [
+        "meta-title-generator",
+        "h1-heading-generator"
+      ]
+    },
+    {
+      "id": "h1-heading-generator",
+      "slug": "h1-heading-generator",
+      "name": "H1 Heading Generator",
+      "description": "Create and compare clear main headings based on the content your page actually offers.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "headings",
+        "content"
+      ],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-03",
+      "featuredOrder": 5,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/h1-heading",
+          "title": "How to write H1 headings"
+        }
+      ],
+      "relatedToolSlugs": [
+        "meta-title-generator",
+        "meta-description-generator"
       ]
     }
   ]

@@ -12,20 +12,20 @@ async function run() {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`${origin}/tools`, { waitUntil: 'networkidle2' });
     await page.waitForSelector('#tool-search');
-    assert.equal(await page.$$eval('section[aria-label="Tool finder"] article', (nodes) => nodes.length), 3);
+    assert.equal(await page.$$eval('section[aria-label="Tool finder"] article', (nodes) => nodes.length), 5);
     assert.equal(await page.$eval('link[rel="canonical"]', (node) => node.href), 'https://doitwithai.tools/tools');
     await page.type('#tool-search', 'slug');
     await page.waitForFunction(() => document.querySelectorAll('section[aria-label="Tool finder"] article').length === 1);
     await page.click('#tool-search', { clickCount: 3 });
     await page.keyboard.press('Backspace');
     await page.select('#tool-category', 'content-writing');
-    await page.waitForFunction(() => document.querySelectorAll('section[aria-label="Tool finder"] article').length === 2);
+    await page.waitForFunction(() => document.querySelectorAll('section[aria-label="Tool finder"] article').length === 4);
     await page.type('#tool-search', 'zzzyyy');
     await page.waitForSelector('section[aria-label="Tool finder"] button');
     await page.click('section[aria-label="Tool finder"] button');
-    await page.waitForFunction(() => document.querySelectorAll('section[aria-label="Tool finder"] article').length === 3);
+    await page.waitForFunction(() => document.querySelectorAll('section[aria-label="Tool finder"] article').length === 5);
     await page.select('#tool-sort', 'recent');
-    await page.waitForFunction(() => document.querySelector('section[aria-label="Tool finder"] article h2').textContent.includes('Meta Title'));
+    await page.waitForFunction(() => document.querySelector('section[aria-label="Tool finder"] article h2').textContent.includes('H1 Heading'));
     await page.setViewport({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     if (process.env.SMOKE_SCREENSHOT_DIR) {
@@ -38,6 +38,33 @@ async function run() {
     await page.goto(`${origin}/guides`, { waitUntil: 'networkidle2' });
     assert.match(await page.$eval('main', (node) => node.textContent), /New guides are being prepared/);
     assert.match(await page.$eval('meta[name="robots"]', (node) => node.content), /noindex/);
+    for (const slug of ['meta-description', 'h1-heading']) {
+      await page.setRequestInterception(true);
+      const intercept = request => {
+        if (request.url().includes(`/api/ai-tools/${slug}`)) return request.respond({ status: 200, contentType: 'application/json', body: JSON.stringify({ result: { candidates: [
+          { text: 'Container gardening basics with practical seed and watering guidance.', approach: 'Topic led', explanation: 'Summarizes the supported page topics.' },
+          { text: 'Plan a container garden using seed selection and watering examples.', approach: 'Action led', explanation: 'Focuses on the main task in the brief.' },
+          { text: 'Explore seed selection and watering for your first container garden.', approach: 'Reader led', explanation: 'Provides context for new gardeners.' },
+        ] } }) });
+        return request.continue();
+      };
+      page.on('request', intercept);
+      await page.goto(`${origin}/tools/${slug}-generator`, { waitUntil: 'networkidle2' });
+      assert.equal(await page.$eval('link[rel="canonical"]', node => node.href), `https://doitwithai.tools/tools/${slug}-generator`);
+      await page.type(`[name="brief"]`, 'An educational page for new gardeners with seed selection and container watering examples.');
+      await page.type('[name="keyword"]', 'container garden');
+      await page.click('form button');
+      await page.waitForSelector(`#${slug}-results`);
+      assert.equal(await page.$$eval('section[aria-labelledby] article', nodes => nodes.length), 3);
+      const editor = `section[aria-labelledby="${slug}-results"] article textarea`;
+      await page.click(editor, { clickCount: 3 });
+      await page.keyboard.press('Backspace');
+      await page.type(editor, 'A clear container garden heading');
+      assert.match(await page.$eval(`section[aria-labelledby="${slug}-results"] article`, node => node.textContent), /32 characters/);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+      page.off('request', intercept);
+      await page.setRequestInterception(false);
+    }
     assert.deepEqual(errors, []);
 
     const redirects = [
@@ -55,10 +82,10 @@ async function run() {
     const missing = await fetch(`${origin}/guides/not-a-published-guide`);
     assert.equal(missing.status, 404);
     const sitemap = await (await fetch(`${origin}/sitemap.xml`)).text();
-    for (const slug of ['meta-title-generator', 'slug-generator', 'schema-markup-generator']) assert.ok(sitemap.includes(`/tools/${slug}`));
+    for (const slug of ['meta-title-generator', 'slug-generator', 'schema-markup-generator', 'meta-description-generator', 'h1-heading-generator']) assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes('/ai-seo-tools'));
     assert.ok(!sitemap.includes('/tools/categories/productivity'));
-    console.log('Passed: desktop/mobile finder, filters, sort, empty states, redirects, guide 404, sitemap, and browser errors.');
+    console.log('Passed: desktop/mobile finder, filters, sort, empty states, redirects, guide 404, sitemap, both new generator forms with mocked AI responses, editable checks, and browser errors.');
   } finally {
     await browser.close();
   }
