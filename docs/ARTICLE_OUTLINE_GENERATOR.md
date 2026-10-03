@@ -25,7 +25,7 @@ Visible observations count H2s and H3s and flag blank or exact duplicate heading
 
 Required server variables: `OPENAI_API_KEY`, `OPENAI_ARTICLE_OUTLINE_MODEL`, `UPSTASH_REDIS_REST_URL`, and `UPSTASH_REDIS_REST_TOKEN`. The model must support Responses structured output. No model name is guessed.
 
-Requests use the existing bounded JSON reader and shared rate limiter. Production requires Redis. Provider requests set `store:false`, a 12000-token output cap, a 60-second timeout, and zero automatic retries. The route duration is 90 seconds, subject to deployment platform limits. The browser aborts after 75 seconds. Provider failures return an explicit error without partial output.
+Requests use the existing bounded JSON reader and shared rate limiter. Production requires Redis. Provider requests set `store:false`, a 12000-token output cap, a 50-second timeout, and zero automatic retries. The route duration is 60 seconds, compatible with this project’s non-Fluid Vercel Hobby limit. The provider timeout leaves 10 seconds for request overhead and response handling. The browser aborts after 75 seconds. Provider failures return an explicit error without partial output.
 
 No URLs are fetched, search results queried, or facts verified. Evidence notes and source references must be reviewed by the writer. No provider keys, live model output, or billing were tested.
 

@@ -25,7 +25,7 @@ A literal review flags changed digit strings, required terms missing at word bou
 
 Required variables: `OPENAI_API_KEY`, `OPENAI_READABILITY_MODEL`, `UPSTASH_REDIS_REST_URL`, and `UPSTASH_REDIS_REST_TOKEN`. The configured model must support Responses structured output. No model name is guessed.
 
-The existing bounded JSON reader and rate limiter protect the API. Production requires Redis. Requests use `store:false`, a 9000-token output cap, a 60-second provider timeout, and zero automatic retries. Browser requests abort after 75 seconds. Route duration is 90 seconds, subject to platform support. Invalid input, unsupported configuration, invalid output, and provider failures return explicit errors.
+The existing bounded JSON reader and rate limiter protect the API. Production requires Redis. Requests use `store:false`, a 9000-token output cap, a 50-second provider timeout, and zero automatic retries. Browser requests abort after 75 seconds. Route duration is 60 seconds, compatible with this project’s non-Fluid Vercel Hobby limit. The provider timeout leaves 10 seconds for request overhead and response handling. Invalid input, unsupported configuration, invalid output, and provider failures return explicit errors.
 
 ## Content and discovery
 

@@ -147,7 +147,7 @@ test("API bounds provider requests and rejects malformed output without returnin
       assert.equal(params.store, false);
       assert.equal(params.max_output_tokens, 12000);
       assert.equal(options.maxRetries, 0);
-      assert.equal(options.timeout, 60000);
+      assert.equal(options.timeout, 50000);
       return { output_parsed: fixture };
     }) as any;
     assert.equal((await POST(request({ title: "bad" }))).status, 422);

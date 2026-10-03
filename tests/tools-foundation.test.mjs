@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { findTools, safeContentHref } from '../features/tool-catalog/catalog-core.mjs';
 import { articlePath, contentSitemapEntries, toolSitemapEntries } from '../features/guides/content-routes.mjs';
 import { createRequire } from 'node:module';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { articleMetrics } from '../features/articles/legacy/content-metrics.mjs';
 const registry = createRequire(import.meta.url)('../features/tool-catalog/registry.json');
 
@@ -45,4 +47,25 @@ test('article metrics count words across text spans and ignore media blocks', ()
   assert.deepEqual(articleMetrics([{ _type: 'block', children: [{ text: 'Hello ' }, { text: 'world.\nAnother sentence.' }] }, { _type: 'image', alt: 'Not article words' }]), { wordCount: 4, estimatedReadingTime: 1 });
   assert.equal(articleMetrics(null).wordCount, 0);
   assert.equal(articleMetrics([{ _type: 'block', children: [{ text: 'word '.repeat(251) }] }]).estimatedReadingTime, 2);
+});
+
+// This project uses non-Fluid Vercel Hobby functions, capped at 60 seconds.
+test('all API route durations fit the deployed Vercel Hobby limit', () => {
+  const routes = [];
+  function collect(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) collect(path);
+      else if (/^route\.(ts|js)$/.test(entry.name)) routes.push(path);
+    }
+  }
+  collect(new URL('../app/api/', import.meta.url).pathname);
+  let configured = 0;
+  for (const path of routes) {
+    const match = readFileSync(path, 'utf8').match(/export const maxDuration = (\d+)/);
+    if (!match) continue;
+    configured++;
+    assert.ok(Number(match[1]) >= 1 && Number(match[1]) <= 60, `${path} exceeds the deployment limit`);
+  }
+  assert.ok(configured > 0, 'Expected configured API durations');
 });

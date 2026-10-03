@@ -154,7 +154,7 @@ test("API validates, bounds AI requests and rejects invalid or failed revisions"
       assert.equal(params.model, "test-model");
       assert.equal(params.max_output_tokens, 9000);
       assert.equal(params.store, false);
-      assert.equal(options.timeout, 60000);
+      assert.equal(options.timeout, 50000);
       assert.equal(options.maxRetries, 0);
       return { output_parsed: fixture };
     }) as any;

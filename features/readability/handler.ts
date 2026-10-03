@@ -79,7 +79,8 @@ export async function POST(request: NextRequest) {
           ),
         },
       },
-      { timeout: 60_000, maxRetries: 0 },
+      // Leave time for validation and an error response before Vercel terminates the function.
+      { timeout: 50_000, maxRetries: 0 },
     );
     const result = validateReadability(response.output_parsed);
     return NextResponse.json(
