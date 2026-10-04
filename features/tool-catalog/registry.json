@@ -160,7 +160,8 @@
         "meta-title-generator",
         "meta-description-generator",
         "image-alt-text-generator",
-        "keyword-clustering-tool"
+        "keyword-clustering-tool",
+        "topical-map-generator"
       ]
     },
     {
@@ -230,7 +231,35 @@
       "relatedToolSlugs": [
         "article-outline-generator",
         "h1-heading-generator",
-        "meta-title-generator"
+        "meta-title-generator",
+        "topical-map-generator"
+      ]
+    },
+    {
+      "id": "topical-map-generator",
+      "slug": "topical-map-generator",
+      "name": "AI Topical Map Generator",
+      "description": "Explore an editable topic hierarchy from a seed or brief, plan pillars and supporting tasks, and keep keyword metrics clearly unverified.",
+      "categories": ["ai-seo", "content-writing"],
+      "tags": ["topical maps", "content planning", "keyword ideas"],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-04",
+      "featuredOrder": 11,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research prompts and planning resources"
+        },
+        {
+          "path": "/ai-seo/chatgpt-target-audience-research",
+          "title": "Understand your intended reader"
+        }
+      ],
+      "relatedToolSlugs": [
+        "keyword-clustering-tool",
+        "article-outline-generator",
+        "h1-heading-generator"
       ]
     }
   ]

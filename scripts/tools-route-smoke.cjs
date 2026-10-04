@@ -27,6 +27,7 @@ async function run() {
       "/tools/readability-checker",
       "/tools/image-alt-text-generator",
       "/tools/keyword-clustering-tool",
+      "/tools/topical-map-generator",
       "/tools/categories/ai-seo",
       "/tools/categories/content-writing",
       "/tools/categories/productivity",
@@ -73,6 +74,7 @@ async function run() {
       "readability-checker",
       "image-alt-text-generator",
       "keyword-clustering-tool",
+      "topical-map-generator",
     ])
       assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes("/ai-seo-tools"));
@@ -95,7 +97,7 @@ async function run() {
       });
     }
     console.log(
-      "Passed: eleven route responses, five permanent redirects, canonical URLs, empty index policy, guide 404s, and sitemap discovery.",
+      "Passed: twelve route responses, five permanent redirects, canonical URLs, empty index policy, guide 404s, and sitemap discovery.",
     );
   } finally {
     server.kill("SIGTERM");

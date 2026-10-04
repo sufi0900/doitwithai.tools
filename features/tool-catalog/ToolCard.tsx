@@ -8,6 +8,7 @@ import {
   Link2,
   ListTree,
   Network,
+  GitBranch,
   ScanText,
   ScanEye,
   Sparkles,
@@ -29,6 +30,7 @@ const icons = {
   "readability-checker": ScanText,
   "image-alt-text-generator": ScanEye,
   "keyword-clustering-tool": Network,
+  "topical-map-generator": GitBranch,
 };
 export default function ToolCard({
   tool,
