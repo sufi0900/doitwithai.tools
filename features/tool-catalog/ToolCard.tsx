@@ -8,6 +8,7 @@ import {
   Link2,
   ListTree,
   ScanText,
+  ScanEye,
   Sparkles,
   Type,
 } from "lucide-react";
@@ -25,6 +26,7 @@ const icons = {
   "h1-heading-generator": Heading1,
   "article-outline-generator": ListTree,
   "readability-checker": ScanText,
+  "image-alt-text-generator": ScanEye,
 };
 export default function ToolCard({
   tool,

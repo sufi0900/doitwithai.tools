@@ -158,7 +158,8 @@
       "relatedToolSlugs": [
         "h1-heading-generator",
         "meta-title-generator",
-        "meta-description-generator"
+        "meta-description-generator",
+        "image-alt-text-generator"
       ]
     },
     {
@@ -181,6 +182,30 @@
       "relatedToolSlugs": [
         "article-outline-generator",
         "h1-heading-generator",
+        "meta-description-generator",
+        "image-alt-text-generator"
+      ]
+    },
+    {
+      "id": "image-alt-text-generator",
+      "slug": "image-alt-text-generator",
+      "name": "Image Alt Text Generator",
+      "description": "Draft image alternatives from uploads or descriptions, consider page purpose, and review editable wording before publishing.",
+      "categories": ["ai-seo", "content-writing"],
+      "tags": ["images", "alt text", "accessibility"],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-04",
+      "featuredOrder": 8,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/ai-alt-text-generators",
+          "title": "Alt text prompts and image writing guidance"
+        }
+      ],
+      "relatedToolSlugs": [
+        "readability-checker",
+        "article-outline-generator",
         "meta-description-generator"
       ]
     }

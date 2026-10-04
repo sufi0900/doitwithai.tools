@@ -24,7 +24,7 @@ async function run() {
         'section[aria-label="Tool finder"] article',
         (nodes) => nodes.length,
       ),
-      7,
+      8,
     );
     assert.equal(
       await page.$eval('link[rel="canonical"]', (node) => node.href),
@@ -62,7 +62,7 @@ async function run() {
     await page.waitForFunction(
       () =>
         document.querySelectorAll('section[aria-label="Tool finder"] article')
-          .length === 6,
+          .length === 7,
     );
     await page.type("#tool-search", "zzzyyy");
     await page.waitForSelector('section[aria-label="Tool finder"] button');
@@ -70,13 +70,13 @@ async function run() {
     await page.waitForFunction(
       () =>
         document.querySelectorAll('section[aria-label="Tool finder"] article')
-          .length === 7,
+          .length === 8,
     );
     await page.select("#tool-sort", "recent");
     await page.waitForFunction(() =>
       document
         .querySelector('section[aria-label="Tool finder"] article h2')
-        .textContent.includes("Readability"),
+        .textContent.includes("Image Alt Text"),
     );
     await page.setViewport({ width: 390, height: 844 });
     assert.equal(
@@ -111,6 +111,11 @@ async function run() {
     assert.match(
       await page.$eval('meta[name="robots"]', (node) => node.content),
       /noindex/,
+    );
+    await require("./alt-text-smoke.cjs")(
+      page,
+      origin,
+      process.env.SMOKE_SCREENSHOT_DIR,
     );
     console.log("Checking readability workspace");
     await page.setViewport({ width: 1440, height: 1000 });
@@ -783,6 +788,7 @@ async function run() {
       "h1-heading-generator",
       "article-outline-generator",
       "readability-checker",
+      "image-alt-text-generator",
     ])
       assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes("/ai-seo-tools"));
