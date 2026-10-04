@@ -1,14 +1,15 @@
+import ArticleTools from "@/features/tool-catalog/ArticleTools";
 // app/ai-seo/[slug]/page.jsx of doitwithai.tools
 
-import { getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData";
+import { getAllArticleSlugs } from "@/features/articles/legacy/articleData";
 
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
-import ArticleChildComp from "@/app/ai-code/[slug]/ArticleChildComp";
-import SeoAndSchemaWrapper from "@/app/ai-code/[slug]/SeoAndSchemaWrapper"; // NEW IMPORT
+import ArticleChildComp from "@/features/articles/legacy/ArticleChildComp";
+import SeoAndSchemaWrapper from "@/features/articles/legacy/SeoAndSchemaWrapper";
 
 
-import ArticleMicrodata from "@/app/ai-code/[slug]/ArticleMicrodata"; // New microdata component
-import { getArticleData, generatePageMetadata } from "@/app/ai-code/[slug]/articleData"; // New utility functions
+import ArticleMicrodata from "@/features/articles/legacy/ArticleMicrodata";
+import { getArticleData, generatePageMetadata } from "@/features/articles/legacy/articleData";
 
 // --- Revalidation ---
 export const revalidate = 7200;
@@ -64,7 +65,8 @@ export default async function ParentPage({ params }) {
 
           {/* The actual client component that renders the article content */}
           <ArticleChildComp serverData={data} params={params} schemaType="seo" />
-        </main>
+          <ArticleTools slugs={data.relatedToolSlugs} />
+      </main>
       </PageCacheProvider>
     </>
   );

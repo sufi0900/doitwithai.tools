@@ -1,3 +1,11 @@
+# Do It With AI Tools — Phase 1
+
+Start with [the Phase 1 release and testing guide](docs/PHASE1_RELEASE.md).
+The [Phase 1.5 and agency handoff](docs/PHASE1_5_AND_AGENCY_HANDOFF.md) records the next steps.
+Existing cache and article logic is preserved. Test on a preview deployment before production.
+
+## Original template documentation
+
 # Startup - Free Next.js Startup Website Template
 
 Startup free, open-source, and premium-quality startup website template for Next.js comes with everything you need to launch a startup, business, or SaaS website, including all essential sections, components, and pages.

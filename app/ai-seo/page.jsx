@@ -4,13 +4,13 @@
 import React from 'react';
 import Script from "next/script";
 
-import BlogListingPageContent from "@/app/ai-tools/BlogListingPageContent";
-import ReusableCachedSEOSubcategories from "@/app/ai-tools/ReusableCachedSEOSubcategories";
-import StaticPageShell from "./StaticPageShell";
+import BlogListingPageContent from "@/features/content-listing/LegacyContentListing";
+import ReusableCachedSEOSubcategories from "@/features/content-listing/CachedSeoSubcategories";
+import StaticPageShell from "@/features/content-listing/ContentListingShell";
 import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis';
-import AISEOHeroSection from "@/app/ai-seo/AISEOHeroSection";
+import AISEOHeroSection from "@/features/content-listing/SeoListingHero";
 export const revalidate = 300;
 const SUBCATEGORIES_LIMIT = 2;
 const BLOGS_PAGE_LIMIT = 12;

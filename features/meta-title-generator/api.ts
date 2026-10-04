@@ -1,3 +1,4 @@
+import { readToolResponse } from "@/lib/ai-tools/client-response";
 import type { MetaTitleApiResponse, MetaTitleInput } from "./schema";
 
 export class GeneratorRequestError extends Error {
@@ -13,11 +14,11 @@ export class GeneratorRequestError extends Error {
 export async function generateMetaTitles(input: MetaTitleInput) {
   const response = await fetch("/api/ai-tools/meta-title", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(input),
   });
 
-  const payload = await response.json().catch(() => null);
+  const payload = await readToolResponse(response);
 
   if (!response.ok) {
     throw new GeneratorRequestError(

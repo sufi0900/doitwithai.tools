@@ -14,6 +14,8 @@ const ESSENTIAL_PATHS = [
   "/ai-learn-earn",
   "/free-ai-resources",
   "/blogs",
+  "/tools",
+  "/guides",
 ];
 
 const EXCLUDED_PATHS = [
@@ -134,6 +136,8 @@ async function fetchSiteResource(rawUrl: string, baseUrl: string) {
 
 function kindForPath(pathname: string) {
   if (pathname === "/") return "homepage";
+  if (pathname.startsWith("/tools/")) return "interactive-tool";
+  if (pathname.startsWith("/guides/")) return "tool-guide";
   if (pathname.startsWith("/ai-seo/")) {
     return pathname.endsWith("generator") ? "seo-tool" : "ai-seo-article";
   }

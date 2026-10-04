@@ -14,7 +14,10 @@
     "generate-manifest": "node scripts/generate-pages-manifest.js",
     "start": "next start",
     "lint": "next lint",
-    "ai:sync-knowledge": "node --import tsx scripts/sync-site-assistant-knowledge.ts"
+    "ai:sync-knowledge": "node --import tsx scripts/sync-site-assistant-knowledge.ts",
+    "test:foundation": "node --test tests/tool-catalog.test.cjs tests/tools-foundation.test.mjs",
+    "test:ai-tools": "node --import tsx --test tests/ai-tools/*.test.ts",
+    "test:routes": "node scripts/tools-route-smoke.cjs"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
@@ -24,6 +27,7 @@
     "@mui/icons-material": "^5.15.14",
     "@mui/material": "^5.15.14",
     "@next/env": "^16.3.2",
+    "@portabletext/react": "3.2.4",
     "@sanity/image-url": "^1.0.2",
     "@sanity/table": "^1.1.2",
     "@sanity/vision": "^3.36.2",
@@ -89,6 +93,7 @@
     "prettier-plugin-tailwindcss": "^0.5.6",
     "puppeteer": "^24.12.1",
     "tailwindcss": "^3.3.5",
+    "tsx": "^4.23.15",
     "typescript": "^5.2.2",
     "web-vitals": "^5.0.3",
     "webpack-bundle-analyzer": "^4.10.2"

@@ -1,0 +1,70 @@
+{
+  "projectId": "qyshio4a",
+  "dataset": "production",
+  "documents": {
+    "f0aad341-efe2-4000-b6b9-bdc3a50cf5e5": {
+      "ifRevisionId": "oqzxBK6qos5QDfacwzTmcn",
+      "patches": [
+        {
+          "set": {
+            "title": "How to Write Clear H1 Headings: Examples, AI Prompts, and Review Checks",
+            "overview": "Learn how to write descriptive H1 headings, compare them with title tags, and review AI-generated options using practical examples.",
+            "metatitle": "How to Write Clear H1 Headings: Examples and AI Prompts",
+            "metadesc": "Understand H1 headings, compare title tags and on-page headings, and use AI prompts to draft accurate options for human review.",
+            "relatedToolSlugs": [
+              "h1-heading-generator",
+              "meta-title-generator",
+              "meta-description-generator"
+            ],
+            "content[_key==\"337e734d075c\"].children[_key==\"fb3ecb5d2a0c2\"].text": ". A descriptive H1 helps readers identify the page topic and provides a clear main heading in the document structure.",
+            "content[_key==\"66006c762fe5\"].children[_key==\"4210ebbf52901\"].text": " - Supported structured data can describe page content and make eligible pages available for certain search features. It does not guarantee rich results or AI citations. ",
+            "content[_key==\"b16328c2f2ef\"].children[_key==\"744114af4e630\"].text": "Clearly describe the main topic of the page",
+            "content[_key==\"5678186752be\"].children[_key==\"1142184ea84d0\"].text": "Provides readers with a clear main heading and topic context.",
+            "content[_key==\"6561230fe1df\"].children[_key==\"750726056fc41\"].text": "clarity for readers navigating the page",
+            "content[_key==\"d6d90afb528b\"].children[_key==\"7ba65bbcd6461\"].text": "\nA descriptive H1 identifies the main topic. We cannot infer a universal AI processing order or citation benefit from its wording.",
+            "content[_key==\"f6b39085c520\"].children[_key==\"d23c35cacd100\"].text": "Unclear topic wording",
+            "content[_key==\"f6b39085c520\"].children[_key==\"d23c35cacd101\"].text": "\nA vague heading can leave readers uncertain about the page topic. Missing a keyword does not establish whether an AI system will cite the page.",
+            "content[_key==\"be71a91f7cfd\"].children[_key==\"8a909309e7590\"].text": "Similar headings across different pages",
+            "content[_key==\"be71a91f7cfd\"].children[_key==\"8a909309e7591\"].text": "\nWhen pages cover different topics, descriptive headings help readers distinguish them. This does not predict AI source selection.",
+            "content[_key==\"dc2b57d45d6c\"].children[_key==\"d228f9c1ae9b0\"].text": "Descriptive main heading",
+            "content[_key==\"dc2b57d45d6c\"].children[_key==\"d228f9c1ae9b1\"].text": "\nA clear heading makes the page topic explicit. AI citation outcomes depend on systems and context beyond the heading.",
+            "content[_key==\"62715012163a\"].children[_key==\"8c7d79dcc6c80\"].text": "Make the main topic easier for readers to identify",
+            "content[_key==\"17509f71d36b\"].children[_key==\"a21eb31a3cd60\"].text": "Titles, headings, body content, and supported structured data provide page context. Search and AI systems do not follow one publicly documented processing order.",
+            "content[_key==\"8407b07d9bad\"].children[_key==\"33c179077fa94\"].text": "visible main heading",
+            "content[_key==\"8407b07d9bad\"].children[_key==\"33c179077fa95\"].text": " that identifies the main topic for readers. Its placement and visual prominence depend on the page design.",
+            "content[_key==\"8c0ada6832bc\"].children[_key==\"2e19bde78b7f1\"].text": "\nUse semantic headings to organize the document. A single descriptive main heading is an editorial convention, not a universal AI parsing requirement.",
+            "content[_key==\"7eb4d487341b\"].children[_key==\"881bd185bfd40\"].text": "This guide offers practical strategies for writing descriptive H1 headings and reviewing AI-generated alternatives. Headings alone cannot guarantee rankings or conversions."
+          }
+        }
+      ]
+    },
+    "imported-seo-91b7626c6077": {
+      "ifRevisionId": "oqzxBK6qos5QDfacwzau1d",
+      "patches": [
+        {
+          "set": {
+            "title": "How to Write Meta Descriptions with AI: Examples and Review Checks",
+            "metatitle": "How to Write Meta Descriptions with AI: Examples and Checks",
+            "metadesc": "Draft accurate, page-specific meta descriptions with AI. Learn how snippets work and review wording, factual claims, and illustrative previews.",
+            "overview": "Learn to draft and review page-specific meta descriptions with practical examples, prompts, and an explanation of Google's snippet behavior.",
+            "relatedToolSlugs": [
+              "meta-description-generator",
+              "meta-title-generator",
+              "h1-heading-generator"
+            ],
+            "content[_key==\"14904b8e57f8\"].children[_key==\"2f1df607a0a9\"].text": "A useful description summarizes the specific page and helps readers understand its content. It is not a documented test of whether a page deserves an AI citation.",
+            "content[_key==\"a517877fc6ca\"].children[_key==\"7992b0d16dd6\"].text": "how a page is described to readers when that description appears in a snippet.",
+            "content[_key==\"670a11af0f21\"].children[_key==\"d30f166e4e6b\"].text": "2. AI Search: Useful Context Without Citation Guarantees",
+            "content[_key==\"9c93e7fc2768\"].children[_key==\"a13714126f6c\"].text": "AI Search: No Guaranteed Citation Bonus",
+            "content[_key==\"339b04dce010\"].children[_key==\"0bebd6b61ffb\"].text": "2. Mobile Preview: Put Useful Information Early",
+            "content[_key==\"a7382e016ce8\"].children[_key==\"fd048a7ae7e0\"].text": ". This is an optional editing exercise, not a Google character limit. Actual snippets vary by query and device width.",
+            "content[_key==\"27f8f6e455f4\"].children[_key==\"dc5c2f10a79b\"].text": ". Treat this as an optional drafting target. Google does not specify a fixed description character limit.",
+            "content[_key==\"381f1870cb7b\"].children[_key==\"bea34fd696cc\"].text": " convey useful page information. This is a review exercise, not a display or ranking guarantee.",
+            "tableOfContents[_key==\"toc39e9c51a85cd\"].subheadings[_key==\"subb77e17e3abf4\"].subheading": "2. AI Search: Useful Context Without Citation Guarantees",
+            "tableOfContents[_key==\"tocd9a501dbdbf7\"].subheadings[_key==\"sub309fd26b9775\"].subheading": "2. Mobile Preview: Put Useful Information Early"
+          }
+        }
+      ]
+    }
+  }
+}

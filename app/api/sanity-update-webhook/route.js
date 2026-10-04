@@ -1,6 +1,7 @@
 // app/api/sanity-update-webhook/route.js
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redisHelpers } from "@/app/lib/redis";
+import registry from "@/features/tool-catalog/registry.json";
 import crypto from "crypto";
 import { syncPublishedSanityDocument } from "@/features/site-assistant/server/sanity-sync";
 
@@ -130,6 +131,24 @@ export async function POST(req) {
     let revalidationPaths = [];
 
     switch (_type) {
+      case "guide":
+        redisCacheKey = null;
+        revalidationTags = ["guide"];
+        revalidationPaths = ["/guides", "/tools", "/sitemap.xml", ...registry.tools.filter((tool) => tool.status === "live").map((tool) => `/tools/${tool.slug}`)];
+        if (slug?.current) revalidationPaths.push(`/guides/${slug.current}`);
+        break;
+      case "blogPost":
+        redisCacheKey = slug?.current ? `article:blogPost:${slug.current}` : null;
+        revalidationTags = ["blogPost", "blogCategory"];
+        revalidationPaths = ["/blogs", "/blogs/category/[slug]", "/sitemap.xml"];
+        if (slug?.current) revalidationPaths.push(`/blogs/${slug.current}`);
+        break;
+      case "blogCategory":
+      case "blogTag":
+        redisCacheKey = null;
+        revalidationTags = ["blogPost", "blogCategory"];
+        revalidationPaths = ["/blogs", "/blogs/category/[slug]", "/sitemap.xml"];
+        break;
       case "aitool":
         redisCacheKey = `article:aitool:${slug.current}`;
         revalidationTags = ["aitool", slug.current];
@@ -185,6 +204,11 @@ export async function POST(req) {
     }
 
     // 7. Invalidate Redis Cache (for individual document page if applicable)
+    if (["seo", "aitool", "coding", "makemoney", "blogPost", "blogCategory", "blogTag"].includes(_type)) {
+      revalidationPaths.push("/", "/blogs", "/sitemap.xml");
+      try { await redisHelpers.del("blogList:all-blogs:main:v2"); }
+      catch (error) { console.error("Unable to invalidate the combined blog listing", error); }
+    }
     if (redisCacheKey) {
       try {
         await redisHelpers.del(redisCacheKey);
@@ -208,7 +232,8 @@ export async function POST(req) {
       });
 
       revalidationPaths.forEach((path) => {
-        revalidatePath(path);
+        if (path.includes("[")) revalidatePath(path, "page");
+        else revalidatePath(path);
         console.log(`[Webhook] Next.js cache revalidated for path: ${path}`);
       });
     } catch (nextjsRevalidateError) {

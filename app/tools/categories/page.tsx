@@ -1,0 +1,7 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { categories, categoryPath, tools } from "@/features/tool-catalog/catalog";
+export const metadata: Metadata = { title: "Tool Categories | Do It With AI Tools", description: "Browse practical SEO and content writing tools by the work you need to do.", alternates: { canonical: "https://doitwithai.tools/tools/categories" } };
+export default function CategoriesPage() {
+  return <main className="mx-auto max-w-7xl px-4 py-16 text-slate-900 dark:text-white"><Link href="/tools" className="text-primary dark:text-blue-200">← All tools</Link><h1 className="my-6 text-4xl font-bold">Browse by task</h1><p className="mb-10 text-slate-600 dark:text-slate-300">Choose the kind of work you want to improve. Browse current tools and categories planned for future tools.</p><div className="grid gap-6 md:grid-cols-2">{categories.map((category) => <article key={category.slug} className="rounded-2xl border border-slate-200 p-8 dark:border-slate-700"><h2 className="text-2xl font-bold"><Link href={categoryPath(category.slug)}>{category.name}</Link></h2><p className="my-4 leading-7 text-slate-600 dark:text-slate-300">{category.description}</p><Link href={categoryPath(category.slug)} className="font-semibold text-primary dark:text-blue-200">Explore {tools.filter((tool) => tool.categories.includes(category.slug)).length} tools →</Link></article>)}</div></main>;
+}

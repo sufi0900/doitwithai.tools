@@ -1,3 +1,4 @@
+import { readToolResponse } from "@/lib/ai-tools/client-response";
 import type { SlugApiResponse, SlugInput } from "./schema";
 
 export class SlugRequestError extends Error {
@@ -13,11 +14,11 @@ export class SlugRequestError extends Error {
 export async function generateSlugs(input: SlugInput) {
   const response = await fetch("/api/ai-tools/slug", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(input),
   });
 
-  const payload = await response.json().catch(() => null);
+  const payload = await readToolResponse(response);
 
   if (!response.ok) {
     throw new SlugRequestError(

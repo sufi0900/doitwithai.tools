@@ -1,5 +1,16 @@
 // next.config.js - Without next-pwa
 const nextConfig = {
+  async redirects() {
+    const { tools } = require('./features/tool-catalog/registry.json');
+    return [...tools.filter(tool => tool.status === 'live' && tool.legacyPath).map(tool => ({
+      source: tool.legacyPath,
+      destination: `/tools/${tool.slug}`,
+      permanent: true,
+    })),
+    { source: '/ai-seo-tools', destination: '/tools', permanent: true },
+    { source: '/tools/categories/seo', destination: '/tools/categories/ai-seo', permanent: true },
+    ];
+  },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },

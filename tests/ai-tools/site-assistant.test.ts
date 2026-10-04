@@ -97,6 +97,8 @@ test("maps Sanity article types to their public knowledge URL", () => {
     "https://doitwithai.tools/free-ai-resources",
   );
   assert.equal(knowledgeUrlForSanityDocument("privateType", "hidden"), "");
+  assert.equal(knowledgeUrlForSanityDocument("guide", "create-an-outline"), "https://doitwithai.tools/guides/create-an-outline");
+  assert.equal(knowledgeUrlForSanityDocument("blogPost", "example"), "https://doitwithai.tools/blogs/example");
 });
 
 test("returns deduplicated site sources used by the answer", () => {

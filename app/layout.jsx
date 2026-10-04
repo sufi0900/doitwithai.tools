@@ -162,6 +162,22 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+          rel="icon"
+          href="/favicon.ico?v=20260917"
+          type="image/x-icon"
+          sizes="any"
+        />
+        <link
+          rel="shortcut icon"
+          href="/favicon.ico?v=20260917"
+          type="image/x-icon"
+        />
+        <link
+          rel="apple-touch-icon"
+          href="/icons/apple-touch-icon.png?v=20260917"
+          sizes="180x180"
+        />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
 

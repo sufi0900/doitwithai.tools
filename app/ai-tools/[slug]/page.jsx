@@ -1,13 +1,13 @@
 // app/ai-tools/[slug]/page.jsx
 
 import { PageCacheProvider } from '@/React_Query_Caching/CacheProvider';
-import ArticleChildComp from "@/app/ai-code/[slug]/ArticleChildComp";
-import SeoAndSchemaWrapper from "@/app/ai-code/[slug]/SeoAndSchemaWrapper"; // NEW IMPORT
-import { getAllArticleSlugs } from "@/app/ai-code/[slug]/articleData";
+import ArticleChildComp from "@/features/articles/legacy/ArticleChildComp";
+import SeoAndSchemaWrapper from "@/features/articles/legacy/SeoAndSchemaWrapper";
+import { getAllArticleSlugs } from "@/features/articles/legacy/articleData";
 
 
-import ArticleMicrodata from "@/app/ai-code/[slug]/ArticleMicrodata"; // New microdata component
-import { getArticleData, generatePageMetadata } from "@/app/ai-code/[slug]/articleData"; // New utility functions
+import ArticleMicrodata from "@/features/articles/legacy/ArticleMicrodata";
+import { getArticleData, generatePageMetadata } from "@/features/articles/legacy/articleData";
 
 // --- Revalidation ---
 export const revalidate = 7200; // Revalidate every 1 hour

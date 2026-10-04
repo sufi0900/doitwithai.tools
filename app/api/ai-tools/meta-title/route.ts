@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { zodTextFormat } from "openai/helpers/zod";
-import { getMetaTitleModel, getOpenAIClient } from "@/lib/ai-tools/openai";
+import {
+  getGeminiClient,
+  getGeminiModel,
+  isGeminiConfigured,
+  geminiTextFormat,
+  geminiFailure,
+} from "@/lib/ai-tools/gemini";
 import { checkMetaTitleRateLimit } from "@/lib/ai-tools/rate-limit";
 import {
   metaTitleInputSchema,
@@ -58,6 +63,9 @@ export async function POST(request: NextRequest) {
   try {
     limit = await checkMetaTitleRateLimit(request);
   } catch (error) {
+    const failure = geminiFailure(error);
+    if (failure)
+      return errorResponse(failure.message, failure.status, failure.code);
     console.error("Meta title rate limiter failed", error);
     return errorResponse(
       "The generator is temporarily unavailable.",
@@ -103,7 +111,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!isGeminiConfigured(getGeminiModel("META_TITLE"))) {
     return errorResponse(
       "The generator has not been connected to its AI provider yet.",
       503,
@@ -111,11 +119,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const model = getMetaTitleModel();
+  const model = getGeminiModel("META_TITLE");
 
   const baseRequest = {
     model,
-    reasoning: { effort: "low" as const },
     // Five groups of five candidates (25 titles total) plus analysis and
     // editor notes need more headroom than the previous four-group shape.
     max_output_tokens: 6_500,
@@ -127,30 +134,13 @@ export async function POST(request: NextRequest) {
       },
     ],
     text: {
-      format: zodTextFormat(metaTitleOutputSchema, "meta_title_generation"),
+      format: geminiTextFormat(metaTitleOutputSchema, "meta_title_generation"),
     },
   };
 
   try {
-    let response;
-    try {
-      // Give the model a lightweight web search tool so it can ground
-      // phrasing decisions (natural keyword placement, existing title
-      // conventions for the topic) in real current pages instead of
-      // relying only on a rigid template. Not every configured model
-      // supports tool use alongside structured Responses output, so this
-      // falls back to a tool-free call if the combined request fails.
-      response = await getOpenAIClient().responses.parse({
-        ...baseRequest,
-        tools: [{ type: "web_search" }],
-      });
-    } catch (toolError) {
-      console.warn(
-        "Meta title generation with web search failed, retrying without it",
-        toolError,
-      );
-      response = await getOpenAIClient().responses.parse(baseRequest);
-    }
+    // Generate from the supplied brief without search grounding or automatic retries.
+    const response = await getGeminiClient().generate(baseRequest);
 
     if (!response.output_parsed) {
       throw new Error("No structured output was returned");
@@ -175,6 +165,9 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
+    const failure = geminiFailure(error);
+    if (failure)
+      return errorResponse(failure.message, failure.status, failure.code);
     console.error("Meta title generation failed", error);
     return errorResponse(
       "We could not complete this title analysis. Please refine the brief and try again.",

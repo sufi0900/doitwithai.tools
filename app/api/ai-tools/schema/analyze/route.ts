@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { zodTextFormat } from "openai/helpers/zod";
-import { getOpenAIClient, getSchemaAnalyzerModel } from "@/lib/ai-tools/openai";
+import {
+  getGeminiClient,
+  getGeminiModel,
+  isGeminiConfigured,
+  geminiTextFormat,
+  geminiFailure,
+} from "@/lib/ai-tools/gemini";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { getSchemaDefinition } from "@/features/schema-generator/config";
 import {
@@ -35,6 +40,9 @@ export async function POST(request: NextRequest) {
   try {
     limit = await checkAiToolRateLimit(request, "schema-analysis");
   } catch (error) {
+    const failure = geminiFailure(error);
+    if (failure)
+      return errorResponse(failure.message, failure.status, failure.code);
     console.error("Schema analyzer rate limiter failed", error);
     return errorResponse(
       "The analyzer is temporarily unavailable.",
@@ -82,7 +90,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!isGeminiConfigured(getGeminiModel("SCHEMA_ANALYZER"))) {
     return errorResponse(
       "The optional AI analyzer has not been connected yet. You can still complete the form and generate JSON-LD locally.",
       503,
@@ -134,12 +142,11 @@ export async function POST(request: NextRequest) {
     if (!match || Number(match[2]) > 24) return false;
     return repeaterFields.get(match[1])?.has(match[3]) || false;
   }
-  const model = getSchemaAnalyzerModel();
+  const model = getGeminiModel("SCHEMA_ANALYZER");
 
   try {
-    const response = await getOpenAIClient().responses.parse({
+    const response = await getGeminiClient().generate({
       model,
-      reasoning: { effort: "low" },
       max_output_tokens: 4_000,
       input: [
         { role: "system", content: SCHEMA_ANALYSIS_SYSTEM_PROMPT },
@@ -153,7 +160,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       text: {
-        format: zodTextFormat(
+        format: geminiTextFormat(
           schemaAnalysisOutputSchema,
           "schema_page_analysis",
         ),
@@ -201,6 +208,9 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
+    const failure = geminiFailure(error);
+    if (failure)
+      return errorResponse(failure.message, failure.status, failure.code);
     console.error("Schema page analysis failed", error);
     return errorResponse(
       "The optional analyzer could not map this page into safe field suggestions. You can still complete the form manually.",

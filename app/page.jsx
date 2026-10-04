@@ -745,11 +745,19 @@ function breadcrumbSchema() {
         additionalLinkTags={[
           {
             rel: 'icon',
-            href: '/favicon.ico'
+            href: '/favicon.ico?v=20260917',
+            type: 'image/x-icon',
+            sizes: 'any'
+          },
+          {
+            rel: 'shortcut icon',
+            href: '/favicon.ico?v=20260917',
+            type: 'image/x-icon'
           },
           {
             rel: 'apple-touch-icon',
-            href: '/apple-touch-icon.png'
+            href: '/icons/apple-touch-icon.png?v=20260917',
+            sizes: '180x180'
           }
         ]}
       />

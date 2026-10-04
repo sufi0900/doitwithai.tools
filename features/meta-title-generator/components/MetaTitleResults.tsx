@@ -89,6 +89,7 @@ export default function MetaTitleResults({ data, input, onRegenerate }: Props) {
 
   return (
     <div className="mt-14 space-y-14" id="generator-results" aria-live="polite">
+      <p className="text-sm text-slate-600 dark:text-slate-300">Scores are local editorial heuristics. They do not measure Google rankings, clicks, or AI citation probability. Pixel previews are estimates.</p>
       <section className="overflow-hidden rounded-[28px] border border-[#5271ff]/20 bg-gradient-to-br from-[#5271ff]/10 via-white to-cyan-50 p-5 dark:via-slate-900 dark:to-slate-900 sm:p-7 lg:p-9">
         <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-start">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#5271ff] text-white shadow-lg shadow-[#5271ff]/25">

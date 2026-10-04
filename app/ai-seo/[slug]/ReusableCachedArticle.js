@@ -2,7 +2,7 @@
 
 import { useCachedSanityData } from '@/components/Blog/useSanityCache';
 import { CACHE_KEYS } from '@/components/Blog/cacheKeys';
-import BlogLayout from "@/app/ai-tools/[slug]/BlogLayout";
+import BlogLayout from "@/features/articles/legacy/components/BlogLayout";
 import SlugSkeleton from '@/components/Blog/Skeleton/SlugSkeleton';
 import { usePageRefresh } from '@/components/Blog/PageScopedRefreshContext';
 import { useEffect } from 'react';

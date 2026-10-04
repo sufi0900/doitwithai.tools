@@ -10,6 +10,8 @@ const TYPE_PREFIX: Record<string, string> = {
   aitool: "ai-tools",
   coding: "ai-code",
   makemoney: "ai-learn-earn",
+  guide: "guides",
+  blogPost: "blogs",
   news: "ai-news",
 };
 

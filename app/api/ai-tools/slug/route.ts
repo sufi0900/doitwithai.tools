@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { zodTextFormat } from "openai/helpers/zod";
-import { getOpenAIClient, getSlugGeneratorModel } from "@/lib/ai-tools/openai";
+import {
+  getGeminiClient,
+  getGeminiModel,
+  isGeminiConfigured,
+  geminiTextFormat,
+  geminiFailure,
+} from "@/lib/ai-tools/gemini";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { canonicalizeSlug } from "@/features/slug-generator/evaluator";
 import {
@@ -77,6 +82,9 @@ export async function POST(request: NextRequest) {
   try {
     limit = await checkAiToolRateLimit(request, "slug");
   } catch (error) {
+    const failure = geminiFailure(error);
+    if (failure)
+      return errorResponse(failure.message, failure.status, failure.code);
     console.error("Slug generator rate limiter failed", error);
     return errorResponse(
       "The generator is temporarily unavailable.",
@@ -122,7 +130,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!isGeminiConfigured(getGeminiModel("SLUG_GENERATOR"))) {
     return errorResponse(
       "The generator has not been connected to its AI provider yet.",
       503,
@@ -130,19 +138,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const model = getSlugGeneratorModel();
+  const model = getGeminiModel("SLUG_GENERATOR");
 
   try {
-    const response = await getOpenAIClient().responses.parse({
+    const response = await getGeminiClient().generate({
       model,
-      reasoning: { effort: "low" },
       max_output_tokens: 3_500,
       input: [
         { role: "system", content: SLUG_SYSTEM_PROMPT },
         { role: "user", content: buildSlugUserPrompt(inputResult.data) },
       ],
       text: {
-        format: zodTextFormat(slugOutputSchema, "seo_slug_generation"),
+        format: geminiTextFormat(slugOutputSchema, "seo_slug_generation"),
       },
     });
 
@@ -169,6 +176,9 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
+    const failure = geminiFailure(error);
+    if (failure)
+      return errorResponse(failure.message, failure.status, failure.code);
     console.error("Slug generation failed", error);
     return errorResponse(
       "We could not complete this slug analysis. Please refine the brief and try again.",

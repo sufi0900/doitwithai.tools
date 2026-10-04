@@ -3,12 +3,12 @@ import test from "node:test";
 import {
   evaluateTitle,
   titleSimilarity,
-} from "../../features/meta-title-generator/evaluator";
+} from "../../../features/meta-title-generator/evaluator";
 import {
   metaTitleInputSchema,
   metaTitleOutputSchema,
   type MetaTitleInput,
-} from "../../features/meta-title-generator/schema";
+} from "../../../features/meta-title-generator/schema";
 
 const input: MetaTitleInput = metaTitleInputSchema.parse({
   topicSummary:
