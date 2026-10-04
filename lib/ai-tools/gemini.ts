@@ -97,6 +97,8 @@ async function generate<T>(
       },
     );
     if (!response.ok) {
+      if (response.status === 400)
+        throw new GeminiError(502, "PROVIDER_BAD_REQUEST");
       if (response.status === 429)
         throw new GeminiError(429, "PROVIDER_RATE_LIMITED");
       if (response.status === 401 || response.status === 403)
@@ -119,7 +121,31 @@ async function generate<T>(
       .map((part) => part.text || "")
       .join("");
     if (!text) throw new GeminiError(502, "EMPTY_OUTPUT");
-    return { output_parsed: params.text.format.parse(JSON.parse(text)) };
+    try {
+      return { output_parsed: params.text.format.parse(JSON.parse(text)) };
+    } catch {
+      throw new GeminiError(502, "MODEL_OUTPUT_INVALID");
+    }
+  } catch (cause) {
+    const failure =
+      cause instanceof GeminiError
+        ? cause
+        : new GeminiError(
+            controller.signal.aborted ? 504 : 502,
+            controller.signal.aborted
+              ? "PROVIDER_TIMEOUT"
+              : "PROVIDER_CONNECTION_FAILED",
+          );
+    // Record only safe failure categories, never keys, prompts, or generated content.
+    process.stderr.write(
+      JSON.stringify({
+        event: "ai_provider_failure",
+        code: failure.code,
+        status: failure.status,
+        model: params.model,
+      }) + "\n",
+    );
+    throw failure;
   } finally {
     clearTimeout(timer);
   }
@@ -132,6 +158,20 @@ export function getGeminiClient() {
 export function geminiFailure(error: unknown) {
   if (!(error instanceof GeminiError)) return null;
   const messages: Record<string, string> = {
+    PROVIDER_BAD_REQUEST:
+      "Gemini rejected this tool's generation settings. The site owner needs to review the model and output schema.",
+    MODEL_OUTPUT_INVALID:
+      "The AI returned a draft that failed this tool's checks. Try a smaller or more focused request.",
+    PROVIDER_TIMEOUT:
+      "The AI request timed out. Your previous draft is preserved. Try a smaller request.",
+    PROVIDER_CONNECTION_FAILED:
+      "The AI provider could not be reached. Your previous draft is preserved. Please try again later.",
+    INCOMPLETE_OUTPUT:
+      "The AI response was incomplete or blocked. Try a smaller request or review the supplied material.",
+    EMPTY_OUTPUT:
+      "The AI returned no draft. Please try a more focused request.",
+    PROVIDER_FAILED:
+      "The AI provider could not complete the request. Please try again later.",
     PROVIDER_RATE_LIMITED:
       "Gemini's current quota is exhausted. Try again later or review your Google AI Studio limits.",
     PROVIDER_AUTH_FAILED:

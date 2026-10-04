@@ -169,6 +169,16 @@ test("both API handlers validate requests, use bounded structured output and sur
   try {
     client.generate = (async (params: any, options: any) => {
       assert.equal(params.model, "test-model");
+      const h1 = params.input[0].content.includes("H1 headings");
+      const fields =
+        params.text.format.schema.properties.candidates.items.properties;
+      assert.deepEqual(
+        fields.approach.enum,
+        h1
+          ? ["Topic first", "Task first", "Audience first"]
+          : ["Clear summary", "Reader benefit", "Next step"],
+      );
+      assert.equal(fields.text.maxLength, h1 ? 140 : 320);
       assert.equal(params.store, false);
       assert.equal(params.max_output_tokens, 2500);
       assert.equal(options.maxRetries, 0);

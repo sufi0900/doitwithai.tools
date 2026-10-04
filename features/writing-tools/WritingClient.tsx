@@ -1,4 +1,5 @@
 "use client";
+import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
@@ -38,11 +39,14 @@ export default function WritingClient({ kind }: { kind: WritingKind }) {
     try {
       const response = await fetch(`/api/ai-tools/${kind}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify(input),
         signal: controller.signal,
       });
-      const data = await response.json();
+      const data = await readToolResponse(response);
       if (!response.ok)
         throw new Error(data.error?.message || "Generation is unavailable.");
       const output = validateWritingOutput(data.result, kind);

@@ -1,4 +1,5 @@
 "use client";
+import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -212,11 +213,14 @@ export default function TopicalMapClient() {
     try {
       const response = await fetch("/api/ai-tools/topical-map", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify(input.data),
         signal: controller.signal,
       });
-      const payload = await response.json();
+      const payload = await readToolResponse(response);
       if (!response.ok)
         throw Error(payload.error?.message || "Could not generate the map.");
       const result = validateOutput(payload.result, input.data);
@@ -243,6 +247,7 @@ export default function TopicalMapClient() {
         });
       }, 100);
     } catch (e) {
+      setStatus("");
       setError(
         e instanceof Error && e.name !== "AbortError"
           ? e.message

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getGeminiClient,
@@ -74,6 +75,24 @@ export function writingHandler(kind: WritingKind) {
         { "Retry-After": String(limit.retryAfterSeconds) },
       );
     try {
+      const labels =
+        kind === "h1-heading"
+          ? (["Topic first", "Task first", "Audience first"] as const)
+          : (["Clear summary", "Reader benefit", "Next step"] as const);
+      const providerOutput = writingOutputSchema.extend({
+        candidates: z
+          .array(
+            writingOutputSchema.shape.candidates.element.extend({
+              approach: z.enum(labels),
+              text: z
+                .string()
+                .trim()
+                .min(10)
+                .max(kind === "h1-heading" ? 140 : 320),
+            }),
+          )
+          .length(6),
+      });
       const prompt = writingPrompt(kind, input.data);
       const response = await getGeminiClient().generate(
         {
@@ -85,7 +104,7 @@ export function writingHandler(kind: WritingKind) {
             { role: "user", content: prompt.user },
           ],
           text: {
-            format: geminiTextFormat(writingOutputSchema, "website_copy"),
+            format: geminiTextFormat(providerOutput, "website_copy"),
           },
         },
         { timeout: 30_000, maxRetries: 0 },

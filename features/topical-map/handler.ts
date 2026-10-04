@@ -6,8 +6,9 @@ import {
   getGeminiModel,
   isGeminiConfigured,
   geminiFailure,
+  geminiTextFormat,
 } from "@/lib/ai-tools/gemini";
-import { inputSchema, providerSchema, prompt, validateOutput } from "./schema";
+import { inputSchema, outputSchema, prompt, validateOutput } from "./schema";
 const error = (
   message: string,
   status: number,
@@ -72,15 +73,12 @@ export async function POST(request: NextRequest) {
           { role: "user", content: p.user },
         ],
         text: {
-          format: {
-            schema: providerSchema,
-            parse: (value: unknown) => validateOutput(value, input.data),
-          },
+          format: geminiTextFormat(outputSchema, "topical_map"),
         },
       },
       { timeout: 45_000, maxRetries: 0 },
     );
-    const result = response.output_parsed;
+    const result = validateOutput(response.output_parsed, input.data);
     return NextResponse.json(
       {
         result,

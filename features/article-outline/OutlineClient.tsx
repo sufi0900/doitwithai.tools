@@ -1,4 +1,5 @@
 "use client";
+import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import {
   ArrowDown,
@@ -197,14 +198,17 @@ export default function OutlineClient() {
       try {
         response = await fetch("/api/ai-tools/article-outline", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
           body: JSON.stringify(input.data),
           signal: controller.signal,
         });
       } finally {
         clearTimeout(timeout);
       }
-      const body = await response.json();
+      const body = await readToolResponse(response);
       if (!response.ok)
         throw Error(
           body.error?.message || "Generation failed. Try again later.",

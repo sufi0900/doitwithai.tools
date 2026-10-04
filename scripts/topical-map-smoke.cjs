@@ -58,6 +58,14 @@ module.exports = async function (page, origin, screenshotDir) {
     ) {
       calls++;
       lastInput = JSON.parse(request.postData());
+      if (fail === "html") {
+        await request.respond({
+          status: 502,
+          contentType: "text/html",
+          body: "<!DOCTYPE html><html>Bad gateway</html>",
+        });
+        return;
+      }
       await request.respond({
         status: fail ? 503 : 200,
         contentType: "application/json",
@@ -209,6 +217,30 @@ module.exports = async function (page, origin, screenshotDir) {
     await click("Copy full map");
     assert.equal(await page.evaluate(() => window.__topicalClipboard), copied);
     assert.equal(calls, 2);
+    fail = "html";
+    await click("Generate a new map");
+    await page.waitForFunction(() =>
+      document.body.innerText.includes("HTTP 502"),
+    );
+    assert.equal(
+      await page.$$eval("[data-topic-id]", (nodes) => nodes.length),
+      5,
+    );
+    assert.equal(
+      await page.evaluate(() =>
+        document.body.innerText.includes("Unexpected token"),
+      ),
+      false,
+    );
+    assert.equal(
+      await page.evaluate(() =>
+        document.body.innerText.includes(
+          "Creating topic suggestions. Your current map remains available.",
+        ),
+      ),
+      false,
+    );
+
     assert.equal(
       await page.$$eval(
         "#topical-results a",

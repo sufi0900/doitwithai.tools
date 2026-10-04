@@ -1,4 +1,5 @@
 "use client";
+import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Copy, Download, Network, Sparkles, Undo2, Upload } from "lucide-react";
@@ -267,11 +268,14 @@ export default function KeywordClusteringClient() {
     try {
       const response = await fetch("/api/ai-tools/keyword-clustering", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify(input.data),
         signal: controller.signal,
       });
-      const data = await response.json();
+      const data = await readToolResponse(response);
       if (!response.ok)
         throw Error(data.error?.message || "Could not generate groups.");
       const valid = validateClusterOutput(data.result, input.data.keywords);
@@ -301,6 +305,7 @@ export default function KeywordClusteringClient() {
         });
       }, 100);
     } catch (e) {
+      setStatus("");
       setError(
         e instanceof Error && e.name !== "AbortError"
           ? e.message

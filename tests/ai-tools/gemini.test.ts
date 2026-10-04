@@ -140,7 +140,7 @@ test("Gemini quota, authentication, and unavailable models return safe errors wi
     oldKey = process.env.GEMINI_API_KEY;
   process.env.GEMINI_API_KEY = "test-key";
   try {
-    for (const status of [429, 403, 404]) {
+    for (const status of [400, 429, 403, 404]) {
       let calls = 0;
       globalThis.fetch = (async () => {
         calls++;
@@ -162,7 +162,7 @@ test("Gemini quota, authentication, and unavailable models return safe errors wi
       )) as typeof fetch;
     await assert.rejects(
       getGeminiClient().generate(params, { timeout: 5 }),
-      /Aborted/,
+      /PROVIDER_TIMEOUT/,
     );
   } finally {
     globalThis.fetch = oldFetch;

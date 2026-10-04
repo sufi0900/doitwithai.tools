@@ -1,4 +1,5 @@
 "use client";
+import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useMemo, useRef, useState } from "react";
 import {
   Copy,
@@ -87,14 +88,17 @@ export default function ReadabilityClient() {
       try {
         response = await fetch("/api/ai-tools/readability", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
           body: JSON.stringify(input.data),
           signal: controller.signal,
         });
       } finally {
         clearTimeout(timer);
       }
-      const body = await response.json();
+      const body = await readToolResponse(response);
       if (!response.ok)
         throw Error(
           body.error?.message || "Revisions are unavailable. Try again later.",

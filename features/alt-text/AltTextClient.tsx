@@ -1,4 +1,5 @@
 "use client";
+import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import {
   Check,
@@ -166,11 +167,14 @@ export default function AltTextClient() {
     try {
       const response = await fetch("/api/ai-tools/alt-text", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify(input.data),
         signal: controller.signal,
       });
-      const body = await response.json();
+      const body = await readToolResponse(response);
       if (!response.ok)
         throw Error(
           body.error?.message ||
