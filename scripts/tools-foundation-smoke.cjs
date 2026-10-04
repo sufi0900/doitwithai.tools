@@ -24,7 +24,7 @@ async function run() {
         'section[aria-label="Tool finder"] article',
         (nodes) => nodes.length,
       ),
-      8,
+      9,
     );
     assert.equal(
       await page.$eval('link[rel="canonical"]', (node) => node.href),
@@ -62,7 +62,7 @@ async function run() {
     await page.waitForFunction(
       () =>
         document.querySelectorAll('section[aria-label="Tool finder"] article')
-          .length === 7,
+          .length === 8,
     );
     await page.type("#tool-search", "zzzyyy");
     await page.waitForSelector('section[aria-label="Tool finder"] button');
@@ -70,7 +70,7 @@ async function run() {
     await page.waitForFunction(
       () =>
         document.querySelectorAll('section[aria-label="Tool finder"] article')
-          .length === 8,
+          .length === 9,
     );
     await page.select("#tool-sort", "recent");
     await page.waitForFunction(() =>
@@ -111,6 +111,11 @@ async function run() {
     assert.match(
       await page.$eval('meta[name="robots"]', (node) => node.content),
       /noindex/,
+    );
+    await require("./keyword-clustering-smoke.cjs")(
+      page,
+      origin,
+      process.env.SMOKE_SCREENSHOT_DIR,
     );
     await require("./alt-text-smoke.cjs")(
       page,
@@ -789,6 +794,7 @@ async function run() {
       "article-outline-generator",
       "readability-checker",
       "image-alt-text-generator",
+      "keyword-clustering-tool",
     ])
       assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes("/ai-seo-tools"));

@@ -159,7 +159,8 @@
         "h1-heading-generator",
         "meta-title-generator",
         "meta-description-generator",
-        "image-alt-text-generator"
+        "image-alt-text-generator",
+        "keyword-clustering-tool"
       ]
     },
     {
@@ -207,6 +208,29 @@
         "readability-checker",
         "article-outline-generator",
         "meta-description-generator"
+      ]
+    },
+    {
+      "id": "keyword-clustering-tool",
+      "slug": "keyword-clustering-tool",
+      "name": "Keyword Clustering Tool",
+      "description": "Group supplied keywords by reader task or topic, refine memberships, and export an editable content plan.",
+      "categories": ["ai-seo", "content-writing"],
+      "tags": ["keywords", "clustering", "content planning"],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-04",
+      "featuredOrder": 9,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research prompts and planning resources"
+        }
+      ],
+      "relatedToolSlugs": [
+        "article-outline-generator",
+        "h1-heading-generator",
+        "meta-title-generator"
       ]
     }
   ]

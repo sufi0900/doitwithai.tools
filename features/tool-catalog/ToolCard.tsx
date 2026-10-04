@@ -7,6 +7,7 @@ import {
   Heading1,
   Link2,
   ListTree,
+  Network,
   ScanText,
   ScanEye,
   Sparkles,
@@ -27,6 +28,7 @@ const icons = {
   "article-outline-generator": ListTree,
   "readability-checker": ScanText,
   "image-alt-text-generator": ScanEye,
+  "keyword-clustering-tool": Network,
 };
 export default function ToolCard({
   tool,
