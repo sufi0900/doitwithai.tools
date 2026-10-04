@@ -6,6 +6,7 @@ import {
   words,
   sentenceParts,
   preservationChecks,
+  flowObservations,
 } from "../../features/readability/analyzer";
 import {
   readabilityInputSchema,
@@ -107,9 +108,69 @@ test("literal preservation flags changed numbers, terms and cautions without cla
     [],
   );
 });
+test("flow review detects choppy prose without treating lists and paragraph breaks as uniform runs", () => {
+  const choppy =
+    "Find the question. Collect useful examples. Review the draft. Check every claim.";
+  assert.equal(flowObservations(choppy).shortRun, true);
+  assert.equal(flowObservations(choppy).similarRun, true);
+  assert.equal(
+    flowObservations(choppy.replaceAll(". ", ".\n\n")).shortRun,
+    false,
+  );
+  assert.equal(
+    flowObservations(choppy.replaceAll(". ", ".\n\n")).singleSentenceRun,
+    true,
+  );
+  const varied =
+    "Start here. Gather examples that directly answer the reader's main question. Because the draft may lose context, a human editor should check each claim carefully before publishing the finished article. Keep the caveat.";
+  const flow = flowObservations(varied);
+  assert.equal(flow.shortRun, false);
+  assert.equal(flow.similarRun, false);
+  assert.ok(flow.bands.slice(0, 3).every((band) => band.count > 0));
+  const list =
+    "Prepare the draft:\n- Find the question\n- Collect useful examples\n- Review the draft\n- Check every claim";
+  assert.deepEqual(flowObservations(list).lengths, []);
+  assert.equal(flowObservations(list).shortRun, false);
+  assert.deepEqual(flowObservations(list.replaceAll("- ", "1. ")).lengths, []);
+  assert.equal(
+    flowObservations(
+      "First group:\n\nNext group:\n\nThird group:\n\nFinal group:",
+    ).singleSentenceRun,
+    false,
+  );
+  assert.equal(
+    flowObservations(
+      "Check these points: keep context. Remember this rule: retain caveats.",
+    ).inlineColonParagraphs,
+    1,
+  );
+  assert.equal(
+    flowObservations("Visit https://example.com for details. Keep the URL.")
+      .inlineColonParagraphs,
+    0,
+  );
+  assert.equal(
+    flowObservations("A short sentence. ".repeat(5)).denseParagraphs,
+    1,
+  );
+  for (const part of sentenceParts(list))
+    assert.equal(list.slice(part.start, part.end), part.text);
+  assert.equal(sentenceParts(list).length, 5);
+});
 test("revision contract bounds inputs and requires three distinct editing directions", () => {
   const input = readabilityInputSchema.parse({ text });
   assert.equal(input.tone, "clear");
+  assert.equal(input.splitParagraphs, true);
+  assert.equal(
+    readabilityInputSchema.parse({ text, splitParagraphs: false })
+      .splitParagraphs,
+    false,
+  );
+  assert.equal(
+    readabilityInputSchema.safeParse({ text, splitParagraphs: "false" })
+      .success,
+    false,
+  );
   assert.ok(!readabilityInputSchema.safeParse({ text: "short" }).success);
   assert.ok(
     !readabilityInputSchema.safeParse({ text: "x".repeat(4501) }).success,

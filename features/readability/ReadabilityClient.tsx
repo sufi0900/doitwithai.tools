@@ -10,6 +10,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { analyzeReadability, preservationChecks } from "./analyzer";
+import FlowReview from "./FlowReview";
 import {
   readabilityInputSchema,
   validateReadability,
@@ -28,6 +29,7 @@ export default function ReadabilityClient() {
   const [threshold, setThreshold] = useState(25);
   const [audience, setAudience] = useState("");
   const [terms, setTerms] = useState("");
+  const [splitParagraphs, setSplitParagraphs] = useState(true);
   const [tone, setTone] = useState<"clear" | "professional" | "friendly">(
     "clear",
   );
@@ -75,6 +77,7 @@ export default function ReadabilityClient() {
       audience,
       terms,
       tone,
+      splitParagraphs,
     });
     if (!input.success) {
       setError("Add 40–4500 characters of text before requesting revisions.");
@@ -407,6 +410,24 @@ export default function ReadabilityClient() {
             </select>
           </label>
         </div>
+        <label className="mt-5 flex items-start gap-3 rounded-xl bg-slate-50 p-4 text-sm dark:bg-slate-950">
+          <input
+            type="checkbox"
+            name="splitParagraphs"
+            checked={splitParagraphs}
+            onChange={(e) => setSplitParagraphs(e.target.checked)}
+            className="mt-1 h-4 w-4 accent-[#5271ff]"
+          />
+          <span>
+            <strong className="block">
+              Split dense paragraphs where the idea changes
+            </strong>
+            <span className="mt-1 block text-xs leading-6 text-slate-500 dark:text-slate-400">
+              Group related sentences and vary paragraph size naturally. Turn
+              this off to request the existing paragraph boundaries.
+            </span>
+          </span>
+        </label>
         <button
           type="button"
           data-readability-generate
@@ -506,6 +527,11 @@ export default function ReadabilityClient() {
                   after.longSentences.length,
                 ],
                 ["Average words", before.average, after.average],
+                [
+                  "Paragraph blocks",
+                  before.paragraphs.length,
+                  after.paragraphs.length,
+                ],
               ].map(([label, a, b]) => (
                 <span
                   key={label}
@@ -519,6 +545,28 @@ export default function ReadabilityClient() {
               Lower counts do not prove a better revision. Check accuracy, tone,
               and whether important detail remains.
             </p>
+            <section
+              className="mt-5 scroll-mt-28"
+              aria-label="Sentence flow and paragraph review"
+            >
+              <h3 className="text-lg font-bold">
+                Sentence flow and paragraph breaks
+              </h3>
+              <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+                Length bands and review cues are editing preferences, not a
+                quality score. Greater variation does not automatically mean
+                clearer writing.
+              </p>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <FlowReview text={source} label="Submitted original flow" />
+                <FlowReview text={revision} label="Current revision flow" />
+              </div>
+              <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
+                Review transitions, conditions, key verbs, and emphasis. A
+                shorter passage can still lose meaning or disconnect related
+                ideas.
+              </p>
+            </section>
             <details className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
               <summary className="cursor-pointer text-sm font-bold">
                 Original AI change notes and human review

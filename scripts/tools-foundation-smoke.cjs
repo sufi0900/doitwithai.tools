@@ -132,9 +132,9 @@ async function run() {
     let readabilityCalls = 0,
       readabilityFail = false;
     const readabilityTexts = [
-      "Start with the reader's main question. Gather examples before drafting each section. The draft may need 2 review passes. AI does not guarantee rankings.",
-      "Identify the main question first. Gather useful examples. The draft may require 2 review passes. AI does not guarantee rankings.",
-      "Before drafting:\n- Identify the reader's main question.\n- Gather examples.\n\nThe draft may need 2 review passes. AI does not guarantee rankings.",
+      "To prepare a useful article for new readers, identify their main question and gather relevant examples before drafting each section.\n\nThe draft may require 2 review passes. Because AI can miss important context, a human editor should check every claim. AI does not guarantee rankings.",
+      "Start with the reader's main question, then gather relevant examples before writing each section for people who are new to the subject.\n\nThe draft may need 2 review passes. Because AI can miss important context, a human editor should check every claim. AI does not guarantee rankings.",
+      "Identify the main question for readers who are new to the subject. Then gather relevant examples before drafting each section.\n\nThe draft may require 2 review passes. Because AI can miss important context, a human editor should check every claim.\n\nAI does not guarantee rankings.",
     ];
     await page.setRequestInterception(true);
     const readabilityIntercept = (request) => {
@@ -142,6 +142,7 @@ async function run() {
         readabilityCalls++;
         const body = JSON.parse(request.postData());
         assert.ok(body.text.length >= 40);
+        assert.equal(body.splitParagraphs, readabilityCalls === 1);
         return request.respond({
           status: readabilityFail ? 503 : 200,
           contentType: "application/json",
@@ -212,12 +213,74 @@ async function run() {
     await page.waitForSelector('[aria-label="Editable readability revision"]');
     assert.equal(readabilityCalls, 1);
     assert.equal(
+      await page.$eval('[name="splitParagraphs"]', (n) => n.checked),
+      true,
+    );
+    assert.equal(
+      await page.$$eval("[data-readability-flow]", (nodes) => nodes.length),
+      2,
+    );
+    await page.$$eval("[data-readability-option]", (nodes) => nodes[1].click());
+    assert.ok(
+      await page.$eval('[aria-label="Editable readability revision"]', (n) =>
+        n.value.includes("\n\n"),
+      ),
+    );
+    assert.ok(
+      await page.$eval(
+        '[aria-label="Sentence flow and paragraph review"]',
+        (n) => n.textContent.includes("editing preferences"),
+      ),
+    );
+    if (process.env.SMOKE_SCREENSHOT_DIR) {
+      await page.$eval('[aria-label="Readability revisions"]', (n) =>
+        n.scrollIntoView({ block: "start" }),
+      );
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/readability-plain-language.png`,
+      });
+      await page.$eval(
+        '[aria-label="Sentence flow and paragraph review"]',
+        (n) => n.scrollIntoView({ block: "start" }),
+      );
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/readability-flow-review.png`,
+      });
+      await page.setViewport({ width: 390, height: 844 });
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        ),
+        false,
+      );
+      await page.screenshot({
+        path: `${process.env.SMOKE_SCREENSHOT_DIR}/readability-flow-mobile.png`,
+      });
+      await page.setViewport({ width: 1440, height: 1000 });
+    }
+    await page.$$eval("[data-readability-option]", (nodes) => nodes[0].click());
+    assert.equal(
       await page.$$eval("[data-readability-option]", (nodes) => nodes.length),
       3,
     );
     assert.equal(
       await page.$eval("[data-readability-original]", (n) => n.textContent),
       readabilityOriginal,
+    );
+    await page.$eval('[aria-label="Editable readability revision"]', (n) => {
+      n.focus();
+      n.select();
+    });
+    await page.type(
+      '[aria-label="Editable readability revision"]',
+      "Find the question. Collect useful examples. Review the draft. Check every claim.",
+    );
+    await page.waitForFunction(() =>
+      [...document.querySelectorAll("[data-readability-flow]")]
+        .at(-1)
+        .textContent.includes(
+          "Four consecutive prose segments have eight words or fewer",
+        ),
     );
     await page.$eval('[aria-label="Editable readability revision"]', (n) => {
       n.focus();
@@ -302,6 +365,11 @@ async function run() {
       await page.screenshot({
         path: `${process.env.SMOKE_SCREENSHOT_DIR}/readability-dark.png`,
       });
+    await page.click('[name="splitParagraphs"]');
+    assert.equal(
+      await page.$eval('[name="splitParagraphs"]', (n) => n.checked),
+      false,
+    );
     readabilityFail = true;
     await page.click("[data-readability-generate]");
     await page.waitForFunction(() =>

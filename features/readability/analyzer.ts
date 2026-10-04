@@ -16,15 +16,17 @@ export function sentenceParts(
   text: string,
 ): Array<{ text: string; start: number; end: number }> {
   const Segmenter = (Intl as any).Segmenter;
-  if (Segmenter)
-    return Array.from(
-      new Segmenter("en", { granularity: "sentence" }).segment(text),
-      (p: any) => ({
+  if (Segmenter) {
+    const segmenter = new Segmenter("en", { granularity: "sentence" });
+    // Respect explicit line breaks, including lists, without changing source offsets.
+    return Array.from(text.matchAll(/[^\r\n]+(?:\r?\n|$)/g)).flatMap((line) =>
+      Array.from(segmenter.segment(line[0]), (p: any) => ({
         text: p.segment,
-        start: p.index,
-        end: p.index + p.segment.length,
-      }),
-    ).filter((p) => words(p.text).length);
+        start: line.index! + p.index,
+        end: line.index! + p.index + p.segment.length,
+      })).filter((p) => words(p.text).length),
+    );
+  }
   const parts = [];
   const pattern = /[^.!?\n]+(?:[.!?]+["')]*|\n|$)/g;
   let match;
@@ -46,7 +48,11 @@ export function analyzeReadability(text: string, threshold = 25) {
   const paragraphs = text
     .split(/\n\s*\n/)
     .filter((p) => p.trim())
-    .map((p) => ({ text: p, words: words(p).length }));
+    .map((p) => ({
+      text: p,
+      words: words(p).length,
+      sentences: sentenceParts(p).length,
+    }));
   const phrases = phraseSuggestions.flatMap(([phrase, suggestion]) => {
     const count = (
       text.toLowerCase().match(new RegExp(`\\b${phrase}\\b`, "g")) || []
@@ -79,6 +85,64 @@ export function analyzeReadability(text: string, threshold = 25) {
     longParagraphs: paragraphs.filter((p) => p.words > 100),
     phrases,
     repeated,
+  };
+}
+const listLine = /^\s*(?:[-*•]|\d+[.)])\s+/;
+export function flowObservations(text: string) {
+  const analysis = analyzeReadability(text);
+  // Lists and labels have a different rhythm from continuous prose.
+  const prose = analysis.sentences.filter((s) => {
+    const lineStart = text.lastIndexOf("\n", Math.max(0, s.start - 1)) + 1;
+    const nextBreak = text.indexOf("\n", s.start);
+    const line = text.slice(lineStart, nextBreak < 0 ? text.length : nextBreak);
+    return !listLine.test(line) && !/:\s*$/.test(s.text) && !/^\s*#/.test(line);
+  });
+  const lengths = prose.map((s) => s.count);
+  const windows = prose.flatMap((s, i) => {
+    const run = prose.slice(i, i + 4);
+    if (run.length < 4) return [];
+    const span = text.slice(s.start, run[3].end);
+    if (
+      /\n\s*\n/.test(span) ||
+      span.split(/\r?\n/).some((line) => listLine.test(line))
+    )
+      return [];
+    const counts = run.map((part) => part.count);
+    return [{ min: Math.min(...counts), max: Math.max(...counts) }];
+  });
+  const proseParagraphs = analysis.paragraphs.filter(
+    (p) =>
+      !p.text.split(/\r?\n/).some((line) => listLine.test(line)) &&
+      !/:\s*$/.test(p.text) &&
+      !/^\s*#/.test(p.text),
+  );
+  return {
+    lengths,
+    minimum: lengths.length ? Math.min(...lengths) : 0,
+    maximum: lengths.length ? Math.max(...lengths) : 0,
+    bands: [
+      { label: "1–8 words", count: lengths.filter((n) => n <= 8).length },
+      {
+        label: "9–16 words",
+        count: lengths.filter((n) => n >= 9 && n <= 16).length,
+      },
+      {
+        label: "17–25 words",
+        count: lengths.filter((n) => n >= 17 && n <= 25).length,
+      },
+      { label: "Over 25", count: lengths.filter((n) => n > 25).length },
+    ],
+    shortRun: windows.some((run) => run.max <= 8),
+    similarRun: windows.some((run) => run.max - run.min <= 3),
+    denseParagraphs: proseParagraphs.filter(
+      (p) => p.words > 100 || p.sentences > 4,
+    ).length,
+    singleSentenceRun:
+      proseParagraphs.length >= 4 &&
+      proseParagraphs.every((p) => p.sentences === 1),
+    inlineColonParagraphs: proseParagraphs.filter(
+      (p) => (p.text.match(/:(?=\s+\S)/g) || []).length >= 2,
+    ).length,
   };
 }
 export function preservationChecks(

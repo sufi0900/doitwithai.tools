@@ -5,7 +5,7 @@ import ReadabilityClient from "@/features/readability/ReadabilityClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl = "https://doitwithai.tools/tools/readability-checker";
 const description =
-  "Review long sentences, wordy phrases, and paragraph length locally. Compare editable AI revisions while checking the meaning and important details.";
+  "Check sentence variety, paragraph length, and wordy phrases. Compare AI revisions with natural flow and optional paragraph splitting. Review meaning before applying.";
 const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Readability Checker and Improver", category: "AI SEO · Content Writing", ctaText: "Inspect. Compare. Refine.", features: "Local Checks,3 Editing Directions,Meaning Review" })}`;
 export const metadata: Metadata = {
   title: "Readability Checker and AI Improver",
@@ -170,7 +170,15 @@ export default function Page() {
               ],
               [
                 "Paragraph length",
-                "Paragraphs above 100 words receive a review cue. Consider whether a new paragraph, heading, or list would clarify separate ideas.",
+                "Flow review flags prose blocks above 100 words or four sentence segments. Break at changes of idea. Keep a condition beside the action it qualifies.",
+              ],
+              [
+                "Sentence variety",
+                "Compare the length sequence and short, medium, and fuller prose segments. Four consecutive short or similar-length segments prompt review. Lists follow a different rhythm.",
+              ],
+              [
+                "Paragraph flow",
+                "Group related sentences, usually two or three, with an occasional one-sentence paragraph. Vary size when useful. Repeated inline colons can signal awkward pseudo-lists.",
               ],
               [
                 "Wordy phrases",
@@ -217,14 +225,15 @@ export default function Page() {
             <div className="rounded-3xl border border-blue-200 bg-blue-50 p-7 dark:border-blue-900 dark:bg-blue-950/30">
               <h3 className="text-sm font-bold">After</h3>
               <p className="mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300">
-                AI can miss important context. A human editor should check every
-                claim before publishing.
+                Because AI can miss important context, a human editor should
+                check every claim before publishing.
               </p>
             </div>
           </div>
           <p className="mt-5 text-sm leading-7 text-slate-600 dark:text-slate-400">
-            The revision removes a wordy lead-in and separates the reason from
-            the action. It keeps the uncertainty and the need for human review.
+            The revision simplifies the lead-in while keeping the reason and
+            action connected. It preserves the uncertainty and the strength of
+            the original advice.
           </p>
         </section>
         <section>
@@ -239,11 +248,11 @@ export default function Page() {
               ],
               [
                 "Plain language",
-                "Explore simpler wording and shorter sentences. Review technical precision and necessary qualifications carefully before applying the changes.",
+                "Use familiar words with varied sentence lengths and connected ideas. Keep precise terms, useful emphasis, and qualifications. Simpler language can still carry necessary detail.",
               ],
               [
                 "Easy to scan",
-                "Explore shorter paragraphs or lists where useful. Check that splitting the text still preserves the relationship between ideas.",
+                "Split dense prose where the idea changes. Use real lists only when appropriate. Preserve transitions, conditions, and the relationship between ideas.",
               ],
             ].map(([title, text], i) => (
               <article
@@ -282,6 +291,14 @@ export default function Page() {
                 "No. Literal checks flag certain numbers, required terms, and caution words. They can miss meaningful changes or flag harmless rewording.",
               ],
               [
+                "Can the tool split a long paragraph?",
+                "Yes. Paragraph splitting is requested by default. It groups related ideas and uses blank lines. Turn it off to request existing boundaries, then review the output.",
+              ],
+              [
+                "Should every sentence be short?",
+                "No. Mix concise emphasis with fuller explanations where useful. Transitions should clarify existing relationships. Length bands are review cues, not universal readability rules.",
+              ],
+              [
                 "Can I revise a complete long article?",
                 "Work section by section within the 4500-character source limit. Review transitions and overall structure separately when combining edited sections.",
               ],
@@ -315,6 +332,20 @@ export default function Page() {
             className="text-[#4662df] underline dark:text-blue-300"
           >
             W3C writing guidance
+          </a>
+          ,{" "}
+          <a
+            href="https://prowritingaid.com/art/346/How-to-use...-The-Sentence-Length-Report.aspx"
+            className="text-[#4662df] underline dark:text-blue-300"
+          >
+            ProWritingAid sentence variety guidance
+          </a>
+          , and{" "}
+          <a
+            href="https://www.stylemanual.gov.au/structuring-content/paragraphs"
+            className="text-[#4662df] underline dark:text-blue-300"
+          >
+            paragraph structure guidance
           </a>
           . For your wider workflow, use the{" "}
           <Link
