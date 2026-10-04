@@ -285,3 +285,23 @@ test("editorial H1 rejects a bare keyword without banning short category names o
     }),
   );
 });
+
+test("H1 accepts natural keyword variants and prompt avoids unsupported product substitutions", () => {
+  const brief = {
+    ...input,
+    keyword: "meta titles with AI",
+    brief:
+      "A practical guide to drafting and reviewing meta titles with ChatGPT, using accurate page context.",
+  };
+  const output = makeOutput("h1-heading");
+  output.candidates[0].text = "How to write a clear meta title with ChatGPT";
+  assert.doesNotThrow(() => validateWritingOutput(output, "h1-heading", brief));
+  assert.match(
+    writingPrompt("h1-heading", brief).system,
+    /not required literal text/,
+  );
+  assert.match(
+    writingPrompt("h1-heading", brief).system,
+    /unless the brief supports it/,
+  );
+});

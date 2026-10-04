@@ -121,7 +121,12 @@ ${
     ? `Every option must read as a polished page headline, not a bare keyword label. Name the subject and its specific task, scope, method, or supported reader benefit.
 For blog and guide pages, usually use 7-16 words when useful. This is editorial guidance, not a Google requirement. Short product or category names can be appropriate for other page types.
 Topic first still needs a complete proposition. Weak: Meta Titles with AI. Strong: Write Clear Meta Titles with AI and Review Them Before Publishing, when the brief covers that workflow.
-Use the primary keyword or a natural close variant without forcing exact wording. Related terms must come from the brief and add meaning, never keyword stuffing.
+Treat the primary keyword as a topic and intent signal, not required literal text. Do not repeat it word for word across all six options.
+Vary syntax, singular or plural forms, and brief-supported terms while preserving the same subject and reader task.
+For the topic meta titles with AI, How to Write a Clear Meta Title with ChatGPT is valid when the brief specifically covers ChatGPT.
+Do not introduce ChatGPT, Gemini, or another named product merely as a synonym for AI unless the brief supports it.
+Some options may include the exact phrase when natural. Others should use meaningful variants. Do not judge quality by exact keyword inclusion.
+Related terms must come from the brief and add meaning, never keyword stuffing.
 Use precise verbs such as write, compare, review, or plan. Never invent years, step counts, speed, expertise, or outcomes to make a headline attractive.
 Keep the promise aligned with the page title and brief. Matching a good meta title is allowed; copying an incomplete keyword label is not.
 The three directions are meaningful perspectives, not mechanical prefix swaps. Avoid awkward plurals such as Guides for when this is one guide.

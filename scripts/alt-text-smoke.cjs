@@ -76,6 +76,15 @@ module.exports = async function checkAltText(page, origin, screenshotDir) {
     await page.goto(`${origin}/tools/image-alt-text-generator`, {
       waitUntil: "networkidle2",
     });
+    assert.equal(
+      await page.$eval("#alt-source-mode", (n) => n.value),
+      "upload",
+    );
+    assert.ok(
+      await page.evaluate(() =>
+        document.body.innerText.includes("Upload one image (required)"),
+      ),
+    );
     await page.$eval("[data-alt-generate]", (n) => n.click());
     await page.waitForSelector('[role="alert"]');
     assert.equal(calls, 0);
@@ -95,6 +104,7 @@ module.exports = async function checkAltText(page, origin, screenshotDir) {
     await click("Copy empty alt attribute");
     assert.equal(await page.evaluate(() => window.__altCopied), 'alt=""');
     await click("Link or button image");
+    await page.select("#alt-source-mode", "description");
     await fill("#alt-description", "A printer icon appears inside a button.");
     await page.$eval("[data-alt-generate]", (n) => n.click());
     await page.waitForFunction(() =>

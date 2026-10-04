@@ -10,7 +10,7 @@ import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
   altInputSchema,
-  altOutputSchema,
+  providerAltSchema,
   altPrompt,
   validateAltOutput,
 } from "./schema";
@@ -91,37 +91,68 @@ export async function POST(request: NextRequest) {
     );
   try {
     const prompt = altPrompt(input.data);
-    const response = await getGeminiClient().generate(
-      {
-        model,
-        max_output_tokens: 6000,
-        store: false,
-        input: [
-          { role: "system", content: prompt.system },
-          {
-            role: "user",
-            content: [
-              { type: "input_text", text: prompt.user },
-              ...(input.data.image
-                ? [
-                    {
-                      type: "input_image" as const,
-                      image_url: input.data.image,
-                      detail: "auto" as const,
-                    },
-                  ]
-                : []),
-            ],
+    const deadline = Date.now() + 45_000;
+    const generate = (repair = false) =>
+      getGeminiClient().generate(
+        {
+          model,
+          max_output_tokens: 6000,
+          store: false,
+          input: [
+            {
+              role: "system",
+              content:
+                prompt.system +
+                (repair
+                  ? "\nThe previous response failed the output contract. Recreate a complete response from the same image and brief. Check all required fields, three distinct alternatives, field lengths, and the purpose-specific extendedDescription rule before returning JSON."
+                  : ""),
+            },
+            {
+              role: "user",
+              content: [
+                { type: "input_text", text: prompt.user },
+                ...(input.data.image
+                  ? [
+                      {
+                        type: "input_image" as const,
+                        image_url: input.data.image,
+                        detail: "auto" as const,
+                      },
+                    ]
+                  : []),
+              ],
+            },
+          ],
+          text: {
+            format: geminiTextFormat(
+              providerAltSchema(input.data.purpose),
+              "image_alt_text",
+              { compact: true },
+            ),
           },
-        ],
-        text: { format: geminiTextFormat(altOutputSchema, "image_alt_text") },
-      },
-      { timeout: 45_000, maxRetries: 0 },
-    );
-    const result = validateAltOutput(
-      response.output_parsed,
-      input.data.purpose,
-    );
+        },
+        { timeout: Math.max(1, deadline - Date.now()), maxRetries: 0 },
+      );
+    const response = await generate();
+    let result;
+    try {
+      result = validateAltOutput(response.output_parsed, input.data.purpose);
+    } catch {
+      console.warn("[alt-text] Output contract failed", {
+        code: "ALT_OUTPUT_INVALID",
+        source: input.data.image ? "uploaded-image" : "written-description",
+        model,
+      });
+      if (deadline - Date.now() < 2000) throw Error("ALT_OUTPUT_INVALID");
+      // Repair only a received but invalid result. Provider, quota, and safety
+      // failures never reach this branch. The same image is retained.
+      const repaired = await generate(true);
+      try {
+        result = validateAltOutput(repaired.output_parsed, input.data.purpose);
+      } catch {
+        throw Error("ALT_OUTPUT_INVALID");
+      }
+    }
     return NextResponse.json(
       {
         result,
@@ -135,6 +166,12 @@ export async function POST(request: NextRequest) {
   } catch (cause) {
     const failure = geminiFailure(cause);
     if (failure) return error(failure.message, failure.status, failure.code);
+    if (cause instanceof Error && cause.message === "ALT_OUTPUT_INVALID")
+      return error(
+        "The AI returned incomplete or inconsistent alt text. Your image is retained. Please try again.",
+        502,
+        "ALT_OUTPUT_INVALID",
+      );
     return error(
       "We could not generate valid alternatives. Please try again later.",
       502,

@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import {
   altInputSchema,
   altPrompt,
+  providerAltSchema,
   validateAltOutput,
   MAX_IMAGE_BYTES,
 } from "../../features/alt-text/schema";
@@ -173,7 +174,7 @@ test("API bounds images, skips decorative requests, preserves no-store and sends
       assert.equal(params.model, "test-vision-model");
       assert.equal(params.store, false);
       assert.equal(params.max_output_tokens, 6000);
-      assert.equal(options.timeout, 45000);
+      assert.ok(options.timeout > 0 && options.timeout <= 45000);
       assert.equal(options.maxRetries, 0);
       assert.equal(params.input[1].content[1].image_url, png);
       assert.equal(params.input[1].content[1].type, "input_image");
@@ -231,5 +232,65 @@ test("API bounds images, skips decorative requests, preserves no-store and sends
     delete process.env.GEMINI_ALT_TEXT_VISION_MODEL;
     delete process.env.GEMINI_ALT_TEXT_MODEL;
     delete process.env.AI_TOOLS_BURST_LIMIT;
+  }
+});
+
+test("upload mode requires an image and description mode remains explicit", () => {
+  assert.equal(
+    altInputSchema.safeParse({ mode: "upload", description }).success,
+    false,
+  );
+  assert.equal(
+    altInputSchema.safeParse({ mode: "upload", image: png }).success,
+    true,
+  );
+  assert.equal(
+    altInputSchema.safeParse({ mode: "description", description }).success,
+    true,
+  );
+  assert.equal(
+    providerAltSchema("informative").safeParse({
+      ...fixture,
+      extendedDescription: "Unexpected caption",
+    }).success,
+    false,
+  );
+  assert.equal(providerAltSchema("complex").safeParse(fixture).success, false);
+});
+test("invalid visual output gets one bounded repair retaining the image", async () => {
+  const client = getGeminiClient();
+  const original = client.generate;
+  const key = process.env.GEMINI_API_KEY,
+    model = process.env.GEMINI_ALT_TEXT_MODEL;
+  process.env.GEMINI_API_KEY = "test-key";
+  process.env.GEMINI_ALT_TEXT_MODEL = "test-vision-model";
+  let calls = 0;
+  try {
+    client.generate = (async (params: any, options: any) => {
+      calls++;
+      assert.equal(params.input[1].content[1].image_url, png);
+      assert.ok(options.timeout <= 45000);
+      if (calls === 1) return { output_parsed: { ...fixture, candidates: [] } };
+      assert.match(params.input[0].content, /previous response failed/);
+      return { output_parsed: fixture };
+    }) as any;
+    const response = await POST(
+      new NextRequest("http://localhost/api/ai-tools/alt-text", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-forwarded-for": "alt-repair-test",
+        },
+        body: JSON.stringify({ mode: "upload", image: png }),
+      }),
+    );
+    assert.equal(response.status, 200);
+    assert.equal(calls, 2);
+  } finally {
+    client.generate = original;
+    if (key === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = key;
+    if (model === undefined) delete process.env.GEMINI_ALT_TEXT_MODEL;
+    else process.env.GEMINI_ALT_TEXT_MODEL = model;
   }
 });

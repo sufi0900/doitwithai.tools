@@ -10,6 +10,7 @@ export const purposeLabels = {
 } as const;
 export const altInputSchema = z
   .object({
+    mode: z.enum(["upload", "description"]).default("description"),
     description: z.string().trim().max(3000).default(""),
     image: z.string().max(MAX_IMAGE_URL_LENGTH).default(""),
     context: z.string().trim().max(1800).default(""),
@@ -21,7 +22,18 @@ export const altInputSchema = z
     currentAlt: z.string().trim().max(600).default(""),
   })
   .superRefine((v, ctx) => {
-    if (v.purpose !== "decorative" && !v.image && v.description.length < 20)
+    if (v.purpose !== "decorative" && v.mode === "upload" && !v.image)
+      ctx.addIssue({
+        code: "custom",
+        path: ["image"],
+        message: "Upload an image before generating alt text.",
+      });
+    if (
+      v.purpose !== "decorative" &&
+      v.mode === "description" &&
+      !v.image &&
+      v.description.length < 20
+    )
       ctx.addIssue({
         code: "custom",
         path: ["description"],
@@ -57,6 +69,14 @@ export const altOutputSchema = z.object({
   review: z.array(z.string().trim().min(10).max(250)).min(2).max(4),
 });
 export type AltOutput = z.infer<typeof altOutputSchema>;
+export function providerAltSchema(purpose: AltInput["purpose"]) {
+  return altOutputSchema.extend({
+    extendedDescription:
+      purpose === "complex"
+        ? z.string().trim().min(1).max(1800)
+        : z.enum([""]),
+  });
+}
 export function validateAltOutput(
   value: unknown,
   purpose: AltInput["purpose"],
@@ -90,7 +110,10 @@ Include important visible text when it is necessary and not already available ne
 Do not stuff keywords, include promotional claims, or promise rankings, traffic, accessibility compliance, or business outcomes. Do not force unrelated page topics into the image.
 Aim for concise wording, not a fixed character limit. Do not start with 'image of' unless the medium is meaningful. Never output HTML or markdown.
 Use sentences of at most 25 words. Never use em dashes. Give each alternative a specific short explanation and 2-4 concrete review notes.
-extendedDescription must be nonempty only for complex images; otherwise return an empty string.`,
+Return exactly three candidates with text and explanation, plus extendedDescription and review. Do not omit fields or return null.
+Keep each explanation within 10-300 characters and each of the 2-4 review notes within 10-250 characters.
+Alternatives may describe the same evidence with different natural wording. Never invent visible details to create variety.
+extendedDescription must be nonempty only for complex images; otherwise return exactly an empty string, not an additional caption.`,
     user: JSON.stringify({
       ...brief,
       source: image ? "Attached image and user notes" : "User description only",

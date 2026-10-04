@@ -73,7 +73,7 @@ export function reviewWriting(
           ? "No keyword supplied. Focus on a clear topic."
           : checks.keywordIncluded
             ? "All entered keyword words appear. Check that they read naturally."
-            : "Some keyword words are absent. Review relevance before adding them.",
+            : "A natural topic variant can be appropriate. Exact keyword wording is not required.",
         warn: false,
       },
       {

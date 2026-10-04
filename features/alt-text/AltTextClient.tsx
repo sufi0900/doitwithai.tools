@@ -62,6 +62,7 @@ const examples = {
   },
 };
 export default function AltTextClient() {
+  const [mode, setMode] = useState<AltInput["mode"]>("upload");
   const [purpose, setPurpose] = useState<AltInput["purpose"]>("informative");
   const [description, setDescription] = useState("");
   const [context, setContext] = useState("");
@@ -111,6 +112,7 @@ export default function AltTextClient() {
   function useExample() {
     const e = examples[purpose];
     clearImage();
+    setMode("description");
     setDescription(e.description);
     setContext(e.context);
     setDestination(e.destination);
@@ -128,6 +130,7 @@ export default function AltTextClient() {
       const prepared = await prepareImage(file);
       if (version !== uploadVersion.current) return;
       setImage(prepared);
+      setMode("upload");
       setStatus(
         "Image prepared locally. It is sent only when you generate alternatives.",
       );
@@ -148,6 +151,7 @@ export default function AltTextClient() {
     setError("");
     setStatus("");
     const input = altInputSchema.safeParse({
+      mode,
       purpose,
       description,
       context,
@@ -239,8 +243,8 @@ export default function AltTextClient() {
               Give the image its page context
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Upload an image or describe it. Tell us what the reader needs from
-              it.
+              Upload an image to generate alt text from visible evidence. Add
+              page context to explain its purpose.
             </p>
           </div>
           <button
@@ -251,6 +255,29 @@ export default function AltTextClient() {
           >
             Try an example
           </button>
+        </div>
+        <div className="mt-6">
+          <label htmlFor="alt-source-mode" className="text-sm font-bold">
+            Source mode
+          </label>
+          <select
+            id="alt-source-mode"
+            className={field}
+            value={mode}
+            disabled={busy || preparing}
+            onChange={(e) => {
+              const next = e.target.value as AltInput["mode"];
+              setMode(next);
+              if (next === "description") clearImage();
+            }}
+          >
+            <option value="upload">Uploaded image (required)</option>
+            <option value="description">Description-only draft</option>
+          </select>
+          <p className="mt-2 text-xs text-slate-500">
+            Description-only drafts use your notes and cannot verify visible
+            image details.
+          </p>
         </div>
         <fieldset className="mt-6" disabled={busy || preparing}>
           <legend className="text-sm font-bold text-slate-900 dark:text-white">
@@ -311,10 +338,9 @@ export default function AltTextClient() {
                     className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white"
                   >
                     <ImagePlus aria-hidden className="h-5 w-5 text-[#5271ff]" />
-                    Upload one image{" "}
-                    <span className="font-normal text-slate-500">
-                      (optional)
-                    </span>
+                    {mode === "upload"
+                      ? "Upload one image (required)"
+                      : "Upload an image to switch to image mode"}
                   </label>
                   <input
                     ref={fileRef}
@@ -397,8 +423,9 @@ export default function AltTextClient() {
                     id="alt-description-help"
                     className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400"
                   >
-                    Required when no image is uploaded. Description-only drafts
-                    cannot verify what an image contains.
+                    {mode === "upload"
+                      ? "Optional notes. The uploaded image remains the source of visible details."
+                      : "Required for description-only drafts. Visible image details cannot be verified."}
                   </p>
                 </div>
               </div>
