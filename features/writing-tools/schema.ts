@@ -32,12 +32,34 @@ export type WritingOutput = z.infer<typeof writingOutputSchema>;
 export function validateWritingOutput(
   value: unknown,
   kind: WritingKind,
+  input?: WritingInput,
 ): WritingOutput {
   const parsed = writingOutputSchema.parse(value);
   const texts = parsed.candidates.map((c) =>
     c.text.toLowerCase().replace(/\s+/g, " ").trim(),
   );
   if (new Set(texts).size !== 6) throw new Error("Duplicate options");
+  if (
+    kind === "h1-heading" &&
+    input?.keyword &&
+    ["guide", "blog"].includes(input.pageType)
+  ) {
+    const normalize = (s: string) =>
+      s
+        .normalize("NFKC")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .trim();
+    const keyword = normalize(input.keyword);
+    // A full question can be a useful headline. Short category names are valid.
+    if (
+      !/^(how|what|why|when|where|which|who|can|does|is|are)\b/u.test(
+        keyword,
+      ) &&
+      parsed.candidates.some((c) => normalize(c.text) === keyword)
+    )
+      throw new Error("An editorial H1 needs context beyond a bare keyword");
+  }
   if (
     kind === "h1-heading" &&
     parsed.candidates.some((c) => Array.from(c.text).length > 140)
@@ -94,6 +116,19 @@ Never invent prices, results, statistics, awards, expertise, dates, guarantees, 
 ${kind === "meta-description" ? "Aim for 100–160 characters as an editorial target, not a Google limit. Summarize the specific page and add useful context beyond the page title. Google can use different snippet text." : "Aim for a clear main heading, usually under 80 characters. This is an editorial target, not a search engine rule. It may overlap the page title when appropriate. Do not output HTML."}
 ${kind === "meta-description" ? "Use exactly these three approach labels, with two distinct options per label: Clear summary, Reader benefit, Next step." : "Use exactly these three approach labels, with two distinct options per label: Topic first, Task first, Audience first."}
 Use the page type, intent, audience, current wording, and supported unique value to make relevant alternatives. Do not use a brand name unless it helps clarity.
+${
+  kind === "h1-heading"
+    ? `Every option must read as a polished page headline, not a bare keyword label. Name the subject and its specific task, scope, method, or supported reader benefit.
+For blog and guide pages, usually use 7-16 words when useful. This is editorial guidance, not a Google requirement. Short product or category names can be appropriate for other page types.
+Topic first still needs a complete proposition. Weak: Meta Titles with AI. Strong: Write Clear Meta Titles with AI and Review Them Before Publishing, when the brief covers that workflow.
+Use the primary keyword or a natural close variant without forcing exact wording. Related terms must come from the brief and add meaning, never keyword stuffing.
+Use precise verbs such as write, compare, review, or plan. Never invent years, step counts, speed, expertise, or outcomes to make a headline attractive.
+Keep the promise aligned with the page title and brief. Matching a good meta title is allowed; copying an incomplete keyword label is not.
+The three directions are meaningful perspectives, not mechanical prefix swaps. Avoid awkward plurals such as Guides for when this is one guide.
+Read every option aloud mentally. Revise vague, choppy, inflated, or ambiguous wording before returning the six alternatives.`
+    : `Each description must summarize this specific page with a useful supported detail. Avoid generic AI-powered solutions or empty calls to action.
+Make the three approaches meaningfully different while preserving the same accurate page promise.`
+}
 Provide a short approach label and a concise explanation for each option. Do not provide scores or predict performance.`,
     user: JSON.stringify(input),
   };

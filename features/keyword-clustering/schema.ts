@@ -104,6 +104,8 @@ Return every supplied keyword ID exactly once across clusters and the unassigned
 Page-intent mode: conservatively group terms that plausibly share a reader task and useful page format. Shared words alone are insufficient. Topic mode: create broader themes and explain when a theme needs several pages.
 Use the site context and audience without forcing unrelated terms into the niche. Leave ambiguous or unrelated terms in the review queue with a specific reason. A single-keyword group is acceptable. All terms may remain unassigned if the evidence is insufficient.
 Use concise English group names, tentative intent labels, a suggested page type, an actionable content focus, a grouping explanation, and a concrete human review question.
+Make focus, rationale, and review specific to the actual keywords. Explain the reader task and why these terms could share a page, not merely that they are related.
+Separate genuinely different intents. Consolidate close variants rather than proposing duplicate pages. Never force a supplied outlier into a convenient group.
 These are semantic planning suggestions. No live search results, SERP overlap, volumes, difficulty metrics, trends, competitor data or existing pages have been retrieved. Never imply otherwise.
 Do not invent demand numbers, confidence scores, ranking guarantees, traffic predictions, citations or cannibalization diagnoses. The primary keyword is a representative editorial choice, not a measured winner.
 Do not instruct creating one page per group automatically. Explain where search-result review, source verification or an existing-page inventory is needed.

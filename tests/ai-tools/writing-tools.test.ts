@@ -246,3 +246,42 @@ test("editing checks distinguish literal wording, title overlap, repetition and 
     '<meta name="description" content="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;">',
   );
 });
+
+test("editorial H1 rejects a bare keyword without banning short category names or full questions", () => {
+  const result = makeOutput("h1-heading");
+  const editorial = {
+    ...input,
+    keyword: "Meta Titles with AI",
+    pageType: "guide" as const,
+  };
+  const bare = {
+    candidates: result.candidates.map((c, i) =>
+      i === 0 ? { ...c, text: editorial.keyword } : c,
+    ),
+  };
+  assert.throws(
+    () => validateWritingOutput(bare, "h1-heading", editorial),
+    /context beyond/,
+  );
+  assert.doesNotThrow(() =>
+    validateWritingOutput(result, "h1-heading", editorial),
+  );
+  assert.doesNotThrow(() =>
+    validateWritingOutput(bare, "h1-heading", {
+      ...editorial,
+      pageType: "category",
+    }),
+  );
+  const question = "How do I write meta titles with AI?";
+  const contextual = {
+    candidates: bare.candidates.map((c, i) =>
+      i === 0 ? { ...c, text: question } : c,
+    ),
+  };
+  assert.doesNotThrow(() =>
+    validateWritingOutput(contextual, "h1-heading", {
+      ...editorial,
+      keyword: question,
+    }),
+  );
+});

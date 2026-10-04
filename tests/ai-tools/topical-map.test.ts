@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
 import {
   inputSchema,
+  nodeSchema,
   validateTree,
   validateOutput,
   prompt,
@@ -59,6 +60,46 @@ export const fixture = {
       parentId: "n2",
       title: "Reviewing outlines",
       keyword: "how to review an article outline",
+      relatedKeywords: [
+        "article outline review checklist",
+        "checking outline coverage",
+      ],
+      format: "tutorial",
+    },
+    {
+      ...node,
+      id: "n5",
+      parentId: "n2",
+      title: "Planning article evidence",
+      keyword: "how to plan evidence for an article",
+      relatedKeywords: [
+        "how to plan evidence for an article checklist",
+        "how to plan evidence for an article examples",
+      ],
+      format: "tutorial",
+    },
+    {
+      ...node,
+      id: "n6",
+      parentId: "n3",
+      title: "Checking factual claims",
+      keyword: "how to check facts in an AI draft",
+      relatedKeywords: [
+        "how to check facts in an AI draft checklist",
+        "how to check facts in an AI draft examples",
+      ],
+      format: "tutorial",
+    },
+    {
+      ...node,
+      id: "n7",
+      parentId: "n3",
+      title: "Improving paragraph flow",
+      keyword: "how to improve paragraph flow in an AI draft",
+      relatedKeywords: [
+        "how to improve paragraph flow in an AI draft checklist",
+        "how to improve paragraph flow in an AI draft examples",
+      ],
       format: "tutorial",
     },
   ],
@@ -98,7 +139,7 @@ test("input accepts seed or fuller brief while bounding all supplied context", (
   );
 });
 test("AI output validates a connected, unique tree and rejects invalid parents, cycles and depth", () => {
-  assert.equal(validateOutput(fixture, source).nodes.length, 4);
+  assert.equal(validateOutput(fixture, source).nodes.length, 7);
   for (const nodes of [
     fixture.nodes.map((n) => ({ ...n, parentId: null })),
     [...fixture.nodes, fixture.nodes[0]],
@@ -106,7 +147,7 @@ test("AI output validates a connected, unique tree and rejects invalid parents, 
     fixture.nodes.map((n) => (n.id === "n2" ? { ...n, parentId: "n4" } : n)),
     [
       ...fixture.nodes,
-      { ...node, id: "n5", parentId: "n4", title: "Deep node" },
+      { ...node, id: "n8", parentId: "n4", title: "Deep node" },
     ],
   ])
     assert.throws(() => validateOutput({ ...fixture, nodes }, source));
@@ -138,11 +179,11 @@ test("moving and adding respect three levels, reject cycles, and reset recorded 
   assert.throws(() => moveTopic(n, "n2", "n4"));
   assert.throws(() => moveTopic(n, "n1", "n3"));
   const added = addTopic(n, "n3");
-  assert.equal(added.length, 5);
+  assert.equal(added.length, 8);
   validateTree(added);
   assert.throws(() => addTopic(n, "n4"));
   const removed = removeTopic(n, "n2");
-  assert.equal(removed.length, 2);
+  assert.equal(removed.length, 4);
   assert.throws(() => removeTopic(n, "n1"));
 });
 test("exports retain hierarchy, human notes and unverified metrics with CSV formula protection", () => {
@@ -269,4 +310,72 @@ test("Gemini API uses bounded structured output without grounding and rejects pr
       else process.env[key] = value;
     }
   }
+});
+
+test("generated maps require supporting queries under every pillar, but editable drafts remain flexible", () => {
+  assert.throws(
+    () =>
+      validateOutput({ ...fixture, nodes: fixture.nodes.slice(0, 4) }, source),
+    /supporting/,
+  );
+  assert.throws(
+    () =>
+      validateOutput(
+        { ...fixture, nodes: fixture.nodes.filter((n) => n.id !== "n7") },
+        source,
+      ),
+    /supporting/,
+  );
+  assert.throws(
+    () =>
+      validateOutput(
+        {
+          ...fixture,
+          nodes: fixture.nodes.map((n) =>
+            n.id === "n4" ? { ...n, relatedKeywords: [] } : n,
+          ),
+        },
+        source,
+      ),
+    /related/,
+  );
+  assert.throws(
+    () => validateOutput(fixture, { ...source, size: "expanded" }),
+    /pillar/,
+  );
+  assert.doesNotThrow(() =>
+    validateTree(fixture.nodes.slice(0, 3).map((n) => nodeSchema.parse(n))),
+  );
+});
+
+test("expanded maps accept distinct pillars with complete supporting branches", () => {
+  const nodes = [node];
+  let id = 2;
+  for (let pillar = 0; pillar < 3; pillar++) {
+    const parentId = `n${id++}`;
+    nodes.push({
+      ...node,
+      id: parentId,
+      parentId: "n1",
+      title: `Planning theme ${pillar}`,
+      keyword: `AI planning theme ${pillar}`,
+    });
+    for (let child = 0; child < 3; child++)
+      nodes.push({
+        ...node,
+        id: `n${id++}`,
+        parentId,
+        title: `Specific task ${pillar}-${child}`,
+        keyword: `how to plan task ${pillar}-${child}`,
+        relatedKeywords: [
+          `task ${pillar}-${child} checklist`,
+          `task ${pillar}-${child} examples`,
+        ],
+      });
+  }
+  assert.equal(
+    validateOutput({ ...fixture, nodes }, { ...source, size: "expanded" }).nodes
+      .length,
+    13,
+  );
 });

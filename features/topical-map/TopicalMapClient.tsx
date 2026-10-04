@@ -273,6 +273,9 @@ export default function TopicalMapClient() {
         <span className="block break-words text-sm font-bold">
           {topic.title}
         </span>
+        <span className="mt-2 block break-words text-xs leading-5 text-slate-600 dark:text-slate-300">
+          Keyword idea: {topic.keyword}
+        </span>
         <span className="mt-2 block text-xs text-slate-500 dark:text-slate-400">
           {topic.intent} · {decisionLabels[topic.decision]}
         </span>
@@ -594,6 +597,28 @@ export default function TopicalMapClient() {
                         <li key={n.id}>{topicButton(n)}</li>
                       ))}
                   </ul>
+                  <details className="mt-3 rounded-xl border border-slate-200 p-3 text-xs dark:border-slate-700">
+                    <summary className="cursor-pointer font-semibold focus-visible:ring-4 focus-visible:ring-blue-300">
+                      View keyword ideas for this pillar
+                    </summary>
+                    <ul className="mt-3 space-y-2">
+                      {[
+                        ...new Set(
+                          nodes
+                            .filter((n) => n.parentId === pillar.id)
+                            .flatMap((n) => [n.keyword, ...n.relatedKeywords]),
+                        ),
+                      ].map((keyword) => (
+                        <li key={keyword} className="break-words">
+                          {keyword}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 text-slate-500 dark:text-slate-400">
+                      AI suggestions. Search demand and difficulty are not
+                      verified.
+                    </p>
+                  </details>
                 </li>
               ))}
             </ul>

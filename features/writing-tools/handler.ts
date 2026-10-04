@@ -109,7 +109,11 @@ export function writingHandler(kind: WritingKind) {
         },
         { timeout: 30_000, maxRetries: 0 },
       );
-      const result = validateWritingOutput(response.output_parsed, kind);
+      const result = validateWritingOutput(
+        response.output_parsed,
+        kind,
+        input.data,
+      );
       return NextResponse.json(
         { result, meta: { remaining: limit.remaining } },
         { headers: { "Cache-Control": "no-store" } },

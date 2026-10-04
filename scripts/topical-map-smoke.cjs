@@ -43,6 +43,46 @@ module.exports = async function (page, origin, screenshotDir) {
         parentId: "n2",
         title: "Reviewing outlines",
         keyword: "how to review an article outline",
+        relatedKeywords: [
+          "article outline review checklist",
+          "checking outline coverage",
+        ],
+        format: "tutorial",
+      },
+      {
+        ...base,
+        id: "n5",
+        parentId: "n2",
+        title: "Planning article evidence",
+        keyword: "how to plan evidence for an article",
+        relatedKeywords: [
+          "how to plan evidence for an article checklist",
+          "how to plan evidence for an article examples",
+        ],
+        format: "tutorial",
+      },
+      {
+        ...base,
+        id: "n6",
+        parentId: "n3",
+        title: "Checking factual claims",
+        keyword: "how to check facts in an AI draft",
+        relatedKeywords: [
+          "how to check facts in an AI draft checklist",
+          "how to check facts in an AI draft examples",
+        ],
+        format: "tutorial",
+      },
+      {
+        ...base,
+        id: "n7",
+        parentId: "n3",
+        title: "Improving paragraph flow",
+        keyword: "how to improve paragraph flow in an AI draft",
+        relatedKeywords: [
+          "how to improve paragraph flow in an AI draft checklist",
+          "how to improve paragraph flow in an AI draft examples",
+        ],
         format: "tutorial",
       },
     ],
@@ -122,6 +162,26 @@ module.exports = async function (page, origin, screenshotDir) {
     await fill("#topical-country", "Pakistan");
     await click("Create my topical map");
     await page.waitForSelector("#topical-results");
+    assert.equal(await page.$$eval("[data-topic-id]", (ns) => ns.length), 7);
+    assert.ok(
+      await page.evaluate(() =>
+        document.body.innerText.includes(
+          "Keyword idea: how to review an article outline",
+        ),
+      ),
+    );
+    await page.$$eval("details summary", (ns) =>
+      ns
+        .find(
+          (n) => n.textContent.trim() === "View keyword ideas for this pillar",
+        )
+        .click(),
+    );
+    assert.ok(
+      await page.evaluate(() =>
+        document.body.innerText.includes("article outline review checklist"),
+      ),
+    );
     assert.equal(lastInput.country, "Pakistan");
     assert.equal(lastInput.projectType, "website");
     await page.$eval('[data-topic-id="n4"]', (n) => n.click());
@@ -154,10 +214,10 @@ module.exports = async function (page, origin, screenshotDir) {
     assert.equal(await page.$eval("#topic-parent", (n) => n.value), "n3");
     await page.$eval('[data-topic-id="n3"]', (n) => n.click());
     await click("Remove this branch");
-    await click("Confirm removal of 2 topic(s)");
-    assert.equal(await page.$$eval("[data-topic-id]", (ns) => ns.length), 3);
+    await click("Confirm removal of 4 topic(s)");
+    assert.equal(await page.$$eval("[data-topic-id]", (ns) => ns.length), 4);
     await click("Undo last edit");
-    assert.equal(await page.$$eval("[data-topic-id]", (ns) => ns.length), 5);
+    assert.equal(await page.$$eval("[data-topic-id]", (ns) => ns.length), 8);
     await page.$eval('[data-topic-id="n1"]', (n) => n.click());
     await page.select("#topic-decision", "page");
     await fill(
@@ -198,7 +258,7 @@ module.exports = async function (page, origin, screenshotDir) {
         .querySelector('[role="alert"]')
         ?.textContent.includes("Could not import"),
     );
-    assert.equal(await page.$$eval("[data-topic-id]", (ns) => ns.length), 5);
+    assert.equal(await page.$$eval("[data-topic-id]", (ns) => ns.length), 8);
     await click("Copy keyword ideas");
     assert.match(
       await page.evaluate(() => window.__topicalClipboard),
@@ -224,7 +284,7 @@ module.exports = async function (page, origin, screenshotDir) {
     );
     assert.equal(
       await page.$$eval("[data-topic-id]", (nodes) => nodes.length),
-      5,
+      8,
     );
     assert.equal(
       await page.evaluate(() =>

@@ -49,7 +49,7 @@ export default function WritingClient({ kind }: { kind: WritingKind }) {
       const data = await readToolResponse(response);
       if (!response.ok)
         throw new Error(data.error?.message || "Generation is unavailable.");
-      const output = validateWritingOutput(data.result, kind);
+      const output = validateWritingOutput(data.result, kind, input);
       setResult({ output, input, generation: Date.now() });
       setStatus(
         "Six options are ready. Choose a direction and refine it in your lab.",

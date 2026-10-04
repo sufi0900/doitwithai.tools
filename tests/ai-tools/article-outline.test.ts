@@ -163,3 +163,15 @@ test("API bounds provider requests and rejects malformed output without returnin
     delete process.env.GEMINI_ARTICLE_OUTLINE_MODEL;
   }
 });
+
+test("bare H2 placeholders are rejected while H3 can inherit parent context", () => {
+  const vague = structuredClone(fixture);
+  vague.sections[0].options[1] = "Overview";
+  assert.throws(
+    () => validateOutline(vague, "balanced"),
+    /topic and task context/,
+  );
+  const child = structuredClone(fixture);
+  child.sections[0].subheadings[0].options[1] = "Overview";
+  assert.doesNotThrow(() => validateOutline(child, "balanced"));
+});
