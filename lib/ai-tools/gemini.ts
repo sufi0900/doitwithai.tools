@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import { readBoundedJson } from "./request-body";
 
 export function getGeminiModel(tool?: string) {
@@ -36,11 +37,41 @@ type Params<T> = {
   text: { format: Format<T> };
 };
 export class GeminiError extends Error {
+  readonly requestId = randomUUID();
   constructor(
     public readonly status: number,
     public readonly code: string,
+    public readonly upstreamStatus?: number,
+    public readonly providerStatus?: string,
   ) {
     super(code);
+  }
+}
+// Never expose arbitrary provider messages, which can contain submitted material.
+async function providerStatus(response: Response) {
+  const allowed = new Set([
+    "INVALID_ARGUMENT",
+    "FAILED_PRECONDITION",
+    "PERMISSION_DENIED",
+    "UNAUTHENTICATED",
+    "NOT_FOUND",
+    "RESOURCE_EXHAUSTED",
+    "INTERNAL",
+    "UNAVAILABLE",
+    "DEADLINE_EXCEEDED",
+    "CANCELLED",
+    "UNKNOWN",
+  ]);
+  try {
+    const body = (await readBoundedJson(response, 16_000)) as {
+      error?: { status?: unknown };
+    };
+    const status = body?.error?.status;
+    return typeof status === "string" && allowed.has(status)
+      ? status
+      : undefined;
+  } catch {
+    return undefined;
   }
 }
 function parts(content: string | Part[]) {
@@ -97,15 +128,18 @@ async function generate<T>(
       },
     );
     if (!response.ok) {
-      if (response.status === 400)
-        throw new GeminiError(502, "PROVIDER_BAD_REQUEST");
-      if (response.status === 429)
-        throw new GeminiError(429, "PROVIDER_RATE_LIMITED");
-      if (response.status === 401 || response.status === 403)
-        throw new GeminiError(503, "PROVIDER_AUTH_FAILED");
-      if (response.status === 404)
-        throw new GeminiError(503, "PROVIDER_MODEL_UNAVAILABLE");
-      throw new GeminiError(502, "PROVIDER_FAILED");
+      const upstream = response.status;
+      const provider = await providerStatus(response);
+      const failure = (status: number, code: string) =>
+        new GeminiError(status, code, upstream, provider);
+      if (upstream === 400) throw failure(502, "PROVIDER_BAD_REQUEST");
+      if (upstream === 429) throw failure(429, "PROVIDER_RATE_LIMITED");
+      if (upstream === 401 || upstream === 403)
+        throw failure(503, "PROVIDER_AUTH_FAILED");
+      if (upstream === 404) throw failure(503, "PROVIDER_MODEL_UNAVAILABLE");
+      if (upstream === 500) throw failure(502, "PROVIDER_INTERNAL_ERROR");
+      if (upstream === 503) throw failure(503, "PROVIDER_UNAVAILABLE");
+      throw failure(502, "PROVIDER_FAILED");
     }
     const payload = (await readBoundedJson(response, 500_000)) as {
       candidates?: Array<{
@@ -142,6 +176,16 @@ async function generate<T>(
         event: "ai_provider_failure",
         code: failure.code,
         status: failure.status,
+        upstreamStatus: failure.upstreamStatus,
+        providerStatus: failure.providerStatus,
+        requestId: failure.requestId,
+        inputMode: params.input.some(
+          (item) =>
+            Array.isArray(item.content) &&
+            item.content.some((part) => part.type === "input_image"),
+        )
+          ? "image"
+          : "text",
         model: params.model,
       }) + "\n",
     );
@@ -159,7 +203,11 @@ export function geminiFailure(error: unknown) {
   if (!(error instanceof GeminiError)) return null;
   const messages: Record<string, string> = {
     PROVIDER_BAD_REQUEST:
-      "Gemini rejected this tool's generation settings. The site owner needs to review the model and output schema.",
+      "Gemini rejected the request. The site owner needs to check the model, input format, and output schema.",
+    PROVIDER_INTERNAL_ERROR:
+      "Gemini returned an internal processing error. Your input is preserved. Try again later.",
+    PROVIDER_UNAVAILABLE:
+      "Gemini is temporarily unavailable. Your input is preserved. Please try again later.",
     MODEL_OUTPUT_INVALID:
       "The AI returned a draft that failed this tool's checks. Try a smaller or more focused request.",
     PROVIDER_TIMEOUT:
@@ -181,6 +229,10 @@ export function geminiFailure(error: unknown) {
     AI_NOT_CONFIGURED: "The generator has not been connected to Gemini yet.",
   };
   return messages[error.code]
-    ? { message: messages[error.code], status: error.status, code: error.code }
+    ? {
+        message: `${messages[error.code]} Reference: ${error.requestId}`,
+        status: error.status,
+        code: error.code,
+      }
     : null;
 }

@@ -201,7 +201,17 @@ test("API bounds images, skips decorative requests, preserves no-store and sends
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "no-store");
     assert.deepEqual((await response.json()).result, fixture);
+    process.env.GEMINI_ALT_TEXT_VISION_MODEL = "separate-vision-model";
     client.generate = (async (params: any) => {
+      assert.equal(params.model, "separate-vision-model");
+      assert.equal(params.input[1].content[1].image_url, png);
+      return { output_parsed: fixture };
+    }) as any;
+    const visionResponse = await POST(request({ image: png }));
+    assert.equal(visionResponse.status, 200);
+    assert.equal((await visionResponse.json()).meta.source, "uploaded-image");
+    client.generate = (async (params: any) => {
+      assert.equal(params.model, "test-vision-model");
       assert.equal(params.input[1].content.length, 1);
       return { output_parsed: fixture };
     }) as any;
@@ -218,6 +228,7 @@ test("API bounds images, skips decorative requests, preserves no-store and sends
     assert.equal((await POST(request({ description }))).status, 503);
   } finally {
     client.generate = original;
+    delete process.env.GEMINI_ALT_TEXT_VISION_MODEL;
     delete process.env.GEMINI_ALT_TEXT_MODEL;
     delete process.env.AI_TOOLS_BURST_LIMIT;
   }

@@ -60,7 +60,12 @@ export async function POST(request: NextRequest) {
       "INVALID_IMAGE",
     );
   }
-  const model = getGeminiModel("ALT_TEXT");
+  // Image requests may use a separately verified vision model. Text examples
+  // retain their existing model; never discard an image to bypass a failure.
+  const model = input.data.image
+    ? process.env.GEMINI_ALT_TEXT_VISION_MODEL?.trim() ||
+      getGeminiModel("ALT_TEXT")
+    : getGeminiModel("ALT_TEXT");
   if (!isGeminiConfigured(model))
     return error(
       "The generator has not been connected to its AI provider yet.",
@@ -118,7 +123,13 @@ export async function POST(request: NextRequest) {
       input.data.purpose,
     );
     return NextResponse.json(
-      { result, meta: { remaining: limit.remaining } },
+      {
+        result,
+        meta: {
+          remaining: limit.remaining,
+          source: input.data.image ? "uploaded-image" : "written-description",
+        },
+      },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (cause) {

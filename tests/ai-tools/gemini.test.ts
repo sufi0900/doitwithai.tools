@@ -170,3 +170,75 @@ test("Gemini quota, authentication, and unavailable models return safe errors wi
     else process.env.GEMINI_API_KEY = oldKey;
   }
 });
+
+test("provider diagnostics retain upstream status without logging submitted or provider content", async () => {
+  const savedFetch = globalThis.fetch;
+  const savedKey = process.env.GEMINI_API_KEY;
+  const savedWrite = process.stderr.write;
+  const logs: string[] = [];
+  process.env.GEMINI_API_KEY = "private-key-never-log";
+  process.stderr.write = ((value: string) => {
+    logs.push(value);
+    return true;
+  }) as typeof process.stderr.write;
+  try {
+    for (const [status, upstreamEnum, expected] of [
+      [500, "INTERNAL", "PROVIDER_INTERNAL_ERROR"],
+      [503, "UNAVAILABLE", "PROVIDER_UNAVAILABLE"],
+      [400, "INVALID_ARGUMENT", "PROVIDER_BAD_REQUEST"],
+      [502, "private-status-never-log", "PROVIDER_FAILED"],
+    ] as const) {
+      globalThis.fetch = (async () =>
+        Response.json(
+          {
+            error: {
+              status: upstreamEnum,
+              message: "private-provider-message-never-log",
+            },
+          },
+          { status },
+        )) as typeof fetch;
+      await assert.rejects(
+        getGeminiClient().generate({
+          ...params,
+          input: [
+            {
+              role: "user",
+              content: [
+                { type: "input_text", text: "private-prompt-never-log" },
+                {
+                  type: "input_image",
+                  image_url: "data:image/png;base64,aGVsbG8=",
+                },
+              ],
+            },
+          ],
+        }),
+        (error) => {
+          assert.ok(error instanceof GeminiError);
+          assert.equal(error.code, expected);
+          assert.equal(error.upstreamStatus, status);
+          assert.match(
+            geminiFailure(error)!.message,
+            /Reference: [a-f0-9-]{36}/,
+          );
+          const diagnostic = JSON.parse(logs.at(-1)!);
+          assert.equal(diagnostic.upstreamStatus, status);
+          assert.equal(diagnostic.inputMode, "image");
+          assert.equal(diagnostic.requestId, error.requestId);
+          assert.equal(
+            diagnostic.providerStatus,
+            status === 502 ? undefined : upstreamEnum,
+          );
+          return true;
+        },
+      );
+    }
+    assert.doesNotMatch(logs.join(""), /private-|aGVsbG8=/);
+  } finally {
+    globalThis.fetch = savedFetch;
+    process.stderr.write = savedWrite;
+    if (savedKey === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = savedKey;
+  }
+});

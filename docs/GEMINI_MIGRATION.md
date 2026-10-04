@@ -38,6 +38,25 @@ The title tool now uses the supplied brief without live search grounding. Its pr
 
 ## Troubleshooting
 
+### Text examples work but uploaded images fail
+
+Text success confirms credentials work for that request. It does not establish image-processing availability or model compatibility.
+The image path sends validated base64 image bytes through native `inlineData`, with the matching MIME type.
+PNG, JPEG, and WebP remain supported. Images are never silently dropped.
+
+An optional server-only `GEMINI_ALT_TEXT_VISION_MODEL` selects a separate model for uploaded images.
+Without it, image requests keep using `GEMINI_ALT_TEXT_MODEL`, then `GEMINI_MODEL`.
+Text examples continue using the existing Alt Text model settings.
+Select a model with verified image input and structured output support in your Google project.
+Configure it in Vercel Preview scope and create a new preview deployment before retesting.
+
+Provider failures now display a reference identifier. Match it to the `ai_provider_failure` entry in Vercel runtime logs.
+Safe diagnostics include the actual upstream HTTP status, allowlisted provider status, model ID, and text/image mode.
+Provider messages, prompts, image bytes, keys, and generated text are excluded.
+HTTP 500 and 503 now have distinct messages instead of the generic provider failure.
+HTTP 400 can involve input format as well as schema or generation settings. Do not assume a schema defect from status alone.
+Diagnostic improvements do not establish the exact cause of an earlier failure or guarantee provider recovery.
+
 - Not configured: check the Gemini key, shared model, optional overrides, and deployment environment.
 - Authentication failure: check the key's Google project, API restrictions, and model access.
 - Model unavailable: use an exact available model ID without the `models/` prefix.
@@ -47,4 +66,6 @@ The title tool now uses the supplied brief without live search grounding. Its pr
 
 ## Validation
 
-All 82 automated checks pass, including native Gemini transport, image conversion, schema parsing, quota errors, authentication errors, unavailable models, timeout cancellation, and existing tool workflows. Frontend TypeScript and focused lint pass. Provider calls were mocked. No live key or Gemini model output was evaluated.
+The current update passes 87 automated checks: 76 AI-tool tests and 11 foundation checks.
+These cover native transport, image conversion, separate vision-model routing, safe diagnostics, validation, quota errors, and existing tool workflows.
+Frontend TypeScript and focused lint pass. Provider calls were mocked. No live key or Gemini model output was evaluated.
