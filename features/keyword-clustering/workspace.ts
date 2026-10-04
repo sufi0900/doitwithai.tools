@@ -1,7 +1,9 @@
+import type { Planning } from "./project";
 import type { ClusterInput, ClusterOutput } from "./schema";
 export type Group = ClusterOutput["clusters"][number] & {
   id: string;
   edited: boolean;
+  planning?: Planning;
 };
 export type Workspace = {
   groups: Group[];
@@ -69,6 +71,8 @@ export function moveKeywords(
         keywordIds: members,
         primaryId: members.includes(g.primaryId) ? g.primaryId : members[0],
         edited: g.edited || changed,
+        planning:
+          changed && g.planning ? { ...g.planning, checked: [] } : g.planning,
       };
     })
     .filter((g) => g.keywordIds.length);
@@ -119,7 +123,39 @@ export function mergeGroups(
     throw Error("Choose a different group to merge into");
   const group = workspace.groups.find((g) => g.id === source);
   if (!group) throw Error("Source group missing");
-  return moveKeywords(workspace, group.keywordIds, target);
+  const destination = workspace.groups.find((g) => g.id === target);
+  if (!destination) throw Error("Choose a destination group");
+  const planning = group.planning;
+  const hasNotes =
+    planning &&
+    (planning.notes ||
+      planning.url ||
+      planning.action !== "undecided" ||
+      planning.checked.length);
+  const notes = hasNotes
+    ? `${destination.planning?.notes || ""}\n\nMerged from ${group.label}:\nPrevious focus: ${group.focus}\nPage decision: ${planning.action}\nPage URL: ${planning.url || "Not mapped"}\nResearch notes: ${planning.notes || "Not recorded"}`.trim()
+    : destination.planning?.notes || "";
+  if (notes.length > 2000)
+    throw Error(
+      "Combined research notes exceed 2,000 characters. Export the project and shorten notes before merging.",
+    );
+  const next = moveKeywords(workspace, group.keywordIds, target);
+  if (hasNotes)
+    next.groups = next.groups.map((g) =>
+      g.id === target
+        ? {
+            ...g,
+            planning: {
+              action: "undecided",
+              url: "",
+              ...(g.planning || {}),
+              notes,
+              checked: [],
+            },
+          }
+        : g,
+    );
+  return next;
 }
 const csvCell = (text: string) =>
   `"${(/^[\s]*[=+\-@]/.test(text) ? "'" + text : text).replace(/"/g, '""')}"`;
@@ -138,6 +174,10 @@ export function exportCsv(
       "Suggested format",
       "Content focus",
       "Review note",
+      "Page decision",
+      "Page URL",
+      "Research notes",
+      "Human review checks",
     ],
   ];
   for (const g of workspace.groups)
@@ -150,6 +190,10 @@ export function exportCsv(
         g.pageType,
         g.focus,
         g.edited ? "Manually edited. Review the group again." : g.review,
+        g.planning?.action || "undecided",
+        g.planning?.url || "",
+        g.planning?.notes || "",
+        g.planning?.checked.join("; ") || "",
       ]);
   for (const k of workspace.unassigned)
     rows.push([
@@ -160,6 +204,10 @@ export function exportCsv(
       "needs review",
       "",
       k.reason,
+      "hold",
+      "",
+      "",
+      "",
     ]);
   return rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
 }
@@ -170,7 +218,7 @@ export function groupBrief(g: Group, keywords: ClusterInput["keywords"]) {
     .map((id) => `- ${map.get(id)}`)
     .join(
       "\n",
-    )}\nReview: ${g.edited ? "Manually edited. Check the grouping and reader task again." : g.review}`;
+    )}\nPage decision: ${g.planning?.action || "undecided"}\nPage URL: ${g.planning?.url || "Not mapped"}\nResearch notes: ${g.planning?.notes || "Not recorded"}\nHuman review checks: ${g.planning?.checked.join(", ") || "Not completed"}\nReview: ${g.edited ? "Manually edited. Check the grouping and reader task again." : g.review}`;
 }
 export function exportPlan(
   workspace: Workspace,

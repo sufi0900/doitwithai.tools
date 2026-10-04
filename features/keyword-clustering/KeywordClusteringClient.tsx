@@ -28,6 +28,17 @@ import {
   type Workspace,
   type Group,
 } from "./workspace";
+import {
+  actions,
+  checks,
+  emptyPlanning,
+  readProject,
+  writeProject,
+  reviewIssues,
+  storageKey,
+  type Planning,
+  type Project,
+} from "./project";
 const field =
   "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-7 text-slate-900 outline-none focus:border-[#5271ff] focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-blue-900";
 const button =
@@ -55,12 +66,78 @@ export default function KeywordClusteringClient() {
   const [selected, setSelected] = useState<string[]>([]);
   const [target, setTarget] = useState("review");
   const [newLabel, setNewLabel] = useState("");
+  const [projectName, setProjectName] = useState("My keyword plan");
+  const [groupSearch, setGroupSearch] = useState("");
+  const [groupFilter, setGroupFilter] = useState("all");
+  const projectFileRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLElement>(null);
   const uploadVersion = useRef(0);
   const parsed = parseKeywordList(text);
   const group = workspace?.groups.find((g) => g.id === active);
   const members =
     group?.keywordIds || workspace?.unassigned.map((k) => k.keywordId) || [];
+  const visibleGroups =
+    workspace?.groups.filter((g) => {
+      const match =
+        `${g.label} ${g.keywordIds.map((id) => source?.keywords.find((k) => k.id === id)?.text).join(" ")}`
+          .toLowerCase()
+          .includes(groupSearch.toLowerCase().trim());
+      return (
+        match &&
+        (groupFilter === "all" ||
+          (groupFilter === "review"
+            ? reviewIssues(g, workspace).length > 0
+            : reviewIssues(g, workspace).length === 0))
+      );
+    }) || [];
+  function project(): Project {
+    if (!source || !result || !workspace)
+      throw Error("Generate a draft first.");
+    return {
+      version: 1,
+      name: projectName.trim() || "My keyword plan",
+      source,
+      result,
+      workspace,
+    };
+  }
+  function restore(p: Project) {
+    setSource(p.source);
+    setResult(p.result);
+    setWorkspace(p.workspace);
+    setProjectName(p.name);
+    setText(p.source.keywords.map((k) => k.text).join("\n"));
+    setContext(p.source.context);
+    setAudience(p.source.audience);
+    setMode(p.source.mode);
+    setHistory([]);
+    setSelected([]);
+    setTarget("review");
+    setActive(p.workspace.groups[0]?.id || "review");
+    setGroupSearch("");
+    setGroupFilter("all");
+    setError("");
+    setStatus(
+      "Project restored. Previous review checks are retained as your saved decisions.",
+    );
+  }
+  async function restoreFile(file?: File) {
+    if (!file || busy) return;
+    setBusy(true);
+    try {
+      if (file.size > 250_000)
+        throw Error("Choose a project file under 250 KB.");
+      const p = readProject(await file.text());
+      restore(p);
+    } catch {
+      setError(
+        "Could not restore this project. Check its format, version, size, and keyword coverage. Your current draft is unchanged.",
+      );
+    } finally {
+      if (projectFileRef.current) projectFileRef.current.value = "";
+      setBusy(false);
+    }
+  }
   const keyword = (id: string) =>
     source?.keywords.find((k) => k.id === id)?.text || id;
   function change(next: Workspace, preferred = active) {
@@ -80,7 +157,25 @@ export default function KeywordClusteringClient() {
     change({
       ...workspace,
       groups: workspace.groups.map((g) =>
-        g.id === group.id ? { ...g, ...patch, edited: true } : g,
+        g.id === group.id
+          ? {
+              ...g,
+              ...patch,
+              edited: true,
+              planning: g.planning ? { ...g.planning, checked: [] } : undefined,
+            }
+          : g,
+      ),
+    });
+  }
+  function editPlanning(patch: Partial<Planning>) {
+    if (!group || !workspace) return;
+    change({
+      ...workspace,
+      groups: workspace.groups.map((g) =>
+        g.id === group.id
+          ? { ...g, planning: { ...(g.planning || emptyPlanning()), ...patch } }
+          : g,
       ),
     });
   }
@@ -106,7 +201,9 @@ export default function KeywordClusteringClient() {
         type:
           extension === "csv"
             ? "text/csv;charset=utf-8"
-            : "text/markdown;charset=utf-8",
+            : extension === "json"
+              ? "application/json"
+              : "text/markdown;charset=utf-8",
       }),
     );
     const a = document.createElement("a");
@@ -145,6 +242,7 @@ export default function KeywordClusteringClient() {
   }
   async function generate(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError("");
     if (parsed.errors.length) {
       setError(parsed.errors.join(" "));
@@ -190,7 +288,13 @@ export default function KeywordClusteringClient() {
         "Draft groups ready. Review their intent and membership before planning pages.",
       );
       setTimeout(() => {
-        resultRef.current?.focus();
+        // Do not take focus from someone already editing the newly rendered results.
+        if (
+          !resultRef.current ||
+          resultRef.current.contains(document.activeElement)
+        )
+          return;
+        resultRef.current.focus();
         resultRef.current?.scrollIntoView({
           behavior: "smooth",
           block: "start",
@@ -209,6 +313,108 @@ export default function KeywordClusteringClient() {
   }
   return (
     <div className="space-y-6 text-slate-900 dark:text-white">
+      <div className={card}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold">Your planning project</h2>
+            <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+              Save locally or use a portable project file. Saving is manual.
+              Export before replacing the current workspace.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={button}
+              disabled={busy}
+              onClick={() =>
+                action(() => {
+                  const saved = localStorage.getItem(storageKey);
+                  if (!saved)
+                    throw Error("No saved project exists in this browser.");
+                  restore(readProject(saved));
+                })
+              }
+            >
+              Load browser save
+            </button>
+            <button
+              type="button"
+              className={button}
+              disabled={busy}
+              onClick={() => projectFileRef.current?.click()}
+            >
+              Import project JSON
+            </button>
+          </div>
+        </div>
+        <input
+          ref={projectFileRef}
+          id="cluster-project-file"
+          type="file"
+          accept=".json,application/json"
+          className="sr-only"
+          aria-label="Import saved keyword project"
+          disabled={busy}
+          onChange={(e) => void restoreFile(e.target.files?.[0])}
+        />
+        {workspace && (
+          <div className="mt-4 flex flex-wrap items-end gap-3">
+            <div className="min-w-0 flex-1">
+              <label
+                htmlFor="cluster-project-name"
+                className="text-xs font-bold"
+              >
+                Project name
+              </label>
+              <input
+                id="cluster-project-name"
+                maxLength={100}
+                className={field}
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              className={button}
+              onClick={() =>
+                action(() => {
+                  localStorage.setItem(storageKey, writeProject(project()));
+                  setStatus(
+                    "Project saved in this browser. Later edits need another save.",
+                  );
+                })
+              }
+            >
+              Save in browser
+            </button>
+            <button
+              type="button"
+              className={button}
+              onClick={() =>
+                action(() => download(writeProject(project()), "json"))
+              }
+            >
+              Download project JSON
+            </button>
+            <button
+              type="button"
+              className={button}
+              onClick={() =>
+                action(() => {
+                  localStorage.removeItem(storageKey);
+                  setStatus(
+                    "Browser save removed. Your open workspace is unchanged.",
+                  );
+                })
+              }
+            >
+              Remove browser save
+            </button>
+          </div>
+        )}
+      </div>
       <form onSubmit={generate} className={card}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -499,9 +705,76 @@ export default function KeywordClusteringClient() {
               Undo last edit
             </button>
           </div>
+          <div className="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950 sm:grid-cols-3">
+            <div>
+              <strong>
+                {
+                  workspace.groups.filter(
+                    (g) => reviewIssues(g, workspace).length === 0,
+                  ).length
+                }
+                /{workspace.groups.length}
+              </strong>
+              <p className="mt-1 text-xs">
+                Groups with all review steps recorded
+              </p>
+            </div>
+            <div>
+              <strong>
+                {
+                  workspace.groups.filter(
+                    (g) =>
+                      g.planning?.action && g.planning.action !== "undecided",
+                  ).length
+                }
+              </strong>
+              <p className="mt-1 text-xs">Page decisions recorded</p>
+            </div>
+            <div>
+              <strong>{workspace.unassigned.length}</strong>
+              <p className="mt-1 text-xs">Unassigned keywords</p>
+            </div>
+          </div>
+          <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+            Progress reflects your recorded checks. It does not verify research,
+            certify quality, or predict rankings.
+          </p>
           <div className="mt-6 grid gap-6 lg:grid-cols-[250px_1fr]">
             <nav aria-label="Keyword groups" className="space-y-2">
-              {workspace.groups.map((g) => (
+              <label
+                className="block text-xs font-bold"
+                htmlFor="cluster-group-search"
+              >
+                Find a group or keyword
+              </label>
+              <input
+                id="cluster-group-search"
+                className={field}
+                value={groupSearch}
+                onChange={(e) => setGroupSearch(e.target.value)}
+              />
+              <label
+                className="block pt-2 text-xs font-bold"
+                htmlFor="cluster-group-filter"
+              >
+                Review progress
+              </label>
+              <select
+                id="cluster-group-filter"
+                className={field}
+                value={groupFilter}
+                onChange={(e) => setGroupFilter(e.target.value)}
+              >
+                <option value="all">All groups</option>
+                <option value="review">Needs review</option>
+                <option value="recorded">Review steps recorded</option>
+              </select>
+              {!visibleGroups.length && (
+                <p className="py-3 text-xs leading-6 text-slate-500">
+                  No groups match. Change your search or filter.
+                </p>
+              )}
+              {visibleGroups.map((g) => (
                 <button
                   key={g.id}
                   className={`flex min-h-14 w-full items-start gap-3 rounded-xl border p-3 text-left ${active === g.id ? "border-[#5271ff] bg-blue-50 dark:bg-blue-950" : "border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"}`}
@@ -641,6 +914,130 @@ export default function KeywordClusteringClient() {
                       />
                     </div>
                   </div>
+                  <div className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700">
+                    <h3 className="font-bold">
+                      Turn this group into a page decision
+                    </h3>
+                    <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
+                      Record your research and existing-page review. URLs are
+                      planning references and are never fetched.
+                    </p>
+                    <label
+                      htmlFor="cluster-page-action"
+                      className="mt-4 block text-xs font-bold"
+                    >
+                      Page decision
+                    </label>
+                    <select
+                      id="cluster-page-action"
+                      className={field}
+                      value={group.planning?.action || "undecided"}
+                      onChange={(e) =>
+                        editPlanning({
+                          action: e.target.value as Planning["action"],
+                          checked: [],
+                        })
+                      }
+                    >
+                      {actions.map((a) => (
+                        <option key={a} value={a}>
+                          {
+                            {
+                              undecided: "Not decided",
+                              create: "Create a page",
+                              update: "Update an existing page",
+                              hold: "Hold for research",
+                            }[a]
+                          }
+                        </option>
+                      ))}
+                    </select>
+                    <label
+                      htmlFor="cluster-page-url"
+                      className="mt-4 block text-xs font-bold"
+                    >
+                      Existing or proposed page URL
+                    </label>
+                    <input
+                      id="cluster-page-url"
+                      type="url"
+                      maxLength={2000}
+                      className={field}
+                      value={group.planning?.url || ""}
+                      onChange={(e) =>
+                        editPlanning({ url: e.target.value, checked: [] })
+                      }
+                      placeholder="https://example.com/useful-page"
+                    />
+                    <label
+                      htmlFor="cluster-research-notes"
+                      className="mt-4 block text-xs font-bold"
+                    >
+                      Research notes and evidence
+                    </label>
+                    <textarea
+                      id="cluster-research-notes"
+                      rows={3}
+                      maxLength={2000}
+                      className={field}
+                      value={group.planning?.notes || ""}
+                      onChange={(e) =>
+                        editPlanning({ notes: e.target.value, checked: [] })
+                      }
+                      placeholder="Record location, research date, observed intent, sources, or reasons to update an existing page."
+                    />
+                    <fieldset className="mt-4">
+                      <legend className="text-xs font-bold">
+                        Human review checklist
+                      </legend>
+                      {checks.map((check) => (
+                        <label
+                          key={check}
+                          className="mt-2 flex min-h-11 items-start gap-3 text-sm leading-6"
+                        >
+                          <input
+                            id={`cluster-check-${check}`}
+                            type="checkbox"
+                            className="mt-1"
+                            checked={
+                              group.planning?.checked.includes(check) || false
+                            }
+                            onChange={(e) =>
+                              editPlanning({
+                                checked: e.target.checked
+                                  ? [...(group.planning?.checked || []), check]
+                                  : (group.planning?.checked || []).filter(
+                                      (c) => c !== check,
+                                    ),
+                              })
+                            }
+                          />
+                          <span>
+                            {
+                              {
+                                task: "I reviewed the reader task and keyword membership.",
+                                results:
+                                  "I reviewed actual search results for my audience.",
+                                coverage:
+                                  "I checked existing pages before choosing a page decision.",
+                              }[check]
+                            }
+                          </span>
+                        </label>
+                      ))}
+                    </fieldset>
+                    <ul className="mt-4 list-disc space-y-1 pl-5 text-xs leading-6 text-amber-800 dark:text-amber-300">
+                      {reviewIssues(group, workspace).map((issue) => (
+                        <li key={issue}>{issue}</li>
+                      ))}
+                    </ul>
+                    {!reviewIssues(group, workspace).length && (
+                      <p className="mt-4 text-xs font-bold text-green-800 dark:text-green-300">
+                        Review steps recorded. Recheck them whenever your brief
+                        or membership changes.
+                      </p>
+                    )}
+                  </div>
                   <div className="rounded-xl bg-slate-50 p-4 text-sm leading-7 dark:bg-slate-950">
                     <strong>
                       {group.edited
@@ -672,7 +1069,7 @@ export default function KeywordClusteringClient() {
                   </p>
                 </div>
               )}
-              <fieldset>
+              <fieldset aria-label="Select keywords">
                 <legend className="text-sm font-bold">
                   {group ? "Group keywords" : "Keywords awaiting review"}
                 </legend>
@@ -875,9 +1272,9 @@ export default function KeywordClusteringClient() {
             </button>
           </div>
           <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Drafts live in this browser tab and are lost on refresh. CSV cells
-            starting with formula-like characters receive an apostrophe for
-            spreadsheet safety.
+            Unsaved drafts are lost on refresh. Save in this browser or download
+            a project to continue later. CSV cells starting with formula-like
+            characters receive an apostrophe for spreadsheet safety.
           </p>
         </section>
       )}

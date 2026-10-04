@@ -399,7 +399,7 @@ export default function Page() {
               ],
               [
                 "Does the tool save my plan or guarantee rankings?",
-                "No. Drafts disappear on refresh unless exported. Grouping is a planning aid and cannot guarantee search visibility, traffic, or business results.",
+                "No. Unsaved drafts disappear on refresh. Save locally or export a project. Grouping is a planning aid and cannot guarantee search visibility, traffic, or business results.",
               ],
             ].map(([q, a]) => (
               <details key={q} className="py-5">
@@ -410,6 +410,55 @@ export default function Page() {
               </details>
             ))}
           </div>
+        </section>
+        <section className="grid gap-8 lg:grid-cols-2">
+          <div>
+            <h2 className="text-3xl font-black">
+              Keep a research trail for every page decision
+            </h2>
+            <p className={prose}>
+              Clustering is only the first step. Record whether a group needs a
+              new page, an existing-page update, or more research.
+            </p>
+            <p className={prose}>
+              Add an existing or proposed URL and notes from your research.
+              These references are never fetched, and their contents are not
+              checked automatically.
+            </p>
+            <p className={prose}>
+              When groups share a URL, the workspace asks you to review their
+              relationship. Sharing a destination does not prove a ranking
+              conflict.
+            </p>
+            <p className={prose}>
+              Use the checklist to record your review of membership, actual
+              search results, and existing coverage. Changing the brief or
+              membership clears those checks.
+            </p>
+          </div>
+          <aside className="rounded-3xl border border-slate-200 p-7 dark:border-slate-800">
+            <h3 className="text-xl font-bold">A project you can return to</h3>
+            <p className={prose}>
+              Save manually in your browser, or download a project JSON file
+              that keeps your source keywords, edited groups, and planning
+              notes.
+            </p>
+            <p className={prose}>
+              Imported projects are checked for supported structure and complete
+              keyword coverage. Invalid files leave the open workspace
+              unchanged.
+            </p>
+            <p className={prose}>
+              Browser saves stay on the same browser and site. Clearing browser
+              data can remove them. Keep an exported project when the plan
+              matters.
+            </p>
+            <p className={prose}>
+              Review progress represents your recorded decisions. It is not an
+              SEO score, research verification, or promise of search
+              performance.
+            </p>
+          </aside>
         </section>
         <ToolResources slug="keyword-clustering-tool" />
       </div>

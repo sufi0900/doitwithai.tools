@@ -11,7 +11,7 @@ Choose shared reader tasks or broader topics. AI supplies tentative intent, form
 
 Edit the brief, move selected terms, split groups, merge groups, or send a group to review. Each mutation checks full keyword coverage. Recent edits can be undone. Original AI notes are labeled after manual changes. Copy a group brief into Article Outline Generator manually. Export all groups and unresolved terms as Markdown or CSV. Formula-like CSV cells receive an apostrophe.
 
-Drafts are tab-local and lost on refresh. Successful regeneration replaces the previous workspace. Failed regeneration preserves it. File selection does not call AI. Generation sends the cleaned list and optional context/audience, not the whole uploaded file.
+Unsaved drafts are tab-local and lost on refresh. Explicit browser saves and portable JSON projects preserve edited groups and planning notes. Successful regeneration replaces the previous workspace. Failed regeneration preserves it. File selection does not call AI. Generation sends the cleaned list and optional context/audience, not the whole uploaded file.
 
 ## Configuration
 
@@ -29,4 +29,8 @@ Primary reference: https://developers.google.com/search/docs/fundamentals/creati
 
 Unit tests cover cleanup, CSV parsing, schema coverage, editable membership operations, export safeguards, and the mocked provider contract. Browser smoke checks cover imports, grouping, manual edits, moving/splitting/merging, undo, failure preservation, clipboard, and mobile/dark layouts. Live provider quality remains to be evaluated after deployment configuration.
 
-Validation result: 55 AI-tool tests and 11 platform tests passed. Frontend type checking, focused lint, and production build passed. Studio registry equality and Studio production build passed. The Studio-wide TypeScript check reports existing implicit-any errors in unrelated editorial schemas.
+Validation result: 61 AI-tool tests and 11 platform tests passed. Frontend type checking, focused lint, and production build passed. Studio registry equality and Studio production build passed. The Studio-wide TypeScript check reports existing implicit-any errors in unrelated editorial schemas.
+
+## Planning upgrade
+
+Groups now support create/update/hold page decisions, URL references, research notes, and human review checks. Shared URLs prompt review without diagnosing ranking conflicts. Semantic edits and membership changes reset checks. Search and review-progress filters never mutate keyword membership. Project files use a strict versioned schema and coverage checks. Browser saves are manual and local to this site and browser. See `KEYWORD_CLUSTERING_RESEARCH_PLAN.md` for research, implemented priorities, and deferred data integrations.

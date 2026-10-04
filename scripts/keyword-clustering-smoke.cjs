@@ -83,8 +83,9 @@ module.exports = async function checkClustering(page, origin, screenshotDir) {
     await page.type(selector, text);
   };
   const choose = async (n) => {
-    await page.$eval(`#keyword-results fieldset input:nth-of-type(1)`, (n) =>
-      n.click(),
+    await page.$eval(
+      `#keyword-results fieldset[aria-label="Select keywords"] input:nth-of-type(1)`,
+      (n) => n.click(),
     );
   };
   let temp;
@@ -148,7 +149,7 @@ module.exports = async function checkClustering(page, origin, screenshotDir) {
     );
     assert.equal(
       await page.$$eval(
-        "#keyword-results fieldset input",
+        '#keyword-results fieldset[aria-label="Select keywords"] input',
         (nodes) => nodes.length,
       ),
       2,
@@ -175,7 +176,7 @@ module.exports = async function checkClustering(page, origin, screenshotDir) {
     await click("Merge whole group into destination");
     assert.equal(
       await page.$$eval(
-        "#keyword-results fieldset input",
+        '#keyword-results fieldset[aria-label="Select keywords"] input',
         (nodes) => nodes.length,
       ),
       3,
@@ -190,6 +191,83 @@ module.exports = async function checkClustering(page, origin, screenshotDir) {
     const saved = await page.evaluate(() => window.__clusterClipboard);
     assert.match(saved, /apple/);
     assert.match(saved, /meta title generator/);
+    await page.$eval("#keyword-results nav button", (n) => n.click());
+    await page.select("#cluster-page-action", "update");
+    await fill("#cluster-page-url", "https://example.com/titles");
+    await fill(
+      "#cluster-research-notes",
+      "Reviewed existing coverage and reader tasks for the intended audience.",
+    );
+    for (const check of ["task", "results", "coverage"])
+      await page.$eval(`#cluster-check-${check}`, (n) => n.click());
+    assert.match(
+      await page.$eval("#keyword-results", (n) => n.textContent),
+      /Review steps recorded/,
+    );
+    await click("Save in browser");
+    const projectText = await page.evaluate(() =>
+      localStorage.getItem("doitwithai.keyword-clustering.project.v1"),
+    );
+    assert.equal(
+      JSON.parse(projectText).workspace.groups[0].planning.url,
+      "https://example.com/titles",
+    );
+    await fill("#group-focus", "A changed brief resets the recorded checks.");
+    assert.equal(
+      await page.$eval("#cluster-check-task", (n) => n.checked),
+      false,
+    );
+    await click("Load browser save");
+    assert.equal(
+      await page.$eval("#cluster-check-task", (n) => n.checked),
+      true,
+    );
+    await fill("#cluster-group-search", "missing group");
+    assert.match(
+      await page.$eval("#keyword-results nav", (n) => n.textContent),
+      /No groups match/,
+    );
+    await fill("#cluster-group-search", "");
+    await page.select("#cluster-group-filter", "recorded");
+    assert.equal(
+      await page.$$eval(
+        "#keyword-results nav button[aria-pressed]",
+        (ns) => ns.length,
+      ),
+      2,
+    );
+    await page.select("#cluster-group-filter", "all");
+    const projectFile = path.join(temp, "project.json");
+    await fs.writeFile(
+      projectFile,
+      JSON.stringify({
+        ...JSON.parse(projectText),
+        name: "Imported review project",
+      }),
+    );
+    await (await page.$("#cluster-project-file")).uploadFile(projectFile);
+    await page.waitForFunction(
+      () =>
+        document.querySelector("#cluster-project-name")?.value ===
+        "Imported review project",
+    );
+    const invalidFile = path.join(temp, "invalid.json");
+    await fs.writeFile(invalidFile, '{"version":99}');
+    await (await page.$("#cluster-project-file")).uploadFile(invalidFile);
+    await page.waitForFunction(() =>
+      document
+        .querySelector('[role="alert"]')
+        ?.textContent.includes("Could not restore"),
+    );
+    assert.equal(
+      await page.$eval("#cluster-page-url", (n) => n.value),
+      "https://example.com/titles",
+    );
+    await click("Copy full plan");
+    const savedProjectPlan = await page.evaluate(
+      () => window.__clusterClipboard,
+    );
+    assert.match(savedProjectPlan, /Page URL: https:\/\/example.com\/titles/);
     fail = true;
     await click("Generate a new draft");
     await page.waitForFunction(() =>
@@ -198,7 +276,10 @@ module.exports = async function checkClustering(page, origin, screenshotDir) {
         ?.textContent.includes("Clustering provider unavailable"),
     );
     await click("Copy full plan");
-    assert.equal(await page.evaluate(() => window.__clusterClipboard), saved);
+    assert.equal(
+      await page.evaluate(() => window.__clusterClipboard),
+      savedProjectPlan,
+    );
     assert.equal(calls, 2);
     if (screenshotDir) {
       await fs.mkdir(screenshotDir, { recursive: true });
@@ -223,6 +304,12 @@ module.exports = async function checkClustering(page, origin, screenshotDir) {
       ),
       true,
     );
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.querySelector("#keyword-results nav"))
+          .color === "rgb(15, 23, 42)",
+    );
+    await new Promise((resolve) => setTimeout(resolve, 400));
     if (screenshotDir)
       await page.screenshot({
         path: path.join(screenshotDir, "clustering-mobile.png"),
