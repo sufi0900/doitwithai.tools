@@ -26,7 +26,7 @@ References: https://ai.google.dev/gemini-api/docs/structured-output and https://
 
 ## Configuration and API
 
-Set server-only `GEMINI_API_KEY` and `GEMINI_TOPICAL_MAP_MODEL`. Choose a Gemini model supporting `generateContent` with JSON-schema output. No model is silently selected and no OpenAI fallback changes the provider. No real provider was billed during implementation checks.
+Set server-only `GEMINI_API_KEY` and shared `GEMINI_MODEL`. Optional `GEMINI_TOPICAL_MAP_MODEL` overrides that shared model. Choose a Gemini model supporting `generateContent` with JSON-schema output. No model is silently selected and no OpenAI fallback changes the provider. No real provider was billed during implementation checks.
 
 The request uses the fixed Gemini endpoint, a validated model identifier, an API-key header, `store:false`, and JSON schema. No search grounding or URL-context tools are enabled. Shared production Redis rate limiting is required, as with other tools.
 

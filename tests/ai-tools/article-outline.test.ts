@@ -12,7 +12,7 @@ import {
   outlineObservations,
 } from "../../features/article-outline/workspace";
 import { POST } from "../../features/article-outline/handler";
-import { getOpenAIClient } from "../../lib/ai-tools/openai";
+import { getGeminiClient } from "../../lib/ai-tools/gemini";
 const heading = (name: string) => ({
   options: [
     `${name} Practical Steps`,
@@ -128,10 +128,10 @@ test("editable export retains selected structure, notes toggle, and local observ
   assert.equal(outlineObservations(d).blanks, 1);
 });
 test("API bounds provider requests and rejects malformed output without returning a partial outline", async () => {
-  process.env.OPENAI_API_KEY = "test-key";
-  process.env.OPENAI_ARTICLE_OUTLINE_MODEL = "test-model";
-  const client = getOpenAIClient();
-  const original = client.responses.parse;
+  process.env.GEMINI_API_KEY = "test-key";
+  process.env.GEMINI_ARTICLE_OUTLINE_MODEL = "test-model";
+  const client = getGeminiClient();
+  const original = client.generate;
   const request = (body: unknown) =>
     new NextRequest("http://localhost/api/ai-tools/article-outline", {
       method: "POST",
@@ -142,7 +142,7 @@ test("API bounds provider requests and rejects malformed output without returnin
       body: JSON.stringify(body),
     });
   try {
-    client.responses.parse = (async (params: any, options: any) => {
+    client.generate = (async (params: any, options: any) => {
       assert.equal(params.model, "test-model");
       assert.equal(params.store, false);
       assert.equal(params.max_output_tokens, 12000);
@@ -154,12 +154,12 @@ test("API bounds provider requests and rejects malformed output without returnin
     const response = await POST(request(input));
     assert.equal(response.status, 200);
     assert.deepEqual((await response.json()).result, fixture);
-    client.responses.parse = (async () => ({
+    client.generate = (async () => ({
       output_parsed: { ...fixture, h1: [] },
     })) as any;
     assert.equal((await POST(request(input))).status, 502);
   } finally {
-    client.responses.parse = original;
-    delete process.env.OPENAI_ARTICLE_OUTLINE_MODEL;
+    client.generate = original;
+    delete process.env.GEMINI_ARTICLE_OUTLINE_MODEL;
   }
 });

@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { zodTextFormat } from "openai/helpers/zod";
-import { getOpenAIClient } from "@/lib/ai-tools/openai";
+import {
+  getGeminiClient,
+  getGeminiModel,
+  isGeminiConfigured,
+  geminiTextFormat,
+  geminiFailure,
+} from "@/lib/ai-tools/gemini";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
@@ -41,9 +46,9 @@ export function writingHandler(kind: WritingKind) {
       );
     const model =
       kind === "meta-description"
-        ? process.env.OPENAI_META_DESCRIPTION_MODEL
-        : process.env.OPENAI_H1_HEADING_MODEL;
-    if (!process.env.OPENAI_API_KEY || !model)
+        ? getGeminiModel("META_DESCRIPTION")
+        : getGeminiModel("H1_HEADING");
+    if (!isGeminiConfigured(model))
       return error(
         "The generator has not been connected to its AI provider yet.",
         503,
@@ -52,7 +57,9 @@ export function writingHandler(kind: WritingKind) {
     let limit;
     try {
       limit = await checkAiToolRateLimit(request, kind);
-    } catch {
+    } catch (cause) {
+      const failure = geminiFailure(cause);
+      if (failure) return error(failure.message, failure.status, failure.code);
       return error(
         "The generator is temporarily unavailable.",
         503,
@@ -68,7 +75,7 @@ export function writingHandler(kind: WritingKind) {
       );
     try {
       const prompt = writingPrompt(kind, input.data);
-      const response = await getOpenAIClient().responses.parse(
+      const response = await getGeminiClient().generate(
         {
           model,
           max_output_tokens: 2500,
@@ -77,7 +84,9 @@ export function writingHandler(kind: WritingKind) {
             { role: "system", content: prompt.system },
             { role: "user", content: prompt.user },
           ],
-          text: { format: zodTextFormat(writingOutputSchema, "website_copy") },
+          text: {
+            format: geminiTextFormat(writingOutputSchema, "website_copy"),
+          },
         },
         { timeout: 30_000, maxRetries: 0 },
       );
@@ -86,7 +95,9 @@ export function writingHandler(kind: WritingKind) {
         { result, meta: { remaining: limit.remaining } },
         { headers: { "Cache-Control": "no-store" } },
       );
-    } catch {
+    } catch (cause) {
+      const failure = geminiFailure(cause);
+      if (failure) return error(failure.message, failure.status, failure.code);
       return error(
         "We could not generate valid options. Please try again later.",
         502,

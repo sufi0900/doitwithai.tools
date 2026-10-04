@@ -13,7 +13,7 @@ import {
   readabilityPrompt,
 } from "../../features/readability/schema";
 import { POST } from "../../features/readability/handler";
-import { getOpenAIClient } from "../../lib/ai-tools/openai";
+import { getGeminiClient } from "../../lib/ai-tools/gemini";
 const text =
   "In order to prepare an article that provides useful information for readers who may be unfamiliar with the subject, you should identify their main question and gather examples before drafting each section. The draft may require 2 review passes. AI does not guarantee rankings.";
 const fixture = {
@@ -136,10 +136,10 @@ test("revision contract bounds inputs and requires three distinct editing direct
   assert.match(readabilityPrompt(input).system, /qualifications/);
 });
 test("API validates, bounds AI requests and rejects invalid or failed revisions", async () => {
-  process.env.OPENAI_API_KEY = "test-key";
-  process.env.OPENAI_READABILITY_MODEL = "test-model";
-  const client = getOpenAIClient();
-  const original = client.responses.parse;
+  process.env.GEMINI_API_KEY = "test-key";
+  process.env.GEMINI_READABILITY_MODEL = "test-model";
+  const client = getGeminiClient();
+  const original = client.generate;
   const request = (body: unknown) =>
     new NextRequest("http://localhost/api/ai-tools/readability", {
       method: "POST",
@@ -150,7 +150,7 @@ test("API validates, bounds AI requests and rejects invalid or failed revisions"
       body: JSON.stringify(body),
     });
   try {
-    client.responses.parse = (async (params: any, options: any) => {
+    client.generate = (async (params: any, options: any) => {
       assert.equal(params.model, "test-model");
       assert.equal(params.max_output_tokens, 9000);
       assert.equal(params.store, false);
@@ -163,18 +163,18 @@ test("API validates, bounds AI requests and rejects invalid or failed revisions"
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "no-store");
     assert.deepEqual((await response.json()).result, fixture);
-    client.responses.parse = (async () => ({
+    client.generate = (async () => ({
       output_parsed: { candidates: [] },
     })) as any;
     assert.equal((await POST(request({ text }))).status, 502);
-    client.responses.parse = (async () => {
+    client.generate = (async () => {
       throw Error("Provider failed");
     }) as any;
     assert.equal((await POST(request({ text }))).status, 502);
-    delete process.env.OPENAI_READABILITY_MODEL;
+    delete process.env.GEMINI_READABILITY_MODEL;
     assert.equal((await POST(request({ text }))).status, 503);
   } finally {
-    client.responses.parse = original;
-    delete process.env.OPENAI_READABILITY_MODEL;
+    client.generate = original;
+    delete process.env.GEMINI_READABILITY_MODEL;
   }
 });

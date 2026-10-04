@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { zodTextFormat } from "openai/helpers/zod";
-import { getOpenAIClient } from "@/lib/ai-tools/openai";
+import {
+  getGeminiClient,
+  getGeminiModel,
+  isGeminiConfigured,
+  geminiTextFormat,
+  geminiFailure,
+} from "@/lib/ai-tools/gemini";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
@@ -37,8 +42,8 @@ export async function POST(request: NextRequest) {
       422,
       "VALIDATION_ERROR",
     );
-  const model = process.env.OPENAI_KEYWORD_CLUSTERING_MODEL;
-  if (!process.env.OPENAI_API_KEY || !model)
+  const model = getGeminiModel("KEYWORD_CLUSTERING");
+  if (!isGeminiConfigured(model))
     return error(
       "The generator has not been connected to its AI provider yet.",
       503,
@@ -63,7 +68,7 @@ export async function POST(request: NextRequest) {
     );
   try {
     const prompt = clusterPrompt(input.data);
-    const response = await getOpenAIClient().responses.parse(
+    const response = await getGeminiClient().generate(
       {
         model,
         max_output_tokens: 5000,
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
           { role: "user", content: prompt.user },
         ],
         text: {
-          format: zodTextFormat(clusterOutputSchema, "keyword_clusters"),
+          format: geminiTextFormat(clusterOutputSchema, "keyword_clusters"),
         },
       },
       // Leave time for validation and an error response before Vercel terminates the function.
@@ -87,7 +92,9 @@ export async function POST(request: NextRequest) {
       { result, meta: { remaining: limit.remaining } },
       { headers: { "Cache-Control": "no-store" } },
     );
-  } catch {
+  } catch (cause) {
+    const failure = geminiFailure(cause);
+    if (failure) return error(failure.message, failure.status, failure.code);
     return error(
       "We could not generate valid options. Please try again later.",
       502,

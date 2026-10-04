@@ -10,7 +10,7 @@ Before drafting any title, silently reason through the brief like an editor woul
 1. What is this page actually about, in one plain sentence? What specific promise does it make to a reader?
 2. What would a real, well-written title for this exact topic look like if a skilled human writer typed it from scratch, with no keyword in hand yet? Start from that natural sentence, not from the keyword.
 3. Where does the primary keyword (or a natural variant of it) fit into that sentence without being forced? Sometimes that is the first few words. Often it reads better in the middle, at the end, or as a natural variant rather than the literal exact phrase. A title with zero awkwardness always beats a title with the keyword crammed at position one.
-4. If you have access to a web search tool, use it when the topic, product, or brand is unfamiliar or specific (a named tool, extension, company, or niche subject). Look at how existing high-quality pages on this exact or a closely related topic phrase their titles, so your options read like they belong in that same field, not like a generic SEO template. Do not copy any title you find; use it only to calibrate natural phrasing and to avoid an obviously generic angle.
+4. Use only the supplied brief and general language knowledge. No web search or live verification is available. Do not imply current facts were checked.
 5. Only after steps 1–4, check the mechanical constraints (length, keyword presence, brand, freshness) and adjust minimally, never by force-inserting the keyword at the front if it breaks the sentence.
 
 WHAT THE TARGET AUDIENCE FIELD IS FOR

@@ -247,7 +247,7 @@ test("Gemini API uses bounded structured output without grounding and rejects pr
     assert.equal((await POST(request({ seed: "SEO" }))).status, 502);
     globalThis.fetch = (async () =>
       new Response("Provider error", { status: 429 })) as typeof fetch;
-    assert.equal((await POST(request({ seed: "SEO" }))).status, 502);
+    assert.equal((await POST(request({ seed: "SEO" }))).status, 429);
     delete process.env.GEMINI_API_KEY;
     assert.equal((await POST(request({ seed: "SEO" }))).status, 503);
   } finally {

@@ -10,7 +10,7 @@ import {
 import { altAttribute, reviewAlt } from "../../features/alt-text/review";
 import { validateImageData } from "../../features/alt-text/image.server";
 import { POST } from "../../features/alt-text/handler";
-import { getOpenAIClient } from "../../lib/ai-tools/openai";
+import { getGeminiClient } from "../../lib/ai-tools/gemini";
 const png =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5ZkAAAAASUVORK5CYII=";
 const description =
@@ -152,11 +152,11 @@ test("output contract requires distinct alternatives and separate detail only fo
   );
 });
 test("API bounds images, skips decorative requests, preserves no-store and sends grounded multimodal input", async () => {
-  process.env.OPENAI_API_KEY = "test-key";
-  process.env.OPENAI_ALT_TEXT_MODEL = "test-vision-model";
+  process.env.GEMINI_API_KEY = "test-key";
+  process.env.GEMINI_ALT_TEXT_MODEL = "test-vision-model";
   process.env.AI_TOOLS_BURST_LIMIT = "40";
-  const client = getOpenAIClient();
-  const original = client.responses.parse;
+  const client = getGeminiClient();
+  const original = client.generate;
   let calls = 0;
   const request = (body: unknown) =>
     new NextRequest("http://localhost/api/ai-tools/alt-text", {
@@ -168,7 +168,7 @@ test("API bounds images, skips decorative requests, preserves no-store and sends
       body: JSON.stringify(body),
     });
   try {
-    client.responses.parse = (async (params: any, options: any) => {
+    client.generate = (async (params: any, options: any) => {
       calls++;
       assert.equal(params.model, "test-vision-model");
       assert.equal(params.store, false);
@@ -201,24 +201,24 @@ test("API bounds images, skips decorative requests, preserves no-store and sends
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "no-store");
     assert.deepEqual((await response.json()).result, fixture);
-    client.responses.parse = (async (params: any) => {
+    client.generate = (async (params: any) => {
       assert.equal(params.input[1].content.length, 1);
       return { output_parsed: fixture };
     }) as any;
     assert.equal((await POST(request({ description }))).status, 200);
-    client.responses.parse = (async () => ({
+    client.generate = (async () => ({
       output_parsed: { ...fixture, candidates: [] },
     })) as any;
     assert.equal((await POST(request({ description }))).status, 502);
-    client.responses.parse = (async () => {
+    client.generate = (async () => {
       throw Error("Provider failed");
     }) as any;
     assert.equal((await POST(request({ description }))).status, 502);
-    delete process.env.OPENAI_ALT_TEXT_MODEL;
+    delete process.env.GEMINI_ALT_TEXT_MODEL;
     assert.equal((await POST(request({ description }))).status, 503);
   } finally {
-    client.responses.parse = original;
-    delete process.env.OPENAI_ALT_TEXT_MODEL;
+    client.generate = original;
+    delete process.env.GEMINI_ALT_TEXT_MODEL;
     delete process.env.AI_TOOLS_BURST_LIMIT;
   }
 });

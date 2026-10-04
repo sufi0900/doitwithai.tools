@@ -11,15 +11,24 @@ type Props = {
 // Status copy tied to elapsed seconds rather than to real backend events,
 // since generation is a single request-response call. The thresholds are
 // tuned to roughly match how the request actually spends its time: reading
-// the brief, letting the model consult web search for phrasing context,
+// the brief, using the supplied brief for phrasing context,
 // drafting the five option groups, then the deterministic quality pass that
 // runs client-side once the response lands. This keeps the wait legible
 // without inventing a progress percentage the app can't actually measure.
 const STATUS_STEPS = [
   { afterSeconds: 0, label: "Reading your page brief and search intent" },
-  { afterSeconds: 3, label: "AI is researching how similar pages phrase titles online" },
-  { afterSeconds: 9, label: "Drafting Google, human, AI-readable, and desktop angles" },
-  { afterSeconds: 17, label: "Checking grammar, variety, and natural keyword placement" },
+  {
+    afterSeconds: 3,
+    label: "Exploring title wording from your supplied brief",
+  },
+  {
+    afterSeconds: 9,
+    label: "Drafting Google, human, AI-readable, and desktop angles",
+  },
+  {
+    afterSeconds: 17,
+    label: "Checking grammar, variety, and natural keyword placement",
+  },
   { afterSeconds: 26, label: "Finalizing your recommendations" },
 ];
 
@@ -91,18 +100,15 @@ export default function GenerationOverlay({ active }: Props) {
             <Quote className="h-3 w-3" />
             While you wait
           </div>
-          <p
-            key={quoteIndex}
-            className="mt-2 text-sm leading-6 text-slate-200"
-          >
+          <p key={quoteIndex} className="mt-2 text-sm leading-6 text-slate-200">
             {quotesRef.current[quoteIndex]}
           </p>
         </div>
 
         <p className="mt-5 text-[11px] leading-5 text-slate-500">
-          This usually takes a little longer than a simple template fill,
-          since the model is checking real phrasing patterns before writing
-          your options.
+          This usually takes a little longer than a simple template fill, since
+          the model is checking real phrasing patterns before writing your
+          options.
         </p>
       </div>
     </div>

@@ -22,7 +22,7 @@ import {
   exportPlan,
 } from "../../features/keyword-clustering/workspace";
 import { POST } from "../../features/keyword-clustering/handler";
-import { getOpenAIClient } from "../../lib/ai-tools/openai";
+import { getGeminiClient } from "../../lib/ai-tools/gemini";
 const keywords = parseKeywordList(
   "meta title examples\nhow to write meta titles\nmeta title generator\napple",
 ).keywords;
@@ -180,17 +180,17 @@ test("CSV export quotes fields, guards spreadsheet formulas and includes unresol
 });
 test("API configuration and mocked provider enforce structured outputs and reject missing coverage", async () => {
   const saved = {
-    key: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_KEYWORD_CLUSTERING_MODEL,
+    key: process.env.GEMINI_API_KEY,
+    model: process.env.GEMINI_KEYWORD_CLUSTERING_MODEL,
     burst: process.env.AI_TOOLS_BURST_LIMIT,
     daily: process.env.AI_TOOLS_DAILY_LIMIT,
   };
-  process.env.OPENAI_API_KEY = "test-key";
-  process.env.OPENAI_KEYWORD_CLUSTERING_MODEL = "test-model";
+  process.env.GEMINI_API_KEY = "test-key";
+  process.env.GEMINI_KEYWORD_CLUSTERING_MODEL = "test-model";
   process.env.AI_TOOLS_BURST_LIMIT = "40";
   process.env.AI_TOOLS_DAILY_LIMIT = "100";
-  const client = getOpenAIClient();
-  const original = client.responses.parse;
+  const client = getGeminiClient();
+  const original = client.generate;
   let n = 0;
   const request = (body: unknown) =>
     new NextRequest("http://localhost/api/ai-tools/keyword-clustering", {
@@ -202,7 +202,7 @@ test("API configuration and mocked provider enforce structured outputs and rejec
       body: JSON.stringify(body),
     });
   try {
-    client.responses.parse = (async (options: any, config: any) => {
+    client.generate = (async (options: any, config: any) => {
       assert.equal(options.store, false);
       assert.equal(options.model, "test-model");
       assert.equal(options.max_output_tokens, 5000);
@@ -216,21 +216,21 @@ test("API configuration and mocked provider enforce structured outputs and rejec
     assert.equal(ok.status, 200);
     assert.equal(ok.headers.get("cache-control"), "no-store");
     assert.deepEqual((await ok.json()).result, fixture);
-    client.responses.parse = (async () => ({
+    client.generate = (async () => ({
       output_parsed: { ...fixture, unassigned: [] },
     })) as any;
     assert.equal((await POST(request({ keywords }))).status, 502);
-    client.responses.parse = (async () => {
+    client.generate = (async () => {
       throw Error("provider unavailable");
     }) as any;
     assert.equal((await POST(request({ keywords }))).status, 502);
-    delete process.env.OPENAI_KEYWORD_CLUSTERING_MODEL;
+    delete process.env.GEMINI_KEYWORD_CLUSTERING_MODEL;
     assert.equal((await POST(request({ keywords }))).status, 503);
   } finally {
-    client.responses.parse = original;
+    client.generate = original;
     for (const [name, value] of Object.entries({
-      OPENAI_API_KEY: saved.key,
-      OPENAI_KEYWORD_CLUSTERING_MODEL: saved.model,
+      GEMINI_API_KEY: saved.key,
+      GEMINI_KEYWORD_CLUSTERING_MODEL: saved.model,
       AI_TOOLS_BURST_LIMIT: saved.burst,
       AI_TOOLS_DAILY_LIMIT: saved.daily,
     })) {

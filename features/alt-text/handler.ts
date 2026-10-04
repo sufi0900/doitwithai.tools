@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { zodTextFormat } from "openai/helpers/zod";
-import { getOpenAIClient } from "@/lib/ai-tools/openai";
+import {
+  getGeminiClient,
+  getGeminiModel,
+  isGeminiConfigured,
+  geminiTextFormat,
+  geminiFailure,
+} from "@/lib/ai-tools/gemini";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
@@ -55,8 +60,8 @@ export async function POST(request: NextRequest) {
       "INVALID_IMAGE",
     );
   }
-  const model = process.env.OPENAI_ALT_TEXT_MODEL;
-  if (!model || !process.env.OPENAI_API_KEY)
+  const model = getGeminiModel("ALT_TEXT");
+  if (!isGeminiConfigured(model))
     return error(
       "The generator has not been connected to its AI provider yet.",
       503,
@@ -81,7 +86,7 @@ export async function POST(request: NextRequest) {
     );
   try {
     const prompt = altPrompt(input.data);
-    const response = await getOpenAIClient().responses.parse(
+    const response = await getGeminiClient().generate(
       {
         model,
         max_output_tokens: 2400,
@@ -104,7 +109,7 @@ export async function POST(request: NextRequest) {
             ],
           },
         ],
-        text: { format: zodTextFormat(altOutputSchema, "image_alt_text") },
+        text: { format: geminiTextFormat(altOutputSchema, "image_alt_text") },
       },
       { timeout: 45_000, maxRetries: 0 },
     );
@@ -116,7 +121,9 @@ export async function POST(request: NextRequest) {
       { result, meta: { remaining: limit.remaining } },
       { headers: { "Cache-Control": "no-store" } },
     );
-  } catch {
+  } catch (cause) {
+    const failure = geminiFailure(cause);
+    if (failure) return error(failure.message, failure.status, failure.code);
     return error(
       "We could not generate valid alternatives. Please try again later.",
       502,

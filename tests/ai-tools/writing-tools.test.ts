@@ -10,7 +10,7 @@ import {
 import { readBoundedJson, BodyError } from "../../lib/ai-tools/request-body";
 import { checkAiToolRateLimit } from "../../lib/ai-tools/rate-limit";
 import { writingHandler } from "../../features/writing-tools/handler";
-import { getOpenAIClient } from "../../lib/ai-tools/openai";
+import { getGeminiClient } from "../../lib/ai-tools/gemini";
 const input = writingInputSchema.parse({
   brief:
     "An educational page explaining how to plan a container garden with seed selection and watering examples.",
@@ -143,9 +143,9 @@ test("changing User-Agent cannot bypass the same address limit", async () => {
 });
 test("both API handlers validate requests, use bounded structured output and surface provider failures", async () => {
   const original = {
-    key: process.env.OPENAI_API_KEY,
-    description: process.env.OPENAI_META_DESCRIPTION_MODEL,
-    heading: process.env.OPENAI_H1_HEADING_MODEL,
+    key: process.env.GEMINI_API_KEY,
+    description: process.env.GEMINI_META_DESCRIPTION_MODEL,
+    heading: process.env.GEMINI_H1_HEADING_MODEL,
   };
   const request = () =>
     new NextRequest("http://example.test", {
@@ -156,18 +156,19 @@ test("both API handlers validate requests, use bounded structured output and sur
       },
       body: JSON.stringify(input),
     });
-  delete process.env.OPENAI_META_DESCRIPTION_MODEL;
+  delete process.env.GEMINI_META_DESCRIPTION_MODEL;
   assert.equal(
     (await writingHandler("meta-description")(request())).status,
     503,
   );
-  process.env.OPENAI_API_KEY = "test-placeholder";
-  process.env.OPENAI_META_DESCRIPTION_MODEL = "test-model";
-  process.env.OPENAI_H1_HEADING_MODEL = "test-model";
-  const client = getOpenAIClient();
-  const parse = client.responses.parse;
+  process.env.GEMINI_API_KEY = "test-placeholder";
+  process.env.GEMINI_META_DESCRIPTION_MODEL = "test-model";
+  process.env.GEMINI_H1_HEADING_MODEL = "test-model";
+  const client = getGeminiClient();
+  const parse = client.generate;
   try {
-    client.responses.parse = (async (params: any, options: any) => {
+    client.generate = (async (params: any, options: any) => {
+      assert.equal(params.model, "test-model");
       assert.equal(params.store, false);
       assert.equal(params.max_output_tokens, 2500);
       assert.equal(options.maxRetries, 0);
@@ -186,7 +187,7 @@ test("both API handlers validate requests, use bounded structured output and sur
       assert.equal(response.headers.get("cache-control"), "no-store");
       assert.equal((await response.json()).result.candidates.length, 6);
     }
-    client.responses.parse = (async () => {
+    client.generate = (async () => {
       throw new Error("provider unavailable");
     }) as any;
     assert.equal(
@@ -194,11 +195,11 @@ test("both API handlers validate requests, use bounded structured output and sur
       502,
     );
   } finally {
-    client.responses.parse = parse;
+    client.generate = parse;
     for (const [key, value] of [
-      ["OPENAI_API_KEY", original.key],
-      ["OPENAI_META_DESCRIPTION_MODEL", original.description],
-      ["OPENAI_H1_HEADING_MODEL", original.heading],
+      ["GEMINI_API_KEY", original.key],
+      ["GEMINI_META_DESCRIPTION_MODEL", original.description],
+      ["GEMINI_H1_HEADING_MODEL", original.heading],
     ]) {
       if (value === undefined) delete process.env[key!];
       else process.env[key!] = value;
