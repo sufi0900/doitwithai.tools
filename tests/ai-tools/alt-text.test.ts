@@ -172,7 +172,7 @@ test("API bounds images, skips decorative requests, preserves no-store and sends
       calls++;
       assert.equal(params.model, "test-vision-model");
       assert.equal(params.store, false);
-      assert.equal(params.max_output_tokens, 2400);
+      assert.equal(params.max_output_tokens, 6000);
       assert.equal(options.timeout, 45000);
       assert.equal(options.maxRetries, 0);
       assert.equal(params.input[1].content[1].image_url, png);

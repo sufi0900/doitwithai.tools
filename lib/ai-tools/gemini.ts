@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
+import { compactOutputSchema } from "./compact-schema";
 import { readBoundedJson } from "./request-body";
 
 export function getGeminiModel(tool?: string) {
@@ -13,16 +14,21 @@ export function isGeminiConfigured(model: string) {
     /^[a-zA-Z0-9][a-zA-Z0-9._-]{1,80}$/.test(model),
   );
 }
-export function geminiTextFormat<T extends z.ZodType>(schema: T, name: string) {
+export function geminiTextFormat<T extends z.ZodType>(
+  schema: T,
+  name: string,
+  options: { compact?: boolean } = {},
+) {
   const json = z.toJSONSchema(schema, { target: "draft-07" });
   delete json.$schema;
   return {
     name,
-    schema: json,
+    schema: options.compact ? compactOutputSchema(json) : json,
     parse: (value: unknown): z.infer<T> => schema.parse(value),
   };
 }
 type Format<T> = {
+  name?: string;
   schema: Record<string, unknown>;
   parse: (value: unknown) => T;
 };
@@ -43,6 +49,7 @@ export class GeminiError extends Error {
     public readonly code: string,
     public readonly upstreamStatus?: number,
     public readonly providerStatus?: string,
+    public readonly finishReason?: string,
   ) {
     super(code);
   }
@@ -64,14 +71,22 @@ async function providerStatus(response: Response) {
   ]);
   try {
     const body = (await readBoundedJson(response, 16_000)) as {
-      error?: { status?: unknown };
+      error?: { status?: unknown; message?: unknown };
     };
     const status = body?.error?.status;
-    return typeof status === "string" && allowed.has(status)
-      ? status
-      : undefined;
+    const message = body?.error?.message;
+    return {
+      status:
+        typeof status === "string" && allowed.has(status) ? status : undefined,
+      // Classify locally; never retain, return or log the provider message.
+      schemaRejected:
+        typeof message === "string" &&
+        /response_?json_?schema|response_?schema|too many states|schema.{0,100}(?:complex|unsupported|invalid)|(?:complex|unsupported|invalid).{0,100}schema/i.test(
+          message,
+        ),
+    };
   } catch {
-    return undefined;
+    return { status: undefined, schemaRejected: false };
   }
 }
 function parts(content: string | Part[]) {
@@ -98,40 +113,77 @@ async function generate<T>(
     Math.min(options.timeout ?? 45_000, 50_000),
   );
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": process.env.GEMINI_API_KEY!.trim(),
+    const send = (jsonMode: boolean) =>
+      fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${params.model}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": process.env.GEMINI_API_KEY!.trim(),
+          },
+          cache: "no-store",
+          signal: controller.signal,
+          body: JSON.stringify({
+            store: false,
+            systemInstruction: {
+              parts: params.input
+                .filter((item) => item.role === "system")
+                .flatMap((item) => parts(item.content))
+                .concat(
+                  jsonMode
+                    ? [
+                        {
+                          text: `Return only valid JSON matching this output contract. All values must pass these checks: ${JSON.stringify(params.text.format.schema)}`,
+                        },
+                      ]
+                    : [],
+                ),
+            },
+            contents: params.input
+              .filter((item) => item.role === "user")
+              .map((item) => ({ role: "user", parts: parts(item.content) })),
+            generationConfig: {
+              responseMimeType: "application/json",
+              ...(!jsonMode
+                ? { responseJsonSchema: params.text.format.schema }
+                : {}),
+              candidateCount: 1,
+              maxOutputTokens: params.max_output_tokens,
+            },
+          }),
         },
-        cache: "no-store",
-        signal: controller.signal,
-        body: JSON.stringify({
-          store: false,
-          systemInstruction: {
-            parts: params.input
-              .filter((item) => item.role === "system")
-              .flatMap((item) => parts(item.content)),
-          },
-          contents: params.input
-            .filter((item) => item.role === "user")
-            .map((item) => ({ role: "user", parts: parts(item.content) })),
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseJsonSchema: params.text.format.schema,
-            candidateCount: 1,
-            maxOutputTokens: params.max_output_tokens,
-          },
-        }),
-      },
-    );
+      );
+    let response = await send(false);
+    let rejection: Awaited<ReturnType<typeof providerStatus>> | undefined;
+    if (response.status === 400) {
+      rejection = await providerStatus(response);
+      // Only these compact tool formats opt into one schema-specific retry.
+      // Both calls share the original abort deadline and all local validators.
+      if (
+        rejection.schemaRejected &&
+        params.text.format.name &&
+        ["article_outline", "keyword_clusters", "topical_map"].includes(
+          params.text.format.name,
+        ) &&
+        !controller.signal.aborted
+      ) {
+        process.stderr.write(
+          JSON.stringify({
+            event: "ai_schema_json_mode_retry",
+            model: params.model,
+            format: params.text.format.name,
+          }) + "\n",
+        );
+        response = await send(true);
+        rejection = undefined;
+      }
+    }
     if (!response.ok) {
       const upstream = response.status;
-      const provider = await providerStatus(response);
+      const provider = rejection || (await providerStatus(response));
       const failure = (status: number, code: string) =>
-        new GeminiError(status, code, upstream, provider);
+        new GeminiError(status, code, upstream, provider.status);
       if (upstream === 400) throw failure(502, "PROVIDER_BAD_REQUEST");
       if (upstream === 429) throw failure(429, "PROVIDER_RATE_LIMITED");
       if (upstream === 401 || upstream === 403)
@@ -142,14 +194,48 @@ async function generate<T>(
       throw failure(502, "PROVIDER_FAILED");
     }
     const payload = (await readBoundedJson(response, 500_000)) as {
+      promptFeedback?: { blockReason?: string };
       candidates?: Array<{
         finishReason?: string;
         content?: { parts?: Array<{ text?: string; thought?: boolean }> };
       }>;
     };
     const candidate = payload.candidates?.[0];
+    const blockedReasons = new Set([
+      "SAFETY",
+      "RECITATION",
+      "BLOCKLIST",
+      "PROHIBITED_CONTENT",
+      "SPII",
+      "IMAGE_SAFETY",
+      "IMAGE_PROHIBITED_CONTENT",
+    ]);
+    if (candidate?.finishReason === "MAX_TOKENS")
+      throw new GeminiError(
+        502,
+        "OUTPUT_LIMIT_REACHED",
+        response.status,
+        undefined,
+        "MAX_TOKENS",
+      );
+    const blockReason =
+      candidate?.finishReason || payload.promptFeedback?.blockReason;
+    if (blockReason && blockedReasons.has(blockReason))
+      throw new GeminiError(
+        422,
+        "OUTPUT_BLOCKED",
+        response.status,
+        undefined,
+        blockReason,
+      );
     if (candidate?.finishReason !== "STOP")
-      throw new GeminiError(502, "INCOMPLETE_OUTPUT");
+      throw new GeminiError(
+        502,
+        "INCOMPLETE_OUTPUT",
+        response.status,
+        undefined,
+        "OTHER_OR_MISSING",
+      );
     const text = candidate.content?.parts
       ?.filter((part) => !part.thought)
       .map((part) => part.text || "")
@@ -178,6 +264,7 @@ async function generate<T>(
         status: failure.status,
         upstreamStatus: failure.upstreamStatus,
         providerStatus: failure.providerStatus,
+        finishReason: failure.finishReason,
         requestId: failure.requestId,
         inputMode: params.input.some(
           (item) =>
@@ -215,7 +302,11 @@ export function geminiFailure(error: unknown) {
     PROVIDER_CONNECTION_FAILED:
       "The AI provider could not be reached. Your previous draft is preserved. Please try again later.",
     INCOMPLETE_OUTPUT:
-      "The AI response was incomplete or blocked. Try a smaller request or review the supplied material.",
+      "Gemini stopped before returning a complete draft. Your input is preserved. Please try again later.",
+    OUTPUT_LIMIT_REACHED:
+      "Gemini reached this request's output limit before finishing. Your input is preserved. Try a smaller request.",
+    OUTPUT_BLOCKED:
+      "Gemini blocked this request or response. Review the supplied material. Your input is preserved.",
     EMPTY_OUTPUT:
       "The AI returned no draft. Please try a more focused request.",
     PROVIDER_FAILED:

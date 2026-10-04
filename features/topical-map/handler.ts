@@ -73,7 +73,9 @@ export async function POST(request: NextRequest) {
           { role: "user", content: p.user },
         ],
         text: {
-          format: geminiTextFormat(outputSchema, "topical_map"),
+          format: geminiTextFormat(outputSchema, "topical_map", {
+            compact: true,
+          }),
         },
       },
       { timeout: 45_000, maxRetries: 0 },

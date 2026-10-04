@@ -208,9 +208,12 @@ test("Gemini API uses bounded structured output without grounding and rejects pr
       const fields =
         body.generationConfig.responseJsonSchema.properties.nodes.items
           .properties;
-      assert.equal(fields.focus.maxLength, 500);
-      assert.equal(fields.why.maxLength, 300);
-      assert.equal(fields.id.pattern, "^n[1-9]\\d?$");
+      assert.equal(fields.focus.maxLength, undefined);
+      assert.match(fields.focus.description, /Maximum string length: 500/);
+      assert.equal(fields.why.maxLength, undefined);
+      assert.match(fields.why.description, /Maximum string length: 300/);
+      assert.equal(fields.id.pattern, undefined);
+      assert.match(fields.id.description, /Required string pattern/);
       return Response.json({
         candidates: [
           {

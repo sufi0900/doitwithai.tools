@@ -38,6 +38,29 @@ The title tool now uses the supplied brief without live search grounding. Its pr
 
 ## Troubleshooting
 
+### Structured tool request compatibility
+
+Article Outline, Keyword Clustering, and Topical Map now send compact provider-facing schemas.
+Types, fields, required keys, enums, and object structure remain enforced by Gemini's structured decoder.
+Array bounds, string lengths, and patterns move into schema descriptions to reduce decoder complexity.
+The original Zod validators and tool-specific semantic checks remain strict.
+Compact schemas do not prove the exact reason for an earlier HTTP 400.
+
+If Gemini explicitly identifies a schema rejection, these three tools allow one JSON-mode recovery call.
+It keeps the output contract in trusted instructions and retains JSON response mode and all local validators.
+Both attempts share the original timeout. Other HTTP 400 errors are not retried.
+Safety blocks, authentication failures, and quota errors never trigger this compatibility recovery.
+The event `ai_schema_json_mode_retry` records the model and tool format without submitted material.
+
+Alt Text now has a 6,000-token output ceiling instead of 2,400.
+This provides more completion headroom; actual token exhaustion must still be confirmed from the stopping reason.
+`MAX_TOKENS`, safety refusals, and other incomplete responses now have distinct messages.
+Safe failure logs include an allowlisted stopping reason. Partial and blocked results remain rejected.
+
+Official references
+- https://ai.google.dev/gemini-api/docs/structured-output
+- https://ai.google.dev/api/generate-content
+
 ### Text examples work but uploaded images fail
 
 Text success confirms credentials work for that request. It does not establish image-processing availability or model compatibility.
@@ -66,6 +89,6 @@ Diagnostic improvements do not establish the exact cause of an earlier failure o
 
 ## Validation
 
-The current update passes 87 automated checks: 76 AI-tool tests and 11 foundation checks.
+The current update passes 90 automated checks: 79 AI-tool tests and 11 foundation checks.
 These cover native transport, image conversion, separate vision-model routing, safe diagnostics, validation, quota errors, and existing tool workflows.
 Frontend TypeScript and focused lint pass. Provider calls were mocked. No live key or Gemini model output was evaluated.

@@ -17,6 +17,7 @@ import { outlineOutputSchema } from "../../features/article-outline/schema";
 import { readabilityOutputSchema } from "../../features/readability/schema";
 import { altOutputSchema } from "../../features/alt-text/schema";
 import { clusterOutputSchema } from "../../features/keyword-clustering/schema";
+import { outputSchema as mapOutputSchema } from "../../features/topical-map/schema";
 
 const format = geminiTextFormat(
   z.object({ answer: z.string().min(2) }).strict(),
@@ -75,6 +76,114 @@ test("all migrated output schemas serialize without relying on OpenAI helpers", 
     assert.equal(f.schema.$schema, undefined);
     assert.ok(f.schema.properties);
     assert.throws(() => f.parse({}));
+  }
+});
+test("compact schemas remove decoder bounds but keep guidance, field names, types, enums and strict local checks", () => {
+  const source = z
+    .object({
+      minItems: z.string().min(3).max(8),
+      nodes: z
+        .array(
+          z
+            .object({
+              id: z.string().regex(/^n[1-9]$/),
+              intent: z.enum(["learn", "buy"]),
+            })
+            .strict(),
+        )
+        .min(2)
+        .max(25),
+    })
+    .strict();
+  const full = geminiTextFormat(source, "full");
+  const compact = geminiTextFormat(source, "compact", { compact: true });
+  const props = compact.schema.properties as any;
+  assert.equal(props.minItems.type, "string");
+  assert.equal(props.minItems.minLength, undefined);
+  assert.match(props.minItems.description, /Minimum string length: 3/);
+  assert.equal(props.nodes.maxItems, undefined);
+  assert.match(props.nodes.description, /Maximum item count: 25/);
+  assert.equal(props.nodes.items.properties.id.pattern, undefined);
+  assert.deepEqual(props.nodes.items.properties.intent.enum, ["learn", "buy"]);
+  assert.equal(props.nodes.items.additionalProperties, false);
+  assert.deepEqual(compact.schema.required, ["minItems", "nodes"]);
+  assert.equal((full.schema.properties as any).nodes.maxItems, 25);
+  assert.throws(() =>
+    compact.parse({ minItems: "longer than allowed", nodes: [] }),
+  );
+  assert.throws(() =>
+    compact.parse({
+      minItems: "valid",
+      nodes: [
+        { id: "wrong", intent: "learn" },
+        { id: "n2", intent: "buy" },
+      ],
+    }),
+  );
+  for (const schema of [
+    mapOutputSchema,
+    outlineOutputSchema,
+    clusterOutputSchema,
+  ]) {
+    const encoded = geminiTextFormat(schema, "tool", { compact: true }).schema;
+    assert.doesNotMatch(
+      JSON.stringify(encoded),
+      /"(?:minItems|maxItems|minLength|maxLength|pattern)":/,
+    );
+    assert.throws(() =>
+      geminiTextFormat(schema, "tool", { compact: true }).parse({}),
+    );
+  }
+});
+
+test("token exhaustion, safety refusal and missing candidates remain distinct and never accept partial output", async () => {
+  const savedFetch = globalThis.fetch;
+  const savedKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = "test-key";
+  try {
+    for (const [response, expected, reason] of [
+      [
+        envelope('{"answer":"partial"}', "MAX_TOKENS"),
+        "OUTPUT_LIMIT_REACHED",
+        "MAX_TOKENS",
+      ],
+      [envelope('{"answer":"blocked"}', "SAFETY"), "OUTPUT_BLOCKED", "SAFETY"],
+      [
+        Response.json({
+          promptFeedback: { blockReason: "PROHIBITED_CONTENT" },
+        }),
+        "OUTPUT_BLOCKED",
+        "PROHIBITED_CONTENT",
+      ],
+      [
+        Response.json({ candidates: [] }),
+        "INCOMPLETE_OUTPUT",
+        "OTHER_OR_MISSING",
+      ],
+      [
+        envelope("bad", "private-reason"),
+        "INCOMPLETE_OUTPUT",
+        "OTHER_OR_MISSING",
+      ],
+    ] as const) {
+      let calls = 0;
+      globalThis.fetch = (async () => {
+        calls++;
+        return response;
+      }) as typeof fetch;
+      await assert.rejects(getGeminiClient().generate(params), (error) => {
+        assert.ok(error instanceof GeminiError);
+        assert.equal(error.code, expected);
+        assert.equal(error.finishReason, reason);
+        assert.equal(error.upstreamStatus, 200);
+        return true;
+      });
+      assert.equal(calls, 1);
+    }
+  } finally {
+    globalThis.fetch = savedFetch;
+    if (savedKey === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = savedKey;
   }
 });
 test("native Gemini transport validates JSON, sends images inline, and does not call OpenAI", async () => {
@@ -238,6 +347,102 @@ test("provider diagnostics retain upstream status without logging submitted or p
   } finally {
     globalThis.fetch = savedFetch;
     process.stderr.write = savedWrite;
+    if (savedKey === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = savedKey;
+  }
+});
+
+test("schema-specific JSON mode recovery is bounded and still rejects invalid drafts", async () => {
+  const savedFetch = globalThis.fetch,
+    savedKey = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = "test-key";
+  const recoveryParams = {
+    ...params,
+    text: { format: { ...format, name: "article_outline" } },
+  };
+  try {
+    for (const text of ['{"answer":"Valid answer"}', '{"answer":"x"}']) {
+      let calls = 0;
+      let firstSignal: AbortSignal;
+      globalThis.fetch = (async (_url: unknown, options: any) => {
+        calls++;
+        const body = JSON.parse(options.body);
+        if (calls === 1) {
+          firstSignal = options.signal;
+          assert.ok(body.generationConfig.responseJsonSchema);
+          return Response.json(
+            {
+              error: {
+                status: "INVALID_ARGUMENT",
+                message: "response_json_schema has too many states for serving",
+              },
+            },
+            { status: 400 },
+          );
+        }
+        assert.equal(options.signal, firstSignal);
+        assert.equal(body.generationConfig.responseJsonSchema, undefined);
+        assert.equal(
+          body.generationConfig.responseMimeType,
+          "application/json",
+        );
+        assert.match(
+          body.systemInstruction.parts.at(-1).text,
+          /output contract/,
+        );
+        assert.deepEqual(body.contents[0].parts, [{ text: "A brief" }]);
+        return envelope(text);
+      }) as typeof fetch;
+      if (text.includes("Valid"))
+        assert.deepEqual(
+          (await getGeminiClient().generate(recoveryParams)).output_parsed,
+          { answer: "Valid answer" },
+        );
+      else
+        await assert.rejects(
+          getGeminiClient().generate(recoveryParams),
+          /MODEL_OUTPUT_INVALID/,
+        );
+      assert.equal(calls, 2);
+    }
+    for (const [name, message] of [
+      ["article_outline", "Invalid maxOutputTokens"],
+      ["example", "response_json_schema unsupported"],
+    ]) {
+      let calls = 0;
+      globalThis.fetch = (async () => {
+        calls++;
+        return Response.json({ error: { message } }, { status: 400 });
+      }) as typeof fetch;
+      await assert.rejects(
+        getGeminiClient().generate({
+          ...recoveryParams,
+          text: { format: { ...format, name } },
+        }),
+        /PROVIDER_BAD_REQUEST/,
+      );
+      assert.equal(calls, 1);
+    }
+    let calls = 0;
+    globalThis.fetch = (async (_url: unknown, options: any) => {
+      if (++calls === 1)
+        return Response.json(
+          { error: { message: "response_json_schema unsupported" } },
+          { status: 400 },
+        );
+      return new Promise((_resolve, reject) =>
+        options.signal.addEventListener("abort", () =>
+          reject(new Error("Aborted")),
+        ),
+      );
+    }) as typeof fetch;
+    await assert.rejects(
+      getGeminiClient().generate(recoveryParams, { timeout: 20 }),
+      /PROVIDER_TIMEOUT/,
+    );
+    assert.equal(calls, 2);
+  } finally {
+    globalThis.fetch = savedFetch;
     if (savedKey === undefined) delete process.env.GEMINI_API_KEY;
     else process.env.GEMINI_API_KEY = savedKey;
   }

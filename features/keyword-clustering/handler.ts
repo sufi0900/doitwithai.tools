@@ -78,7 +78,9 @@ export async function POST(request: NextRequest) {
           { role: "user", content: prompt.user },
         ],
         text: {
-          format: geminiTextFormat(clusterOutputSchema, "keyword_clusters"),
+          format: geminiTextFormat(clusterOutputSchema, "keyword_clusters", {
+            compact: true,
+          }),
         },
       },
       // Leave time for validation and an error response before Vercel terminates the function.

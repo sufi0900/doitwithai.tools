@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     const response = await getGeminiClient().generate(
       {
         model,
-        max_output_tokens: 2400,
+        max_output_tokens: 6000,
         store: false,
         input: [
           { role: "system", content: prompt.system },
