@@ -12,7 +12,7 @@ import { useOnlineStatus } from "./useOnlineStatus";
 import { Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import Hero from "@/components/Hero";
+import "@/features/homepage/homepage.css";
 import Header from "@/components/Header";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -317,7 +317,7 @@ export default function RootLayout({ children }) {
 
         <Providers>
           {isSlugPage ? <ConditionalGlobalHeader /> : <Header />}
-          {isHomePage && <Hero />}
+
 
           <>
             <CacheProvider>

@@ -2,14 +2,14 @@ export const SITE_ASSISTANT_NAME = "Do It With AI Tools Assistant";
 export const SITE_ASSISTANT_BASE_URL = "https://doitwithai.tools";
 
 export const SITE_ASSISTANT_STARTERS = [
-  "What should I learn first?",
+  "Find an AI tool for my task",
   "Find the right AI SEO guide",
   "Show me the free AI resources",
   "How can I contact Sufian?",
 ] as const;
 
 export const SITE_ASSISTANT_WELCOME =
-  "How can I help you? I can find the right guide, explain an AI SEO topic, recommend a free resource, or help you contact us.";
+  "How can I help you put AI to work? I can find a tool, suggest a practical guide, or recommend a free resource.";
 
 export const SITE_PROFILE_FACTS = {
   identity:
