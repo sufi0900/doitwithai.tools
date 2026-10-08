@@ -1,79 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, BookOpen, FileCheck2, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Sparkles } from "lucide-react";
 
 import type { HomeArticle } from "./data";
-export function HomeWorkflows() {
-  const steps = [
-    {
-      title: "Understand the task",
-      label: "Read the guides",
-      description:
-        "Start with a practical article to understand the steps, choices, and examples behind your task.",
-      href: "/ai-seo",
-      Icon: BookOpen,
-    },
-    {
-      title: "Gather your starting points",
-      label: "Explore free resources",
-      description:
-        "Find prompts and learning resources you can adapt to your project before you begin.",
-      href: "/free-ai-resources",
-      Icon: FileCheck2,
-    },
-    {
-      title: "Put what you learned to work",
-      label: "Choose your AI tool",
-      description:
-        "Use a tool to generate or evaluate your work, then review and refine the results with your own judgment.",
-      href: "/tools",
-      Icon: Sparkles,
-    },
-  ];
-  return (
-    <section
-      aria-labelledby="workflow-title"
-      className="home-section bg-white dark:bg-[#111827]"
-    >
-      <div className="home-shell home-journey">
-        <div className="home-journey-intro">
-          <p className="home-eyebrow">One connected approach</p>
-          <h2 id="workflow-title" className="home-title">
-            Learn it. Prepare it.
-            <br />
-            Do it with AI.
-          </h2>
-          <p className="home-description">
-            Guidance, resources, and tools work together to help you move from
-            understanding a task to doing it.
-          </p>
-        </div>
-        <ol className="home-journey-steps">
-          {steps.map(({ title, label, description, href, Icon }, i) => (
-            <li key={href} className="home-journey-step">
-              <span className="home-step-number">0{i + 1}</span>
-              <div>
-                <div className="flex items-center gap-3">
-                  <Icon aria-hidden className="h-5 w-5 text-[#5271ff]" />
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                    {title}
-                  </h3>
-                </div>
-                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                  {description}
-                </p>
-                <Link href={href} className="home-text-link mt-2">
-                  {label}
-                  <ArrowRight aria-hidden className="h-4 w-4" />
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
+import { articlePath, articleCategory } from "./article-path";
+export { default as HomeWorkflows } from "./HomeJourney";
 export function HomeLearning({ articles }: { articles: HomeArticle[] }) {
   return (
     <section
@@ -104,7 +35,7 @@ export function HomeLearning({ articles }: { articles: HomeArticle[] }) {
                 <Link
                   tabIndex={-1}
                   aria-hidden
-                  href={`/ai-seo/${a.slug}`}
+                  href={articlePath(a)}
                   className="relative block aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-slate-800"
                 >
                   <BookOpen
@@ -124,11 +55,14 @@ export function HomeLearning({ articles }: { articles: HomeArticle[] }) {
                   )}
                 </Link>
                 <div className="flex flex-1 flex-col p-6">
-                  <p className="home-eyebrow text-xs">SEO with AI</p>
+                  <p className="home-eyebrow text-xs">
+                    {articleCategory(a)}
+                    {articles[0]._id === a._id ? " / Featured" : ""}
+                  </p>
                   <h3 className="mt-2 text-lg font-bold leading-relaxed text-slate-900 dark:text-white">
                     <Link
                       className="home-focus hover:text-[#5271ff]"
-                      href={`/ai-seo/${a.slug}`}
+                      href={articlePath(a)}
                     >
                       {a.title}
                     </Link>
@@ -138,7 +72,7 @@ export function HomeLearning({ articles }: { articles: HomeArticle[] }) {
                       "Explore the steps, examples, and practical choices behind this topic."}
                   </p>
                   <Link
-                    href={`/ai-seo/${a.slug}`}
+                    href={articlePath(a)}
                     className="home-text-link mt-auto pt-5"
                   >
                     Read guide <ArrowRight aria-hidden className="h-4 w-4" />
@@ -172,8 +106,8 @@ export function HomeFounder() {
       className="home-section bg-white dark:bg-[#111827]"
     >
       <div className="home-shell">
-        <div className="home-founder-panel">
-          <div className="home-founder-mark" aria-hidden>
+        <div className="home-founder-editorial">
+          <div className="home-founder-emblem" aria-hidden>
             <Image
               src="/icons/apple-touch-icon.png"
               alt=""
@@ -211,10 +145,10 @@ export function HomeClosing() {
       className="home-section bg-white pt-0 dark:bg-[#111827]"
     >
       <div className="home-shell">
-        <div className="home-closing-panel">
+        <div className="home-closing-banner">
           <Sparkles
             aria-hidden
-            className="mx-auto mb-5 h-8 w-8 text-blue-200"
+            className="home-closing-spark h-8 w-8 text-blue-200"
           />
           <h2
             id="closing-title"
@@ -222,11 +156,11 @@ export function HomeClosing() {
           >
             Keep learning what you can do with AI
           </h2>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-8 text-blue-100">
+          <p className="mt-5 max-w-xl text-base leading-8 text-white">
             Explore more tools, follow a practical guide, or find a free
             resource for your next project.
           </p>
-          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <div className="home-closing-actions">
             <Link className="home-closing-primary" href="/tools">
               Explore tools <ArrowRight aria-hidden className="h-4 w-4" />
             </Link>

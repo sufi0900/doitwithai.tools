@@ -101,7 +101,7 @@ const Contact = ({ homepage = false }: { homepage?: boolean }) => {
   };
 
   return (
-    <section id="contact" className="relative isolate container mx-auto px-4 py-16">
+    <section id="contact" className={homepage ? "home-contact relative isolate" : "relative isolate container mx-auto px-4 py-16"}>
       {/* Background decorative elements */}
       {homepage ? (
         <div className="home-section-head">

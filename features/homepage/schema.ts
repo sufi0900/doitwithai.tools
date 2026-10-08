@@ -1,4 +1,5 @@
 import { SITE_PROFILE_FACTS } from "@/features/site-assistant/config";
+import { articlePath } from "./article-path";
 import { homepage } from "./content";
 import { tools, toolPath } from "@/features/tool-catalog/catalog";
 import type { HomeArticle, HomeResource } from "./data";
@@ -76,7 +77,7 @@ export function homepageSchema(
                 "@type": "ListItem",
                 position: i + 1,
                 name: a.title,
-                url: `${origin}/ai-seo/${a.slug}`,
+                url: `${origin}${articlePath(a)}`,
               })),
             },
           ]

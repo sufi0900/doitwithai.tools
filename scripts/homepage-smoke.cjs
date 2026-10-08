@@ -154,26 +154,54 @@ async function run() {
       await page.$$eval(".home-journey-step", (steps) => steps.length),
       3,
     );
+    await page.click("#journey-tab-1");
+    assert.equal(
+      await page.$eval("#journey-tab-1", (el) =>
+        el.getAttribute("aria-selected"),
+      ),
+      "true",
+    );
+    assert.ok(
+      await page.$eval("#journey-preview", (el) =>
+        el.textContent.includes("Give your project a useful starting point"),
+      ),
+    );
+    await page.keyboard.press("ArrowRight");
+    assert.equal(
+      await page.$eval("#journey-tab-2", (el) =>
+        el.getAttribute("aria-selected"),
+      ),
+      "true",
+    );
+    await page.click("#journey-tab-0");
     if (process.env.HOMEPAGE_QA_EXPECT_CONTENT) {
       assert.equal(
-        await page.$$eval(".home-resource-slide", (slides) => slides.length),
+        await page.$$eval(
+          ".slick-slide:not(.slick-cloned) .home-resource-slide",
+          (slides) => slides.length,
+        ),
         6,
       );
-      await page.$eval(".home-resource-track", (el) => (el.scrollLeft = 0));
       await page.click('[aria-label="Next resource"]');
-      await page.waitForFunction(
-        () => document.querySelector(".home-resource-track").scrollLeft > 100,
+      await page.waitForFunction(() =>
+        document
+          .querySelector(".resource-carousel-controls p")
+          .textContent.includes("Resource 2"),
       );
       await page.click('[aria-label="Previous resource"]');
-      await page.waitForFunction(
-        () => document.querySelector(".home-resource-track").scrollLeft < 10,
+      await page.waitForFunction(() =>
+        document
+          .querySelector(".resource-carousel-controls p")
+          .textContent.includes("Resource 1"),
       );
     }
-    const prompt = await page.$("button.home-text-link");
+    const prompt = await page.$(
+      '.slick-slide:not(.slick-cloned)[aria-hidden="false"] button[aria-label^="View prompt"]',
+    );
     if (process.env.HOMEPAGE_QA_EXPECT_CONTENT) {
       assert.equal(
         await page.$$eval("#learning article", (els) => els.length),
-        3,
+        5,
       );
       assert.ok(prompt, "Expected a verified prompt resource");
       await prompt.click();
@@ -213,10 +241,41 @@ async function run() {
       );
       await page.keyboard.press("Escape");
     }
+    if (process.env.HOMEPAGE_QA_EXPECT_CONTENT) {
+      await page.click('[aria-label="Start resource autoplay"]');
+      await page.mouse.move(5, 5);
+      const before = await page.$eval(
+        ".resource-carousel-controls p",
+        (el) => el.textContent,
+      );
+      await page.waitForFunction(
+        (previous) =>
+          document.querySelector(".resource-carousel-controls p")
+            .textContent !== previous,
+        { timeout: 9000 },
+        before,
+      );
+      await page.hover(".home-original-resource-carousel");
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      const pausedAt = await page.$eval(
+        ".resource-carousel-controls p",
+        (el) => el.textContent,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 5800));
+      assert.equal(
+        await page.$eval(
+          ".resource-carousel-controls p",
+          (el) => el.textContent,
+        ),
+        pausedAt,
+        "Hover must pause autoplay",
+      );
+      await page.click('[aria-label="Pause resource autoplay"]');
+    }
     for (const width of [360, 390, 768, 1024, 1440]) {
       await page.setViewport({ width, height: 1000 });
       await page.evaluate(() => window.scrollTo(0, 0));
-      await new Promise((r) => setTimeout(r, 350));
+      await new Promise((r) => setTimeout(r, 850));
       const overflow = await page.evaluate(() => ({
         width: innerWidth,
         scroll: document.documentElement.scrollWidth,
@@ -233,6 +292,19 @@ async function run() {
         });
       }
     }
+    const alignment = await page.evaluate(() => {
+      const reference = document
+        .querySelector("#featured-tools .home-shell")
+        .getBoundingClientRect();
+      const contact = document
+        .querySelector("#contact")
+        .getBoundingClientRect();
+      return (
+        Math.abs(reference.left - contact.left) +
+        Math.abs(reference.right - contact.right)
+      );
+    });
+    assert.ok(alignment < 2, "Contact width must align with other sections");
     await page.evaluate(() => {
       localStorage.setItem("theme", "dark");
     });
@@ -263,7 +335,7 @@ async function run() {
     );
     if (process.env.HOMEPAGE_QA_EXPECT_CONTENT)
       console.log(
-        "Passed: three published article previews and verified CMS prompt viewing/copying, Escape dismissal, and dialog focus handling.",
+        "Passed: five published article previews and verified CMS prompt viewing/copying, Escape dismissal, and dialog focus handling.",
       );
   } finally {
     if (browser) await browser.close();

@@ -5,6 +5,8 @@
 "use client";
 import { Providers } from "./providers";
 
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import "../styles/index.css";
 import "../components/Hero/critical-hero.css";
 import { useEffect, useState } from "react";
@@ -73,8 +75,7 @@ export default function RootLayout({ children }) {
     // mark that initial paint has happened
     setHydrated(true);
 
-    import("slick-carousel/slick/slick.css");
-    import("slick-carousel/slick/slick-theme.css");
+
   }, []);
 
   // online/offline banner
