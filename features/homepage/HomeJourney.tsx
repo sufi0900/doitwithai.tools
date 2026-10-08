@@ -187,7 +187,6 @@ export default function HomeJourney({
                 {step.short} with confidence
               </span>
               <JourneySimulation
-                key={selected}
                 stage={selected}
                 articles={articles}
                 resources={resources}

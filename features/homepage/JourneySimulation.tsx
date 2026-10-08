@@ -12,158 +12,8 @@ import {
 import type { HomeArticle, HomeResource } from "./data";
 import { articlePath } from "./article-path";
 
-// Decorative examples, not tool requests. CSS shares one 16-second clock.
-function Student({ stage }: { stage: number }) {
-  return (
-    <div className={`journey-student student-${stage}`}>
-      <svg
-        width="260"
-        height="240"
-        viewBox="0 0 260 240"
-        fill="none"
-        aria-hidden
-      >
-        <ellipse
-          cx="132"
-          cy="222"
-          rx="102"
-          ry="12"
-          fill="#5271ff"
-          opacity=".12"
-        />
-        <path
-          d="M102 166L89 213H111L130 169M132 167L148 212H170L157 159"
-          fill="#25375f"
-        />
-        <path
-          d="M84 210H112V222H73Q70 213 84 210M148 210H171L185 222H147Z"
-          fill="#16213d"
-        />
-        <path
-          d="M89 102Q126 87 153 103L170 164Q124 184 82 164Z"
-          fill="#5271ff"
-        />
-        <path d="M114 87V103Q125 112 136 101V83" fill="#e9ac7c" />
-        <ellipse cx="126" cy="62" rx="31" ry="36" fill="#f5c69f" />
-        <path
-          d="M95 58Q87 16 127 17Q166 16 158 57L147 45Q127 48 113 37L100 62Z"
-          fill="#253047"
-        />
-        <circle cx="115" cy="62" r="2.5" fill="#253047" />
-        <circle cx="139" cy="62" r="2.5" fill="#253047" />
-        <path
-          d="M120 77Q129 84 138 76"
-          stroke="#a96642"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <path
-          d="M98 106L70 138L89 151M150 108L176 134L159 150"
-          stroke="#f5c69f"
-          strokeWidth="15"
-          strokeLinecap="round"
-        />
-        <g className="student-book">
-          <path
-            d="M77 121Q103 113 126 125Q146 114 171 121V164Q146 159 126 171Q102 158 77 164Z"
-            fill="white"
-            stroke="#344b9d"
-            strokeWidth="3"
-          />
-          <path
-            d="M126 126V170M87 135L115 138M87 145L115 148M138 137L160 133M138 147L160 143"
-            stroke="#a9b8ef"
-            strokeWidth="2"
-          />
-        </g>
-        {stage > 0 && (
-          <g className="student-bag">
-            <path
-              d="M189 149V137Q212 113 232 137V149"
-              stroke="#d9a348"
-              strokeWidth="7"
-            />
-            <rect
-              x="179"
-              y="145"
-              width="65"
-              height="71"
-              rx="13"
-              fill="#f8ca6d"
-              stroke="#d9a348"
-              strokeWidth="2"
-            />
-            <rect
-              x="186"
-              y="170"
-              width="51"
-              height="33"
-              rx="6"
-              fill="#fff4d6"
-            />
-            <text
-              x="211"
-              y="182"
-              textAnchor="middle"
-              fontSize="9"
-              fontWeight="700"
-              fill="#69491d"
-            >
-              FREE
-            </text>
-            <text
-              x="211"
-              y="195"
-              textAnchor="middle"
-              fontSize="8"
-              fontWeight="700"
-              fill="#69491d"
-            >
-              RESOURCES
-            </text>
-          </g>
-        )}
-        {stage === 2 && (
-          <g>
-            <path
-              d="M24 162H110L125 204H37Z"
-              fill="#b6c7ff"
-              stroke="#5271ff"
-              strokeWidth="3"
-            />
-            <circle cx="72" cy="183" r="6" fill="#5271ff" />
-            <path
-              d="M28 205H142"
-              stroke="#25375f"
-              strokeWidth="7"
-              strokeLinecap="round"
-            />
-          </g>
-        )}
-      </svg>
-      <span className="student-action">
-        {
-          [
-            "Read. Understand. Discover.",
-            "Collect your starting points",
-            "Create with what you learned",
-          ][stage]
-        }
-      </span>
-      {stage === 1 && (
-        <div className="student-collect">
-          <FileText size={18} />
-          <span>+ Saved to your bag</span>
-        </div>
-      )}
-      {stage === 2 && (
-        <div className="student-success">
-          <Check size={15} /> Draft ready to review
-        </div>
-      )}
-    </div>
-  );
-}
+import JourneyCharacter from "./JourneyCharacter";
+
 function Thumbnail({ src, label }: { src?: string; label: string }) {
   return (
     <div className="journey-thumbnail">
@@ -197,7 +47,7 @@ export default function JourneySimulation({
   const video = resources.find((r) => r.format === "video");
   return (
     <div className={`journey-story story-${stage}`}>
-      <div className="journey-window">
+      <div className="journey-window" key={stage}>
         <div className="journey-browser">
           <i />
           <i />
@@ -437,7 +287,7 @@ export default function JourneySimulation({
           <span>Preview</span>
         </div>
       </div>
-      <Student stage={stage} />
+      <JourneyCharacter stage={stage} />
     </div>
   );
 }
