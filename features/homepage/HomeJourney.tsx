@@ -188,6 +188,7 @@ export default function HomeJourney({
               </span>
               <JourneySimulation
                 stage={selected}
+                active={inView && !paused}
                 articles={articles}
                 resources={resources}
               />

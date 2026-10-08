@@ -33,10 +33,12 @@ export default function JourneySimulation({
   stage,
   articles,
   resources,
+  active,
 }: {
   stage: number;
   articles: HomeArticle[];
   resources: HomeResource[];
+  active: boolean;
 }) {
   const article = articles.find((a) => a._type === "seo") || articles[0];
   const visuals = resources.filter((r) => r.image).slice(0, 3);
@@ -287,7 +289,7 @@ export default function JourneySimulation({
           <span>Preview</span>
         </div>
       </div>
-      <JourneyCharacter stage={stage} />
+      <JourneyCharacter stage={stage} active={active} />
     </div>
   );
 }
