@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { samplePose, type Point } from "./journey-motion";
+import { samplePose, around, type Point } from "./journey-motion";
 
 export default function JourneyCharacter({
   stage,
@@ -65,8 +65,8 @@ export default function JourneyCharacter({
         "transform",
         `translate(165 78) scale(1 ${p.blink}) translate(-165 -78)`,
       );
-      const edgeX = 206 - 82 * p.page,
-        edgeY = 158 - 19 * Math.sin(Math.PI * p.page);
+      const edgeX = p.pageEdge.x,
+        edgeY = p.pageEdge.y;
       page.setAttribute(
         "d",
         `M165 163Q${(165 + edgeX) / 2} ${edgeY - 5} ${edgeX} ${edgeY}L${edgeX} ${edgeY + 39}Q${(165 + edgeX) / 2} 197 165 207Z`,
@@ -100,12 +100,21 @@ export default function JourneyCharacter({
         `translate(269 185) scale(1 ${1 - 1.8 * p.bagOpen}) translate(-269 -185)`,
       );
       pen.setAttribute("transform", `translate(${p.penTip.x} ${p.penTip.y})`);
-      lines.forEach((line, i) =>
+      lines.forEach((line, i) => {
+        const points = Array.from({ length: 9 }, (_, n) => {
+          const q = around(p.rightElbow, 42, 22 + i * 6 + (n * 6) / 8);
+          return `${n === 0 ? "M" : "L"}${q.x + 5} ${q.y + 12}`;
+        }).join("");
+        const length = (42 * 6 * Math.PI) / 180;
+        line.setAttribute("d", points);
+        line.setAttribute("stroke-dasharray", String(length));
         line.setAttribute(
           "stroke-dashoffset",
-          String(28 * (1 - Math.min(1, Math.max(0, p.writingProgress - i)))),
-        ),
-      );
+          String(
+            length * (1 - Math.min(1, Math.max(0, p.writingProgress - i))),
+          ),
+        );
+      });
     }
     draw(
       media.matches
@@ -235,7 +244,7 @@ export default function JourneyCharacter({
           </g>
         </g>
         <g className="rig-open-book">
-          <g transform="translate(165 0) scale(.77358490566 1) translate(-165 0)">
+          <g transform="translate(165 0) scale(.845 1) translate(-165 0)">
             <path
               d="M111 159Q138 152 165 163V207Q138 196 111 200Z"
               fill="#fff"
@@ -291,7 +300,7 @@ export default function JourneyCharacter({
           <path d="M118 189H142M118 194H136" stroke="#b8c6ff" strokeWidth="2" />
           <path d="M111 170V202" stroke="#344b9d" strokeWidth="2" />
         </g>
-        <g className="rig-shelf" transform="translate(-20 0)">
+        <g className="rig-shelf" transform="translate(-16 31)">
           <rect
             x="246"
             y="117"
@@ -372,6 +381,17 @@ export default function JourneyCharacter({
             </text>
           </g>
         </g>
+        <g transform="translate(-14 0)">
+          {" "}
+          <g data-rig="flap">
+            <path
+              d="M239 184Q269 173 299 184V207Q269 218 239 207Z"
+              fill="#f8d789"
+              stroke="#d99d3c"
+              strokeWidth="2"
+            />
+          </g>
+        </g>
         <path
           data-rig="left-arm"
           d="M139 125L112 165L128 192"
@@ -432,7 +452,7 @@ export default function JourneyCharacter({
             </text>
           </g>
         </g>
-        <g className="rig-bag" transform="translate(-18 0)">
+        <g className="rig-bag" transform="translate(-14 0)">
           <path
             d="M247 185V174Q267 157 291 175V185"
             stroke="#c7892f"
@@ -470,14 +490,6 @@ export default function JourneyCharacter({
           >
             RESOURCES
           </text>
-          <g data-rig="flap">
-            <path
-              d="M239 184Q269 173 299 184V207Q269 218 239 207Z"
-              fill="#f8d789"
-              stroke="#d99d3c"
-              strokeWidth="2"
-            />
-          </g>
         </g>
         <g data-rig="pen" className="rig-pen">
           <path
@@ -517,7 +529,7 @@ export default function JourneyCharacter({
         {
           [
             "Read the guide. Turn the page.",
-            "Close the book. Pack your resources.",
+            "Keep your guide. Pack your resources.",
             "Bring your learning to the desk.",
           ][stage]
         }
