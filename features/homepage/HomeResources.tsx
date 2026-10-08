@@ -94,7 +94,8 @@ export default function HomeResources({
         {resources.length ? (
           <ResourceCarousel
             className="home-original-resource-carousel"
-            autoplaySpeed={5500}
+            autoplaySpeed={1600}
+            pauseOnInteraction={false}
             modalOpen={!!selected}
           >
             {resources.map((r) => (

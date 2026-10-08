@@ -36,7 +36,10 @@ async function run() {
     });
     const page = await browser.newPage();
     const errors = [];
-    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("pageerror", (e) => {
+      errors.push(e.message);
+      console.error("Browser error:", e.stack || e.message);
+    });
     await page.setViewport({ width: 1440, height: 1000 });
     await page.goto(origin, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForSelector("#home-tool-search");
@@ -174,6 +177,74 @@ async function run() {
       "true",
     );
     await page.click("#journey-tab-0");
+    const readPosition = () =>
+      page.$eval(
+        ".simulation-article-scroll",
+        (el) => getComputedStyle(el).transform,
+      );
+    const startPosition = await readPosition();
+    await new Promise((r) => setTimeout(r, 4500));
+    assert.notEqual(
+      await readPosition(),
+      startPosition,
+      "Article preview must scroll",
+    );
+    await page.evaluate(() =>
+      [...document.querySelectorAll(".home-journey-footer button")][0].click(),
+    );
+    await page.waitForFunction(
+      () =>
+        getComputedStyle(document.querySelector(".simulation-article-scroll"))
+          .animationPlayState === "paused",
+    );
+    await new Promise((r) => setTimeout(r, 150));
+    const frozenPosition = await readPosition();
+    await new Promise((r) => setTimeout(r, 700));
+    assert.equal(
+      await readPosition(),
+      frozenPosition,
+      "Pause visuals must freeze scrolling",
+    );
+    await page.evaluate(() =>
+      [...document.querySelectorAll(".home-journey-footer button")][0].click(),
+    );
+    if (screenshots) {
+      fs.mkdirSync(screenshots, { recursive: true });
+      await (
+        await page.$(".home-journey-board")
+      ).screenshot({ path: path.join(screenshots, "simulation-article.png") });
+    }
+    await page.click("#journey-tab-1");
+    assert.ok(await page.$(".simulation-resource-tabs"));
+    await new Promise((r) => setTimeout(r, 4600));
+    assert.equal(
+      await page.$eval(
+        ".sim-visual-panel",
+        (el) => getComputedStyle(el).opacity,
+      ),
+      "1",
+    );
+    if (screenshots)
+      await (
+        await page.$(".home-journey-board")
+      ).screenshot({
+        path: path.join(screenshots, "simulation-resources.png"),
+      });
+    await page.click("#journey-tab-2");
+    assert.ok(await page.$(".simulation-tool-tabs"));
+    await new Promise((r) => setTimeout(r, 5200));
+    assert.equal(
+      await page.$eval(
+        ".simulation-title-result",
+        (el) => getComputedStyle(el).opacity,
+      ),
+      "1",
+    );
+    if (screenshots)
+      await (
+        await page.$(".home-journey-board")
+      ).screenshot({ path: path.join(screenshots, "simulation-tools.png") });
+    await page.click("#journey-tab-0");
     if (process.env.HOMEPAGE_QA_EXPECT_CONTENT) {
       assert.equal(
         await page.$$eval(
@@ -242,7 +313,8 @@ async function run() {
       await page.keyboard.press("Escape");
     }
     if (process.env.HOMEPAGE_QA_EXPECT_CONTENT) {
-      await page.click('[aria-label="Start resource autoplay"]');
+      if (await page.$('[aria-label="Start resource autoplay"]'))
+        await page.click('[aria-label="Start resource autoplay"]');
       await page.mouse.move(5, 5);
       const before = await page.$eval(
         ".resource-carousel-controls p",
@@ -261,16 +333,40 @@ async function run() {
         ".resource-carousel-controls p",
         (el) => el.textContent,
       );
-      await new Promise((resolve) => setTimeout(resolve, 5800));
+      await page.waitForFunction(
+        (previous) =>
+          document.querySelector(".resource-carousel-controls p")
+            .textContent !== previous,
+        { timeout: 4000 },
+        pausedAt,
+      );
+      await page.focus('[aria-label="Next resource"]');
+      const focusedAt = await page.$eval(
+        ".resource-carousel-controls p",
+        (el) => el.textContent,
+      );
+      await page.waitForFunction(
+        (previous) =>
+          document.querySelector(".resource-carousel-controls p")
+            .textContent !== previous,
+        { timeout: 4000 },
+        focusedAt,
+      );
+      await page.click('[aria-label="Pause resource autoplay"]');
+      await new Promise((r) => setTimeout(r, 800));
+      const stoppedAt = await page.$eval(
+        ".resource-carousel-controls p",
+        (el) => el.textContent,
+      );
+      await new Promise((r) => setTimeout(r, 2400));
       assert.equal(
         await page.$eval(
           ".resource-carousel-controls p",
           (el) => el.textContent,
         ),
-        pausedAt,
-        "Hover must pause autoplay",
+        stoppedAt,
+        "Explicit pause must stop autoplay",
       );
-      await page.click('[aria-label="Pause resource autoplay"]');
     }
     for (const width of [360, 390, 768, 1024, 1440]) {
       await page.setViewport({ width, height: 1000 });
@@ -324,6 +420,43 @@ async function run() {
       (el) => getComputedStyle(el).opacity,
     );
     assert.equal(visible, "1");
+    await page.click("#journey-tab-1");
+    assert.equal(
+      await page.$eval(
+        ".simulation-pointer",
+        (el) => getComputedStyle(el).display,
+      ),
+      "none",
+    );
+    assert.equal(
+      await page.$eval(
+        ".sim-prompt-panel",
+        (el) => getComputedStyle(el).opacity,
+      ),
+      "1",
+    );
+    assert.equal(
+      await page.$eval(
+        ".sim-visual-panel",
+        (el) => getComputedStyle(el).display,
+      ),
+      "none",
+    );
+    await page.click("#journey-tab-2");
+    assert.equal(
+      await page.$eval(
+        ".simulation-title-result",
+        (el) => getComputedStyle(el).opacity,
+      ),
+      "1",
+    );
+    assert.equal(
+      await page.$eval(
+        ".simulation-title-result",
+        (el) => getComputedStyle(el).animationName,
+      ),
+      "none",
+    );
     assert.deepEqual(errors, []);
     const og = await fetch(
       `${origin}/api/og?variant=homepage&title=Work%20smarter%20and%20grow%20with%20AI%20tools`,
@@ -333,9 +466,12 @@ async function run() {
     console.log(
       "Passed: unique metadata, canonical, schema, H1/main landmarks, featured tools, search, filters, reset, five viewport widths, dark mode, reduced motion, browser errors, and OG image.",
     );
+    console.log(
+      "Passed: twelve-second simulations, article scrolling, resource selection, generated results, visual pause, and static reduced-motion previews.",
+    );
     if (process.env.HOMEPAGE_QA_EXPECT_CONTENT)
       console.log(
-        "Passed: five published article previews and verified CMS prompt viewing/copying, Escape dismissal, and dialog focus handling.",
+        "Passed: published article previews, CMS prompt viewing/copying, dialog focus, continuous autoplay during hover/focus, and explicit carousel pause.",
       );
   } finally {
     if (browser) await browser.close();

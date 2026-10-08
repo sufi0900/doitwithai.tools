@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -10,8 +10,8 @@ import {
   Sparkles,
   Pause,
   Play,
-  MousePointer2,
 } from "lucide-react";
+import JourneySimulation from "./JourneySimulation";
 const steps = [
   {
     title: "Understand the task",
@@ -53,6 +53,16 @@ const steps = [
 export default function HomeJourney() {
   const [selected, setSelected] = useState(0);
   const [paused, setPaused] = useState(false);
+  const board = useRef<HTMLDivElement | null>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.15 },
+    );
+    if (board.current) observer.observe(board.current);
+    return () => observer.disconnect();
+  }, []);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const step = steps[selected];
   return (
@@ -71,7 +81,10 @@ export default function HomeJourney() {
             understanding a task to doing it.
           </p>
         </div>
-        <div className={`home-journey-board ${paused ? "is-paused" : ""}`}>
+        <div
+          ref={board}
+          className={`home-journey-board ${paused || !inView ? "is-paused" : ""}`}
+        >
           <div className="home-project-node">
             <Sparkles aria-hidden size={18} />
             <span>Your next project</span>
@@ -166,68 +179,7 @@ export default function HomeJourney() {
                 <step.Icon size={16} />
                 {step.short} with confidence
               </span>
-              <div className="home-scene-window">
-                <div className="home-window-bar">
-                  <i />
-                  <i />
-                  <i />
-                  <span>Workflow preview</span>
-                </div>
-                {selected === 0 ? (
-                  <div className="home-scene-document">
-                    <span className="home-mock-label">A practical guide</span>
-                    <strong>From an idea to a clear plan</strong>
-                    <div className="home-mock-lines">
-                      <i />
-                      <i />
-                      <i />
-                    </div>
-                    <div className="home-mock-callout">
-                      <BookOpen size={18} />
-                      Understand the steps before you begin
-                    </div>
-                    <div className="home-mock-lines">
-                      <i />
-                      <i />
-                    </div>
-                  </div>
-                ) : selected === 1 ? (
-                  <div className="home-scene-document">
-                    <span className="home-mock-label">
-                      Your starting points
-                    </span>
-                    <strong>A prompt you can make your own</strong>
-                    <div className="home-mock-prompt">
-                      <span>[Your task]</span>
-                      <span>[Your audience]</span>
-                      <span>[Your context]</span>
-                    </div>
-                    <div className="home-mock-callout">
-                      <Layers3 size={18} />
-                      Adapt the resources to your project
-                    </div>
-                  </div>
-                ) : (
-                  <div className="home-scene-document">
-                    <span className="home-mock-label">An editable draft</span>
-                    <strong>Your idea, shaped with AI</strong>
-                    <div className="home-mock-lines">
-                      <i />
-                      <i />
-                      <i />
-                    </div>
-                    <div className="home-mock-result">
-                      <Check size={17} />
-                      Compare. Review. Refine.
-                    </div>
-                    <div className="home-mock-lines">
-                      <i />
-                      <i />
-                    </div>
-                  </div>
-                )}
-              </div>
-              <MousePointer2 className="home-scene-cursor" size={30} />
+              <JourneySimulation key={selected} stage={selected} />
               <span className="home-scene-bottom">
                 <Check size={14} />
                 Your judgment connects every step

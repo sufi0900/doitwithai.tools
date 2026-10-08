@@ -10,6 +10,7 @@ export default function ResourceCarousel({
   autoplaySpeed = 5000,
   slidesToShow = 3,
   modalOpen = false,
+  pauseOnInteraction = true,
 }) {
   const slider = useRef(null),
     container = useRef(null);
@@ -83,7 +84,7 @@ export default function ResourceCarousel({
     playing &&
     visible &&
     pageVisible &&
-    !hovered &&
+    !(pauseOnInteraction && hovered) &&
     !modalOpen &&
     legacyModalCount === 0 &&
     count > slots;
@@ -128,7 +129,9 @@ export default function ResourceCarousel({
       className={`carousel-container relative ${className}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onFocusCapture={() => setPlaying(false)}
+      onFocusCapture={() => {
+        if (pauseOnInteraction) setPlaying(false);
+      }}
     >
       <Slider ref={slider} {...settings} className="resource-carousel-slider">
         {React.Children.map(children, (child, i) => (
