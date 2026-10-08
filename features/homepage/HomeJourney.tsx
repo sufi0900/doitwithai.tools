@@ -11,6 +11,7 @@ import {
   Pause,
   Play,
 } from "lucide-react";
+import type { HomeArticle, HomeResource } from "./data";
 import JourneySimulation from "./JourneySimulation";
 const steps = [
   {
@@ -50,7 +51,13 @@ const steps = [
     items: ["Your context", "Editable results", "Review and refine"],
   },
 ];
-export default function HomeJourney() {
+export default function HomeJourney({
+  articles = [],
+  resources = [],
+}: {
+  articles?: HomeArticle[];
+  resources?: HomeResource[];
+}) {
   const [selected, setSelected] = useState(0);
   const [paused, setPaused] = useState(false);
   const board = useRef<HTMLDivElement | null>(null);
@@ -179,7 +186,12 @@ export default function HomeJourney() {
                 <step.Icon size={16} />
                 {step.short} with confidence
               </span>
-              <JourneySimulation key={selected} stage={selected} />
+              <JourneySimulation
+                key={selected}
+                stage={selected}
+                articles={articles}
+                resources={resources}
+              />
               <span className="home-scene-bottom">
                 <Check size={14} />
                 Your judgment connects every step

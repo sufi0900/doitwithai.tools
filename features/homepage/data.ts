@@ -14,6 +14,7 @@ export type HomeArticle = {
   overview?: string;
   image?: string;
   imageAlt?: string;
+  previewBlocks?: { _key: string; style?: string; text: string }[];
 };
 export type HomeResource = {
   _id: string;
@@ -34,7 +35,7 @@ const publicClient = client.withConfig({
   timeout: 10000,
 });
 const imageProjection = `"image":mainImage.asset->url,"imageAlt":mainImage.alt`;
-const articlesQuery = `*[_type in ["seo","aitool","coding","makemoney"] && !(_id in path("drafts.**")) && defined(slug.current)]|order(coalesce(displaySettings.isHomePageTrendBig,false) desc,coalesce(displaySettings.isHomePageTrendRelated,false) desc,publishedAt desc,_id asc)[0...80]{_id,_type,displaySettings,title,"slug":slug.current,overview,${imageProjection}}`;
+const articlesQuery = `*[_type in ["seo","aitool","coding","makemoney"] && !(_id in path("drafts.**")) && defined(slug.current)]|order(coalesce(displaySettings.isHomePageTrendBig,false) desc,coalesce(displaySettings.isHomePageTrendRelated,false) desc,publishedAt desc,_id asc)[0...80]{_id,_type,displaySettings,title,"slug":slug.current,overview,${imageProjection},"previewBlocks":content[_type=="block" && length(children)>0][0...9]{_key,style,"text":pt::text(@)}}`;
 const resourcesQuery = `*[_type=="freeResources" && !(_id in path("drafts.**"))]|order(coalesce(isHomePageFeature,false) desc,publishedAt desc)[0...18]{_id,title,isHomePageFeature,overview,mainImage,resourceType,tags,resourceLinkType,previewSettings,"previewImage":previewSettings.previewImage.asset->url,"format":resourceFormat,${imageProjection},"file":resourceFile.asset->url,resourceLink,promptContent}`;
 
 function safeUrl(value: unknown) {
@@ -112,7 +113,8 @@ export async function getHomepageData() {
       const file = safeUrl(r.file),
         link = safeUrl(r.resourceLink),
         image =
-          safeUrl(r.previewImage) || safeUrl(r.image) ||
+          safeUrl(r.previewImage) ||
+          safeUrl(r.image) ||
           (r.format === "image" ? safeUrl(r.file) : undefined);
       const href = file || link || image;
       if (!prompt && !href) return null;

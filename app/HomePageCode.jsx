@@ -16,7 +16,7 @@ export default function HomePage({ initialServerData }) {
       <HomeTools />
       <HomeLearning articles={articles} />
       <HomeResources resources={resources} />
-      <HomeWorkflows />
+      <HomeWorkflows articles={articles} resources={resources} />
       <HomeFounder />
       <HomeClosing />
       <Contact homepage />
