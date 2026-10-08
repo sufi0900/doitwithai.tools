@@ -1562,6 +1562,9 @@
 .journey-student > svg {
   display: block;
   width: 100%;
+  height: auto;
+  aspect-ratio: 260 / 240;
+  contain: none;
   animation: student-breathe 4s ease-in-out infinite;
 }
 .student-action {

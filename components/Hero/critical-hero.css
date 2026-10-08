@@ -135,7 +135,7 @@
 
 
   /* SVG Performance Optimizations */
-svg {
+.hero-section svg {
   contain: strict;
   will-change: auto;
   shape-rendering: geometricPrecision;

@@ -16,7 +16,13 @@ import { articlePath } from "./article-path";
 function Student({ stage }: { stage: number }) {
   return (
     <div className={`journey-student student-${stage}`}>
-      <svg viewBox="0 0 260 240" fill="none" aria-hidden>
+      <svg
+        width="260"
+        height="240"
+        viewBox="0 0 260 240"
+        fill="none"
+        aria-hidden
+      >
         <ellipse
           cx="132"
           cy="222"
