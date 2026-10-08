@@ -126,6 +126,49 @@ async function run() {
         .find((el) => el.textContent === "All tools")
         .click(),
     );
+    assert.ok(
+      await page.$("#contact form"),
+      "Contact form must remain on the homepage",
+    );
+    assert.deepEqual(
+      await page.$$eval("main section[aria-labelledby]", (sections) =>
+        sections
+          .map((section) => section.getAttribute("aria-labelledby"))
+          .filter((id) =>
+            [
+              "home-tools-title",
+              "learning-title",
+              "resources-title",
+              "workflow-title",
+            ].includes(id),
+          ),
+      ),
+      [
+        "home-tools-title",
+        "learning-title",
+        "resources-title",
+        "workflow-title",
+      ],
+    );
+    assert.equal(
+      await page.$$eval(".home-journey-step", (steps) => steps.length),
+      3,
+    );
+    if (process.env.HOMEPAGE_QA_EXPECT_CONTENT) {
+      assert.equal(
+        await page.$$eval(".home-resource-slide", (slides) => slides.length),
+        6,
+      );
+      await page.$eval(".home-resource-track", (el) => (el.scrollLeft = 0));
+      await page.click('[aria-label="Next resource"]');
+      await page.waitForFunction(
+        () => document.querySelector(".home-resource-track").scrollLeft > 100,
+      );
+      await page.click('[aria-label="Previous resource"]');
+      await page.waitForFunction(
+        () => document.querySelector(".home-resource-track").scrollLeft < 10,
+      );
+    }
     const prompt = await page.$("button.home-text-link");
     if (process.env.HOMEPAGE_QA_EXPECT_CONTENT) {
       assert.equal(

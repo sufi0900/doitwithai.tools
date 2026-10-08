@@ -1,103 +1,75 @@
 import Link from "next/link";
 import Image from "next/image";
-import {
-  ArrowRight,
-  BookOpen,
-  ListTree,
-  FileCheck2,
-  ScanText,
-  Sparkles,
-} from "lucide-react";
-import { workflows } from "./content";
-import { tools, toolPath } from "@/features/tool-catalog/catalog";
+import { ArrowRight, BookOpen, FileCheck2, Sparkles } from "lucide-react";
+
 import type { HomeArticle } from "./data";
-const icons = [ListTree, FileCheck2, ScanText];
-export function HomeWorkflows({
-  articles,
-}: {
-  articles: { title: string; slug: string }[];
-}) {
+export function HomeWorkflows() {
+  const steps = [
+    {
+      title: "Understand the task",
+      label: "Read the guides",
+      description:
+        "Start with a practical article to understand the steps, choices, and examples behind your task.",
+      href: "/ai-seo",
+      Icon: BookOpen,
+    },
+    {
+      title: "Gather your starting points",
+      label: "Explore free resources",
+      description:
+        "Find prompts and learning resources you can adapt to your project before you begin.",
+      href: "/free-ai-resources",
+      Icon: FileCheck2,
+    },
+    {
+      title: "Put what you learned to work",
+      label: "Choose your AI tool",
+      description:
+        "Use a tool to generate or evaluate your work, then review and refine the results with your own judgment.",
+      href: "/tools",
+      Icon: Sparkles,
+    },
+  ];
   return (
     <section
       aria-labelledby="workflow-title"
-      className="home-section bg-slate-50 dark:bg-[#0D1422]"
+      className="home-section bg-white dark:bg-[#111827]"
     >
-      <div className="home-shell">
-        <div className="home-section-head">
-          <div>
-            <p className="home-eyebrow">From learning to doing</p>
-            <h2 id="workflow-title" className="home-title">
-              Put tools and guidance together
-            </h2>
-            <p className="home-description">
-              Choose a starting point, follow the guidance, and use the tools
-              that fit each stage of your work.
-            </p>
-          </div>
+      <div className="home-shell home-journey">
+        <div className="home-journey-intro">
+          <p className="home-eyebrow">One connected approach</p>
+          <h2 id="workflow-title" className="home-title">
+            Learn it. Prepare it.
+            <br />
+            Do it with AI.
+          </h2>
+          <p className="home-description">
+            Guidance, resources, and tools work together to help you move from
+            understanding a task to doing it.
+          </p>
         </div>
-        <div className="grid gap-5 lg:grid-cols-3">
-          {workflows.map((w, i) => {
-            const Icon = icons[i];
-            const primary = tools.find((t) => t.slug === w.primary);
-            const guide = articles.find((a) => a.slug === w.guideSlug);
-            return (
-              <article
-                key={w.title}
-                className={`home-workflow home-workflow-${w.color}`}
-              >
-                <div className="mb-6 flex items-center justify-between">
-                  <span className="home-workflow-icon">
-                    <Icon aria-hidden className="h-6 w-6" />
-                  </span>
-                  <span className="text-sm font-semibold text-slate-400">
-                    0{i + 1}
-                  </span>
+        <ol className="home-journey-steps">
+          {steps.map(({ title, label, description, href, Icon }, i) => (
+            <li key={href} className="home-journey-step">
+              <span className="home-step-number">0{i + 1}</span>
+              <div>
+                <div className="flex items-center gap-3">
+                  <Icon aria-hidden className="h-5 w-5 text-[#5271ff]" />
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                    {title}
+                  </h3>
                 </div>
-                <h3 className="text-xl font-bold leading-snug text-slate-900 dark:text-white">
-                  {w.title}
-                </h3>
-                <p className="mt-3 flex-1 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                  {w.description}
+                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  {description}
                 </p>
-                {primary && (
-                  <Link
-                    href={toolPath(primary.slug)}
-                    className="home-text-link mt-6"
-                  >
-                    Try {primary.name.toLowerCase()}{" "}
-                    <ArrowRight aria-hidden className="h-4 w-4" />
-                  </Link>
-                )}
-                <div className="mt-5 space-y-2 border-t border-slate-200 pt-4 dark:border-slate-700">
-                  {w.supporting.map((slug) => {
-                    const t = tools.find((item) => item.slug === slug);
-                    return (
-                      t && (
-                        <Link
-                          className="home-support-link"
-                          key={slug}
-                          href={toolPath(slug)}
-                        >
-                          {t.name}
-                          <ArrowRight aria-hidden className="h-3 w-3" />
-                        </Link>
-                      )
-                    );
-                  })}
-                  {guide && (
-                    <Link
-                      className="home-support-link"
-                      href={`/ai-seo/${guide.slug}`}
-                    >
-                      <BookOpen aria-hidden className="h-3.5 w-3.5 shrink-0" />
-                      <span>Read the supporting guide</span>
-                    </Link>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
+                <Link href={href} className="home-text-link mt-2">
+                  {label}
+                  <ArrowRight aria-hidden className="h-4 w-4" />
+                </Link>
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );
@@ -126,7 +98,7 @@ export function HomeLearning({ articles }: { articles: HomeArticle[] }) {
           </Link>
         </div>
         {articles.length ? (
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="home-learning-grid">
             {articles.map((a) => (
               <article key={a._id} className="home-learning-card">
                 <Link

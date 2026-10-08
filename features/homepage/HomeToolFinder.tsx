@@ -86,7 +86,7 @@ export default function HomeToolFinder() {
         </p>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {matched.map((t) => (
-            <ToolCard key={t.id} tool={t} headingLevel={3} />
+            <ToolCard key={t.id} tool={t} headingLevel={3} homepage />
           ))}
         </div>
         {!matched.length && (

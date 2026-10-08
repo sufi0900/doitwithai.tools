@@ -8,7 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import NewsLatterBox from "./NewsLatterBox";
 import Breadcrumb from "../Common/Breadcrumb";
 
-const Contact = () => {
+const Contact = ({ homepage = false }: { homepage?: boolean }) => {
   const form = useRef<HTMLFormElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -101,9 +101,17 @@ const Contact = () => {
   };
 
   return (
-    <section id="contact" className="container mx-auto px-4 py-16">
+    <section id="contact" className="relative isolate container mx-auto px-4 py-16">
       {/* Background decorative elements */}
-       <Breadcrumb
+      {homepage ? (
+        <div className="home-section-head">
+          <div>
+            <p className="home-eyebrow">Let’s stay connected</p>
+            <h2 className="home-title">Have a question or an idea?</h2>
+            <p className="home-description">Share your feedback, ask about our tools, or get in touch about a collaboration.</p>
+          </div>
+        </div>
+      ) : <Breadcrumb
         linktext="Contact Us"
         firstlinktext="Home"
         firstlink="/"
@@ -111,7 +119,7 @@ const Contact = () => {
         pageName2=""
         link="contact"
         description="Connect for queries, feedback, or collaborations around AI tools, learning, or digital growth — and stay updated through our newsletter."
-      />
+      />}
 
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl"></div>

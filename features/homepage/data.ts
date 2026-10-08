@@ -122,6 +122,6 @@ export async function getHomepageData() {
   return {
     articles: selectedArticles,
     workflowArticles: unique.map(({ title, slug }) => ({ title, slug })),
-    resources: selected.slice(0, 3),
+    resources: selected.slice(0, 6),
   };
 }

@@ -2,7 +2,15 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Copy, X, Gift, FileText } from "lucide-react";
+import {
+  ArrowRight,
+  Copy,
+  X,
+  Gift,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import type { HomeResource } from "./data";
 function ResourceCard({ resource: r }: { resource: HomeResource }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -124,6 +132,20 @@ export default function HomeResources({
 }: {
   resources: HomeResource[];
 }) {
+  const track = useRef<HTMLDivElement>(null);
+  const move = (direction: number) => {
+    const element = track.current;
+    if (!element) return;
+    element.scrollBy({
+      left:
+        direction *
+        (element.firstElementChild?.getBoundingClientRect().width ||
+          element.clientWidth),
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
+  };
   return (
     <section
       aria-labelledby="resources-title"
@@ -147,9 +169,16 @@ export default function HomeResources({
           </Link>
         </div>
         {resources.length ? (
-          <div className="grid gap-6 md:grid-cols-3">
+          <div
+            className="home-resource-track"
+            ref={track}
+            aria-label="Free AI resources"
+            tabIndex={0}
+          >
             {resources.map((r) => (
-              <ResourceCard key={r._id} resource={r} />
+              <div className="home-resource-slide" key={r._id}>
+                <ResourceCard resource={r} />
+              </div>
             ))}
           </div>
         ) : (
@@ -160,6 +189,31 @@ export default function HomeResources({
               Open the resource collection{" "}
               <ArrowRight aria-hidden className="h-4 w-4" />
             </Link>
+          </div>
+        )}
+        {resources.length > 1 && (
+          <div className="home-carousel-controls">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Swipe or use the arrows to explore.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="home-carousel-button"
+                aria-label="Previous resource"
+                onClick={() => move(-1)}
+              >
+                <ChevronLeft aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="home-carousel-button"
+                aria-label="Next resource"
+                onClick={() => move(1)}
+              >
+                <ChevronRight aria-hidden />
+              </button>
+            </div>
           </div>
         )}
       </div>
