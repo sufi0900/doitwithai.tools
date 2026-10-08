@@ -1101,13 +1101,14 @@
 
 /* A shared 16-second story. All motion follows the parent pause control. */
 .home-preview-scene {
-  min-height: 580px;
-  padding: 56px 22px 185px;
+  min-height: 650px;
+  padding: 56px 22px 60px;
 }
 .journey-story {
   position: relative;
   width: 100%;
   max-width: 390px;
+  padding-bottom: 230px;
   color: #18233e;
 }
 .journey-window {
@@ -1553,9 +1554,10 @@
 }
 .journey-student {
   position: absolute;
-  width: 200px;
-  bottom: -163px;
-  left: -12px;
+  width: 220px;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
 }
 .journey-student > svg {
   display: block;
@@ -1879,18 +1881,18 @@
 }
 @media (max-width: 640px) {
   .home-preview-scene {
-    min-height: 575px;
-    padding: 55px 16px 190px;
+    min-height: 650px;
+    padding: 55px 16px 60px;
   }
   .journey-student {
-    width: 180px;
-    bottom: -155px;
+    width: 200px;
+    bottom: 0;
     left: 0;
   }
   .student-collect,
   .student-success {
-    left: 145px;
-    width: 135px;
+    left: 155px;
+    width: 125px;
     font-size: 8px;
   }
 }
