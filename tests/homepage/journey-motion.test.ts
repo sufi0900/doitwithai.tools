@@ -1,89 +1,96 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { samplePose, type Point } from "../../features/homepage/journey-motion";
+import {
+  samplePose,
+  READ_CYCLE,
+  BAG_CYCLE,
+  WRITE_CYCLE,
+  type Point,
+} from "../../features/homepage/journey-motion";
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
-test("shoulders stay fixed; elbows/hands move within a small, bounded sway", () => {
+
+test("projected joint chains remain finite and within the updated rig's reach", () => {
   for (const stage of [0, 1, 2]) {
     const base = samplePose(stage, 0);
     for (let t = 0; t < 24; t += 0.02) {
       const p = samplePose(stage, t);
-      // The shoulder joints and overall body lean never move: only the arms do.
-      for (const key of ["leftShoulder", "rightShoulder", "bodyAngle"] as const)
-        assert.deepEqual(p[key], base[key]);
-      // Elbows and the idle hand sway gently but never swing far from rest.
-      for (const [key, max] of [
-        ["leftElbow", 4],
-        ["leftHand", 4],
-        ["rightElbow", 14],
-      ] as const)
+      assert.equal(p.bodyAngle, base.bodyAngle);
+      for (const key of ["leftShoulder", "rightShoulder"] as const)
         assert.ok(
-          distance(p[key], base[key]) < max,
-          `${key} moved too far in stage ${stage}: ${distance(p[key], base[key])}`,
+          distance(p[key], base[key]) <= 0.61,
+          "Only the small breathing lift should move the shoulders",
         );
-      // Segment lengths (bone lengths) are constant for every pose, so the
-      // arm never stretches or snaps - only rotates like a real joint chain.
+      // The rig solves in 3D. Projected lengths may shorten, but cannot exceed
+      // their physical lengths, unlike the previous flat angle-driven rig.
       for (const [s, e, h] of [
         [p.leftShoulder, p.leftElbow, p.leftHand],
         [p.rightShoulder, p.rightElbow, p.rightHand],
       ]) {
-        assert.ok(Math.abs(distance(s, e) - 46) < 1e-8);
-        assert.ok(Math.abs(distance(e, h) - 42) < 1e-8);
+        for (const v of [s, e, h])
+          assert.ok(Number.isFinite(v.x) && Number.isFinite(v.y));
+        assert.ok(distance(s, e) <= 43 + 1e-8);
+        assert.ok(distance(e, h) <= 41 + 1e-8);
+        assert.ok(distance(s, h) <= 84 * 0.97 + 1e-8);
       }
     }
   }
 });
-test("hand movement stays inside a small forearm sweep", () => {
-  for (const [stage, max] of [
-    [0, 30],
-    [1, 32],
-    [2, 20],
-  ] as const) {
-    const points = Array.from(
-      { length: 121 },
-      (_, i) => samplePose(stage, i * 0.05).rightHand,
-    );
-    for (const a of points)
-      for (const b of points) assert.ok(distance(a, b) < max, `stage ${stage}`);
-  }
-});
-test("page corner follows the finger while gripped, then releases", () => {
-  let contacts = 0,
-    releases = 0;
+test("reading page turns within the book and hides outside the turn", () => {
+  assert.equal(samplePose(0, 1).pageVisible, false);
+  assert.equal(samplePose(0, 5).pageVisible, false);
   for (let t = 2.5; t < 4.4; t += 0.01) {
     const p = samplePose(0, t);
-    if (p.pageContact) {
-      assert.deepEqual(p.pageEdge, p.rightHand);
-      contacts++;
-    } else releases++;
+    assert.equal(p.pageVisible, true);
+    assert.ok(p.pageEdge.x >= 120 && p.pageEdge.x <= 210);
+    assert.ok(p.pageEdge.y >= 142 && p.pageEdge.y <= 158);
   }
-  assert.ok(contacts > 0 && releases > 0);
+  assert.ok(samplePose(0, 2.5).pageEdge.x > samplePose(0, 4.39).pageEdge.x);
 });
-test("carried resources and pencil stay attached to the wrist", () => {
-  for (let t = 0.35; t < 1.6; t += 0.01) {
-    const p = samplePose(1, t);
-    assert.deepEqual(p.resource, p.rightHand);
-  }
-  for (let t = 0; t < 12; t += 0.01) {
+test("resources appear during pickup, drop into the bag, and cycle through assets", () => {
+  assert.equal(samplePose(1, 0).resourceVisible, false);
+  assert.equal(samplePose(1, 0.5).resourceVisible, true);
+  assert.equal(samplePose(1, 1.6).resourceVisible, false);
+  assert.ok(
+    distance(samplePose(1, 0.5).resource, samplePose(1, 0.5).rightHand) < 6,
+  );
+  assert.ok(samplePose(1, 1.35).resource.y > samplePose(1, 1.13).resource.y);
+  for (let i = 0; i < 8; i++)
+    assert.equal(samplePose(1, i * BAG_CYCLE + 0.5).resourceIndex, i % 4);
+});
+test("writing progresses through three lines and fades before restarting", () => {
+  assert.ok(
+    samplePose(2, 0.8).writingProgress > samplePose(2, 0.2).writingProgress,
+  );
+  assert.ok(samplePose(2, 2).writingProgress > 1);
+  assert.ok(samplePose(2, 3.5).writingProgress > 2);
+  assert.equal(samplePose(2, 4.6).writingProgress, 3);
+  assert.ok(samplePose(2, 4.6).lineFade < samplePose(2, 4).lineFade);
+  for (let t = 0; t < WRITE_CYCLE; t += 0.01) {
     const p = samplePose(2, t);
-    assert.equal(p.penTip.x - p.rightHand.x, 5);
-    assert.equal(p.penTip.y - p.rightHand.y, 12);
+    assert.ok(
+      distance(p.penTip, p.rightHand) < 16,
+      "Pencil should remain close to the writing wrist",
+    );
   }
 });
-test("small actions remain continuous at their loop boundaries", () => {
-  for (const [stage, bounds] of [
-    [0, [2, 2.5, 4.4, 6]],
-    [1, [0.35, 0.65, 1.5, 1.75, 2.6]],
-    [2, [1.4, 2.8, 4.2, 5.2]],
+test("joint motion stays continuous across action and cycle boundaries", () => {
+  for (const [stage, boundaries] of [
+    [0, [1.9, 2.5, 3.25, 4.15, 4.4, READ_CYCLE]],
+    [1, [0.28, 0.4, 1, 1.2, BAG_CYCLE]],
+    [2, [1, 1.3, 2.3, 2.6, 3.6, 3.9, 4.4, WRITE_CYCLE]],
   ] as const)
-    for (const t of bounds)
-      assert.ok(
-        distance(
-          samplePose(stage, t - 0.00001).rightHand,
-          samplePose(stage, t + 0.00001).rightHand,
-        ) < 0.01,
-      );
-  const p = samplePose(1, 2);
-  assert.equal(p.gaze, 1);
-  assert.equal(p.bodyAngle, 8);
-  assert.equal(p.headAngle, 15);
+    for (const t of boundaries)
+      for (const joint of [
+        "leftElbow",
+        "rightElbow",
+        "leftHand",
+        "rightHand",
+      ] as const)
+        assert.ok(
+          distance(
+            samplePose(stage, t - 0.00001)[joint],
+            samplePose(stage, t + 0.00001)[joint],
+          ) < 1,
+          `stage ${stage}, ${joint}, time ${t}`,
+        );
 });

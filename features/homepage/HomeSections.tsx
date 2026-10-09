@@ -107,12 +107,13 @@ export function HomeFounder() {
     >
       <div className="home-shell">
         <div className="home-founder-editorial">
-          <div className="home-founder-emblem" aria-hidden>
+          <div className="home-founder-portrait">
             <Image
-              src="/icons/apple-touch-icon.png"
-              alt=""
-              width={64}
-              height={64}
+              src="/images/founder/sufian-mustafa.webp"
+              alt="Sufian Mustafa, founder of Do It With AI Tools"
+              width={360}
+              height={360}
+              sizes="(max-width: 767px) 160px, 180px"
             />
           </div>
           <div className="max-w-3xl">
