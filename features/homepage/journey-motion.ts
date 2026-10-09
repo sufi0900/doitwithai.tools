@@ -41,27 +41,32 @@ function rotate(p: Point, degrees: number): Point {
     y: 210 + x * Math.sin(a) + y * Math.cos(a),
   };
 }
-// Each stage has a held upper-arm pose. Only the lower joint rotates.
+// Each stage has a lateral (non-crossing) rest pose for the upper arm, so the
+// elbow sits to the side of the torso instead of swinging toward the
+// centerline. The shoulder joint is now coupled to the forearm's motion (not
+// frozen), clamped to a human-safe window, so the whole arm moves as one
+// chain instead of only the wrist pivoting. The idle (left) arm gets a small
+// continuous sway so it never reads as a dead/static limb.
 export function samplePose(stage: number, seconds: number): Pose {
   const bodyAngle = stage === 1 ? 8 : stage === 2 ? 3 : 0;
   const leftShoulder = rotate({ x: 139, y: 125 }, bodyAngle),
     rightShoulder = rotate({ x: 190, y: 125 }, bodyAngle);
-  const leftElbow = around(
-    leftShoulder,
-    46,
-    stage === 1 ? 120 : stage === 2 ? 105 : 130,
-  );
-  const rightElbow = around(
-    rightShoulder,
-    46,
-    stage === 1 ? 72 : stage === 2 ? 112 : 118,
-  );
-  const leftHand = around(
-    leftElbow,
-    42,
-    stage === 1 ? 80 : stage === 2 ? 55 : 49,
-  );
-  let angle = 10,
+
+  const leftElbowBase = stage === 0 ? 132 : stage === 1 ? 120 : 106;
+  const leftHandAngle = stage === 0 ? 50 : stage === 1 ? 80 : 58;
+  // Subtle idle breathing sway so the resting arm never freezes dead.
+  const idleSway = 1.5 * Math.sin(seconds * 0.6 + 1.3);
+  const leftElbow = around(leftShoulder, 46, leftElbowBase + idleSway);
+  const leftHand = around(leftElbow, 42, leftHandAngle);
+
+  // Lateral (non-crossing) upper-arm rest angles for the active arm.
+  const rightElbowBase = stage === 0 ? 104 : stage === 1 ? 78 : 112;
+  const handRest = stage === 0 ? 10 : stage === 1 ? 4 : 22;
+  // How strongly the upper arm follows the forearm's motion (0-1). Keeps the
+  // two joints moving together without letting the shoulder swing wildly.
+  const shoulderFollow = stage === 0 ? 0.25 : stage === 1 ? 0.3 : 0.2;
+
+  let angle = handRest,
     page = 0,
     pageVisible = false,
     pageContact = false,
@@ -70,6 +75,7 @@ export function samplePose(stage: number, seconds: number): Pose {
     writingProgress = 0;
   let pageEdge = { x: 210, y: 158 },
     resource = { x: 250, y: 145 };
+
   if (stage === 0) {
     const t = seconds % 6;
     if (t < 2) angle = 10;
@@ -82,33 +88,18 @@ export function samplePose(stage: number, seconds: number): Pose {
         page < 0.16
           ? mix(-10, -22, flick)
           : mix(-22, 10, ease((page - 0.16) / 0.84));
-      const release = around(rightElbow, 42, -22);
-      pageContact = page <= 0.16;
-      // Fingers lift the corner, then release it. The page settles under its own motion.
-      if (pageContact) pageEdge = around(rightElbow, 42, angle);
-      else {
-        const p = ease((page - 0.16) / 0.84);
-        pageEdge = {
-          x: mix(release.x, 120, p),
-          y: mix(release.y, 158, p) - 9 * Math.sin(Math.PI * p),
-        };
-      }
-    }
+    } else angle = 10;
   } else if (stage === 1) {
-    const t = seconds % 4.6;
-    resourceIndex = Math.floor(seconds / 4.6) % 4;
-    // Resources and bag opening sit within a short forearm sweep.
-    if (t < 0.6) angle = mix(4, -20, ease(t / 0.6));
-    else if (t < 1.1) angle = -20;
-    else if (t < 2.5) angle = mix(-20, 14, ease((t - 1.1) / 1.4));
-    else if (t < 3) angle = 14;
-    else angle = mix(14, 4, ease((t - 3) / 1.6));
-    resourceVisible = t >= 0.6 && t < 3.15;
-    const drop = around(rightElbow, 42, 14);
-    resource =
-      t < 2.8
-        ? around(rightElbow, 42, angle)
-        : { x: drop.x, y: drop.y + 150 * (t - 2.8) ** 2 };
+    // Faster cycle (2.6s vs the previous 4.6s) with shorter holds, so the
+    // motion reads as deliberate rather than slow/lazy.
+    const t = seconds % 2.6;
+    resourceIndex = Math.floor(seconds / 2.6) % 4;
+    if (t < 0.35) angle = mix(4, -20, ease(t / 0.35));
+    else if (t < 0.65) angle = -20;
+    else if (t < 1.5) angle = mix(-20, 14, ease((t - 0.65) / 0.85));
+    else if (t < 1.75) angle = 14;
+    else angle = mix(14, 4, ease((t - 1.75) / 0.85));
+    resourceVisible = t >= 0.35 && t < 1.85;
   } else {
     const t = seconds % 5.2;
     if (t < 4.2) {
@@ -122,8 +113,43 @@ export function samplePose(stage: number, seconds: number): Pose {
       writingProgress = 3;
     }
   }
-  const rightHand = around(rightElbow, 42, angle),
-    penTip = { x: rightHand.x + 5, y: rightHand.y + 12 };
+
+  // Shoulder follows the forearm proportionally, clamped to a human-safe
+  // window so the upper arm can never swing into an implausible pose.
+  const rightElbowAngle = Math.max(
+    rightElbowBase - 16,
+    Math.min(rightElbowBase + 16, rightElbowBase + shoulderFollow * (angle - handRest)),
+  );
+  const rightElbow = around(rightShoulder, 46, rightElbowAngle);
+  const rightHand = around(rightElbow, 42, angle);
+  const penTip = { x: rightHand.x + 5, y: rightHand.y + 12 };
+
+  if (stage === 0) {
+    const t = seconds % 6;
+    if (t >= 2.5 && t < 4.4) {
+      const release = around(rightElbow, 42, -22);
+      pageContact = page <= 0.16;
+      if (pageContact) pageEdge = rightHand;
+      else {
+        const p = ease((page - 0.16) / 0.84);
+        pageEdge = {
+          x: mix(release.x, 120, p),
+          y: mix(release.y, 158, p) - 9 * Math.sin(Math.PI * p),
+        };
+      }
+    }
+  } else if (stage === 1) {
+    const t = seconds % 2.6;
+    // Resource is carried in the hand, then settles onto the desk just
+    // before the arm fully withdraws (same proportion as the original).
+    const dropStart = 1.6;
+    if (t < dropStart) resource = rightHand;
+    else {
+      const drop = around(rightElbow, 42, 14);
+      resource = { x: drop.x, y: drop.y + 150 * (t - dropStart) ** 2 };
+    }
+  }
+
   const blinkTime = seconds % 5.1,
     blink =
       blinkTime > 3.8 && blinkTime < 4
