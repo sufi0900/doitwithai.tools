@@ -35,14 +35,19 @@ const icons = {
 export default function ToolCard({
   tool,
   headingLevel = 2,
+  homepage = false,
 }: {
   tool: CatalogTool;
   headingLevel?: 2 | 3;
+  homepage?: boolean;
 }) {
   const Icon = icons[tool.slug] || Sparkles;
   const Heading = headingLevel === 3 ? "h3" : "h2";
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:border-[#5271ff]/40 hover:shadow-lg hover:shadow-slate-200/40 dark:border-slate-700 dark:bg-[#1D2430] sm:p-7">
+    <article
+      data-tool-slug={tool.slug}
+      className={`${homepage ? "home-tool-card" : ""} group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm transition duration-200 hover:border-[#5271ff]/40 hover:shadow-lg hover:shadow-slate-200/40 dark:border-slate-700 dark:bg-[#1D2430] sm:p-7`}
+    >
       <div
         aria-hidden
         className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#5271ff] via-blue-400 to-cyan-300 opacity-0 transition group-hover:opacity-100"
@@ -93,19 +98,21 @@ export default function ToolCard({
             </Link>
           ))}
         </div>
-        {tool.relatedGuides.map((guide) => (
-          <Link
-            key={guide.path}
-            href={guide.path}
-            className="inline-flex min-h-9 items-center gap-2 text-xs font-medium text-slate-500 transition hover:text-[#5271ff] dark:text-slate-400 dark:hover:text-blue-300"
-          >
-            <BookOpen aria-hidden className="h-3.5 w-3.5 shrink-0" />
-            <span>
-              Read guide<span className="sr-only">: {guide.title}</span>
-            </span>
-            <ArrowRight aria-hidden className="h-3 w-3" />
-          </Link>
-        ))}
+        {(homepage ? tool.relatedGuides.slice(0, 1) : tool.relatedGuides).map(
+          (guide) => (
+            <Link
+              key={guide.path}
+              href={guide.path}
+              className="inline-flex min-h-9 items-center gap-2 text-xs font-medium text-slate-500 transition hover:text-[#5271ff] dark:text-slate-400 dark:hover:text-blue-300"
+            >
+              <BookOpen aria-hidden className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                Read guide<span className="sr-only">: {guide.title}</span>
+              </span>
+              <ArrowRight aria-hidden className="h-3 w-3" />
+            </Link>
+          ),
+        )}
       </div>
     </article>
   );

@@ -101,7 +101,7 @@ const Footer = () => {
                   {/* Content */}
                   <div className="text-center lg:text-left flex-1 max-w-md lg:max-w-none">
                     <p className="dark:text-gray-300 mb-3 sm:mb-4 lg:mb-5 text-sm sm:text-base leading-relaxed text-gray-600">
-Do It With AI Tools is your modern AI hub to master SEO, boost productivity, and scale your projects with advanced AI insights and free resources.                    </p>
+Put AI to work with practical tools, step-by-step guides, and free resources for smarter work and stronger online presence.                    </p>
                     <p className="dark:text-gray-300 mb-4 sm:mb-5 lg:mb-6 text-sm sm:text-base leading-relaxed text-gray-600">
                       Learn, build & grow with AI at{" "}
                       <Link
@@ -230,7 +230,9 @@ Do It With AI Tools is your modern AI hub to master SEO, boost productivity, and
                 </h2>
                 <ul className="space-y-2 sm:space-y-3 w-full">
                   {[
-                    { href: "/blogs", text: "Blog" },
+                    { href: "/tools", text: "AI tools" },
+                    { href: "/ai-seo", text: "Learn with AI" },
+                    { href: "/blogs", text: "All articles" },
                     { href: "/author/sufian-mustafa", text: "About Author" },
                     { href: "/categories", text: "Categories" },
                     { href: "/free-ai-resources", text: "Free Resources" }
