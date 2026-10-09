@@ -39,7 +39,7 @@ export const SITE_PROFILE_FACTS = {
     "Tailwind CSS for the interface",
     "Vercel deployment and analytics",
     "Redis and React Query caching where appropriate",
-    "OpenAI Responses API and File Search for the website assistant",
+    "Gemini with live published Sanity content and the tools registry for the website assistant",
   ],
   social: [
     ["YouTube", "https://www.youtube.com/@doitwithaitools"],

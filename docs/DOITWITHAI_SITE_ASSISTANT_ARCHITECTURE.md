@@ -1,5 +1,7 @@
 # Do It With AI Tools Site Assistant Architecture
 
+> Current implementation: Gemini now uses live published Sanity content and the deployed tools registry. See [GEMINI_SITE_ASSISTANT.md](./GEMINI_SITE_ASSISTANT.md). The OpenAI index design below is historical.
+
 ## Product decision
 
 This is a website knowledge assistant, not a general ChatGPT clone. Its primary jobs are to answer from published Do It With AI Tools content, help a visitor find the best page or resource, explain supported AI SEO topics, and route contact or collaboration enquiries.

@@ -1,3 +1,4 @@
+import { getGeminiModel, isGeminiConfigured } from "@/lib/ai-tools/gemini";
 import { SITE_ASSISTANT_BASE_URL } from "../config";
 import { crawlKnowledgeUrl } from "./knowledge";
 import {
@@ -32,6 +33,9 @@ export async function syncPublishedSanityDocument(input: {
   type: string;
   slug?: string;
 }) {
+  if (isGeminiConfigured(getGeminiModel("SITE_ASSISTANT"))) {
+    return { skipped: true as const, reason: "live-published-knowledge" };
+  }
   if (!process.env.OPENAI_API_KEY || !getSiteAssistantVectorStoreId()) {
     return { skipped: true as const, reason: "assistant-not-configured" };
   }
