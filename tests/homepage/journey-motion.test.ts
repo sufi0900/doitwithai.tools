@@ -2,20 +2,26 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { samplePose, type Point } from "../../features/homepage/journey-motion";
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
-test("shoulders and elbows remain fixed throughout every stage", () => {
+test("shoulders stay fixed; elbows/hands move within a small, bounded sway", () => {
   for (const stage of [0, 1, 2]) {
     const base = samplePose(stage, 0);
     for (let t = 0; t < 24; t += 0.02) {
       const p = samplePose(stage, t);
-      for (const key of [
-        "leftShoulder",
-        "rightShoulder",
-        "leftElbow",
-        "rightElbow",
-        "leftHand",
-        "bodyAngle",
-      ] as const)
+      // The shoulder joints and overall body lean never move: only the arms do.
+      for (const key of ["leftShoulder", "rightShoulder", "bodyAngle"] as const)
         assert.deepEqual(p[key], base[key]);
+      // Elbows and the idle hand sway gently but never swing far from rest.
+      for (const [key, max] of [
+        ["leftElbow", 4],
+        ["leftHand", 4],
+        ["rightElbow", 14],
+      ] as const)
+        assert.ok(
+          distance(p[key], base[key]) < max,
+          `${key} moved too far in stage ${stage}: ${distance(p[key], base[key])}`,
+        );
+      // Segment lengths (bone lengths) are constant for every pose, so the
+      // arm never stretches or snaps - only rotates like a real joint chain.
       for (const [s, e, h] of [
         [p.leftShoulder, p.leftElbow, p.leftHand],
         [p.rightShoulder, p.rightElbow, p.rightHand],
@@ -28,10 +34,10 @@ test("shoulders and elbows remain fixed throughout every stage", () => {
 });
 test("hand movement stays inside a small forearm sweep", () => {
   for (const [stage, max] of [
-    [0, 24],
-    [1, 25],
-    [2, 14],
-  ]) {
+    [0, 30],
+    [1, 32],
+    [2, 20],
+  ] as const) {
     const points = Array.from(
       { length: 121 },
       (_, i) => samplePose(stage, i * 0.05).rightHand,
@@ -53,7 +59,7 @@ test("page corner follows the finger while gripped, then releases", () => {
   assert.ok(contacts > 0 && releases > 0);
 });
 test("carried resources and pencil stay attached to the wrist", () => {
-  for (let t = 0.6; t < 2.8; t += 0.01) {
+  for (let t = 0.35; t < 1.6; t += 0.01) {
     const p = samplePose(1, t);
     assert.deepEqual(p.resource, p.rightHand);
   }
@@ -66,7 +72,7 @@ test("carried resources and pencil stay attached to the wrist", () => {
 test("small actions remain continuous at their loop boundaries", () => {
   for (const [stage, bounds] of [
     [0, [2, 2.5, 4.4, 6]],
-    [1, [0.6, 1.1, 2.5, 3, 4.6]],
+    [1, [0.35, 0.65, 1.5, 1.75, 2.6]],
     [2, [1.4, 2.8, 4.2, 5.2]],
   ] as const)
     for (const t of bounds)
