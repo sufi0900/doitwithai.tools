@@ -1,6 +1,19 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { samplePose, around, type Point } from "./journey-motion";
+import {
+  samplePose,
+  STATIC_TIME,
+  LINE_X0,
+  LINE_X1,
+  LINE_Y,
+  type Point,
+} from "./journey-motion";
+
+// Short sleeves give the shoulder a natural shape. Set to 0 to go back to bare arms.
+const SLEEVE = 0.44;
+const f = (n: number) => n.toFixed(2);
+const angleOf = (a: Point, b: Point) =>
+  (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
 
 export default function JourneyCharacter({
   stage,
@@ -20,10 +33,17 @@ export default function JourneyCharacter({
     }
     const root = svg.current;
     const el = (name: string) => root.querySelector(`[data-rig="${name}"]`)!;
-    const leftArm = el("left-arm"),
-      rightArm = el("right-arm"),
-      leftHand = el("left-hand"),
+    const leftHand = el("left-hand"),
       rightHand = el("right-hand");
+    const parts = (side: "left" | "right") => ({
+      outline: el(`${side}-arm-outline`),
+      skin: el(`${side}-arm`),
+      sleeve: el(`${side}-sleeve`),
+      hem: el(`${side}-hem`),
+      cap: el(`${side}-shoulder`),
+    });
+    const leftParts = parts("left"),
+      rightParts = parts("right");
     const torso = el("torso"),
       face = el("face");
     const head = el("head"),
@@ -39,28 +59,50 @@ export default function JourneyCharacter({
     const icons = Array.from(root.querySelectorAll("[data-card-icon]"));
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     const arm = (a: Point, b: Point, c: Point) =>
-      `M${a.x} ${a.y}L${b.x} ${b.y}L${c.x} ${c.y}`;
+      `M${f(a.x)} ${f(a.y)}L${f(b.x)} ${f(b.y)}L${f(c.x)} ${f(c.y)}`;
+    function setArm(
+      ui: ReturnType<typeof parts>,
+      shoulder: Point,
+      elbow: Point,
+      hand: Point,
+    ) {
+      const d = arm(shoulder, elbow, hand);
+      ui.outline.setAttribute("d", d);
+      ui.skin.setAttribute("d", d);
+      const cx = shoulder.x + (elbow.x - shoulder.x) * SLEEVE,
+        cy = shoulder.y + (elbow.y - shoulder.y) * SLEEVE;
+      const len = Math.hypot(elbow.x - shoulder.x, elbow.y - shoulder.y) || 1;
+      const nx = -(elbow.y - shoulder.y) / len,
+        ny = (elbow.x - shoulder.x) / len;
+      ui.sleeve.setAttribute("d", `M${f(shoulder.x)} ${f(shoulder.y)}L${f(cx)} ${f(cy)}`);
+      ui.hem.setAttribute(
+        "d",
+        `M${f(cx + nx * 8.4)} ${f(cy + ny * 8.4)}L${f(cx - nx * 8.4)} ${f(cy - ny * 8.4)}`,
+      );
+      ui.cap.setAttribute("cx", f(shoulder.x));
+      ui.cap.setAttribute("cy", f(shoulder.y));
+    }
     function draw(time: number) {
       const p = samplePose(stage, time);
-      leftArm.setAttribute("d", arm(p.leftShoulder, p.leftElbow, p.leftHand));
-      rightArm.setAttribute(
-        "d",
-        arm(p.rightShoulder, p.rightElbow, p.rightHand),
-      );
+      setArm(leftParts, p.leftShoulder, p.leftElbow, p.leftHand);
+      setArm(rightParts, p.rightShoulder, p.rightElbow, p.rightHand);
       leftHand.setAttribute(
         "transform",
-        `translate(${p.leftHand.x} ${p.leftHand.y})`,
+        `translate(${f(p.leftHand.x)} ${f(p.leftHand.y)}) rotate(${f(angleOf(p.leftElbow, p.leftHand))})`,
       );
       rightHand.setAttribute(
         "transform",
-        `translate(${p.rightHand.x} ${p.rightHand.y})`,
+        `translate(${f(p.rightHand.x)} ${f(p.rightHand.y)}) rotate(${f(angleOf(p.rightElbow, p.rightHand))})`,
       );
-      torso.setAttribute("transform", `rotate(${p.bodyAngle} 165 210)`);
+      torso.setAttribute(
+        "transform",
+        `translate(0 ${f(-0.6 * p.breath)}) rotate(${f(p.bodyAngle)} 165 210)`,
+      );
       face.setAttribute(
         "transform",
         `translate(${p.gaze * 8} ${p.gaze * 5}) translate(165 0) scale(${1 - p.gaze * 0.2} 1) translate(-165 0)`,
       );
-      head.setAttribute("transform", `rotate(${p.headAngle} 165 110)`);
+      head.setAttribute("transform", `rotate(${f(p.headAngle)} 165 110)`);
       eyes.setAttribute(
         "transform",
         `translate(165 78) scale(1 ${p.blink}) translate(-165 -78)`,
@@ -90,7 +132,7 @@ export default function JourneyCharacter({
       );
       card.setAttribute(
         "opacity",
-        stage === 1 && p.resourceVisible ? "1" : "0",
+        stage === 1 && p.resourceVisible ? f(p.resourceAlpha) : "0",
       );
       icons.forEach((icon, i) =>
         icon.setAttribute("opacity", i === p.resourceIndex ? "1" : "0"),
@@ -100,31 +142,17 @@ export default function JourneyCharacter({
         `translate(269 185) scale(1 ${1 - 1.8 * p.bagOpen}) translate(-269 -185)`,
       );
       pen.setAttribute("transform", `translate(${p.penTip.x} ${p.penTip.y})`);
+      // Lines are fixed on the paper; the pen tip walks along them.
+      const length = LINE_X1 - LINE_X0;
       lines.forEach((line, i) => {
-        const points = Array.from({ length: 9 }, (_, n) => {
-          const q = around(p.rightElbow, 42, 22 + i * 6 + (n * 6) / 8);
-          return `${n === 0 ? "M" : "L"}${q.x + 5} ${q.y + 12}`;
-        }).join("");
-        const length = (42 * 6 * Math.PI) / 180;
-        line.setAttribute("d", points);
-        line.setAttribute("stroke-dasharray", String(length));
         line.setAttribute(
           "stroke-dashoffset",
-          String(
-            length * (1 - Math.min(1, Math.max(0, p.writingProgress - i))),
-          ),
+          f(length * (1 - Math.min(1, Math.max(0, p.writingProgress - i)))),
         );
+        line.setAttribute("opacity", f(p.lineFade));
       });
     }
-    draw(
-      media.matches
-        ? stage === 1
-          ? 2.6
-          : stage === 2
-            ? 3.5
-            : 1
-        : clock.current,
-    );
+    draw(media.matches ? STATIC_TIME[stage] : clock.current);
     let frame = 0,
       last: number | undefined;
     const tick = (now: number) => {
@@ -138,7 +166,7 @@ export default function JourneyCharacter({
       cancelAnimationFrame(frame);
       last = undefined;
       if (active && !media.matches) frame = requestAnimationFrame(tick);
-      else if (media.matches) draw(stage === 1 ? 2.6 : stage === 2 ? 3.5 : 1);
+      else if (media.matches) draw(STATIC_TIME[stage]);
     };
     sync();
     media.addEventListener("change", sync);
@@ -206,13 +234,13 @@ export default function JourneyCharacter({
         />
         <g data-rig="torso">
           <path
-            d="M137 115Q164 104 192 115L199 211Q165 225 130 211Z"
+            d="M128 118Q164 104 201 118L195 210Q165 223 135 210Z"
             fill="#5271ff"
           />
           <path d="M151 101V119Q165 129 179 116V100" fill="#e9ac7c" />
           <path
             className="rig-backpack"
-            d="M137 122Q128 158 141 190"
+            d="M133 124Q126 158 139 190"
             stroke="#e4a342"
             strokeWidth="7"
             strokeLinecap="round"
@@ -343,27 +371,30 @@ export default function JourneyCharacter({
           <path d="M183 190H234L250 218H194Z" fill="#fff" stroke="#c2cee9" />
           <path
             data-rig="line-0"
-            d="M196 199H224"
+            d={`M${LINE_X0} ${LINE_Y[0]}H${LINE_X1}`}
             stroke="#5271ff"
             strokeWidth="1.6"
-            strokeDasharray="28"
-            strokeDashoffset="28"
+            strokeLinecap="round"
+            strokeDasharray={LINE_X1 - LINE_X0}
+            strokeDashoffset={LINE_X1 - LINE_X0}
           />
           <path
             data-rig="line-1"
-            d="M196 204H224"
+            d={`M${LINE_X0} ${LINE_Y[1]}H${LINE_X1}`}
             stroke="#5271ff"
             strokeWidth="1.6"
-            strokeDasharray="28"
-            strokeDashoffset="28"
+            strokeLinecap="round"
+            strokeDasharray={LINE_X1 - LINE_X0}
+            strokeDashoffset={LINE_X1 - LINE_X0}
           />
           <path
             data-rig="line-2"
-            d="M196 209H224"
+            d={`M${LINE_X0} ${LINE_Y[2]}H${LINE_X1}`}
             stroke="#5271ff"
             strokeWidth="1.6"
-            strokeDasharray="28"
-            strokeDashoffset="28"
+            strokeLinecap="round"
+            strokeDasharray={LINE_X1 - LINE_X0}
+            strokeDashoffset={LINE_X1 - LINE_X0}
           />
           <g>
             <path d="M103 195L144 192L157 214L113 216Z" fill="#344b9d" />
@@ -392,22 +423,41 @@ export default function JourneyCharacter({
             />
           </g>
         </g>
-        <path
-          data-rig="left-arm"
-          d="M139 125L112 165L128 192"
-          stroke="#f3c49e"
-          strokeWidth="13"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          data-rig="right-arm"
-          d="M190 125L231 156L218 181"
-          stroke="#f3c49e"
-          strokeWidth="13"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        {(["left", "right"] as const).map((side) => (
+          <g key={side}>
+            <path
+              data-rig={`${side}-arm-outline`}
+              stroke="#d8a074"
+              strokeWidth="13.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              data-rig={`${side}-arm`}
+              stroke="#f3c49e"
+              strokeWidth="11"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {SLEEVE > 0 && (
+              <>
+                <path
+                  data-rig={`${side}-sleeve`}
+                  stroke="#5271ff"
+                  strokeWidth="17"
+                  strokeLinecap="butt"
+                />
+                <path
+                  data-rig={`${side}-hem`}
+                  stroke="#3c57dc"
+                  strokeWidth="2.2"
+                  strokeLinecap="butt"
+                />
+                <circle data-rig={`${side}-shoulder`} r="8.5" fill="#5271ff" />
+              </>
+            )}
+          </g>
+        ))}
         <g data-rig="card" opacity="0">
           <rect
             x="-6"
@@ -500,30 +550,29 @@ export default function JourneyCharacter({
           />
           <path d="M-1 -3L0 0" stroke="#d9a66d" strokeWidth="1.5" />
         </g>
-        <g data-rig="left-hand">
-          <ellipse rx="6" ry="5" fill="#f3c49e" />
-          <path
-            d="M-4 1L3 2"
-            stroke="#d6966b"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </g>
-        <g data-rig="right-hand">
-          <path
-            d="M-3 -4Q1 -7 4 -3L3 1"
-            stroke="#f3c49e"
-            strokeWidth="3.5"
-            strokeLinecap="round"
-          />
-          <ellipse rx="6" ry="5" fill="#f3c49e" />
-          <path
-            d="M-4 1L3 2"
-            stroke="#d6966b"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </g>
+        {(["left", "right"] as const).map((side) => (
+          <g key={side} data-rig={`${side}-hand`}>
+            <path
+              d="M-4 -4.6Q4 -6.4 10 -3Q13 0 10 3.6Q4 6 -4 4.6Z"
+              fill="#f3c49e"
+              stroke="#d8a074"
+              strokeWidth="1"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M1 -4Q7 -8.5 11.5 -5.6"
+              stroke="#f3c49e"
+              strokeWidth="3.6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M6 -1.2L11 -0.4M6 1.6L10.4 2.6"
+              stroke="#d6966b"
+              strokeWidth="1"
+              strokeLinecap="round"
+            />
+          </g>
+        ))}
       </svg>
       <span className="jc-caption">
         {
