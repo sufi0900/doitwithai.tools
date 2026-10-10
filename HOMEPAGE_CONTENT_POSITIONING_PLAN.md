@@ -25,8 +25,8 @@ If copy overflows, shorten the copy before considering any layout change.
 Brand: Do It With AI Tools.
 Headline: Put AI to work on your SEO and content.
 Description: Plan and refine your website content with practical AI tools, clear guides, and free resources built for everyday marketing work.
-Five existing badges: SEO / Content / Marketers / Agencies / Founders.
-These badges describe work and users without claiming five separate product markets.
+Five audience badges: SEO specialists / Content writers / Digital marketers / SEO teams / Website owners.
+Each badge uses a matching decorative icon and describes an audience role.
 Cards heading: Three ways to improve your content workflow.
 
 Card 1 title: Find the right tool for the task.
@@ -47,7 +47,7 @@ Supporting chips: Practical SEO tools / Clear content guides / Free AI resources
 Primary action: Explore SEO tools.
 Secondary action: Read SEO guides.
 Trust line: Tools for the task. Guidance for the decisions. Resources to get started.
-Audience line: For marketers, agency teams, and founders handling their own SEO and content.
+Audience line: For marketers, SEO teams, and website owners doing SEO and content work.
 Synchronize visible action text and accessible names.
 
 ## Sections below the hero
@@ -105,7 +105,7 @@ Keep fields, validation, submission, and consent wording unchanged.
 ## Search and social metadata
 
 Meta title: Put AI to Work on Your SEO and Content | Do It With AI Tools
-Meta description: Plan and refine website content with AI tools, practical SEO guides, and free resources for marketers, agency teams, and founders.
+Meta description: Plan and refine website content with AI tools, practical SEO guides, and free resources for marketers, SEO teams, and website owners.
 Open Graph and Twitter title: Put AI to Work on Your SEO and Content.
 Open Graph and Twitter description: use the meta description.
 Social image headline: Put AI to work on your SEO and content.

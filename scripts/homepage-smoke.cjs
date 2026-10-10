@@ -158,6 +158,7 @@ async function run() {
       3,
     );
     await page.click("#journey-tab-1");
+    await page.waitForSelector(".resource-panel-0");
     assert.equal(
       await page.$eval("#journey-tab-1", (el) =>
         el.getAttribute("aria-selected"),
@@ -215,6 +216,7 @@ async function run() {
       ).screenshot({ path: path.join(screenshots, "simulation-article.png") });
     }
     await page.click("#journey-tab-1");
+    await page.waitForSelector(".resource-panel-0");
     assert.ok(await page.$(".journey-resource-tabs"));
     await page.waitForFunction(() => getComputedStyle(document.querySelector(".resource-panel-1")).opacity === "1", { timeout: 25000 });
     assert.equal(
@@ -231,6 +233,7 @@ async function run() {
         path: path.join(screenshots, "simulation-resources.png"),
       });
     await page.click("#journey-tab-2");
+    await page.waitForSelector(".journey-output");
     assert.ok(await page.$(".journey-tool-list"));
     await page.waitForFunction(() => getComputedStyle(document.querySelector(".journey-output")).opacity === "1", { timeout: 25000 });
     assert.equal(
@@ -415,12 +418,14 @@ async function run() {
       { name: "prefers-reduced-motion", value: "reduce" },
     ]);
     await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => Object.keys(document.getElementById("journey-tab-1")).some((key) => key.startsWith("__reactProps")));
     const visible = await page.$eval(
       "h1",
       (el) => getComputedStyle(el).opacity,
     );
     assert.equal(visible, "1");
     await page.click("#journey-tab-1");
+    await page.waitForSelector(".resource-panel-0");
     assert.equal(
       await page.$eval(
         ".journey-cursor",
@@ -443,6 +448,7 @@ async function run() {
       "0",
     );
     await page.click("#journey-tab-2");
+    await page.waitForSelector(".journey-output");
     assert.equal(
       await page.$eval(
         ".journey-output",

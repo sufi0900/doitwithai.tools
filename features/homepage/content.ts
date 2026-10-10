@@ -2,7 +2,7 @@ export const homepage = {
   brand: "Do It With AI Tools",
   title: "Put AI to Work on Your SEO and Content | Do It With AI Tools",
   description:
-    "Plan and refine website content with AI tools, practical SEO guides, and free resources for marketers, agency teams, and founders.",
+    "Plan and refine website content with AI tools, practical SEO guides, and free resources for marketers, SEO teams, and website owners.",
   headline: "Put AI to work on your SEO and content",
   heroDescription:
     "Plan and refine your website content with practical AI tools, clear guides, and free resources built for everyday marketing work.",
