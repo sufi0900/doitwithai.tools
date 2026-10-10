@@ -15,39 +15,39 @@ import type { HomeArticle, HomeResource } from "./data";
 import JourneySimulation from "./JourneySimulation";
 const steps = [
   {
-    title: "Understand the task",
+    title: "Understand the content task",
     label: "Read the guides",
     description:
-      "Start with a practical article to understand the steps, choices, and examples behind your task.",
+      "Follow a guide to understand your page purpose, reader needs, and the choices behind a useful result.",
     href: "/ai-seo",
     Icon: BookOpen,
     short: "Learn",
-    detail: "Know what a useful result looks like",
-    note: "Follow an example, understand the choices, and bring your own ideas to the task.",
+    detail: "Know what your page needs to achieve",
+    note: "Review the examples, identify your audience, and decide what belongs in your content.",
     items: ["Clear steps", "Practical examples", "Human judgment"],
   },
   {
     title: "Gather your starting points",
     label: "Explore free resources",
     description:
-      "Find prompts and learning resources you can adapt to your project before you begin.",
+      "Choose a relevant prompt or resource, then adapt it to your topic, audience, and page purpose.",
     href: "/free-ai-resources",
     Icon: Layers3,
     short: "Prepare",
-    detail: "Give your project a useful starting point",
-    note: "Collect a relevant prompt or learning resource, then adapt it to your goal and audience.",
+    detail: "Give your content a clear starting point",
+    note: "Bring your own context and supporting information rather than relying on a generic prompt.",
     items: ["Adaptable prompts", "Learning visuals", "Useful resources"],
   },
   {
-    title: "Put what you learned to work",
+    title: "Put your plan into practice",
     label: "Choose your AI tool",
     description:
-      "Use a tool to generate or evaluate your work, then review and refine the results with your own judgment.",
+      "Use a relevant tool, compare the output, and refine it before adding it to your website or client work.",
     href: "/tools",
     Icon: WandSparkles,
     short: "Do",
-    detail: "Turn your preparation into a working draft",
-    note: "Bring your context into a tool, compare the output, and refine it before putting it to use.",
+    detail: "Develop a draft you can review",
+    note: "Check meaning, factual claims, and page context before using the result.",
     items: ["Your context", "Editable results", "Review and refine"],
   },
 ];
@@ -79,13 +79,13 @@ export default function HomeJourney({
     >
       <div className="home-shell">
         <div className="home-journey-heading">
-          <p className="home-eyebrow">One connected approach</p>
+          <p className="home-eyebrow">From understanding to action</p>
           <h2 id="workflow-title" className="home-title">
             Learn it. Prepare it. Do it with AI.
           </h2>
           <p className="home-description">
-            Guidance, resources, and tools work together to help you move from
-            understanding a task to doing it.
+            Understand the task, gather useful starting points, and use our
+            tools to develop results you can review and refine.
           </p>
         </div>
         <div
@@ -94,7 +94,7 @@ export default function HomeJourney({
         >
           <div className="home-project-node">
             <Sparkles aria-hidden size={18} />
-            <span>Your next project</span>
+            <span>Your next content task</span>
             <span className="home-node-signal" aria-hidden />
           </div>
           <div className="home-journey-route" aria-hidden>

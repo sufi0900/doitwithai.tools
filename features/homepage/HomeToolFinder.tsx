@@ -32,13 +32,13 @@ export default function HomeToolFinder() {
       <div className="home-shell">
         <div className="home-section-head">
           <div>
-            <p className="home-eyebrow">Built to help you do the work</p>
+            <p className="home-eyebrow">Practical tools for everyday marketing</p>
             <h2 id="home-tools-title" className="home-title">
-              Find an AI tool for your next task
+              Choose a tool for your SEO and content work
             </h2>
             <p className="home-description">
-              Start with tools for SEO and content writing, then review and
-              refine the results for your project.
+              Plan articles, compare metadata, and refine your content with tools
+              that help you review your options before publishing.
             </p>
           </div>
           <Link className="home-text-link shrink-0" href="/tools">

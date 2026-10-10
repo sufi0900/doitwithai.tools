@@ -79,11 +79,11 @@ export default function HomeResources({
           <div>
             <p className="home-eyebrow">Useful starting points</p>
             <h2 id="resources-title" className="home-title">
-              Free resources to put AI into practice
+              Free resources for your next content task
             </h2>
             <p className="home-description">
-              Explore prompts and learning resources you can adapt to your next
-              task, with clear details about what each resource provides.
+              Explore free prompts and learning resources, then choose what fits
+              your audience and the work you need to complete.
             </p>
           </div>
           <Link className="home-text-link shrink-0" href="/free-ai-resources">

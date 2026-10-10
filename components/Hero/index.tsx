@@ -293,7 +293,7 @@ useEffect(() => {
       d="M21 21l-4.35-4.35"
     />
   </svg>
-  Creators
+  SEO
 </span>
 
             <span className="audience-badge badge-2 inline-flex items-center px-4 py-2 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium whitespace-nowrap shadow-sm no-shift">
@@ -312,27 +312,27 @@ useEffect(() => {
       d="M3 3v18h18M8 17V9m4 8V5m4 12v-6"
     />
   </svg>
-  Marketers
+  Content
 </span>
 
             <span className="audience-badge badge-3 inline-flex items-center px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium whitespace-nowrap shadow-sm no-shift">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-              Professionals
+              Marketers
             </span>
             <span className="audience-badge badge-4 inline-flex items-center px-4 py-2 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-sm font-medium whitespace-nowrap shadow-sm no-shift">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-              Developers
+              Agencies
             </span>
             <span className="audience-badge badge-5 inline-flex items-center px-4 py-2 rounded-full bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 text-sm font-medium whitespace-nowrap shadow-sm no-shift">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
-              AI beginners
+              Founders
             </span>
           </div>
 
           <div className="max-w-6xl mx-auto text-center">
             {/* BENEFITS SECTION - Animated */}
 <div className="mb-8">
-  <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800 dark:text-white">Three ways to put AI to work</h2>
+  <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800 dark:text-white">Three ways to improve your content workflow</h2>
   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
     
     {/* Benefit 1 - Efficiency & Practicality */}
@@ -370,7 +370,7 @@ useEffect(() => {
             {/* Removed conditional rendering as CSS handles initial state */}
             <div className="mb-8">
               <div className="max-w-2xl mx-auto text-center mb-8">
-    <p className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Ready to make AI <span className="text-blue-600 dark:text-blue-400">work smarter for you</span>?</p>
+    <p className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Ready to put AI to work <span className="text-blue-600 dark:text-blue-400">on your content</span>?</p>
                 <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">{homepage.closingDescription}</p>
               </div>
 
@@ -379,13 +379,13 @@ useEffect(() => {
            <div className="flex flex-wrap justify-center gap-2 mb-6">
           <span className="value-indicator value-1 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium whitespace-nowrap no-shift">
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            Hands-on AI tools
+            Practical SEO tools
           </span>
           <span className="value-indicator value-2 inline-flex items-center px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium whitespace-nowrap no-shift">
             <svg className="w-4 h-4 mr-1 text-green-500 dark:text-green-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
-            Step-by-step guides
+            Clear content guides
           </span>
           <span className="value-indicator value-3 inline-flex items-center px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm font-medium whitespace-nowrap no-shift">
             <svg className="w-4 h-4 mr-1 text-purple-500 dark:text-purple-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -408,12 +408,12 @@ useEffect(() => {
                 <a
                   href="/tools"
                   className="press-button  w-full sm:w-auto inline-flex items-center justify-center min-h-[48px] px-8 py-4 bg-blue-600 text-white font-semibold rounded-lg no-shift"
-                  aria-label="Explore AI tools"
+                  aria-label="Explore SEO tools"
                   style={{    transition: 'all 0.3s ease',
 }}
                 >
                   <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5.75 8.55 5.518S4.168 5.477 3.62 5.253v13C4.168 18.477 5.754 18.75 7.25 18.518s3.332.477 4.51.253m0-13C13.168 5.477 14.754 5.16 15.518 5.253c1.746 0 3.332.477 4.518.253v13C20.168 18.477 18.582 18.16 17.518 18.253c-1.746 0-3.332.477-4.518.253"/></svg>
-                  Explore AI tools
+                  Explore SEO tools
                 </a>
 
                 {/* SECONDARY CTA - Animated */}
@@ -421,17 +421,17 @@ useEffect(() => {
                 <a
                   href="/ai-seo"
                   className="press-button-secondary w-full sm:w-auto inline-flex items-center justify-center min-h-[48px] px-8 py-4 border border-gray-400 dark:border-gray-600 bg-transparent text-gray-800 dark:text-white font-semibold rounded-lg no-shift"
-                  aria-label="Explore AI guides"
+                  aria-label="Read SEO guides"
                 >
                   <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  Explore AI guides
+                  Read SEO guides
                 </a>
               </div>
 
               {/* CRITICAL FIX: Enhanced trust indicator with social proof */}
               <div className="mt-6 text-center">
-                <p className="trust-text text-xs text-gray-500 dark:text-gray-400 mb-2">Tools to put into practice • Guidance to build your skills • Resources to make a start</p>
-                <p className="trust-text text-xs text-gray-400 dark:text-gray-500">For creators, marketers, professionals, developers, and anyone starting with AI.</p>
+                <p className="trust-text text-xs text-gray-500 dark:text-gray-400 mb-2">Tools for the task. Guidance for the decisions. Resources to get started.</p>
+                <p className="trust-text text-xs text-gray-400 dark:text-gray-500">For marketers, agency teams, and founders handling their own SEO and content.</p>
               </div>
             </div>
           </div>

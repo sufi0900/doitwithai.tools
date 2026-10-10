@@ -15,13 +15,13 @@ export function HomeLearning({ articles }: { articles: HomeArticle[] }) {
       <div className="home-shell">
         <div className="home-section-head">
           <div>
-            <p className="home-eyebrow">Learn how to use AI well</p>
+            <p className="home-eyebrow">Learn the process behind the output</p>
             <h2 id="learning-title" className="home-title">
-              Build skills you can put into practice
+              Make better decisions about your SEO and content
             </h2>
             <p className="home-description">
-              Read step-by-step guides on AI, SEO, and digital marketing, with
-              examples that help you apply what you learn.
+              Read practical guides with examples, prompts, and review steps
+              you can apply to your own website or client work.
             </p>
           </div>
           <Link className="home-text-link shrink-0" href="/ai-seo">
@@ -122,13 +122,12 @@ export function HomeFounder() {
               Built by someone who puts AI to work
             </h2>
             <p className="mt-4 text-base leading-8 text-slate-600 dark:text-slate-300">
-              I’m Sufian Mustafa, the founder of Do It With AI Tools, sharing
-              tools and guidance shaped by my work in development, SEO, and
-              content.
+              I’m Sufian Mustafa, founder of Do It With AI Tools, a developer
+              and marketer working with SEO and content.
             </p>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              My approach combines AI assistance with human judgment, with a
-              focus on clear guidance and useful results.
+              I build practical tools and share guidance that combines AI
+              assistance with careful review and clear explanations.
             </p>
             <Link href="/author/sufian-mustafa" className="home-text-link mt-5">
               Meet the founder <ArrowRight aria-hidden className="h-4 w-4" />
@@ -155,11 +154,11 @@ export function HomeClosing() {
             id="closing-title"
             className="text-3xl font-bold leading-tight sm:text-4xl"
           >
-            Keep learning what you can do with AI
+            Put your next content task into motion
           </h2>
           <p className="mt-5 max-w-xl text-base leading-8 text-white">
-            Explore more tools, follow a practical guide, or find a free
-            resource for your next project.
+            Choose an SEO tool, follow a useful guide, or find a free resource
+            to support the work ahead.
           </p>
           <div className="home-closing-actions">
             <Link className="home-closing-primary" href="/tools">

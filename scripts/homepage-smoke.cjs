@@ -62,7 +62,7 @@ async function run() {
     }));
     assert.equal(
       metadata.title,
-      "Work Smarter and Grow with AI Tools | Do It With AI Tools",
+      "Put AI to Work on Your SEO and Content | Do It With AI Tools",
     );
     assert.equal(metadata.titles, 1);
     assert.equal(metadata.descriptions, 1);
@@ -166,7 +166,7 @@ async function run() {
     );
     assert.ok(
       await page.$eval("#journey-preview", (el) =>
-        el.textContent.includes("Give your project a useful starting point"),
+        el.textContent.includes("Give your content a clear starting point"),
       ),
     );
     await page.keyboard.press("ArrowRight");
@@ -179,7 +179,7 @@ async function run() {
     await page.click("#journey-tab-0");
     const readPosition = () =>
       page.$eval(
-        ".simulation-article-scroll",
+        ".journey-reading",
         (el) => getComputedStyle(el).transform,
       );
     const startPosition = await readPosition();
@@ -194,7 +194,7 @@ async function run() {
     );
     await page.waitForFunction(
       () =>
-        getComputedStyle(document.querySelector(".simulation-article-scroll"))
+        getComputedStyle(document.querySelector(".journey-reading"))
           .animationPlayState === "paused",
     );
     await new Promise((r) => setTimeout(r, 150));
@@ -215,11 +215,11 @@ async function run() {
       ).screenshot({ path: path.join(screenshots, "simulation-article.png") });
     }
     await page.click("#journey-tab-1");
-    assert.ok(await page.$(".simulation-resource-tabs"));
-    await new Promise((r) => setTimeout(r, 4600));
+    assert.ok(await page.$(".journey-resource-tabs"));
+    await page.waitForFunction(() => getComputedStyle(document.querySelector(".resource-panel-1")).opacity === "1", { timeout: 25000 });
     assert.equal(
       await page.$eval(
-        ".sim-visual-panel",
+        ".resource-panel-1",
         (el) => getComputedStyle(el).opacity,
       ),
       "1",
@@ -231,11 +231,11 @@ async function run() {
         path: path.join(screenshots, "simulation-resources.png"),
       });
     await page.click("#journey-tab-2");
-    assert.ok(await page.$(".simulation-tool-tabs"));
-    await new Promise((r) => setTimeout(r, 5200));
+    assert.ok(await page.$(".journey-tool-list"));
+    await page.waitForFunction(() => getComputedStyle(document.querySelector(".journey-output")).opacity === "1", { timeout: 25000 });
     assert.equal(
       await page.$eval(
-        ".simulation-title-result",
+        ".journey-output",
         (el) => getComputedStyle(el).opacity,
       ),
       "1",
@@ -423,43 +423,43 @@ async function run() {
     await page.click("#journey-tab-1");
     assert.equal(
       await page.$eval(
-        ".simulation-pointer",
+        ".journey-cursor",
         (el) => getComputedStyle(el).display,
       ),
       "none",
     );
     assert.equal(
       await page.$eval(
-        ".sim-prompt-panel",
+        ".resource-panel-0",
         (el) => getComputedStyle(el).opacity,
       ),
       "1",
     );
     assert.equal(
       await page.$eval(
-        ".sim-visual-panel",
-        (el) => getComputedStyle(el).display,
+        ".resource-panel-1",
+        (el) => getComputedStyle(el).opacity,
       ),
-      "none",
+      "0",
     );
     await page.click("#journey-tab-2");
     assert.equal(
       await page.$eval(
-        ".simulation-title-result",
+        ".journey-output",
         (el) => getComputedStyle(el).opacity,
       ),
       "1",
     );
     assert.equal(
       await page.$eval(
-        ".simulation-title-result",
+        ".journey-output",
         (el) => getComputedStyle(el).animationName,
       ),
       "none",
     );
     assert.deepEqual(errors, []);
     const og = await fetch(
-      `${origin}/api/og?variant=homepage&title=Work%20smarter%20and%20grow%20with%20AI%20tools`,
+      `${origin}/api/og?variant=homepage&title=Put%20AI%20to%20work%20on%20your%20SEO%20and%20content`,
     );
     assert.equal(og.status, 200);
     assert.ok(og.headers.get("content-type").includes("image"));
@@ -467,7 +467,7 @@ async function run() {
       "Passed: unique metadata, canonical, schema, H1/main landmarks, featured tools, search, filters, reset, five viewport widths, dark mode, reduced motion, browser errors, and OG image.",
     );
     console.log(
-      "Passed: twelve-second simulations, article scrolling, resource selection, generated results, visual pause, and static reduced-motion previews.",
+      "Passed: sixteen-second simulations, article scrolling, resource selection, generated results, visual pause, and static reduced-motion previews.",
     );
     if (process.env.HOMEPAGE_QA_EXPECT_CONTENT)
       console.log(

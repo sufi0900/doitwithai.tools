@@ -3,7 +3,7 @@ import { homepage } from "@/features/homepage/content";
 import { getHomepageData } from "@/features/homepage/data";
 import { homepageSchema } from "@/features/homepage/schema";
 const origin = "https://doitwithai.tools";
-const image = `${origin}/api/og?variant=homepage&title=${encodeURIComponent("Work smarter and grow with AI tools")}`;
+const image = `${origin}/api/og?variant=homepage&title=${encodeURIComponent("Put AI to work on your SEO and content")}`;
 export const revalidate = 600;
 export const metadata = {
   metadataBase: new URL(origin),
@@ -19,20 +19,20 @@ export const metadata = {
     locale: "en_US",
     siteName: homepage.brand,
     url: `${origin}/`,
-    title: "Work Smarter and Grow with AI Tools",
+    title: "Put AI to Work on Your SEO and Content",
     description: homepage.description,
     images: [
       {
         url: image,
         width: 1200,
         height: 630,
-        alt: "Do It With AI Tools: work smarter and grow with AI tools",
+        alt: "Do It With AI Tools: practical AI tools and guides for SEO and content",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Work Smarter and Grow with AI Tools",
+    title: "Put AI to Work on Your SEO and Content",
     description: homepage.description,
     images: [image],
   },

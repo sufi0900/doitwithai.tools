@@ -38,6 +38,7 @@ export function homepageSchema(
         "@id": website,
         name: homepage.brand,
         alternateName: ["Do It With AI", "doitwithai.tools"],
+        description: homepage.description,
         url: `${origin}/`,
         publisher: { "@id": organization },
         inLanguage: "en",
@@ -59,7 +60,7 @@ export function homepageSchema(
       {
         "@type": "ItemList",
         "@id": `${origin}/#featured-tools`,
-        name: "Featured AI tools",
+        name: "Practical SEO and content tools",
         itemListElement: items.map((t, i) => ({
           "@type": "ListItem",
           position: i + 1,
@@ -72,7 +73,7 @@ export function homepageSchema(
             {
               "@type": "ItemList",
               "@id": `${origin}/#learning`,
-              name: "Practical AI guides",
+              name: "SEO and content guides",
               itemListElement: articles.map((a, i) => ({
                 "@type": "ListItem",
                 position: i + 1,

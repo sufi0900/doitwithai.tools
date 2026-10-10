@@ -1,13 +1,13 @@
 export const homepage = {
   brand: "Do It With AI Tools",
-  title: "Work Smarter and Grow with AI Tools | Do It With AI Tools",
+  title: "Put AI to Work on Your SEO and Content | Do It With AI Tools",
   description:
-    "Explore AI tools, guides, and free resources that help you work smarter, improve your SEO, and build your online presence.",
-  headline: "Master AI for smarter work and online growth",
+    "Plan and refine website content with AI tools, practical SEO guides, and free resources for marketers, agency teams, and founders.",
+  headline: "Put AI to work on your SEO and content",
   heroDescription:
-    "Put AI to work with hands-on tools, step-by-step guides, and free resources that help you work smarter and build your online presence.",
+    "Plan and refine your website content with practical AI tools, clear guides, and free resources built for everyday marketing work.",
   closingDescription:
-    "Start with practical tools and strategies for smarter work and stronger online presence, with clear guidance to help you take the next step.",
+    "Start with a practical guide, choose a relevant tool, and review the results for your audience before putting them to use.",
   featuredToolSlugs: [
     "meta-title-generator",
     "meta-description-generator",
@@ -23,20 +23,20 @@ export const homepage = {
   ],
   cards: [
     {
-      title: "Put AI to work on real tasks",
-      body: "Use our AI tools to turn ideas into drafts, outlines, and useful options you can review and refine for your task.",
+      title: "Find the right tool for the task",
+      body: "Compare title ideas, build article outlines, and refine your content with editable results you can review before publishing.",
       href: "/tools",
       action: "Explore tools",
     },
     {
-      title: "Build skills you can put to use",
-      body: "Follow step-by-step guides that connect AI with human judgment, helping you understand each task and apply what you learn.",
+      title: "Learn the reasoning behind the work",
+      body: "Follow practical SEO and content guides with examples that help you make informed choices and apply AI with human judgment.",
       href: "/ai-seo",
-      action: "Explore guides",
+      action: "Read SEO guides",
     },
     {
-      title: "Start with something useful",
-      body: "Explore free prompts and learning resources you can adapt to your projects, then build on them with our tools and guides.",
+      title: "Start with a useful resource",
+      body: "Find free prompts and learning resources, then adapt them to your audience, page purpose, and content task.",
       href: "/free-ai-resources",
       action: "Explore resources",
     },

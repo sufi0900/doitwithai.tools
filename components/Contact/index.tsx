@@ -106,9 +106,9 @@ const Contact = ({ homepage = false }: { homepage?: boolean }) => {
       {homepage ? (
         <div className="home-section-head">
           <div>
-            <p className="home-eyebrow">Let’s stay connected</p>
-            <h2 className="home-title">Have a question or an idea?</h2>
-            <p className="home-description">Share your feedback, ask about our tools, or get in touch about a collaboration.</p>
+            <p className="home-eyebrow">Help shape what we build next</p>
+            <h2 className="home-title">What would make your marketing work easier?</h2>
+            <p className="home-description">Share a tool idea, tell us where your content workflow gets difficult, or get in touch about a collaboration.</p>
           </div>
         </div>
       ) : <Breadcrumb
