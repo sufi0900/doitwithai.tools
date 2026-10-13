@@ -39,6 +39,8 @@ Uses existing `GEMINI_API_KEY` and `GEMINI_MODEL` configuration. An optional `GE
 
 No credentials are introduced or changed by this feature.
 
+A confirmed Upstash fixed-plan capacity error activates a temporary, instance-local fallback for this tool only. It permits one attempt per ten minutes and two per day per client on that instance. Redis retries resume after a one-minute circuit cooldown. Missing credentials and unrelated Redis failures still stop analysis safely. This fallback is not a distributed quota: server restarts and multiple instances can reset or multiply its allowance. Restore Redis capacity for consistent site-wide limits.
+
 ## Verification
 
 - Production build and TypeScript checks.

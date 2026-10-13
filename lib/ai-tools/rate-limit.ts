@@ -11,12 +11,14 @@ type LimitResult = {
 type LimitOptions = {
   dailyLimit?: number;
   burstLimit?: number;
+  allowPlanLimitFallback?: boolean;
 };
 
 type WindowValue = { count: number; expiresAt: number };
 
 const memoryStore = new Map<string, WindowValue>();
 let redis: Redis | null | undefined;
+let planLimitCooldownUntil = 0;
 
 function getRedis() {
   if (redis !== undefined) return redis;
@@ -33,10 +35,7 @@ function getClientKey(request: NextRequest) {
     ?.split(",")[0]
     ?.trim();
   const address = forwarded || request.headers.get("x-real-ip") || "unknown";
-  return createHash("sha256")
-    .update(address)
-    .digest("hex")
-    .slice(0, 24);
+  return createHash("sha256").update(address).digest("hex").slice(0, 24);
 }
 
 async function incrementWindow(key: string, ttlSeconds: number) {
@@ -50,8 +49,13 @@ async function incrementWindow(key: string, ttlSeconds: number) {
     return { count, ttl: ttl > 0 ? ttl : ttlSeconds };
   }
 
-  if (process.env.NODE_ENV === "production") throw new Error("Shared Redis rate limiting is required in production");
+  if (process.env.NODE_ENV === "production")
+    throw new Error("Shared Redis rate limiting is required in production");
 
+  return incrementMemoryWindow(key, ttlSeconds);
+}
+
+function incrementMemoryWindow(key: string, ttlSeconds: number) {
   const now = Date.now();
   const existing = memoryStore.get(key);
   const next =
@@ -60,8 +64,10 @@ async function incrementWindow(key: string, ttlSeconds: number) {
       : { ...existing, count: existing.count + 1 };
 
   if (!existing && memoryStore.size >= 10_000) {
-    for (const [entryKey, value] of memoryStore) if (value.expiresAt <= now) memoryStore.delete(entryKey);
-    if (memoryStore.size >= 10_000) throw new Error("Local rate-limit capacity exceeded");
+    for (const [entryKey, value] of memoryStore)
+      if (value.expiresAt <= now) memoryStore.delete(entryKey);
+    if (memoryStore.size >= 10_000)
+      throw new Error("Local rate-limit capacity exceeded");
   }
   memoryStore.set(key, next);
 
@@ -88,12 +94,12 @@ export async function checkAiToolRateLimit(
 ): Promise<LimitResult> {
   const clientKey = getClientKey(request);
 
-  const dailyLimit = validLimit(
+  let dailyLimit = validLimit(
     5,
     options.dailyLimit ?? Number(process.env.AI_TOOLS_DAILY_LIMIT || 5),
   );
 
-  const burstLimit = validLimit(
+  let burstLimit = validLimit(
     3,
     options.burstLimit ?? Number(process.env.AI_TOOLS_BURST_LIMIT || 3),
   );
@@ -104,10 +110,43 @@ export async function checkAiToolRateLimit(
     throw new Error("A valid AI tool id is required");
   }
 
-  const [daily, burst] = await Promise.all([
-    incrementWindow(`ai-tools:${safeToolId}:day:${clientKey}`, 86_400),
-    incrementWindow(`ai-tools:${safeToolId}:burst:${clientKey}`, 600),
-  ]);
+  let daily: { count: number; ttl: number };
+  let burst: { count: number; ttl: number };
+  const fallback = () => {
+    dailyLimit = Math.min(dailyLimit, 2);
+    burstLimit = 1;
+    return [
+      incrementMemoryWindow(
+        `ai-tools:quota:${safeToolId}:day:${clientKey}`,
+        86_400,
+      ),
+      incrementMemoryWindow(
+        `ai-tools:quota:${safeToolId}:burst:${clientKey}`,
+        600,
+      ),
+    ];
+  };
+  if (options.allowPlanLimitFallback && planLimitCooldownUntil > Date.now()) {
+    [daily, burst] = fallback();
+  } else {
+    try {
+      [daily, burst] = await Promise.all([
+        incrementWindow(`ai-tools:${safeToolId}:day:${clientKey}`, 86_400),
+        incrementWindow(`ai-tools:${safeToolId}:burst:${clientKey}`, 600),
+      ]);
+    } catch (cause) {
+      // Only a confirmed plan-capacity failure activates the bounded fallback.
+      // Missing credentials, authentication failures, and outages remain fail-closed.
+      if (
+        !options.allowPlanLimitFallback ||
+        !(cause instanceof Error) ||
+        !/database has reached.*(?:fixed )?plan limits/i.test(cause.message)
+      )
+        throw cause;
+      planLimitCooldownUntil = Date.now() + 60_000;
+      [daily, burst] = fallback();
+    }
+  }
 
   const allowed = daily.count <= dailyLimit && burst.count <= burstLimit;
 

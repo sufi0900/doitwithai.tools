@@ -55,7 +55,17 @@ export async function POST(request: NextRequest) {
         "Keep your sitemap and destination URLs on the article's exact hostname.",
         422,
       );
-    const limit = await checkAiToolRateLimit(request, "internal-linking");
+    let limit;
+    try {
+      limit = await checkAiToolRateLimit(request, "internal-linking", {
+        allowPlanLimitFallback: true,
+      });
+    } catch {
+      return error(
+        "The analysis service is temporarily unavailable. Please try again later.",
+        503,
+      );
+    }
     if (!limit.allowed)
       return error(
         "You have reached the analysis limit. Please try again later.",
