@@ -6,12 +6,14 @@ type LimitResult = {
   allowed: boolean;
   remaining: number;
   retryAfterSeconds: number;
+  release?: () => Promise<void>;
 };
 
 type LimitOptions = {
   dailyLimit?: number;
   burstLimit?: number;
   allowPlanLimitFallback?: boolean;
+  refundFailures?: boolean;
 };
 
 type WindowValue = { count: number; expiresAt: number };
@@ -112,19 +114,41 @@ export async function checkAiToolRateLimit(
 
   let daily: { count: number; ttl: number };
   let burst: { count: number; ttl: number };
+  let usedFallback = false;
+  let fallbackKeys: string[] = [];
+  let fallbackExpiries: number[] = [];
   const fallback = () => {
+    usedFallback = true;
     dailyLimit = Math.min(dailyLimit, 2);
     burstLimit = 1;
-    return [
-      incrementMemoryWindow(
-        `ai-tools:quota:${safeToolId}:day:${clientKey}`,
-        86_400,
-      ),
-      incrementMemoryWindow(
-        `ai-tools:quota:${safeToolId}:burst:${clientKey}`,
-        600,
-      ),
+    fallbackKeys = [
+      `ai-tools:quota:${safeToolId}:day:${clientKey}`,
+      `ai-tools:quota:${safeToolId}:burst:${clientKey}`,
     ];
+    const now = Date.now();
+    const current = fallbackKeys.map((key) => memoryStore.get(key));
+    const counts = current.map((value) =>
+      value && value.expiresAt > now ? value.count : 0,
+    );
+    // Reject before mutating either window. Refreshing cannot extend a lockout.
+    if (counts[0] >= dailyLimit || counts[1] >= burstLimit) {
+      return current.map((value, i) => ({
+        count: counts[i] + 1,
+        ttl:
+          value && value.expiresAt > now
+            ? Math.ceil((value.expiresAt - now) / 1000)
+            : i === 0
+              ? 86400
+              : 600,
+      }));
+    }
+    const windows = fallbackKeys.map((key, i) =>
+      incrementMemoryWindow(key, i === 0 ? 86400 : 600),
+    );
+    fallbackExpiries = fallbackKeys.map(
+      (key) => memoryStore.get(key)!.expiresAt,
+    );
+    return windows;
   };
   if (options.allowPlanLimitFallback && planLimitCooldownUntil > Date.now()) {
     [daily, burst] = fallback();
@@ -148,7 +172,50 @@ export async function checkAiToolRateLimit(
     }
   }
 
+  let released = false;
+  const release = async () => {
+    if (released) return;
+    released = true;
+    if (usedFallback) {
+      fallbackKeys.forEach((key, i) => {
+        const value = memoryStore.get(key);
+        if (value && value.expiresAt === fallbackExpiries[i])
+          memoryStore.set(key, {
+            ...value,
+            count: Math.max(0, value.count - 1),
+          });
+      });
+    } else if (getRedis()) {
+      // Do not recreate expired counters or decrement them below zero.
+      await getRedis()!.eval(
+        "for i=1,#KEYS do local n=tonumber(redis.call('GET',KEYS[i]) or '0'); if n>0 then redis.call('DECR',KEYS[i]); end end return 1",
+        [
+          `ai-tools:${safeToolId}:day:${clientKey}`,
+          `ai-tools:${safeToolId}:burst:${clientKey}`,
+        ],
+        [],
+      );
+    } else {
+      for (const key of [
+        `ai-tools:${safeToolId}:day:${clientKey}`,
+        `ai-tools:${safeToolId}:burst:${clientKey}`,
+      ]) {
+        const value = memoryStore.get(key);
+        if (value)
+          memoryStore.set(key, {
+            ...value,
+            count: Math.max(0, value.count - 1),
+          });
+      }
+    }
+  };
   const allowed = daily.count <= dailyLimit && burst.count <= burstLimit;
+
+  if (!allowed && options.refundFailures && !usedFallback) {
+    try {
+      await release();
+    } catch {}
+  }
 
   const retryAfterSeconds =
     daily.count > dailyLimit
@@ -164,6 +231,7 @@ export async function checkAiToolRateLimit(
       Math.min(dailyLimit - daily.count, burstLimit - burst.count),
     ),
     retryAfterSeconds,
+    ...(allowed && options.refundFailures ? { release } : {}),
   };
 }
 

@@ -42,6 +42,8 @@ export async function POST(request: NextRequest) {
       "Provide an article URL, up to 100 destination URLs, and optional article text below 40,000 characters.",
       422,
     );
+  let reservation: Awaited<ReturnType<typeof checkAiToolRateLimit>> | undefined;
+  let completed = false;
   try {
     const input = parsed.data;
     normalizeUrl(input.sourceUrl);
@@ -57,8 +59,9 @@ export async function POST(request: NextRequest) {
       );
     let limit;
     try {
-      limit = await checkAiToolRateLimit(request, "internal-linking", {
+      limit = await checkAiToolRateLimit(request, "internal-linking-v2", {
         allowPlanLimitFallback: true,
+        refundFailures: true,
       });
     } catch {
       return error(
@@ -68,10 +71,11 @@ export async function POST(request: NextRequest) {
     }
     if (!limit.allowed)
       return error(
-        "You have reached the analysis limit. Please try again later.",
+        `Please try again in ${Math.max(1, Math.ceil(limit.retryAfterSeconds / 60))} minutes. A previous analysis or an active request reached the current limit.`,
         429,
         { "Retry-After": String(limit.retryAfterSeconds) },
       );
+    reservation = limit;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30000);
     const abort = () => controller.abort();
@@ -82,6 +86,12 @@ export async function POST(request: NextRequest) {
     } finally {
       clearTimeout(timer);
       request.signal.removeEventListener("abort", abort);
+    }
+    if (!collected.destinations.length) {
+      return error(
+        "No destination pages could be read. Check the page URLs or try a smaller list. This failed analysis does not consume your allowance.",
+        422,
+      );
     }
     let suggestions = textMatches(collected.source, collected.destinations);
     const model = getGeminiModel("INTERNAL_LINKING");
@@ -148,6 +158,7 @@ export async function POST(request: NextRequest) {
       pages: collected.pages,
       notes: collected.notes,
     };
+    completed = true;
     return NextResponse.json(
       { result },
       { headers: { "Cache-Control": "no-store" } },
@@ -160,6 +171,26 @@ export async function POST(request: NextRequest) {
       )
         ? e.message
         : "Analysis is temporarily unavailable. Check the URLs and try again.";
+    console.warn(
+      JSON.stringify({
+        event: "internal_link_analysis_failed",
+        code: /robots/i.test(message)
+          ? "ROBOTS_CHECK_FAILED"
+          : /HTTP/i.test(message)
+            ? "PAGE_HTTP_ERROR"
+            : "PAGE_ANALYSIS_FAILED",
+      }),
+    );
     return error(message, 502);
+  } finally {
+    if (!completed && reservation?.release) {
+      try {
+        await reservation.release();
+      } catch {
+        console.warn(
+          JSON.stringify({ event: "internal_link_quota_refund_failed" }),
+        );
+      }
+    }
   }
 }

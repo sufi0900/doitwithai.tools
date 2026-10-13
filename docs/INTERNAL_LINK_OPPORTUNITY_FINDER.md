@@ -39,7 +39,7 @@ Uses existing `GEMINI_API_KEY` and `GEMINI_MODEL` configuration. An optional `GE
 
 No credentials are introduced or changed by this feature.
 
-A confirmed Upstash fixed-plan capacity error activates a temporary, instance-local fallback for this tool only. It permits one attempt per ten minutes and two per day per client on that instance. Redis retries resume after a one-minute circuit cooldown. Missing credentials and unrelated Redis failures still stop analysis safely. This fallback is not a distributed quota: server restarts and multiple instances can reset or multiply its allowance. Restore Redis capacity for consistent site-wide limits.
+A confirmed Upstash fixed-plan capacity error activates a temporary, instance-local fallback for this tool only. It permits one active or completed analysis per ten minutes and two per day per client on that instance. Failed analyses release their reservations. Rejected fallback retries do not increase counters. Redis retries resume after a one-minute circuit cooldown. Missing credentials and unrelated Redis failures still stop analysis safely. This fallback is not a distributed quota: server restarts and multiple instances can reset or multiply its allowance. Restore Redis capacity for consistent site-wide limits.
 
 ## Verification
 
@@ -49,3 +49,5 @@ A confirmed Upstash fixed-plan capacity error activates a temporary, instance-lo
 - `scripts/internal-linking-smoke.cjs` checks the actual API's input validation, canonical metadata, structured data, five widths, dark mode, reduced motion, example results, catalogue registration, and fixture response rendering.
 
 Browser success rendering and collection pipeline tests use fixtures. This workspace's restricted DNS prevents direct public-host fetching, and local production credentials are absent. Live crawling, shared rate limiting, and Gemini review need a deployment smoke check.
+
+The internal-linking limiter uses a new versioned namespace so previously consumed failed-attempt counters do not carry into this correction. Quota responses include a wait time and Retry-After header.

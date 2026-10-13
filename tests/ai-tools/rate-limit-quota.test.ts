@@ -74,3 +74,69 @@ test("confirmed Redis plan limits activate a bounded opt-in fallback without aff
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
   }
 });
+
+test("failed analyses release reservations and rejected retries do not extend lockouts", async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async () =>
+    new Response(
+      JSON.stringify([
+        { error: "ERR This database has reached current Fixed plan limits." },
+      ]),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  const request = new NextRequest("https://example.com/api", {
+    headers: { "x-forwarded-for": "192.0.2.91" },
+  });
+  try {
+    const options = { allowPlanLimitFallback: true, refundFailures: true };
+    const first = await checkAiToolRateLimit(
+      request,
+      "refundable-fixture",
+      options,
+    );
+    assert.equal(first.allowed, true);
+    for (let i = 0; i < 10; i++) {
+      const rejected = await checkAiToolRateLimit(
+        request,
+        "refundable-fixture",
+        options,
+      );
+      assert.equal(rejected.allowed, false);
+      assert.ok(
+        rejected.retryAfterSeconds <= 600,
+        "Rejected retries must not consume the daily allowance",
+      );
+    }
+    await first.release!();
+    await first.release!();
+    const retry = await checkAiToolRateLimit(
+      request,
+      "refundable-fixture",
+      options,
+    );
+    assert.equal(retry.allowed, true, "A failed attempt must permit retry");
+    assert.equal(
+      (await checkAiToolRateLimit(request, "refundable-fixture", options))
+        .allowed,
+      false,
+      "An active or completed attempt remains limited",
+    );
+    await retry.release!();
+    for (let i = 0; i < 2; i++) {
+      const response = await POST(
+        new NextRequest("https://example.com/api", {
+          method: "POST",
+          headers: { "x-forwarded-for": "192.0.2.92" },
+          body: JSON.stringify({ sourceUrl: "http://127.0.0.1/article" }),
+        }),
+      );
+      assert.equal(
+        response.status,
+        502,
+        "Unsafe fetch fails safely and repeated attempts are not replaced by quota errors",
+      );
+    }
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
