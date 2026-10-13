@@ -31,6 +31,7 @@ const icons = {
   "image-alt-text-generator": ScanEye,
   "keyword-clustering-tool": Network,
   "topical-map-generator": GitBranch,
+  "internal-link-opportunity-finder": Link2,
 };
 export default function ToolCard({
   tool,

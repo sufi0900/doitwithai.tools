@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-03T18:10:13.506Z",
+  "generated": "2026-10-13T20:57:27.054Z",
   "static_pages": [
     {
       "url": "/",
@@ -117,6 +117,42 @@
       "type": "static"
     },
     {
+      "url": "/tools/article-outline-generator",
+      "title": "Article Outline Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/readability-checker",
+      "title": "Readability Checker and Improver",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/image-alt-text-generator",
+      "title": "Image Alt Text Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/keyword-clustering-tool",
+      "title": "Keyword Clustering Tool",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/topical-map-generator",
+      "title": "AI Topical Map Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/internal-link-opportunity-finder",
+      "title": "Internal Link Opportunity Finder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -129,5 +165,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 21
+  "total_pages": 27
 }
