@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   getGeminiClient,
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
   geminiTextFormat,
   geminiFailure,
 } from "@/lib/ai-tools/gemini";
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!isGeminiConfigured(getGeminiModel("SLUG_GENERATOR"))) {
+  if (!isAiConfigured(getGeminiModel("SLUG_GENERATOR"))) {
     return errorResponse(
       "The generator has not been connected to its AI provider yet.",
       503,
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
         result,
         meta: {
           generatedAt: new Date().toISOString(),
-          model,
+          model: response.model || model,
           remaining: limit.remaining,
         },
       },

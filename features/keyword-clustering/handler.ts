@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   getGeminiClient,
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
   geminiTextFormat,
   geminiFailure,
 } from "@/lib/ai-tools/gemini";
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       "VALIDATION_ERROR",
     );
   const model = getGeminiModel("KEYWORD_CLUSTERING");
-  if (!isGeminiConfigured(model))
+  if (!isAiConfigured(model))
     return error(
       "The generator has not been connected to its AI provider yet.",
       503,

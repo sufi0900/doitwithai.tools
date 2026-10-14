@@ -1,12 +1,12 @@
 import { loadEnvConfig } from "@next/env";
-import { getGeminiModel, isGeminiConfigured } from "../lib/ai-tools/gemini";
+import { getGeminiModel, isAiConfigured } from "../lib/ai-tools/gemini";
 import { buildKnowledgeDocuments } from "../features/site-assistant/server/knowledge";
 import { syncKnowledgeDocuments } from "../features/site-assistant/server/vector-store";
 
 loadEnvConfig(process.cwd());
 
 async function main() {
-  if (isGeminiConfigured(getGeminiModel("SITE_ASSISTANT"))) {
+  if (isAiConfigured(getGeminiModel("SITE_ASSISTANT"))) {
     console.log(
       "Gemini assistant reads published Sanity content on each request. No vector synchronization is needed. Tool changes are included after deployment.",
     );

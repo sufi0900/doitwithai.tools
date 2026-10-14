@@ -4,7 +4,8 @@ import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import {
   getGeminiClient,
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
+  geminiFailure,
   geminiTextFormat,
 } from "@/lib/ai-tools/gemini";
 import {
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
     const model = getGeminiModel("INTERNAL_LINKING");
     if (
       collected.destinations.length &&
-      isGeminiConfigured(model) &&
+      isAiConfigured(model) &&
       !request.signal.aborted
     ) {
       try {
@@ -146,14 +147,17 @@ export async function POST(request: NextRequest) {
           collected.destinations,
           "AI reviewed",
         );
-      } catch {
-        collected.notes.push(
-          "AI review was unavailable. These results use conservative text matching instead.",
+      } catch (cause) {
+        const failure = geminiFailure(cause);
+        return error(
+          failure?.message ||
+            "AI review is temporarily unavailable. Please try again later.",
+          failure?.status || 503,
         );
       }
     } else
       collected.notes.push(
-        "These results use text matching. AI review activates when the site's existing Gemini provider is configured.",
+        "These results use text matching. AI review activates when an AI provider is configured.",
       );
     const result: Report = {
       sourceUrl: collected.source.url,

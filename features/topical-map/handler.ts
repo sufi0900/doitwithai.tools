@@ -4,7 +4,7 @@ import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
   getGeminiClient,
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
   geminiFailure,
   geminiTextFormat,
 } from "@/lib/ai-tools/gemini";
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       "VALIDATION_ERROR",
     );
   const model = getGeminiModel("TOPICAL_MAP");
-  if (!isGeminiConfigured(model))
+  if (!isAiConfigured(model))
     return error(
       "The map generator has not been connected to Gemini yet.",
       503,

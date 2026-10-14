@@ -319,8 +319,8 @@ export default function Page() {
                 "Possible reasons include robot restrictions, noindex directives, inaccessible pages, download limits, and missing readable paragraphs. The coverage panel reports observed outcomes.",
               ],
               [
-                "What happens when AI review is unavailable?",
-                "The tool can return conservative shared-phrase suggestions. These are labeled Text match. They still require editorial review.",
+                "What happens when AI review fails?",
+                "The service tries its configured backup provider automatically. If review still fails, an error preserves your inputs for another attempt.",
               ],
               [
                 "Does the tool detect orphan pages?",

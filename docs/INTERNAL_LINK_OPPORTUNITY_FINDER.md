@@ -31,7 +31,7 @@ The tool respects applicable robots disallow rules and excludes observed noindex
 
 AI receives extracted article evidence, not authority to follow page instructions. Suggested destinations must belong to the successfully fetched set. Anchors must exist verbatim in the indexed source passage. Existing source links, duplicate destinations, and weak topic overlap are rejected. React renders evidence as text.
 
-If Gemini is unavailable, conservative shared-phrase results remain available and are labeled `Text match`. AI-reviewed output still requires an editor's judgment.
+Gemini review now falls back automatically to configured Groq. If both providers fail, a safe error releases the analysis reservation. When neither provider is configured, conservative shared-phrase results remain available and are labeled `Text match`. AI-reviewed output still requires an editor's judgment.
 
 ## Configuration
 

@@ -4,7 +4,7 @@ import { siteAssistantRequestSchema } from "@/features/site-assistant/schema";
 import { answerSiteAssistant } from "@/features/site-assistant/server/chat";
 import {
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
   geminiFailure,
 } from "@/lib/ai-tools/gemini";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!isGeminiConfigured(getGeminiModel("SITE_ASSISTANT"))) {
+  if (!isAiConfigured(getGeminiModel("SITE_ASSISTANT"))) {
     return errorResponse(
       "The website assistant has not been connected yet.",
       503,

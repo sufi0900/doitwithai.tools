@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   getGeminiClient,
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
   geminiTextFormat,
   geminiFailure,
 } from "@/lib/ai-tools/gemini";
@@ -49,7 +49,7 @@ export function writingHandler(kind: WritingKind) {
       kind === "meta-description"
         ? getGeminiModel("META_DESCRIPTION")
         : getGeminiModel("H1_HEADING");
-    if (!isGeminiConfigured(model))
+    if (!isAiConfigured(model))
       return error(
         "The generator has not been connected to its AI provider yet.",
         503,
