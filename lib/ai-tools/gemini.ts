@@ -56,7 +56,7 @@ export class GeminiError extends Error {
     public readonly upstreamStatus?: number,
     public readonly providerStatus?: string,
     public readonly finishReason?: string,
-    public readonly failures?: { gemini: string; groq: string },
+    public failures?: { gemini: string; groq: string },
   ) {
     super(code);
   }
@@ -307,20 +307,72 @@ async function generate<T>(
       Array.isArray(item.content) &&
       item.content.some((part) => part.type === "input_image"),
   );
-  if (!isGroqConfigured(image)) return generateGemini(params, options);
+  const traceId = randomUUID();
+  const startedAt = Date.now();
+  const trace = (
+    provider: "gemini" | "groq",
+    state: "started" | "succeeded" | "failed" | "skipped",
+    code?: string,
+  ) => {
+    process.stderr.write(
+      JSON.stringify({
+        event: "ai_provider_attempt",
+        traceId,
+        provider,
+        state,
+        code,
+        elapsedMs: Date.now() - startedAt,
+        model: provider === "gemini" ? params.model : getGroqModel(image),
+      }) + "\n",
+    );
+  };
+  if (!isGroqConfigured(image)) {
+    trace("groq", "skipped", "AI_NOT_CONFIGURED");
+    trace(
+      "gemini",
+      isGeminiConfigured(params.model) ? "started" : "skipped",
+      isGeminiConfigured(params.model) ? undefined : "AI_NOT_CONFIGURED",
+    );
+    try {
+      const result = await generateGemini(params, options);
+      trace("gemini", "succeeded");
+      return result;
+    } catch (cause) {
+      if (!(cause instanceof GeminiError)) throw cause;
+      trace("gemini", "failed", cause.code);
+      const failure = cause;
+      failure.failures = { gemini: cause.code, groq: "NOT_CONFIGURED" };
+      process.stderr.write(
+        JSON.stringify({
+          event: "ai_generation_failed",
+          traceId,
+          requestId: failure.requestId,
+          ...failure.failures,
+        }) + "\n",
+      );
+      throw failure;
+    }
+  }
   const total = Math.max(1, Math.min(options.timeout ?? 45000, 50000));
   const deadline = Date.now() + total;
   let firstFailure: GeminiError;
+  trace(
+    "gemini",
+    isGeminiConfigured(params.model) ? "started" : "skipped",
+    isGeminiConfigured(params.model) ? undefined : "AI_NOT_CONFIGURED",
+  );
   try {
     const result = await generateGemini(params, {
       ...options,
       timeout: Math.max(1, Math.min(25000, Math.floor(total * 0.55))),
     });
+    trace("gemini", "succeeded");
     return { ...result, provider: "gemini", model: params.model };
   } catch (cause) {
     if (!(cause instanceof GeminiError)) throw cause;
     // A provider refusal is not a service outage. Preserve the existing refusal behavior.
     if (["OUTPUT_BLOCKED", "INVALID_IMAGE"].includes(cause.code)) throw cause;
+    trace("gemini", "failed", cause.code);
     firstFailure = cause;
   }
   const remaining = deadline - Date.now();
@@ -334,25 +386,32 @@ async function generate<T>(
     }) + "\n",
   );
   try {
+    trace("groq", "started");
     const result = await generateGroq(params, remaining, image);
+    trace("groq", "succeeded");
     return { ...result, provider: "groq", model: getGroqModel(image) };
   } catch (cause) {
     const failure =
       cause instanceof GroqError
         ? cause
         : new GroqError(502, "PROVIDER_FAILED");
+    trace("groq", "failed", failure.code);
     const finalFailure = new GeminiError(
       failure.code === "OUTPUT_BLOCKED" ? 422 : failure.status,
       failure.code === "OUTPUT_BLOCKED"
         ? "OUTPUT_BLOCKED"
         : "ALL_PROVIDERS_FAILED",
-      undefined, undefined, undefined,
+      undefined,
+      undefined,
+      undefined,
       { gemini: firstFailure.code, groq: failure.code },
     );
     process.stderr.write(
       JSON.stringify({
         event: "ai_provider_failure",
         requestId: finalFailure.requestId,
+        traceId,
+        gemini: firstFailure.code,
         provider: "groq",
         code: failure.code,
         model: getGroqModel(image),

@@ -1,3 +1,4 @@
+import { rateLimitFailure } from "@/lib/ai-tools/rate-limit";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getGeminiClient,
@@ -66,9 +67,8 @@ export async function POST(request: NextRequest) {
     const failure = geminiFailure(error);
     if (failure)
       return errorResponse(failure.message, failure.status, failure.code);
-    console.error("Meta title rate limiter failed", error);
     return errorResponse(
-      "The generator is temporarily unavailable.",
+      rateLimitFailure(error).message,
       503,
       "RATE_LIMIT_UNAVAILABLE",
     );

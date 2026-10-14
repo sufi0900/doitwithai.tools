@@ -56,3 +56,9 @@ Sources checked October 14, 2026:
 ## Native request regression fix
 
 Gemini generateContent does not accept the Responses API `store` field. The native transport omits it; HTTP cache remains disabled. Transport tests now reject unsupported top-level fields instead of requiring `store: false`. Dual-provider errors retain safe failure categories for each provider, with a reference ID. Groq JSON validation errors and model availability errors are classified without retaining provider messages.
+
+## Diagnosing failures before generation
+
+Every tool now identifies a failed rate-limit preflight with a reference ID and a safe category: REDIS_PLAN_LIMIT, REDIS_NOT_CONFIGURED, REDIS_AUTH_FAILED, or REDIS_UNAVAILABLE. It explicitly reports Gemini and Groq as not attempted. This does not bypass Redis or change allowances. No Redis commands, IPs, keys or raw errors are exposed.
+
+Provider-attempt logs share a traceId and record provider, model, started/succeeded/failed/skipped, elapsed time and safe code. A final failure maps the public reference to that trace. Single-provider errors also identify an unconfigured Groq backup. A started entry means the adapter began its request; it does not prove the provider received it. A succeeded entry means local structured-output validation passed; handler editorial checks still run afterward.

@@ -1,3 +1,4 @@
+import { rateLimitFailure } from "@/lib/ai-tools/rate-limit";
 import { z } from "zod";
 import { NextResponse, type NextRequest } from "next/server";
 import {
@@ -62,7 +63,7 @@ export function writingHandler(kind: WritingKind) {
       const failure = geminiFailure(cause);
       if (failure) return error(failure.message, failure.status, failure.code);
       return error(
-        "The generator is temporarily unavailable.",
+        rateLimitFailure(cause).message,
         503,
         "RATE_LIMIT_UNAVAILABLE",
       );

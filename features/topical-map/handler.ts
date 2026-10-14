@@ -1,3 +1,4 @@
+import { rateLimitFailure } from "@/lib/ai-tools/rate-limit";
 import { NextResponse, type NextRequest } from "next/server";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
@@ -47,9 +48,9 @@ export async function POST(request: NextRequest) {
   let limit;
   try {
     limit = await checkAiToolRateLimit(request, "topical-map");
-  } catch {
+  } catch (cause) {
     return error(
-      "The generator is temporarily unavailable.",
+      rateLimitFailure(cause).message,
       503,
       "RATE_LIMIT_UNAVAILABLE",
     );

@@ -1,3 +1,4 @@
+import { rateLimitFailure } from "@/lib/ai-tools/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 import { readBoundedJson, BodyError } from "@/lib/ai-tools/request-body";
 import { siteAssistantRequestSchema } from "@/features/site-assistant/schema";
@@ -33,9 +34,8 @@ export async function POST(request: NextRequest) {
       burstLimit: Number(process.env.AI_ASSISTANT_BURST_LIMIT || 8),
     });
   } catch (error) {
-    console.error("Site assistant rate limiter failed", error);
     return errorResponse(
-      "The assistant is temporarily unavailable. Please try again shortly.",
+      rateLimitFailure(error).message,
       503,
       "RATE_LIMIT_UNAVAILABLE",
     );

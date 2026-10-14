@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { Redis } from "@upstash/redis";
 import type { NextRequest } from "next/server";
 
@@ -237,4 +237,31 @@ export async function checkAiToolRateLimit(
 
 export function checkMetaTitleRateLimit(request: NextRequest) {
   return checkAiToolRateLimit(request, "meta-title");
+}
+
+// Classify infrastructure errors without returning Redis commands or credentials.
+export function rateLimitFailure(cause: unknown) {
+  const raw = cause instanceof Error ? cause.message : "";
+  const reason = /database has reached.*(?:fixed )?plan limits/i.test(raw)
+    ? "REDIS_PLAN_LIMIT"
+    : /Shared Redis rate limiting is required/i.test(raw)
+      ? "REDIS_NOT_CONFIGURED"
+      : /unauthori[sz]ed|wrongpass|invalid.*token|forbidden/i.test(raw)
+        ? "REDIS_AUTH_FAILED"
+        : "REDIS_UNAVAILABLE";
+  const requestId = randomUUID();
+  process.stderr.write(
+    JSON.stringify({
+      event: "ai_preflight_failure",
+      stage: "rate_limit",
+      reason,
+      requestId,
+      gemini: "not_attempted",
+      groq: "not_attempted",
+    }) + "\n",
+  );
+  return {
+    code: "RATE_LIMIT_UNAVAILABLE",
+    message: `Generation stopped before AI requests: ${reason}. Gemini: not attempted. Groq: not attempted. Reference: ${requestId}`,
+  };
 }

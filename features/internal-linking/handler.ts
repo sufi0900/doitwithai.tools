@@ -1,3 +1,4 @@
+import { rateLimitFailure } from "@/lib/ai-tools/rate-limit";
 import { NextResponse, type NextRequest } from "next/server";
 import { readBoundedJson, BodyError } from "@/lib/ai-tools/request-body";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
@@ -65,9 +66,9 @@ export async function POST(request: NextRequest) {
         allowPlanLimitFallback: true,
         refundFailures: true,
       });
-    } catch {
+    } catch (cause) {
       return error(
-        "The analysis service is temporarily unavailable. Please try again later.",
+        rateLimitFailure(cause).message,
         503,
       );
     }

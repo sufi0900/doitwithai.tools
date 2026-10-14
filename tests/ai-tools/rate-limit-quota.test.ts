@@ -1,7 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { NextRequest } from "next/server";
-import { checkAiToolRateLimit } from "../../lib/ai-tools/rate-limit";
+import {
+  checkAiToolRateLimit,
+  rateLimitFailure,
+} from "../../lib/ai-tools/rate-limit";
 import { POST } from "../../features/internal-linking/handler";
 
 test("confirmed Redis plan limits activate a bounded opt-in fallback without affecting other tools", async () => {
@@ -138,5 +141,27 @@ test("failed analyses release reservations and rejected retries do not extend lo
     }
   } finally {
     global.fetch = originalFetch;
+  }
+});
+
+test("rate-limit diagnostics identify pre-provider failures without exposing raw Redis details", () => {
+  for (const [raw, code] of [
+    [
+      "ERR This database has reached current Fixed plan limits. command was private-key",
+      "REDIS_PLAN_LIMIT",
+    ],
+    [
+      "Shared Redis rate limiting is required in production",
+      "REDIS_NOT_CONFIGURED",
+    ],
+    ["Unauthorized private-token", "REDIS_AUTH_FAILED"],
+    ["private-token network failure", "REDIS_UNAVAILABLE"],
+  ]) {
+    const result = rateLimitFailure(new Error(raw));
+    assert.equal(result.code, "RATE_LIMIT_UNAVAILABLE");
+    assert.ok(result.message.includes(code));
+    assert.match(result.message, /Gemini: not attempted. Groq: not attempted/);
+    assert.ok(!result.message.includes("private-"));
+    assert.match(result.message, /Reference: [a-f0-9-]{36}/);
   }
 });

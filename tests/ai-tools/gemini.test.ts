@@ -331,7 +331,9 @@ test("provider diagnostics retain upstream status without logging submitted or p
             geminiFailure(error)!.message,
             /Reference: [a-f0-9-]{36}/,
           );
-          const diagnostic = JSON.parse(logs.at(-1)!);
+          const diagnostic = logs
+            .map((line) => JSON.parse(line))
+            .findLast((entry) => entry.event === "ai_provider_failure");
           assert.equal(diagnostic.upstreamStatus, status);
           assert.equal(diagnostic.inputMode, "image");
           assert.equal(diagnostic.requestId, error.requestId);

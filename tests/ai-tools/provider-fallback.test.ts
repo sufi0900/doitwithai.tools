@@ -265,22 +265,83 @@ test("native Gemini payload rejects unsupported request fields in the regression
     global.fetch = async (url, options) => {
       assert.ok(String(url).includes("googleapis.com"));
       const body = JSON.parse(String(options!.body));
-      const supported = new Set(["systemInstruction", "contents", "generationConfig"]);
-      assert.deepEqual(Object.keys(body).filter(key => !supported.has(key)), []);
+      const supported = new Set([
+        "systemInstruction",
+        "contents",
+        "generationConfig",
+      ]);
+      assert.deepEqual(
+        Object.keys(body).filter((key) => !supported.has(key)),
+        [],
+      );
       return geminiOk();
     };
     assert.equal((await getGeminiClient().generate(params)).provider, "gemini");
   }));
 test("both provider failure categories survive without exposing provider messages", () =>
   scenario(async () => {
-    global.fetch = async url => String(url).includes("googleapis.com")
-      ? Response.json({}, {status: 429})
-      : Response.json({error: {code: "json_validate_failed", message: "private material"}}, {status: 400});
-    await assert.rejects(getGeminiClient().generate(params), error => {
+    global.fetch = async (url) =>
+      String(url).includes("googleapis.com")
+        ? Response.json({}, { status: 429 })
+        : Response.json(
+            {
+              error: {
+                code: "json_validate_failed",
+                message: "private material",
+              },
+            },
+            { status: 400 },
+          );
+    await assert.rejects(getGeminiClient().generate(params), (error) => {
       const failure = geminiFailure(error);
       assert.match(failure!.message, /Gemini: PROVIDER_RATE_LIMITED/);
       assert.match(failure!.message, /Groq: MODEL_OUTPUT_INVALID/);
       assert.ok(!failure!.message.includes("private material"));
       return true;
     });
+  }));
+
+test("attempt logs confirm Groq started after Gemini failed and correlate final public reference", () =>
+  scenario(async () => {
+    const write = process.stderr.write;
+    const logs: string[] = [];
+    process.stderr.write = ((value: string) => {
+      logs.push(value);
+      return true;
+    }) as typeof process.stderr.write;
+    try {
+      global.fetch = async (url) =>
+        Response.json(
+          {},
+          { status: String(url).includes("googleapis.com") ? 503 : 429 },
+        );
+      await assert.rejects(getGeminiClient().generate(params), (error) => {
+        assert.ok(error instanceof GeminiError);
+        const entries = logs.map((line) => JSON.parse(line));
+        const attempts = entries.filter(
+          (entry) => entry.event === "ai_provider_attempt",
+        );
+        assert.deepEqual(
+          attempts.map((entry) => [entry.provider, entry.state]),
+          [
+            ["gemini", "started"],
+            ["gemini", "failed"],
+            ["groq", "started"],
+            ["groq", "failed"],
+          ],
+        );
+        assert.equal(new Set(attempts.map((entry) => entry.traceId)).size, 1);
+        const last = entries.at(-1)!;
+        assert.equal(last.traceId, attempts[0].traceId);
+        assert.equal(last.requestId, error.requestId);
+        assert.match(
+          geminiFailure(error)!.message,
+          /Groq: PROVIDER_RATE_LIMITED/,
+        );
+        assert.ok(!logs.join("").includes("secret"));
+        return true;
+      });
+    } finally {
+      process.stderr.write = write;
+    }
   }));
