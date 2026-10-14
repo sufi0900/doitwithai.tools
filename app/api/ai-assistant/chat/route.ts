@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readBoundedJson, BodyError } from "@/lib/ai-tools/request-body";
 import { siteAssistantRequestSchema } from "@/features/site-assistant/schema";
 import { answerSiteAssistant } from "@/features/site-assistant/server/chat";
+import {
+  getGeminiModel,
+  isGeminiConfigured,
+  geminiFailure,
+} from "@/lib/ai-tools/gemini";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 
 export const runtime = "nodejs";
@@ -46,9 +52,13 @@ export async function POST(request: NextRequest) {
 
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return errorResponse("Send a valid JSON request.", 400, "INVALID_JSON");
+    body = await readBoundedJson(request, 60_000);
+  } catch (error) {
+    return errorResponse(
+      "Send a valid JSON request within the chat size limit.",
+      error instanceof BodyError ? error.status : 400,
+      "INVALID_JSON",
+    );
   }
 
   const parsed = siteAssistantRequestSchema.safeParse(body);
@@ -61,7 +71,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  if (!isGeminiConfigured(getGeminiModel("SITE_ASSISTANT"))) {
     return errorResponse(
       "The website assistant has not been connected yet.",
       503,
@@ -69,9 +79,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!process.env.OPENAI_SITE_ASSISTANT_VECTOR_STORE_ID) {
+  if (!process.env.NEXT_PUBLIC_SANITY_PROJECT_ID) {
     return errorResponse(
-      "The website knowledge base has not been synchronized yet.",
+      "The website content source has not been connected yet.",
       503,
       "KNOWLEDGE_NOT_CONFIGURED",
     );
@@ -86,7 +96,12 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Site assistant response failed", error);
+    const failure = geminiFailure(error);
+    if (failure)
+      return errorResponse(failure.message, failure.status, failure.code);
+    console.error("Site assistant response failed", {
+      code: error instanceof Error ? error.name : "UNKNOWN",
+    });
     return errorResponse(
       "I could not complete that answer. Please try again or use the contact page if the issue continues.",
       503,

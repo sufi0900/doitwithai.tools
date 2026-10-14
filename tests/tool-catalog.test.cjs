@@ -38,7 +38,7 @@ test('tool pages point canonical metadata and breadcrumbs at the new URLs', () =
   for (const tool of tools) {
     if (["meta-description-generator", "h1-heading-generator"].includes(tool.slug)) continue;
     const source = fs.readFileSync(path.join(root, 'app', 'tools', tool.slug, 'page.tsx'), 'utf8');
-    assert.ok(source.includes(`const pageUrl = "https://doitwithai.tools/tools/${tool.slug}"`));
+    assert.ok(source.replace(/\s+/g, " ").includes(`const pageUrl = "https://doitwithai.tools/tools/${tool.slug}"`));
     assert.ok(source.includes('alternates: { canonical: pageUrl }'));
     assert.ok(source.includes('href="/tools"'));
   }

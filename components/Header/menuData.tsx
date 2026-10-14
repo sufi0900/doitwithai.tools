@@ -2,15 +2,15 @@ import { Menu } from "@/types/menu";
 
 const menuData: Menu[] = [
   {
-    id: 100,
-    title: "Tools",
-    path: "/tools",
-    newTab: false,
-  },
-  {
     id: 1,
     title: "Home",
     path: "/",
+    newTab: false,
+  },
+  {
+    id: 100,
+    title: "Tools",
+    path: "/tools",
     newTab: false,
   },
   {
@@ -19,13 +19,6 @@ const menuData: Menu[] = [
     path: "/ai-seo",
     newTab: false,
   },
-  {
-    id: 3,
-    title: "Free AI Resources",
-    path: "/free-ai-resources",
-    newTab: false,
-  },
-  { id: 101, title: "Guides", path: "/guides", newTab: false },
   {
     id: 43,
     title: "All Blogs",
@@ -44,6 +37,12 @@ const menuData: Menu[] = [
     title: "Pages",
     newTab: false,
     submenu: [
+      {
+        id: 3,
+        title: "Free AI Resources",
+        path: "/free-ai-resources",
+        newTab: false,
+      },
       {
         id: 41,
         title: "About Us",

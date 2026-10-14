@@ -5,6 +5,8 @@
 "use client";
 import { Providers } from "./providers";
 
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import "../styles/index.css";
 import "../components/Hero/critical-hero.css";
 import { useEffect, useState } from "react";
@@ -12,7 +14,7 @@ import { useOnlineStatus } from "./useOnlineStatus";
 import { Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import Hero from "@/components/Hero";
+import "@/features/homepage/homepage.css";
 import Header from "@/components/Header";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -73,8 +75,7 @@ export default function RootLayout({ children }) {
     // mark that initial paint has happened
     setHydrated(true);
 
-    import("slick-carousel/slick/slick.css");
-    import("slick-carousel/slick/slick-theme.css");
+
   }, []);
 
   // online/offline banner
@@ -317,7 +318,7 @@ export default function RootLayout({ children }) {
 
         <Providers>
           {isSlugPage ? <ConditionalGlobalHeader /> : <Header />}
-          {isHomePage && <Hero />}
+
 
           <>
             <CacheProvider>

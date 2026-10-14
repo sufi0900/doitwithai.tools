@@ -261,6 +261,36 @@
         "article-outline-generator",
         "h1-heading-generator"
       ]
+    },
+    {
+      "id": "internal-link-opportunity-finder",
+      "slug": "internal-link-opportunity-finder",
+      "name": "Internal Link Opportunity Finder",
+      "description": "Discover relevant website pages and review exact anchor placements, explanations, and bounded page coverage.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "internal links",
+        "anchors",
+        "content optimization"
+      ],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-14",
+      "featuredOrder": 12,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research and content planning"
+        }
+      ],
+      "relatedToolSlugs": [
+        "article-outline-generator",
+        "keyword-clustering-tool",
+        "topical-map-generator"
+      ]
     }
   ]
 }

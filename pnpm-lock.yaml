@@ -95,6 +95,9 @@ importers:
       framer-motion:
         specifier: ^12.18.1
         version: 12.43.0(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      htmlparser2:
+        specifier: ^10.1.0
+        version: 10.1.0
       idb-keyval:
         specifier: ^6.2.2
         version: 6.3.0

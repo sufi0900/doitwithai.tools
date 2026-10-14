@@ -77,7 +77,8 @@
     "slick-carousel": "^1.8.1",
     "styled-components": "^6.1.8",
     "workbox-webpack-plugin": "^7.3.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "htmlparser2": "^10.1.0"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.4.0",
