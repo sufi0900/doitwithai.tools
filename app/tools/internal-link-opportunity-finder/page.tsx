@@ -279,18 +279,21 @@ export default function Page() {
             counts. Expand page coverage to see analyzed pages and skipped URLs.
           </p>
           <p className={prose}>
-            The current version reads server-delivered HTML. It does not render
-            JavaScript, use private account access, or analyze an entire website
-            without limits.
+            Compressed downloads and streaming cleanup remove bulky scripts and
+            styles before extraction. Very large pages can return clearly marked
+            partial coverage. The current version reads server-delivered HTML.
+            It does not render JavaScript, use private account access, or
+            analyze an entire website without limits.
           </p>
           <p className={prose}>
             Pages with noindex directives or blocked robot access are excluded.
             Analysis stays on the exact hostname supplied in the source URL.
           </p>
           <p className={prose}>
-            Source extraction uses up to 60 passages within 18,000 characters.
-            Pasted articles use up to 60 paragraphs and accept 40,000
-            characters.
+            Source extraction reads up to 1,200 passages within 240,000
+            characters. AI review receives up to 40 relevant passages within a
+            fixed text budget. Pasted articles use up to 60 paragraphs and
+            accept 40,000 characters.
           </p>
         </section>
         <section>

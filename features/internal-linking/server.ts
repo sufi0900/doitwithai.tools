@@ -4,6 +4,7 @@ import http from "node:http";
 import https from "node:https";
 import * as cheerio from "cheerio";
 import { normalizeUrl, sameSite, relevance, type Page } from "./core";
+import { readDocument } from "./document-reader";
 
 export function publicIpv4(address: string) {
   if (isIP(address) !== 4) return false;
@@ -28,7 +29,7 @@ export async function readPublic(
   signal: AbortSignal,
   kind: "html" | "xml" | "text",
   allowed: (url: string) => boolean = () => true,
-) {
+): Promise<{ url: string; body: string; truncated?: boolean }> {
   let url = new URL(normalizeUrl(raw));
   for (let redirects = 0; redirects <= 3; redirects++) {
     url = new URL(normalizeUrl(url.toString()));
@@ -66,6 +67,7 @@ export async function readPublic(
       location?: string;
       type: string;
       body: string;
+      truncated?: boolean;
     }>((resolve, reject) => {
       const req = (url.protocol === "https:" ? https : http).request(
         url,
@@ -81,7 +83,7 @@ export async function readPublic(
                 : kind === "xml"
                   ? "application/xml,text/xml"
                   : "text/plain",
-            "Accept-Encoding": "identity",
+            "Accept-Encoding": "gzip, br, deflate",
           },
           lookup: (_hostname, options, callback) => {
             const chosen = v4[0];
@@ -129,22 +131,12 @@ export async function readPublic(
             );
             return;
           }
-          const chunks: Buffer[] = [];
-          let bytes = 0;
-          res.on("data", (chunk) => {
-            bytes += chunk.length;
-            if (bytes > 1_250_000) {
-              req.destroy(new Error("Page exceeds the download limit."));
-            } else chunks.push(chunk);
-          });
-          res.on("end", () =>
-            resolve({
-              status,
-              type,
-              body: Buffer.concat(chunks).toString("utf8"),
-            }),
-          );
-          res.on("error", reject);
+          readDocument(
+            res,
+            String(res.headers["content-encoding"] || ""),
+            kind,
+            signal,
+          ).then((document) => resolve({ status, type, ...document }), reject);
         },
       );
       req.setTimeout(5000, () =>
@@ -152,7 +144,7 @@ export async function readPublic(
       );
       const timer = setTimeout(
         () => req.destroy(new Error("Page download timed out.")),
-        6000,
+        kind === "html" ? 12000 : 6000,
       );
       req.on("close", () => clearTimeout(timer));
       req.on("error", reject);
@@ -163,7 +155,11 @@ export async function readPublic(
       url = new URL(response.location, url);
       continue;
     }
-    return { url: normalizeUrl(url.toString()), body: response.body };
+    return {
+      url: normalizeUrl(url.toString()),
+      body: response.body,
+      truncated: response.truncated || false,
+    };
   }
   throw new Error("Cannot fetch this URL.");
 }
@@ -192,25 +188,27 @@ export function extractPage(html: string, url: string): Page {
     } catch {}
   });
   const paragraphs: string[] = [];
-  let chars = 0;
+  let chars = 0,
+    truncated = false;
   root.find("p,li").each((_, el) => {
     if ($(el).is("li") && $(el).find("p,li").length) return;
     const text = $(el).text().replace(/\s+/g, " ").trim();
-    if (
-      text.length >= 40 &&
-      text.length <= 2500 &&
-      chars + text.length <= 18000 &&
-      paragraphs.length < 60
-    ) {
-      paragraphs.push(text);
-      chars += text.length;
+    if (text.length < 40) return;
+    for (let start = 0; start < text.length; start += 2000) {
+      const passage = text.slice(start, start + 2000);
+      if (chars + passage.length > 240000 || paragraphs.length >= 1200) {
+        truncated = true;
+        break;
+      }
+      paragraphs.push(passage);
+      chars += passage.length;
     }
   });
   if (!paragraphs.length)
     throw new Error(
       "No readable article paragraphs found. Paste the article text instead.",
     );
-  return { url, title: title.slice(0, 200), paragraphs, links };
+  return { url, title: title.slice(0, 200), paragraphs, links, truncated };
 }
 export function sitemapEntries(xml: string, site: string) {
   const $ = cheerio.load(xml, { xmlMode: true });
@@ -297,7 +295,9 @@ export async function collectPages(
     const result = await read(url, sourceUrl, signal, "html", (u) =>
       robotsAllows(robots, u),
     );
-    return extractPage(result.body, result.url);
+    const page = extractPage(result.body, result.url);
+    page.truncated = page.truncated || result.truncated;
+    return page;
   };
   const source: Page = input.sourceText.trim()
     ? {
@@ -314,6 +314,10 @@ export async function collectPages(
     : await fetchPage(sourceUrl);
   let candidates = input.destinationUrls.map((u) => normalizeUrl(u));
   const notes: string[] = [];
+  if (source.truncated)
+    notes.push(
+      "This large source page was partially read within safety limits. Suggestions cover the extracted passages only.",
+    );
   let discovery = candidates.length ? "Supplied URLs" : "Sitemap discovery";
   if (!candidates.length) {
     const declared = [...robots.matchAll(/^\s*Sitemap:\s*(\S+)/gim)].map(
@@ -330,6 +334,14 @@ export async function collectPages(
       !signal.aborted
     ) {
       const raw = queue.shift()!;
+      if (
+        candidates.length &&
+        !input.sitemapUrl &&
+        !declared.includes(raw) &&
+        (raw === `${origin}/sitemap.xml` ||
+          raw === `${origin}/sitemap_index.xml`)
+      )
+        continue;
       if (
         seen.has(raw) ||
         !sameSite(raw, sourceUrl) ||
@@ -384,7 +396,11 @@ export async function collectPages(
         try {
           const page = await fetchPage(url);
           destinations.push(page);
-          pages.push({ url, status: "Analyzed", title: page.title });
+          pages.push({
+            url,
+            status: page.truncated ? "Analyzed partially" : "Analyzed",
+            title: page.title,
+          });
         } catch (e) {
           pages.push({
             url,

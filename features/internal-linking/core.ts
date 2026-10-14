@@ -9,6 +9,7 @@ export const inputSchema = z.object({
 export type Page = {
   url: string;
   title: string;
+  truncated?: boolean;
   paragraphs: string[];
   links: { url: string; text: string }[];
 };
@@ -31,6 +32,7 @@ export type Report = {
   pages: { url: string; status: string; title?: string }[];
   notes: string[];
   sourceMode: string;
+  sourcePassages?: number;
 };
 export function normalizeUrl(raw: string, base?: string) {
   const u = new URL(raw, base);
@@ -177,4 +179,32 @@ export function textMatches(source: Page, destinations: Page[]): Suggestion[] {
     destinations,
     "Text match",
   );
+}
+
+// Read broadly with local code; send only relevant indexed passages to AI.
+export function selectReviewPassages(source: Page, destinations: Page[]) {
+  const ranked = source.paragraphs
+    .map((passage, paragraphIndex) => ({
+      passage,
+      paragraphIndex,
+      score: Math.max(
+        0,
+        ...destinations.map((p) =>
+          relevance(
+            passage,
+            p.title + " " + p.paragraphs.slice(0, 2).join(" "),
+          ),
+        ),
+      ),
+    }))
+    .sort((a, b) => b.score - a.score || a.paragraphIndex - b.paragraphIndex);
+  const selected: { passage: string; paragraphIndex: number }[] = [];
+  let chars = 0;
+  for (const p of ranked) {
+    if (selected.length >= 40) break;
+    if (chars + p.passage.length > 16000) continue;
+    selected.push({ passage: p.passage, paragraphIndex: p.paragraphIndex });
+    chars += p.passage.length;
+  }
+  return selected.sort((a, b) => a.paragraphIndex - b.paragraphIndex);
 }

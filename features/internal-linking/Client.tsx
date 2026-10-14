@@ -323,6 +323,9 @@ export default function Client() {
               </div>
               <p className="mt-4 text-xs text-slate-300">
                 {report.discovery} · {report.sourceMode}
+                {report.sourcePassages
+                  ? ` · ${report.sourcePassages} article passages read`
+                  : ""}
               </p>
               <button
                 type="button"
@@ -343,9 +346,10 @@ export default function Client() {
             ))}
             {!report.suggestions.length && (
               <p className="rounded-2xl border border-white/15 p-6 text-sm leading-7 text-slate-300">
-                No strong placements survived review. Try supplying closer
-                destination pages. Do not force a link where it adds little
-                value.
+                No strong placements survived review. Suitable pages may already
+                be linked, or the analyzed pages may add little detail. Try
+                supplying closer destination pages. Do not force a link where it
+                adds little value.
               </p>
             )}
             {report.suggestions.map((s, i) => {
