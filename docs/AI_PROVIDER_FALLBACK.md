@@ -52,3 +52,7 @@ Sources checked October 14, 2026:
 - https://console.groq.com/docs/api-reference
 - https://console.groq.com/docs/vision
 - https://console.groq.com/docs/rate-limits
+
+## Native request regression fix
+
+Gemini generateContent does not accept the Responses API `store` field. The native transport omits it; HTTP cache remains disabled. Transport tests now reject unsupported top-level fields instead of requiring `store: false`. Dual-provider errors retain safe failure categories for each provider, with a reference ID. Groq JSON validation errors and model availability errors are classified without retaining provider messages.

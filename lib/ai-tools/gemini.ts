@@ -56,6 +56,7 @@ export class GeminiError extends Error {
     public readonly upstreamStatus?: number,
     public readonly providerStatus?: string,
     public readonly finishReason?: string,
+    public readonly failures?: { gemini: string; groq: string },
   ) {
     super(code);
   }
@@ -131,7 +132,6 @@ async function generateGemini<T>(
           cache: "no-store",
           signal: controller.signal,
           body: JSON.stringify({
-            store: false,
             systemInstruction: {
               parts: params.input
                 .filter((item) => item.role === "system")
@@ -346,6 +346,8 @@ async function generate<T>(
       failure.code === "OUTPUT_BLOCKED"
         ? "OUTPUT_BLOCKED"
         : "ALL_PROVIDERS_FAILED",
+      undefined, undefined, undefined,
+      { gemini: firstFailure.code, groq: failure.code },
     );
     process.stderr.write(
       JSON.stringify({
@@ -402,7 +404,7 @@ export function geminiFailure(error: unknown) {
   };
   return messages[error.code]
     ? {
-        message: `${messages[error.code]} Reference: ${error.requestId}`,
+        message: `${messages[error.code]}${error.failures ? ` Gemini: ${error.failures.gemini}. Groq: ${error.failures.groq}.` : ""} Reference: ${error.requestId}`,
         status: error.status,
         code: error.code,
       }

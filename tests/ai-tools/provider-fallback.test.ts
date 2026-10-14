@@ -259,3 +259,28 @@ test("Groq-only configuration works, but provider refusals and invalid image inp
     );
     assert.equal(calls, 0);
   }));
+
+test("native Gemini payload rejects unsupported request fields in the regression fixture", () =>
+  scenario(async () => {
+    global.fetch = async (url, options) => {
+      assert.ok(String(url).includes("googleapis.com"));
+      const body = JSON.parse(String(options!.body));
+      const supported = new Set(["systemInstruction", "contents", "generationConfig"]);
+      assert.deepEqual(Object.keys(body).filter(key => !supported.has(key)), []);
+      return geminiOk();
+    };
+    assert.equal((await getGeminiClient().generate(params)).provider, "gemini");
+  }));
+test("both provider failure categories survive without exposing provider messages", () =>
+  scenario(async () => {
+    global.fetch = async url => String(url).includes("googleapis.com")
+      ? Response.json({}, {status: 429})
+      : Response.json({error: {code: "json_validate_failed", message: "private material"}}, {status: 400});
+    await assert.rejects(getGeminiClient().generate(params), error => {
+      const failure = geminiFailure(error);
+      assert.match(failure!.message, /Gemini: PROVIDER_RATE_LIMITED/);
+      assert.match(failure!.message, /Groq: MODEL_OUTPUT_INVALID/);
+      assert.ok(!failure!.message.includes("private material"));
+      return true;
+    });
+  }));

@@ -201,7 +201,7 @@ test("native Gemini transport validates JSON, sends images inline, and does not 
       assert.equal(options.headers["x-goog-api-key"], "test-key");
       assert.equal(options.headers.Authorization, undefined);
       const body = JSON.parse(options.body);
-      assert.equal(body.store, false);
+      assert.equal(body.store, undefined);
       assert.equal(body.tools, undefined);
       assert.equal(body.generationConfig.responseMimeType, "application/json");
       assert.equal(body.generationConfig.maxOutputTokens, 1000);

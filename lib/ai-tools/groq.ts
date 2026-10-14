@@ -68,7 +68,20 @@ export async function generateGroq<T>(
       },
     );
     if (!response.ok) {
-      await response.body?.cancel();
+      // Classify a bounded error locally. Never log provider text or failed output.
+      let providerCode = "";
+      try {
+        const error = (await readBoundedJson(response, 16_000)) as {
+          error?: { code?: unknown };
+        };
+        if (typeof error.error?.code === "string") providerCode = error.error.code;
+      } catch { /* HTTP status still identifies the failure. */ }
+      if (providerCode === "json_validate_failed")
+        throw new GroqError(502, "MODEL_OUTPUT_INVALID");
+      if (providerCode === "model_not_found" || providerCode === "model_decommissioned")
+        throw new GroqError(503, "PROVIDER_MODEL_UNAVAILABLE");
+      if (response.status === 400 || response.status === 422)
+        throw new GroqError(502, "PROVIDER_BAD_REQUEST");
       if (response.status === 429)
         throw new GroqError(429, "PROVIDER_RATE_LIMITED");
       if (response.status === 401 || response.status === 403)
