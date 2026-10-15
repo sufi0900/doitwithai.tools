@@ -257,8 +257,9 @@ export default function Client() {
           )}
         </div>
         <p className="mt-4 text-xs leading-6 text-slate-500 dark:text-slate-400">
-          Up to 100 candidates, 20 destination downloads, and five suggestions.
-          Website content may be sent to our AI provider for review.
+          Up to 100 candidates, 20 new destination downloads, and five
+          suggestions. 15 analyses per day, with up to five starts per 10
+          minutes. Website content may be sent to our AI provider for review.
         </p>
         {error && (
           <p
@@ -327,6 +328,16 @@ export default function Client() {
                   ? ` · ${report.sourcePassages} article passages read`
                   : ""}
               </p>
+              <p className="mt-2 text-xs text-slate-300">
+                {report.alreadyLinked ?? 0} discovered pages already linked ·{" "}
+                {report.aiReviewed
+                  ? "AI review completed"
+                  : "Local text analysis"}
+                {report.reviewCharacters
+                  ? ` · ${report.reviewCharacters.toLocaleString()} content characters sent for AI review`
+                  : ""}
+                {" · Images, video, scripts, and styles excluded from AI input"}
+              </p>
               <button
                 type="button"
                 onClick={download}
@@ -346,10 +357,13 @@ export default function Client() {
             ))}
             {!report.suggestions.length && (
               <p className="rounded-2xl border border-white/15 p-6 text-sm leading-7 text-slate-300">
-                No strong placements survived review. Suitable pages may already
-                be linked, or the analyzed pages may add little detail. Try
-                supplying closer destination pages. Do not force a link where it
-                adds little value.
+                {(report.alreadyLinked ?? 0) > 0 &&
+                report.alreadyLinked === report.discovered
+                  ? `Good news: all ${report.alreadyLinked} discovered destination pages are already linked from this source. No new destination links were needed within this candidate set.`
+                  : `No additional links passed the checks across ${report.analyzed} readable destination pages. ${report.alreadyLinked ?? 0} discovered pages are already linked.`}
+                {
+                  " This is a limited scan, not proof that every internal link is optimized. Review page coverage below. Supply closer destination URLs to expand the check."
+                }
               </p>
             )}
             {report.suggestions.map((s, i) => {

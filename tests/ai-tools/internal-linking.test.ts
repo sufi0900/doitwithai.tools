@@ -7,6 +7,9 @@ import {
   textMatches,
   validateSuggestions,
   type Page,
+  selectReviewPassages,
+  reviewDestinations,
+  mergeSuggestions,
 } from "../../features/internal-linking/core";
 import {
   collectPages,
@@ -230,4 +233,124 @@ test("article URL flows through sitemap discovery, content fetch, skipped-page c
   );
   assert.equal(manual.discovery, "Supplied URLs");
   assert.ok(manual.notes.some((n) => n.includes("duplicate")));
+});
+
+test("a linked phrase elsewhere does not suppress an unlinked exact placement", () => {
+  const page = extractPage(
+    '<article><p>Read <a href="/overview">search intent</a> in this overview of website planning and editorial strategy.</p><p>Check search intent before choosing which keywords deserve a separate article.</p></article>',
+    source.url,
+  );
+  const result = textMatches(page, [destination]);
+  assert.equal(result.length, 1);
+  assert.equal(result[0].paragraphIndex, 1);
+  assert.equal(result[0].anchor, "search intent");
+  const linked = extractPage(
+    '<article><p>Check <a href="/overview">search intent</a> before choosing which keywords deserve a separate article.</p></article>',
+    source.url,
+  );
+  assert.equal(textMatches(linked, [destination]).length, 0);
+});
+
+test("empty AI review preserves validated local opportunities and merges without duplicates", () => {
+  const local = textMatches(source, [destination]);
+  assert.equal(mergeSuggestions([], local).length, 1);
+  assert.equal(mergeSuggestions(local, local).length, 1);
+});
+
+test("already linked pages cannot consume the download shortlist and missing robots is nonfatal", async () => {
+  const old = Array.from(
+    { length: 25 },
+    (_, i) => `https://example.com/already-linked-${i}`,
+  );
+  const fetched: string[] = [];
+  const read = async (url: string) => {
+    fetched.push(url);
+    if (url.endsWith("/robots.txt")) throw new Error("HTTP 404");
+    if (url === source.url)
+      return {
+        url,
+        body: `<article><h1>Keyword research</h1><p>${source.paragraphs[0]}</p><p>${old.map((link) => `<a href="${link}">Research guide</a>`).join(" ")} More existing links.</p></article>`,
+      };
+    if (url === destination.url)
+      return {
+        url,
+        body: `<article><h1>${destination.title}</h1><p>${destination.paragraphs[0]}</p></article>`,
+      };
+    throw new Error("Should not download already linked pages");
+  };
+  const result = await collectPages(
+    {
+      sourceUrl: source.url,
+      sourceText: "",
+      sitemapUrl: "",
+      destinationUrls: [...old, destination.url],
+    },
+    new AbortController().signal,
+    read,
+  );
+  assert.equal(result.alreadyLinked, 25);
+  assert.equal(result.destinations.length, 1);
+  assert.ok(!old.some((url) => fetched.includes(url)));
+  assert.equal(textMatches(result.source, result.destinations).length, 1);
+  assert.ok(result.notes.some((note) => note.includes("no robots.txt")));
+});
+
+test("landing-page extraction supports text blocks and AI ignores unrelated passages", () => {
+  const page = extractPage(
+    "<main><h1>Keyword research</h1><section><div>Check search intent before choosing which keywords deserve a separate article.</div></section></main>",
+    source.url,
+  );
+  assert.equal(textMatches(page, [destination]).length, 1);
+  const unrelated = {
+    ...destination,
+    title: "Baking bread",
+    url: "https://example.com/baking",
+    paragraphs: ["Mixing flour and yeast in a kitchen."],
+  };
+  assert.equal(reviewDestinations(source, [unrelated]).length, 0);
+  assert.equal(selectReviewPassages(source, [unrelated]).length, 0);
+  assert.ok(
+    selectReviewPassages(page, [destination]).reduce(
+      (sum, item) => sum + item.passage.length,
+      0,
+    ) <= 8000,
+  );
+});
+
+test("AI SEO remains a specific match while generic AI tools anchors are rejected", () => {
+  const page: Page = {
+    ...source,
+    title: "Modern visibility",
+    paragraphs: [
+      "Learn AI SEO before choosing your content strategy for modern search engines.",
+    ],
+    links: [],
+  };
+  const target: Page = {
+    ...destination,
+    url: "https://example.com/ai-seo",
+    title: "AI SEO",
+    paragraphs: ["AI SEO helps content visibility in modern search engines."],
+  };
+  assert.equal(textMatches(page, [target])[0].anchor, "AI SEO");
+  const generic = {
+    ...page,
+    paragraphs: [
+      "Try AI tools before choosing your content strategy for modern search engines.",
+    ],
+  };
+  const genericTarget = {
+    ...target,
+    url: "https://example.com/ai-tools",
+    title: "AI tools",
+  };
+  assert.equal(textMatches(generic, [genericTarget]).length, 0);
+});
+
+test("a teaser article before the main article does not hide source passages", () => {
+  const page = extractPage(
+    "<main><article><p>A small promotional teaser with unrelated information.</p></article><article><h1>Keyword research</h1><p>Check search intent before choosing which keywords deserve a separate article.</p><p>A useful editorial plan also checks what readers expect from each destination page.</p></article></main>",
+    source.url,
+  );
+  assert.equal(textMatches(page, [destination]).length, 1);
 });

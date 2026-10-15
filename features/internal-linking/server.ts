@@ -3,7 +3,7 @@ import { isIP } from "node:net";
 import http from "node:http";
 import https from "node:https";
 import * as cheerio from "cheerio";
-import { normalizeUrl, sameSite, relevance, type Page } from "./core";
+import { normalizeUrl, sameSite, words, type Page } from "./core";
 import { readDocument } from "./document-reader";
 
 export function publicIpv4(address: string) {
@@ -167,15 +167,25 @@ export function extractPage(html: string, url: string): Page {
   const $ = cheerio.load(html);
   if (/noindex/i.test($("meta[name='robots']").attr("content") || ""))
     throw new Error("Page contains a noindex directive.");
-  const title = $("h1").first().text().trim() || $("title").text().trim();
-  const root = $("article").first().length
-    ? $("article").first()
+  // Some templates place a small teaser article before the actual article.
+  const articles = $("article")
+    .toArray()
+    .sort(
+      (a, b) =>
+        $(b).find("p,li").text().length - $(a).find("p,li").text().length,
+    );
+  const root = articles.length
+    ? $(articles[0])
     : $("main").first().length
       ? $("main").first()
       : $("body");
+  const title =
+    root.find("h1").first().text().trim() ||
+    $("h1").first().text().trim() ||
+    $("title").text().trim();
   root
     .find(
-      "script,style,noscript,nav,footer,aside,form,template,[hidden],[aria-hidden='true']",
+      "script,style,noscript,nav,footer,aside,form,template,video,audio,iframe,canvas,svg,[hidden],[aria-hidden='true']",
     )
     .remove();
   const links: Page["links"] = [];
@@ -188,12 +198,24 @@ export function extractPage(html: string, url: string): Page {
     } catch {}
   });
   const paragraphs: string[] = [];
+  const unlinkedParagraphs: string[] = [];
   let chars = 0,
     truncated = false;
-  root.find("p,li").each((_, el) => {
+  const blocks = root
+    .find("p,li")
+    .filter((_, el) => $(el).text().replace(/\s+/g, " ").trim().length >= 40);
+  const fallbackBlocks = root
+    .find("div,section")
+    .filter((_, el) => !$(el).find("p,li,div,section").length);
+  (blocks.length ? blocks : fallbackBlocks).each((_, el) => {
     if ($(el).is("li") && $(el).find("p,li").length) return;
     const text = $(el).text().replace(/\s+/g, " ").trim();
     if (text.length < 40) return;
+    const unlinked = $(el).clone();
+    unlinked.find("a").each((_, a) => {
+      $(a).replaceWith("█".repeat($(a).text().replace(/\s+/g, " ").length));
+    });
+    const unlinkedText = unlinked.text().replace(/\s+/g, " ").trim();
     for (let start = 0; start < text.length; start += 2000) {
       const passage = text.slice(start, start + 2000);
       if (chars + passage.length > 240000 || paragraphs.length >= 1200) {
@@ -201,6 +223,7 @@ export function extractPage(html: string, url: string): Page {
         break;
       }
       paragraphs.push(passage);
+      unlinkedParagraphs.push(unlinkedText.slice(start, start + 2000));
       chars += passage.length;
     }
   });
@@ -208,7 +231,14 @@ export function extractPage(html: string, url: string): Page {
     throw new Error(
       "No readable article paragraphs found. Paste the article text instead.",
     );
-  return { url, title: title.slice(0, 200), paragraphs, links, truncated };
+  return {
+    url,
+    title: title.slice(0, 200),
+    paragraphs,
+    unlinkedParagraphs,
+    links,
+    truncated,
+  };
 }
 export function sitemapEntries(xml: string, site: string) {
   const $ = cheerio.load(xml, { xmlMode: true });
@@ -281,14 +311,18 @@ export async function collectPages(
   const sourceUrl = normalizeUrl(input.sourceUrl),
     origin = new URL(sourceUrl).origin;
   let robots = "";
+  const notes: string[] = [];
   try {
     robots = (await read(`${origin}/robots.txt`, sourceUrl, signal, "text"))
       .body;
   } catch (e) {
-    if (!(e instanceof Error && e.message === "HTTP 404"))
+    if (!(e instanceof Error && /^HTTP (404|410)$/.test(e.message)))
       throw new Error(
         "Could not verify robots.txt. Try again when the website is accessible.",
       );
+    notes.push(
+      "This site has no robots.txt (404/410). Public pages were checked without robots exclusions.",
+    );
   }
   const fetchPage = async (url: string) => {
     if (!robotsAllows(robots, url)) throw new Error("Blocked by robots.txt");
@@ -308,12 +342,11 @@ export async function collectPages(
           .split(/\n\s*\n|\n/)
           .map((p) => p.trim())
           .filter(Boolean)
-          .slice(0, 60),
+          .slice(0, 1200),
         links: [],
       }
     : await fetchPage(sourceUrl);
   let candidates = input.destinationUrls.map((u) => normalizeUrl(u));
-  const notes: string[] = [];
   if (source.truncated)
     notes.push(
       "This large source page was partially read within safety limits. Suggestions cover the extracted passages only.",
@@ -368,25 +401,32 @@ export async function collectPages(
       u !== sourceUrl &&
       !/\.(?:jpg|png|pdf|xml|zip|webp)$/i.test(new URL(u).pathname),
   );
+  // Existing links are reported separately and need no destination download.
   const discovered = candidates.length;
+  const existing = new Set(source.links.map((link) => normalizeUrl(link.url)));
+  const alreadyLinked = candidates.filter((url) => existing.has(url)).length;
+  const linkedCandidates = candidates.filter((url) => existing.has(url));
+  candidates = candidates.filter((url) => !existing.has(url));
+  const sourceTerms = new Set(
+    words(source.title + " " + source.paragraphs.join(" ")),
+  );
+  const pathScore = (url: string) =>
+    words(new URL(url).pathname.replace(/[-/]/g, " ")).reduce(
+      (score, word) => score + Number(sourceTerms.has(word)),
+      0,
+    );
   candidates = candidates
-    .sort(
-      (a, b) =>
-        relevance(
-          source.title + " " + source.paragraphs.join(" "),
-          new URL(b).pathname.replace(/[-/]/g, " "),
-        ) -
-        relevance(
-          source.title + " " + source.paragraphs.join(" "),
-          new URL(a).pathname.replace(/[-/]/g, " "),
-        ),
-    )
+    .sort((a, b) => pathScore(b) - pathScore(a) || a.localeCompare(b))
     .slice(0, 100);
   if (!candidates.length)
     notes.push(
       "No destination URLs found. Supply page URLs or a sitemap and try again.",
     );
-  const pages: { url: string; status: string; title?: string }[] = [];
+  const pages: { url: string; status: string; title?: string }[] =
+    linkedCandidates.map((url) => ({
+      url,
+      status: "Already linked from source",
+    }));
   const destinations: Page[] = [];
   let cursor = 0;
   await Promise.all(
@@ -425,5 +465,14 @@ export async function collectPages(
     notes.push(
       "Pasted text cannot reveal existing hyperlinks. Check for duplicate links before publishing.",
     );
-  return { source, destinations, pages, notes, discovered, discovery };
+  destinations.sort((a, b) => a.url.localeCompare(b.url));
+  return {
+    source,
+    destinations,
+    pages,
+    notes,
+    discovered,
+    discovery,
+    alreadyLinked,
+  };
 }

@@ -128,7 +128,18 @@ test("late article passages remain available and AI review text stays within a f
   };
   const selected = selectReviewPassages(page, [destination]);
   assert.ok(selected.some((p) => p.paragraphIndex === 150));
-  assert.ok(selected.length <= 40);
-  assert.ok(selected.reduce((sum, p) => sum + p.passage.length, 0) <= 16000);
+  assert.ok(selected.length <= 16);
+  assert.ok(selected.reduce((sum, p) => sum + p.passage.length, 0) <= 8000);
   assert.equal(textMatches(page, [destination])[0].paragraphIndex, 150);
+});
+
+test("landing text survives streaming cleanup while media payloads stay out of article evidence", () => {
+  const parser = compactHtml();
+  parser.write(
+    '<main><div>Check search intent before choosing keywords for a useful article.</div><video>PRIVATE_VIDEO_PAYLOAD</video><audio>PRIVATE_AUDIO_PAYLOAD</audio><iframe>PRIVATE_FRAME_PAYLOAD</iframe><img src="https://example.com/photo.jpg"></main>',
+  );
+  const document = parser.end();
+  assert.ok(!document.body.includes("PRIVATE_"));
+  assert.ok(!document.body.includes("photo.jpg"));
+  assert.equal(extractPage(document.body, url).paragraphs.length, 1);
 });

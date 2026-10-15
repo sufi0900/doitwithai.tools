@@ -291,9 +291,10 @@ export default function Page() {
           </p>
           <p className={prose}>
             Source extraction reads up to 1,200 passages within 240,000
-            characters. AI review receives up to 40 relevant passages within a
-            fixed text budget. Pasted articles use up to 60 paragraphs and
-            accept 40,000 characters.
+            characters. AI review receives up to 16 relevant passages within
+            8,000 characters, plus eight destination excerpts of 600 characters
+            each. Pasted articles use up to 1,200 paragraphs and accept 40,000
+            characters.
           </p>
         </section>
         <section>
@@ -320,7 +321,11 @@ export default function Page() {
               ],
               [
                 "What happens when AI review fails?",
-                "The service tries its configured backup provider automatically. If review still fails, an error preserves your inputs for another attempt.",
+                "The service tries its configured backup provider. If both fail, locally validated text matches remain available with an incomplete-review notice. Empty degraded runs do not consume your analysis allowance.",
+              ],
+              [
+                "Does zero suggestions mean my article is fully optimized?",
+                "No. The report distinguishes already-linked destinations from pages without validated placements. Check skipped URLs and scan coverage before drawing broader conclusions.",
               ],
               [
                 "Does the tool detect orphan pages?",

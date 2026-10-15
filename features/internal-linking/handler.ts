@@ -16,6 +16,8 @@ import {
   sameSite,
   textMatches,
   selectReviewPassages,
+  reviewDestinations,
+  mergeSuggestions,
   validateSuggestions,
   type Report,
 } from "./core";
@@ -62,15 +64,14 @@ export async function POST(request: NextRequest) {
       );
     let limit;
     try {
-      limit = await checkAiToolRateLimit(request, "internal-linking-v2", {
+      limit = await checkAiToolRateLimit(request, "internal-linking-v3", {
+        dailyLimit: 15,
+        burstLimit: 5,
         allowPlanLimitFallback: true,
         refundFailures: true,
       });
     } catch (cause) {
-      return error(
-        rateLimitFailure(cause).message,
-        503,
-      );
+      return error(rateLimitFailure(cause).message, 503);
     }
     if (!limit.allowed)
       return error(
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
       clearTimeout(timer);
       request.signal.removeEventListener("abort", abort);
     }
-    if (!collected.destinations.length) {
+    if (!collected.destinations.length && !collected.alreadyLinked) {
       return error(
         "No destination pages could be read. Check the page URLs or try a smaller list. This failed analysis does not consume your allowance.",
         422,
@@ -98,8 +99,17 @@ export async function POST(request: NextRequest) {
     }
     let suggestions = textMatches(collected.source, collected.destinations);
     const model = getGeminiModel("INTERNAL_LINKING");
+    const shortlist = reviewDestinations(
+      collected.source,
+      collected.destinations,
+    );
+    const passages = selectReviewPassages(collected.source, shortlist);
+    let aiReviewed = false;
+    let aiFailed = false;
     if (
-      collected.destinations.length &&
+      shortlist.length &&
+      passages.length &&
+      suggestions.length < 5 &&
       isAiConfigured(model) &&
       !request.signal.aborted
     ) {
@@ -107,7 +117,7 @@ export async function POST(request: NextRequest) {
         const response = await getGeminiClient().generate(
           {
             model,
-            max_output_tokens: 2000,
+            max_output_tokens: 1400,
             store: false,
             input: [
               {
@@ -121,15 +131,12 @@ export async function POST(request: NextRequest) {
                   source: {
                     url: collected.source.url,
                     title: collected.source.title,
-                    paragraphs: selectReviewPassages(
-                      collected.source,
-                      collected.destinations,
-                    ),
+                    paragraphs: passages,
                   },
-                  destinations: collected.destinations.map((p) => ({
+                  destinations: shortlist.map((p) => ({
                     url: p.url,
                     title: p.title,
-                    content: p.paragraphs.join(" ").slice(0, 1800),
+                    content: p.paragraphs.join(" ").slice(0, 600),
                   })),
                 }),
               },
@@ -140,27 +147,42 @@ export async function POST(request: NextRequest) {
               }),
             },
           },
-          { timeout: 20000, maxRetries: 0 },
+          { timeout: 25000, maxRetries: 0 },
         );
-        suggestions = validateSuggestions(
+        const reviewed = validateSuggestions(
           response.output_parsed,
           collected.source,
           collected.destinations,
           "AI reviewed",
         );
+        if (response.output_parsed.suggestions.length > reviewed.length)
+          collected.notes.push(
+            "Some AI proposals were removed because the URL, anchor placement, existing-link, or topic checks did not pass. Valid text matches were retained.",
+          );
+        suggestions = mergeSuggestions(reviewed, suggestions);
+        aiReviewed = true;
       } catch (cause) {
+        aiFailed = true;
         const failure = geminiFailure(cause);
-        return error(
-          failure?.message ||
-            "AI review is temporarily unavailable. Please try again later.",
-          failure?.status || 503,
+        collected.notes.push(
+          `AI review could not complete. These are locally checked text matches, not a completed AI review. ${failure?.message || "Provider result failed validation."}`,
         );
       }
     } else
       collected.notes.push(
-        "These results use text matching. AI review activates when an AI provider is configured.",
+        "AI review was skipped: enough text matches were found, no eligible topic passages remained, or no provider was configured.",
       );
     const result: Report = {
+      alreadyLinked: collected.alreadyLinked,
+      aiReviewed,
+      reviewPassages: aiReviewed ? passages.length : 0,
+      reviewCharacters: aiReviewed
+        ? passages.reduce((total, p) => total + p.passage.length, 0) +
+          shortlist.reduce(
+            (total, p) => total + p.paragraphs.join(" ").slice(0, 600).length,
+            0,
+          )
+        : 0,
       sourceUrl: collected.source.url,
       sourceTitle: collected.source.title,
       sourcePassages: collected.source.paragraphs.length,
@@ -172,7 +194,7 @@ export async function POST(request: NextRequest) {
       pages: collected.pages,
       notes: collected.notes,
     };
-    completed = true;
+    completed = !aiFailed || suggestions.length > 0;
     return NextResponse.json(
       { result },
       { headers: { "Cache-Control": "no-store" } },
@@ -180,11 +202,11 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     const message =
       e instanceof Error &&
-      /public|hostname|robots|article|noindex|paragraph|HTTP|limit|URL/i.test(
+      /public|hostname|robots|article|noindex|paragraph|HTTP|limit|URL|timed out|DNS/i.test(
         e.message,
       )
         ? e.message
-        : "Analysis is temporarily unavailable. Check the URLs and try again.";
+        : "Page analysis could not finish. Try pasted article text and a smaller destination list. This failed run does not consume your allowance.";
     console.warn(
       JSON.stringify({
         event: "internal_link_analysis_failed",

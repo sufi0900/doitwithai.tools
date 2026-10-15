@@ -10,6 +10,7 @@ export type Page = {
   url: string;
   title: string;
   truncated?: boolean;
+  unlinkedParagraphs?: string[];
   paragraphs: string[];
   links: { url: string; text: string }[];
 };
@@ -33,6 +34,10 @@ export type Report = {
   notes: string[];
   sourceMode: string;
   sourcePassages?: number;
+  alreadyLinked?: number;
+  aiReviewed?: boolean;
+  reviewPassages?: number;
+  reviewCharacters?: number;
 };
 export function normalizeUrl(raw: string, base?: string) {
   const u = new URL(raw, base);
@@ -53,7 +58,7 @@ export function sameSite(raw: string, source: string) {
   }
 }
 const stop = new Set(
-  "a an the and or to for of in on with by from is are be your our how what why when this that it as at do can will best guide tool tools free ai".split(
+  "a an the and or to for of in on with by from is are be your our how what why when this that it as at do can will best guide tool tools free".split(
     " ",
   ),
 );
@@ -61,7 +66,7 @@ export function words(text: string) {
   return [
     ...new Set(
       (text.toLowerCase().match(/[a-z0-9]+/g) || ([] as string[])).filter(
-        (w) => w.length > 2 && !stop.has(w),
+        (w) => (w.length > 2 || w === "ai") && !stop.has(w),
       ),
     ),
   ];
@@ -108,6 +113,9 @@ export function validateSuggestions(
         !destination ||
         !passage ||
         !anchor ||
+        /^(?:ai tools?|read more|click here|learn more|more information)$/i.test(
+          anchor,
+        ) ||
         !passage.includes(anchor) ||
         used.has(destination.url) ||
         existing.has(destination.url) ||
@@ -115,7 +123,11 @@ export function validateSuggestions(
       )
         return [];
       // Do not suggest wrapping existing linked words or nested anchors.
-      if (source.links.some((link) => link.text && anchor.includes(link.text)))
+      if (
+        source.unlinkedParagraphs
+          ? !source.unlinkedParagraphs[s.paragraphIndex]?.includes(anchor)
+          : source.links.some((link) => link.text && anchor.includes(link.text))
+      )
         return [];
       if (
         relevance(
@@ -201,10 +213,42 @@ export function selectReviewPassages(source: Page, destinations: Page[]) {
   const selected: { passage: string; paragraphIndex: number }[] = [];
   let chars = 0;
   for (const p of ranked) {
-    if (selected.length >= 40) break;
-    if (chars + p.passage.length > 16000) continue;
+    if (selected.length >= 16) break;
+    if (p.score < 2) continue;
+    if (chars + p.passage.length > 8000) continue;
     selected.push({ passage: p.passage, paragraphIndex: p.paragraphIndex });
     chars += p.passage.length;
   }
   return selected.sort((a, b) => a.paragraphIndex - b.paragraphIndex);
+}
+
+export function reviewDestinations(source: Page, destinations: Page[]) {
+  const existing = new Set(source.links.map((link) => normalizeUrl(link.url)));
+  return destinations
+    .filter((page) => !existing.has(normalizeUrl(page.url)))
+    .map((page) => ({
+      page,
+      score: relevance(
+        source.title + " " + source.paragraphs.join(" "),
+        page.title + " " + new URL(page.url).pathname.replace(/[-/]/g, " "),
+      ),
+    }))
+    .sort((a, b) => b.score - a.score || a.page.url.localeCompare(b.page.url))
+    .filter((item) => item.score >= 2)
+    .slice(0, 8)
+    .map((item) => item.page);
+}
+
+export function mergeSuggestions(
+  primary: Suggestion[],
+  secondary: Suggestion[],
+) {
+  const seen = new Set<string>();
+  return [...primary, ...secondary]
+    .filter((suggestion) => {
+      if (seen.has(suggestion.destinationUrl)) return false;
+      seen.add(suggestion.destinationUrl);
+      return true;
+    })
+    .slice(0, 5);
 }

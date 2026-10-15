@@ -16,6 +16,8 @@ export function compactHtml(maximum = 1_000_000) {
     "head",
     "body",
     "main",
+    "div",
+    "section",
     "article",
     "title",
     "h1",
@@ -38,6 +40,10 @@ export function compactHtml(maximum = 1_000_000) {
     "aside",
     "form",
     "template",
+    "video",
+    "audio",
+    "iframe",
+    "canvas",
   ]);
   let suppressed = 0,
     output = "",
@@ -71,7 +77,10 @@ export function compactHtml(maximum = 1_000_000) {
       ontext(text) {
         if (
           !suppressed &&
-          stack.some((s) => s.keep && /^(title|h1|h2|h3|p|li|a)$/.test(s.name))
+          stack.some(
+            (s) =>
+              s.keep && /^(title|h1|h2|h3|p|li|a|div|section)$/.test(s.name),
+          )
         )
           append(escape(text));
       },
