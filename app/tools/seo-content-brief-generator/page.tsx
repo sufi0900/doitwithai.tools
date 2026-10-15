@@ -1,3 +1,7 @@
+import {
+  ToolHeroBackground,
+  toolHeroSurface,
+} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -82,11 +86,10 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section className="relative overflow-hidden bg-slate-950 pb-16 pt-12">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-40 left-1/3 h-96 w-96 rounded-full bg-[#5271ff]/15 blur-3xl"
-        />
+      <section
+        className={`relative overflow-hidden ${toolHeroSurface} pb-16 pt-12`}
+      >
+        <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
