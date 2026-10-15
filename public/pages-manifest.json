@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-13T20:57:27.054Z",
+  "generated": "2026-10-15T10:35:49.623Z",
   "static_pages": [
     {
       "url": "/",
@@ -153,6 +153,12 @@
       "type": "static"
     },
     {
+      "url": "/tools/search-intent-checker",
+      "title": "Search Intent Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -165,5 +171,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 27
+  "total_pages": 28
 }

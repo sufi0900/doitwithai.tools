@@ -11,6 +11,7 @@ import {
   GitBranch,
   ScanText,
   ScanEye,
+  Search,
   Sparkles,
   Type,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const icons = {
   "keyword-clustering-tool": Network,
   "topical-map-generator": GitBranch,
   "internal-link-opportunity-finder": Link2,
+  "search-intent-checker": Search,
 };
 export default function ToolCard({
   tool,

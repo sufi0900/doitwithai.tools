@@ -161,7 +161,8 @@
         "meta-description-generator",
         "image-alt-text-generator",
         "keyword-clustering-tool",
-        "topical-map-generator"
+        "topical-map-generator",
+        "search-intent-checker"
       ]
     },
     {
@@ -232,7 +233,8 @@
         "article-outline-generator",
         "h1-heading-generator",
         "meta-title-generator",
-        "topical-map-generator"
+        "topical-map-generator",
+        "search-intent-checker"
       ]
     },
     {
@@ -259,7 +261,8 @@
       "relatedToolSlugs": [
         "keyword-clustering-tool",
         "article-outline-generator",
-        "h1-heading-generator"
+        "h1-heading-generator",
+        "search-intent-checker"
       ]
     },
     {
@@ -290,6 +293,38 @@
         "article-outline-generator",
         "keyword-clustering-tool",
         "topical-map-generator"
+      ]
+    },
+    {
+      "id": "search-intent-checker",
+      "slug": "search-intent-checker",
+      "name": "Search Intent Checker",
+      "description": "Interpret keyword intent, inspect reader tasks and supporting cues, and plan suitable page formats without invented search metrics.",
+      "categories": ["ai-seo", "content-writing"],
+      "tags": ["search intent", "keyword intent", "content planning"],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-15",
+      "featuredOrder": 13,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research and planning with ChatGPT"
+        },
+        {
+          "path": "/ai-seo/chatgpt-target-audience-research",
+          "title": "Understand reader needs and audience context"
+        },
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Separate AI assistance from search visibility outcomes"
+        }
+      ],
+      "relatedToolSlugs": [
+        "keyword-clustering-tool",
+        "article-outline-generator",
+        "meta-title-generator",
+        "internal-link-opportunity-finder"
       ]
     }
   ]
