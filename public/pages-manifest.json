@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-15T10:35:49.623Z",
+  "generated": "2026-10-15T13:00:19.879Z",
   "static_pages": [
     {
       "url": "/",
@@ -159,6 +159,12 @@
       "type": "static"
     },
     {
+      "url": "/tools/seo-content-brief-generator",
+      "title": "SEO Content Brief Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -171,5 +177,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 28
+  "total_pages": 29
 }

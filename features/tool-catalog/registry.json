@@ -162,7 +162,8 @@
         "image-alt-text-generator",
         "keyword-clustering-tool",
         "topical-map-generator",
-        "search-intent-checker"
+        "search-intent-checker",
+        "seo-content-brief-generator"
       ]
     },
     {
@@ -234,7 +235,8 @@
         "h1-heading-generator",
         "meta-title-generator",
         "topical-map-generator",
-        "search-intent-checker"
+        "search-intent-checker",
+        "seo-content-brief-generator"
       ]
     },
     {
@@ -270,15 +272,8 @@
       "slug": "internal-link-opportunity-finder",
       "name": "Internal Link Opportunity Finder",
       "description": "Discover relevant website pages and review exact anchor placements, explanations, and bounded page coverage.",
-      "categories": [
-        "ai-seo",
-        "content-writing"
-      ],
-      "tags": [
-        "internal links",
-        "anchors",
-        "content optimization"
-      ],
+      "categories": ["ai-seo", "content-writing"],
+      "tags": ["internal links", "anchors", "content optimization"],
       "kind": "AI-assisted",
       "status": "live",
       "addedAt": "2026-10-14",
@@ -324,7 +319,36 @@
         "keyword-clustering-tool",
         "article-outline-generator",
         "meta-title-generator",
-        "internal-link-opportunity-finder"
+        "internal-link-opportunity-finder",
+        "seo-content-brief-generator"
+      ]
+    },
+    {
+      "id": "seo-content-brief-generator",
+      "slug": "seo-content-brief-generator",
+      "name": "SEO Content Brief Generator",
+      "description": "Create an editable writer handoff with reader goals, section instructions, research gaps, and suggested internal links.",
+      "categories": ["ai-seo", "content-writing"],
+      "tags": ["content briefs", "writer instructions", "content planning"],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-15",
+      "featuredOrder": 14,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-target-audience-research",
+          "title": "Understand your intended reader"
+        },
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research and planning"
+        }
+      ],
+      "relatedToolSlugs": [
+        "search-intent-checker",
+        "article-outline-generator",
+        "internal-link-opportunity-finder",
+        "readability-checker"
       ]
     }
   ]

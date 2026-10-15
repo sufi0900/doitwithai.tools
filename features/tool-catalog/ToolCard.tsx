@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  ClipboardList,
   AlignLeft,
   ArrowRight,
   BookOpen,
@@ -22,6 +23,7 @@ import {
   type CatalogTool,
 } from "./catalog";
 const icons = {
+  "seo-content-brief-generator": ClipboardList,
   "meta-title-generator": Type,
   "slug-generator": Link2,
   "schema-markup-generator": Braces,
