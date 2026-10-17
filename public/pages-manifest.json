@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-15T13:00:19.879Z",
+  "generated": "2026-10-17T19:03:45.768Z",
   "static_pages": [
     {
       "url": "/",
@@ -165,6 +165,12 @@
       "type": "static"
     },
     {
+      "url": "/tools/ai-faq-generator",
+      "title": "AI FAQ Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -177,5 +183,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 29
+  "total_pages": 30
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ClipboardList,
+  MessageCircleQuestion,
   AlignLeft,
   ArrowRight,
   BookOpen,
@@ -23,6 +24,7 @@ import {
   type CatalogTool,
 } from "./catalog";
 const icons = {
+  "ai-faq-generator": MessageCircleQuestion,
   "seo-content-brief-generator": ClipboardList,
   "meta-title-generator": Type,
   "slug-generator": Link2,

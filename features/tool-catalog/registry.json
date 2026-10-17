@@ -163,7 +163,8 @@
         "keyword-clustering-tool",
         "topical-map-generator",
         "search-intent-checker",
-        "seo-content-brief-generator"
+        "seo-content-brief-generator",
+        "ai-faq-generator"
       ]
     },
     {
@@ -320,7 +321,8 @@
         "article-outline-generator",
         "meta-title-generator",
         "internal-link-opportunity-finder",
-        "seo-content-brief-generator"
+        "seo-content-brief-generator",
+        "ai-faq-generator"
       ]
     },
     {
@@ -348,6 +350,35 @@
         "search-intent-checker",
         "article-outline-generator",
         "internal-link-opportunity-finder",
+        "readability-checker",
+        "ai-faq-generator"
+      ]
+    },
+    {
+      "id": "ai-faq-generator",
+      "slug": "ai-faq-generator",
+      "name": "AI FAQ Generator",
+      "description": "Draft FAQs from your text, inspect matched source quotes, identify research gaps, and export only reviewed answers.",
+      "categories": ["ai-seo", "content-writing"],
+      "tags": ["FAQs", "questions and answers", "source quotes"],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-17",
+      "featuredOrder": 15,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-target-audience-research",
+          "title": "Understand reader needs before writing FAQs"
+        },
+        {
+          "path": "/ai-seo/ai-readability-tools",
+          "title": "Write clear answers without losing meaning"
+        }
+      ],
+      "relatedToolSlugs": [
+        "seo-content-brief-generator",
+        "search-intent-checker",
+        "article-outline-generator",
         "readability-checker"
       ]
     }
