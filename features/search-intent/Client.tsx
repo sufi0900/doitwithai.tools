@@ -24,7 +24,6 @@ export default function SearchIntentClient() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
-  const [provider, setProvider] = useState("");
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
   const input = () =>
@@ -41,10 +40,9 @@ export default function SearchIntentClient() {
       return;
     }
     setReport(quickAnalyze(parsed.data));
-    setProvider("");
     setError("");
     setStatus(
-      "Quick check completed locally. No AI request was made. Audience context and pasted notes are used only in AI review.",
+      "Quick check complete. Choose a detailed review to include your audience context and pasted notes.",
     );
   }
   function example() {
@@ -66,10 +64,9 @@ export default function SearchIntentClient() {
         notes: "",
       }),
     );
-    setProvider("");
     setError("");
     setStatus(
-      "Illustrative wording-based example. No AI or search request was made.",
+      "Example loaded. Review the suggested reader tasks and content angles.",
     );
   }
   async function analyze(event: React.FormEvent) {
@@ -100,14 +97,13 @@ export default function SearchIntentClient() {
         meta?: { provider?: string };
       }>(response);
       setReport(validateOutput(payload.result, parsed.data));
-      setProvider(payload.meta?.provider || "");
       setStatus(
         "AI review completed. Validate the interpretation against current search results before writing.",
       );
     } catch (cause) {
       setError(
         controller.signal.aborted
-          ? "Waiting stopped or timed out. An in-flight provider request may still complete. Your inputs and previous results are preserved."
+          ? "Waiting stopped. Your inputs and previous results are preserved."
           : cause instanceof Error
             ? cause.message
             : "The request failed. Your inputs are preserved.",
@@ -268,7 +264,7 @@ export default function SearchIntentClient() {
                 onClick={quick}
                 className={button + " text-white"}
               >
-                Quick check · no API
+                Quick check
               </button>
               <button
                 type="button"
@@ -289,9 +285,8 @@ export default function SearchIntentClient() {
             </button>
           )}
           <p className="mt-5 text-xs leading-6 text-slate-400">
-            Quick check uses wording rules only. AI review uses your supplied
-            text, with Gemini first and Groq as backup. No live search is
-            performed.
+            Quick check uses keyword wording. Detailed review includes your
+            supplied context and notes.
           </p>
           <p className="mt-2 text-xs leading-6 text-slate-400">
             AI allowance: 15 reviews per day and five starts per ten minutes.
@@ -324,7 +319,8 @@ export default function SearchIntentClient() {
                 content angle, and next step. Ambiguous queries stay uncertain.
               </p>
               <p className="mt-4 text-xs leading-6 text-slate-400">
-                Try an example to inspect the output without spending API quota.
+                Try an example to explore the results before checking your own
+                keywords.
               </p>
             </div>
           ) : (
@@ -334,7 +330,6 @@ export default function SearchIntentClient() {
                   <h3 className="font-bold text-white">{report.method}</h3>
                   <span className="text-xs text-slate-300">
                     {report.items.length} queries
-                    {provider ? ` · ${provider}` : ""}
                   </span>
                 </div>
                 <p className="mt-3 text-xs leading-6 text-slate-300">

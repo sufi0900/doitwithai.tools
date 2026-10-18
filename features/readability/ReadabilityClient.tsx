@@ -170,7 +170,7 @@ export default function ReadabilityClient() {
           </label>
           <div className="mt-3 flex flex-wrap justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
             <span>{text.length} / 4500 characters</span>
-            <span>Local checks update as you type.</span>
+            <span>Readability checks update as you type.</span>
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
             <button
@@ -208,9 +208,8 @@ export default function ReadabilityClient() {
             </button>
           </div>
           <p className="mt-4 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Local checks run in your browser. Text is sent to the AI provider
-            only when you request revisions. Avoid confidential information.
-            Local edits are lost on refresh.
+            Review each revision against your original meaning. Avoid
+            confidential information, and save your edits before refreshing.
           </p>
         </section>
         <aside className={card} aria-labelledby="readability-observations">

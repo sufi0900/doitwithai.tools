@@ -96,11 +96,11 @@ const faqs = [
   ],
   [
     "Does the tool guarantee accessibility or search rankings?",
-    "No. It helps draft and review text alternatives. Human review and correct page implementation remain necessary. The local checks do not certify accessibility or verify facts.",
+    "No. It helps draft and review text alternatives. Human review and correct page implementation remain necessary. Check the final wording for accuracy and suitability on your page.",
   ],
   [
     "What happens to my uploaded image?",
-    "Selecting a file prepares it locally. Generating sends that prepared image and brief through our API to the AI provider. Drafts are not saved between visits.",
+    "Select an image, add page context, and review the generated wording. Download or copy drafts you want to keep before leaving.",
   ],
 ];
 const prose = "mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300";
@@ -295,7 +295,7 @@ export default function Page() {
               ],
               [
                 "Check the source again",
-                "Review names, numbers, visible text, and uncertain details. Local checks identify certain wording patterns, but cannot confirm image accuracy or reader comprehension.",
+                "Review names, numbers, visible text, and uncertain details. Check the suggested wording against the image and the surrounding page content.",
               ],
               [
                 "Use the right output",

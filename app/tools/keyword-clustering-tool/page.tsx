@@ -395,7 +395,7 @@ export default function Page() {
               ],
               [
                 "Where does my uploaded file go?",
-                "The browser reads the file locally. Generation sends the cleaned keyword list and optional brief through our API to the AI provider.",
+                "Import your CSV, review the cleaned keyword list, and add an optional brief before generating groups.",
               ],
               [
                 "Does the tool save my plan or guarantee rankings?",

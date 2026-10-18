@@ -87,7 +87,7 @@ export default function ContentBriefClient() {
       return;
     }
     if (!ai) {
-      show(template(data), data, "Local template");
+      show(template(data), data, "Brief template");
       return;
     }
     const controller = new AbortController();
@@ -104,13 +104,13 @@ export default function ContentBriefClient() {
       const payload = await readToolResponse<{ result: Brief }>(response);
       if (!payload.result)
         throw new Error(
-          "The service returned no brief. Try the local template.",
+          "No brief was returned. Try again or start with the brief template.",
         );
       show(validateOutput(payload.result, data), data, "AI draft");
     } catch (e) {
       setError(
         controller.signal.aborted
-          ? "Stopped waiting. A dispatched provider request may still finish. Your inputs and previous brief are preserved."
+          ? "Waiting stopped. Your inputs and previous brief are preserved."
           : (e as Error).message,
       );
     } finally {
@@ -328,7 +328,8 @@ export default function ContentBriefClient() {
               <li>Editorial review checklist</li>
             </ul>
             <p className="mt-4">
-              The local template runs in your browser without an API request.
+              Use the brief template as a starting point, then adapt it to your
+              writer and reader.
             </p>
           </div>
         )}

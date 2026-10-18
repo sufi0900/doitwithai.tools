@@ -265,9 +265,9 @@ export default function Page() {
             Coverage and limits are part of the result
           </h2>
           <p className={prose}>
-            This is a bounded opportunity finder. It considers up to 100
-            candidates and downloads up to 20 destinations within a fixed time
-            budget.
+            The tool considers up to 100 candidate pages and reviews up to 20
+            destinations. Check the coverage panel to see which pages were
+            included.
           </p>
           <p className={prose}>
             Sitemap discovery reads up to four sitemap files. Large sitemap
@@ -279,11 +279,9 @@ export default function Page() {
             counts. Expand page coverage to see analyzed pages and skipped URLs.
           </p>
           <p className={prose}>
-            Compressed downloads and streaming cleanup remove bulky scripts and
-            styles before extraction. Very large pages can return clearly marked
-            partial coverage. The current version reads server-delivered HTML.
-            It does not render JavaScript, use private account access, or
-            analyze an entire website without limits.
+            Very large or inaccessible pages may receive partial coverage. If a
+            page cannot be read, paste its main article text for a focused
+            review.
           </p>
           <p className={prose}>
             Pages with noindex directives or blocked robot access are excluded.
@@ -321,7 +319,7 @@ export default function Page() {
               ],
               [
                 "What happens when AI review fails?",
-                "The service tries its configured backup provider. If both fail, locally validated text matches remain available with an incomplete-review notice. Empty degraded runs do not consume your analysis allowance.",
+                "Available text matches remain visible with an incomplete-review notice. Check the coverage panel and retry later for a fuller review.",
               ],
               [
                 "Does zero suggestions mean my article is fully optimized?",
@@ -337,7 +335,7 @@ export default function Page() {
               ],
               [
                 "Will it save or publish my results?",
-                "No. Download the CSV to keep suggestions. The tool does not edit your website. Relevant extracted content may reach our AI provider during review.",
+                "No. Download the CSV to keep suggestions. Review and apply any changes in your own website editor.",
               ],
               [
                 "Can internal links guarantee better rankings?",

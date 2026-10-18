@@ -11,7 +11,7 @@ import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl = "https://doitwithai.tools/tools/readability-checker";
 const description =
   "Check sentence variety, paragraph length, and wordy phrases. Compare AI revisions with natural flow and optional paragraph splitting. Review meaning before applying.";
-const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Readability Checker and Improver", category: "AI SEO · Content Writing", ctaText: "Inspect. Compare. Refine.", features: "Local Checks,3 Editing Directions,Meaning Review" })}`;
+const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Readability Checker and Improver", category: "AI SEO · Content Writing", ctaText: "Inspect. Compare. Refine.", features: "Readability Checks,3 Editing Directions,Meaning Review" })}`;
 export const metadata: Metadata = {
   title: "Readability Checker and AI Improver",
   description,
@@ -201,9 +201,9 @@ export default function Page() {
             ))}
           </div>
           <p className="mt-5 text-xs leading-7 text-slate-500">
-            Words are counted as letter or number tokens, including internal
-            apostrophes and hyphens. Sentence boundaries use English
-            segmentation where available, with a simpler fallback.
+            Word counts include letters and numbers, with internal apostrophes
+            and hyphens. Sentence boundaries use English segmentation where
+            available, with a simpler fallback.
           </p>
         </section>
         <section>
@@ -276,7 +276,7 @@ export default function Page() {
             {[
               [
                 "Can I check text without using AI?",
-                "Yes. Counts, highlights, phrase matches, and repeated-word observations run locally as you type. Only the revision request sends text to the provider.",
+                "Yes. Counts, highlights, phrase matches, and repeated-word observations update as you type. Request a revision when you want wording suggestions.",
               ],
               [
                 "Does the tool calculate Flesch or a school grade?",

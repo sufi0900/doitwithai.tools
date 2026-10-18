@@ -259,7 +259,7 @@ export default function Client() {
         <p className="mt-4 text-xs leading-6 text-slate-500 dark:text-slate-400">
           Up to 100 candidates, 20 new destination downloads, and five
           suggestions. 15 analyses per day, with up to five starts per 10
-          minutes. Website content may be sent to our AI provider for review.
+          minutes. Review each suggested placement before changing your page.
         </p>
         {error && (
           <p

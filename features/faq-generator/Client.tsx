@@ -29,7 +29,7 @@ const blank: FaqInput = {
   count: 5,
   questions: [],
 };
-type Snapshot = { input: FaqInput; report: FaqReport; provider: string };
+type Snapshot = { input: FaqInput; report: FaqReport };
 export default function FaqGeneratorClient() {
   const [input, setInput] = useState<FaqInput>(blank);
   const [questions, setQuestions] = useState("");
@@ -146,12 +146,6 @@ export default function FaqGeneratorClient() {
       setSnapshot({
         input: value,
         report,
-        provider:
-          payload.meta?.provider === "groq"
-            ? "Groq"
-            : payload.meta?.provider === "gemini"
-              ? "Gemini"
-              : "AI",
       });
       setLastKey(key);
       setPreview("");
@@ -165,7 +159,7 @@ export default function FaqGeneratorClient() {
       if (alive.current)
         setError(
           controller.signal.aborted
-            ? "Stopped waiting. A dispatched provider request may still finish. Your source and previous result are preserved."
+            ? "Waiting stopped. Your source and previous result are preserved."
             : (e as Error).message,
         );
     } finally {
@@ -197,9 +191,7 @@ export default function FaqGeneratorClient() {
     setInput(example);
     setQuestions(example.questions.join("\n"));
     setError("");
-    setStatus(
-      "Example loaded. No AI request was made. Generate FAQs when ready.",
-    );
+    setStatus("Example loaded. Generate FAQs when ready.");
   }
   return (
     <div
@@ -288,7 +280,7 @@ export default function FaqGeneratorClient() {
               <p className="mt-2 text-xs leading-6 text-slate-600 dark:text-slate-300">
                 {coverage
                   ? `${coverage.selectedCharacters.toLocaleString()} of ${coverage.sourceCharacters.toLocaleString()} normalized text characters selected across ${coverage.passages.length} of ${coverage.totalPassages} passages.`
-                  : "Add text to preview the AI reading budget. This preview uses no API calls."}
+                  : "Add text to preview the passages included in your review."}
               </p>
               {coverage?.partial && (
                 <p className="mt-2 text-xs leading-6 text-amber-800 dark:text-amber-200">
@@ -416,7 +408,7 @@ export default function FaqGeneratorClient() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-black">Review your FAQs</h2>
                 <span className="rounded-full bg-[#5271FF]/20 px-3 py-2 text-xs font-bold text-blue-100">
-                  {snapshot.provider} · {selected} selected
+                  {selected} selected
                 </span>
               </div>
               <p className="mt-3 text-xs leading-7 text-slate-300">
@@ -528,7 +520,7 @@ export default function FaqGeneratorClient() {
                       </button>
                       <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
                         Replaces the draft with quoted text. Check that it
-                        answers the question. No new API call.
+                        answers the question.
                       </p>
                     </details>
                     <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl bg-slate-50 p-3 text-xs font-semibold leading-6 dark:bg-slate-950/40">
@@ -655,8 +647,8 @@ export default function FaqGeneratorClient() {
                 </label>
               )}
               <p className="mt-4 text-xs leading-6 text-slate-500 dark:text-slate-400">
-                No FAQ rich-result or AI citation promises. Exported HTML is
-                escaped and contains only selected questions and answers.
+                Your FAQ export contains only the questions and answers you have
+                reviewed and selected.
               </p>
             </section>
           </>

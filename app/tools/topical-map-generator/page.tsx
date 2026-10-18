@@ -131,8 +131,8 @@ export default function Page() {
             </p>
             <p className={prose}>
               This generator starts from a seed keyword, an introduction, a
-              summary, or a project brief. Gemini proposes relationships you can
-              inspect and change.
+              summary, or a project brief. Explore proposed relationships you
+              can inspect and change.
             </p>
             <p className={prose}>
               Each topic includes keyword ideas, tentative intent, a suggested
@@ -281,7 +281,7 @@ export default function Page() {
               [
                 "05",
                 "Validate the opportunities",
-                "Review actual search results and existing content. Use a keyword-data provider when you need volume or difficulty estimates, and retain its source and location.",
+                "Review actual search results and existing content. Check volume and difficulty estimates in your keyword research tool, noting the source and location.",
               ],
               [
                 "06",
@@ -397,8 +397,8 @@ export default function Page() {
                 "Yes. Save manually in the browser or download a project JSON file. CSV and Markdown exports provide readable planning records.",
               ],
               [
-                "Does Gemini guarantee a correct map or better rankings?",
-                "No. Gemini generates tentative suggestions from your brief. Human research and editing remain necessary. The tool cannot guarantee rankings, traffic, citations, or business results.",
+                "Should I review the suggested map before using it?",
+                "Yes. Check suggested relationships against your audience, existing pages, and research before using the map to plan content.",
               ],
             ].map(([q, a]) => (
               <details key={q} className="py-5">

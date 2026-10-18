@@ -10,8 +10,8 @@ import Client from "@/features/keyword-density/Client";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl = "https://doitwithai.tools/tools/keyword-density-checker";
 const description =
-  "Check keyword density and repeated phrases in your text. Inspect paragraph-level frequency, highlight exact matches, and export a CSV report without AI API calls.";
-const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Keyword Density Checker", category: "SEO · Content Editing", ctaText: "Count. Inspect. Edit.", features: "Phrase Counts,Context Highlights,Local Analysis" })}`;
+  "Check keyword density and repeated phrases in your text. Inspect paragraph-level frequency, highlight exact matches, and export a CSV report.";
+const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Keyword Density Checker", category: "SEO · Content Editing", ctaText: "Count. Inspect. Edit.", features: "Phrase Counts,Context Highlights,Live Counts" })}`;
 export const metadata: Metadata = {
   title: "Free Keyword Density Checker and Repetition Finder",
   description,
@@ -41,8 +41,8 @@ const faqs = [
     "No. A technical topic can naturally repeat a term. Counts alone cannot establish intent, quality, or a search policy violation.",
   ],
   [
-    "Does this tool use AI or send my text to a server?",
-    "No. Analysis runs in your browser. This checker makes no AI or analysis API requests and does not save your text to local storage.",
+    "Do I need to create an account?",
+    "No. Paste your text to start checking phrases, inspect highlighted matches, and download your report.",
   ],
   [
     "How are multiword phrases counted?",
@@ -123,7 +123,7 @@ export default function Page() {
           </nav>
           <header className="mx-auto mb-12 mt-12 max-w-5xl text-center text-white">
             <p className="inline-flex rounded-full border border-[#5271FF]/40 bg-[#5271FF]/15 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#AEBBFF]">
-              Free browser-based content checker
+              Free content editing tool
             </p>
             <h1 className="mt-7 text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
               Keyword Density Checker
@@ -133,8 +133,7 @@ export default function Page() {
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
               Count words and phrases, inspect repeated wording in context, and
-              spot paragraphs worth reviewing. No AI calls or invented
-              optimization scores.
+              spot paragraphs worth reviewing.
             </p>
           </header>
           <Client />
@@ -223,7 +222,7 @@ export default function Page() {
         </section>
         <section>
           <h2 className="text-3xl font-black">
-            Clear matching rules without hidden SEO scores
+            Understand how phrase matching works
           </h2>
           <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700">
             <table className="w-full text-left text-sm">
@@ -287,9 +286,8 @@ export default function Page() {
             Avoid editing toward an arbitrary percentage
           </h2>
           <p className={prose}>
-            This checker does not mark a draft as optimized or penalized based
-            on frequency. A percentage cannot tell you whether an article
-            answers a reader’s question.
+            Use frequency to identify passages worth reviewing. Judge each
+            occurrence by clarity, relevance, and usefulness.
           </p>
           <p className={prose}>
             Keep precise terms when readers need them. Remove repeated wording
@@ -311,15 +309,15 @@ export default function Page() {
         </section>
         <section>
           <h2 className="text-3xl font-black">
-            Private local analysis with a useful export
+            Keep a useful record of your edits
           </h2>
           <p className={prose}>
-            The checker processes your supplied text in this browser. There is
-            no AI generation, analysis endpoint, or API allowance to exhaust.
+            Counts update as you edit. Inspect the highlighted context to decide
+            which repeated phrases are useful and which need attention.
           </p>
           <p className={prose}>
-            Text remains in page memory. Reloading clears it. The tool does not
-            save drafts in local storage or upload them for counting.
+            Download your report before leaving or refreshing the page. Your
+            draft is not saved between visits.
           </p>
           <p className={prose}>
             The CSV includes target phrases and discovered phrases with their

@@ -130,7 +130,7 @@ const origin = "http://127.0.0.1:3138";
     await page.waitForSelector('[role="alert"]');
     assert.ok(
       (await page.$eval('[role="alert"]', (e) => e.textContent)).includes(
-        "Groq: PROVIDER_RATE_LIMITED",
+        "We could not complete this request",
       ),
     );
     assert.equal(

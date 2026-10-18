@@ -48,8 +48,8 @@ const sections = [
     "Supply existing page titles and URLs you control. AI may suggest an anchor and placement for relevant candidates. No pages are crawled, so verify each destination and its actual content.",
   ],
   [
-    "Keep API use proportionate",
-    "The tool processes text only, with a 6,000-character notes limit and eight candidate links. Each submission uses one generation workflow. Gemini runs first, with configured Groq available for eligible failures.",
+    "Keep your source focused",
+    "Add up to 6,000 characters of relevant notes and eight candidate links. Include useful insights, constraints, and destinations for the writer.",
   ],
   [
     "Review before handing off",
@@ -113,7 +113,7 @@ export default function Page() {
               useful sections, research needs, and relevant next steps.
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-400">
-              Start with a free local template or request an AI draft. No live
+              Start with a free brief template or generate a draft. No live
               search results or keyword metrics are claimed.
             </p>
           </div>
@@ -178,7 +178,7 @@ export default function Page() {
               ],
               [
                 "Can I create a brief without AI?",
-                "Yes. Build free template runs locally without an API request. It provides a general structure for manual editing.",
+                "Yes. Choose Build free template for a starting structure you can edit yourself.",
               ],
               [
                 "Does a brief guarantee rankings?",
@@ -190,7 +190,7 @@ export default function Page() {
               ],
               [
                 "What happens if generation fails?",
-                "Your inputs and previous brief remain available. Failed runs release their rate-limit reservation when possible. The local template stays available.",
+                "Your inputs and previous brief remain available. Try again later, or use the brief template as a starting point.",
               ],
               [
                 "Does the tool write the entire article?",

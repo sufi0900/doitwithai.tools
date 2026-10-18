@@ -167,7 +167,7 @@ const output = () => ({
       ),
     );
     assert.ok(
-      (await page.$eval("#faq-generator", (e) => e.textContent)).includes(
+      !(await page.$eval("#faq-generator", (e) => e.textContent)).includes(
         "Groq",
       ),
     );
@@ -246,7 +246,7 @@ const output = () => ({
     await page.waitForFunction(() =>
       document
         .querySelector('[role="alert"]')
-        ?.textContent.includes("Groq: PROVIDER_RATE_LIMITED"),
+        ?.textContent.includes("We could not complete this request"),
     );
     assert.ok(await page.$('[data-faq-id="faq-1"]'));
     assert.equal(
@@ -267,7 +267,7 @@ const output = () => ({
     await page.waitForFunction(() =>
       document
         .querySelector('[role="alert"]')
-        ?.textContent.includes("Stopped waiting"),
+        ?.textContent.includes("Waiting stopped"),
     );
     assert.ok(await page.$('[data-faq-id="faq-1"]'));
     mode = "success";

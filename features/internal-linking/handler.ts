@@ -6,7 +6,6 @@ import {
   getGeminiClient,
   getGeminiModel,
   isAiConfigured,
-  geminiFailure,
   geminiTextFormat,
 } from "@/lib/ai-tools/gemini";
 import {
@@ -163,14 +162,13 @@ export async function POST(request: NextRequest) {
         aiReviewed = true;
       } catch (cause) {
         aiFailed = true;
-        const failure = geminiFailure(cause);
         collected.notes.push(
-          `AI review could not complete. These are locally checked text matches, not a completed AI review. ${failure?.message || "Provider result failed validation."}`,
+          "The full review could not be completed. Available text matches are shown below. Check each placement before applying it.",
         );
       }
     } else
       collected.notes.push(
-        "AI review was skipped: enough text matches were found, no eligible topic passages remained, or no provider was configured.",
+        "The report includes available text matches. Review the coverage details and each proposed placement before applying changes.",
       );
     const result: Report = {
       alreadyLinked: collected.alreadyLinked,

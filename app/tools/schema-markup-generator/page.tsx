@@ -80,7 +80,7 @@ const faqs = [
   {
     question: "Can the generator fetch a page URL automatically?",
     answer:
-      "Yes. URL analysis is optional. The server accepts only public HTTP or HTTPS HTML pages, blocks private and local network targets, limits redirects and response size, and treats fetched content as untrusted evidence.",
+      "Yes. URL analysis is optional. Use an accessible public page, then review its extracted details before preparing your markup.",
   },
   {
     question: "Which schema types are included?",

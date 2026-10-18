@@ -80,7 +80,7 @@ export default function KeywordDensityClient() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     setStatus(
-      "CSV downloaded. Counts describe the current text, without ranking scores.",
+      "Report downloaded. Use it to compare phrase counts across your revisions.",
     );
   }
   function highlight() {
@@ -159,15 +159,17 @@ export default function KeywordDensityClient() {
               setText(example);
               setRawTargets("AI writing tools\nhuman review");
               setSelected("AI writing tools");
-              setStatus("Example loaded. Analysis runs in this browser.");
+              setStatus(
+                "Example loaded. Select a phrase to inspect its matches.",
+              );
             }}
           >
             Try example
           </button>
         </div>
         <p className="mt-4 text-sm leading-7 text-slate-500 dark:text-slate-300">
-          Paste plain text. Counts update as you edit. This tool sends no
-          article text to an AI service or analysis server.
+          Paste your article text to see word counts, phrase frequency, and
+          repetition patterns as you edit.
         </p>
         <label className="mt-5 block text-sm font-bold" htmlFor="density-text">
           Article or page text
@@ -251,8 +253,8 @@ export default function KeywordDensityClient() {
           {updating ? "Updating counts…" : status}
         </p>
         <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs leading-7 text-slate-600 dark:border-blue-400/20 dark:bg-blue-400/5 dark:text-slate-300">
-          No API key, AI quota, or sign-in needed. Text stays in page memory and
-          is cleared when you reload.
+          Start checking right away. Download your report before leaving or
+          refreshing the page.
         </div>
       </section>
       <div className="min-w-0 space-y-5">
@@ -313,9 +315,8 @@ export default function KeywordDensityClient() {
             `Top ${Math.min(50, rows.length)} of ${rows.length.toLocaleString()} phrases. Full counts are in the CSV`,
           )}
           <p className="mt-4 rounded-xl bg-amber-50 p-4 text-xs leading-7 text-amber-900 dark:bg-amber-400/5 dark:text-amber-100">
-            These are descriptive counts, not a ranking score or a keyword
-            stuffing verdict. Read repeated wording in context before changing
-            it.
+            Read the highlighted passages before editing. Keep repeated terms
+            when they make your explanation accurate and clear.
           </p>
         </section>
         <section className="rounded-[28px] border border-white/20 bg-white p-5 text-slate-950 dark:border-slate-700 dark:bg-[#1D2430] dark:text-white sm:p-7">

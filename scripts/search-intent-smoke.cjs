@@ -128,7 +128,7 @@ const screenshotDir =
     await page.waitForSelector('[role="alert"]');
     assert.ok(
       (await page.$eval('[role="alert"]', (el) => el.textContent)).includes(
-        "Groq: PROVIDER_RATE_LIMITED",
+        "We could not complete this request",
       ),
     );
     assert.equal(
@@ -148,8 +148,11 @@ const screenshotDir =
     );
     assert.equal(calls, 2);
     assert.ok(
-      await page.evaluate(() =>
-        document.querySelector("#intent-checker").textContent.includes("groq"),
+      await page.evaluate(
+        () =>
+          !document
+            .querySelector("#intent-checker")
+            .textContent.includes("groq"),
       ),
     );
     await page.setViewport({ width: 390, height: 1000 });

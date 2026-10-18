@@ -48,12 +48,12 @@ const faqs = [
     "A short query may support several reader tasks. Conflicting modifiers also create ambiguity. Check current results before selecting a format.",
   ],
   [
-    "What if the AI provider is unavailable?",
-    "Gemini is tried first, then configured Groq on eligible provider failures. Clear errors preserve your input. Quick check works without either API.",
+    "What if a review cannot be completed?",
+    "Your inputs and previous results stay available. Try again later, or use Quick check for a wording-based estimate.",
   ],
   [
-    "Can I use the tool without spending API quota?",
-    "Yes. Quick check runs locally in your browser. Trying the example also makes no AI request. Neither action interprets pasted search-result notes.",
+    "What does Quick check include?",
+    "Quick check estimates intent from keyword wording. Use a detailed review to include audience context and pasted search-result notes.",
   ],
   [
     "Are my market and audience independently researched?",
@@ -158,7 +158,7 @@ export default function Page() {
               angle.
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-400">
-              Start with a no-API quick check. Use AI for a more contextual
+              Start with a quick check. Add context for a more detailed
               interpretation. Every result stays clearly separate from live
               search verification.
             </p>

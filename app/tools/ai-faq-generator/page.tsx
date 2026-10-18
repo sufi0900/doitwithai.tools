@@ -68,16 +68,16 @@ const faqs = [
     "Your selected count is a maximum. A short source may support only a few distinct, useful answers. The tool avoids padding the result.",
   ],
   [
-    "What if Gemini cannot generate the FAQs?",
-    "The shared provider workflow can try configured Groq after eligible Gemini failures. Clear errors preserve your source and previous result.",
+    "What if FAQ generation fails?",
+    "Your source and previous results stay available. Try again later, or use a shorter, more focused source section.",
   ],
   [
     "Can I edit and export answers?",
-    "Yes. Edit each answer, compare its quotes, and select reviewed items. Download Markdown, an escaped HTML accordion, or separate editorial review notes.",
+    "Yes. Edit each answer, compare its quotes, and select reviewed items. Download Markdown, an HTML accordion, or separate editorial review notes.",
   ],
   [
-    "Are sources saved in my browser?",
-    "The tool keeps its form and results in page memory. It does not save them to local storage. AI generation sends supplied text to the server.",
+    "Can I keep my sources and results?",
+    "Copy your source and download results you want to keep. Drafts are not saved between visits.",
   ],
 ];
 export default function Page() {
@@ -288,11 +288,11 @@ export default function Page() {
         </section>
         <section>
           <h2 className="text-3xl font-black">
-            Long articles with a clear reading budget
+            Review long articles with clear coverage
           </h2>
           <p className={prose}>
-            You can paste up to 60,000 characters of source text. To control API
-            use, the AI receives at most 14,000 normalized characters.
+            You can paste up to 60,000 characters. The review covers up to
+            14,000 characters of selected source passages.
           </p>
           <p className={prose}>
             For longer sources, passage selection samples the beginning, middle,
@@ -310,8 +310,8 @@ export default function Page() {
             evidence and try again.
           </p>
           <p className={prose}>
-            The tool sends text only. It does not fetch URLs, download media,
-            run a website crawl, or make a second AI call for each edit.
+            Paste relevant article or product text. You can edit the results and
+            compare source wording before selecting answers for export.
           </p>
         </section>
         <section>

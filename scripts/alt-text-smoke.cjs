@@ -174,7 +174,7 @@ module.exports = async function checkAltText(page, origin, screenshotDir) {
     await page.waitForFunction(() =>
       document
         .querySelector('[role="alert"]')
-        ?.textContent.includes("Alt provider unavailable"),
+        ?.textContent.includes("We could not complete this request"),
     );
     assert.equal(await page.$eval("#alt-edit", (n) => n.value), edited);
     fail = false;

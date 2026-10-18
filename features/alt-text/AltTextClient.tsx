@@ -132,7 +132,7 @@ export default function AltTextClient() {
       setImage(prepared);
       setMode("upload");
       setStatus(
-        "Image prepared locally. It is sent only when you generate alternatives.",
+        "Image ready. Add page context and generate alternatives when you are ready.",
       );
     } catch (e) {
       if (version === uploadVersion.current)
@@ -310,7 +310,7 @@ export default function AltTextClient() {
             </h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               Use this only when the image adds no meaning and provides no link
-              or button label. No AI request is needed.
+              or button label.
             </p>
             <pre className="mt-4 rounded-xl bg-white p-4 text-sm text-slate-900 dark:bg-slate-950 dark:text-white">
               {altAttribute("")}
@@ -357,7 +357,8 @@ export default function AltTextClient() {
                     className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400"
                   >
                     PNG, JPEG, or WebP. Original up to 10 MB and 24 megapixels.
-                    Prepared locally at up to 1600 pixels on its longest side.
+                    Choose a clear image that shows the details you want to
+                    describe.
                   </p>
                   {preparing && (
                     <p
@@ -535,9 +536,8 @@ export default function AltTextClient() {
             </div>
             <div className="mt-7 flex flex-wrap items-center justify-between gap-5 border-t border-slate-100 pt-6 dark:border-slate-800">
               <p className="max-w-2xl text-xs leading-6 text-slate-500 dark:text-slate-400">
-                Generate sends the prepared image and brief to our AI provider.
-                Drafts stay in this tab and are lost on refresh. Save edits
-                before regenerating.
+                Add page context to guide the description. Drafts stay in this
+                tab and are lost on refresh. Save edits before regenerating.
               </p>
               <button
                 data-alt-generate
