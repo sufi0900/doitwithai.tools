@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ClipboardList,
+  TextSearch,
   MessageCircleQuestion,
   AlignLeft,
   ArrowRight,
@@ -24,6 +25,7 @@ import {
   type CatalogTool,
 } from "./catalog";
 const icons = {
+  "keyword-density-checker": TextSearch,
   "ai-faq-generator": MessageCircleQuestion,
   "seo-content-brief-generator": ClipboardList,
   "meta-title-generator": Type,

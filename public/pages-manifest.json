@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-17T19:03:45.768Z",
+  "generated": "2026-10-18T10:46:13.644Z",
   "static_pages": [
     {
       "url": "/",
@@ -171,6 +171,12 @@
       "type": "static"
     },
     {
+      "url": "/tools/keyword-density-checker",
+      "title": "Keyword Density and Repetition Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -183,5 +189,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 30
+  "total_pages": 31
 }
