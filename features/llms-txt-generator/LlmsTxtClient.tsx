@@ -12,11 +12,12 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  inputClass,
+  inputClass as sharedInputClass,
   panelClass,
   primaryButton,
   secondaryButton,
 } from "@/features/writing-tools/config";
+const inputClass = `${sharedInputClass} min-w-0`;
 import {
   buildLlmsTxt,
   defaultState,
@@ -184,7 +185,7 @@ export default function LlmsTxtClient() {
 
   return (
     <div id="llms-txt-generator" className={`${panelClass} p-5 sm:p-8`}>
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Builder */}
         <div className="space-y-6">
           <section>
@@ -236,7 +237,7 @@ export default function LlmsTxtClient() {
           </section>
 
           <section>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-sm font-black uppercase tracking-wider text-[#4662df] dark:text-blue-300">
                 2. Import pages (optional)
               </h2>
@@ -282,7 +283,7 @@ export default function LlmsTxtClient() {
           </section>
 
           <section>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-sm font-black uppercase tracking-wider text-[#4662df] dark:text-blue-300">
                 3. Sections and links
               </h2>
@@ -389,9 +390,9 @@ export default function LlmsTxtClient() {
         </div>
 
         {/* Preview + checklist */}
-        <div className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+        <div className="min-w-0 space-y-5 lg:sticky lg:top-24 lg:self-start">
           <section>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-sm font-black uppercase tracking-wider text-[#4662df] dark:text-blue-300">
                 Live preview
               </h2>
@@ -399,7 +400,7 @@ export default function LlmsTxtClient() {
                 {output.length.toLocaleString()} chars
               </span>
             </div>
-            <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
+            <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
               {output}
             </pre>
             <div className="mt-3 flex flex-wrap gap-2">

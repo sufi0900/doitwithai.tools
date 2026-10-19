@@ -11,11 +11,12 @@ import {
   XCircle,
 } from "lucide-react";
 import {
-  inputClass,
+  inputClass as sharedInputClass,
   panelClass,
   primaryButton,
   secondaryButton,
 } from "@/features/writing-tools/config";
+const inputClass = `${sharedInputClass} min-w-0`;
 import { analyzeDocument } from "./analyzer";
 import { extractFromText } from "./extract-from-text";
 import { analyzeUrl } from "./client";
@@ -89,7 +90,7 @@ function ResultsPanel({ result }: { result: AnalysisResult }) {
             key={category?.id}
             className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"
           >
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-xs font-black uppercase tracking-wider text-[#4662df] dark:text-blue-300">
                 {category?.name}
               </h3>
@@ -189,7 +190,7 @@ export default function CitationReadinessClient() {
         </button>
       </div>
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-2">
+      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div>
           {mode === "url" ? (
             <>
