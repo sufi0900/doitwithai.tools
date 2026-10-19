@@ -195,7 +195,7 @@ export default function RobotsTxtGeneratorPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Build rules from scratch or fetch and validate a live site's
+              Build rules from scratch or fetch and validate a live site&apos;s
               robots.txt. See exactly which named AI crawlers; training, search,
               and chat-fetch bots; are allowed or blocked, and flip any of them
               with one click.
