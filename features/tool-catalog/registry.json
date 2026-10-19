@@ -411,6 +411,60 @@
         "keyword-clustering-tool",
         "seo-content-brief-generator"
       ]
+    },
+    {
+      "id": "robots-txt-generator",
+      "slug": "robots-txt-generator",
+      "name": "Robots.txt Generator & AI Crawler Checker",
+      "description": "Build or validate robots.txt with a live access matrix for 14 named AI crawlers, plus fetch-and-check for a live site.",
+      "categories": ["ai-seo"],
+      "tags": ["robots.txt", "AI crawlers", "GEO", "technical SEO"],
+      "kind": "Deterministic",
+      "status": "live",
+      "addedAt": "2026-10-19",
+      "featuredOrder": 17,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "llms-txt-generator",
+        "schema-markup-generator",
+        "ai-citation-readiness-checker"
+      ]
+    },
+    {
+      "id": "llms-txt-generator",
+      "slug": "llms-txt-generator",
+      "name": "llms.txt Generator",
+      "description": "Build a spec-compliant llms.txt file by hand or imported from your sitemap.xml, with a validation checklist, copy, and download.",
+      "categories": ["ai-seo"],
+      "tags": ["llms.txt", "AI search", "GEO", "technical SEO"],
+      "kind": "Deterministic",
+      "status": "live",
+      "addedAt": "2026-10-19",
+      "featuredOrder": 18,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "schema-markup-generator",
+        "slug-generator",
+        "meta-title-generator"
+      ]
+    },
+    {
+      "id": "ai-citation-readiness-checker",
+      "slug": "ai-citation-readiness-checker",
+      "name": "AI Citation Readiness Checker",
+      "description": "Score a live URL or pasted draft against a 12-point, explainable checklist for AI-answer and citation readiness.",
+      "categories": ["ai-seo", "content-writing"],
+      "tags": ["AI search", "GEO", "citations", "content audit"],
+      "kind": "Deterministic",
+      "status": "live",
+      "addedAt": "2026-10-19",
+      "featuredOrder": 19,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "llms-txt-generator",
+        "readability-checker",
+        "schema-markup-generator"
+      ]
     }
   ]
 }

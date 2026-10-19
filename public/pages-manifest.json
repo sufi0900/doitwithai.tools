@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-18T10:46:13.644Z",
+  "generated": "2026-10-19T18:03:02.429Z",
   "static_pages": [
     {
       "url": "/",
@@ -177,6 +177,24 @@
       "type": "static"
     },
     {
+      "url": "/tools/robots-txt-generator",
+      "title": "Robots.txt Generator & AI Crawler Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/llms-txt-generator",
+      "title": "llms.txt Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-citation-readiness-checker",
+      "title": "AI Citation Readiness Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -189,5 +207,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 31
+  "total_pages": 34
 }

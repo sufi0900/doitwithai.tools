@@ -1,6 +1,9 @@
 import Link from "next/link";
 import {
   ClipboardList,
+  Bot,
+  FileCode2,
+  ListChecks,
   TextSearch,
   MessageCircleQuestion,
   AlignLeft,
@@ -25,6 +28,9 @@ import {
   type CatalogTool,
 } from "./catalog";
 const icons = {
+  "robots-txt-generator": Bot,
+  "llms-txt-generator": FileCode2,
+  "ai-citation-readiness-checker": ListChecks,
   "keyword-density-checker": TextSearch,
   "ai-faq-generator": MessageCircleQuestion,
   "seo-content-brief-generator": ClipboardList,
