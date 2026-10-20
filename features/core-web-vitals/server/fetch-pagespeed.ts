@@ -1,3 +1,4 @@
+import { extractFindings, cleanDescription } from "../insights";
 import type {
   CategoryScore,
   FieldData,
@@ -76,10 +77,14 @@ function extractFieldData(
         id: key,
         label: metricLabels[key],
         displayValue: display,
-        rating: CRUX_RATING[value.category as string] || "unknown",
+        rating:
+          percentile === null
+            ? "unknown"
+            : CRUX_RATING[value.category as string] || "unknown",
       };
     });
 
+  if (!metrics.some((metric) => metric.displayValue !== "No data")) return null;
   return {
     source,
     overallRating: CRUX_RATING[experience.overall_category as string] || null,
@@ -227,8 +232,17 @@ async function fetchPageSpeed(
     .map((audit: any) => ({
       id: audit.id,
       label: audit.title,
-      displayValue: audit.displayValue || ";",
-      rating: rateLabMetric(audit.id, audit.numericValue),
+      displayValue: audit.displayValue || "Not available",
+      rating:
+        typeof audit.score === "number"
+          ? audit.score >= 0.9
+            ? "good"
+            : audit.score >= 0.5
+              ? "needs-improvement"
+              : "poor"
+          : strategy === "mobile"
+            ? rateLabMetric(audit.id, audit.numericValue)
+            : "unknown",
     }));
 
   const fieldData = extractFieldData(data.loadingExperience, "page") ||
@@ -246,5 +260,18 @@ async function fetchPageSpeed(
     categories,
     fieldData,
     labMetrics,
+    findings: extractFindings(lighthouse),
+    reportWarnings: (Array.isArray(lighthouse.runWarnings)
+      ? lighthouse.runWarnings
+      : []
+    )
+      .map(cleanDescription)
+      .slice(0, 5),
+    environment: {
+      formFactor: String(lighthouse.configSettings?.formFactor || strategy),
+      throttlingMethod: String(
+        lighthouse.configSettings?.throttlingMethod || "Not reported",
+      ),
+    },
   };
 }

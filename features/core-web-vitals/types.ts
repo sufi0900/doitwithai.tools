@@ -28,4 +28,20 @@ export type PageSpeedResult = {
   categories: CategoryScore[];
   fieldData: FieldData;
   labMetrics: Metric[];
+  findings?: AuditFinding[];
+  reportWarnings?: string[];
+  environment?: { formFactor: string; throttlingMethod: string };
+};
+
+export type AuditFinding = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  score: number;
+  displayValue: string;
+  savingsMs: number | null;
+  savingsBytes: number | null;
+  resources: string[];
+  nextStep: string;
 };

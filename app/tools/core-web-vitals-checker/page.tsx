@@ -77,7 +77,7 @@ const faqs = [
   {
     question: "Why are my mobile and desktop scores so different?",
     answer:
-      "Mobile testing simulates a mid-range phone on a throttled connection, which is intentionally harsher than desktop testing. A page that scores well on desktop but poorly on mobile usually has real mobile-specific issues worth fixing, since mobile is where most real traffic and ranking evaluation happens.",
+      "Mobile and desktop runs use different test conditions and scoring. Switch devices to load the matching report. Some pages may produce similar scores, so review the measurements and findings as well.",
   },
   {
     question: "Does a perfect score guarantee good rankings?",
@@ -102,6 +102,9 @@ const structuredData = {
       description: metadata.description,
       featureList: [
         "Live check via Google's PageSpeed Insights",
+        "Separate mobile and desktop reports",
+        "Prioritized audit findings with suggested fixes",
+        "Downloadable report summary",
         "Real-user field data (LCP, CLS, INP) when available",
         "Lab data fallback for new or low-traffic pages",
         "Lighthouse Performance, Accessibility, Best Practices, and SEO scores",
