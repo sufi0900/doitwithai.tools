@@ -1,70 +1,92 @@
 # Readability Checker and Improver
 
 Route: `/tools/readability-checker`.
-API: `/api/ai-tools/readability`.
+API: `/api/ai-tools/readability` (unchanged).
 
-The seventh tool combines browser-local observations with optional AI revision comparison. It preserves the existing dark hero, blue/cyan accents, rounded workspace, tool cards, and responsive layout.
+The tool is now a live editor with browser-local analysis and an optional AI revision workflow. It keeps the existing dark hero, brand blue, rounded workspace, and card system.
 
-## Local checks
+## Modes
 
-English sentence segmentation uses Intl.Segmenter where available, with a punctuation-based fallback. Unicode word tokens include internal apostrophes and hyphens. Tokenization is approximate; numeric decimals can contribute multiple tokens. The tool shows word count, sentence segments, average words per segment, and blank-line-separated paragraphs.
+- **Write** shows a clean page with no highlights and a one-line count.
+- **Edit** shows live highlights, a click-to-fix card, and a sidebar with the grade, issue counters, feedback, and more stats.
+- **Improve** shows the AI controls. Revisions apply to a selected passage, or to a clicked sentence through "Rewrite this sentence with AI".
 
-Long sentence cues use an adjustable 20/25/30-word threshold. Paragraphs above 100 words receive a review cue. A small phrase list offers context-dependent alternatives. A small stop-word filter lists content words that occur at least three times. Necessary repeated terms are not treated as errors.
+## Local analysis engine
 
-These are explicit editing preferences and observations. There is no Flesch score, grade estimate, reading age, comprehension assessment, SEO score, or accessibility certification. The passage preview preserves the supplied text and highlights long sentence segments. Local checks do not request the AI provider.
+Code lives in `features/readability/engine/`. It is plain TypeScript with no UI imports, so it can be tested in Node.
 
-## AI editing and preservation
+| File | Purpose |
+|---|---|
+| `text.ts` | Word tokens, sentence segmentation with offsets, syllable estimate, code range helpers |
+| `lexicons.ts` | Simpler alternatives, weakeners, non-adverb list, participle lists |
+| `annotate.ts` | Sentence scoring, issue annotations, overlap resolution, `applyFix` |
+| `stats.ts` | Document stats, grade label, feedback, targets, durations |
 
-The optional request accepts 40–4500 characters, intended reader, required terms, and tone. Three distinct directions are required: Light edit, Plain language, Easy to scan. Each revision has original change notes and a human review suggestion.
+### Grade and sentence levels
 
-Users edit each alternative locally, compare it with the submitted original snapshot, restore the generated draft, copy text, or download a plain text file. Applying a revision replaces the source only within its 4500-character limit. An undo control restores the previous source. Oversized revisions remain available for copy/download and cannot be silently truncated into the source editor.
+The grade uses the ARI formula: `4.71 * (letters / words) + 0.5 * (words / sentences) - 21.43`, rounded and clamped at zero. It is labelled "Estimated grade" everywhere. It follows a publicly documented analysis of Hemingway-style editors and is not the vendor's own calculation.
 
-A literal review flags changed digit strings, required terms missing at word boundaries, and missing caution words from a small list. These checks cannot verify meaning, detect every name/unit change, or certify facts. Original change explanations do not update after editing. Failed regeneration preserves prior revisions and local edits. Successful regeneration replaces them. Local work is lost on refresh.
+Each sentence gets the same formula on its own. Sentences under 14 words are never flagged. From 14 words, level 10 to 13 is hard (amber) and level 14 or higher is very hard (red). Headings are never flagged. Fenced code blocks are skipped.
 
-## Server configuration
+### Inline issues
+
+- **Passive voice:** a form of be, an optional adverb, then an irregular participle or a word of five or more letters ending in "ed", minus a small exclusion list.
+- **Adverbs:** words of five or more letters ending in "ly", minus a non-adverb list.
+- **Weakeners:** a small list of hedges and filler. The message reminds writers that some hedges protect accuracy.
+- **Simpler alternatives:** a list of complex words and wordy phrases with replacements. An empty replacement means "cut it".
+
+When two inline issues overlap, the higher priority wins: simpler, then passive, then weakener, then adverb. Sentence-level highlights can sit under inline ones.
+
+The lists are small editorial lists. They are not complete, and the page says so.
+
+### Other stats
+
+Reading time uses 238 words per minute and speaking time uses 150. Flesch Reading Ease and Flesch-Kincaid grade use an approximate syllable counter and are labelled as estimates. The long-sentence marker keeps the earlier 20, 25, or 30 word choice.
+
+The "what to fix first" list and the adverb, passive, and weakener allowances are product choices, not readability standards.
+
+## Editor technique
+
+`HighlightEditor.tsx` renders a real `textarea` above a mirrored layer. Both use the same box model from `editorText` in `components/styles.ts`, so colors line up with the text. The textarea grows with its content, so neither layer needs a scrollbar. Native undo, IME, and mobile keyboards keep working.
+
+Highlights cannot be clicked under a textarea. The card above the editor reads the caret position instead and explains the issue at that spot. Colors are never the only signal. Each type has its own underline style and a named legend.
+
+Analysis uses `useDeferredValue`, and the highlight layer always renders from the same text that produced the annotations. Typing stays responsive on 30,000 characters.
+
+## Fixes and history
+
+`applyFix` replaces a span with matching capitalization, or deletes it and tidies spaces, commas, and sentence capitalization. Programmatic changes (fixes, example, upload, clear, replace) go on an undo stack of 50. Typing uses the browser's own undo.
+
+## Draft autosave
+
+`hooks/useDraft.ts` saves the text, mode, and target reader in `localStorage` after 600 ms. Every access is guarded. If storage is blocked, the editor still works and shows a short notice. "Clear text" removes the saved draft. Nothing is sent to a server by autosave.
+
+## Limits
+
+- Local editor: 30,000 characters.
+- AI revisions: a passage of 40 to 4,500 characters. The existing API schema enforces this.
+- Upload: `.txt` or `.md` under 2 MB, truncated to the editor limit.
+
+## AI revisions
+
+The request and response schema are unchanged, so the Gemini setup, rate limiter, and 60-second route limit still apply. See the server configuration below. The client now sends only the selected passage.
+
+Replacing a passage verifies that the original is still at its recorded position, or finds it again by exact text. If it cannot, the editor is left alone and the user sees a message. The compare view shows estimated grade, word count, and hard, passive, and adverb counts before and after. The earlier literal preservation review and flow review are unchanged.
+
+### Server configuration
 
 Required variables: `GEMINI_API_KEY`, `GEMINI_MODEL`, `UPSTASH_REDIS_REST_URL`, and `UPSTASH_REDIS_REST_TOKEN`. Optional `GEMINI_READABILITY_MODEL` overrides the shared model. The configured Gemini model must support structured JSON output.
 
-The existing bounded JSON reader and rate limiter protect the API. Production requires Redis. Requests use `store:false`, a 9000-token output cap, a 50-second provider timeout, and zero automatic retries. Browser requests abort after 75 seconds. Route duration is 60 seconds, compatible with this project’s non-Fluid Vercel Hobby limit. The provider timeout leaves 10 seconds for request overhead and response handling. Invalid input, unsupported configuration, invalid output, and provider failures return explicit errors.
+The bounded JSON reader and rate limiter protect the API. Production requires Redis. Requests use `store:false`, a 9,000-token output cap, a 50-second provider timeout, and zero automatic retries. Browser requests abort after 75 seconds.
 
 ## Content and discovery
 
-The tool is registered in AI SEO and Content Writing and appears in directory/category discovery and the sitemap. Metadata, Open Graph image, breadcrumbs, and WebApplication structured data use its permanent tools route. A ScanText icon follows the existing card system. The standalone Studio registry snapshot matches the frontend.
+The page adds a color guide, an open explanation of the grade formula, an honest comparison with Hemingway Editor, a larger FAQ, and `FAQPage` plus `featureList` structured data. The comparison states that the tool is independent and that Hemingway details may change.
 
-The existing readability article informed audience-aware editing and human review. Its unverified conversion and ranking claims were not reused. The article audit remains a later phase; no CMS documents were changed. On-page education explains observations, trade-offs, preservation limitations, a worked revision, and common questions. W3C writing guidance is linked as a primary source.
+The registry description now reflects the live editor. No CMS documents changed.
 
-## Original implementation validation
+## Tests
 
-42 AI-tool tests and 10 foundation tests passed. Type checking, focused lint checks, and the production build passed. The build generated 66 pages. Browser checks passed for local-only analysis, exact highlighted text preservation, three revisions, per-option edit retention, submitted-original snapshots, apply/undo, clipboard export, failed-regeneration preservation, mobile overflow, dark mode, directory/category discovery, canonical routes, redirects, and sitemap inclusion. Existing outline and writing tool workflows also passed. Desktop, mobile, and dark screenshots were reviewed. Provider responses were mocked; real model output and billing were not evaluated.
+`tests/ai-tools/readability-engine.test.ts` covers the grade formula, sentence bands, offsets, headings and code, adverbs, passive voice, weakeners, simpler alternatives, overlaps, fixes, stats, and feedback. The earlier `readability.test.ts` suite still passes, because `analyzer.ts` keeps its exports.
 
-## Sentence flow and paragraph update
-
-The live article at https://doitwithai.tools/ai-seo/ai-readability-tools was reviewed, including its sentence variety, paragraph structure, transitions, and editing workflow sections. The former prompt only requested shorter sentences and optional short paragraphs. It omitted those detailed editorial principles.
-
-All three revisions now request connected ideas, useful sentence variety, and supported transitions. Plain language preserves necessary detail and uses familiar words without converting prose into tiny fragments. Light edit retains working voice and structure. Easy to scan prioritizes paragraph breaks and uses lists only for actual parallel points or source-supported steps. Inline pseudo-lists and repeated colon labels are discouraged. Genuine list items must occupy separate lines.
-
-The new splitParagraphs input defaults to true. It requests idea-based breaks, usually grouping two or three related sentences, sometimes four, with a purposeful one-sentence paragraph. It discourages automatic splitting after every sentence and equal-sized blocks. Turning it off requests existing boundaries. This is a model instruction, not deterministic semantic paragraph splitting.
-
-Source and revision flow panels recalculate locally after edits. They show prose sentence length bands, range, and an accessible length sequence. Four consecutive segments of eight words or fewer trigger a short-run cue. Four consecutive segments differing by three words or fewer trigger a similar-length cue. Those windows do not cross blank-line paragraph boundaries or lists. List lines and colon-ended labels are excluded. These are disclosed editorial heuristics, not validated readability standards or judgments about reader comprehension. High variation is not automatically better.
-
-Prose blocks above 100 words or four segments prompt paragraph review. Four or more one-sentence prose blocks prompt grouping review. Multiple inline colons in a prose block prompt formatting review. They are suggestions, not automatic errors. Genuine colon use is preserved. URLs are excluded from the inline-colon pattern.
-
-Sentence segmentation respects explicit line breaks and preserves source offsets. Highlighting, submitted-original snapshots, independent edits, apply/undo, copy/download, failure preservation, and server limits remain intact. Prompts explicitly preserve digit strings, units, names, quotations, caveats, meaningful verbs, and modal strength. Literal preservation checks remain limited and do not verify all meaning or facts.
-
-No CMS content was edited or published. The article's unsupported traffic, conversion, AI-detection, and universal outcome claims were not adopted. Existing article corrections remain a separate task.
-
-### Research references
-
-- https://doitwithai.tools/ai-seo/ai-readability-tools
-- https://prowritingaid.com/art/346/How-to-use...-The-Sentence-Length-Report.aspx
-- https://www.stylemanual.gov.au/structuring-content/paragraphs
-- https://github.com/GSA/plainlanguage.gov/blob/main/_pages/guidelines/concise/write-short-paragraphs.md
-- https://digital-gov-static-prod.app.cloud.gov/guides/plain-language/writing/style
-
-ProWritingAid supports checking sentence variety rather than shortening everything. Government guidance supports logical topic groupings and varied paragraph lengths. Transitions should communicate an existing relationship and can be overused. The exact bands and review thresholds in this implementation are product choices, not claims borrowed from those sources.
-
-### Update validation
-
-All 75 AI-tool tests and 11 platform tests pass, 86 total. Frontend TypeScript, focused lint, production build, and whitespace checks pass. Regression cases cover short and uniform prose, meaningful variation, paragraph boundaries, labels, real lists, numbered lists, source offsets, URLs, inline colons, and paragraph-option defaults.
-
-The production browser suite passed with mocked provider responses. It checks paragraph controls, blank-line output, locally updated flow cues, independent revisions, source snapshots, copy, apply/undo, failed-regeneration preservation, mobile overflow, and dark mode. Existing tool workflows, directory filters, route metadata, redirects, and sitemap checks also pass. Screenshots were visually reviewed. Real Gemini revision quality still requires preview evaluation.
+Real Gemini output quality is not covered by tests. Check it on a preview deployment.

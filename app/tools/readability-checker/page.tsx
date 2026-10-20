@@ -5,13 +5,17 @@ import {
 } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ScanText, FileCheck2, PencilLine } from "lucide-react";
+import { ScanText, FileCheck2, Gauge, Wand2 } from "lucide-react";
 import ReadabilityClient from "@/features/readability/ReadabilityClient";
+import { issueStyles } from "@/features/readability/components/styles";
+import type { IssueType } from "@/features/readability/engine";
 import ToolResources from "@/features/tool-catalog/ToolResources";
+
 const pageUrl = "https://doitwithai.tools/tools/readability-checker";
 const description =
-  "Check sentence variety, paragraph length, and wordy phrases. Compare AI revisions with natural flow and optional paragraph splitting. Review meaning before applying.";
-const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Readability Checker and Improver", category: "AI SEO · Content Writing", ctaText: "Inspect. Compare. Refine.", features: "Readability Checks,3 Editing Directions,Meaning Review" })}`;
+  "Free readability checker with live highlights, an estimated grade, and one-click fixes. Optional AI rewrites for selected text. Your draft stays in your browser.";
+const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Readability Checker and Improver", category: "AI SEO · Content Writing", ctaText: "Highlight. Fix. Refine.", features: "Live Highlights,Estimated Grade,Optional AI Rewrite" })}`;
+
 export const metadata: Metadata = {
   title: "Readability Checker and AI Improver",
   description,
@@ -30,6 +34,87 @@ export const metadata: Metadata = {
     images: [image],
   },
 };
+
+const colorGuide: Array<[IssueType, string]> = [
+  [
+    "veryHard",
+    "A long, dense sentence. It has at least 14 words and an estimated level of 14 or higher. Split it at a change of idea.",
+  ],
+  [
+    "hard",
+    "A heavy sentence. It has at least 14 words and an estimated level from 10 to 13. Cut words or shorten it.",
+  ],
+  [
+    "passive",
+    "A form of be followed by a past participle, such as was written. Name who does the action when that helps.",
+  ],
+  [
+    "adverb",
+    "Words ending in ly, minus common exceptions such as family. A stronger verb often works better.",
+  ],
+  [
+    "weakener",
+    "Hedges and filler such as really or I think. Some hedges protect accuracy, so cut only the empty ones.",
+  ],
+  [
+    "simpler",
+    "A complex word or wordy phrase from a small list. One click swaps in the plainer option.",
+  ],
+];
+
+const faqs = [
+  {
+    question: "Does this readability checker need AI?",
+    answer:
+      "No. Highlights, the grade estimate, stats, and one-click fixes run in your browser. AI is optional and only runs when you ask for revisions of a passage.",
+  },
+  {
+    question: "How is the grade calculated?",
+    answer:
+      "It uses the ARI formula: 4.71 times letters per word, plus 0.5 times words per sentence, minus 21.43. The result is an estimate for editing, not a verdict on comprehension.",
+  },
+  {
+    question: "Is this the same score as Hemingway Editor?",
+    answer:
+      "Not necessarily. We follow a publicly documented analysis of how Hemingway-style tools work. This is an independent tool, and results can differ from Hemingway's own.",
+  },
+  {
+    question: "Why are some sentences red and others amber?",
+    answer:
+      "Sentences under 14 words are never flagged. Longer ones are amber at an estimated level of 10 to 13 and red at 14 or higher.",
+  },
+  {
+    question: "Should I remove every highlight?",
+    answer:
+      "No. Highlights are prompts. Technical text, quotations, and careful hedging can be correct as written. Keep wording that protects accuracy and meaning.",
+  },
+  {
+    question: "Does a lower grade help my rankings?",
+    answer:
+      "This tool does not predict rankings or traffic. Clear writing helps readers, and that is the goal. Choose wording that fits your audience and keeps details accurate.",
+  },
+  {
+    question: "Does the tool verify that AI kept the meaning?",
+    answer:
+      "No. Literal checks flag changed numbers, missing required terms, and dropped caution words. They can miss meaningful changes, so always read the revision against the original.",
+  },
+  {
+    question: "Where is my draft stored?",
+    answer:
+      "Your draft autosaves in this browser only. Use Clear text to remove it. Avoid confidential information, and note that AI revisions send just the passage you choose.",
+  },
+  {
+    question: "How much text can I check?",
+    answer:
+      "The editor accepts up to 30,000 characters. AI revisions work on a selected passage of 40 to 4,500 characters, so long articles can be improved section by section.",
+  },
+  {
+    question: "Can it fix grammar and spelling?",
+    answer:
+      "No. This tool focuses on clarity and style. Your browser's spellcheck still underlines misspellings, but there is no dedicated grammar checker.",
+  },
+];
+
 export default function Page() {
   const schema = {
     "@context": "https://schema.org",
@@ -42,6 +127,15 @@ export default function Page() {
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any",
         browserRequirements: "Requires JavaScript",
+        isAccessibleForFree: true,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        featureList: [
+          "Live highlights for hard sentences, passive voice, adverbs, weakeners, and simpler words",
+          "Estimated grade, reading time, and document stats",
+          "One-click fixes with undo",
+          "Optional AI revisions for a selected passage",
+          "Draft autosave in the browser",
+        ],
       },
       {
         "@type": "BreadcrumbList",
@@ -50,6 +144,14 @@ export default function Page() {
           { name: "Tools", item: "https://doitwithai.tools/tools" },
           { name: "Readability Checker", item: pageUrl },
         ].map((s, i) => ({ "@type": "ListItem", position: i + 1, ...s })),
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqs.map((f) => ({
+          "@type": "Question",
+          name: f.question,
+          acceptedAnswer: { "@type": "Answer", text: f.answer },
+        })),
       },
     ],
   };
@@ -89,13 +191,15 @@ export default function Page() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Find passages worth reviewing, explore three editing directions,
-              and compare important details before you replace your text.
+              Paste your draft and see hard sentences, passive voice, adverbs,
+              and wordy phrases highlighted as you type. Fix them in one click,
+              or compare AI revisions for a passage you select.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
               {[
-                [ScanText, "Local passage checks"],
-                [PencilLine, "Editable comparisons"],
+                [ScanText, "Live highlights"],
+                [Gauge, "Estimated grade"],
+                [Wand2, "One-click fixes"],
                 [FileCheck2, "Human meaning review"],
               ].map(([Icon, label]) => {
                 const I = Icon as typeof ScanText;
@@ -114,6 +218,7 @@ export default function Page() {
           <ReadabilityClient />
         </div>
       </div>
+
       <div className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-2">
           <div>
@@ -130,13 +235,12 @@ export default function Page() {
             </p>
             <p className="mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300">
               A technical term may be essential for specialists. Beginners may
-              need an explanation, a clear example, or a smaller step before the
-              same term becomes useful.
+              need an explanation, an example, or a smaller step first.
             </p>
             <p className="mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300">
-              This checker shows measurable editing cues. It does not assign a
-              reading age, measure comprehension, certify accessibility, or
-              predict search performance.
+              This checker shows an estimated grade and editing cues. They guide
+              your edits. They do not measure comprehension, certify
+              accessibility, or predict search performance.
             </p>
           </div>
           <aside className="rounded-3xl bg-slate-950 p-8 text-white">
@@ -149,63 +253,135 @@ export default function Page() {
               an edit.
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Use the required-terms field for names, product terms, or
-              vocabulary that should remain. Add the audience to guide the level
-              of explanation.
+              Use the required-terms field for names and product terms that
+              must stay. Add the audience to guide the level of explanation.
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Compare claims, quantities, units, quotations, and qualifications
-              against the submitted original. Literal preservation checks are
-              prompts for review, not fact verification.
+              Compare claims, quantities, units, and qualifications against the
+              original. Literal checks are prompts for review, not fact
+              verification.
             </p>
           </aside>
         </section>
+
         <section>
-          <h2 className="text-3xl font-black">What each observation means</h2>
-          <div className="mt-7 grid gap-5 sm:grid-cols-2">
-            {[
-              [
-                "Long sentence segments",
-                "The default threshold flags more than 25 words. Choose 20 or 30 when useful. These thresholds are editorial preferences, not readability standards.",
-              ],
-              [
-                "Paragraph length",
-                "Flow review flags prose blocks above 100 words or four sentence segments. Break at changes of idea. Keep a condition beside the action it qualifies.",
-              ],
-              [
-                "Sentence variety",
-                "Compare the length sequence and short, medium, and fuller prose segments. Four consecutive short or similar-length segments prompt review. Lists follow a different rhythm.",
-              ],
-              [
-                "Paragraph flow",
-                "Group related sentences, usually two or three, with an occasional one-sentence paragraph. Vary size when useful. Repeated inline colons can signal awkward pseudo-lists.",
-              ],
-              [
-                "Wordy phrases",
-                "A small English phrase list suggests simpler alternatives. Read each phrase in context before changing it. The list cannot identify every difficult expression.",
-              ],
-              [
-                "Repeated content words",
-                "Some words occurring at least three times are listed. Repetition can maintain clarity, especially for technical terms. Do not replace precise terms simply to vary vocabulary.",
-              ],
-            ].map(([title, text]) => (
+          <h2 className="text-3xl font-black">What each highlight means</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-8 text-slate-600 dark:text-slate-300">
+            Every category has its own color and underline style, so the meaning
+            never depends on color alone. Click a highlight in the editor to see
+            why it is marked.
+          </p>
+          <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {colorGuide.map(([type, text]) => (
               <article
-                key={title}
+                key={type}
                 className="rounded-2xl border border-slate-200 p-6 dark:border-slate-800"
               >
-                <h3 className="font-extrabold">{title}</h3>
+                <h3 className="flex items-center gap-3 font-extrabold">
+                  <span
+                    aria-hidden
+                    className={`h-3.5 w-3.5 rounded-sm ${issueStyles[type].swatch}`}
+                  />
+                  {issueStyles[type].label}
+                </h3>
                 <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-400">
                   {text}
                 </p>
               </article>
             ))}
           </div>
-          <p className="mt-5 text-xs leading-7 text-slate-500">
-            Word counts include letters and numbers, with internal apostrophes
-            and hyphens. Sentence boundaries use English segmentation where
-            available, with a simpler fallback.
+        </section>
+
+        <section className="grid gap-8 lg:grid-cols-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
+              Open about the math
+            </p>
+            <h2 className="mt-3 text-3xl font-black">
+              How the estimated grade works
+            </h2>
+            <p className="mt-5 text-sm leading-8 text-slate-600 dark:text-slate-300">
+              The grade uses the Automated Readability Index. It looks at word
+              length and sentence length, then rounds to a whole grade.
+            </p>
+            <pre className="mt-5 overflow-x-auto rounded-2xl bg-slate-950 p-5 text-xs leading-7 text-blue-100">
+              <code>
+                {"grade = 4.71 × (letters ÷ words)\n      + 0.5 × (words ÷ sentences)\n      − 21.43"}
+              </code>
+            </pre>
+            <p className="mt-5 text-sm leading-8 text-slate-600 dark:text-slate-300">
+              Sentence colors use the same formula on one sentence at a time.
+              The method follows a publicly documented analysis of Hemingway-style
+              editors. It is an independent estimate, not the vendor&apos;s own
+              calculation.
+            </p>
+          </div>
+          <ul className="space-y-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+            {[
+              "Letters and digits count as characters. Punctuation and spaces do not.",
+              "Fenced code blocks are skipped. Headings count but are never flagged.",
+              "Reading time assumes 238 words per minute. Speaking time assumes 150.",
+              "Flesch scores use an approximate syllable counter, so treat them as estimates.",
+              "Adverb, passive, and hedge lists are small editorial lists. They cannot catch everything.",
+            ].map((item) => (
+              <li
+                key={item}
+                className="rounded-2xl border border-slate-200 p-5 dark:border-slate-800"
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="text-3xl font-black">
+            How this tool compares with Hemingway Editor
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-8 text-slate-600 dark:text-slate-300">
+            Hemingway Editor is a well-known standard for plain writing. We are
+            an independent tool with a similar goal and a smaller scope. Here is
+            an honest side-by-side.
+          </p>
+          <div className="mt-7 overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <caption className="sr-only">
+                Feature comparison between this readability checker and Hemingway Editor
+              </caption>
+              <thead className="bg-slate-50 text-xs uppercase tracking-wider dark:bg-slate-900">
+                <tr>
+                  <th scope="col" className="p-4">Feature</th>
+                  <th scope="col" className="p-4">This tool</th>
+                  <th scope="col" className="p-4">Hemingway Editor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 text-slate-600 dark:divide-slate-800 dark:text-slate-300">
+                {[
+                  ["Live highlights in the text", "Yes", "Yes"],
+                  ["Estimated grade level", "Yes", "Yes"],
+                  ["Reading time and stats", "Yes", "Yes"],
+                  ["One-click word and phrase fixes", "Yes, free", "Part of a paid plan"],
+                  ["AI rewrite", "Optional, on a selected passage", "Part of a paid plan"],
+                  ["Literal meaning and number checks on revisions", "Yes", "No"],
+                  ["Grammar and spelling checker", "No", "Part of a paid plan"],
+                ].map(([feature, ours, theirs]) => (
+                  <tr key={feature}>
+                    <th scope="row" className="p-4 font-bold text-slate-900 dark:text-white">
+                      {feature}
+                    </th>
+                    <td className="p-4">{ours}</td>
+                    <td className="p-4">{theirs}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-4 text-xs leading-7 text-slate-500">
+            Hemingway details come from its public site and may change. We are
+            not affiliated with Hemingway Editor or its owners.
           </p>
         </section>
+
         <section>
           <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
             An editorial example
@@ -236,9 +412,10 @@ export default function Page() {
             the original advice.
           </p>
         </section>
+
         <section>
           <h2 className="text-3xl font-black">
-            Three editing directions, three useful trade-offs
+            Three AI editing directions, three useful trade-offs
           </h2>
           <div className="mt-7 grid gap-5 md:grid-cols-3">
             {[
@@ -248,7 +425,7 @@ export default function Page() {
               ],
               [
                 "Plain language",
-                "Use familiar words with varied sentence lengths and connected ideas. Keep precise terms, useful emphasis, and qualifications. Simpler language can still carry necessary detail.",
+                "Use familiar words with varied sentence lengths and connected ideas. Keep precise terms, useful emphasis, and qualifications.",
               ],
               [
                 "Easy to scan",
@@ -270,61 +447,26 @@ export default function Page() {
             ))}
           </div>
         </section>
+
         <section className="max-w-4xl">
           <h2 className="text-3xl font-black">Readability questions</h2>
           <div className="mt-7 space-y-4">
-            {[
-              [
-                "Can I check text without using AI?",
-                "Yes. Counts, highlights, phrase matches, and repeated-word observations update as you type. Request a revision when you want wording suggestions.",
-              ],
-              [
-                "Does the tool calculate Flesch or a school grade?",
-                "No. This version focuses on transparent passage checks. It does not estimate syllables, reading age, school grade, or a formula-based readability score.",
-              ],
-              [
-                "Will a shorter revision rank better?",
-                "This tool does not predict rankings or traffic. Choose wording that helps your reader understand the actual topic and preserves accurate detail.",
-              ],
-              [
-                "Does it verify that AI kept the meaning?",
-                "No. Literal checks flag certain numbers, required terms, and caution words. They can miss meaningful changes or flag harmless rewording.",
-              ],
-              [
-                "Can the tool split a long paragraph?",
-                "Yes. Paragraph splitting is requested by default. It groups related ideas and uses blank lines. Turn it off to request existing boundaries, then review the output.",
-              ],
-              [
-                "Should every sentence be short?",
-                "No. Mix concise emphasis with fuller explanations where useful. Transitions should clarify existing relationships. Length bands are review cues, not universal readability rules.",
-              ],
-              [
-                "Can I revise a complete long article?",
-                "Work section by section within the 4500-character source limit. Review transitions and overall structure separately when combining edited sections.",
-              ],
-              [
-                "Will changing the source overwrite my comparison?",
-                "No. The comparison preserves the submitted original. Failed regeneration keeps previous revisions and edits. Successful regeneration creates a new comparison.",
-              ],
-              [
-                "How do I save the revision?",
-                "Copy or download the selected text. Apply a revision to the source only after review. Local work is lost on refresh, so save it before leaving.",
-              ],
-            ].map(([q, a]) => (
+            {faqs.map((f) => (
               <details
-                key={q}
+                key={f.question}
                 className="rounded-2xl border border-slate-200 p-5 dark:border-slate-800"
               >
                 <summary className="cursor-pointer text-sm font-bold">
-                  {q}
+                  {f.question}
                 </summary>
                 <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-400">
-                  {a}
+                  {f.answer}
                 </p>
               </details>
             ))}
           </div>
         </section>
+
         <p className="text-sm leading-7 text-slate-500">
           Review{" "}
           <a
