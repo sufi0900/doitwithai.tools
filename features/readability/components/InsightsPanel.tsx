@@ -105,6 +105,10 @@ export default function InsightsPanel({
             ))}
           </select>
         </label>
+        <p className="mt-3 rounded-xl bg-blue-50 p-3 text-xs leading-6 dark:bg-blue-950" aria-live="polite">
+          Target: grade {target}. {has ? (a.grade <= target ? "Your estimated grade meets this target." : `${a.grade - target} grades above your target.`) : "Add text to compare."}
+          {" "}Changing readers adjusts sentence highlights and revision guidance. The measured grade stays based on your text.
+        </p>
       </section>
 
       <section className="border-t border-slate-200 pt-4 dark:border-slate-700">

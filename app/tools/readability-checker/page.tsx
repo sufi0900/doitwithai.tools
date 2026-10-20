@@ -164,10 +164,10 @@ export default function Page() {
         }}
       />
       <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
+        className={`relative overflow-clip ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto w-full px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
             className="flex flex-wrap gap-2 text-xs text-slate-400"
@@ -446,6 +446,33 @@ export default function Page() {
               </article>
             ))}
           </div>
+        </section>
+
+        <section aria-labelledby="reader-workflow-title">
+          <h2 id="reader-workflow-title" className="text-3xl font-black">Match readability to the reader and the task</h2>
+          <p className="mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300">
+            A useful readability review starts with the audience. Keep necessary technical terms, then simplify the explanation around them.
+            Changing the target adjusts editing cues and rewrite guidance. Your measured grade changes only when the text changes.
+          </p>
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <caption className="sr-only">Suggested editing targets for different readers</caption>
+              <thead className="bg-blue-50 dark:bg-blue-950"><tr>{["Target reader", "Editing target", "What to preserve"].map((heading) => <th key={heading} scope="col" className="p-4">{heading}</th>)}</tr></thead>
+              <tbody>{[
+                ["General web readers", "Grade 9", "Familiar wording, clear actions, and brief explanations of unfamiliar terms."],
+                ["Professional readers", "Grade 11", "Industry terminology, precise conditions, and evidence supporting each recommendation."],
+                ["Technical readers", "Grade 13", "Exact definitions, units, constraints, and relationships between ideas."],
+              ].map((row) => <tr key={row[0]} className="border-t border-slate-200 dark:border-slate-700">{row.map((cell, i) => i === 0 ? <th key={i} scope="row" className="p-4">{cell}</th> : <td key={i} className="p-4 leading-7">{cell}</td>)}</tr>)}</tbody>
+            </table>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {[
+              ["Inspect a highlight", "Click a marked sentence to see its explanation. Right-click it for nearby rewrite and correction actions."],
+              ["Compare in place", "Review three alternatives without losing your editing position. Check names, numbers, and qualifications before replacing a passage."],
+              ["Read the full paragraph", "After a sentence changes, review its surrounding paragraph. A clear sentence still needs a logical transition and accurate context."],
+            ].map(([title, body]) => <article key={title} className="rounded-2xl bg-slate-50 p-6 dark:bg-slate-900"><h3 className="font-bold">{title}</h3><p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{body}</p></article>)}
+          </div>
+          <p className="mt-5 text-sm leading-7 text-slate-600 dark:text-slate-300">Review the page structure with the <Link href="/tools/heading-structure-analyzer" className="text-[#5271ff] underline">Heading Structure Analyzer</Link> after editing long articles. Clear sections help readers find the information they need.</p>
         </section>
 
         <section className="max-w-4xl">

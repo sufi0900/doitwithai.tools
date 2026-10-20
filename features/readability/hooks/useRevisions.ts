@@ -28,12 +28,13 @@ export function useRevisions() {
   const [generation, setGeneration] = useState(0);
 
   const generate = useCallback(
-    async (passage: string, passageRange: Range) => {
+    async (passage: string, passageRange: Range, reader?: string) => {
+      if (busy) return false;
       setError("");
       setStatus("");
       const input = readabilityInputSchema.safeParse({
         text: passage,
-        audience,
+        audience: [reader, audience].filter(Boolean).join(". ").slice(0, 250),
         terms,
         tone,
         splitParagraphs,
@@ -91,7 +92,7 @@ export function useRevisions() {
         setBusy(false);
       }
     },
-    [audience, terms, tone, splitParagraphs],
+    [audience, terms, tone, splitParagraphs, busy],
   );
 
   return {

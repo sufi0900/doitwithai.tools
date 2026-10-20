@@ -90,3 +90,13 @@ The registry description now reflects the live editor. No CMS documents changed.
 `tests/ai-tools/readability-engine.test.ts` covers the grade formula, sentence bands, offsets, headings and code, adverbs, passive voice, weakeners, simpler alternatives, overlaps, fixes, stats, and feedback. The earlier `readability.test.ts` suite still passes, because `analyzer.ts` keeps its exports.
 
 Real Gemini output quality is not covered by tests. Check it on a preview deployment.
+
+
+## Reader-aware editing and revision placement
+
+- General, professional, and technical presets adjust sentence flags relative to grades 9, 11, and 13. The measured ARI grade remains independent of the selected target.
+- AI requests include the chosen reader preset along with any custom audience instructions. Only the selected passage is submitted for sentence rewrites.
+- The full-width editor uses an internally scrolling textarea and a synchronized highlight layer. Toolbar actions and desktop insights remain available during editing.
+- Right-clicking a highlight opens keyboard-accessible actions. Native dialogs keep revision comparisons beside the editing workflow without scrolling to the page bottom.
+- Replacement uses the original range when unchanged. A fallback match must be unique, preventing edits to an arbitrary repeated passage.
+- Regression coverage checks audience-dependent flags, invariant measured grade, safe entity output, heading structure, and structured-data parsing.

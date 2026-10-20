@@ -633,6 +633,75 @@
         "ai-citation-readiness-checker",
         "robots-txt-generator"
       ]
+    },
+    {
+      "id": "serp-rich-result-preview-generator",
+      "slug": "serp-rich-result-preview-generator",
+      "name": "SERP & Rich Result Preview",
+      "description": "Preview search snippets and inspect supported structured data before publishing.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "SERP",
+        "structured data"
+      ],
+      "kind": "Utility",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 27,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "meta-title-generator",
+        "schema-markup-generator"
+      ]
+    },
+    {
+      "id": "entity-sameas-finder",
+      "slug": "entity-sameas-finder",
+      "name": "Entity & sameAs Finder",
+      "description": "Find Wikidata entities, verify profile links, and build sameAs structured data.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "entities",
+        "sameAs"
+      ],
+      "kind": "Utility",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 28,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "schema-markup-generator",
+        "ai-citation-readiness-checker"
+      ]
+    },
+    {
+      "id": "heading-structure-analyzer",
+      "slug": "heading-structure-analyzer",
+      "name": "Heading Structure Analyzer",
+      "description": "Inspect HTML or Markdown headings for skipped levels, duplicates, and structural issues.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "headings",
+        "content structure"
+      ],
+      "kind": "Utility",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 29,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "h1-heading-generator",
+        "readability-checker"
+      ]
     }
   ]
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { Copy, Download, FileCheck2 } from "lucide-react";
 import FlowReview from "../FlowReview";
 import { preservationChecks } from "../analyzer";
@@ -15,20 +15,8 @@ type Props = {
 };
 
 export default function AiResults({ rev, onCopy, onReplace }: Props) {
-  const ref = useRef<HTMLElement>(null);
-  const { result, edits, selected, source, sourceTerms, generation } = rev;
+  const { result, edits, selected, source, sourceTerms } = rev;
   const revision = edits[selected] || "";
-
-  useEffect(() => {
-    if (!generation) return;
-    ref.current?.focus();
-    ref.current?.scrollIntoView({
-      block: "start",
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-    });
-  }, [generation]);
 
   const before = useMemo(() => analyzeDocument(source), [source]);
   const after = useMemo(() => analyzeDocument(revision), [revision]);
@@ -41,12 +29,11 @@ export default function AiResults({ rev, onCopy, onReplace }: Props) {
 
   return (
     <section
-      ref={ref}
       tabIndex={-1}
       aria-label="Readability revisions"
       className="mt-8 scroll-mt-28 outline-none"
     >
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3">
         {result.candidates.map((c, i) => (
           <button
             key={c.approach}

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-20T10:45:06.019Z",
+  "generated": "2026-10-20T21:36:00.942Z",
   "static_pages": [
     {
       "url": "/",
@@ -243,6 +243,24 @@
       "type": "static"
     },
     {
+      "url": "/tools/serp-rich-result-preview-generator",
+      "title": "SERP & Rich Result Preview",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/entity-sameas-finder",
+      "title": "Entity & sameAs Finder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/heading-structure-analyzer",
+      "title": "Heading Structure Analyzer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -255,5 +273,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 42
+  "total_pages": 45
 }

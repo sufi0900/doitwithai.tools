@@ -2,6 +2,7 @@
 import {
   useCallback,
   useDeferredValue,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -64,6 +65,29 @@ export default function ReadabilityClient() {
   const [history, setHistory] = useState<string[]>([]);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [status, setStatus] = useState("");
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [context, setContext] = useState<{ x: number; y: number; issue: Annotation } | null>(null);
+  const contextDialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = contextDialog.current;
+    if (context && dialog && !dialog.open) dialog.showModal();
+    if (!context && dialog?.open) dialog.close();
+  }, [context]);
+  const reviewDialog = useRef<HTMLDialogElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const dialog = reviewDialog.current;
+    if (reviewOpen && dialog && !dialog.open) {
+      returnFocus.current = editor.current?.textarea ?? document.activeElement as HTMLElement | null;
+      dialog.showModal();
+    }
+    if (!reviewOpen && dialog?.open) dialog.close();
+  }, [reviewOpen]);
+  function closeReview() {
+    setReviewOpen(false);
+    returnFocus.current?.focus({ preventScroll: true });
+  }
+
 
   const editor = useRef<EditorHandle>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -80,8 +104,8 @@ export default function ReadabilityClient() {
 
   const deferredText = useDeferredValue(text);
   const analysis = useMemo(
-    () => analyzeDocument(deferredText, { longThreshold }),
-    [deferredText, longThreshold],
+    () => analyzeDocument(deferredText, { longThreshold, targetGrade: target }),
+    [deferredText, longThreshold, target],
   );
   const inSync = deferredText === text;
   const highlights = mode !== "write";
@@ -214,7 +238,9 @@ export default function ReadabilityClient() {
 
   async function runAi(range = aiTarget) {
     const passage = text.slice(range.start, range.end);
-    await rev.generate(passage, { start: range.start, end: range.end });
+    setReviewOpen(true);
+    await rev.generate(passage, { start: range.start, end: range.end },
+      `Write for ${targetPresets.find((p) => p.grade === target)?.label ?? "general readers"}`);
   }
 
   function rewriteSentence(start: number, end: number) {
@@ -237,7 +263,7 @@ export default function ReadabilityClient() {
     const index =
       current && text.slice(current.start, current.end) === snapshot
         ? current.start
-        : text.indexOf(snapshot);
+        : text.indexOf(snapshot) === text.lastIndexOf(snapshot) ? text.indexOf(snapshot) : -1;
     if (index < 0)
       return "The original passage changed or was removed. Select it again, then compare revisions.";
     const next = text.slice(0, index) + replacement + text.slice(index + snapshot.length);
@@ -245,6 +271,8 @@ export default function ReadabilityClient() {
       return `The result would pass the ${MAX_LOCAL_CHARS.toLocaleString()} character limit. Copy the revision instead.`;
     commit(next, [index, index + replacement.length]);
     rev.setRange({ start: index, end: index + replacement.length });
+    setReviewOpen(false);
+    setStatus("Passage replaced. Your editing position is preserved. Use Undo to restore it.");
     return null;
   }
 
@@ -259,7 +287,7 @@ export default function ReadabilityClient() {
               Your text, under a clearer lens
             </h2>
             <p className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">
-              Highlights update as you type. Everything runs in your browser until you ask for AI.
+              Highlights update as you type. Choose a target reader to tailor the editing cues.
             </p>
           </div>
           <div role="group" aria-label="Editor mode" className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-950">
@@ -283,7 +311,7 @@ export default function ReadabilityClient() {
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-2">
+        <div className="sticky top-20 z-20 mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <button type="button" className={button} onClick={() => commit(exampleText)}>
             Try an example
           </button>
@@ -328,7 +356,7 @@ export default function ReadabilityClient() {
         <div className={`mt-6 grid items-start gap-6 ${showSidebar ? "lg:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
           <div className="min-w-0">
             {highlights && (
-              <div className="mb-4">
+              <div className="mb-4 max-h-56 overflow-y-auto">
                 <IssueCard
                   issues={caretIssues}
                   text={text}
@@ -360,6 +388,10 @@ export default function ReadabilityClient() {
               placeholder="Paste a section, introduction, email, or article. English prose works best."
               onChange={onType}
               onSelection={onSelection}
+              onContextIssue={(x, y, issue) => {
+                setSelection({ start: issue.start, end: issue.start });
+                setContext({ x: Math.max(8, Math.min(x, window.innerWidth - 304)), y: Math.max(8, Math.min(y, window.innerHeight - 230)), issue });
+              }}
             />
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
               <span>
@@ -396,7 +428,7 @@ export default function ReadabilityClient() {
           </div>
 
           {showSidebar && (
-            <aside className="min-w-0 lg:sticky lg:top-24" aria-label={mode === "edit" ? "Readability insights" : "AI revisions"}>
+            <aside className="min-w-0 lg:sticky lg:top-44 lg:max-h-[calc(100dvh-12rem)] lg:overflow-y-auto" aria-label={mode === "edit" ? "Readability insights" : "AI revisions"}>
               {mode === "edit" ? (
                 <InsightsPanel
                   analysis={analysis}
@@ -417,9 +449,33 @@ export default function ReadabilityClient() {
         </div>
       </section>
 
-      {mode === "improve" && (
-        <AiResults rev={rev} onCopy={copy} onReplace={replacePassage} />
-      )}
+      <dialog ref={contextDialog} aria-label="Highlighted text actions"
+        onCancel={(e) => { e.preventDefault(); setContext(null); }}
+        onClose={() => setContext(null)}
+        style={{ left: context?.x ?? 8, top: context?.y ?? 8 }}
+        className="fixed m-0 w-72 max-w-[calc(100vw-1rem)] max-h-[80dvh] overflow-auto rounded-xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl backdrop:bg-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+        {context && <>
+            <button autoFocus type="button" className={button} onClick={() => setContext(null)}>Close actions</button>
+            <p className="mt-3 text-sm">{context.issue.message}</p>
+            {context.issue.replacement !== undefined && <button type="button" className={`${button} mt-3`} onClick={() => { fix(context.issue); setContext(null); }}>Apply suggested fix</button>}
+            {analysis.sentences[context.issue.sentenceIndex] && <button type="button" className={`${button} mt-3`} disabled={rev.busy} onClick={() => {
+              const sentence = analysis.sentences[context.issue.sentenceIndex];
+              setContext(null); rewriteSentence(sentence.start, sentence.end);
+            }}>Rewrite this sentence with AI</button>}
+        </>}
+      </dialog>
+      {mode === "improve" && rev.result && <button type="button" className={`${button} mt-4`} onClick={() => setReviewOpen(true)}>Open latest revisions</button>}
+      <dialog ref={reviewDialog} onCancel={(e) => { e.preventDefault(); closeReview(); }}
+        onClose={() => setReviewOpen(false)} aria-labelledby="revision-dialog-title"
+        className="fixed inset-0 m-auto max-h-[90dvh] w-[min(1100px,96vw)] max-w-none overflow-y-auto rounded-2xl bg-white p-4 text-slate-900 shadow-2xl backdrop:bg-slate-950/60 dark:bg-slate-900 dark:text-white sm:p-6">
+        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 bg-white pb-3 dark:bg-slate-900">
+          <h2 id="revision-dialog-title" className="text-xl font-black">Compare passage revisions</h2>
+          <button type="button" className={button} onClick={closeReview}>Back to editor</button>
+        </div>
+        <p role="status" className="mt-3 text-sm">{rev.busy ? "Preparing three revisions. Your editing position is saved." : rev.status}</p>
+        {rev.error && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{rev.error}</p>}
+        {!rev.busy && <AiResults rev={rev} onCopy={copy} onReplace={replacePassage} />}
+      </dialog>
     </div>
   );
 }

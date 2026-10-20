@@ -63,10 +63,10 @@ export function formatDuration(seconds: number) {
 
 export function analyzeDocument(
   text: string,
-  options: { longThreshold?: number } = {},
+  options: { longThreshold?: number; targetGrade?: number } = {},
 ): DocumentAnalysis {
   const longThreshold = options.longThreshold ?? 25;
-  const sentences = scoreSentences(text);
+  const sentences = scoreSentences(text, options.targetGrade ?? 9);
   const annotations = annotate(text, sentences);
 
   const counts = Object.fromEntries(issueTypes.map((t) => [t, 0])) as Record<

@@ -28,6 +28,9 @@ import {
   type CatalogTool,
 } from "./catalog";
 const icons = {
+  "serp-rich-result-preview-generator": Search,
+  "entity-sameas-finder": Network,
+  "heading-structure-analyzer": ListTree,
   "gsc-striking-distance-finder": Search,
   "indexnow-key-generator": Link2,
   "keyword-cannibalization-finder": Network,

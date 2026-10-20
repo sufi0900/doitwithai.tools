@@ -63,15 +63,15 @@ export function ariGrade(letters: number, wordCount: number, sentenceCount: numb
   return Math.max(0, Math.round(raw));
 }
 
-/** Sentences shorter than 14 words are never flagged. Level 10-13 is hard, 14+ is very hard. */
-export function classifySentence(wordCount: number, level: number) {
+/** Sentences shorter than 14 words are never flagged. Hard starts one grade above the target; very hard starts five grades above. */
+export function classifySentence(wordCount: number, level: number, targetGrade = 9) {
   if (wordCount < 14) return null;
-  if (level >= 14) return "veryHard" as const;
-  if (level >= 10) return "hard" as const;
+  if (level >= targetGrade + 5) return "veryHard" as const;
+  if (level >= targetGrade + 1) return "hard" as const;
   return null;
 }
 
-export function scoreSentences(text: string): SentenceInfo[] {
+export function scoreSentences(text: string, targetGrade = 9): SentenceInfo[] {
   const code = codeRanges(text);
   const result: SentenceInfo[] = [];
   for (const part of sentenceParts(text)) {
@@ -91,7 +91,7 @@ export function scoreSentences(text: string): SentenceInfo[] {
       letters,
       level,
       heading,
-      flag: heading ? null : classifySentence(tokens.length, level),
+      flag: heading ? null : classifySentence(tokens.length, level, targetGrade),
     });
   }
   return result;

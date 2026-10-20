@@ -27,6 +27,7 @@ type Props = {
   placeholder: string;
   onChange: (value: string) => void;
   onSelection: (start: number, end: number) => void;
+  onContextIssue: (x: number, y: number, issue: Annotation) => void;
 };
 
 const isSentence = (a: Annotation) => a.type === "hard" || a.type === "veryHard";
@@ -47,6 +48,7 @@ const HighlightEditor = forwardRef<EditorHandle, Props>(
       placeholder,
       onChange,
       onSelection,
+      onContextIssue,
     },
     ref,
   ) {
@@ -59,19 +61,19 @@ const HighlightEditor = forwardRef<EditorHandle, Props>(
       reveal(offset: number) {
         const target = layerEl.current?.querySelector(`[data-from="${offset}"]`);
         const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        (target as HTMLElement | null)?.scrollIntoView({
-          block: "center",
-          behavior: reduce ? "auto" : "smooth",
-        });
+        const el = area.current;
+        if (target && el && layerEl.current) {
+          const top = target.getBoundingClientRect().top - layerEl.current.getBoundingClientRect().top + el.scrollTop;
+          el.scrollTo({ top: Math.max(0, top - el.clientHeight / 2), behavior: reduce ? "auto" : "smooth" });
+        }
       },
     }));
 
     useLayoutEffect(() => {
       const el = area.current;
       if (!el) return;
-      el.style.height = "auto";
-      el.style.height = `${Math.max(el.scrollHeight, 360)}px`;
-    }, [text]);
+      el.style.height = "min(65dvh, 700px)";
+    }, []);
 
     const layer = useMemo<ReactNode[]>(() => {
       if (!showHighlights || !annotations.length) return [analysedText];
@@ -122,7 +124,7 @@ const HighlightEditor = forwardRef<EditorHandle, Props>(
           ref={layerEl}
           aria-hidden="true"
           data-readability-highlight
-          className={`${editorText} pointer-events-none absolute inset-0 overflow-hidden text-transparent`}
+          className={`${editorText} pointer-events-none absolute inset-0 overflow-y-scroll text-transparent`}
         >
           {layer}
           {"\n"}
@@ -142,7 +144,27 @@ const HighlightEditor = forwardRef<EditorHandle, Props>(
           onSelect={(e) => sync(e.currentTarget)}
           onClick={(e) => sync(e.currentTarget)}
           onKeyUp={(e) => sync(e.currentTarget)}
-          className={`${editorText} relative min-h-[360px] resize-none overflow-hidden bg-transparent text-slate-900 caret-[#5271ff] outline-none placeholder:text-slate-400 dark:text-slate-100`}
+          onScroll={(e) => {
+            if (layerEl.current) layerEl.current.scrollTop = e.currentTarget.scrollTop;
+          }}
+          onContextMenu={(e) => {
+            if (!showHighlights || text !== analysedText) return;
+            const spans = layerEl.current?.querySelectorAll<HTMLElement>("[data-from]");
+            let offset = e.currentTarget.selectionStart;
+            let hit = false;
+            for (const span of Array.from(spans ?? [])) {
+              if (Array.from(span.getClientRects()).some((r) => e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom)) {
+                offset = Number(span.dataset.from); hit = true; break;
+              }
+            }
+            if ((e.clientX || e.clientY) && !hit) return;
+            const issue = annotations.filter((a) => a.start <= offset && offset < a.end).sort((a,b) => (a.end-a.start)-(b.end-b.start))[0];
+            if (!issue) return;
+            e.preventDefault();
+            const bounds = e.currentTarget.getBoundingClientRect();
+            onContextIssue(e.clientX || bounds.left + 16, e.clientY || bounds.top + 24, issue);
+          }}
+          className={`${editorText} relative min-h-[360px] resize-none overflow-y-scroll bg-transparent text-slate-900 caret-[#5271ff] outline-none placeholder:text-slate-400 dark:text-slate-100`}
         />
       </div>
     );
