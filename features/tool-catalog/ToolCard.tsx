@@ -28,6 +28,15 @@ import {
   type CatalogTool,
 } from "./catalog";
 const icons = {
+  "gsc-striking-distance-finder": Search,
+  "indexnow-key-generator": Link2,
+  "keyword-cannibalization-finder": Network,
+  "sitemap-xml-generator": FileCode2,
+  "redirect-rule-generator": GitBranch,
+  "og-twitter-preview-generator": ScanEye,
+  "hreflang-generator": Link2,
+  "core-web-vitals-checker": ListChecks,
+
   "robots-txt-generator": Bot,
   "llms-txt-generator": FileCode2,
   "ai-citation-readiness-checker": ListChecks,

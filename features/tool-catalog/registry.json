@@ -465,6 +465,174 @@
         "readability-checker",
         "schema-markup-generator"
       ]
+    },
+    {
+      "id": "gsc-striking-distance-finder",
+      "slug": "gsc-striking-distance-finder",
+      "name": "GSC Striking Distance Finder",
+      "description": "Find search queries close to stronger visibility using your Search Console CSV export.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "search visibility"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 19,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "keyword-cannibalization-finder",
+        "meta-title-generator"
+      ]
+    },
+    {
+      "id": "indexnow-key-generator",
+      "slug": "indexnow-key-generator",
+      "name": "IndexNow Key Generator",
+      "description": "Create an IndexNow key, verify its published file, and submit changed URLs.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "search visibility"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 20,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "sitemap-xml-generator",
+        "robots-txt-generator"
+      ]
+    },
+    {
+      "id": "keyword-cannibalization-finder",
+      "slug": "keyword-cannibalization-finder",
+      "name": "Keyword Cannibalization Finder",
+      "description": "Review queries shared by multiple pages and identify overlap worth investigating.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "search visibility"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 21,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "gsc-striking-distance-finder",
+        "internal-link-opportunity-finder"
+      ]
+    },
+    {
+      "id": "sitemap-xml-generator",
+      "slug": "sitemap-xml-generator",
+      "name": "Sitemap XML Generator",
+      "description": "Create sitemap files from URL lists, or validate an existing sitemap.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 22,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "robots-txt-generator",
+        "indexnow-key-generator"
+      ]
+    },
+    {
+      "id": "redirect-rule-generator",
+      "slug": "redirect-rule-generator",
+      "name": "Redirect Rule Generator",
+      "description": "Generate redirect rules for your hosting platform and check for loops and chains.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 23,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "sitemap-xml-generator",
+        "slug-generator"
+      ]
+    },
+    {
+      "id": "og-twitter-preview-generator",
+      "slug": "og-twitter-preview-generator",
+      "name": "OG & Twitter Card Preview Generator",
+      "description": "Preview social cards, review image dimensions, and prepare sharing tags.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 24,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "meta-title-generator",
+        "meta-description-generator"
+      ]
+    },
+    {
+      "id": "hreflang-generator",
+      "slug": "hreflang-generator",
+      "name": "Hreflang Generator",
+      "description": "Build reciprocal language and region annotations and review existing tags.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 25,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "sitemap-xml-generator",
+        "robots-txt-generator"
+      ]
+    },
+    {
+      "id": "core-web-vitals-checker",
+      "slug": "core-web-vitals-checker",
+      "name": "Core Web Vitals Checker",
+      "description": "Review mobile and desktop performance with field measurements and lab results.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 26,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "ai-citation-readiness-checker",
+        "robots-txt-generator"
+      ]
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-19T18:03:02.429Z",
+  "generated": "2026-10-20T10:45:06.019Z",
   "static_pages": [
     {
       "url": "/",
@@ -195,6 +195,54 @@
       "type": "static"
     },
     {
+      "url": "/tools/gsc-striking-distance-finder",
+      "title": "GSC Striking Distance Finder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/indexnow-key-generator",
+      "title": "IndexNow Key Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/keyword-cannibalization-finder",
+      "title": "Keyword Cannibalization Finder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/sitemap-xml-generator",
+      "title": "Sitemap XML Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/redirect-rule-generator",
+      "title": "Redirect Rule Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/og-twitter-preview-generator",
+      "title": "OG & Twitter Card Preview Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/hreflang-generator",
+      "title": "Hreflang Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/core-web-vitals-checker",
+      "title": "Core Web Vitals Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -207,5 +255,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 34
+  "total_pages": 42
 }
