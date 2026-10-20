@@ -70,7 +70,7 @@ export default function CoreWebVitalsClient() {
     <div id="core-web-vitals-checker" className={`${panelClass} p-5 sm:p-8`}>
       <div className="flex flex-col gap-3 xl:flex-row">
         <input
-          className={inputClass}
+          className={`${inputClass} h-12 flex-1`}
           value={url}
           onChange={(event) => setUrl(event.target.value)}
           placeholder="https://example.com/page"
@@ -92,7 +92,7 @@ export default function CoreWebVitalsClient() {
             <Monitor className="h-3.5 w-3.5" /> Desktop
           </button>
         </div>
-        <button type="button" onClick={handleCheck} disabled={loading || !url.trim()} className={`${primaryButton} shrink-0`}>
+        <button type="button" onClick={handleCheck} disabled={loading || !url.trim()} className={`${primaryButton} min-h-12 shrink-0`}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {loading ? "Running check…" : "Check Core Web Vitals"}
         </button>
@@ -101,14 +101,15 @@ export default function CoreWebVitalsClient() {
         Review mobile or desktop performance. A full check
         usually takes 10–30 seconds.
       </p>
-      {error && <p className="mt-3 text-sm font-semibold text-rose-600 dark:text-rose-400">{error}</p>}
+      {error && <div role="status" className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-5"><p className="text-sm font-semibold leading-7 text-amber-700 dark:text-amber-200">{error}</p><a href={`https://pagespeed.web.dev/analysis?url=${encodeURIComponent(url)}&form_factor=${strategy}`} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex rounded-xl bg-[#5271ff] px-4 py-3 text-sm font-bold text-white">Check in Google PageSpeed Insights</a><p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-300">The direct report uses the same page URL and selected device. This tool does not substitute estimated scores.</p></div>}
 
       {result && (
         <div className="mt-8 space-y-6">
+          {result.checkedAt && <p className="text-xs leading-6 text-slate-500 dark:text-slate-300">Report checked at {new Date(result.checkedAt).toLocaleString()}. Reports may be reused for up to 30 minutes.</p>}
           <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {result.categories.map((category) => (
               <div key={category.id} className="rounded-2xl border border-slate-200 p-4 text-center dark:border-slate-700">
-                <p className={`text-3xl font-black ${scoreColor(category.score)}`}>{category.score ?? ";"}</p>
+                <p className={`text-3xl font-black ${scoreColor(category.score)}`}>{category.score ?? "N/A"}</p>
                 <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{category.name}</p>
               </div>
             ))}

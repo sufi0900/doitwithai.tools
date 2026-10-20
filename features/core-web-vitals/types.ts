@@ -21,6 +21,7 @@ export type FieldData = {
 };
 
 export type PageSpeedResult = {
+  checkedAt?: string;
   requestedUrl: string;
   finalUrl: string;
   strategy: Strategy;

@@ -1,3 +1,4 @@
+import ToolFaq from "@/features/tool-ui/ToolFaq";
 import { ToolHeroBackground, toolHeroSurface, toolHeroHeading } from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
@@ -67,7 +68,7 @@ const faqs = [
   {
     question: "Which file do I need to use this tool?",
     answer:
-      "A CSV that contains both a Query column and a Page column, along with Clicks, Impressions, and Position. The separate Queries and Pages tabs in Search Console can't show which page ranks for which query, so use a connector such as Looker Studio, a Google Sheets add-on, or the Search Analytics API to pull them together.",
+      "Upload a Search Console CSV or ZIP for a performance preview. To compare competing pages, use a combined Query + Page CSV. Alternatively, upload query exports filtered to individual pages and assign each page URL. Separate overall Queries and Pages totals cannot establish overlap.",
   },
   {
     question: "Is my Search Console data uploaded anywhere?",
@@ -232,32 +233,7 @@ export default function KeywordCannibalizationFinderPage() {
       <KeywordCannibalizationTutorial />
       <KeywordCannibalizationEducation />
 
-      <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-[#5271ff]">
-              Common questions
-            </p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-4xl">
-              Keyword cannibalization finder FAQ
-            </h2>
-          </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            {faqs.map((faq) => (
-              <details
-                key={faq.question}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 open:bg-white dark:border-slate-800 dark:bg-slate-900 dark:open:bg-slate-900"
-              >
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-sm font-extrabold text-slate-950 dark:text-white">
-                  {faq.question}
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-[#5271ff]" />
-                </summary>
-                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{faq.answer}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ToolFaq title="Keyword cannibalization finder FAQ" faqs={faqs} />
       <ToolResources slug="keyword-cannibalization-finder" />
     </>
   );

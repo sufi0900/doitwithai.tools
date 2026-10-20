@@ -1,6 +1,8 @@
 "use client";
+import ConsoleImportPanel from "@/features/search-console-import/ConsoleImportPanel";
+import ReportOverview from "@/features/search-console-import/ReportOverview";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   Download,
@@ -40,10 +42,7 @@ function numberOr(value: string, fallback: number): number {
 }
 
 export default function GscStrikingDistanceClient() {
-  const fileRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [fileError, setFileError] = useState("");
   const [minPosition, setMinPosition] = useState("8");
   const [maxPosition, setMaxPosition] = useState("20");
   const [minImpressions, setMinImpressions] = useState("100");
@@ -51,7 +50,6 @@ export default function GscStrikingDistanceClient() {
   const [exclude, setExclude] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("opportunity");
   const [visible, setVisible] = useState(PAGE_SIZE);
-  const [dragging, setDragging] = useState(false);
 
   const parsed = useMemo(() => parseGscCsv(text), [text]);
 
@@ -76,31 +74,6 @@ export default function GscStrikingDistanceClient() {
     [opportunities]
   );
 
-  const loadFile = async (file: File | undefined) => {
-    setFileError("");
-    if (!file) return;
-    if (file.size > MAX_FILE_BYTES) {
-      setFileError("That file is larger than 25 MB. Export a smaller date range or tab and try again.");
-      return;
-    }
-    if (/\.(xlsx|xls|zip)$/i.test(file.name)) {
-      setFileError("Please load a .csv file. If you downloaded a .zip from Search Console, unzip it and use Queries.csv.");
-      return;
-    }
-    const content = await file.text();
-    setText(content);
-    setFileName(file.name);
-    setVisible(PAGE_SIZE);
-  };
-
-  const reset = () => {
-    setText("");
-    setFileName("");
-    setFileError("");
-    setVisible(PAGE_SIZE);
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
   const downloadCsv = () => {
     const csv = buildCsv(opportunities, parsed.hasPage);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -124,70 +97,13 @@ export default function GscStrikingDistanceClient() {
           <label className={labelClass} htmlFor="gsc-csv-paste">
             1. Load your Search Console export
           </label>
-          <div
-            onDragOver={(event) => {
-              event.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setDragging(false);
-              void loadFile(event.dataTransfer.files?.[0]);
-            }}
-            className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-4 py-8 text-center transition ${
-              dragging ? "border-cyan-300 bg-cyan-300/10" : "border-white/15 bg-slate-900/40"
-            }`}
-          >
-            <FileSpreadsheet className="h-8 w-8 text-blue-300" aria-hidden="true" />
-            <p className="text-sm font-semibold text-slate-200">
-              {fileName ? `Loaded: ${fileName}` : "Drop your Queries.csv here"}
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-blue-50"
-              >
-                <Upload className="h-4 w-4" aria-hidden="true" /> Choose CSV file
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setText(SAMPLE_CSV);
-                  setFileName("sample-data.csv");
-                  setVisible(PAGE_SIZE);
-                }}
-                className="rounded-xl border border-white/15 px-4 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10"
-              >
-                Try sample data
-              </button>
-              {text && (
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 px-4 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Clear
-                </button>
-              )}
-            </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".csv,text/csv"
-              className="sr-only"
-              aria-label="Choose a Search Console CSV file"
-              onChange={(event) => void loadFile(event.target.files?.[0])}
-            />
-          </div>
+          <ConsoleImportPanel sample={SAMPLE_CSV} onChange={value=>{setText(value);setVisible(PAGE_SIZE);}} />
 
           <textarea
             id="gsc-csv-paste"
             value={text}
             onChange={(event) => {
               setText(event.target.value);
-              setFileName("");
               setVisible(PAGE_SIZE);
             }}
             rows={5}
@@ -197,13 +113,8 @@ export default function GscStrikingDistanceClient() {
           />
           <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-400">
             <Lock className="mt-1 h-3.5 w-3.5 shrink-0 text-emerald-300" aria-hidden="true" />
-            Your file is read in this browser tab only. Nothing is uploaded, stored, or sent to an AI model.
+            Your file is read in this browser tab only. Your data stays in this browser tab.
           </p>
-          {fileError && (
-            <p role="alert" className="mt-2 text-xs font-semibold text-amber-300">
-              {fileError}
-            </p>
-          )}
         </div>
 
         <div>
@@ -259,18 +170,13 @@ export default function GscStrikingDistanceClient() {
         </div>
       </div>
 
-      {parsed.error && (
-        <p role="alert" className="mt-6 flex items-start gap-2 rounded-xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-200">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          {parsed.error}
-        </p>
-      )}
+      <ReportOverview validRows={parsed.rows.length} text={text} />
 
       {hasData && (
         <div className="mt-8" aria-live="polite">
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              ["Striking-distance queries", opportunities.length.toLocaleString()],
+              [parsed.hasQuery ? "Striking-distance queries" : "Striking-distance pages", opportunities.length.toLocaleString()],
               ["Impressions in range", Math.round(totals.impressions).toLocaleString()],
               ["Estimated extra clicks", `~${Math.round(totals.extraClicks).toLocaleString()}`],
             ].map(([label, value]) => (
@@ -289,7 +195,8 @@ export default function GscStrikingDistanceClient() {
 
           {opportunities.length === 0 ? (
             <p className="mt-6 rounded-xl border border-white/10 bg-slate-900/60 p-5 text-sm text-slate-300">
-              No rows match these filters. Try lowering the minimum impressions or widening the position range.
+              No rows match these filters. Your file loaded successfully. Try a wider position range or lower the impression threshold.
+              <button type="button" onClick={()=>{setMinPosition("1");setMaxPosition("100");setMinImpressions("0");}} className="mt-3 block rounded-xl bg-[#5271ff] px-4 py-3 text-sm font-bold text-white">Show all positions</button>
             </p>
           ) : (
             <>

@@ -1,6 +1,8 @@
 "use client";
+import ConsoleImportPanel from "@/features/search-console-import/ConsoleImportPanel";
+import ReportOverview from "@/features/search-console-import/ReportOverview";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, Download, FileSpreadsheet, Lock, RotateCcw, Upload } from "lucide-react";
 import {
   SAMPLE_CSV,
@@ -45,10 +47,7 @@ function numberOr(value: string, fallback: number): number {
 }
 
 export default function KeywordCannibalizationClient() {
-  const fileRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [fileError, setFileError] = useState("");
   const [minTotal, setMinTotal] = useState("50");
   const [minPage, setMinPage] = useState("10");
   const [minShare, setMinShare] = useState("10");
@@ -56,7 +55,6 @@ export default function KeywordCannibalizationClient() {
   const [exclude, setExclude] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("split");
   const [visible, setVisible] = useState(PAGE_SIZE);
-  const [dragging, setDragging] = useState(false);
 
   const parsed = useMemo(() => parseQueryPageCsv(text), [text]);
 
@@ -83,30 +81,6 @@ export default function KeywordCannibalizationClient() {
     return { impressions, pages: pages.size };
   }, [findings]);
 
-  const loadFile = async (file: File | undefined) => {
-    setFileError("");
-    if (!file) return;
-    if (file.size > MAX_FILE_BYTES) {
-      setFileError("That file is larger than 25 MB. Export a shorter date range and try again.");
-      return;
-    }
-    if (/\.(xlsx|xls|zip)$/i.test(file.name)) {
-      setFileError("Please load a .csv file. In Google Sheets or Excel, use File → Download/Save as → CSV.");
-      return;
-    }
-    setText(await file.text());
-    setFileName(file.name);
-    setVisible(PAGE_SIZE);
-  };
-
-  const reset = () => {
-    setText("");
-    setFileName("");
-    setFileError("");
-    setVisible(PAGE_SIZE);
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
   const downloadCsv = () => {
     const blob = new Blob([buildCsv(findings)], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -127,72 +101,15 @@ export default function KeywordCannibalizationClient() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div>
           <label className={labelClass} htmlFor="kc-csv-paste">
-            1. Load a Query + Page export
+            1. Load your Search Console export
           </label>
-          <div
-            onDragOver={(event) => {
-              event.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setDragging(false);
-              void loadFile(event.dataTransfer.files?.[0]);
-            }}
-            className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-4 py-8 text-center transition ${
-              dragging ? "border-cyan-300 bg-cyan-300/10" : "border-white/15 bg-slate-900/40"
-            }`}
-          >
-            <FileSpreadsheet className="h-8 w-8 text-blue-300" aria-hidden="true" />
-            <p className="text-sm font-semibold text-slate-200">
-              {fileName ? `Loaded: ${fileName}` : "Drop a CSV with Query and Page columns"}
-            </p>
-            <div className="flex flex-wrap justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-extrabold text-slate-950 transition hover:bg-blue-50"
-              >
-                <Upload className="h-4 w-4" aria-hidden="true" /> Choose CSV file
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setText(SAMPLE_CSV);
-                  setFileName("sample-data.csv");
-                  setVisible(PAGE_SIZE);
-                }}
-                className="rounded-xl border border-white/15 px-4 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10"
-              >
-                Try sample data
-              </button>
-              {text && (
-                <button
-                  type="button"
-                  onClick={reset}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 px-4 py-2.5 text-xs font-bold text-slate-200 transition hover:bg-white/10"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Clear
-                </button>
-              )}
-            </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".csv,text/csv"
-              className="sr-only"
-              aria-label="Choose a CSV file"
-              onChange={(event) => void loadFile(event.target.files?.[0])}
-            />
-          </div>
+          <ConsoleImportPanel cannibalization sample={SAMPLE_CSV} onChange={value=>{setText(value);setVisible(PAGE_SIZE);}} />
 
           <textarea
             id="kc-csv-paste"
             value={text}
             onChange={(event) => {
               setText(event.target.value);
-              setFileName("");
               setVisible(PAGE_SIZE);
             }}
             rows={5}
@@ -202,13 +119,8 @@ export default function KeywordCannibalizationClient() {
           />
           <p className="mt-2 flex items-start gap-2 text-xs leading-6 text-slate-400">
             <Lock className="mt-1 h-3.5 w-3.5 shrink-0 text-emerald-300" aria-hidden="true" />
-            Your file is analyzed in this browser tab only. Nothing is uploaded, stored, or sent to an AI model.
+            Your file is analyzed in this browser tab only. Your data stays in this browser tab.
           </p>
-          {fileError && (
-            <p role="alert" className="mt-2 text-xs font-semibold text-amber-300">
-              {fileError}
-            </p>
-          )}
         </div>
 
         <div>
@@ -267,12 +179,7 @@ export default function KeywordCannibalizationClient() {
         </div>
       </div>
 
-      {parsed.error && (
-        <p role="alert" className="mt-6 flex items-start gap-2 rounded-xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-200">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          {parsed.error}
-        </p>
-      )}
+      <ReportOverview validRows={parsed.rows.length} text={text} cannibalization />
 
       {hasData && (
         <div className="mt-8" aria-live="polite">

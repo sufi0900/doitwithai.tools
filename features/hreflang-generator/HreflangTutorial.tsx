@@ -101,15 +101,15 @@ export default function HreflangTutorial() {
           })}
         </ol>
 
-        <div className="mt-14 grid gap-8 md:grid-cols-2">
-          <div>
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          <div className="rounded-2xl bg-blue-50/60 p-5 dark:bg-blue-950/20">
             <h3 className="flex items-center gap-2 text-xl font-black text-slate-950 dark:text-white">
               <CheckCircle2 className="h-5 w-5 text-[#4662df] dark:text-blue-300" />
               Hreflang best practices
             </h3>
             <ul className="mt-4 space-y-3">
               {PRACTICES.map((practice) => (
-                <li key={practice.title} className="flex gap-2.5 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                <li key={practice.title} className="flex gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
                   <span>
                     <span className="font-bold text-slate-900 dark:text-white">{practice.title}.</span> {practice.body}
@@ -119,14 +119,14 @@ export default function HreflangTutorial() {
             </ul>
           </div>
 
-          <div>
+          <div className="rounded-2xl bg-amber-50/60 p-5 dark:bg-amber-950/10">
             <h3 className="flex items-center gap-2 text-xl font-black text-slate-950 dark:text-white">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
               Common mistakes to avoid
             </h3>
             <ul className="mt-4 space-y-3">
               {MISTAKES.map((mistake) => (
-                <li key={mistake} className="flex gap-2.5 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                <li key={mistake} className="flex gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                   <AlertTriangle className="mt-1 h-4 w-4 shrink-0 text-amber-500" />
                   <span>{mistake}</span>
                 </li>

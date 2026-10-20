@@ -93,7 +93,7 @@ export default function SitemapXmlEducation() {
         </div>
 
         <div className="mt-14 grid gap-8 md:grid-cols-2">
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">What to include</h3>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
               {INCLUDE.map((item) => (
@@ -101,7 +101,7 @@ export default function SitemapXmlEducation() {
               ))}
             </ul>
           </div>
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">What to leave out</h3>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
               {EXCLUDE.map((item) => (
@@ -112,7 +112,7 @@ export default function SitemapXmlEducation() {
         </div>
 
         <div className="mt-14 grid gap-8 md:grid-cols-2">
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">Limits and sitemap index files</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               A single sitemap can hold up to 50,000 URLs and be up to 50 MB uncompressed. Larger sites
@@ -135,7 +135,7 @@ export default function SitemapXmlEducation() {
               ))}
             </div>
           </div>
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">Building a Next.js site?</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               The App Router can generate your sitemap from code, so it stays in sync as you publish.

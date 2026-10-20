@@ -133,7 +133,7 @@ export default function GscStrikingDistanceEducation() {
         </div>
 
         <div className="mt-14 grid gap-8 md:grid-cols-2">
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">Reading the numbers honestly</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               Search Console reports an <em>average</em> position, so a query listed at 9.4 may have
@@ -148,7 +148,7 @@ export default function GscStrikingDistanceEducation() {
               section or by page to see more of the picture.
             </p>
           </div>
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">Search Console terms at a glance</h3>
             <dl className="mt-3 space-y-3">
               {GLOSSARY.map(([term, definition]) => (

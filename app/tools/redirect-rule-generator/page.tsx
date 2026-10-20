@@ -1,3 +1,4 @@
+import ToolFaq from "@/features/tool-ui/ToolFaq";
 import { ToolHeroBackground, toolHeroSurface, toolHeroHeading } from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
@@ -231,32 +232,7 @@ export default function RedirectRuleGeneratorPage() {
       <RedirectRuleTutorial />
       <RedirectRuleEducation />
 
-      <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-[#5271ff]">
-              Common questions
-            </p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-4xl">
-              Redirect rule generator FAQ
-            </h2>
-          </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            {faqs.map((faq) => (
-              <details
-                key={faq.question}
-                className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 open:bg-white dark:border-slate-800 dark:bg-slate-900 dark:open:bg-slate-900"
-              >
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-sm font-extrabold text-slate-950 dark:text-white">
-                  {faq.question}
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-[#5271ff]" />
-                </summary>
-                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{faq.answer}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
+      <ToolFaq title="Redirect rule generator FAQ" faqs={faqs} />
       <ToolResources slug="redirect-rule-generator" />
     </>
   );

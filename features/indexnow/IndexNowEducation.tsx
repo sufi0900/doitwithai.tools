@@ -86,7 +86,7 @@ export default function IndexNowEducation() {
         </div>
 
         <div className="mt-14 grid gap-8 md:grid-cols-2">
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">Why faster discovery matters</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               When you publish a time-sensitive article, fix an error, or retire a page, the quicker a
@@ -107,7 +107,7 @@ export default function IndexNowEducation() {
               .
             </p>
           </div>
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">Is the IndexNow key a secret?</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               Not in the password sense. The key sits in a public text file so search engines can

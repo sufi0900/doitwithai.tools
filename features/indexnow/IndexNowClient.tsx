@@ -70,6 +70,9 @@ export default function IndexNowClient() {
   const [verifyResult, setVerifyResult] = useState<Feedback | null>(null);
   const [submitResult, setSubmitResult] = useState<Feedback | null>(null);
   const [copied, setCopied] = useState("");
+  const [demo, setDemo] = useState(false);
+  const [published, setPublished] = useState(false);
+  const [verifiedIdentity, setVerifiedIdentity] = useState("");
 
   // Restore the last host and key from this browser only.
   useEffect(() => {
@@ -87,11 +90,11 @@ export default function IndexNowClient() {
 
   useEffect(() => {
     try {
-      if (hostInput || key) window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ host: hostInput, key }));
+      if (!demo && (hostInput || key)) window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ host: hostInput, key }));
     } catch {
       /* ignore */
     }
-  }, [hostInput, key]);
+  }, [hostInput, key, demo]);
 
   const host = useMemo(() => normalizeHost(hostInput), [hostInput]);
   const hostOk = isValidHost(host);
@@ -99,7 +102,7 @@ export default function IndexNowClient() {
   const parsedUrls = useMemo(() => (hostOk ? parseUrlList(urlsText, host) : null), [urlsText, host, hostOk]);
   const validCount = parsedUrls?.valid.length ?? 0;
   const tooMany = validCount > MAX_URLS;
-  const canSubmit = hostOk && keyOk && validCount > 0 && !tooMany && !submitting;
+  const canSubmit = hostOk && keyOk && validCount > 0 && !tooMany && !submitting && (demo || verifiedIdentity === host+"/"+key);
 
   const copy = async (label: string, value: string) => {
     try {
@@ -122,13 +125,15 @@ export default function IndexNowClient() {
   };
 
   const verify = async () => {
+    if(demo){setVerifyResult({tone:"success",title:"Example key file",detail:"Demo only. A real check succeeds after the text file is published at the shown address."});return;}
     setVerifying(true);
     setVerifyResult(null);
     try {
       const data = await callApi({ action: "verify", host, key });
+      if(data.ok === true) setVerifiedIdentity(host+"/"+key);
       setVerifyResult({
-        tone: data.ok === true ? "success" : "error",
-        title: data.ok === true ? "Key file verified" : "Key file problem",
+        tone: data.ok === true ? "success" : data.status === 404 ? "warning" : "error",
+        title: data.ok === true ? "Key file verified" : data.status === 404 ? "File not published yet" : "Check the key file",
         detail: typeof data.message === "string" ? data.message : "Something went wrong.",
       });
     } catch {
@@ -140,6 +145,7 @@ export default function IndexNowClient() {
 
   const submit = async () => {
     if (!parsedUrls) return;
+    if(demo){setSubmitResult({tone:"warning",title:"Example response",detail:"Demo only. No URLs were sent. A 202 response means ownership validation is pending, not that pages are indexed."});return;}
     setSubmitting(true);
     setSubmitResult(null);
     try {
@@ -174,6 +180,7 @@ export default function IndexNowClient() {
       id="indexnow-key-generator"
       className="mx-auto max-w-6xl scroll-mt-24 rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-left backdrop-blur sm:p-8"
     >
+      <div className="mb-6 rounded-2xl border border-blue-300/20 bg-blue-300/5 p-5"><p className="font-bold text-white">Generate → Publish → Verify → Submit</p><p className="mt-2 text-sm leading-7 text-slate-300">Generating a key does not install anything on your website. Download its text file, upload it to your site root, then verify it.</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" className={smallButton} onClick={()=>{setDemo(true);setHostInput("example.com");setKey("example-indexnow-key-12345678");setUrlsText("https://example.com/new-guide");setPublished(true);setVerifyResult(null);setSubmitResult(null);}}>Try example</button>{demo&&<button type="button" className={smallButton} onClick={()=>{setDemo(false);setHostInput("");setKey("");setUrlsText("");setPublished(false);setVerifyResult(null);setSubmitResult(null);}}>Exit example</button>}</div>{demo&&<p role="status" className="mt-3 text-sm font-bold text-amber-200">Example mode. Verification and submission are simulated. No requests are sent.</p>}</div>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Step 1 */}
         <div>
@@ -244,11 +251,12 @@ export default function IndexNowClient() {
                 <button type="button" onClick={() => void copy("key", key)} className={smallButton}>
                   <CopyIcon label="key" /> Copy key
                 </button>
-                <button type="button" onClick={verify} disabled={!hostOk || verifying} className={smallButton}>
+                <button type="button" onClick={verify} disabled={!hostOk || verifying || (!published && !demo)} className={smallButton}>
                   {verifying ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <ShieldCheck className="h-4 w-4" aria-hidden="true" />}
                   Check key file
                 </button>
               </div>
+              <div className="mt-4 rounded-xl border border-blue-300/20 p-4 text-xs leading-6 text-slate-300"><p className="font-bold text-blue-200">Publish the file before checking</p><p>For Next.js, add the downloaded file to your public folder and deploy. On other hosts, upload it to the website root. Open the displayed URL and confirm it shows only your key.</p><label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={published} onChange={e=>setPublished(e.target.checked)} className="mt-1 shrink-0"/>I have published this key file on this host.</label></div>
               {verifyResult && (
                 <p role="status" className={`mt-3 rounded-xl border p-3 text-xs leading-6 ${toneClass[verifyResult.tone]}`}>
                   <span className="font-extrabold">{verifyResult.title}.</span> {verifyResult.detail}
@@ -263,7 +271,7 @@ export default function IndexNowClient() {
 
         {/* Step 2 */}
         <div>
-          <p className={labelClass}>2. Submit new or updated URLs</p>
+          <p className={labelClass}>Submit new or updated URLs</p><p className="mb-3 text-xs leading-6 text-slate-300">Submission unlocks after your current host and key are verified. A 404 means the key file is missing, not that your whole website is broken.</p>
           <label className="mb-1 block text-xs font-semibold text-slate-300" htmlFor="indexnow-urls">
             URLs (one per line, up to {MAX_URLS.toLocaleString()})
           </label>

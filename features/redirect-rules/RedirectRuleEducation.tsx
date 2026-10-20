@@ -77,7 +77,7 @@ export default function RedirectRuleEducation() {
         </div>
 
         <div className="mt-14 grid gap-8 md:grid-cols-2">
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">When to set up a redirect</h3>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
               {WHEN.map((item) => (
@@ -89,7 +89,7 @@ export default function RedirectRuleEducation() {
               than redirecting it to an unrelated page.
             </p>
           </div>
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">Redirect chains and loops</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               A chain happens when A redirects to B, and B redirects to C. Visitors and crawlers must

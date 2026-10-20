@@ -70,8 +70,8 @@ function detectDelimiter(line: string): string {
 }
 
 export function parseCsvText(text: string): { rows: string[][]; delimiter: string } {
-  const clean = text.replace(/^\uFEFF/, "");
-  const firstLine = clean.split(/\r?\n/, 1)[0] ?? "";
+  const clean = text.replace(/^\uFEFF/, "").replace(/^sep=.[\r\n]+/i, "");
+  const firstLine = clean.split(/\r?\n/).find(line => /impressions|average position/i.test(line)) ?? clean.split(/\r?\n/, 1)[0] ?? "";
   const delimiter = detectDelimiter(firstLine);
 
   const rows: string[][] = [];
@@ -127,7 +127,7 @@ function toNumber(raw: string | undefined, decimalComma: boolean): number {
 
 function findColumn(headers: string[], key: keyof typeof HEADER_ALIASES): number {
   const aliases = HEADER_ALIASES[key];
-  return headers.findIndex((header) => aliases.includes(header));
+  return headers.findIndex((header) => aliases.some(alias => header === alias || header.endsWith(" " + alias)));
 }
 
 export function parseGscCsv(text: string): ParseResult {
@@ -139,7 +139,9 @@ export function parseGscCsv(text: string): ParseResult {
     return { ...empty, error: "The file needs a header row and at least one data row." };
   }
 
-  const headers = table[0].map((header) => header.trim().toLowerCase());
+  const headerIndex = table.findIndex(row => row.some(cell => /(^| )(impressions|impr\.?|clicks)$/i.test(cell.trim())));
+  if (headerIndex > 0) table.splice(0, headerIndex);
+  const headers = table[0].map((header) => header.trim().toLowerCase().replace(/[_\s]+/g, " "));
   const queryCol = findColumn(headers, "query");
   const pageCol = findColumn(headers, "page");
   const clicksCol = findColumn(headers, "clicks");

@@ -85,7 +85,7 @@ export default function KeywordCannibalizationEducation() {
         </div>
 
         <div className="mt-14 grid gap-8 md:grid-cols-2">
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">How to prevent it from the start</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               Plan topics before you write. Group related keywords with the{" "}
@@ -110,7 +110,7 @@ export default function KeywordCannibalizationEducation() {
               helps you state the page&apos;s single main purpose up front.
             </p>
           </div>
-          <div>
+          <div className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-xl font-black text-slate-950 dark:text-white">Reading the results honestly</h3>
             <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
               Search Console reports average positions and combines many searches, devices, and
