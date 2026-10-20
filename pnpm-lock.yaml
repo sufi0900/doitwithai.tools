@@ -59,6 +59,9 @@ importers:
       '@tanstack/react-query-persist-client':
         specifier: ^5.81.2
         version: 5.101.4(@tanstack/react-query@5.101.4(react@18.3.1))(react@18.3.1)
+      '@tiptap/pm':
+        specifier: 2.27.2
+        version: 2.27.2
       '@tiptap/react':
         specifier: ^2.10.4
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

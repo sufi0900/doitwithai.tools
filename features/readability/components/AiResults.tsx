@@ -5,7 +5,7 @@ import FlowReview from "../FlowReview";
 import { preservationChecks } from "../analyzer";
 import { analyzeDocument } from "../engine";
 import type { Revisions } from "../hooks/useRevisions";
-import { button, card, field } from "./styles";
+import { button, card, field, primary } from "./styles";
 
 type Props = {
   rev: Revisions;
@@ -26,6 +26,10 @@ export default function AiResults({ rev, onCopy, onReplace }: Props) {
   );
 
   if (!result) return null;
+  const apply = () => {
+    const problem = onReplace(source, revision);
+    rev.setStatus(problem || "Revision applied. Use Undo change to restore your previous article.");
+  };
 
   return (
     <section
@@ -50,6 +54,13 @@ export default function AiResults({ rev, onCopy, onReplace }: Props) {
         ))}
       </div>
 
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-blue-200 bg-white p-3 shadow-sm dark:border-blue-800 dark:bg-slate-900">
+        <p className="text-sm font-bold">Selected: {result.candidates[selected].approach}</p>
+        <button type="button" className={primary} disabled={rev.busy || !revision.trim()} onClick={apply}>
+          Apply selected revision
+        </button>
+      </div>
+      <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">Choose a version, review its wording, then apply it to the original passage. Formatting around the passage stays in place.</p>
       <div className={`${card} mt-5`}>
         <h2 className="text-2xl font-black">Compare meaning, then refine the wording</h2>
         <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
@@ -180,15 +191,9 @@ export default function AiResults({ rev, onCopy, onReplace }: Props) {
             className={button}
             data-readability-replace
             disabled={rev.busy || !revision.trim()}
-            onClick={() => {
-              const problem = onReplace(source, revision);
-              rev.setStatus(
-                problem ||
-                  "Passage replaced in the editor. Use Undo in the editor toolbar to restore it.",
-              );
-            }}
+            onClick={apply}
           >
-            Replace the passage in the editor
+            Apply selected revision
           </button>
           <button
             className={button}

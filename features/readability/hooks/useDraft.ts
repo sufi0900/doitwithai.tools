@@ -1,10 +1,12 @@
 "use client";
+import type { RichDocument } from "../engine/document";
 import { useEffect, useRef, useState } from "react";
 
 const KEY = "dwai:readability-editor:v2";
 
 export type StoredDraft = {
   text: string;
+  document?: RichDocument;
   mode?: "write" | "edit" | "improve";
   target?: string;
 };
@@ -12,7 +14,7 @@ export type StoredDraft = {
 function read(): StoredDraft | null {
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (!raw) return null;
+    if (!raw || raw.length > 1_000_000) return null;
     const parsed = JSON.parse(raw);
     return typeof parsed?.text === "string" ? parsed : null;
   } catch {
@@ -62,7 +64,7 @@ export function useDraft(
       }
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [ready, value.text, value.mode, value.target]);
+  }, [ready, value.text, value.mode, value.target, value.document]);
 
   return { ready, saved };
 }

@@ -1,3 +1,4 @@
+import type { DocumentBlock } from "./document";
 import {
   beForms,
   irregularParticiples,
@@ -71,17 +72,24 @@ export function classifySentence(wordCount: number, level: number, targetGrade =
   return null;
 }
 
-export function scoreSentences(text: string, targetGrade = 9): SentenceInfo[] {
+export function scoreSentences(text: string, targetGrade = 9, blocks?: DocumentBlock[]): SentenceInfo[] {
   const code = codeRanges(text);
   const result: SentenceInfo[] = [];
-  for (const part of sentenceParts(text)) {
-    if (inRanges(part.start, code)) continue;
-    const tokens = words(part.text);
+  // A soft line break inside one rich block is not a new list item or paragraph.
+  const characters = blocks ? text.split("") : null;
+  if (characters) for (const block of blocks!) {
+    for (let i = block.start; i < block.end; i++) if (characters[i] === "\n") characters[i] = " ";
+  }
+  for (const part of sentenceParts(characters ? characters.join("") : text)) {
+    const block = blocks?.find((b) => part.start >= b.start && part.start < b.end);
+    if (inRanges(part.start, code) || block?.type === "codeBlock") continue;
+    const original = text.slice(part.start, part.end);
+    const tokens = words(original);
     if (!tokens.length) continue;
     const letters = tokens.reduce((n, w) => n + letterCount(w), 0);
     const level = ariGrade(letters, tokens.length, 1);
-    const heading = isHeadingLine(text, part.start);
-    const trimmed = part.text.replace(/\s+$/, "");
+    const heading = block?.type === "heading" || isHeadingLine(text, part.start);
+    const trimmed = original.replace(/\s+$/, "");
     result.push({
       index: result.length,
       start: part.start,

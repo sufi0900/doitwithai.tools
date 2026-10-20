@@ -126,6 +126,7 @@ export default function InsightsPanel({
         </dl>
       </section>
 
+      <p className="rounded-xl bg-slate-50 p-3 text-xs leading-6 dark:bg-slate-950">{a.paragraphs} paragraphs · {a.listItems} list items · {a.headings} headings · {a.quotes} quotes</p>
       <section aria-label="Issues found" className="space-y-2">
         {has && !rows.length && (
           <p className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm font-bold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
@@ -188,6 +189,9 @@ export default function InsightsPanel({
           {[
             ["Sentences", a.sentenceCount],
             ["Paragraphs", a.paragraphs],
+            ["List items", a.listItems],
+            ["Headings", a.headings],
+            ["Quotes", a.quotes],
             ["Words per sentence", a.averageSentenceWords],
             ["Longest sentence", `${a.longestSentenceWords} words`],
             ["Speaking time", formatDuration(a.speakingSeconds)],
@@ -201,6 +205,7 @@ export default function InsightsPanel({
             </div>
           ))}
         </dl>
+        <p className="mt-3 text-[11px] leading-5 text-slate-500 dark:text-slate-400">List fragments count as separate reading units. Headings and code blocks are excluded from the article grade.</p>
         <p className="mt-3 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
           Syllable-based scores use an approximate English counter. Treat them as estimates.
         </p>

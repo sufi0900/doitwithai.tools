@@ -100,3 +100,16 @@ Real Gemini output quality is not covered by tests. Check it on a preview deploy
 - Right-clicking a highlight opens keyboard-accessible actions. Native dialogs keep revision comparisons beside the editing workflow without scrolling to the page bottom.
 - Replacement uses the original range when unchanged. A fallback match must be unique, preventing edits to an arbitrary repeated passage.
 - Regression coverage checks audience-dependent flags, invariant measured grade, safe entity output, heading structure, and structured-data parsing.
+
+
+## Structured article editing
+
+The editor now uses the existing Tiptap 2 installation and ProseMirror decorations. It retains supported headings, paragraphs, lists, blockquotes, inline emphasis, and safe links. Paste removes scripts, tracking images, embedded media, and form controls. Unsupported layout structures are not reproduced.
+
+A separate text projection inserts boundaries between text blocks. Position mapping keeps highlights and sentence replacements aligned through nested lists and inline marks. List items without terminal punctuation remain separate reading units. Rich-text headings and code blocks are excluded from grade calculations.
+
+Draft autosave includes the rich document JSON while retaining compatibility with older plain-text drafts. HTML download and formatted clipboard copy preserve supported formatting.
+
+AI requests include selected block types. The prompt preserves block count and list boundaries. Applying a revision keeps existing block containers. A cross-block revision with a different block count is rejected with instructions to edit smaller passages. Edited spans retain common inline marks; surrounding markup is unchanged.
+
+The comparison header exposes Apply with the selected approach. Expand editor hides the sidebar for more writing space. Native formatting undo and programmatic revision undo remain available.

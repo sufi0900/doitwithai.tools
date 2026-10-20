@@ -28,12 +28,13 @@ export function useRevisions() {
   const [generation, setGeneration] = useState(0);
 
   const generate = useCallback(
-    async (passage: string, passageRange: Range, reader?: string) => {
+    async (passage: string, passageRange: Range, reader?: string, blockTypes?: Array<"paragraph" | "heading" | "listItem" | "quote" | "codeBlock">) => {
       if (busy) return false;
       setError("");
       setStatus("");
       const input = readabilityInputSchema.safeParse({
         text: passage,
+        blockTypes,
         audience: [reader, audience].filter(Boolean).join(". ").slice(0, 250),
         terms,
         tone,

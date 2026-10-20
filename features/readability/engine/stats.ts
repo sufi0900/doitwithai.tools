@@ -1,3 +1,4 @@
+import type { DocumentBlock } from "./document";
 import {
   annotate,
   ariGrade,
@@ -34,6 +35,9 @@ export type DocumentAnalysis = {
   charactersNoSpaces: number;
   sentenceCount: number;
   paragraphs: number;
+  listItems: number;
+  headings: number;
+  quotes: number;
   grade: number;
   fleschEase: number | null;
   fleschKincaid: number | null;
@@ -63,11 +67,11 @@ export function formatDuration(seconds: number) {
 
 export function analyzeDocument(
   text: string,
-  options: { longThreshold?: number; targetGrade?: number } = {},
+  options: { longThreshold?: number; targetGrade?: number; blocks?: DocumentBlock[] } = {},
 ): DocumentAnalysis {
   const longThreshold = options.longThreshold ?? 25;
-  const sentences = scoreSentences(text, options.targetGrade ?? 9);
-  const annotations = annotate(text, sentences);
+  const sentences = scoreSentences(text, options.targetGrade ?? 9, options.blocks);
+  const annotations = annotate(text, sentences).filter((a) => !options.blocks?.some((b) => ["heading", "codeBlock"].includes(b.type) && a.start >= b.start && a.start < b.end));
 
   const counts = Object.fromEntries(issueTypes.map((t) => [t, 0])) as Record<
     IssueType,
@@ -82,14 +86,15 @@ export function analyzeDocument(
         text,
       )
     : text;
-  const tokens = words(prose);
-  const letters = sentences.reduce((n, s) => n + s.letters, 0);
-  const wordCount = sentences.reduce((n, s) => n + s.words, 0);
-  const sentenceCount = sentences.length;
+  const measured = options.blocks ? sentences.filter((s) => !s.heading) : sentences;
+  const tokens = words(measured.map((s) => s.text).join(" "));
+  const letters = measured.reduce((n, s) => n + s.letters, 0);
+  const wordCount = measured.reduce((n, s) => n + s.words, 0);
+  const sentenceCount = measured.length;
   const syllables = tokens.reduce((n, w) => n + countSyllables(w), 0);
   const perSentence = sentenceCount ? wordCount / sentenceCount : 0;
   const perWord = wordCount ? syllables / wordCount : 0;
-  const lengths = sentences.map((s) => s.words);
+  const lengths = measured.map((s) => s.words);
 
   return {
     sentences,
@@ -99,7 +104,10 @@ export function analyzeDocument(
     characters: text.length,
     charactersNoSpaces: text.replace(/\s/g, "").length,
     sentenceCount,
-    paragraphs: prose.split(/\n\s*\n/).filter((p) => p.trim()).length,
+    paragraphs: options.blocks ? options.blocks.filter((b) => ["paragraph", "quote"].includes(b.type) && b.end > b.start).length : prose.split(/\n\s*\n/).filter((p) => p.trim()).length,
+    listItems: new Set(options.blocks?.filter((b) => b.listItem !== undefined).map((b) => b.listItem)).size,
+    headings: options.blocks?.filter((b) => b.type === "heading").length ?? 0,
+    quotes: new Set(options.blocks?.filter((b) => b.quote !== undefined).map((b) => b.quote)).size,
     grade: ariGrade(letters, wordCount, sentenceCount),
     fleschEase: sentenceCount
       ? Math.round((206.835 - 1.015 * perSentence - 84.6 * perWord) * 10) / 10

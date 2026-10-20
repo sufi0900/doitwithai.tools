@@ -19,6 +19,10 @@ import {
 } from "lucide-react";
 import {
   analyzeDocument,
+  changedRange,
+  plainDocument,
+  projectDocument,
+  type RichDocument,
   applyFix,
   formatDuration,
   issueTypes,
@@ -33,6 +37,7 @@ import InsightsPanel from "./components/InsightsPanel";
 import IssueCard from "./components/IssueCard";
 import {
   button,
+  primary,
   card,
   exampleText,
   issueStyles,
@@ -57,12 +62,15 @@ const allVisible = Object.fromEntries(issueTypes.map((t) => [t, true])) as Recor
 >;
 
 export default function ReadabilityClient() {
-  const [text, setText] = useState("");
+  const [document, setDocument] = useState<RichDocument>(() => plainDocument(""));
+  const projection = useMemo(() => projectDocument(document), [document]);
+  const text = projection.text;
+  const [expanded, setExpanded] = useState(false);
   const [mode, setMode] = useState<Mode>("edit");
   const [target, setTarget] = useState(targetPresets[0].grade);
   const [visible, setVisible] = useState(allVisible);
   const [longThreshold, setLongThreshold] = useState(25);
-  const [history, setHistory] = useState<string[]>([]);
+  const [history, setHistory] = useState<RichDocument[]>([]);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [status, setStatus] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -78,10 +86,10 @@ export default function ReadabilityClient() {
   useEffect(() => {
     const dialog = reviewDialog.current;
     if (reviewOpen && dialog && !dialog.open) {
-      returnFocus.current = editor.current?.textarea ?? document.activeElement as HTMLElement | null;
+      returnFocus.current = editor.current?.element ?? window.document.activeElement as HTMLElement | null;
       dialog.showModal();
     }
-    if (!reviewOpen && dialog?.open) dialog.close();
+    if (!reviewOpen && dialog?.open) { dialog.close(); returnFocus.current?.focus({ preventScroll: true }); }
   }, [reviewOpen]);
   function closeReview() {
     setReviewOpen(false);
@@ -95,17 +103,18 @@ export default function ReadabilityClient() {
   const jumpIndex = useRef<Partial<Record<IssueType, number>>>({});
   const rev = useRevisions();
 
-  const { saved } = useDraft({ text, mode, target: String(target) }, (draft) => {
-    setText(draft.text.slice(0, MAX_LOCAL_CHARS));
+  const { saved } = useDraft({ text, document, mode, target: String(target) }, (draft) => {
+    setDocument(draft.document?.type === "doc" && projectDocument(draft.document).text.length <= MAX_LOCAL_CHARS ? draft.document : plainDocument(draft.text.slice(0, MAX_LOCAL_CHARS)));
     if (draft.mode) setMode(draft.mode);
     const grade = Number(draft.target);
     if (targetPresets.some((p) => p.grade === grade)) setTarget(grade);
   });
 
-  const deferredText = useDeferredValue(text);
+  const deferredProjection = useDeferredValue(projection);
+  const deferredText = deferredProjection.text;
   const analysis = useMemo(
-    () => analyzeDocument(deferredText, { longThreshold, targetGrade: target }),
-    [deferredText, longThreshold, target],
+    () => analyzeDocument(deferredText, { longThreshold, targetGrade: target, blocks: deferredProjection.blocks }),
+    [deferredText, deferredProjection.blocks, longThreshold, target],
   );
   const inSync = deferredText === text;
   const highlights = mode !== "write";
@@ -143,21 +152,19 @@ export default function ReadabilityClient() {
   // Restore the caret or selection after a programmatic change.
   useLayoutEffect(() => {
     const pending = pendingSelection.current;
-    const el = editor.current?.textarea;
-    if (!pending || !el) return;
+    if (!pending || !editor.current) return;
     pendingSelection.current = null;
-    el.focus({ preventScroll: true });
-    el.setSelectionRange(pending[0], pending[1]);
+    editor.current.select(pending[0], pending[1]);
     setSelection({ start: pending[0], end: pending[1] });
-  }, [text]);
+  }, [document]);
 
   const commit = useCallback(
     (next: string, selectionAfter?: [number, number]) => {
-      setHistory((h) => [...h.slice(-49), text]);
+      setHistory((h) => [...h.slice(-29), document]);
       pendingSelection.current = selectionAfter ?? null;
-      setText(next);
+      setDocument(plainDocument(next));
     },
-    [text],
+    [document],
   );
 
   const onSelection = useCallback((start: number, end: number) => {
@@ -166,14 +173,17 @@ export default function ReadabilityClient() {
     );
   }, []);
 
-  function onType(value: string) {
-    setText(value);
+  function onType(value: RichDocument) {
+    setDocument(value);
   }
 
   function fix(issue: Annotation) {
     const result = applyFix(text, issue);
     if (!result) return;
-    commit(result.text, [result.caret, result.caret]);
+    const edit = changedRange(text, result.text);
+    const problem = editor.current?.replace(edit.start, edit.end, edit.replacement);
+    if (problem) { setStatus(problem); return; }
+    setHistory((h) => [...h.slice(-29), document]);
     setStatus("Fix applied. Use Undo to restore the previous text.");
   }
 
@@ -184,10 +194,8 @@ export default function ReadabilityClient() {
     const index = after < list.length ? after : 0;
     jumpIndex.current[type] = index;
     const a = list[index];
-    const el = editor.current?.textarea;
-    if (!el) return;
-    el.focus({ preventScroll: true });
-    el.setSelectionRange(a.start, a.start);
+    if (!editor.current) return;
+    editor.current.select(a.start, a.start);
     setSelection({ start: a.start, end: a.start });
     editor.current?.reveal(a.start);
   }
@@ -196,7 +204,7 @@ export default function ReadabilityClient() {
     setHistory((h) => {
       if (!h.length) return h;
       pendingSelection.current = null;
-      setText(h[h.length - 1]);
+      setDocument(h[h.length - 1]);
       setStatus("Previous text restored.");
       return h.slice(0, -1);
     });
@@ -213,7 +221,7 @@ export default function ReadabilityClient() {
 
   function download() {
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
-    const a = document.createElement("a");
+    const a = window.document.createElement("a");
     a.href = url;
     a.download = "draft.txt";
     a.click();
@@ -238,15 +246,15 @@ export default function ReadabilityClient() {
 
   async function runAi(range = aiTarget) {
     const passage = text.slice(range.start, range.end);
+    const blocks = projection.blocks.filter((b) => b.end > range.start && b.start < range.end).map((b) => b.type);
     setReviewOpen(true);
     await rev.generate(passage, { start: range.start, end: range.end },
-      `Write for ${targetPresets.find((p) => p.grade === target)?.label ?? "general readers"}`);
+      `Write for ${targetPresets.find((p) => p.grade === target)?.label ?? "general readers"}`, blocks.length <= 300 ? blocks : undefined);
   }
 
   function rewriteSentence(start: number, end: number) {
     setMode("improve");
-    const el = editor.current?.textarea;
-    el?.setSelectionRange(start, end);
+    editor.current?.select(start, end);
     setSelection({ start, end });
     void runAi({
       start,
@@ -269,22 +277,24 @@ export default function ReadabilityClient() {
     const next = text.slice(0, index) + replacement + text.slice(index + snapshot.length);
     if (next.length > MAX_LOCAL_CHARS)
       return `The result would pass the ${MAX_LOCAL_CHARS.toLocaleString()} character limit. Copy the revision instead.`;
-    commit(next, [index, index + replacement.length]);
+    const problem = editor.current?.replace(index, index + snapshot.length, replacement);
+    if (problem) return problem;
+    setHistory((h) => [...h.slice(-29), document]);
     rev.setRange({ start: index, end: index + replacement.length });
     setReviewOpen(false);
     setStatus("Passage replaced. Your editing position is preserved. Use Undo to restore it.");
     return null;
   }
 
-  const showSidebar = mode !== "write";
+  const showSidebar = mode !== "write" && !expanded;
 
   return (
-    <div className="text-slate-900 dark:text-white">
+    <div className="min-w-0 text-slate-900 dark:text-white">
       <section className={card} aria-labelledby="readability-input-title">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 id="readability-input-title" className="text-2xl font-black">
-              Your text, under a clearer lens
+              Your article, with room to edit
             </h2>
             <p className="mt-1 text-xs leading-6 text-slate-500 dark:text-slate-400">
               Highlights update as you type. Choose a target reader to tailor the editing cues.
@@ -334,7 +344,7 @@ export default function ReadabilityClient() {
           </button>
           <button type="button" className={button} disabled={!text} onClick={download}>
             <Download aria-hidden className="h-4 w-4" />
-            Download
+            Download text
           </button>
           <button
             type="button"
@@ -347,25 +357,33 @@ export default function ReadabilityClient() {
           >
             Clear text
           </button>
+          <button type="button" className={button} disabled={!text} onClick={async () => {
+            try {
+              if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") throw Error("Clipboard format unavailable");
+              await navigator.clipboard.write([new ClipboardItem({
+                "text/html": new Blob([editor.current?.html() ?? ""], { type: "text/html" }),
+                "text/plain": new Blob([text], { type: "text/plain" }),
+              })]);
+              setStatus("Formatted article copied.");
+            } catch { setStatus("Formatted copying is unavailable. Use Download formatted article instead."); }
+          }}>Copy formatted article</button>
+          <button type="button" className={button} aria-pressed={expanded} onClick={() => setExpanded((v) => !v)}>
+            {expanded ? "Show insights" : "Expand editor"}
+          </button>
+          <button type="button" className={button} disabled={!text} onClick={() => {
+            const html = editor.current?.html() ?? "";
+            const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+            const a = window.document.createElement("a"); a.href = url; a.download = "readability-draft.html"; a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          }}>Download formatted article</button>
           <button type="button" className={button} disabled={!history.length} onClick={undo}>
             <Undo2 aria-hidden className="h-4 w-4" />
             Undo change
           </button>
         </div>
 
-        <div className={`mt-6 grid items-start gap-6 ${showSidebar ? "lg:grid-cols-[minmax(0,1fr)_340px]" : ""}`}>
+        <div className={`mt-6 grid items-start gap-6 ${showSidebar ? "xl:grid-cols-[minmax(0,1fr)_300px]" : ""}`}>
           <div className="min-w-0">
-            {highlights && (
-              <div className="mb-4 max-h-56 overflow-y-auto">
-                <IssueCard
-                  issues={caretIssues}
-                  text={text}
-                  sentences={analysis.sentences}
-                  onFix={fix}
-                  onRewrite={rewriteSentence}
-                />
-              </div>
-            )}
             {mode === "edit" && hasSelection && aiTarget.valid && (
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#5271ff]/30 bg-[#5271ff]/[0.06] px-4 py-3 text-xs">
                 <span className="font-bold">
@@ -377,15 +395,26 @@ export default function ReadabilityClient() {
                 </button>
               </div>
             )}
+            {highlights && caretIssues.some((a) => a.type === "hard" || a.type === "veryHard") && (
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:bg-amber-950 dark:text-amber-100">
+                <span>Review this sentence for your target reader.</span>
+                <button type="button" className={button} disabled={rev.busy} onClick={() => {
+                  const issue = caretIssues.find((a) => a.type === "hard" || a.type === "veryHard")!;
+                  const sentence = analysis.sentences[issue.sentenceIndex];
+                  if (sentence) rewriteSentence(sentence.start, sentence.end);
+                }}>Rewrite with AI</button>
+              </div>
+            )}
             <HighlightEditor
               ref={editor}
-              text={text}
+              document={document}
+              expanded={expanded}
+              onNotice={setStatus}
               analysedText={deferredText}
               annotations={shown}
               activeId={activeId}
               showHighlights={highlights}
               maxLength={MAX_LOCAL_CHARS}
-              placeholder="Paste a section, introduction, email, or article. English prose works best."
               onChange={onType}
               onSelection={onSelection}
               onContextIssue={(x, y, issue) => {
@@ -422,13 +451,14 @@ export default function ReadabilityClient() {
               {status}
             </p>
             <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-              Avoid confidential information. Your draft is saved only in this
-              browser, and AI revisions send just the passage you choose.
+              Paste formatted articles or write here. Each list item is reviewed separately. Images and embedded media are omitted.
             </p>
           </div>
 
           {showSidebar && (
-            <aside className="min-w-0 lg:sticky lg:top-44 lg:max-h-[calc(100dvh-12rem)] lg:overflow-y-auto" aria-label={mode === "edit" ? "Readability insights" : "AI revisions"}>
+            <aside className="min-w-0 xl:sticky xl:top-44 xl:max-h-[calc(100dvh-12rem)] xl:overflow-y-auto" aria-label={mode === "edit" ? "Readability insights" : "AI revisions"}>
+              {mode === "improve" && <p className="mb-4 rounded-xl bg-blue-50 p-3 text-sm font-bold dark:bg-blue-950">Grade {analysis.grade} · {analysis.counts.hard + analysis.counts.veryHard} hard sentences · {analysis.listItems} list items</p>}
+              {highlights && <div className="mb-4"><IssueCard issues={caretIssues} text={text} sentences={analysis.sentences} onFix={fix} onRewrite={rewriteSentence} /></div>}
               {mode === "edit" ? (
                 <InsightsPanel
                   analysis={analysis}
@@ -470,7 +500,13 @@ export default function ReadabilityClient() {
         className="fixed inset-0 m-auto max-h-[90dvh] w-[min(1100px,96vw)] max-w-none overflow-y-auto rounded-2xl bg-white p-4 text-slate-900 shadow-2xl backdrop:bg-slate-950/60 dark:bg-slate-900 dark:text-white sm:p-6">
         <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 bg-white pb-3 dark:bg-slate-900">
           <h2 id="revision-dialog-title" className="text-xl font-black">Compare passage revisions</h2>
-          <button type="button" className={button} onClick={closeReview}>Back to editor</button>
+          <div className="flex flex-wrap gap-2">
+            {rev.result && !rev.busy && <button type="button" className={primary} data-readability-apply disabled={!rev.edits[rev.selected]?.trim()} onClick={() => {
+              const problem = replacePassage(rev.source, rev.edits[rev.selected]);
+              rev.setStatus(problem || "Revision applied. Use Undo change to restore your previous article.");
+            }}>Apply {rev.result.candidates[rev.selected].approach}</button>}
+            <button type="button" className={button} onClick={closeReview}>Back to editor</button>
+          </div>
         </div>
         <p role="status" className="mt-3 text-sm">{rev.busy ? "Preparing three revisions. Your editing position is saved." : rev.status}</p>
         {rev.error && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300">{rev.error}</p>}

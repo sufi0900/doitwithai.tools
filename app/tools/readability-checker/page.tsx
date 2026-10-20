@@ -38,11 +38,11 @@ export const metadata: Metadata = {
 const colorGuide: Array<[IssueType, string]> = [
   [
     "veryHard",
-    "A long, dense sentence. It has at least 14 words and an estimated level of 14 or higher. Split it at a change of idea.",
+    "A long, dense sentence. It has at least 14 words and an estimated level five grades above your reader target. Consider splitting its ideas.",
   ],
   [
     "hard",
-    "A heavy sentence. It has at least 14 words and an estimated level from 10 to 13. Cut words or shorten it.",
+    "A sentence with at least 14 words and an estimated level above your reader target. Review its wording and structure.",
   ],
   [
     "passive",
@@ -64,9 +64,9 @@ const colorGuide: Array<[IssueType, string]> = [
 
 const faqs = [
   {
-    question: "Does this readability checker need AI?",
+    question: "Can I paste a formatted article?",
     answer:
-      "No. Highlights, the grade estimate, stats, and one-click fixes run in your browser. AI is optional and only runs when you ask for revisions of a passage.",
+      "Yes. Paste headings, paragraphs, lists, quotations, bold text, italic text, and links. Supported formatting stays visible while you edit. Images and embedded media are omitted.",
   },
   {
     question: "How is the grade calculated?",
@@ -81,7 +81,7 @@ const faqs = [
   {
     question: "Why are some sentences red and others amber?",
     answer:
-      "Sentences under 14 words are never flagged. Longer ones are amber at an estimated level of 10 to 13 and red at 14 or higher.",
+      "Sentences under 14 words are not flagged. Longer sentences are amber above your target grade and red five grades above it. Changing the reader target adjusts these cues.",
   },
   {
     question: "Should I remove every highlight?",
@@ -446,6 +446,20 @@ export default function Page() {
               </article>
             ))}
           </div>
+        </section>
+
+        <section aria-labelledby="rich-reading-title">
+          <h2 id="rich-reading-title" className="text-3xl font-black">Review the article as readers see it</h2>
+          <p className="mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300">Paste your article with its headings, lists, quotes, bold text, and links. The editor keeps these supported formats while you review readability.</p>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {[
+              ["Lists stay separate", "Four short list items remain four reading units. Missing punctuation does not combine them into one long sentence."],
+              ["Paragraphs keep their place", "Paragraph breaks and quotations remain visible. Headings and code blocks are excluded from the article grade."],
+              ["Revisions need your approval", "Choose Light edit, Plain language, or Easy to scan. Click Apply selected revision to replace the original passage. Undo restores its previous content."],
+            ].map(([title, body]) => <article key={title} className="rounded-2xl border border-slate-200 p-6 dark:border-slate-700"><h3 className="font-bold">{title}</h3><p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{body}</p></article>)}
+          </div>
+          <p className="mt-5 text-sm leading-7 text-slate-600 dark:text-slate-300">Use Expand editor for more writing space. Download the formatted article to keep supported formatting. Images, embeds, and complex page layouts are omitted.</p>
+          <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">For precise editing, rewrite one paragraph or list item at a time. Revisions that change several block boundaries require separate edits before applying.</p>
         </section>
 
         <section aria-labelledby="reader-workflow-title">
