@@ -12,8 +12,8 @@ import {
 const STEPS = [
   {
     icon: ClipboardPaste,
-    title: "Copy your page's HTML or Markdown",
-    body: "For a live page, right-click and choose Inspect, then copy the outer HTML of the <html> or <main> element. This captures headings added by JavaScript that \"View source\" can miss. Writing in Markdown? Paste it as is.",
+    title: "Enter your website or article URL",
+    body: "Enter a public page address and select Analyze headings. For unpublished drafts, use Paste content with HTML or Markdown.",
   },
   {
     icon: SlidersHorizontal,
@@ -38,7 +38,7 @@ const STEPS = [
   {
     icon: RefreshCw,
     title: "Export and re-check after editing",
-    body: "Copy the outline as Markdown or download the CSV report to share with a writer or developer. After you make changes, paste the updated page and confirm the issues are gone.",
+    body: "Copy the outline as Markdown or download the CSV report to share with a writer or developer. After editing, check the page again. URL reports may reuse results for up to five minutes.",
   },
 ];
 
@@ -83,7 +83,7 @@ export default function HeadingAnalyzerTutorial() {
             How to check your heading structure with this tool
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-            Six steps from pasting a page to a clean, well-ordered heading outline.
+            Six steps from entering a URL to reviewing a clear heading outline.
           </p>
         </div>
 

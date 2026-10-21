@@ -18,7 +18,7 @@ const pageUrl = "https://doitwithai.tools/tools/heading-structure-analyzer";
 export const metadata: Metadata = {
   title: "Free Heading Structure Analyzer: Check H1–H6 Hierarchy",
   description:
-    "Paste a page's HTML or Markdown to see its heading outline and catch missing H1s, skipped levels, empty, duplicate, and hidden headings. Review your page outline before publishing.",
+    "Check a webpage URL for H1 to H6 hierarchy, skipped levels, duplicate headings, and target phrase placement. Explore a visual outline with practical fixes.",
   keywords: [
     "heading structure checker",
     "h1 h2 h3 checker",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Free Heading Structure Analyzer: Check H1–H6 Hierarchy",
-    description: "Audit heading hierarchy from pasted HTML or Markdown.",
+    description: "Check heading hierarchy from a live URL, HTML, or Markdown.",
     images: ["https://doitwithai.tools/ogimage.png"],
   },
   robots: {
@@ -77,12 +77,12 @@ const faqs = [
   {
     question: "Can I check a live URL?",
     answer:
-      "This tool analyzes HTML or Markdown that you paste or load. To check a live page, open it, right-click, choose Inspect, and copy the outer HTML of the <html> or <main> element. That also captures headings added by JavaScript.",
+      "Yes. Enter a public webpage URL to check headings in its returned HTML. If headings appear only after JavaScript runs, open Inspect in your browser. Copy the outer HTML of the main element into Paste content to check those headings too.",
   },
   {
     question: "Is my content uploaded anywhere?",
     answer:
-      "No. Parsing and analysis happen in your browser, pasted scripts are never executed.",
+      "URL checks send the entered address to our server to retrieve the public page. Pasted HTML and Markdown are analyzed in your browser. Pasted scripts are never executed.",
   },
   {
     question: "Why does the tool skip some headings?",
@@ -92,7 +92,7 @@ const faqs = [
   {
     question: "Does the tool score my headings for SEO?",
     answer:
-      "No. It checks structure and flags common problems. It can't judge whether your headings match what searchers want, so use it alongside your own review of the content.",
+      "The dashboard includes a transparent structure score based on six checks. It is not a Google score or ranking prediction. Keyword placement is separate, and the tool cannot judge search intent or topic completeness.",
   },
 ];
 
@@ -111,10 +111,10 @@ const structuredData = {
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       description: metadata.description,
       featureList: [
-        "Extract headings from pasted HTML or Markdown",
+        "Extract headings from a public URL, pasted HTML, or Markdown",
         "Detect missing, multiple, and empty H1 and other headings",
         "Flag skipped levels, repeated text, hidden, and generic headings",
-        "Optional target-phrase check across headings",
+        "Target phrase placement by heading level and a transparent structure score",
         "Copy the outline as Markdown or download a CSV report",
       ],
       creator: {
@@ -143,7 +143,7 @@ const structuredData = {
       "@type": "HowTo",
       name: "How to check your heading structure",
       step: [
-        { "@type": "HowToStep", name: "Copy your page's HTML or Markdown", text: "Copy the outer HTML of the page or main element, or paste your Markdown." },
+        { "@type": "HowToStep", name: "Enter your webpage URL", text: "Enter a public webpage URL, or use Paste content for HTML or Markdown." },
         { "@type": "HowToStep", name: "Choose what to analyze", text: "Analyze main content only, or audit the whole page." },
         { "@type": "HowToStep", name: "Read the outline", text: "Review every heading in order with its level and count." },
         { "@type": "HowToStep", name: "Add a target phrase", text: "Optionally check where your main phrase appears in the headings." },
@@ -192,13 +192,13 @@ export default function HeadingStructureAnalyzerPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Paste a page&apos;s HTML or Markdown and see its heading outline at a glance. The tool
-              flags missing H1s, skipped levels, and empty, repeated, or hidden headings, with the
-              exact headings affected.
+              Enter a website or article URL to explore its heading hierarchy. Find missing H1s,
+              skipped levels, and repeated headings. See practical fixes and target phrase placement
+              in one visual dashboard.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
               {[
-                [ListTree, "HTML and Markdown"],
+                [ListTree, "URL, HTML, and Markdown"],
                 [ShieldCheck, "No login required"],
               ].map(([Icon, label]) => {
                 const FeatureIcon = Icon as typeof ListTree;

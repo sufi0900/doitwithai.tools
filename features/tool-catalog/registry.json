@@ -684,7 +684,7 @@
       "id": "heading-structure-analyzer",
       "slug": "heading-structure-analyzer",
       "name": "Heading Structure Analyzer",
-      "description": "Inspect HTML or Markdown headings for skipped levels, duplicates, and structural issues.",
+      "description": "Check a webpage URL, HTML, or Markdown for heading hierarchy, skipped levels, duplicates, and target phrase placement.",
       "categories": [
         "ai-seo",
         "content-writing"

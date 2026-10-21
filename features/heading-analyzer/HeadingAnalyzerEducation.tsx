@@ -12,7 +12,7 @@ const WHY = [
   ["Readers", "People skim. Clear headings let them find the part they need without reading everything."],
   ["Accessibility", "Many screen reader users move through a page by jumping between headings, so a logical order and real text matter."],
   ["Search engines", "Headings help search engines understand how a page is organised and which section answers which question."],
-  ["AI answer engines", "Well-labelled sections are easier to quote or summarise accurately, because each heading frames the passage under it."],
+  ["Editors", "A visual outline helps writers spot repeated sections, missing explanations, and headings that do not describe their content."],
 ];
 
 const GOOD = `<h1>How to write a meta description</h1>
@@ -99,13 +99,33 @@ export default function HeadingAnalyzerEducation() {
               it fits. Search engines can handle more than one H1, so the single-H1 advice here is about
               clarity, not a penalty. If your research shows people ask a question, phrasing a heading
               as that question can help the section stand alone. Avoid stuffing the same phrase into every
-              heading — check for over-repetition with the{" "}
+              heading. Check for over-repetition with the{" "}
               <Link href="/tools/keyword-density-checker" className="font-bold text-[#4662df] hover:underline dark:text-blue-300">
                 Keyword Density and Repetition Checker
               </Link>
               .
             </p>
           </div>
+        </div>
+
+        <div className="mt-14 grid gap-4 md:grid-cols-2">
+          <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
+            <h3 className="text-lg font-black text-slate-950 dark:text-white">What if the live page has more headings?</h3>
+            <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+              Some websites add content after JavaScript runs. A URL check reads the returned HTML, which can contain fewer headings than your browser shows.
+              Open the page, choose Inspect, and copy the main element using Copy outerHTML. Analyze that in Paste content.
+              Password protection and website access rules can also prevent a URL check.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
+            <h3 className="text-lg font-black text-slate-950 dark:text-white">How should you interpret the score?</h3>
+            <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+              The structure score summarizes six checks, with the full breakdown available in your report.
+              A high score confirms those checks passed. It does not prove complete topic coverage or guarantee rankings.
+              Review whether each heading accurately describes its section before changing any tags.
+            </p>
+            <a href="https://www.w3.org/WAI/tutorials/page-structure/headings/" className="mt-3 inline-block text-sm font-bold text-[#4662df] underline dark:text-blue-300">Read W3C guidance on heading structure</a>
+          </article>
         </div>
 
         <div className="mt-14 rounded-2xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
