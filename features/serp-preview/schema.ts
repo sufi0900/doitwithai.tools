@@ -1,5 +1,11 @@
 import { z } from "zod";
 
 export const serpImportInputSchema = z.object({
-  pageUrl: z.string().trim().min(4, "Enter a page URL.").max(2048, "That URL is too long."),
+  includeStructuredData: z.boolean().default(true),
+  pageUrl: z
+    .string()
+    .trim()
+    .url("Enter a valid public page URL.")
+    .max(2048)
+    .refine((url) => /^https?:\/\//i.test(url), "Use http:// or https://."),
 });

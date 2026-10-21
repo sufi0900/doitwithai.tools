@@ -11,42 +11,42 @@ const STEPS = [
   {
     icon: Globe,
     title: "Import from a live URL, or start from scratch",
-    body: "Paste a published page's URL and click \"Import from URL\" to pull in its current title, description, and any JSON-LD schema it already has — or skip this and fill in the fields yourself.",
+    body: 'Paste a published page\'s URL and click "Import from URL" to pull in its current title, description, and any JSON-LD schema it already has. or skip this and fill in the fields yourself.',
   },
   {
     icon: Type,
-    title: "Check the SERP snippet tab",
-    body: "Review how your title, URL breadcrumb, and description would read as a search result. Fix anything flagged in the checklist below the form.",
+    title: "Compare mobile and desktop",
+    body: "Compare title wrapping and description clipping in both device presets. Review pixel measurements rather than judging length from character counts alone.",
   },
   {
     icon: ClipboardPaste,
-    title: "Paste JSON-LD into the Rich Result tab",
-    body: "Paste the exact contents of a <script type=\"application/ld+json\"> block — your own, or the output straight from the Schema Markup Generator — to see which rich result types it would render.",
+    title: "Review imported structured data",
+    body: 'Paste the exact contents of a <script type="application/ld+json"> block. your own, or the output straight from the Schema Markup Generator. to see which rich result types it would render.',
   },
   {
     icon: LayoutList,
     title: "Compare against what's actually on the page",
-    body: "For FAQ, Review, and HowTo markup especially, confirm every piece of marked-up content is something a visitor can actually see and read on the live page — not just present in the schema.",
+    body: "For FAQ, Review, and HowTo markup especially, confirm every piece of marked-up content is something a visitor can actually see and read on the live page. not just present in the schema.",
   },
   {
     icon: CheckCircle2,
     title: "Validate with Google's own tools before relying on it",
-    body: "Once published, run the URL through Google Search Console's Rich Results Test or URL Inspection tool — the final word on eligibility is Google's, not any preview tool's.",
+    body: "Once published, run the URL through Google's Rich Results Test or URL Inspection tool. the final word on eligibility is Google's, not any preview tool's.",
   },
 ];
 
 const PRACTICES = [
   {
     title: "Keep titles unique per page",
-    body: "Duplicate titles across pages make it harder for Google to pick the one you intend — and harder for searchers to tell your pages apart in results.",
+    body: "Duplicate titles across pages make it harder for Google to pick the one you intend. and harder for searchers to tell your pages apart in results.",
   },
   {
     title: "Write descriptions that earn the click",
-    body: "Treat the description as ad copy for your own content — specific and useful beats generic and keyword-stuffed.",
+    body: "Treat the description as ad copy for your own content. specific and useful beats generic and keyword-stuffed.",
   },
   {
     title: "Only mark up visible content",
-    body: "FAQ and Review rich results should mirror exactly what a visitor sees on the page — not expanded, invented, or third-party content.",
+    body: "FAQ and Review rich results should mirror exactly what a visitor sees on the page. not expanded, invented, or third-party content.",
   },
   {
     title: "Re-test after every schema change",
@@ -55,9 +55,9 @@ const PRACTICES = [
 ];
 
 const MISTAKES = [
-  "Assuming valid JSON-LD guarantees the rich result will actually show in search — eligibility also depends on Google's content-quality and policy checks.",
+  "Assuming valid JSON-LD guarantees the rich result will actually show in search. eligibility also depends on Google's content-quality and policy checks.",
   "Marking up FAQ or Review content that doesn't appear anywhere on the visible page.",
-  "Forgetting to re-validate with Google's own Rich Results Test after publishing — this tool is a preview, not the final authority.",
+  "Forgetting to re-validate with Google's own Rich Results Test after publishing. this tool is a preview, not the final authority.",
 ];
 
 export default function SerpPreviewTutorial() {
@@ -72,7 +72,8 @@ export default function SerpPreviewTutorial() {
             How to use the SERP & Rich Result Preview
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-            Five steps from a URL or a blank form to a reviewed, checklist-passed preview.
+            Five steps from a URL or a blank form to a reviewed,
+            checklist-passed preview.
           </p>
         </div>
 
@@ -92,7 +93,9 @@ export default function SerpPreviewTutorial() {
                     <span className="mr-2 text-[#5271ff]">{index + 1}.</span>
                     {step.title}
                   </h3>
-                  <p className="mt-1.5 text-sm leading-7 text-slate-600 dark:text-slate-300">{step.body}</p>
+                  <p className="mt-1.5 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {step.body}
+                  </p>
                 </div>
               </li>
             );
@@ -107,10 +110,16 @@ export default function SerpPreviewTutorial() {
             </h3>
             <ul className="mt-4 space-y-3">
               {PRACTICES.map((practice) => (
-                <li key={practice.title} className="flex gap-2.5 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                <li
+                  key={practice.title}
+                  className="flex gap-2.5 text-sm leading-7 text-slate-600 dark:text-slate-300"
+                >
                   <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
                   <span>
-                    <span className="font-bold text-slate-900 dark:text-white">{practice.title}.</span> {practice.body}
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {practice.title}.
+                    </span>{" "}
+                    {practice.body}
                   </span>
                 </li>
               ))}
@@ -124,7 +133,10 @@ export default function SerpPreviewTutorial() {
             </h3>
             <ul className="mt-4 space-y-3">
               {MISTAKES.map((mistake) => (
-                <li key={mistake} className="flex gap-2.5 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                <li
+                  key={mistake}
+                  className="flex gap-2.5 text-sm leading-7 text-slate-600 dark:text-slate-300"
+                >
                   <AlertTriangle className="mt-1 h-4 w-4 shrink-0 text-amber-500" />
                   <span>{mistake}</span>
                 </li>

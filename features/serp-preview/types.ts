@@ -21,13 +21,40 @@ export type RichResultType =
   | "Event";
 
 export type FaqPreview = { question: string; answer: string }[];
-export type HowToPreview = { name: string; steps: { name: string; text: string }[] };
-export type RatingPreview = { ratingValue: number | null; reviewCount: number | null; itemName: string };
+export type HowToPreview = {
+  name: string;
+  steps: { name: string; text: string }[];
+};
+export type RatingPreview = {
+  ratingValue: number | null;
+  reviewCount: number | null;
+  itemName: string;
+};
 export type BreadcrumbPreview = string[];
-export type ArticlePreview = { headline: string; author: string; datePublished: string };
-export type ProductPreview = { name: string; price: string | null; currency: string | null; availability: string | null; ratingValue: number | null; reviewCount: number | null };
-export type RecipePreview = { name: string; totalTime: string | null; ratingValue: number | null; reviewCount: number | null };
-export type EventPreview = { name: string; startDate: string | null; location: string | null };
+export type ArticlePreview = {
+  headline: string;
+  author: string;
+  datePublished: string;
+};
+export type ProductPreview = {
+  name: string;
+  price: string | null;
+  currency: string | null;
+  availability: string | null;
+  ratingValue: number | null;
+  reviewCount: number | null;
+};
+export type RecipePreview = {
+  name: string;
+  totalTime: string | null;
+  ratingValue: number | null;
+  reviewCount: number | null;
+};
+export type EventPreview = {
+  name: string;
+  startDate: string | null;
+  location: string | null;
+};
 
 export type RichResultBlock =
   | { type: "FAQPage"; data: FaqPreview }

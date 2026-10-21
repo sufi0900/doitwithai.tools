@@ -1,4 +1,8 @@
-import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
+import {
+  ToolHeroBackground,
+  toolHeroHeading,
+  toolHeroSurface,
+} from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -13,12 +17,13 @@ import SerpPreviewClient from "@/features/serp-preview/SerpPreviewClient";
 import SerpPreviewTutorial from "@/features/serp-preview/SerpPreviewTutorial";
 import SerpPreviewEducation from "@/features/serp-preview/SerpPreviewEducation";
 
-const pageUrl = "https://doitwithai.tools/tools/serp-rich-result-preview-generator";
+const pageUrl =
+  "https://doitwithai.tools/tools/serp-rich-result-preview-generator";
 
 export const metadata: Metadata = {
   title: "Free SERP Snippet & Rich Result Preview Generator",
   description:
-    "Preview how a page's title, URL, and description would look as a Google search result, and visualize FAQ, HowTo, Review, Product, Recipe, Event, and Breadcrumb rich results from your JSON-LD. Compare your preview before publishing.",
+    "Preview titles and descriptions with pixel measurements, mobile and desktop layouts, favicon imports, image exports, and a structured data inspector.",
   keywords: [
     "serp preview tool",
     "google search snippet preview",
@@ -32,7 +37,8 @@ export const metadata: Metadata = {
     type: "website",
     url: pageUrl,
     title: "Free SERP Snippet & Rich Result Preview Generator",
-    description: "Preview a Google search snippet and visualize rich results from your JSON-LD structured data.",
+    description:
+      "Preview a Google search snippet and visualize rich results from your JSON-LD structured data.",
     siteName: "Do It With AI Tools",
     images: [
       {
@@ -46,7 +52,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Free SERP Snippet & Rich Result Preview Generator",
-    description: "Preview a search snippet and visualize FAQ, Review, Product, and other rich results from JSON-LD.",
+    description:
+      "Preview a search snippet and visualize FAQ, Review, Product, and other rich results from JSON-LD.",
     images: ["https://doitwithai.tools/ogimage.png"],
   },
   robots: {
@@ -65,24 +72,51 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
+    question: "Does Google use a fixed 600 pixel title limit?",
+    answer:
+      "No. Google truncates title links to fit the device. This simulator uses a 600 pixel desktop title preset as a practical estimate. Mobile uses a narrower layout with more lines. Font, query, and search features can change the result.",
+  },
+  {
+    question: "Why can the same number of characters have different widths?",
+    answer:
+      "Letters have different shapes and widths. A capital W uses more space than a lowercase i. The simulator measures text using browser fonts and checks line wrapping. Character counts remain available as a reference.",
+  },
+  {
+    question: "Can I import a long article?",
+    answer:
+      "Yes. The importer keeps page metadata and selected structured data without downloading images or videos. Quick import stops after the page head. The full scan checks up to 8 MB and reports when later markup may be missing.",
+  },
+  {
+    question: "Are the heatmap and AI Overview real search data?",
+    answer:
+      "No. These optional layouts illustrate visual emphasis and space above organic results. They do not retrieve an AI answer, predict clicks, or measure eye movement. Country selection provides preview context rather than local ranking data.",
+  },
+  {
+    question: "Can I save or share my preview?",
+    answer:
+      "Save a PNG image, copy escaped metadata HTML, or copy a share link. Share links contain the preview content, so send them only when that content can be shared. Image exports use a site initial instead of external favicons.",
+  },
+  {
     question: "What can I preview?",
     answer:
       "Preview your title, URL, and description, or inspect the structured data you provide. Import a public page to start with its existing metadata. Previews are illustrative, and actual search appearances can differ.",
   },
   {
-    question: "Why doesn't my rich result show here even though my JSON-LD is valid?",
+    question:
+      "Why doesn't my rich result show here even though my JSON-LD is valid?",
     answer:
-      "This tool recognizes FAQPage, HowTo, Review, AggregateRating, BreadcrumbList, Article, Product, Recipe, and Event. If your markup uses a different type, or the recognized fields are empty, nothing renders — that doesn't necessarily mean the markup itself is invalid.",
+      "This tool recognizes FAQPage, HowTo, Review, AggregateRating, BreadcrumbList, Article, Product, Recipe, and Event. If your markup uses a different type, or the recognized fields are empty, nothing renders. That doesn't necessarily mean the markup itself is invalid.",
   },
   {
-    question: "If it shows a preview here, will Google definitely display the rich result?",
+    question:
+      "If it shows a preview here, will Google definitely display the rich result?",
     answer:
       "No. This is an illustrative preview of what your markup describes, not a guarantee. Google applies its own content-quality and policy checks per rich result type, and the final authority is Google's own Rich Results Test and Search Console.",
   },
   {
     question: "Can I use the output from the Schema Markup Generator here?",
     answer:
-      "Yes — paste the JSON-LD it generates directly into the Rich Result tab to see how it would render before you publish it.",
+      "Yes. Paste the JSON-LD it generates directly into the Structured data editor to see how it would render before you publish it.",
   },
 ];
 
@@ -115,9 +149,24 @@ const structuredData = {
     {
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: "https://doitwithai.tools" },
-        { "@type": "ListItem", position: 2, name: "Tools", item: "https://doitwithai.tools/tools" },
-        { "@type": "ListItem", position: 3, name: "SERP & Rich Result Preview Generator", item: pageUrl },
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: "https://doitwithai.tools",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Tools",
+          item: "https://doitwithai.tools/tools",
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: "SERP & Rich Result Preview Generator",
+          item: pageUrl,
+        },
       ],
     },
     {
@@ -132,11 +181,31 @@ const structuredData = {
       "@type": "HowTo",
       name: "How to use the SERP & Rich Result Preview Generator",
       step: [
-        { "@type": "HowToStep", name: "Import from a live URL, or start from scratch", text: "Paste a page's URL to import its title, description, and JSON-LD, or fill the fields in manually." },
-        { "@type": "HowToStep", name: "Check the SERP snippet tab", text: "Review the title, URL breadcrumb, and description as a mock search result." },
-        { "@type": "HowToStep", name: "Paste JSON-LD into the Rich Result tab", text: "Paste a JSON-LD block to see which rich result types it would render." },
-        { "@type": "HowToStep", name: "Compare against what's actually on the page", text: "Confirm marked-up content matches what is genuinely visible on the live page." },
-        { "@type": "HowToStep", name: "Validate with Google's own tools before relying on it", text: "Run the published URL through Google Search Console's Rich Results Test for the final word on eligibility." },
+        {
+          "@type": "HowToStep",
+          name: "Import from a live URL, or start from scratch",
+          text: "Paste a page's URL to import its title, description, and JSON-LD, or fill the fields in manually.",
+        },
+        {
+          "@type": "HowToStep",
+          name: "Check the SERP snippet tab",
+          text: "Review the title, URL breadcrumb, and description as a mock search result.",
+        },
+        {
+          "@type": "HowToStep",
+          name: "Paste JSON-LD into the Structured data editor",
+          text: "Paste a JSON-LD block to see which rich result types it would render.",
+        },
+        {
+          "@type": "HowToStep",
+          name: "Compare against what's actually on the page",
+          text: "Confirm marked-up content matches what is genuinely visible on the live page.",
+        },
+        {
+          "@type": "HowToStep",
+          name: "Validate with Google's own tools before relying on it",
+          text: "Run the published URL through Google Search Console's Rich Results Test for the final word on eligibility.",
+        },
       ],
     },
   ],
@@ -147,10 +216,14 @@ export default function SerpPreviewGeneratorPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+        }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}>
+      <div
+        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}
+      >
         <ToolHeroBackground />
 
         <div className="relative mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
@@ -180,9 +253,9 @@ export default function SerpPreviewGeneratorPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              See how a page would look as a Google search result, then paste its JSON-LD to
-              visualize FAQ, HowTo, Review, Product, Recipe, Event, and Breadcrumb rich results
-              before anything goes live.
+              See how a page would look as a Google search result, then paste
+              its JSON-LD to visualize FAQ, HowTo, Review, Product, Recipe,
+              Event, and Breadcrumb rich results before anything goes live.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
               {[
@@ -238,7 +311,9 @@ export default function SerpPreviewGeneratorPage() {
                   {faq.question}
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-[#5271ff]" />
                 </summary>
-                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{faq.answer}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  {faq.answer}
+                </p>
               </details>
             ))}
           </div>
