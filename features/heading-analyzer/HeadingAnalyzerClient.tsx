@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import styles from "./HeadingOutline.module.css";
 import Link from "next/link";
 import {
   ArrowRight,
+  CornerDownRight,
   CheckCircle2,
   Code2,
   Copy,
@@ -40,6 +48,44 @@ const colors = {
   info: "border-blue-300/30 bg-blue-300/10 text-blue-100",
   success: "border-emerald-400/40 bg-emerald-400/10 text-emerald-200",
 };
+const headingLevels = [
+  {
+    label: "Main heading",
+    badge: "border-emerald-300/40 bg-emerald-400/20 text-emerald-100",
+    row: "border-emerald-300/40 border-l-emerald-400 bg-emerald-400/[0.08]",
+    text: "text-emerald-100",
+  },
+  {
+    label: "Section",
+    badge: "border-blue-300/40 bg-blue-400/20 text-blue-100",
+    row: "border-white/10 border-l-blue-400 bg-blue-400/[0.06]",
+    text: "text-blue-100",
+  },
+  {
+    label: "Subsection",
+    badge: "border-violet-300/40 bg-violet-400/20 text-violet-100",
+    row: "border-white/10 border-l-violet-400 bg-violet-400/[0.06]",
+    text: "text-violet-100",
+  },
+  {
+    label: "Detail",
+    badge: "border-amber-300/40 bg-amber-400/20 text-amber-100",
+    row: "border-white/10 border-l-amber-400 bg-amber-400/[0.06]",
+    text: "text-amber-100",
+  },
+  {
+    label: "Nested detail",
+    badge: "border-pink-300/40 bg-pink-400/20 text-pink-100",
+    row: "border-white/10 border-l-pink-400 bg-pink-400/[0.06]",
+    text: "text-pink-100",
+  },
+  {
+    label: "Deepest detail",
+    badge: "border-cyan-300/40 bg-cyan-400/20 text-cyan-100",
+    row: "border-white/10 border-l-cyan-400 bg-cyan-400/[0.06]",
+    text: "text-cyan-100",
+  },
+];
 type Result = ExtractResult &
   Partial<Pick<PageHeadings, "title" | "finalUrl" | "checkedAt">> & {
     source: "url" | "paste";
@@ -646,7 +692,7 @@ export default function HeadingAnalyzerClient() {
               </p>
             </div>
           )}
-          <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+          <div className="space-y-6">
             <div className={panel}>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 font-bold">
@@ -665,16 +711,75 @@ export default function HeadingAnalyzerClient() {
                   </button>
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+                Follow the page from its main topic to sections and nested
+                details. Headings stay in their original document order.
+              </p>
+              <div
+                className="mt-5 flex flex-wrap gap-2"
+                aria-label="Heading level legend"
+              >
                 {analysis.counts.map((count, i) => (
                   <span
                     key={i}
-                    className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs"
+                    className={`rounded-lg border px-3 py-2 text-xs ${headingLevels[i].badge}`}
                   >
-                    H{i + 1}: {count}
+                    <strong>H{i + 1}</strong> · {headingLevels[i].label}{" "}
+                    <span className="ml-1 opacity-80">({count})</span>
                   </span>
                 ))}
               </div>
+              {visible.some((h) => h.level === 1) && (
+                <div
+                  className="mt-5 rounded-2xl border border-emerald-300/30 bg-emerald-400/[0.08] p-4 sm:p-5"
+                  aria-label="Main heading overview"
+                >
+                  <p className="text-xs font-bold uppercase tracking-widest text-emerald-200">
+                    Page main heading
+                    {visible.filter((h) => h.level === 1).length > 1 ? "s" : ""}
+                  </p>
+                  <ul className="mt-3 space-y-3">
+                    {visible
+                      .filter((h) => h.level === 1)
+                      .slice(0, 3)
+                      .map((h) => (
+                        <li key={h.index} className="flex items-start gap-3">
+                          <span className="shrink-0 rounded-lg border border-emerald-300/40 bg-emerald-400/20 px-3 py-2 text-sm font-black text-emerald-100">
+                            H1
+                          </span>
+                          <div className="min-w-0">
+                            <p className="break-words text-lg font-bold leading-7 text-white sm:text-2xl sm:leading-8">
+                              {h.text || "(Empty heading)"}
+                            </p>
+                            <a
+                              href={`#ha-heading-${h.index}`}
+                              onClick={() => setFilter("all")}
+                              className="mt-1 inline-block text-xs text-emerald-100 underline underline-offset-4"
+                            >
+                              View position {h.index + 1} in the outline
+                            </a>
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                  {visible.filter((h) => h.level === 1).length > 3 && (
+                    <p className="mt-3 text-xs text-emerald-100">
+                      Showing the first three H1 headings. Find every H1 in the
+                      outline below.
+                    </p>
+                  )}
+                  {visible.filter((h) => h.level === 1).length > 1 && (
+                    <p className="mt-3 text-xs leading-6 text-amber-100">
+                      Multiple H1 headings found. Review whether one heading can
+                      clearly introduce the whole page.
+                    </p>
+                  )}
+                </div>
+              )}
+              <p className="mt-4 text-xs leading-6 text-slate-400">
+                Level colors identify H1 to H6. Separate issue badges indicate
+                errors, warnings, or guidance.
+              </p>
               <div
                 role="group"
                 aria-label="Filter outline"
@@ -698,7 +803,7 @@ export default function HeadingAnalyzerClient() {
                 </button>
               </div>
               <ol
-                className="max-h-[680px] space-y-2 overflow-y-auto pr-1"
+                className={`${styles.outline} max-h-[850px] space-y-3 overflow-y-auto py-2 pr-1 sm:space-y-4`}
                 aria-label="Headings in document order"
               >
                 {result.headings
@@ -713,19 +818,42 @@ export default function HeadingAnalyzerClient() {
                       : flags.some((f) => f.severity === "warning")
                         ? "warning"
                         : "info";
+                    const level = headingLevels[h.level - 1];
                     return (
                       <li
                         key={h.index}
                         id={`ha-heading-${h.index}`}
-                        style={{ marginLeft: `${(h.level - 1) * 8}px` }}
-                        className={`scroll-mt-24 rounded-xl border p-3 ${flags.length ? colors[severity] : "border-white/10 bg-white/5"}`}
+                        style={{ "--depth": h.level - 1 } as CSSProperties}
+                        data-heading-level={h.level}
+                        className={`${styles.row} scroll-mt-24 rounded-xl border border-l-4 p-3 sm:p-5 ${level.row} ${h.level === 1 ? "!my-5 shadow-lg shadow-emerald-950/20" : ""}`}
                       >
-                        <div className="flex items-start gap-2">
-                          <span className="rounded-md bg-white/10 px-2 py-1 text-xs font-bold">
-                            H{h.level}
-                          </span>
+                        {h.level > 1 && (
+                          <span className={styles.branch} aria-hidden="true" />
+                        )}
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            {h.level > 1 && (
+                              <CornerDownRight
+                                size={16}
+                                className={`hidden sm:block ${level.text}`}
+                                aria-hidden="true"
+                              />
+                            )}
+                            <span
+                              className={`rounded-lg border px-2 py-2 text-sm font-black sm:px-3 ${level.badge}`}
+                            >
+                              H{h.level}
+                            </span>
+                          </div>
                           <div className="min-w-0 flex-1">
-                            <p className="break-words text-sm font-semibold">
+                            <p
+                              className={`mb-1 text-[10px] font-bold uppercase tracking-widest ${level.text}`}
+                            >
+                              {level.label}
+                            </p>
+                            <p
+                              className={`break-words font-semibold leading-7 ${h.level === 1 ? "text-lg sm:text-xl" : h.level === 2 ? "text-base sm:text-lg" : "text-sm sm:text-base"}`}
+                            >
                               {h.text || "(Empty heading)"}
                             </p>
                             <p className="mt-1 text-[11px] opacity-80">
@@ -746,12 +874,22 @@ export default function HeadingAnalyzerClient() {
                           </div>
                         </div>
                         {flags.length > 0 && (
-                          <p className="mt-2 break-words text-xs leading-5">
+                          <p
+                            className={`mt-3 rounded-lg border px-3 py-2 text-xs leading-6 ${colors[severity]}`}
+                          >
+                            <strong>
+                              {severity === "error"
+                                ? "Error"
+                                : severity === "warning"
+                                  ? "Review"
+                                  : "Guidance"}
+                              :{" "}
+                            </strong>
                             {flags.map((f) => f.title).join(" · ")}
                           </p>
                         )}
                         {fix && (
-                          <p className="mt-2 text-xs font-semibold leading-5">
+                          <p className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-xs font-semibold leading-6 text-blue-100">
                             Suggested level: H{fix}. Confirm that this matches
                             the section relationship.
                           </p>
@@ -778,14 +916,14 @@ export default function HeadingAnalyzerClient() {
                   </p>
                 )}
             </div>
-            <div className="space-y-4">
+            <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.4fr)]">
               <div className={panel}>
                 <h2 className="font-bold">Your next steps</h2>
                 <p className="mt-2 text-xs leading-6 text-slate-300">
                   Review errors first, then warnings. Suggested changes need
                   your editorial judgment.
                 </p>
-                <div className="mt-4 space-y-3">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {analysis.issues.map((issue) => (
                     <article
                       key={issue.code}
