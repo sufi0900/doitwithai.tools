@@ -15,13 +15,13 @@ const STEPS = [
   },
   {
     icon: Smartphone,
-    title: "Check mobile first",
-    body: "Mobile is the default because most real traffic and most ranking evaluation happens there. Run desktop afterward for comparison, not instead of it.",
+    title: "Prepare both device reports",
+    body: "Click Check Core Web Vitals once. Mobile and desktop checks start together. Read the first result while the other device finishes.",
   },
   {
     icon: ListChecks,
-    title: "Read field data before lab data",
-    body: "If field data is present, that's the number that reflects real visitors and what Search Console reports on. Treat lab data as a debugging detail, not the headline.",
+    title: "Identify the measurement source",
+    body: "Field data describes real visitors. If it is unavailable, use labeled lab measurements for diagnostics. Lab TBT does not replace real-user INP.",
   },
   {
     icon: TrendingDown,

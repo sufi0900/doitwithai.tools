@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useReports } from "./useReports";
+import { RATING_STYLE, scoreRating } from "./ratings";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -22,39 +24,7 @@ import {
   reportSummary,
 } from "./report-state";
 import ReportInsights from "./ReportInsights";
-import { checkCoreWebVitals } from "./client";
-import type { Metric, PageSpeedResult, Strategy, VitalRating } from "./types";
-
-const RATING_STYLE: Record<VitalRating, { className: string; label: string }> =
-  {
-    good: {
-      className:
-        "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-      label: "Good",
-    },
-    "needs-improvement": {
-      className:
-        "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-      label: "Needs improvement",
-    },
-    poor: {
-      className:
-        "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-      label: "Poor",
-    },
-    unknown: {
-      className:
-        "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
-      label: "Not available",
-    },
-  };
-
-function scoreColor(score: number | null) {
-  if (score === null) return "text-slate-400";
-  if (score >= 90) return "text-emerald-600 dark:text-emerald-400";
-  if (score >= 50) return "text-amber-600 dark:text-amber-400";
-  return "text-rose-600 dark:text-rose-400";
-}
+import type { Metric, Strategy } from "./types";
 
 function MetricRow({ metric }: { metric: Metric }) {
   const style = RATING_STYLE[metric.rating];
@@ -62,7 +32,7 @@ function MetricRow({ metric }: { metric: Metric }) {
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5 text-sm dark:bg-slate-950/60">
       <span className="text-slate-700 dark:text-slate-200">{metric.label}</span>
       <div className="flex items-center gap-2">
-        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+        <span className={`font-mono text-xs ${style.valueClass}`}>
           {metric.displayValue}
         </span>
         <span
@@ -78,54 +48,42 @@ function MetricRow({ metric }: { metric: Metric }) {
 export default function CoreWebVitalsClient() {
   const [url, setUrl] = useState("");
   const [strategy, setStrategy] = useState<Strategy>("mobile");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [reports, setReports] = useState<Record<string, PageSpeedResult>>({});
+  const [validationError, setValidationError] = useState("");
+  const { reports, pending, errors, ensure } = useReports();
   const result = matchingReport(reports, url, strategy);
   const mobile = matchingReport(reports, url, "mobile");
   const desktop = matchingReport(reports, url, "desktop");
-  async function handleCheck(device: Strategy = strategy) {
-    let target: string;
+  let selectedKey = "",
+    mobileKey = "",
+    desktopKey = "";
+  try {
+    selectedKey = reportKey(url, strategy);
+    mobileKey = reportKey(url, "mobile");
+    desktopKey = reportKey(url, "desktop");
+  } catch {
+    /* A typed URL is not submitted until validation passes. */
+  }
+  const loading = Boolean(pending[selectedKey]);
+  const anyLoading = Object.values(pending).some(Boolean);
+  const otherLoading = Boolean(
+    pending[strategy === "mobile" ? desktopKey : mobileKey],
+  );
+  const error = validationError || errors[selectedKey] || "";
+  function handleCheck() {
     try {
-      target = normalizeReportUrl(url);
+      const target = normalizeReportUrl(url);
+      setValidationError("");
+      void ensure(target, strategy);
+      void ensure(target, strategy === "mobile" ? "desktop" : "mobile");
     } catch {
-      setError("Enter a full page URL beginning with https:// or http://.");
-      return;
-    }
-    setError("");
-    if (matchingReport(reports, target, device)) return;
-    setLoading(true);
-    try {
-      const outcome = await checkCoreWebVitals(target, device);
-      if (outcome.ok === false) {
-        setError(outcome.message);
-        return;
-      }
-      if (outcome.result.strategy !== device) {
-        setError(
-          "The returned report did not match the selected device. Please try again.",
-        );
-        return;
-      }
-      setReports((previous) => {
-        const entries = Object.entries(previous).slice(-19);
-        return {
-          ...Object.fromEntries(entries),
-          [reportKey(target, device)]: {
-            ...outcome.result,
-            checkedAt: outcome.result.checkedAt || new Date().toISOString(),
-          },
-        };
-      });
-    } finally {
-      setLoading(false);
+      setValidationError(
+        "Enter a full page URL beginning with https:// or http://.",
+      );
     }
   }
   function selectDevice(device: Strategy) {
-    if (loading || device === strategy) return;
     setStrategy(device);
-    setError("");
-    if (url.trim()) void handleCheck(device);
+    setValidationError("");
   }
   function downloadReport() {
     if (!result) return;
@@ -140,25 +98,29 @@ export default function CoreWebVitalsClient() {
   }
 
   return (
-    <div id="core-web-vitals-checker" className={`${panelClass} p-5 sm:p-8`}>
+    <div
+      id="core-web-vitals-checker"
+      className={`${panelClass} relative p-5 sm:p-8`}
+    >
       <div className="flex flex-col gap-3 xl:flex-row">
         <input
           className={`${inputClass} h-12 flex-1`}
           value={url}
           onChange={(event) => {
             setUrl(event.target.value);
-            setError("");
+            setValidationError("");
           }}
-          disabled={loading}
           aria-label="Public page URL"
           placeholder="https://example.com/page"
           inputMode="url"
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !anyLoading) handleCheck();
+          }}
         />
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => selectDevice("mobile")}
-            disabled={loading}
             aria-pressed={strategy === "mobile"}
             className={strategy === "mobile" ? primaryButton : secondaryButton}
           >
@@ -167,7 +129,6 @@ export default function CoreWebVitalsClient() {
           <button
             type="button"
             onClick={() => selectDevice("desktop")}
-            disabled={loading}
             aria-pressed={strategy === "desktop"}
             className={strategy === "desktop" ? primaryButton : secondaryButton}
           >
@@ -176,19 +137,91 @@ export default function CoreWebVitalsClient() {
         </div>
         <button
           type="button"
-          onClick={() => void handleCheck()}
-          disabled={loading || !url.trim()}
+          onClick={handleCheck}
+          disabled={anyLoading || !url.trim()}
           className={`${primaryButton} min-h-12 shrink-0`}
         >
-          {loading ? <Loader2 className="animate-spin h-4 w-4" /> : null}
-          {loading ? "Running check…" : "Check Core Web Vitals"}
+          {anyLoading ? <Loader2 className="animate-spin h-4 w-4" /> : null}
+          {anyLoading ? "Checking devices…" : "Check Core Web Vitals"}
         </button>
       </div>
       <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-        {strategy === "mobile" ? "Mobile" : "Desktop"} selected. Switching
-        devices checks the matching report when a URL is entered. A check
-        usually takes 10–30 seconds.
+        One check prepares mobile and desktop together. Switch devices at any
+        time. A fresh check may take up to a minute.
       </p>
+      {(loading || otherLoading) && (
+        <div
+          className="mt-3 flex flex-wrap gap-2"
+          role="status"
+          aria-live="polite"
+        >
+          {(["mobile", "desktop"] as Strategy[]).map((device) => {
+            const key = device === "mobile" ? mobileKey : desktopKey;
+            const ready = device === "mobile" ? mobile : desktop;
+            return (
+              <span
+                key={device}
+                className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-2 text-xs font-bold text-blue-800 dark:bg-blue-950 dark:text-blue-200"
+              >
+                {pending[key] ? (
+                  <Loader2
+                    aria-hidden
+                    className="animate-spin motion-reduce:animate-none h-3 w-3"
+                  />
+                ) : null}
+                {device === "mobile" ? "Mobile" : "Desktop"}:{" "}
+                {ready
+                  ? "Ready"
+                  : pending[key]
+                    ? "Checking"
+                    : errors[key]
+                      ? "Retry needed"
+                      : "Waiting"}
+              </span>
+            );
+          })}
+        </div>
+      )}
+      {loading && (
+        <div
+          className="relative mt-6 min-h-[340px] overflow-hidden rounded-2xl border border-blue-200 bg-slate-50 dark:border-blue-900 dark:bg-slate-950"
+          aria-busy="true"
+        >
+          <div
+            aria-hidden
+            className="grid grid-cols-3 gap-3 p-5 opacity-40 blur-sm"
+          >
+            {Array.from({ length: 6 }, (_, i) => (
+              <div
+                key={i}
+                className="animate-pulse motion-reduce:animate-none h-24 rounded-xl bg-slate-200 dark:bg-slate-800"
+              />
+            ))}
+          </div>
+          <div
+            role="status"
+            aria-live="polite"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-white/65 p-5 text-center backdrop-blur-sm dark:bg-slate-950/65"
+          >
+            <div className="rounded-full border-4 border-blue-100 p-4 dark:border-blue-950">
+              <Loader2
+                aria-hidden
+                className="animate-spin motion-reduce:animate-none h-10 w-10 text-[#5271ff]"
+              />
+            </div>
+            <h2 className="text-xl font-black text-slate-950 dark:text-white">
+              Measuring {strategy} performance
+            </h2>
+            <p className="max-w-md text-sm leading-7 text-slate-600 dark:text-slate-300">
+              Your page is being loaded under simulated device conditions. Both
+              device reports are being prepared.
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              You can switch devices while the checks continue.
+            </p>
+          </div>
+        </div>
+      )}
       {error && (
         <div
           role="status"
@@ -213,7 +246,11 @@ export default function CoreWebVitalsClient() {
       )}
 
       {result && (
-        <div className="mt-8 space-y-6" aria-live="polite">
+        <div
+          className="mt-8 space-y-6"
+          aria-live="polite"
+          data-report-device={result.strategy}
+        >
           <div className="flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-blue-300/30 bg-blue-50 p-5 dark:bg-blue-950/30">
             <div className="min-w-0">
               <h2 className="text-lg font-black text-slate-950 dark:text-white">
@@ -229,6 +266,11 @@ export default function CoreWebVitalsClient() {
                   : "Simulated desktop conditions"}
                 . Scores can vary between runs.
               </p>
+              {result.analysisAt && (
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Lab run: {new Date(result.analysisAt).toLocaleString()}.
+                </p>
+              )}
             </div>
             <button
               type="button"
@@ -238,6 +280,15 @@ export default function CoreWebVitalsClient() {
               Download summary
             </button>
           </div>
+          {otherLoading && (
+            <p
+              role="status"
+              className="rounded-xl bg-blue-50 p-4 text-sm text-blue-800 dark:bg-blue-950 dark:text-blue-200"
+            >
+              This report is ready. The other device is still being measured in
+              the background.
+            </p>
+          )}
           {result.reportWarnings?.map((warning, i) => (
             <p
               key={i}
@@ -253,7 +304,7 @@ export default function CoreWebVitalsClient() {
             onCompare={() =>
               selectDevice(strategy === "mobile" ? "desktop" : "mobile")
             }
-            loading={loading}
+            loading={otherLoading}
           />
 
           {result.checkedAt && (
@@ -266,15 +317,20 @@ export default function CoreWebVitalsClient() {
             {result.categories.map((category) => (
               <div
                 key={category.id}
-                className="rounded-2xl border border-slate-200 p-4 text-center dark:border-slate-700"
+                className={`rounded-2xl border p-4 text-center ${RATING_STYLE[scoreRating(category.score)].panelClass}`}
               >
                 <p
-                  className={`text-3xl font-black ${scoreColor(category.score)}`}
+                  className={`text-3xl font-black ${RATING_STYLE[scoreRating(category.score)].valueClass}`}
                 >
                   {category.score ?? "N/A"}
                 </p>
                 <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   {category.name}
+                </p>
+                <p
+                  className={`mt-2 text-xs font-bold ${RATING_STYLE[scoreRating(category.score)].valueClass}`}
+                >
+                  {RATING_STYLE[scoreRating(category.score)].label}
                 </p>
               </div>
             ))}
@@ -302,10 +358,9 @@ export default function CoreWebVitalsClient() {
             ) : (
               <p className="mt-3 flex items-start gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-                No real-user field data is available for this URL yet ; the
-                Chrome User Experience Report needs enough real visitor traffic
-                before Google publishes it. The lab data below is a simulated
-                single-run alternative.
+                Google has not supplied enough real-user data for this page or
+                origin. This does not by itself indicate a website error. The
+                lab measurements remain available.
               </p>
             )}
           </section>

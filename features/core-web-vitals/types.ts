@@ -11,6 +11,7 @@ export type Metric = {
   id: string;
   label: string;
   displayValue: string;
+  numericValue?: number | null;
   rating: VitalRating;
 };
 
@@ -22,6 +23,7 @@ export type FieldData = {
 
 export type PageSpeedResult = {
   checkedAt?: string;
+  analysisAt?: string;
   requestedUrl: string;
   finalUrl: string;
   strategy: Strategy;

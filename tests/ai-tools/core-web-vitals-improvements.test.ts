@@ -163,8 +163,8 @@ test("Google requests, server cache and metric labels remain separated by device
               id: "largest-contentful-paint",
               title: "LCP",
               score: device === "mobile" ? 0.4 : 0.95,
-              numericValue: 2400,
-              displayValue: "2.4 s",
+              numericValue: device === "mobile" ? 4400 : 800,
+              displayValue: device === "mobile" ? "4.4 s" : "0.8 s",
             },
             "unused-javascript": {
               score: 0.2,

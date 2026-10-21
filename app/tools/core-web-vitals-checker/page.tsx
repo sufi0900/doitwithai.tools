@@ -77,7 +77,7 @@ const faqs = [
   {
     question: "Why are my mobile and desktop scores so different?",
     answer:
-      "Mobile and desktop runs use different test conditions and scoring. Switch devices to load the matching report. Some pages may produce similar scores, so review the measurements and findings as well.",
+      "Mobile and desktop runs use different test conditions and scoring. One check prepares both reports. Switch devices to view the matching result. Some pages may produce similar scores, so review the measurements and findings as well.",
   },
   {
     question: "Does a perfect score guarantee good rankings?",
@@ -137,7 +137,7 @@ const structuredData = {
       name: "How to use the Core Web Vitals Checker",
       step: [
         { "@type": "HowToStep", name: "Paste the exact URL you care about", text: "Core Web Vitals are measured per URL, so check the specific page you care about." },
-        { "@type": "HowToStep", name: "Check mobile first", text: "Run the mobile check first, since it reflects most real traffic and ranking evaluation." },
+        { "@type": "HowToStep", name: "Prepare both device reports", text: "Start one check to prepare mobile and desktop reports together. Switch devices to compare the results." },
         { "@type": "HowToStep", name: "Read field data before lab data", text: "Prioritize real-user field data over the simulated lab data when both are available." },
         { "@type": "HowToStep", name: "Fix the worst-rated metric first", text: "Address the single lowest-rated metric before fine-tuning metrics that already pass." },
         { "@type": "HowToStep", name: "Re-check after deploying a fix", text: "Lab data updates immediately; field data reflects a rolling window of real visitors and updates more slowly." },

@@ -1,26 +1,15 @@
 import React from "react";
-import type { PageSpeedResult } from "./types";
+import { CORE_METRICS, coreCards, hasMeasurement } from "./presentation";
+import { RATING_STYLE, scoreRating } from "./ratings";
+import type { Metric, PageSpeedResult } from "./types";
 import { secondaryButton } from "@/features/writing-tools/config";
-const core = [
-  {
-    id: "LARGEST_CONTENTFUL_PAINT_MS",
-    name: "Loading (LCP)",
-    goal: "Good at 2.5 seconds or less",
-    help: "How quickly the main content becomes visible.",
-  },
-  {
-    id: "INTERACTION_TO_NEXT_PAINT",
-    name: "Responsiveness (INP)",
-    goal: "Good at 200 milliseconds or less",
-    help: "How quickly the page responds to visitor interactions.",
-  },
-  {
-    id: "CUMULATIVE_LAYOUT_SHIFT_SCORE",
-    name: "Visual stability (CLS)",
-    goal: "Good at 0.1 or less",
-    help: "Whether visible content shifts unexpectedly.",
-  },
-];
+function ComparisonMetric({ metric }: { metric?: Metric }) {
+  return (
+    <span className={RATING_STYLE[metric?.rating ?? "unknown"].valueClass}>
+      {metric?.displayValue || "Not available"}
+    </span>
+  );
+}
 function score(report: PageSpeedResult | null) {
   return (
     report?.categories.find((c) => c.id === "performance")?.score ??
@@ -40,19 +29,30 @@ export default function ReportInsights({
   onCompare: () => void;
   loading: boolean;
 }) {
-  const measurements = core.map((c) =>
+  const measurements = CORE_METRICS.map((c) =>
     result.fieldData.metrics.find((m) => m.id === c.id),
   );
-  const complete = measurements.every((m) => m && m.rating !== "unknown");
+  const complete = measurements.every(
+    (m) => hasMeasurement(m) && m.rating !== "unknown",
+  );
+  const assessment = !complete
+    ? "needs-improvement"
+    : measurements.some((m) => m?.rating === "poor")
+      ? "poor"
+      : measurements.every((m) => m?.rating === "good")
+        ? "good"
+        : "needs-improvement";
   return (
     <>
       <section className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700">
         <h2 className="font-black text-slate-950 dark:text-white">
           Understand your Core Web Vitals
         </h2>
-        <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
+        <p
+          className={`mt-2 rounded-xl border p-3 text-sm leading-7 ${RATING_STYLE[assessment].panelClass} ${RATING_STYLE[assessment].valueClass}`}
+        >
           {!complete
-            ? "Assessment incomplete. One or more real-user core metrics are unavailable."
+            ? "Assessment incomplete. Google has not provided every real-user core metric. Labeled lab measurements are shown where available."
             : measurements.every((m) => m?.rating === "good")
               ? "All three reported core metrics meet the good range."
               : "One or more reported core metrics need attention."}{" "}
@@ -61,19 +61,42 @@ export default function ReportInsights({
             : ""}
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {core.map((c) => {
-            const m = result.fieldData.metrics.find((m) => m.id === c.id);
+          {coreCards(result).map((c) => {
+            const rating = c.metric?.rating ?? "unknown";
+            const style = RATING_STYLE[rating];
             return (
               <div
                 key={c.id}
-                className="min-w-0 rounded-xl bg-slate-50 p-4 dark:bg-slate-950/60"
+                className={`min-w-0 rounded-xl border p-4 ${style.panelClass}`}
+                data-core-card={c.id}
               >
-                <h3 className="text-sm font-bold text-slate-950 dark:text-white">
-                  {c.name}
-                </h3>
-                <p className="mt-2 text-2xl font-black text-[#5271ff]">
-                  {m?.displayValue || "No field data"}
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <h3 className="text-sm font-bold text-slate-950 dark:text-white">
+                    {c.name}
+                  </h3>
+                  <span
+                    className={`rounded-full px-2 py-1 text-[10px] font-bold ${style.className}`}
+                  >
+                    {style.label}
+                  </span>
+                </div>
+                <p className={`mt-2 text-2xl font-black ${style.valueClass}`}>
+                  {c.metric?.displayValue || "Not available"}
                 </p>
+                <p className="mt-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                  {c.source === "field"
+                    ? "Real-user measurement"
+                    : c.source === "lab"
+                      ? "Simulated lab measurement"
+                      : c.source === "diagnostic"
+                        ? "Lab diagnostic, not INP"
+                        : "No measurement supplied"}
+                </p>
+                {c.source !== "field" && (
+                  <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                    {c.note}
+                  </p>
+                )}
                 <p className="mt-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
                   {c.goal}
                 </p>
@@ -84,6 +107,30 @@ export default function ReportInsights({
             );
           })}
         </div>
+        {!complete && (
+          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-7 text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+            <p className="font-bold">
+              Missing field data does not mean the page has failed.
+            </p>
+            <p>
+              Google needs enough eligible visitor samples before publishing
+              page or origin data. New or less-visited pages may not qualify.
+              Check that the page is publicly accessible and indexable.
+            </p>
+            <p className="mt-2">
+              Use the device-specific lab results to find improvements now.
+              Real-user INP cannot be inferred from a loading test.
+            </p>
+            <a
+              className="mt-2 inline-block font-bold underline"
+              href="https://developer.chrome.com/docs/crux/methodology"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Read Google’s field-data requirements
+            </a>
+          </div>
+        )}
         <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
           Real-user assessments use the 75th percentile. A lab score alone
           cannot establish a real-user Core Web Vitals pass.
@@ -103,11 +150,11 @@ export default function ReportInsights({
           {(!mobile || !desktop) && (
             <button
               type="button"
-              disabled={loading}
               className={secondaryButton}
               onClick={onCompare}
             >
-              Check {result.strategy === "mobile" ? "desktop" : "mobile"}
+              {loading ? "Preparing" : "View"}{" "}
+              {result.strategy === "mobile" ? "desktop" : "mobile"}
             </button>
           )}
         </div>
@@ -122,23 +169,83 @@ export default function ReportInsights({
             </thead>
             <tbody className="text-slate-700 dark:text-slate-200">
               <tr className="border-t border-slate-200 dark:border-slate-700">
-                <th className="p-3">Performance score</th>
-                <td className="p-3">{score(mobile)}</td>
-                <td className="p-3">{score(desktop)}</td>
+                <th className="p-3 text-xs">Real-user data scope</th>
+                <td className="p-3 text-xs">
+                  {mobile
+                    ? mobile.fieldData.source || "Unavailable"
+                    : "Not checked"}
+                </td>
+                <td className="p-3 text-xs">
+                  {desktop
+                    ? desktop.fieldData.source || "Unavailable"
+                    : "Not checked"}
+                </td>
               </tr>
-              {result.labMetrics.map((m) => (
+              {CORE_METRICS.map((c) => (
+                <tr
+                  key={c.id}
+                  className="border-t border-slate-200 dark:border-slate-700"
+                >
+                  <th className="p-3 text-xs">{c.name} (real users)</th>
+                  <td className="p-3 text-xs">
+                    <ComparisonMetric
+                      metric={mobile?.fieldData.metrics.find(
+                        (m) => m.id === c.id,
+                      )}
+                    />
+                  </td>
+                  <td className="p-3 text-xs">
+                    <ComparisonMetric
+                      metric={desktop?.fieldData.metrics.find(
+                        (m) => m.id === c.id,
+                      )}
+                    />
+                  </td>
+                </tr>
+              ))}
+              <tr className="border-t border-slate-200 dark:border-slate-700">
+                <th className="p-3">Performance score</th>
+                <td
+                  className={`p-3 font-bold ${RATING_STYLE[scoreRating(mobile?.categories.find((c) => c.id === "performance")?.score)].valueClass}`}
+                >
+                  {score(mobile)}
+                </td>
+                <td
+                  className={`p-3 font-bold ${RATING_STYLE[scoreRating(desktop?.categories.find((c) => c.id === "performance")?.score)].valueClass}`}
+                >
+                  {score(desktop)}
+                </td>
+              </tr>
+              {Array.from(
+                new Map(
+                  [
+                    ...(mobile?.labMetrics ?? []),
+                    ...(desktop?.labMetrics ?? []),
+                  ].map((m) => [m.id, m]),
+                ).values(),
+              ).map((m) => (
                 <tr
                   key={m.id}
                   className="border-t border-slate-200 dark:border-slate-700"
                 >
                   <th className="p-3 text-xs">{m.label}</th>
                   <td className="p-3 text-xs">
-                    {mobile?.labMetrics.find((v) => v.id === m.id)
-                      ?.displayValue || "Not checked"}
+                    {mobile ? (
+                      <ComparisonMetric
+                        metric={mobile.labMetrics.find((v) => v.id === m.id)}
+                      />
+                    ) : (
+                      "Not checked"
+                    )}
                   </td>
                   <td className="p-3 text-xs">
-                    {desktop?.labMetrics.find((v) => v.id === m.id)
-                      ?.displayValue || "Not checked"}
+                    {desktop ? (
+                      <ComparisonMetric
+                        metric={desktop.labMetrics.find((v) => v.id === m.id)}
+                      />
+                    ) : (
+                      "Not checked"
+                    )}
                   </td>
                 </tr>
               ))}
@@ -147,7 +254,8 @@ export default function ReportInsights({
         </div>
         <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
           These are separate lab runs under different device conditions. Similar
-          results are possible. Compare only reports for the same URL.
+          results are possible. Compare only reports for the same URL. Real-user
+          data covers a rolling collection period and may change slowly.
         </p>
       </section>
       <section className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700">

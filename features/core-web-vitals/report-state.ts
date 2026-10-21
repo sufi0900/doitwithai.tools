@@ -20,6 +20,9 @@ export function matchingReport(
     if (
       !report ||
       report.strategy !== strategy ||
+      normalizeReportUrl(report.requestedUrl) !== normalizeReportUrl(url) ||
+      (["mobile", "desktop"].includes(report.environment?.formFactor ?? "") &&
+        report.environment?.formFactor !== strategy) ||
       !report.checkedAt ||
       !Number.isFinite(Date.parse(report.checkedAt)) ||
       now - Date.parse(report.checkedAt) > 30 * 60 * 1000
@@ -38,6 +41,11 @@ export function reportSummary(report: PageSpeedResult) {
     `Checked: ${report.checkedAt || "Not provided"}`,
     "",
     ...report.categories.map((c) => `${c.name}: ${c.score ?? "Not available"}`),
+    "",
+    `Real-user data: ${report.fieldData.source ? report.fieldData.source + "-level" : "Unavailable"}`,
+    ...report.fieldData.metrics.map(
+      (m) => `${m.label}: ${m.displayValue} (${m.rating})`,
+    ),
     "",
     "Lab measurements",
     ...report.labMetrics.map(

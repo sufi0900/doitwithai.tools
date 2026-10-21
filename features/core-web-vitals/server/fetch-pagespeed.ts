@@ -1,3 +1,4 @@
+import { metricRating } from "../ratings";
 import { extractFindings, cleanDescription } from "../insights";
 import type {
   CategoryScore,
@@ -9,7 +10,7 @@ import type {
 } from "../types";
 
 const ENDPOINT = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
-const FETCH_TIMEOUT_MS = 55_000;
+const FETCH_TIMEOUT_MS = 45_000;
 
 const CATEGORY_LABELS: Record<string, string> = {
   performance: "Performance",
@@ -48,7 +49,7 @@ function rateLabMetric(
   return "poor";
 }
 
-function extractFieldData(
+export function extractFieldData(
   experience: any,
   source: "page" | "origin",
 ): FieldData | null {
@@ -62,25 +63,38 @@ function extractFieldData(
   };
 
   const metrics: Metric[] = Object.entries(experience.metrics)
-    .filter(([key]) => key in metricLabels)
+    .filter(
+      ([key, value]) =>
+        key in metricLabels && value && typeof value === "object",
+    )
     .map(([key, value]: [string, any]) => {
       const isScore = key === "CUMULATIVE_LAYOUT_SHIFT_SCORE";
       const percentile =
-        typeof value.percentile === "number" ? value.percentile : null;
+        typeof value.percentile === "number" &&
+        Number.isFinite(value.percentile) &&
+        value.percentile >= 0
+          ? value.percentile
+          : null;
       const display =
         percentile === null
           ? "No data"
           : isScore
             ? (percentile / 100).toFixed(2)
-            : `${(percentile / 1000).toFixed(2)}s`;
+            : key === "INTERACTION_TO_NEXT_PAINT" ||
+                key === "FIRST_INPUT_DELAY_MS"
+              ? `${Math.round(percentile)} ms`
+              : `${(percentile / 1000).toFixed(2)} s`;
       return {
         id: key,
         label: metricLabels[key],
         displayValue: display,
+        numericValue:
+          percentile === null ? null : isScore ? percentile / 100 : percentile,
         rating:
           percentile === null
             ? "unknown"
-            : CRUX_RATING[value.category as string] || "unknown",
+            : CRUX_RATING[value.category as string] ||
+              metricRating(key, isScore ? percentile / 100 : percentile),
       };
     });
 
@@ -179,7 +193,7 @@ async function fetchPageSpeed(
   if (apiKey) params.set("key", apiKey);
 
   const response = await fetch(`${ENDPOINT}?${params.toString()}`, {
-    signal: AbortSignal.timeout(45_000),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -216,6 +230,24 @@ async function fetchPageSpeed(
     );
   }
 
+  const formFactor = lighthouse.configSettings?.formFactor;
+  if (
+    (formFactor === "mobile" || formFactor === "desktop") &&
+    formFactor !== strategy
+  ) {
+    throw new PageSpeedError(
+      "The performance service returned a different device report. Please retry this device.",
+      "DEVICE_MISMATCH",
+      502,
+    );
+  }
+  if (lighthouse.runtimeError) {
+    throw new PageSpeedError(
+      "The page could not be measured. Check that it loads publicly, then try again.",
+      "PAGE_MEASUREMENT_FAILED",
+      422,
+    );
+  }
   const categories: CategoryScore[] = Object.entries(
     lighthouse.categories || {},
   ).map(([id, value]: [string, any]) => ({
@@ -233,27 +265,36 @@ async function fetchPageSpeed(
       id: audit.id,
       label: audit.title,
       displayValue: audit.displayValue || "Not available",
+      numericValue:
+        typeof audit.numericValue === "number" &&
+        Number.isFinite(audit.numericValue)
+          ? audit.numericValue
+          : null,
       rating:
-        typeof audit.score === "number"
-          ? audit.score >= 0.9
-            ? "good"
-            : audit.score >= 0.5
-              ? "needs-improvement"
-              : "poor"
-          : strategy === "mobile"
-            ? rateLabMetric(audit.id, audit.numericValue)
-            : "unknown",
+        metricRating(audit.id, audit.numericValue) !== "unknown"
+          ? metricRating(audit.id, audit.numericValue)
+          : typeof audit.score === "number"
+            ? audit.score >= 0.9
+              ? "good"
+              : audit.score >= 0.5
+                ? "needs-improvement"
+                : "poor"
+            : strategy === "mobile"
+              ? rateLabMetric(audit.id, audit.numericValue)
+              : "unknown",
     }));
 
-  const fieldData = extractFieldData(data.loadingExperience, "page") ||
-    extractFieldData(data.originLoadingExperience, "origin") || {
-      source: null,
-      overallRating: null,
-      metrics: [],
-    };
+  const fieldData = chooseFieldData(
+    data.loadingExperience,
+    data.originLoadingExperience,
+  );
 
   return {
     checkedAt: new Date().toISOString(),
+    analysisAt:
+      typeof lighthouse.fetchTime === "string"
+        ? lighthouse.fetchTime
+        : undefined,
     requestedUrl: url,
     finalUrl: lighthouse.finalUrl || url,
     strategy,
@@ -268,10 +309,34 @@ async function fetchPageSpeed(
       .map(cleanDescription)
       .slice(0, 5),
     environment: {
-      formFactor: String(lighthouse.configSettings?.formFactor || strategy),
+      formFactor: String(formFactor || "Not reported"),
       throttlingMethod: String(
         lighthouse.configSettings?.throttlingMethod || "Not reported",
       ),
     },
   };
+}
+
+/** Prefer one coherent dataset; never silently mix page and origin measurements. */
+export function chooseFieldData(
+  pageExperience: unknown,
+  originExperience: unknown,
+): FieldData {
+  const page = extractFieldData(pageExperience, "page");
+  const origin = extractFieldData(originExperience, "origin");
+  const ids = [
+    "LARGEST_CONTENTFUL_PAINT_MS",
+    "INTERACTION_TO_NEXT_PAINT",
+    "CUMULATIVE_LAYOUT_SHIFT_SCORE",
+  ];
+  const count = (data: FieldData | null) =>
+    data?.metrics.filter((m) => ids.includes(m.id) && m.numericValue != null)
+      .length ?? 0;
+  return (
+    (count(origin) > count(page) ? origin : (page ?? origin)) ?? {
+      source: null,
+      overallRating: null,
+      metrics: [],
+    }
+  );
 }
