@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ToolActions } from "../tools-workspace/ToolActions";
 import {
   ClipboardList,
   Bot,
@@ -63,13 +64,55 @@ export default function ToolCard({
   tool,
   headingLevel = 2,
   homepage = false,
+  workspace = false,
+  list = false,
 }: {
   tool: CatalogTool;
   headingLevel?: 2 | 3;
   homepage?: boolean;
+  workspace?: boolean;
+  list?: boolean;
 }) {
   const Icon = icons[tool.slug] || Sparkles;
   const Heading = headingLevel === 3 ? "h3" : "h2";
+  if (list)
+    return (
+      <article
+        data-tool-slug={tool.slug}
+        className="flex min-w-0 flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-[#1D2430] sm:flex-row sm:items-center"
+      >
+        <div className="flex min-w-0 flex-1 items-start gap-4">
+          <div className="rounded-xl bg-blue-50 p-3 text-primary dark:bg-blue-950">
+            <Icon size={22} />
+          </div>
+          <div className="min-w-0">
+            <Heading className="text-lg font-bold">
+              <Link
+                prefetch={false}
+                href={toolPath(tool.slug)}
+                className="hover:text-primary"
+              >
+                {tool.name}
+              </Link>
+            </Heading>
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+              {tool.description}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          <ToolActions id={tool.id} />
+          <Link
+            prefetch={false}
+            href={toolPath(tool.slug)}
+            aria-label={`Open ${tool.name}`}
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white"
+          >
+            Open <ArrowRight size={16} />
+          </Link>
+        </div>
+      </article>
+    );
   return (
     <article
       data-tool-slug={tool.slug}
@@ -89,6 +132,7 @@ export default function ToolCard({
       </div>
       <Heading className="text-xl font-extrabold tracking-tight text-slate-950 dark:text-white">
         <Link
+          prefetch={false}
           href={toolPath(tool.slug)}
           className="rounded hover:text-[#5271ff] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300"
         >
@@ -100,6 +144,7 @@ export default function ToolCard({
       </p>
       <Link
         data-open-tool
+        prefetch={false}
         href={toolPath(tool.slug)}
         className="mt-6 inline-flex min-h-11 w-fit items-center justify-center gap-3 rounded-lg border border-[#5271ff]/25 bg-[#5271ff]/[0.04] px-4 py-2.5 text-sm font-bold text-[#4662df] transition hover:border-[#5271ff]/50 hover:bg-[#5271ff]/[0.09] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 dark:border-blue-400/30 dark:bg-blue-400/10 dark:text-blue-200 dark:hover:bg-blue-400/20"
       >
@@ -113,6 +158,11 @@ export default function ToolCard({
           />
         </span>
       </Link>
+      {workspace && (
+        <div className="mt-4">
+          <ToolActions id={tool.id} />
+        </div>
+      )}
       <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-700/70">
         <div className="mb-3 flex flex-wrap gap-x-3 gap-y-2">
           {tool.categories.map((slug) => (

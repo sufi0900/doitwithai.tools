@@ -1,0 +1,193 @@
+.tools-shell {
+  --workspace-top: 80px;
+  position: relative;
+  background: #f8fafc;
+}
+.dark .tools-shell {
+  background: #111827;
+}
+.workspace-body {
+  min-width: 0;
+}
+.workspace-sidebar {
+  display: none;
+}
+.workspace-toolbar {
+  position: sticky;
+  top: var(--workspace-top);
+  z-index: 45;
+  display: flex;
+  min-height: 68px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+}
+.dark .workspace-toolbar {
+  color: #e2e8f0;
+  background: rgba(17, 24, 39, 0.96);
+  border-color: #334155;
+}
+.workspace-icon {
+  display: inline-flex;
+  min-height: 40px;
+  min-width: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+.workspace-icon:hover {
+  background: #5271ff12;
+}
+.workspace-icon:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.workspace-icon:focus-visible,
+.workspace-nav-link:focus-visible,
+.workspace-nav-home:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+.dark .workspace-icon {
+  border-color: #334155;
+}
+.workspace-nav-home {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #5271ff14;
+  color: #4662df;
+  font-weight: 700;
+}
+.workspace-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.workspace-nav-link:hover {
+  background: #5271ff0d;
+}
+.workspace-nav-link[aria-current="page"] {
+  background: #5271ff18;
+  color: #4662df;
+  font-weight: 700;
+}
+.dark .workspace-nav-link[aria-current="page"] {
+  color: #bfdbfe;
+}
+.workspace-profile {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: min(300px, calc(100vw - 32px));
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 15px 40px #0f172a20;
+}
+.dark .workspace-profile {
+  background: #1e293b;
+  border-color: #334155;
+}
+@media (min-width: 1400px) {
+  .tools-shell.is-catalog:not(.is-expanded) {
+    padding-left: 260px;
+  }
+  .is-catalog:not(.is-expanded) > .workspace-sidebar {
+    display: block;
+    position: sticky;
+    float: left;
+    margin-left: -260px;
+    top: 80px;
+    width: 260px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding: 20px 14px;
+    border-right: 1px solid #e2e8f0;
+  }
+  .dark .workspace-sidebar {
+    color: #e2e8f0;
+    border-color: #334155;
+  }
+}
+@media (min-width: 1680px) {
+  .tools-shell.is-tool:not(.is-expanded) {
+    padding-left: 260px;
+  }
+  .is-tool:not(.is-expanded) > .workspace-sidebar {
+    display: block;
+    position: sticky;
+    float: left;
+    margin-left: -260px;
+    top: 80px;
+    width: 260px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+    padding: 20px 14px;
+    border-right: 1px solid #e2e8f0;
+  }
+}
+@media (max-width: 479px) {
+  .workspace-toolbar {
+    padding: 8px;
+    gap: 6px;
+  }
+  .workspace-toolbar > div {
+    gap: 5px;
+  }
+}
+/* Existing tool workspaces retain their own sticky controls beneath the shared toolbar. */
+.workspace-body .top-20 {
+  top: calc(5rem + 68px);
+}
+.workspace-body .top-28 {
+  top: calc(7rem + 68px);
+}
+.workspace-body .scroll-mt-24 {
+  scroll-margin-top: calc(6rem + 68px);
+}
+.workspace-body .scroll-mt-28 {
+  scroll-margin-top: calc(7rem + 68px);
+}
+@media (min-width: 1024px) {
+  .workspace-body .lg\:top-24 {
+    top: calc(6rem + 68px);
+  }
+  .workspace-body .lg\:scroll-mt-28 {
+    scroll-margin-top: calc(7rem + 68px);
+  }
+}
+@media (min-width: 1280px) {
+  .workspace-body .xl\:top-24 {
+    top: calc(6rem + 68px);
+  }
+  .workspace-body .xl\:top-44 {
+    top: calc(11rem + 68px);
+  }
+  .workspace-body .xl\:max-h-\[calc\(100dvh-12rem\)\] {
+    max-height: calc(100dvh - 12rem - 68px);
+  }
+}
+
+.dark .workspace-nav-home {
+  color: #bfdbfe;
+}
+.dark .workspace-sidebar .text-slate-500,
+.dark .workspace-profile .text-slate-500 {
+  color: #94a3b8;
+}
