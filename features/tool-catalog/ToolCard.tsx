@@ -28,7 +28,7 @@ import {
   categoryPath,
   type CatalogTool,
 } from "./catalog";
-import { getTopicMeta } from "./discovery";
+import { getTopicMeta, topicStyle } from "./discovery";
 
 const icons: Record<string, typeof Sparkles> = {
   "serp-rich-result-preview-generator": Search,
@@ -83,10 +83,14 @@ export default function ToolCard({
     return (
       <article
         data-tool-slug={tool.slug}
-        className="group flex min-w-0 flex-col justify-between gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition duration-200 hover:border-[#5271FF]/50 hover:shadow-md dark:border-slate-800 dark:bg-[#161F30] sm:flex-row sm:items-center"
+        style={workspace && primaryTopic ? topicStyle(primaryTopic) : undefined}
+        className={`${workspace ? "workspace-topic-card" : ""} group flex min-w-0 flex-col justify-between gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition duration-200 hover:border-[#5271FF]/50 hover:shadow-md dark:border-slate-800 dark:bg-[#161F30] sm:flex-row sm:items-center`}
       >
         <div className="flex min-w-0 flex-1 items-start gap-4">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/20 bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 text-[#4A6CF7] dark:from-[#5271FF]/25 dark:to-[#4361EE]/10 dark:text-[#93B4FF]">
+          <div
+            data-topic-icon
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/20 bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 text-[#4A6CF7] dark:from-[#5271FF]/25 dark:to-[#4361EE]/10 dark:text-[#93B4FF]"
+          >
             <Icon size={22} />
           </div>
           <div className="min-w-0 flex-1">
@@ -146,17 +150,22 @@ export default function ToolCard({
   return (
     <article
       data-tool-slug={tool.slug}
-      className={`${
+      style={workspace && primaryTopic ? topicStyle(primaryTopic) : undefined}
+      className={`${workspace ? "workspace-topic-card" : ""} ${
         homepage ? "home-tool-card" : ""
       } group relative flex h-full flex-col overflow-hidden rounded-[24px] border border-slate-200/90 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-[#5271FF]/50 hover:shadow-xl hover:shadow-[#5271FF]/[0.07] dark:border-slate-800 dark:bg-[#161F30] dark:hover:border-[#5271FF]/50 sm:p-6`}
     >
       <div
         aria-hidden
+        data-topic-stripe
         className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#5271FF] via-[#4A6CF7] to-cyan-400 opacity-75 transition group-hover:opacity-100"
       />
 
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/[0.15] bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 text-[#4A6CF7] transition group-hover:scale-105 dark:border-[#5271FF]/30 dark:from-[#5271FF]/25 dark:to-[#4361EE]/10 dark:text-[#93B4FF]">
+        <div
+          data-topic-icon
+          className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/[0.15] bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 text-[#4A6CF7] transition group-hover:scale-105 dark:border-[#5271FF]/30 dark:from-[#5271FF]/25 dark:to-[#4361EE]/10 dark:text-[#93B4FF]"
+        >
           <Icon aria-hidden className="h-6 w-6" />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">

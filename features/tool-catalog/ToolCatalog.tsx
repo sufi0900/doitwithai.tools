@@ -22,7 +22,7 @@ import {
   useWorkspace,
   type WorkspaceView,
 } from "../tools-workspace/WorkspaceProvider";
-import { topics, matchesTopic, getTopicMeta } from "./discovery";
+import { topics, matchesTopic, getTopicMeta, topicStyle } from "./discovery";
 import ToolCard from "./ToolCard";
 import { findTools } from "./catalog-core.mjs";
 
@@ -372,7 +372,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
                 updateTopic("");
                 setTag("");
               }}
-              className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition ${
+              className={`workspace-topic-chip inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition ${
                 !topic
                   ? "border-[#5271FF] bg-[#5271FF]/[0.15] text-[#4A6CF7] dark:border-[#5271FF] dark:bg-[#5271FF]/25 dark:text-white"
                   : "border-slate-200/80 bg-slate-50/70 text-slate-600 hover:border-[#5271FF]/40 hover:text-slate-900 dark:border-slate-700/80 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:text-white"
@@ -394,26 +394,23 @@ export default function ToolCatalog({ category }: { category?: string }) {
               return (
                 <button
                   key={item.id}
+                  style={topicStyle(meta)}
                   type="button"
                   aria-pressed={isSelected}
                   onClick={() => {
                     updateTopic(isSelected ? "" : item.id);
                     setTag("");
                   }}
-                  className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition ${
+                  className={`workspace-topic-chip inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition ${
                     isSelected
                       ? "border-[#5271FF] bg-[#5271FF]/[0.15] text-[#4A6CF7] shadow-sm dark:border-[#5271FF] dark:bg-[#5271FF]/25 dark:text-white"
                       : "border-slate-200/80 bg-slate-50/70 text-slate-700 hover:border-[#5271FF]/40 hover:text-slate-900 dark:border-slate-700/80 dark:bg-slate-800/50 dark:text-slate-300 dark:hover:text-white"
                   }`}
                 >
-                  <TopicIcon
-                    size={14}
-                    className={
-                      isSelected ? "text-[#5271FF] dark:text-[#93B4FF]" : ""
-                    }
-                  />
+                  <TopicIcon size={14} className="opacity-90" />
                   <span>{meta.shortName}</span>
                   <span
+                    data-topic-count
                     className={`rounded-full px-1.5 py-0.5 text-[10px] ${
                       isSelected
                         ? "bg-[#5271FF] text-white"

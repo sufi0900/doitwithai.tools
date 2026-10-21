@@ -5,7 +5,11 @@ import { safeReturnPath } from "../../features/tools-workspace/supabase";
 import { POST } from "../../app/api/tools/community/route";
 import { tools } from "../../features/tool-catalog/catalog";
 import { findTools } from "../../features/tool-catalog/catalog-core.mjs";
-import { topics, matchesTopic } from "../../features/tool-catalog/discovery";
+import {
+  topics,
+  matchesTopic,
+  getTopicMeta,
+} from "../../features/tool-catalog/discovery";
 test("OAuth return URLs stay within public tools", () => {
   for (const bad of [
     null,
@@ -106,4 +110,45 @@ test("account actions accept a public host behind the Next.js internal hostname"
     body: "{}",
   });
   assert.equal((await POST(forged)).status, 403);
+});
+
+test("category accents remain readable on selected navigation backgrounds", () => {
+  const hex = (value: string) =>
+    value
+      .slice(1)
+      .match(/../g)!
+      .map((part) => parseInt(part, 16));
+  const luminance = (channels: number[]) =>
+    channels
+      .map((channel) => {
+        const s = channel / 255;
+        return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      })
+      .reduce(
+        (sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index],
+        0,
+      );
+  const contrast = (a: number[], b: number[]) => {
+    const values = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (values[0] + 0.05) / (values[1] + 0.05);
+  };
+  for (const topic of topics) {
+    const meta = getTopicMeta(topic.id),
+      rgb = meta.rgb.split(",").map(Number);
+    const lightBackground = rgb.map(
+      (channel, index) => channel * 0.13 + [248, 250, 252][index] * 0.87,
+    );
+    const darkBackground = rgb.map(
+      (channel, index) => channel * 0.15 + [15, 21, 35][index] * 0.85,
+    );
+    assert.ok(
+      contrast(hex(meta.accent), lightBackground) >= 4.5,
+      `${topic.id}: light text contrast`,
+    );
+    assert.ok(
+      contrast(hex(meta.darkAccent), darkBackground) >= 4.5,
+      `${topic.id}: dark text contrast`,
+    );
+  }
+  assert.match(getTopicMeta("future-category").accent, /^#[0-9a-f]{6}$/i);
 });
