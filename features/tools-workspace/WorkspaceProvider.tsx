@@ -1,12 +1,14 @@
 "use client";
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import { Info, X } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import {
   browserAccounts,
@@ -14,7 +16,9 @@ import {
   safeReturnPath,
 } from "./supabase";
 import { tools } from "../tool-catalog/catalog";
+
 const valid = new Set(tools.map((t) => t.id));
+
 function read(key: string): string[] {
   try {
     const data = JSON.parse(localStorage.getItem(key) || "[]");
@@ -25,6 +29,19 @@ function read(key: string): string[] {
     return [];
   }
 }
+
+export type WorkspaceView = "all" | "saved" | "recent";
+
+function parseHashView(): WorkspaceView | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.location.hash.replace(/^#/, "");
+  if (!raw) return null;
+  const params = new URLSearchParams(raw);
+  const v = params.get("view");
+  if (v === "saved" || v === "recent" || v === "all") return v;
+  return null;
+}
+
 type Workspace = {
   user: User | null;
   saved: string[];
@@ -33,6 +50,7 @@ type Workspace = {
   counts: Record<string, number>;
   ready: boolean;
   message: string;
+  dismissMessage: () => void;
   pending: string[];
   toggle: (id: string, kind: "bookmark" | "like") => void;
   signIn: () => void;
@@ -41,14 +59,31 @@ type Workspace = {
   sync: () => void;
   localCount: number;
   signingIn: boolean;
+  view: WorkspaceView;
+  setView: (view: WorkspaceView) => void;
+  selectView: (view: WorkspaceView) => void;
+  activeTopic: string;
+  setActiveTopic: (topic: string) => void;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (value: boolean | ((prev: boolean) => boolean)) => void;
 };
+
 const Context = createContext<Workspace | null>(null);
 export const useWorkspace = () => useContext(Context);
+
 export default function WorkspaceProvider({
   children,
 }: {
   children: ReactNode;
 }) {
+  const existing = useContext(Context);
+  if (existing) {
+    return <>{children}</>;
+  }
+  return <WorkspaceStateRoot>{children}</WorkspaceStateRoot>;
+}
+
+function WorkspaceStateRoot({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null),
     [saved, setSaved] = useState<string[]>([]),
     [recent, setRecent] = useState<string[]>([]),
@@ -58,9 +93,57 @@ export default function WorkspaceProvider({
     [message, setMessage] = useState(""),
     [pending, setPending] = useState<string[]>([]),
     [localCount, setLocalCount] = useState(0),
-    [signingIn, setSigningIn] = useState(false);
+    [signingIn, setSigningIn] = useState(false),
+    [view, setView] = useState<WorkspaceView>("all"),
+    [activeTopic, setActiveTopic] = useState(""),
+    [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const identity = useRef<string | null>(null),
     busy = useRef(new Set<string>());
+
+  // Sync view with URL hash on mount, hashchange, and popstate
+  useEffect(() => {
+    const syncFromLocation = () => {
+      const parsed = parseHashView();
+      setView(parsed || "all");
+    };
+    syncFromLocation();
+    window.addEventListener("hashchange", syncFromLocation);
+    window.addEventListener("popstate", syncFromLocation);
+    return () => {
+      window.removeEventListener("hashchange", syncFromLocation);
+      window.removeEventListener("popstate", syncFromLocation);
+    };
+  }, []);
+
+  // Auto-dismiss transient status messages so they never block the workspace
+  useEffect(() => {
+    if (
+      !message ||
+      /could|failed|unavailable|not available|expired|wait/i.test(message)
+    )
+      return;
+    const timer = window.setTimeout(() => {
+      setMessage("");
+    }, 4000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
+  const selectView = useCallback((nextView: WorkspaceView) => {
+    setView(nextView);
+    if (typeof window !== "undefined") {
+      if (window.location.pathname === "/tools") {
+        const nextHash = `#view=${nextView}`;
+        if (window.location.hash !== nextHash) {
+          window.history.replaceState(null, "", `/tools${nextHash}`);
+        }
+      }
+      window.dispatchEvent(
+        new CustomEvent("tools:viewchange", { detail: { view: nextView } }),
+      );
+    }
+  }, []);
+
   useEffect(() => {
     setSaved(read("tools:saved"));
     setLocalCount(read("tools:saved").length);
@@ -99,6 +182,7 @@ export default function WorkspaceProvider({
       dispose();
     };
   }, []);
+
   useEffect(() => {
     let active = true;
     const id = user?.id;
@@ -134,6 +218,7 @@ export default function WorkspaceProvider({
       active = false;
     };
   }, [user?.id]);
+
   useEffect(() => {
     let active = true;
     let dispose = () => {};
@@ -178,6 +263,7 @@ export default function WorkspaceProvider({
       dispose();
     };
   }, []);
+
   async function signIn() {
     if (signingIn) return;
     setMessage("");
@@ -204,6 +290,7 @@ export default function WorkspaceProvider({
       setMessage("Google sign-in could not start. Please try again.");
     }
   }
+
   async function action(
     id: string,
     kind: "bookmark" | "like",
@@ -252,8 +339,10 @@ export default function WorkspaceProvider({
         active
           ? kind === "like"
             ? "Thanks for your vote."
-            : "Tool saved."
-          : "Removed.",
+            : "Tool saved to your workspace."
+          : kind === "like"
+            ? "Vote removed."
+            : "Removed from saved tools.",
       );
       return true;
     } catch (error) {
@@ -269,6 +358,7 @@ export default function WorkspaceProvider({
       setPending([...busy.current]);
     }
   }
+
   function toggle(id: string, kind: "bookmark" | "like") {
     if (!valid.has(id)) return;
     if (!user) {
@@ -277,12 +367,16 @@ export default function WorkspaceProvider({
         return;
       }
       setSaved((old) => {
-        const next = old.includes(id)
-          ? old.filter((x) => x !== id)
-          : [...old, id];
+        const isRemoving = old.includes(id);
+        const next = isRemoving ? old.filter((x) => x !== id) : [...old, id];
         try {
           localStorage.setItem("tools:saved", JSON.stringify(next));
           setLocalCount(next.length);
+          setMessage(
+            isRemoving
+              ? "Removed from saved tools."
+              : "Tool saved on this device.",
+          );
         } catch {
           setMessage("This browser could not save your bookmark.");
         }
@@ -293,6 +387,7 @@ export default function WorkspaceProvider({
     if (!ready) return;
     void action(id, kind, !(kind === "bookmark" ? saved : likes).includes(id));
   }
+
   function visit(id: string) {
     if (!valid.has(id)) return;
     setRecent((old) => {
@@ -303,6 +398,7 @@ export default function WorkspaceProvider({
       return next;
     });
   }
+
   async function sync() {
     const uid = identity.current;
     if (!uid || !ready) return;
@@ -316,6 +412,7 @@ export default function WorkspaceProvider({
     } catch {}
     setMessage("Your device bookmarks are now saved to your account.");
   }
+
   return (
     <Context.Provider
       value={{
@@ -326,6 +423,7 @@ export default function WorkspaceProvider({
         counts,
         ready,
         message,
+        dismissMessage: () => setMessage(""),
         pending,
         toggle,
         signIn: () => {
@@ -345,9 +443,37 @@ export default function WorkspaceProvider({
         },
         localCount,
         signingIn,
+        view,
+        setView,
+        selectView,
+        activeTopic,
+        setActiveTopic,
+        sidebarCollapsed,
+        setSidebarCollapsed,
       }}
     >
       {children}
+      {message && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-3 z-[10040] flex max-w-[min(24rem,calc(100vw-1.5rem))] items-center gap-3 rounded-2xl border border-[#5271FF]/30 bg-white/95 px-4 py-3 text-xs font-semibold text-slate-900 shadow-2xl backdrop-blur-xl dark:border-[#5271FF]/40 dark:bg-[#161F30]/95 dark:text-white"
+        >
+          <Info
+            size={17}
+            className="shrink-0 text-[#5271FF] dark:text-[#93B4FF]"
+          />
+          <span className="flex-1 leading-relaxed">{message}</span>
+          <button
+            type="button"
+            aria-label="Dismiss notification"
+            onClick={() => setMessage("")}
+            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </Context.Provider>
   );
 }
