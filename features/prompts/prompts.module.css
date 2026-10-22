@@ -971,3 +971,241 @@
     scroll-behavior: auto !important;
   }
 }
+.detailHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 55px;
+  padding: 20px 0 38px;
+  align-items: center;
+}
+.detailHero h1 {
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -1.7px;
+  margin-bottom: 22px;
+}
+.detailHero .lead {
+  max-width: 750px;
+  font-size: 16px;
+}
+.detailOutcome {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-top: 3px solid #5271ff;
+  border-radius: 14px;
+  padding: 27px;
+}
+.detailOutcome h2 {
+  font-size: 21px;
+  line-height: 1.4;
+  font-weight: 750;
+  margin-bottom: 15px;
+}
+.detailOutcome > p:not(.eyebrow) {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+.detailOutcome .tags {
+  margin: 16px 0 0;
+}
+.detailNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 25px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 17px 0;
+  font-size: 12px;
+  font-weight: 700;
+}
+.detailNav a {
+  padding: 5px 0;
+}
+.detailSection {
+  scroll-margin-top: 110px;
+  margin-top: 42px;
+}
+.detailSection h2 {
+  font-size: 26px;
+  font-weight: 750;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  margin-bottom: 16px;
+}
+.detailSection h3 {
+  font-size: 16px;
+  font-weight: 750;
+  margin: 18px 0 10px;
+}
+.detailSection > p {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 14px 0;
+  max-width: 850px;
+}
+.detailSection .workspace {
+  margin-top: 25px;
+  padding: 28px;
+}
+.detailColumns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+  gap: 55px;
+}
+.detailSteps {
+  list-style: none;
+  padding: 0;
+}
+.detailSteps li {
+  display: flex;
+  gap: 18px;
+  align-items: start;
+  border-bottom: 1px solid var(--line);
+  padding: 17px 0;
+}
+.detailSteps li > span {
+  font-size: 12px;
+  font-weight: 750;
+  color: #5271ff;
+  padding-top: 2px;
+}
+.detailSteps p {
+  font-size: 14px;
+  color: var(--muted);
+}
+.exampleInputs {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 5px 22px;
+  margin: 22px 0;
+}
+.exampleInputs > div {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.exampleInputs > div:last-child {
+  border-bottom: 0;
+}
+.exampleInputs dt {
+  font-size: 11px;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+.exampleInputs dd {
+  font-size: 13px;
+  color: var(--muted);
+}
+.exampleOutput {
+  background: var(--soft);
+  border-left: 3px solid #5271ff;
+  padding: 20px;
+  border-radius: 0 12px 12px 0;
+  margin: 20px 0;
+}
+.exampleOutput h3 {
+  margin-top: 0;
+}
+.exampleOutput p {
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.reviewAside {
+  align-self: start;
+  position: sticky;
+  top: 105px;
+  margin-top: 42px;
+  scroll-margin-top: 110px;
+}
+.reviewList {
+  list-style: none;
+  padding: 0;
+  margin: 22px 0;
+}
+.reviewList li {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+  margin: 15px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.reviewList svg {
+  color: #27856b;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+.reviewAside .primary {
+  width: 100%;
+  font-size: 12px;
+  text-align: center;
+  white-space: normal;
+}
+.detailList {
+  padding-left: 20px;
+  list-style: disc;
+  color: var(--muted);
+  font-size: 14px;
+}
+.detailList li {
+  padding: 7px 0;
+}
+.detailNav a:hover {
+  text-decoration: underline;
+}
+@media (max-width: 900px) {
+  .detailHero,
+  .detailColumns {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .reviewAside {
+    position: static;
+    margin-top: 0;
+  }
+  .detailHero .detailOutcome {
+    max-width: 600px;
+  }
+  .detailSection {
+    margin-top: 32px;
+  }
+  .detailSection .workspace {
+    padding: 20px;
+  }
+}
+@media (max-width: 540px) {
+  .detailHero {
+    padding-top: 0;
+  }
+  .detailHero h1 {
+    font-size: 34px;
+    letter-spacing: -1px;
+  }
+  .detailNav {
+    gap: 5px 18px;
+    font-size: 11px;
+  }
+  .detailSection h2 {
+    font-size: 23px;
+  }
+  .detailOutcome {
+    padding: 20px;
+  }
+  .detailSection .workspace {
+    padding: 17px;
+  }
+}
+.breadcrumb {
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.detailSection p > a {
+  text-decoration: underline;
+  color: #405acb;
+}
+:global(.dark) .detailSection p > a {
+  color: #aabaff;
+}

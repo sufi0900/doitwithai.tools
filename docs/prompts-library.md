@@ -30,3 +30,13 @@ Do not count preview cards as published prompts. Remove the preview notice once 
 ## Current scope
 
 No schema deployment, content migration, or live Sanity writes were performed for this frontend task.
+
+## Dedicated detail pages update
+
+Cards now link to `/prompts/[slug]`. Titles also link to the same page. The inline hub workspace has been removed.
+Each page has server-rendered task guidance, prompt builder, example inputs/output, steps, mistakes, review checklist, and related workflows.
+The builder includes an illustrative example action and manual clipboard fallback. Example outputs are labeled as illustrative, never model test results.
+`features/prompts/details.ts` controls stable slugs and publication readiness. Only the complete meta title workflow currently has `ready: true`.
+Ready pages allow indexing, enter the sitemap, and include Article markup. Preview pages have real canonical URLs but use `noindex, follow` and stay out of the sitemap.
+Unknown slugs return 404. Future prompt variants serving the same task should be sections on the existing workflow page, unless they satisfy a different user need.
+This update supersedes the earlier statements about hub-only indexing and inline sample workspaces.

@@ -12,7 +12,7 @@ import styles from "@/features/prompts/prompts.module.css";
 const origin = "https://doitwithai.tools";
 const title = "AI Prompts for SEO & Content Writing | Do It With AI Tools";
 const description =
-  "Explore a preview of our SEO and content prompt library. Browse workflows for titles, headings, keyword research, technical reviews, and clearer writing.";
+  "Explore our SEO and content prompt library. Browse workflows for titles, headings, keyword research, technical reviews, and clearer writing.";
 export const metadata: Metadata = {
   metadataBase: new URL(origin),
   title,
@@ -98,14 +98,14 @@ export default function PromptsPage() {
             </p>
             <div className={styles.heroActions}>
               <a href="#prompt-library" className={styles.primary}>
-                Explore the previews <ArrowUpRight size={18} />
+                Explore the workflows <ArrowUpRight size={18} />
               </a>
               <Link href="/tools" className={styles.textLink}>
                 Looking for a tool? <ArrowUpRight size={16} />
               </Link>
             </div>
             <p className={styles.heroNote}>
-              Library preview · Sample workflows, ready to explore
+              One complete guide · Seven upcoming workflow previews
             </p>
           </div>
           <div
@@ -199,16 +199,16 @@ export default function PromptsPage() {
             <details>
               <summary>Are these published prompt guides?</summary>
               <p>
-                These are sample previews of the future library. Full guides
-                will include task-specific prompts, examples, tutorials, and
-                review checklists.
+                The meta title workflow is a complete guide. Other cards open
+                dedicated design previews while their full guides are prepared.
               </p>
             </details>
             <details>
               <summary>How do I use a sample prompt?</summary>
               <p>
-                Open a preview, fill in the context fields, then copy the prompt
-                into your preferred AI assistant. Review the result yourself.
+                Open a workflow page, fill in the context fields, then copy the
+                prompt into your preferred AI assistant. Review the result
+                yourself.
               </p>
             </details>
             <details>

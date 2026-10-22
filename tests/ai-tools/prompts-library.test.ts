@@ -47,3 +47,27 @@ test("every sample has valid categories, declared inputs, and a live tool destin
     assert.ok(prompt.checks.length > 0);
   }
 });
+
+test("detail routes are unique and only completed workflows are indexable", async () => {
+  const { promptDetails, promptPath, findPromptDetail } =
+    await import("../../features/prompts/details");
+  const slugs = Object.values(promptDetails).map((detail) => detail.slug);
+  assert.equal(new Set(slugs).size, promptPreviews.length);
+  for (const prompt of promptPreviews) {
+    const detail = promptDetails[prompt.id];
+    assert.match(detail.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+    assert.equal(findPromptDetail(detail.slug)?.prompt.id, prompt.id);
+    assert.equal(promptPath(prompt.id), `/prompts/${detail.slug}`);
+    assert.deepEqual(
+      Object.keys(detail.example).sort(),
+      [...prompt.inputs].sort(),
+    );
+  }
+  assert.equal(findPromptDetail("missing-page"), undefined);
+  assert.deepEqual(
+    Object.entries(promptDetails)
+      .filter(([, detail]) => detail.ready)
+      .map(([id]) => id),
+    ["meta-title"],
+  );
+});
