@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-21T09:39:41.645Z",
+  "generated": "2026-10-22T10:34:19.410Z",
   "static_pages": [
     {
       "url": "/",
@@ -84,6 +84,12 @@
       "url": "/guides",
       "title": "Practical Guides",
       "priority": "medium",
+      "type": "static"
+    },
+    {
+      "url": "/tools/on-page-ai-seo-analyzer",
+      "title": "On-page AI SEO Analyzer",
+      "priority": "high",
       "type": "static"
     },
     {
@@ -273,5 +279,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 45
+  "total_pages": 46
 }

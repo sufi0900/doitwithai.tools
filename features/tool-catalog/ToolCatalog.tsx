@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  ChevronRight,
   Bookmark,
   Clock,
   FileCode2,
@@ -18,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { categories, tools } from "./catalog";
+import Link from "next/link";
 import {
   useWorkspace,
   type WorkspaceView,
@@ -161,6 +163,30 @@ export default function ToolCatalog({ category }: { category?: string }) {
       aria-label="Tool finder"
       className="mt-6 scroll-mt-24"
     >
+      {!hasActiveFilters && (!category || category === "ai-seo") && (
+        <div className="mb-6 flex flex-col justify-between gap-6 overflow-hidden rounded-3xl border border-blue-300/25 bg-[#101e43] p-6 text-white sm:p-8 lg:flex-row lg:items-center">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-200/20 bg-blue-300/10 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-widest text-blue-100">
+              <Sparkles size={13} />
+              Featured workspace
+            </span>
+            <h2 className="mt-4 text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Your page. One complete review.
+            </h2>
+            <p className="mt-3 max-w-xl text-sm leading-7 text-blue-100/90">
+              Audit titles, headings, content, links, and technical signals.
+              Review the evidence, improve selected text, and export your
+              changes.
+            </p>
+          </div>
+          <Link
+            href="/tools/on-page-ai-seo-analyzer"
+            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-3 rounded-xl bg-[#5271ff] px-5 py-3 text-sm font-extrabold text-white transition hover:bg-[#4260ee]"
+          >
+            Open On-page AI SEO Analyzer <ChevronRight size={18} />
+          </Link>
+        </div>
+      )}
       {/* Unified Control Hub */}
       <div className="rounded-3xl border border-slate-200/90 bg-white/95 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-[#161F30]/95 sm:p-6">
         {/* Top Row: Workspace View Tabs (All / Saved / Recent) + Layout Switcher */}
@@ -173,6 +199,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
                   "saved",
                   "Saved tools",
                   workspace?.saved.length ?? 0,
+                  ChevronRight,
                   Bookmark,
                 ],
                 [

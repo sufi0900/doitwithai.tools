@@ -22,6 +22,52 @@
   ],
   "tools": [
     {
+      "id": "on-page-ai-seo-analyzer",
+      "slug": "on-page-ai-seo-analyzer",
+      "name": "On-page AI SEO Analyzer",
+      "description": "Audit your page in one workspace. Inspect evidence, improve selected text, review draft changes, and export a practical action plan.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "on-page SEO",
+        "page audit",
+        "AI SEO",
+        "content optimization"
+      ],
+      "kind": "Audit & improve",
+      "status": "live",
+      "addedAt": "2026-10-22",
+      "featuredOrder": 0,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        },
+        {
+          "path": "/ai-seo/meta-title",
+          "title": "Write useful page titles"
+        }
+      ],
+      "relatedToolSlugs": [
+        "heading-structure-analyzer",
+        "meta-title-generator",
+        "meta-description-generator",
+        "internal-link-opportunity-finder",
+        "readability-checker",
+        "schema-markup-generator",
+        "core-web-vitals-checker",
+        "llms-txt-generator"
+      ],
+      "topics": [
+        "on-page",
+        "technical",
+        "ai-search",
+        "writing"
+      ]
+    },
+    {
       "id": "meta-title-generator",
       "slug": "meta-title-generator",
       "name": "Meta Title Generator",
@@ -47,6 +93,7 @@
         }
       ],
       "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
         "slug-generator",
         "schema-markup-generator",
         "meta-description-generator",
@@ -150,6 +197,7 @@
         }
       ],
       "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
         "meta-title-generator",
         "h1-heading-generator"
       ],
@@ -651,6 +699,7 @@
       "featuredOrder": 19,
       "relatedGuides": [],
       "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
         "llms-txt-generator",
         "readability-checker",
         "schema-markup-generator"
@@ -871,6 +920,7 @@
       "featuredOrder": 27,
       "relatedGuides": [],
       "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
         "meta-title-generator",
         "schema-markup-generator"
       ],
@@ -925,6 +975,7 @@
       "featuredOrder": 29,
       "relatedGuides": [],
       "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
         "h1-heading-generator",
         "readability-checker"
       ],
