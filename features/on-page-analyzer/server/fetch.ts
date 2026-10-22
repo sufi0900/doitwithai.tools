@@ -113,6 +113,7 @@ export async function fetchAuditPage(
           await res.body?.cancel();
           return { status: "unknown" as const, text: "" };
         }
+        let partial = false;
         let text = "",
           bytes = 0;
         const stream = res.body?.getReader(),
@@ -126,6 +127,7 @@ export async function fetchAuditPage(
               bytes += part.byteLength;
               text += decode.decode(part, { stream: true });
               if (bytes >= 32000) {
+                partial = true;
                 await stream.cancel();
                 break;
               }
@@ -134,12 +136,14 @@ export async function fetchAuditPage(
           } finally {
             stream.releaseLock();
           }
-        return { status: "found" as const, text };
+        return { status: "found" as const, text, partial };
       }),
     );
     if (files[0].status === "fulfilled") {
       page.resources.robots = files[0].value.status;
       page.resources.robotsText = files[0].value.text;
+      page.resources.robotsPartial =
+        "partial" in files[0].value ? files[0].value.partial : false;
     }
     if (files[1].status === "fulfilled")
       page.resources.llms = files[1].value.status;

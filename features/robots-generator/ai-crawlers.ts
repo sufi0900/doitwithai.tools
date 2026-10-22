@@ -39,7 +39,7 @@ export const AI_CRAWLERS: AiCrawler[] = [
     token: "Google-Extended",
     operator: "Google",
     purpose: "training",
-    note: "Controls Gemini / AI Overviews training use — separate from Googlebot search indexing.",
+    note: "Controls Gemini training and selected grounding uses; separate from Googlebot search indexing.",
   },
   {
     token: "CCBot",

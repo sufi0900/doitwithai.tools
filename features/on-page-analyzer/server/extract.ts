@@ -30,6 +30,7 @@ export class PageCollector {
   private links: (PageSnapshot["links"][number] & { main: boolean })[] = [];
   private images: (PageSnapshot["images"][number] & { main: boolean })[] = [];
   private sequence = 0;
+  private iconPriority = 0;
   private nestedMarkup = new WeakSet<object>();
   private markupProperties = 0;
   private markupSize = 0;
@@ -197,6 +198,19 @@ export class PageCollector {
               !this.page.twitterImage
             )
               this.page.twitterImage = absoluteUrl(content, url);
+          }
+          if (
+            name === "link" &&
+            /(?:^|\s)(?:icon|apple-touch-icon)(?:$|\s)/i.test(attrs.rel || "")
+          ) {
+            const priority = /(?:^|\s)icon(?:$|\s)/i.test(attrs.rel || "")
+              ? 2
+              : 1;
+            const icon = absoluteUrl(attrs.href || "", url);
+            if (icon && priority > this.iconPriority) {
+              this.page.favicon = icon;
+              this.iconPriority = priority;
+            }
           }
           if (
             name === "link" &&

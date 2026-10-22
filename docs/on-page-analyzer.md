@@ -107,3 +107,31 @@ Live provider and production fetching behavior still require a configured deploy
 4. Expand the existing AI Citation Readiness Checker before introducing another overlapping tool.
 5. Reuse the existing schema validator, internal-link finder, and multi-page cannibalization checker.
 6. Consider controlled rendered inspection and deeper technical auditing as separately scoped infrastructure work.
+
+## Category navigation and AI opening review
+
+- Category cards and the local navigation share one navigation handler, a focus target, and an explicit scroll destination.
+- Scroll anchoring is disabled within the audit report. Category selection scrolls to the new category header after layout commits.
+- Reduced-motion preferences disable animated navigation. Initial-import scroll timers are cancelled when users select a category.
+- Category views use allowlisted fragments such as `#audit-search`, with browser Back/Forward restoration. The page retains its canonical URL.
+- Fragments are interface state, not new indexable landing pages. The audit itself remains session-only and must be imported after a reload.
+- Every category has a local score banner showing contribution, coverage, warnings, and critical findings. The overall circular score is centered.
+- Search previews show Google-style chrome, a responsive phone frame, actual declared favicons, and canvas layouts based on available width.
+- Four-column link tables have explicit widths totaling 100%. Long destinations use ellipsis and retain the full hyperlink and title.
+- AI review shows complete first paragraphs with up to two following context blocks. It does not isolate the first sentence.
+- Generic framing is flagged only when the same paragraph lacks detected explanatory cues. Topic matching remains an editorial heuristic.
+- Readability and claim-review checkboxes stay in Content and readability. AI review summarizes attribution and links to that report.
+- Optional contextual review sends at most 27 source blocks, 1,600 characters per block, and 24,000 total text characters.
+- Server validation enforces the aggregate sample budget. No opening paragraphs means no contextual generation request.
+- Search-policy checks reuse the robots parser and a bounded URL-path matcher with wildcards, terminal anchors, specificity, and Allow ties.
+- Googlebot, bingbot, OAI-SearchBot, PerplexityBot, and Claude-SearchBot have separate access findings in the AI readiness category.
+- Blocked search policies receive zero access credit and a contextual warning. Unknown or truncated policy evidence never passes.
+- GPTBot training choices and Google-Extended product controls remain visible but do not influence search-readiness points.
+- Robots permissions are not network probes. CDN restrictions, actual indexing, and citation frequency require separate evidence.
+
+Research references for this revision:
+- https://developers.openai.com/api/docs/bots
+- https://developers.google.com/search/docs/appearance/ai-features
+- https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec
+- https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers
+- https://blogs.bing.com/webmaster/2026/2/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview/

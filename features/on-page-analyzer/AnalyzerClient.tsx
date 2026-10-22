@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -51,18 +51,19 @@ import SchemaPanel from "@/features/schema-inspector/SchemaPanel";
 import AnswerReadinessPanel from "./AnswerReadinessPanel";
 import {
   CategoryReport,
+  SectionScore,
   ContentReport,
   SocialPreview,
   TechnicalReport,
-  EvidenceReview,
   EvidenceReviewScope,
 } from "./ReportPanels";
-import { PRESETS, textLayout } from "@/features/serp-preview/preview";
+import SearchAppearance from "./SearchAppearance";
+import { sectionHash, sectionFromHash } from "./navigation";
 import { categoryScores } from "./scoring";
 import { tools } from "@/features/tool-catalog/catalog";
 import { linkReport } from "./metrics";
 import type { EditorialReview } from "./review";
-import { sampleReviewBlocks } from "./audit";
+import { sampleOpeningReviewBlocks } from "./audit";
 
 type Editor = {
   field: string;
@@ -111,121 +112,6 @@ function Badge({ status }: { status: Status }) {
     </span>
   );
 }
-function SearchPreview({ page }: { page: PageSnapshot }) {
-  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-  const [layouts, setLayouts] = useState<{
-    title: ReturnType<typeof textLayout>;
-    description: ReturnType<typeof textLayout>;
-  } | null>(null);
-  useEffect(() => {
-    const context = document.createElement("canvas").getContext("2d");
-    if (!context) {
-      setLayouts(null);
-      return;
-    }
-    const preset = PRESETS[device];
-    context.font = "400 20px Arial";
-    const title = textLayout(
-      page.title,
-      preset.titleWidth,
-      preset.titleLines,
-      (t) => context.measureText(t).width,
-    );
-    context.font = "400 14px Arial";
-    const description = textLayout(
-      page.description,
-      preset.descriptionWidth,
-      preset.descriptionLines,
-      (t) => context.measureText(t).width,
-    );
-    setLayouts({ title, description });
-  }, [page.title, page.description, device]);
-  const titleWidth = layouts?.title.pixels ?? null,
-    descriptionWidth = layouts?.description.pixels ?? null;
-  return (
-    <section
-      className={styles.previewCard}
-      aria-label="Illustrative search preview"
-    >
-      <div className={styles.panelTitle}>
-        <h3>Search appearance</h3>
-        <div className={styles.segment}>
-          <button
-            type="button"
-            aria-pressed={device === "desktop"}
-            onClick={() => setDevice("desktop")}
-          >
-            <Monitor size={15} />
-            Desktop
-          </button>
-          <button
-            type="button"
-            aria-pressed={device === "mobile"}
-            onClick={() => setDevice("mobile")}
-          >
-            <Smartphone size={15} />
-            Mobile
-          </button>
-        </div>
-      </div>
-      <div
-        className={`${styles.serp} ${device === "mobile" ? styles.mobileSerp : ""}`}
-      >
-        <div className={styles.siteLine}>
-          <span className={styles.globe}>
-            <Globe2 size={19} />
-          </span>
-          <span>
-            <strong>
-              {page.siteName ||
-                (page.url ? new URL(page.url).hostname : "Your website")}
-            </strong>
-            <small>{page.url || "https://your-website.com/page"}</small>
-          </span>
-        </div>
-        <div className={styles.serpTitle}>
-          {layouts?.title.lines.join("\n") ||
-            page.title ||
-            "Add a descriptive page title"}
-        </div>
-        <p>
-          {layouts?.description.lines.join("\n") ||
-            page.description ||
-            "Add a page-specific description to preview your proposed search snippet."}
-        </p>
-      </div>
-      <div className={styles.previewStats}>
-        <span>
-          Title {titleWidth === null ? "" : `≈ ${titleWidth} px`} ·{" "}
-          {page.title.length} characters
-        </span>
-        <span>
-          Description{" "}
-          {descriptionWidth === null ? "" : `≈ ${descriptionWidth} px`} ·{" "}
-          {page.description.length} characters
-        </span>
-      </div>
-      {layouts && (
-        <p className={styles.muted}>
-          {layouts.title.truncated
-            ? "Title may be clipped. "
-            : "Title fits this preview guide. "}
-          {layouts.description.truncated
-            ? "Description may be clipped. "
-            : "Description fits this preview guide. "}
-          Guide: title {PRESETS[device].titleWidth}px ×{" "}
-          {PRESETS[device].titleLines} line(s); description{" "}
-          {PRESETS[device].descriptionWidth}px ×{" "}
-          {PRESETS[device].descriptionLines} lines.
-        </p>
-      )}
-      <p className={styles.muted}>
-        Illustrative preview. Widths, line wrapping, and search engine rewrites
-        can change the actual result.
-      </p>
-    </section>
-  );
-}
 export default function AnalyzerClient() {
   const [source, setSource] = useState<"url" | "paste">("url"),
     [url, setUrl] = useState(""),
@@ -266,6 +152,9 @@ export default function AnalyzerClient() {
     openerRef = useRef<HTMLElement | null>(null),
     drawerRef = useRef<HTMLElement>(null),
     reportRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const pendingNavigation = useRef(false);
+  const importScroll = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draft = useMemo(
     () => (page ? applyDraft(page, changes) : null),
     [page, changes],
@@ -295,11 +184,56 @@ export default function AnalyzerClient() {
     )
     .sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
   const headings = active?.blocks.filter((b) => /^h[1-6]$/.test(b.tag)) || [];
+  function scrollToCategory(target: Section = section) {
+    const pane = target === "overview" ? reportRef.current : canvasRef.current;
+    if (!pane) return;
+    pane.focus({ preventScroll: true });
+    pane.scrollIntoView({
+      block: "start",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
+  }
+  function navigateSection(next: Section, updateHistory = true) {
+    if (importScroll.current) clearTimeout(importScroll.current);
+    setFilter("all");
+    if (updateHistory && window.location.hash !== sectionHash(next))
+      window.history.pushState(window.history.state, "", sectionHash(next));
+    if (next === section) {
+      requestAnimationFrame(() => scrollToCategory(next));
+      return;
+    }
+    pendingNavigation.current = true;
+    setSection(next);
+  }
+  useLayoutEffect(() => {
+    if (!pendingNavigation.current || !active) return;
+    pendingNavigation.current = false;
+    scrollToCategory(section);
+  }, [section, active]);
+  useEffect(() => {
+    const restore = () => {
+      const next = sectionFromHash(window.location.hash) || "overview";
+      pendingNavigation.current = true;
+      setSection(next);
+      setFilter("all");
+    };
+    const initial = sectionFromHash(window.location.hash);
+    if (initial) setSection(initial);
+    window.addEventListener("popstate", restore);
+    window.addEventListener("hashchange", restore);
+    return () => {
+      window.removeEventListener("popstate", restore);
+      window.removeEventListener("hashchange", restore);
+    };
+  }, []);
   useEffect(
     () => () => {
       requestRef.current?.abort();
       suggestRef.current?.abort();
       reviewRef.current?.abort();
+      if (importScroll.current) clearTimeout(importScroll.current);
     },
     [],
   );
@@ -315,7 +249,7 @@ export default function AnalyzerClient() {
       if (e.key === "Escape") {
         suggestRef.current?.abort();
         setEditor(null);
-        openerRef.current?.focus();
+        openerRef.current?.focus({ preventScroll: true });
       }
       if (e.key === "Tab") {
         const nodes = Array.from(
@@ -370,7 +304,7 @@ export default function AnalyzerClient() {
         );
       setPage(data.result);
       setChanges([]);
-      setSection("overview");
+      setSection(sectionFromHash(window.location.hash) || "overview");
       setMode("audit");
       setFilter("all");
       setReview(null);
@@ -387,12 +321,9 @@ export default function AnalyzerClient() {
         setNotice(
           "Audit complete. Review the coverage and priority findings below.",
         );
-      setTimeout(
+      importScroll.current = setTimeout(
         () =>
-          reportRef.current?.scrollIntoView({
-            block: "start",
-            behavior: "smooth",
-          }),
+          scrollToCategory(sectionFromHash(window.location.hash) || "overview"),
         80,
       );
     } catch (e) {
@@ -518,7 +449,7 @@ export default function AnalyzerClient() {
     suggestRef.current?.abort();
     setEditor(null);
     setSuggesting(false);
-    openerRef.current?.focus();
+    openerRef.current?.focus({ preventScroll: true });
   }
   async function suggest() {
     if (!editor || !draft || editor.kind === "schema") return;
@@ -580,7 +511,13 @@ export default function AnalyzerClient() {
     reviewRef.current?.abort();
     reviewRef.current = controller;
     const fingerprint = reviewFingerprint,
-      blocks = sampleReviewBlocks(active.blocks);
+      blocks = sampleOpeningReviewBlocks(active);
+    if (!blocks.some((b) => !/^h[1-6]$/.test(b.tag))) {
+      setReviewError(
+        "No opening paragraphs were extracted. Import the rendered HTML before requesting a contextual review.",
+      );
+      return;
+    }
     setReviewBusy(true);
     setReviewError("");
     try {
@@ -672,6 +609,13 @@ export default function AnalyzerClient() {
             Paste HTML
           </button>
         </div>
+        {!page && section !== "overview" && (
+          <p className={styles.notice}>
+            Selected report: {SECTIONS.find((s) => s.id === section)?.label}.
+            Import a page to open this view. Audit data is not stored in the
+            link.
+          </p>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -839,7 +783,13 @@ export default function AnalyzerClient() {
       )}
       {page && active && (
         <EvidenceReviewScope key={page.checkedAt}>
-          <div ref={reportRef} className={styles.report} aria-busy={loading}>
+          <div
+            ref={reportRef}
+            tabIndex={-1}
+            aria-label="Page audit overview"
+            className={styles.report}
+            aria-busy={loading}
+          >
             <header className={styles.reportHeader}>
               <div className={styles.reportIdentity}>
                 <span className={styles.eyebrow}>
@@ -901,6 +851,10 @@ export default function AnalyzerClient() {
                   Below 90% coverage, scores are provisional. Manual
                   acknowledgments never increase audit health. Product weights
                   are not Google ranking factors.
+                </p>
+                <p>
+                  Blocked search crawler policies earn zero access points.
+                  Training policies never change this score.
                 </p>
                 <div className={styles.weightList}>
                   {categorySummaries.map((c) => (
@@ -980,10 +934,8 @@ export default function AnalyzerClient() {
             </div>
             <CategoryReport
               findings={findings}
-              onSelect={(s) => {
-                setSection(s);
-                setFilter("all");
-              }}
+              active={section}
+              onSelect={navigateSection}
             />
             <div className={styles.modeBar}>
               <div className={styles.segment}>
@@ -1030,10 +982,7 @@ export default function AnalyzerClient() {
                       key={s.id}
                       type="button"
                       aria-current={section === s.id ? "page" : undefined}
-                      onClick={() => {
-                        setSection(s.id);
-                        setFilter("all");
-                      }}
+                      onClick={() => navigateSection(s.id)}
                     >
                       <I size={17} />
                       <span>
@@ -1060,7 +1009,23 @@ export default function AnalyzerClient() {
                   </p>
                 </div>
               </nav>
-              <div className={styles.canvas}>
+              <div
+                ref={canvasRef}
+                tabIndex={-1}
+                className={styles.canvas}
+                id="audit-category-content"
+                aria-label={`${SECTIONS.find((s) => s.id === section)?.label} report`}
+              >
+                <span className={styles.srOnly} role="status">
+                  Viewing {SECTIONS.find((s) => s.id === section)?.label}
+                </span>
+                {section !== "overview" && (
+                  <SectionScore
+                    category={categorySummaries.find((c) => c.id === section)!}
+                    findings={findings.filter((f) => f.section === section)}
+                  />
+                )}
+
                 {section === "overview" && (
                   <>
                     <div className={styles.sectionHeading}>
@@ -1074,12 +1039,12 @@ export default function AnalyzerClient() {
                         Priority reflects our checklist
                       </span>
                     </div>
-                    <SearchPreview page={active} />
+                    <SearchAppearance page={active} keyword={keyword} />
                   </>
                 )}
                 {section === "search" && (
                   <>
-                    <SearchPreview page={active} />
+                    <SearchAppearance page={active} keyword={keyword} />
                     <SocialPreview page={active} />
                     <div className={styles.quickFields}>
                       {[
@@ -1206,7 +1171,7 @@ export default function AnalyzerClient() {
                       Destinations were not fetched. Counts cover {active.scope}
                       .
                     </p>
-                    <div className={styles.tableWrap}>
+                    <div className={`${styles.tableWrap} ${styles.linkTable}`}>
                       <table>
                         <thead>
                           <tr>
@@ -1219,10 +1184,18 @@ export default function AnalyzerClient() {
                         <tbody>
                           {active.links.slice(0, 120).map((l, i) => (
                             <tr key={i}>
-                              <td>{l.text || "No text anchor"}</td>
+                              <td>
+                                <span
+                                  className={styles.linkAnchor}
+                                  title={l.text}
+                                >
+                                  {l.text || "No text anchor"}
+                                </span>
+                              </td>
                               <td>
                                 <a
                                   href={l.href}
+                                  title={l.href}
                                   rel="noreferrer"
                                   target="_blank"
                                 >
@@ -1311,6 +1284,7 @@ export default function AnalyzerClient() {
                 {section === "ai-search" && (
                   <AnswerReadinessPanel
                     page={active}
+                    onNavigate={navigateSection}
                     onEdit={(field, label) => {
                       const b = active.blocks.find((b) => b.id === field);
                       if (b)
@@ -1323,18 +1297,16 @@ export default function AnalyzerClient() {
                   />
                 )}
                 {section === "ai-search" && (
-                  <EvidenceReview key={active.checkedAt} page={active} />
-                )}
-                {section === "ai-search" && (
                   <section className={styles.evidencePanel}>
                     <span className={styles.eyebrow}>
                       Clarity, evidence, and access
                     </span>
-                    <h3>Useful content comes first.</h3>
+                    <h3>Review opening paragraphs in context.</h3>
                     <p className={styles.muted}>
-                      Optional editorial review checks a representative sample
-                      against your page promise and supplied audience. It does
-                      not verify facts or search rankings.
+                      Optional review checks opening paragraphs with their
+                      headings and nearby context against your page promise. It
+                      does not verify facts or search rankings. Long paragraphs
+                      may be shortened in this optional sample.
                     </p>
                     <button
                       className={styles.suggestButton}
@@ -1348,8 +1320,8 @@ export default function AnalyzerClient() {
                         <Sparkles size={16} />
                       )}
                       {reviewBusy
-                        ? "Reviewing sampled passages…"
-                        : "Review content clarity & evidence"}
+                        ? "Reviewing opening paragraphs…"
+                        : "Review opening answers in context"}
                     </button>
                     {reviewError && (
                       <p role="alert" className={styles.error}>
@@ -1410,37 +1382,27 @@ export default function AnalyzerClient() {
                       </div>
                     )}
 
-                    <p>
-                      Review claims, explain unfamiliar entities, and make your
-                      page useful for its intended reader. These checks cannot
-                      predict AI citations.
-                    </p>
-                    <div className={styles.typeChips}>
-                      <span>llms.txt: {active.resources.llms}</span>
-                      <span>robots.txt: {active.resources.robots}</span>
-                      <span>
-                        Author metadata:{" "}
-                        {active.author ? "found" : "not detected"}
-                      </span>
-                    </div>
                     <p className={styles.muted}>
-                      Crawl access and indexability are summarized here. Use the
-                      dedicated crawler checker for detailed rules and access
-                      matrices.
+                      This review describes content and access signals. Actual
+                      citation frequency requires observed search results or
+                      first-party reporting.
                     </p>
-                    <Link
-                      href="/tools/robots-txt-generator"
-                      className={styles.toolLink}
-                    >
-                      Open crawler access checker <ArrowRight size={15} />
-                    </Link>
                     <Link
                       href="/tools/ai-citation-readiness-checker"
                       className={styles.toolLink}
                     >
-                      Open the dedicated AI content readiness review{" "}
+                      Open AI Citation Readiness Checker{" "}
                       <ArrowRight size={15} />
                     </Link>
+                    <a
+                      href="https://developers.google.com/search/docs/appearance/ai-features"
+                      target="_blank"
+                      rel="noreferrer"
+                      className={styles.toolLink}
+                    >
+                      Google guidance on AI search features{" "}
+                      <ArrowUpRight size={15} />
+                    </a>
                   </section>
                 )}
                 <div className={styles.findingHeader}>

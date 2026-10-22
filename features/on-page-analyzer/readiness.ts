@@ -1,3 +1,4 @@
+import { words } from "./text";
 import { claimPassages } from "./metrics";
 import type { Block, PageSnapshot } from "./types";
 import { authorsFromSchemas } from "@/features/schema-inspector/inspect";
@@ -6,9 +7,11 @@ export type AnswerSection = {
   passage: Block | null;
   status: "review" | "available" | "unknown";
   reason: string;
+  label: string;
+  paragraphs: Block[];
 };
 const opener =
-  /^(?:in (?:this|today['’]s) (?:article|guide|post|world)|welcome to|have you ever wondered|before we (?:start|begin)|let['’]s (?:dive|explore))/i;
+  /^(?:in (?:this|today['’]s) (?:article|guide|post|world)|welcome to|have you ever wondered|before we (?:start|begin)|let['’]s (?:dive|explore)|we (?:have seen|have witnessed|are seeing)|in recent years|over (?:the|recent) (?:past )?years|the (?:world|landscape) of)/i;
 const administrative =
   /^(?:table of contents|contents|on this page|about the author|share this|related (?:posts|articles)|references|sources)$/i;
 const meaningful = (b: Block) =>
@@ -18,38 +21,89 @@ const meaningful = (b: Block) =>
   !/^(?:AI tools? expert|author|founder|written by|updated on|published on)\b/i.test(
     b.text.trim(),
   );
-function classify(heading: Block | null, passage: Block | null): AnswerSection {
+const topicStop = new Set(
+  "what why how when where which the a an and or of to in for with your our this that explained explanation overview guide practical reviewed workflow through about benefits advantages introduction".split(
+    " ",
+  ),
+);
+function classify(
+  heading: Block | null,
+  paragraphs: Block[],
+  topic: string,
+  opening = false,
+): AnswerSection {
+  const passage = paragraphs[0] || null;
+  const base = { heading, passage, paragraphs };
   if (!passage)
     return {
-      heading,
-      passage,
+      ...base,
       status: "unknown",
+      label: "Opening paragraph unavailable",
       reason:
-        "No following text block was extracted before the next heading. Review the rendered page before adding content.",
+        "No following paragraph was extracted before the next heading. Review the rendered page before adding content.",
     };
-  if (opener.test(passage.text.trim()))
+  const text = passage.text;
+  const tokens = words(topic.toLowerCase())
+    .filter(
+      (w) =>
+        !topicStop.has(w) &&
+        (w.length >= 3 || ["ai", "h1", "h2", "ux", "ui"].includes(w)),
+    )
+    .slice(0, 12);
+  const paragraphWords = new Set(words(text.toLowerCase()));
+  const overlap = tokens.filter((w) => paragraphWords.has(w)).length;
+  const explanatory =
+    overlap > 0 &&
+    /\b(?:is|are|means|refers to|uses|helps|combines|involves|enables|start|first|choose|follow|compare|steps)\b/i.test(
+      text,
+    );
+  if (opener.test(text.trim()) && !explanatory)
     return {
-      heading,
-      passage,
+      ...base,
       status: "review",
+      label: "Opening delays the topic",
       reason:
-        "The passage opens with introductory framing. Consider whether the reader would benefit from an earlier answer or key point.",
+        "This paragraph starts with broad framing without a detected topic explanation. Consider stating the definition, result, or useful overview earlier.",
     };
-  if (passage.text.length > 700)
+  const definition =
+    /^(?:what (?:is|are)|define|meaning of)\b|\b(?:explained|explanation)\b/i.test(
+      topic,
+    );
+  if ((definition || opening) && tokens.length && !overlap)
     return {
-      heading,
-      passage,
+      ...base,
       status: "review",
+      label: "Review topic alignment",
       reason:
-        "The opening passage is dense. Review whether the main answer is easy to find without removing useful context.",
+        "The opening paragraph does not contain the detected topic terms. Synonyms may still answer the topic; review the full paragraph before revising.",
+    };
+  if (words(text).length > 180)
+    return {
+      ...base,
+      status: "review",
+      label: "Opening is dense",
+      reason:
+        "The first paragraph contains more than 180 words. Review whether its main answer is easy to locate. This is an editorial prompt, not a search requirement.",
     };
   return {
-    heading,
-    passage,
+    ...base,
     status: "available",
-    reason:
-      "No generic introductory framing was detected in this passage. Review its meaning against the heading; this check cannot establish answer completeness.",
+    label: explanatory
+      ? "Early explanation cues found"
+      : "Review opening in context",
+    reason: explanatory
+      ? "Topic wording and explanatory or procedural cues appear in the first paragraph. These cues cannot establish accuracy, completeness, or citation likelihood."
+      : "The complete first paragraph is retained below. Automated framing checks cannot establish whether it fully answers the heading. Use the optional contextual review for a semantic assessment.",
   };
+}
+function openingParagraphs(content: Block[], start: number) {
+  const paragraphs: Block[] = [];
+  for (let i = start; i < content.length; i++) {
+    if (/^h[1-6]$/.test(content[i].tag)) break;
+    if (meaningful(content[i])) paragraphs.push(content[i]);
+    if (paragraphs.length === 3) break;
+  }
+  return paragraphs;
 }
 export function answerReadiness(page: PageSnapshot) {
   let contentsList = false;
@@ -67,15 +121,11 @@ export function answerReadiness(page: PageSnapshot) {
   });
   const firstHeading = content.findIndex((b) => b.tag === "h1");
   const start = firstHeading >= 0 ? firstHeading + 1 : 0;
-  const nextHeading = content.findIndex(
-    (b, i) => i >= start && /^h[1-6]$/.test(b.tag),
-  );
-  const firstPassage = content
-    .slice(start, nextHeading >= 0 ? nextHeading : undefined)
-    .find(meaningful);
   const opening = classify(
     firstHeading >= 0 ? content[firstHeading] : null,
-    firstPassage || null,
+    openingParagraphs(content, start),
+    content[firstHeading]?.text || page.title,
+    true,
   );
   const sections: AnswerSection[] = [];
   for (let i = 0; i < content.length && sections.length < 40; i++) {
@@ -84,15 +134,9 @@ export function answerReadiness(page: PageSnapshot) {
       administrative.test(content[i].text.trim())
     )
       continue;
-    let passage: Block | null = null;
-    for (let j = i + 1; j < content.length; j++) {
-      if (/^h[1-6]$/.test(content[j].tag)) break;
-      if (meaningful(content[j])) {
-        passage = content[j];
-        break;
-      }
-    }
-    sections.push(classify(content[i], passage));
+    sections.push(
+      classify(content[i], openingParagraphs(content, i + 1), content[i].text),
+    );
   }
   const claims = claimPassages(page);
   const authors = authorsFromSchemas(page.schemas);

@@ -41,6 +41,7 @@ export type PageSnapshot = {
   ogDescription: string;
   ogImage: string;
   siteName: string;
+  favicon?: string;
   twitterTitle?: string;
   twitterDescription?: string;
   twitterImage?: string;
@@ -67,6 +68,7 @@ export type PageSnapshot = {
   resources: {
     robots: "found" | "missing" | "unknown";
     robotsText: string;
+    robotsPartial?: boolean;
     llms: "found" | "missing" | "unknown";
   };
 };
@@ -79,6 +81,7 @@ export type Finding = {
   advice: string;
   tool: string;
   weight: number;
+  credit?: 0 | 0.5 | 1;
   field?: string;
 };
 export type Change = { field: string; before: string; after: string };

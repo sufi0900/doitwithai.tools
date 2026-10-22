@@ -1,4 +1,4 @@
-export const words = (text: string) =>
+export const words = (text: string): string[] =>
   text.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || [];
 export const normalize = (text: string) => words(text.toLowerCase()).join(" ");
 export function phraseCount(text: string, phrase: string) {

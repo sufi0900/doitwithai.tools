@@ -9,7 +9,7 @@ import {
   type SetStateAction,
 } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { categoryScores } from "./scoring";
 import {
   claimPassages,
@@ -30,7 +30,9 @@ const band = (score: number | null) =>
 export function CategoryReport({
   findings,
   onSelect,
+  active,
 }: {
+  active: Section;
   findings: Finding[];
   onSelect: (s: Section) => void;
 }) {
@@ -45,9 +47,14 @@ export function CategoryReport({
           className={styles.categoryCard}
           key={c.id}
           onClick={() => onSelect(c.id)}
+          aria-pressed={active === c.id}
+          aria-controls="audit-category-content"
           data-band={c.critical ? "poor" : band(c.score)}
         >
-          <span>{c.label}</span>
+          <span className={styles.categoryTitle}>
+            {c.label}
+            <ChevronRight size={16} />
+          </span>
           <strong>
             {c.score ?? "Not assessed"}
             {c.score !== null && <small>/100</small>}
@@ -67,6 +74,42 @@ export function CategoryReport({
         </button>
       ))}
     </section>
+  );
+}
+export function SectionScore({
+  category,
+  findings,
+}: {
+  category: ReturnType<typeof categoryScores>[number];
+  findings: Finding[];
+}) {
+  const warnings = findings.filter((f) => f.status === "warning").length;
+  const passed = findings.filter((f) => f.status === "passed").length;
+  return (
+    <header
+      className={styles.sectionScore}
+      data-band={category.critical ? "poor" : band(category.score)}
+    >
+      <div>
+        <span className={styles.eyebrow}>Category overview</span>
+        <h3>{category.label}</h3>
+        <p>
+          {category.contribution.toFixed(1)} of {category.weight} possible audit
+          points earned · {category.coverage}% check coverage
+        </p>
+        <p className={styles.muted}>
+          {passed} passed · {warnings} warnings · {category.critical} critical
+          findings
+        </p>
+      </div>
+      <div className={styles.sectionScoreNumber}>
+        <strong>{category.score ?? "Not assessed"}</strong>
+        {category.score !== null && <span>/ 100</span>}
+        <small>
+          {category.coverage < 90 ? "Partial measurement" : "Measured checks"}
+        </small>
+      </div>
+    </header>
   );
 }
 export function SocialPreview({ page }: { page: PageSnapshot }) {

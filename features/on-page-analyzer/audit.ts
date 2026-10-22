@@ -6,6 +6,7 @@ import {
 import { words, normalize, phraseCount } from "./text";
 export { words, normalize, phraseCount } from "./text";
 import { readabilityReport } from "./metrics";
+import { crawlerReadiness } from "./crawlers";
 import { answerReadiness } from "./readiness";
 export { summarize } from "./scoring";
 export function applyDraft(
@@ -534,15 +535,32 @@ export function auditPage(
   add(
     "answer-framing",
     "ai-search",
-    !available.length
+    !available.length || !/^en(?:-|$)/i.test(page.language)
       ? "unchecked"
       : bodyStatus(framing.length ? "warning" : "passed"),
-    "Section opening clarity cues",
-    `${available.length} openings inspected; ${framing.length} contain generic introductory framing or dense text.`,
+    "Opening paragraph readiness cues",
+    `${available.length} openings inspected; ${framing.length} need review for generic framing, topic alignment, or density.`,
     "Inspect the quoted openings in context. This measures framing cues, not answer accuracy or citation likelihood.",
     "ai-citation-readiness-checker",
     2,
   );
+  for (const crawler of crawlerReadiness(page).filter((c) => c.scored)) {
+    add(
+      `crawler-${crawler.token}`,
+      "ai-search",
+      crawler.status === "unknown"
+        ? "unchecked"
+        : crawler.status === "blocked"
+          ? "warning"
+          : "passed",
+      `${crawler.token} search policy`,
+      `${crawler.rule}. ${crawler.reason}`,
+      "Review this policy if you want discovery through this search service. Robots permission does not establish network access, indexing, or citation likelihood.",
+      "robots-txt-generator",
+      1,
+    );
+    if (crawler.status === "blocked") findings[findings.length - 1].credit = 0;
+  }
   add(
     "author",
     "ai-search",
@@ -653,4 +671,33 @@ export function sampleReviewBlocks(blocks: Block[]) {
       ...candidates[i],
       text: candidates[i].text.slice(0, 1000),
     }));
+}
+
+/** Review actual opening paragraphs with their headings, not isolated first sentences. */
+export function sampleOpeningReviewBlocks(page: PageSnapshot): Block[] {
+  const report = answerReadiness(page);
+  const sections = [
+    report.opening,
+    ...report.sections.filter((s) => s.status === "review"),
+    ...report.sections.filter((s) => s.status !== "review"),
+  ].slice(0, 9);
+  const seen = new Set<string>();
+  let remaining = 24000;
+  return sections
+    .flatMap((s) => [
+      ...(s.heading ? [s.heading] : []),
+      ...s.paragraphs.slice(0, 2),
+    ])
+    .filter((b) => {
+      if (seen.has(b.id)) return false;
+      seen.add(b.id);
+      return true;
+    })
+    .slice(0, 27)
+    .flatMap((b) => {
+      if (remaining <= 0) return [];
+      const text = b.text.slice(0, Math.min(1600, remaining));
+      remaining -= text.length;
+      return [{ ...b, text }];
+    });
 }

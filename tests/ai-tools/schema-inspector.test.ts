@@ -212,14 +212,14 @@ test("opening and section boundaries never borrow a later section's answer", () 
   assert.equal(r.sections[1].passage?.text, "Actual nested explanation.");
   assert.equal(r.sections[2].status, "review");
 });
-test("short passages are detected, not certified as direct or correct answers", () => {
+test("unrelated opening paragraphs are flagged without claiming semantic certainty", () => {
   const r = answerReadiness(
     extractHtml(
       "<main><h1>Topic</h1><p>Brief unrelated wording.</p><h2>Details</h2><p>A short passage.</p></main>",
     ),
   );
-  assert.equal(r.opening.status, "available");
-  assert.match(r.opening.reason, /cannot establish/);
+  assert.equal(r.opening.status, "review");
+  assert.match(r.opening.reason, /Synonyms may still answer/);
 });
 test("claim cues remain editorial prompts and new schema findings link to the validator", () => {
   const p = extractHtml(

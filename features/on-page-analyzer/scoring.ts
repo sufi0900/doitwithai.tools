@@ -23,7 +23,8 @@ export function categoryScores(findings: Finding[]) {
         (n, f) =>
           n +
           f.weight *
-            (f.status === "passed" ? 1 : f.status === "warning" ? 0.5 : 0),
+            (f.credit ??
+              (f.status === "passed" ? 1 : f.status === "warning" ? 0.5 : 0)),
         0,
       );
     const weight = CATEGORY_WEIGHTS[s.id as keyof typeof CATEGORY_WEIGHTS];

@@ -9,16 +9,20 @@ import {
   UserRound,
 } from "lucide-react";
 import { answerReadiness, type AnswerSection } from "./readiness";
-import type { PageSnapshot } from "./types";
+import { crawlerReadiness } from "./crawlers";
+import type { PageSnapshot, Section } from "./types";
 import styles from "./analyzer.module.css";
 export default function AnswerReadinessPanel({
   page,
   onEdit,
+  onNavigate,
 }: {
   page: PageSnapshot;
+  onNavigate?: (section: Section) => void;
   onEdit?: (id: string, label: string) => void;
 }) {
   const report = useMemo(() => answerReadiness(page), [page]);
+  const crawlers = useMemo(() => crawlerReadiness(page), [page]);
   const renderPassage = (s: AnswerSection, label: string) => (
     <details
       key={s.heading?.id || "opening"}
@@ -35,23 +39,28 @@ export default function AnswerReadinessPanel({
             ) : (
               <CheckCircle2 size={12} />
             )}
-            {s.status === "review"
-              ? "Review placement"
-              : s.status === "unknown"
-                ? "Needs context"
-                : "Review answer relevance"}
+            {s.label}
           </span>
           <span className={styles.muted}>{label}</span>
         </div>
         <h4>{s.heading?.text || page.title || "Opening passage"}</h4>
       </summary>
       {s.passage && (
-        <blockquote className={styles.evidence}>
-          {s.passage.text.slice(0, 900)}
-          {s.passage.text.length > 900 ? "…" : ""}
-        </blockquote>
+        <blockquote className={styles.evidence}>{s.passage.text}</blockquote>
       )}
       <p className={styles.advice}>{s.reason}</p>
+      {s.paragraphs.length > 1 && (
+        <details className={styles.options}>
+          <summary>
+            Following paragraph context ({s.paragraphs.length - 1})
+          </summary>
+          {s.paragraphs.slice(1).map((b) => (
+            <p key={b.id} className={styles.contextParagraph}>
+              {b.text}
+            </p>
+          ))}
+        </details>
+      )}
       {s.passage && onEdit && (
         <button
           className={styles.quiet}
@@ -59,7 +68,7 @@ export default function AnswerReadinessPanel({
           onClick={() => onEdit(s.passage!.id, "Review the opening answer")}
         >
           <PencilLine size={14} />
-          Improve this passage
+          Improve this opening paragraph
         </button>
       )}
     </details>
@@ -72,8 +81,9 @@ export default function AnswerReadinessPanel({
       <span className={styles.eyebrow}>AI content readiness</span>
       <h3>Review clarity, evidence, and original contributions.</h3>
       <p>
-        Review how your opening and sections introduce their key points. A
-        direct answer can help readers when it fits the topic.
+        Inspect complete opening paragraphs, search crawler rules, original
+        contributions, and attribution. Opening checks are editorial cues, not
+        citation probabilities.
       </p>
       <div className={styles.readinessStats}>
         <div>
@@ -96,6 +106,57 @@ export default function AnswerReadinessPanel({
         probabilities. There is no required answer length or fixed AI writing
         format.
       </p>
+      <section
+        className={styles.crawlerPanel}
+        aria-label="Search crawler policy"
+      >
+        <h4>Can search crawlers access this URL path?</h4>
+        <p className={styles.muted}>
+          Search crawler policy contributes to this category. Training
+          preferences do not earn or lose points. Firewall access remains
+          unverified.
+        </p>
+        <div className={styles.crawlerGrid}>
+          {crawlers
+            .filter((c) => c.scored)
+            .map((c) => (
+              <div key={c.token} data-access={c.status}>
+                <strong>{c.token}</strong>
+                <span>{c.purpose}</span>
+                <b>
+                  {c.status === "allowed"
+                    ? "No robots block detected"
+                    : c.status === "blocked"
+                      ? "Blocked by robots.txt"
+                      : "Not assessed"}
+                </b>
+                <small>{c.rule}</small>
+                <p>{c.reason}</p>
+              </div>
+            ))}
+        </div>
+        <details className={styles.options}>
+          <summary>Other AI product policies, not scored</summary>
+          {crawlers
+            .filter((c) => !c.scored)
+            .map((c) => (
+              <p key={c.token}>
+                <strong>{c.token}:</strong> {c.status} · {c.purpose}. No score
+                effect.
+              </p>
+            ))}
+        </details>
+        <p className={styles.muted}>
+          Retrieved indexing directives:{" "}
+          {page.robots.join("; ") ||
+            "No directives detected in the supplied evidence"}
+          . Inspect technical findings for indexing restrictions.
+        </p>
+        <Link className={styles.toolLink} href="/tools/robots-txt-generator">
+          Open Robots.txt Generator & AI Crawler Checker{" "}
+          <ArrowUpRight size={14} />
+        </Link>
+      </section>
       <div className={styles.quickFields}>
         <div>
           <h4>Original contributions</h4>
@@ -131,10 +192,26 @@ export default function AnswerReadinessPanel({
           </p>
           <p className={styles.muted}>
             A source link does not establish that it supports a particular
-            claim.
+            claim. Review individual claims in Content and readability.
           </p>
         </div>
       </div>
+      {onNavigate && (
+        <button
+          type="button"
+          className={styles.quiet}
+          onClick={() => onNavigate("content")}
+        >
+          Open the claims and readability report <ArrowUpRight size={14} />
+        </button>
+      )}
+      <h4 className={styles.openingsTitle}>
+        Do opening paragraphs address their topic?
+      </h4>
+      <p className={styles.muted}>
+        Read the full first paragraph, then expand following context. Not every
+        heading needs a definition or immediate answer.
+      </p>
       <div className={styles.answerGrid}>
         {renderPassage(report.opening, "Article opening")}
         {report.sections.map((s) =>

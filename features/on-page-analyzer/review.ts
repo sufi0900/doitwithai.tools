@@ -1,20 +1,25 @@
 import { z } from "zod";
 import type { Block } from "./types";
-export const reviewInput = z.object({
-  title: z.string().max(1000),
-  keyword: z.string().max(100).default(""),
-  audience: z.string().max(160).default(""),
-  blocks: z
-    .array(
-      z.object({
-        id: z.string().regex(/^block:\d+$/),
-        tag: z.string().regex(/^(h[1-6]|p|li|blockquote|pre|td|th|dt|dd)$/),
-        text: z.string().max(1000),
-      }),
-    )
-    .min(1)
-    .max(30),
-});
+export const reviewInput = z
+  .object({
+    title: z.string().max(1000),
+    keyword: z.string().max(100).default(""),
+    audience: z.string().max(160).default(""),
+    blocks: z
+      .array(
+        z.object({
+          id: z.string().regex(/^block:\d+$/),
+          tag: z.string().regex(/^(h[1-6]|p|li|blockquote|pre|td|th|dt|dd)$/),
+          text: z.string().max(1600),
+        }),
+      )
+      .min(1)
+      .max(30),
+  })
+  .refine(
+    (input) => input.blocks.reduce((n, b) => n + b.text.length, 0) <= 24000,
+    "The review sample exceeds 24,000 characters.",
+  );
 export const reviewOutput = z.object({
   summary: z.string().trim().min(15).max(400),
   insights: z
