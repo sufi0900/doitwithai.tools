@@ -162,7 +162,12 @@ export class PageCollector {
               const parsed = JSON.parse(frame.text);
               this.page.schemas.valid++;
               if (
-                this.page.schemas.samples.join("").length + frame.text.length <=
+                this.page.schemas.samples.join("").length +
+                  (this.page.schemas.invalidSamples || []).reduce(
+                    (n, s) => n + s.raw.length,
+                    0,
+                  ) +
+                  frame.text.length <=
                 150000
               )
                 this.page.schemas.samples.push(frame.text);
@@ -190,6 +195,19 @@ export class PageCollector {
               visit(parsed);
             } catch {
               this.page.schemas.invalid++;
+              const used =
+                this.page.schemas.samples.join("").length +
+                (this.page.schemas.invalidSamples || []).reduce(
+                  (n, s) => n + s.raw.length,
+                  0,
+                );
+              if (used + frame.text.length <= 150000) {
+                this.page.schemas.invalidSamples ||= [];
+                this.page.schemas.invalidSamples.push({
+                  raw: frame.text,
+                  block: this.page.schemas.valid + this.page.schemas.invalid,
+                });
+              } else this.truncated();
             }
           }
           if (!frame.hidden && !frame.landmark) {

@@ -45,8 +45,10 @@ import {
   type Status,
 } from "./types";
 import { EXAMPLE_HTML } from "./example";
-import type { PageSpeedResult } from "@/features/core-web-vitals/types";
 import styles from "./analyzer.module.css";
+import ScoreGauge from "./ScoreGauge";
+import SchemaPanel from "@/features/schema-inspector/SchemaPanel";
+import AnswerReadinessPanel from "./AnswerReadinessPanel";
 import type { EditorialReview } from "./review";
 import { sampleReviewBlocks } from "./audit";
 
@@ -197,12 +199,6 @@ export default function AnalyzerClient() {
       { text: string; reason: string }[]
     >([]),
     [imageContext, setImageContext] = useState("");
-  const [speeds, setSpeeds] = useState<
-      Partial<Record<"mobile" | "desktop", PageSpeedResult>>
-    >({}),
-    [speedBusy, setSpeedBusy] = useState(false),
-    [speedError, setSpeedError] = useState(""),
-    [speedDevice, setSpeedDevice] = useState<"mobile" | "desktop">("mobile");
   const [methodology, setMethodology] = useState(false);
   const [review, setReview] = useState<{
     result: EditorialReview;
@@ -214,7 +210,6 @@ export default function AnalyzerClient() {
   const reviewRef = useRef<AbortController | null>(null);
   const requestRef = useRef<AbortController | null>(null),
     suggestRef = useRef<AbortController | null>(null),
-    speedRef = useRef<AbortController | null>(null),
     editorRef = useRef<HTMLTextAreaElement>(null),
     openerRef = useRef<HTMLElement | null>(null),
     drawerRef = useRef<HTMLElement>(null),
@@ -224,20 +219,10 @@ export default function AnalyzerClient() {
     [page, changes],
   );
   const active = mode === "improve" ? draft : page;
-  const findings = useMemo(() => {
-    if (!active) return [];
-    return auditPage(active, keyword).map((f) =>
-      f.id === "performance" && speeds[speedDevice]
-        ? {
-            ...f,
-            status: "info" as const,
-            evidence: `${speedDevice} performance checked. See the measurements above.`,
-            advice:
-              "Lab measurements and real-user field data have separate scopes. Review the measurement source before comparing.",
-          }
-        : f,
-    );
-  }, [active, keyword, speeds, speedDevice]);
+  const findings = useMemo(
+    () => (active ? auditPage(active, keyword) : []),
+    [active, keyword],
+  );
   const summary = summarize(findings);
   const reviewFingerprint = useMemo(
     () => JSON.stringify({ blocks: active?.blocks, keyword, audience }),
@@ -261,7 +246,6 @@ export default function AnalyzerClient() {
     () => () => {
       requestRef.current?.abort();
       suggestRef.current?.abort();
-      speedRef.current?.abort();
       reviewRef.current?.abort();
     },
     [],
@@ -306,10 +290,8 @@ export default function AnalyzerClient() {
   async function runAudit(example = false) {
     requestRef.current?.abort();
     suggestRef.current?.abort();
-    speedRef.current?.abort();
     reviewRef.current?.abort();
     setReviewBusy(false);
-    setSpeedBusy(false);
     const controller = new AbortController();
     requestRef.current = controller;
     setLoading(true);
@@ -338,11 +320,8 @@ export default function AnalyzerClient() {
       setSection("overview");
       setMode("audit");
       setFilter("all");
-      setSpeeds({});
       setReview(null);
       setReviewError("");
-      setSpeedError("");
-      setSpeedBusy(false);
       if (example)
         setNotice(
           "Example report. This sample contains intentional issues and an illustrative, unverified claim.",
@@ -424,6 +403,8 @@ export default function AnalyzerClient() {
     if (field === "description") return "Meta description";
     if (field.startsWith("image:"))
       return `Image ${Number(field.split(":")[1]) + 1} alternative`;
+    if (field.startsWith("schema-invalid:"))
+      return `JSON-LD source correction ${Number(field.split(":")[1]) + 1}`;
     if (field.startsWith("schema:"))
       return `JSON-LD block ${Number(field.split(":")[1]) + 1}`;
     const level = field.startsWith("level:"),
@@ -443,11 +424,14 @@ export default function AnalyzerClient() {
           ? page.description
           : field.startsWith("image:")
             ? page.images[Number(field.split(":")[1])]?.alt || ""
-            : field.startsWith("schema:")
-              ? page.schemas.samples[Number(field.split(":")[1])] || ""
-              : field.startsWith("level:")
-                ? page.blocks.find((b) => b.id === field.slice(6))?.tag || ""
-                : page.blocks.find((b) => b.id === field)?.text || "";
+            : field.startsWith("schema-invalid:")
+              ? page.schemas.invalidSamples?.[Number(field.split(":")[1])]
+                  ?.raw || ""
+              : field.startsWith("schema:")
+                ? page.schemas.samples[Number(field.split(":")[1])] || ""
+                : field.startsWith("level:")
+                  ? page.blocks.find((b) => b.id === field.slice(6))?.tag || ""
+                  : page.blocks.find((b) => b.id === field)?.text || "";
     setChanges((previous) => [
       ...previous.filter((c) => c.field !== field),
       ...(original !== value
@@ -573,37 +557,6 @@ export default function AnalyzerClient() {
       if (!controller.signal.aborted) setReviewBusy(false);
     }
   }
-  async function checkSpeed() {
-    if (!page?.url) return;
-    const existing = speeds[speedDevice];
-    if (existing) return;
-    const controller = new AbortController();
-    speedRef.current = controller;
-    setSpeedBusy(true);
-    setSpeedError("");
-    try {
-      const res = await fetch("/api/ai-tools/core-web-vitals/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: page.url, strategy: speedDevice }),
-        signal: controller.signal,
-      });
-      const data = await res.json();
-      if (!res.ok)
-        throw new Error(
-          data.error?.message || "Performance check unavailable.",
-        );
-      setSpeeds((p) => ({ ...p, [data.result.strategy]: data.result }));
-    } catch (e) {
-      if (!controller.signal.aborted)
-        setSpeedError(
-          e instanceof Error ? e.message : "Performance check unavailable.",
-        );
-    } finally {
-      if (!controller.signal.aborted) setSpeedBusy(false);
-    }
-  }
-  const speed = speeds[speedDevice];
   const reportExport = () =>
     download(
       "on-page-seo-report.json",
@@ -616,7 +569,6 @@ export default function AnalyzerClient() {
           findings: page ? auditPage(page, keyword) : [],
           proposedChanges: changes,
           draftFindings: draft ? auditPage(draft, keyword) : [],
-          performance: speeds,
           editorialReview:
             review?.fingerprint === reviewFingerprint ? review.result : null,
           note: "Draft changes have not been published. Scores reflect completed checks, not rankings.",
@@ -872,19 +824,36 @@ export default function AnalyzerClient() {
               </div>
             </div>
           )}
-          <div className={styles.metrics}>
-            <div className={styles.scoreMetric}>
-              <span>Page audit score</span>
-              <strong>
-                {summary.score ?? "—"}
-                <small>/100</small>
-              </strong>
+          <section className={styles.scoreHero} aria-label="Page audit summary">
+            <ScoreGauge score={summary.score} critical={summary.critical > 0} />
+            <div>
+              <span className={styles.eyebrow}>
+                {mode === "improve" ? "Your working draft" : "Your page audit"}
+              </span>
+              <h3>
+                {summary.critical
+                  ? "Resolve the critical findings first."
+                  : summary.score === null
+                    ? "More evidence is needed."
+                    : summary.score >= 80
+                      ? "A good foundation to build on."
+                      : summary.score >= 50
+                        ? "Useful improvements are within reach."
+                        : "Start with the essentials."}
+              </h3>
               <p>
                 {mode === "improve"
-                  ? `Draft estimate · published snapshot ${originalSummary.score ?? "—"}`
-                  : "Based on completed weighted checks"}
+                  ? `Draft estimate. Original snapshot: ${originalSummary.score ?? "not available"}/100.`
+                  : "Your checklist score reflects completed checks. Inspect the evidence before making changes."}
               </p>
+              <small>
+                {summary.assessed} of {summary.total} checks assessed ·{" "}
+                {page.partial ? "Partial extraction" : "Returned HTML"} ·
+                Rankings and AI citations are not predicted.
+              </small>
             </div>
+          </section>
+          <div className={styles.metrics}>
             <div>
               <span>Needs attention</span>
               <strong className={styles.redText}>
@@ -1220,177 +1189,60 @@ export default function AnalyzerClient() {
                 </section>
               )}
               {section === "schema" && (
-                <section className={styles.evidencePanel}>
-                  <div className={styles.panelTitle}>
-                    <h3>Structured data evidence</h3>
-                    <button
-                      className={styles.quiet}
-                      type="button"
-                      onClick={() =>
-                        selectEditor(
-                          `schema:${page.schemas.samples.length}`,
-                          "New JSON-LD draft",
-                          "schema",
-                        )
-                      }
-                    >
-                      {changes.some(
-                        (c) =>
-                          c.field === `schema:${page.schemas.samples.length}`,
-                      )
-                        ? "Edit added JSON-LD draft"
-                        : "Add JSON-LD draft"}
-                    </button>
-                  </div>
-                  <div className={styles.typeChips}>
-                    {active.schemas.types.map((t) => (
-                      <span key={t}>{t}</span>
-                    ))}
-                  </div>
-                  {active.schemas.samples.map((s, i) => (
-                    <details key={i} className={styles.schemaBlock}>
-                      <summary>JSON-LD block {i + 1}</summary>
-                      <pre>{s}</pre>
-                      <button
-                        className={styles.quiet}
-                        type="button"
-                        onClick={() =>
-                          selectEditor(
-                            `schema:${i}`,
-                            `JSON-LD block ${i + 1}`,
-                            "schema",
-                          )
-                        }
-                      >
-                        <PencilLine size={14} />
-                        Edit draft
-                      </button>
-                    </details>
-                  ))}
-                  <p className={styles.muted}>
-                    Invalid source blocks are counted but not reused. Editing a
-                    valid draft does not remove invalid markup from your
-                    website.
-                  </p>
-                  <Link
-                    href="/tools/schema-markup-generator"
-                    className={styles.toolLink}
-                  >
-                    Build and validate relevant schema <ArrowRight size={15} />
-                  </Link>
-                </section>
+                <SchemaPanel
+                  schema={active.schemas}
+                  pageUrl={active.url}
+                  partial={active.partial}
+                  onApply={(field, raw) => {
+                    updateChange(field, raw);
+                    setMode("improve");
+                  }}
+                />
               )}
               {section === "technical" && (
                 <section className={styles.evidencePanel}>
-                  <div className={styles.panelTitle}>
-                    <div>
-                      <h3>Optional performance check</h3>
-                      <p className={styles.muted}>
-                        Run separately so your page audit stays available.
-                      </p>
-                    </div>
-                    <div className={styles.segment}>
-                      {(["mobile", "desktop"] as const).map((d) => (
-                        <button
-                          key={d}
-                          type="button"
-                          disabled={speedBusy}
-                          aria-pressed={speedDevice === d}
-                          onClick={() => {
-                            setSpeedDevice(d);
-                            setSpeedError("");
-                          }}
-                        >
-                          {d === "mobile" ? (
-                            <Smartphone size={14} />
-                          ) : (
-                            <Monitor size={14} />
-                          )}
-                          {d}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {speed ? (
-                    <>
-                      <div className={styles.vitals}>
-                        {speed.categories.map((c) => (
-                          <div key={c.id}>
-                            <span>{c.name}</span>
-                            <strong
-                              className={
-                                c.score === null
-                                  ? ""
-                                  : c.score >= 90
-                                    ? styles.greenText
-                                    : c.score >= 50
-                                      ? styles.amberText
-                                      : styles.redText
-                              }
-                            >
-                              {c.score ?? "Not available"}
-                            </strong>
-                          </div>
-                        ))}
-                      </div>
-                      <p className={styles.muted}>
-                        Field source:{" "}
-                        {speed.fieldData.source || "No real-user field data"}.
-                        Lab results are separate measurements.
-                      </p>
-                      <div className={styles.vitals}>
-                        {(speed.fieldData.metrics.length
-                          ? speed.fieldData.metrics
-                          : speed.labMetrics
-                        ).map((m) => (
-                          <div key={m.id}>
-                            <span>{m.label}</span>
-                            <strong
-                              className={
-                                m.rating === "good"
-                                  ? styles.greenText
-                                  : m.rating === "poor"
-                                    ? styles.redText
-                                    : m.rating === "needs-improvement"
-                                      ? styles.amberText
-                                      : ""
-                              }
-                            >
-                              {m.displayValue}
-                            </strong>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <button
-                      className={styles.primary}
-                      type="button"
-                      onClick={checkSpeed}
-                      disabled={
-                        speedBusy || !page.url || page.source === "paste"
-                      }
+                  <span className={styles.eyebrow}>Technical overview</span>
+                  <h3>Check access before polishing content.</h3>
+                  <p>
+                    Review the response, indexing directives, and canonical
+                    findings below. Crawling and indexability support discovery;
+                    they do not guarantee indexing speed or AI visibility.
+                  </p>
+                  <div className={styles.technicalLinks}>
+                    <Link
+                      href="/tools/robots-txt-generator"
+                      className={styles.toolLink}
                     >
-                      {speedBusy && (
-                        <Loader2 size={16} className={styles.spin} />
-                      )}
-                      {speedBusy
-                        ? "Measuring performance…"
-                        : `Check ${speedDevice} performance`}
-                    </button>
-                  )}
-                  {speedError && (
-                    <p className={styles.error} role="alert">
-                      {speedError}
-                    </p>
-                  )}
-                  <Link
-                    href="/tools/core-web-vitals-checker"
-                    className={styles.toolLink}
-                  >
-                    Open full performance report <ArrowRight size={15} />
-                  </Link>
+                      Crawler access & robots rules <ArrowUpRight size={15} />
+                    </Link>
+                    <Link
+                      href="/tools/core-web-vitals-checker"
+                      className={styles.toolLink}
+                    >
+                      Mobile & desktop performance <ArrowUpRight size={15} />
+                    </Link>
+                    <Link
+                      href="/tools/sitemap-xml-generator"
+                      className={styles.toolLink}
+                    >
+                      Sitemap validation <ArrowUpRight size={15} />
+                    </Link>
+                  </div>
                 </section>
+              )}
+              {section === "ai-search" && (
+                <AnswerReadinessPanel
+                  page={active}
+                  onEdit={(field, label) => {
+                    const b = active.blocks.find((b) => b.id === field);
+                    if (b)
+                      selectEditor(
+                        field,
+                        label,
+                        /^h/.test(b.tag) ? "heading" : "passage",
+                      );
+                  }}
+                />
               )}
               {section === "ai-search" && (
                 <section className={styles.evidencePanel}>
@@ -1490,21 +1342,23 @@ export default function AnalyzerClient() {
                       {active.author ? "found" : "not detected"}
                     </span>
                   </div>
-                  {active.resources.robotsText && (
-                    <details className={styles.schemaBlock}>
-                      <summary>Review retrieved robots.txt</summary>
-                      <pre>{active.resources.robotsText}</pre>
-                    </details>
-                  )}
                   <p className={styles.muted}>
-                    Crawler access rules require interpretation per user agent
-                    and URL. Use the crawler checker for its access matrix.
+                    Crawl access and indexability are summarized here. Use the
+                    dedicated crawler checker for detailed rules and access
+                    matrices.
                   </p>
                   <Link
                     href="/tools/robots-txt-generator"
                     className={styles.toolLink}
                   >
-                    Inspect crawler rules <ArrowRight size={15} />
+                    Open crawler access checker <ArrowRight size={15} />
+                  </Link>
+                  <Link
+                    href="/tools/ai-citation-readiness-checker"
+                    className={styles.toolLink}
+                  >
+                    Open the dedicated AI content readiness review{" "}
+                    <ArrowRight size={15} />
                   </Link>
                 </section>
               )}

@@ -32,6 +32,7 @@ import { getTopicMeta, topicStyle } from "./discovery";
 
 const icons: Record<string, typeof Sparkles> = {
   "on-page-ai-seo-analyzer": ScanText,
+  "structured-data-validator": Braces,
   "serp-rich-result-preview-generator": Search,
   "entity-sameas-finder": Network,
   "heading-structure-analyzer": ListTree,
@@ -84,6 +85,9 @@ export default function ToolCard({
     return (
       <article
         data-tool-slug={tool.slug}
+        data-flagship={
+          tool.slug === "on-page-ai-seo-analyzer" ? "true" : undefined
+        }
         style={workspace && primaryTopic ? topicStyle(primaryTopic) : undefined}
         className={`${workspace ? "workspace-topic-card" : ""} group flex min-w-0 flex-col justify-between gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition duration-200 hover:border-[#5271FF]/50 hover:shadow-md dark:border-slate-800 dark:bg-[#161F30] sm:flex-row sm:items-center`}
       >
@@ -151,6 +155,9 @@ export default function ToolCard({
   return (
     <article
       data-tool-slug={tool.slug}
+      data-flagship={
+        tool.slug === "on-page-ai-seo-analyzer" ? "true" : undefined
+      }
       style={workspace && primaryTopic ? topicStyle(primaryTopic) : undefined}
       className={`${workspace ? "workspace-topic-card" : ""} ${
         homepage ? "home-tool-card" : ""
@@ -183,6 +190,12 @@ export default function ToolCard({
         </div>
       </div>
 
+      {tool.slug === "on-page-ai-seo-analyzer" && (
+        <span className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-[#5271ff]/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-widest text-[#3959db] dark:text-blue-200">
+          <Sparkles size={12} />
+          Flagship workspace
+        </span>
+      )}
       <Heading className="text-xl font-extrabold tracking-tight text-slate-950 dark:text-white">
         <Link
           prefetch={false}

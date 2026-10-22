@@ -22,7 +22,14 @@ export const reviewOutput = z.object({
       z.object({
         blockId: z.string(),
         quote: z.string().trim().min(8).max(220),
-        topic: z.enum(["clarity", "intent", "evidence", "coverage"]),
+        topic: z.enum([
+          "clarity",
+          "intent",
+          "evidence",
+          "coverage",
+          "answer-placement",
+          "standalone-context",
+        ]),
         observation: z.string().trim().min(15).max(350),
         action: z.string().trim().min(15).max(350),
       }),

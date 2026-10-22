@@ -55,7 +55,7 @@ const CHECKS: CheckDef[] = [
   {
     id: "first-paragraph-short",
     category: "answer",
-    label: "Opening paragraph answers quickly",
+    label: "Opening passage is easy to review",
     weight: 10,
     evaluate: (doc) => {
       const first = doc.paragraphs[0];
@@ -70,26 +70,26 @@ const CHECKS: CheckDef[] = [
         return {
           status: "warn",
           detail:
-            "Opening paragraph starts with filler instead of the answer itself.",
+            "Opening passage starts with introductory framing. Consider whether an earlier key point would help readers.",
         };
       }
       if (count > 70) {
         return {
           status: "warn",
-          detail: `Opening paragraph is ${count} words — a model has to read further to find the point.`,
+          detail: `Opening paragraph is ${count} words — review where the main point appears. This length is an editorial prompt, not an AI requirement.`,
         };
       }
       return {
         status: "pass",
-        detail: `Opening paragraph is ${count} words and reads as a direct statement.`,
+        detail: `Opening paragraph is ${count} words. Check whether it actually addresses the topic.`,
       };
     },
   },
   {
     id: "question-headings",
     category: "answer",
-    label: "At least one heading phrased as a question",
-    weight: 10,
+    label: "Question-style headings (optional)",
+    weight: 0,
     evaluate: (doc) => {
       const count = doc.headings.filter((heading) =>
         heading.text.trim().endsWith("?"),
@@ -97,12 +97,12 @@ const CHECKS: CheckDef[] = [
       return count > 0
         ? {
             status: "pass",
-            detail: `${count} question-style heading${count === 1 ? "" : "s"} found — these map well to AI Overview and chat answers.`,
+            detail: `${count} question-style heading${count === 1 ? "" : "s"} found. Use this format only when it helps the reader.`,
           }
         : {
-            status: "warn",
+            status: "na",
             detail:
-              "No headings are phrased as questions readers would actually ask.",
+              "No question-style headings detected. Questions are optional and do not affect the score.",
           };
     },
   },
@@ -128,8 +128,8 @@ const CHECKS: CheckDef[] = [
   {
     id: "has-lists-or-tables",
     category: "structure",
-    label: "Includes at least one list or table",
-    weight: 10,
+    label: "Lists and tables (optional)",
+    weight: 0,
     evaluate: (doc) =>
       doc.listCount + doc.tableCount > 0
         ? {
@@ -137,9 +137,9 @@ const CHECKS: CheckDef[] = [
             detail: `${doc.listCount} list(s) and ${doc.tableCount} table(s) found.`,
           }
         : {
-            status: "warn",
+            status: "na",
             detail:
-              "No lists or tables — these are easy for a model to extract and quote cleanly.",
+              "No lists or tables detected. Add them only where the content benefits; no score deduction.",
           },
   },
   {
@@ -172,20 +172,21 @@ const CHECKS: CheckDef[] = [
   {
     id: "has-stats",
     category: "evidence",
-    label: "Includes specific numbers or data",
-    weight: 8,
+    label: "Numbers and statistics (review cues)",
+    weight: 0,
     evaluate: (doc) => {
       const text = doc.paragraphs.join(" ");
       const hasNumber = /\d/.test(text);
       return hasNumber
         ? {
             status: "pass",
-            detail: "At least one number or statistic found in the body text.",
+            detail:
+              "Numbers are present. This does not establish accuracy, sourcing, or original research.",
           }
         : {
-            status: "warn",
+            status: "na",
             detail:
-              "No numbers found — specific figures are easier to cite than general claims.",
+              "No numbers detected. Statistics are optional; do not add unsupported figures to raise a score.",
           };
     },
   },
@@ -199,7 +200,7 @@ const CHECKS: CheckDef[] = [
         ? {
             status: "na",
             detail:
-              "Not checked for pasted text — analyze the live URL to check this.",
+              "Not established from this input. Review visible content and relevant metadata manually.",
           }
         : doc.hasAuthor
           ? { status: "pass", detail: "An author is identified on the page." }
@@ -218,7 +219,7 @@ const CHECKS: CheckDef[] = [
         ? {
             status: "na",
             detail:
-              "Not checked for pasted text — analyze the live URL to check this.",
+              "Not established from this input. Review visible content and relevant metadata manually.",
           }
         : doc.hasPublishedDate || doc.hasModifiedDate
           ? {
@@ -228,20 +229,20 @@ const CHECKS: CheckDef[] = [
           : {
               status: "warn",
               detail:
-                "No published or modified date found — freshness is a trust signal for AI answers.",
+                "No date metadata detected. Review dates where they help readers understand the content.",
             },
   },
   {
     id: "has-outbound-citations",
     category: "evidence",
     label: "Links out to at least one outside source",
-    weight: 7,
+    weight: 0,
     evaluate: (doc) =>
       doc.outboundLinkDomains === null
         ? {
             status: "na",
             detail:
-              "Not checked for pasted text — analyze the live URL to check this.",
+              "Not established from this input. Review visible content and relevant metadata manually.",
           }
         : doc.outboundLinkDomains.length > 0
           ? {
@@ -249,40 +250,45 @@ const CHECKS: CheckDef[] = [
               detail: `Links to ${doc.outboundLinkDomains.length} outside domain(s).`,
             }
           : {
-              status: "warn",
-              detail: "No outbound links to other sources found.",
+              status: "na",
+              detail:
+                "No external links detected. Review sourcing where claims need support; external links are not mandatory.",
             },
   },
   {
     id: "has-structured-data",
     category: "technical",
     label: "Page includes JSON-LD structured data",
-    weight: 10,
+    weight: 0,
     evaluate: (doc) =>
       doc.schemaTypes === null
         ? {
             status: "na",
             detail:
-              "Not checked for pasted text — analyze the live URL to check this.",
+              "Not established from this input. Review visible content and relevant metadata manually.",
           }
         : doc.schemaTypes.length > 0
           ? {
               status: "pass",
               detail: `Schema types found: ${doc.schemaTypes.slice(0, 6).join(", ")}.`,
             }
-          : { status: "warn", detail: "No JSON-LD structured data detected." },
+          : {
+              status: "na",
+              detail:
+                "No JSON-LD extracted. Special AI schema is not required, and dynamic markup may need rendered HTML.",
+            },
   },
   {
     id: "has-canonical",
     category: "technical",
     label: "Canonical tag is present",
-    weight: 5,
+    weight: 0,
     evaluate: (doc) =>
       doc.hasCanonical === null
         ? {
             status: "na",
             detail:
-              "Not checked for pasted text — analyze the live URL to check this.",
+              "Not established from this input. Review visible content and relevant metadata manually.",
           }
         : doc.hasCanonical
           ? { status: "pass", detail: "A canonical tag is present." }

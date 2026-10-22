@@ -51,6 +51,7 @@
         }
       ],
       "relatedToolSlugs": [
+        "structured-data-validator",
         "heading-structure-analyzer",
         "meta-title-generator",
         "meta-description-generator",
@@ -65,6 +66,40 @@
         "technical",
         "ai-search",
         "writing"
+      ]
+    },
+    {
+      "id": "structured-data-validator",
+      "slug": "structured-data-validator",
+      "name": "Structured Data Validator",
+      "description": "Inspect individual JSON-LD entities, review supported field checks, correct source drafts, and export reviewed structured data.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "schema validation",
+        "JSON-LD",
+        "structured data",
+        "technical SEO"
+      ],
+      "kind": "Validate & correct",
+      "status": "live",
+      "addedAt": "2026-10-22",
+      "featuredOrder": 2.5,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/schema-markup-optimization",
+          "title": "Understand useful structured data"
+        }
+      ],
+      "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
+        "schema-markup-generator",
+        "serp-rich-result-preview-generator"
+      ],
+      "topics": [
+        "technical",
+        "on-page"
       ]
     },
     {
@@ -164,6 +199,7 @@
         }
       ],
       "relatedToolSlugs": [
+        "structured-data-validator",
         "meta-title-generator",
         "slug-generator",
         "meta-description-generator",
@@ -682,7 +718,7 @@
       "id": "ai-citation-readiness-checker",
       "slug": "ai-citation-readiness-checker",
       "name": "AI Citation Readiness Checker",
-      "description": "Score a live URL or pasted draft against a 12-point, explainable checklist for AI-answer and citation readiness.",
+      "description": "Review content readiness with a structural checklist, section-opening evidence, author details, and practical editorial suggestions.",
       "categories": [
         "ai-seo",
         "content-writing"
@@ -700,6 +736,7 @@
       "relatedGuides": [],
       "relatedToolSlugs": [
         "on-page-ai-seo-analyzer",
+        "structured-data-validator",
         "llms-txt-generator",
         "readability-checker",
         "schema-markup-generator"
@@ -920,6 +957,7 @@
       "featuredOrder": 27,
       "relatedGuides": [],
       "relatedToolSlugs": [
+        "structured-data-validator",
         "on-page-ai-seo-analyzer",
         "meta-title-generator",
         "schema-markup-generator"

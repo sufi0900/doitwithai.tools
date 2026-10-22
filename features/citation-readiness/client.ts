@@ -1,28 +1,86 @@
-import type { AnalysisResult } from "./types";
-
+import type { AnalysisResult, NormalizedDoc } from "./types";
+import type { PageSnapshot } from "@/features/on-page-analyzer/types";
+import { analyzeDocument } from "./analyzer";
+import {
+  authorsFromSchemas,
+  inspectSchemas,
+  schemaSources,
+} from "@/features/schema-inspector/inspect";
 export type UrlAnalysisResult =
   | {
       ok: true;
       result: AnalysisResult;
       doc: { title: string; wordCount: number; finalUrl: string };
+      page: PageSnapshot;
     }
   | { ok: false; message: string };
-
+export function citationDocument(page: PageSnapshot): NormalizedDoc {
+  const schema = inspectSchemas(schemaSources(page.schemas));
+  return {
+    source: "url",
+    title: page.title,
+    h1Count: page.blocks.filter((b) => b.tag === "h1").length,
+    headings: page.blocks
+      .filter((b) => /^h[1-6]$/.test(b.tag))
+      .map((b) => ({ level: Number(b.tag[1]), text: b.text })),
+    paragraphs: page.blocks
+      .filter((b) => !/^h[1-6]$/.test(b.tag))
+      .map((b) => b.text),
+    listCount: page.blocks.filter((b) => b.tag === "li").length,
+    tableCount: page.blocks.some((b) => b.tag === "td" || b.tag === "th")
+      ? 1
+      : 0,
+    hasAuthor:
+      page.author || authorsFromSchemas(page.schemas).length ? true : null,
+    hasPublishedDate: schema.items.some((i) =>
+      i.properties.some(([k]) => k === "datePublished"),
+    )
+      ? true
+      : null,
+    hasModifiedDate:
+      page.modified ||
+      schema.items.some((i) => i.properties.some(([k]) => k === "dateModified"))
+        ? true
+        : null,
+    outboundLinkDomains: [
+      ...new Set(
+        page.links
+          .filter(
+            (l) =>
+              page.url && new URL(l.href).origin !== new URL(page.url).origin,
+          )
+          .map((l) => new URL(l.href).hostname),
+      ),
+    ],
+    schemaTypes: page.schemas.types,
+    hasCanonical: Boolean(page.canonical),
+    wordCount: page.blocks.reduce(
+      (n, b) => n + b.text.trim().split(/\s+/).filter(Boolean).length,
+      0,
+    ),
+  };
+}
 export async function analyzeUrl(url: string): Promise<UrlAnalysisResult> {
   try {
-    const response = await fetch("/api/ai-tools/citation-readiness/analyze", {
+    const response = await fetch("/api/ai-tools/on-page/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
     });
     const payload = await response.json().catch(() => null);
-    if (!response.ok || !payload || payload.error) {
+    if (!response.ok || !payload?.result || payload.error)
       return {
         ok: false,
         message: payload?.error?.message || "The page could not be analyzed.",
       };
-    }
-    return { ok: true, result: payload.result, doc: payload.doc };
+    const page = payload.result as PageSnapshot,
+      doc = citationDocument(page);
+    return {
+      ok: true,
+      result: analyzeDocument(doc),
+      page,
+      doc: { title: doc.title, wordCount: doc.wordCount, finalUrl: page.url },
+    };
   } catch {
     return {
       ok: false,

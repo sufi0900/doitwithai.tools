@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-22T10:34:19.410Z",
+  "generated": "2026-10-22T12:25:29.498Z",
   "static_pages": [
     {
       "url": "/",
@@ -89,6 +89,12 @@
     {
       "url": "/tools/on-page-ai-seo-analyzer",
       "title": "On-page AI SEO Analyzer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/structured-data-validator",
+      "title": "Structured Data Validator",
       "priority": "high",
       "type": "static"
     },
@@ -279,5 +285,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 46
+  "total_pages": 47
 }

@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     q: "What does the on-page SEO audit check?",
-    a: "It extracts the returned HTML and checks metadata, headings, content blocks, links, image attributes, canonical declarations, directives, and JSON-LD syntax. Coverage and unchecked items appear beside the report. Performance testing is optional.",
+    a: "It extracts the returned HTML and checks metadata, headings, content blocks, links, image attributes, canonical declarations, directives, and JSON-LD syntax and selected field checks. Coverage and unchecked items appear beside the report. Detailed performance testing is available through the linked specialist tool.",
   },
   {
     q: "Can this tool fix my live website?",
@@ -104,7 +104,7 @@ const areas = [
   [
     "05",
     "Structured data",
-    "Inspect detected JSON-LD types and syntax. Prepare editable markup drafts, then validate relevant requirements before publishing.",
+    "Inspect individual JSON-LD entities, source syntax, and supported property checks. Correct source drafts and review broader eligibility before publishing.",
   ],
   [
     "06",

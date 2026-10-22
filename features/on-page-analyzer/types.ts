@@ -44,6 +44,7 @@ export type PageSnapshot = {
     valid: number;
     invalid: number;
     samples: string[];
+    invalidSamples?: { raw: string; block: number }[];
   };
   author: string;
   modified: string;

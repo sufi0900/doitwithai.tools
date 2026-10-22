@@ -17,6 +17,8 @@ import {
   secondaryButton,
 } from "@/features/writing-tools/config";
 const inputClass = `${sharedInputClass} min-w-0`;
+import DetailedReadiness from "./DetailedReadiness";
+import type { PageSnapshot } from "@/features/on-page-analyzer/types";
 import { analyzeDocument } from "./analyzer";
 import { extractFromText } from "./extract-from-text";
 import { analyzeUrl } from "./client";
@@ -142,6 +144,7 @@ export default function CitationReadinessClient() {
     title: string;
     wordCount: number;
     finalUrl: string;
+    page?: PageSnapshot;
   } | null>(null);
 
   const textResult = useMemo(() => {
@@ -165,6 +168,7 @@ export default function CitationReadinessClient() {
       title: outcome.doc.title,
       wordCount: outcome.doc.wordCount,
       finalUrl: outcome.doc.finalUrl,
+      page: outcome.page,
     });
   }
 
@@ -287,6 +291,13 @@ export default function CitationReadinessClient() {
           )}
         </div>
       </div>
+      {(mode === "url" ? urlResult : textResult) && (
+        <DetailedReadiness
+          initialPage={mode === "url" ? urlResult?.page : undefined}
+          url={mode === "url" ? urlResult?.finalUrl || "" : ""}
+          draft={mode === "text" ? draft : ""}
+        />
+      )}
     </div>
   );
 }

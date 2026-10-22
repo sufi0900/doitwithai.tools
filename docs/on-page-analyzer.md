@@ -55,3 +55,20 @@ The optional llms.txt check has no scoring effect and is not presented as a Goog
 Run `pnpm test:ai-tools`, `pnpm test:foundation`, and `pnpm build`.
 The analyzer tests cover streamed script-heavy pages, explicit partial extraction, list boundaries, hidden content, directives, safe URL handling, source-backed reviews, immutable drafts, and route validation.
 Live provider and production fetching behavior still require a configured deployment check.
+
+## Structured data and content review update
+
+- The report includes an animated circular checklist score with reduced-motion support and critical-finding color handling.
+- The shared schema inspector powers the embedded report and `/tools/structured-data-validator`.
+- Entity cards distinguish script blocks, typed objects, distinct types, nested items, and multi-type objects.
+- Validation covers JSON syntax, selected property formats, dates, rating ranges, local references, and declared field profiles.
+- Missing Article recommendations are never presented as universal Google-required properties.
+- Unrecognized types remain visible with explicit coverage limits. Full vocabulary conformance and Google eligibility are not certified.
+- Invalid source samples are retained within the shared evidence budget. Source corrections update a draft and can be undone or exported.
+- Returned HTML is distinguished from rendered HTML. Client-injected markup requires pasted rendered HTML or directly supplied JSON-LD.
+- The AI search panel reviews article and section openings, authorship references, and claims worth checking.
+- Opening-passage detection does not establish semantic answer quality. Optional editorial review can assess quoted sample passages.
+- Technical details stay in dedicated crawler, sitemap, and performance tools, linked from the overview.
+- The existing citation readiness checker uses the shared importer and offers the same detailed section-opening review.
+- Optional numbers, question headings, lists, external links, and JSON-LD no longer add citation-checker score points.
+- New source tests cover graph references, multi-type entities, malformed-source corrections, source preservation, dates, and section boundaries.

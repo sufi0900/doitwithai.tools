@@ -21,7 +21,7 @@ const pageUrl = "https://doitwithai.tools/tools/ai-citation-readiness-checker";
 export const metadata: Metadata = {
   title: "AI Citation Readiness Checker | Free GEO Tool",
   description:
-    "Score a page's structure for how citable it is to AI Overviews, ChatGPT, and Perplexity. Analyze a live URL or paste a draft; review clear checks and practical editing suggestions.",
+    "Review a page's answer placement, section openings, authorship clues, and supporting evidence. Inspect content readiness without predicting AI citations.",
   keywords: [
     "AI citation checker",
     "answer engine optimization",
@@ -87,7 +87,7 @@ const faqs = [
   {
     question: "What does a low score actually mean?",
     answer:
-      "It flags specific structural gaps; a missing H1, long paragraphs, no subheadings, no outbound citations; each with a plain-language reason. It does not mean the content is inaccurate or low quality, and a high score does not mean it will be cited.",
+      "It highlights completed structural checks worth reviewing. Optional numbers, question headings, lists, external links, and structured data do not add points. It does not mean the content is inaccurate or low quality, and a high score does not mean it will be cited.",
   },
 ];
 

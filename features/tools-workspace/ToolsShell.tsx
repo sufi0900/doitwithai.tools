@@ -249,10 +249,18 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
                         current?.id === tool.id ? "page" : undefined
                       }
                       onClick={() => setDrawerOpen(false)}
-                      className="workspace-nav-link"
+                      className={`workspace-nav-link ${tool.id === "on-page-ai-seo-analyzer" ? "workspace-flagship-link" : ""}`}
                     >
                       <span className="workspace-tool-dot" aria-hidden="true" />
-                      <span className="min-w-0 flex-1">{tool.name}</span>
+                      <span className="min-w-0 flex-1">
+                        {tool.id === "on-page-ai-seo-analyzer" && (
+                          <span className="workspace-flagship-label">
+                            <Sparkles size={10} />
+                            Flagship
+                          </span>
+                        )}
+                        {tool.name}
+                      </span>
                       {workspace.saved.includes(tool.id) && (
                         <Bookmark
                           size={12}

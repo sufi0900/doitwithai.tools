@@ -1,4 +1,8 @@
 import type { Block, Change, Finding, PageSnapshot, Section } from "./types";
+import {
+  inspectSchemas,
+  schemaSources,
+} from "@/features/schema-inspector/inspect";
 export const words = (text: string) =>
   text.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || [];
 export const normalize = (text: string) => words(text.toLowerCase()).join(" ");
@@ -24,6 +28,9 @@ export function applyDraft(
       ...page.schemas,
       samples: [...page.schemas.samples],
       types: [...page.schemas.types],
+      ...(page.schemas.invalidSamples
+        ? { invalidSamples: page.schemas.invalidSamples.map((s) => ({ ...s })) }
+        : {}),
     },
     blocks: page.blocks.map((b) => ({ ...b })),
     images: page.images.map((i) => ({ ...i })),
@@ -54,12 +61,30 @@ export function applyDraft(
         next.schemas.valid = next.schemas.samples.length;
       }
     }
+    if (c.field.startsWith("schema-invalid:")) {
+      const index = Number(c.field.split(":")[1]);
+      if (next.schemas.invalidSamples?.[index]) {
+        next.schemas.invalidSamples[index].raw = c.after;
+        try {
+          const parsed = JSON.parse(c.after);
+          if (parsed && typeof parsed === "object") {
+            next.schemas.invalid = Math.max(0, next.schemas.invalid - 1);
+            next.schemas.valid++;
+          }
+        } catch {}
+      }
+    }
     const alt = /^image:(\d+)$/.exec(c.field);
     if (alt && next.images[Number(alt[1])])
       next.images[Number(alt[1])].alt = c.after;
   }
   // Draft estimates retain duplicate tag counts, directives, links, and published evidence.
-  if (changes.some((c) => c.field.startsWith("schema:"))) {
+  if (
+    changes.some(
+      (c) =>
+        c.field.startsWith("schema:") || c.field.startsWith("schema-invalid:"),
+    )
+  ) {
     const types = new Set<string>();
     const visit = (value: unknown, depth = 0) => {
       if (!value || typeof value !== "object" || depth > 20) return;
@@ -76,7 +101,10 @@ export function applyDraft(
         .slice(0, 100)
         .forEach((v) => visit(v, depth + 1));
     };
-    for (const sample of next.schemas.samples)
+    for (const sample of [
+      ...next.schemas.samples,
+      ...(next.schemas.invalidSamples || []).map((s) => s.raw),
+    ])
       try {
         visit(JSON.parse(sample));
       } catch {}
@@ -443,8 +471,18 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     "Structured data syntax",
     `${page.schemas.valid} valid JSON-LD block(s); ${page.schemas.invalid} invalid block(s).`,
     "JSON validity does not establish rich result eligibility. Validate relevant types and compare markup with visible content.",
-    "schema-markup-generator",
+    "structured-data-validator",
     page.schemas.valid || page.schemas.invalid ? 2 : 0,
+  );
+  const schemaReport = inspectSchemas(schemaSources(page.schemas));
+  add(
+    "schema-fields",
+    "schema",
+    schemaReport.errors ? "warning" : "info",
+    "Schema entities & field checks",
+    `${schemaReport.items.length} typed entities across ${schemaReport.types.length} distinct types; ${schemaReport.errors} local errors; ${schemaReport.warnings} review suggestions.`,
+    "Inspect each entity card. These checks cover selected field profiles, not full Schema.org conformance or Google eligibility.",
+    "structured-data-validator",
   );
   add(
     "schema-types",
@@ -461,7 +499,7 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     "schema",
     "unchecked",
     "Rich result eligibility",
-    "Only JSON-LD parsing and type extraction completed.",
+    "JSON-LD parsing, entity inspection, and selected local field checks completed.",
     "Use the schema tool and Google's Rich Results Test for supported feature requirements. Display is never guaranteed.",
     "schema-markup-generator",
   );
