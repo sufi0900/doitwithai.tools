@@ -8,7 +8,7 @@ Route: `/tools/on-page-ai-seo-analyzer`.
 - Improve applies individual text, heading-level, image-alternative, and JSON-LD changes to an in-memory draft.
 - Suggestions use the existing Gemini-first, Groq-fallback client. Provider details are not displayed on the public page.
 - Editorial review samples up to 30 structured blocks. Only observations with matching source quotations are retained.
-- JSON reports contain original evidence, draft changes, findings, and requested performance measurements.
+- JSON reports contain original evidence, draft changes, findings, keyword context, category contributions, and weighted coverage.
 - CSV exports contain proposed changes and protect against spreadsheet formula injection.
 - Changes are not published to the user's website. The user reviews, exports, publishes, and rechecks.
 - Reports and drafts are session-only. Leaving or reloading the page clears them unless exported.
@@ -38,15 +38,24 @@ Keep all these variables server-only.
 
 ## Honest scoring
 
-Only completed, applicable, weighted checks affect the score. Passed items earn full points; review items earn half; critical findings earn zero.
-Unchecked and informational items are excluded. Score weights are visible inside the dashboard.
-Editorial reviews, keyword counts, optional files, and crawler-file presence do not increase the score.
-The score is a checklist summary, not a ranking, citation, indexing, or rich-result prediction.
+Category weights total 100: search 15, headings 10, content 20, links 15, media 5, technical 15, schema 10, and AI content readiness 10.
+These are product checklist weights, not Google ranking weights.
+Within a category, scored checks earn full points for a pass, half for a warning, and zero for critical findings.
+Unknown and informational weighted checks reduce assessed coverage rather than silently earning points.
+Each category contribution equals its weight multiplied by earned check weight divided by possible check weight.
+Overall score equals 100 times total earned category contributions divided by assessed category weight.
+Withhold the overall score below 60% weighted coverage. Label it provisional below 90% coverage.
+Category scores are withheld below 60% category coverage. Every category shows earned points and coverage.
+Confirmed critical findings remain prominent regardless of the numerical score.
+Manual claim acknowledgments never affect measured audit health. They persist across tabs for the current audit session.
+Keyword counts and density are contextual measurements, not fixed percentage targets.
+Optional llms.txt, recommended markup formats, and manual review checkboxes never increase the score.
+The score does not predict rankings, factual accuracy, citations, indexing, or rich results.
 
 ## Deliberately separate checks
 
 This release does not execute JavaScript, crawl every linked destination, inspect incoming links, establish sitewide duplicates, or verify Search Console indexing.
-JSON-LD syntax and extracted types do not establish Schema.org validity or Google rich-result eligibility. Microdata and RDFa are not assessed.
+JSON-LD syntax and extracted types do not establish Schema.org validity or Google rich-result eligibility. Basic embedded Microdata and Schema.org RDFa are normalized for the shared inspector. Advanced relationships remain uninspected.
 The robots.txt source is available for review; presence alone does not mean a specific crawler can access a page.
 The optional llms.txt check has no scoring effect and is not presented as a Google requirement.
 
@@ -72,3 +81,29 @@ Live provider and production fetching behavior still require a configured deploy
 - The existing citation readiness checker uses the shared importer and offers the same detailed section-opening review.
 - Optional numbers, question headings, lists, external links, and JSON-LD no longer add citation-checker score points.
 - New source tests cover graph references, multi-type entities, malformed-source corrections, source preservation, dates, and section boundaries.
+
+## Evidence-first report revision
+
+- Search and social previews show available Open Graph and X image metadata, platform fallbacks, and inaccessible-image states.
+- Search previews reuse the SERP simulator's canvas text layout and device presets. Character counts supplement estimated pixel clipping.
+- Primary, secondary, and related terms are visible inputs. Density counts exact body phrase occurrences per 100 body words.
+- Whole-document readability reuses the existing engine and independent list boundaries. English formulas require an English document language declaration.
+- Reader presets control readability review thresholds. Detailed editing stays in the existing Readability Editor, with an explicit copy action.
+- Author cards, bylines, contents navigation, and administrative headings are excluded from opening-answer review where identifiable.
+- Framing checks describe observable cues. Semantic completeness and factual verification stay unassessed without supporting evidence.
+- Technical reports show actual response metadata, redirects, canonical, directives, language, viewport, byte count, and retained scope.
+- Schema sources include raw JSON-LD and normalized Microdata/basic Schema.org RDFa. Normalized sources are labeled and are not invented script blocks.
+- Normalized markup drafts export as JSON-LD. They do not modify the original Microdata or RDFa attributes automatically.
+- Schema property retention is bounded to 200 entities, 1,000 properties, and 100,000 property characters within the existing total source limits.
+- Advanced itemref/RDFa list relationships are explicitly uninspected. JavaScript rendering is not available in this release.
+- Shared readability calculations are memoized by immutable snapshot and audience grade. No new generative requests run automatically.
+- External competitor links are not automatically penalized. Destination health, authority, and claim support are not inferred from hostnames.
+
+## Follow-up tools
+
+1. Extend existing keyword analysis into keyword coverage and distribution.
+2. Add Content Evidence Review using the same claim cues and manual review model.
+3. Add External Link and Source Review with source context, not invented authority scores.
+4. Expand the existing AI Citation Readiness Checker before introducing another overlapping tool.
+5. Reuse the existing schema validator, internal-link finder, and multi-page cannibalization checker.
+6. Consider controlled rendered inspection and deeper technical auditing as separately scoped infrastructure work.

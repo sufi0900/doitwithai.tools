@@ -39,7 +39,7 @@ export default function AnswerReadinessPanel({
               ? "Review placement"
               : s.status === "unknown"
                 ? "Needs context"
-                : "Passage detected"}
+                : "Review answer relevance"}
           </span>
           <span className={styles.muted}>{label}</span>
         </div>
@@ -69,8 +69,8 @@ export default function AnswerReadinessPanel({
       className={styles.evidencePanel}
       aria-label="AI content readiness signals"
     >
-      <span className={styles.eyebrow}>Reader clarity & answer placement</span>
-      <h3>Make the useful answer easy to find.</h3>
+      <span className={styles.eyebrow}>AI content readiness</span>
+      <h3>Review clarity, evidence, and original contributions.</h3>
       <p>
         Review how your opening and sections introduce their key points. A
         direct answer can help readers when it fits the topic.
@@ -96,6 +96,45 @@ export default function AnswerReadinessPanel({
         probabilities. There is no required answer length or fixed AI writing
         format.
       </p>
+      <div className={styles.quickFields}>
+        <div>
+          <h4>Original contributions</h4>
+          <p>
+            {
+              page.blocks.filter((b) =>
+                /\b(?:we tested|I tested|our (?:test|research|experiment|results)|in my experience|we measured)\b/i.test(
+                  b.text,
+                ),
+              ).length
+            }{" "}
+            passages mention testing, research, or experience.
+          </p>
+          <p className={styles.muted}>
+            Wording alone cannot verify firsthand experience. Review methods,
+            examples, and supporting material.
+          </p>
+        </div>
+        <div>
+          <h4>Evidence and attribution</h4>
+          <p>
+            {report.claims.length} claim passages need editorial attention.{" "}
+            {
+              page.links.filter((l) => {
+                try {
+                  return new URL(l.href).origin !== new URL(page.url).origin;
+                } catch {
+                  return false;
+                }
+              }).length
+            }{" "}
+            external links were extracted.
+          </p>
+          <p className={styles.muted}>
+            A source link does not establish that it supports a particular
+            claim.
+          </p>
+        </div>
+      </div>
       <div className={styles.answerGrid}>
         {renderPassage(report.opening, "Article opening")}
         {report.sections.map((s) =>
@@ -132,31 +171,6 @@ export default function AnswerReadinessPanel({
           not prove expertise or authority.
         </p>
       </div>
-      {report.claims.length > 0 && (
-        <details className={styles.schemaBlock}>
-          <summary>
-            Claims and statistics worth checking ({report.claims.length})
-          </summary>
-          {report.claims.slice(0, 12).map((b) => (
-            <div key={b.id} className={styles.claimPassage}>
-              <blockquote>{b.text.slice(0, 800)}</blockquote>
-              {onEdit && (
-                <button
-                  className={styles.quiet}
-                  type="button"
-                  onClick={() => onEdit(b.id, "Review claim wording")}
-                >
-                  Review wording
-                </button>
-              )}
-            </div>
-          ))}
-          <p className={styles.muted}>
-            These phrases are cues for editorial review. They do not establish
-            that a statement is wrong or unsupported.
-          </p>
-        </details>
-      )}
       <div className={styles.technicalOverview}>
         <h4>Discovery and technical access</h4>
         <p>

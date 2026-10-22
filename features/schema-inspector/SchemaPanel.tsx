@@ -139,8 +139,8 @@ export default function SchemaPanel({
       </header>
       <div className={styles.stats}>
         <div>
-          <strong>{schema.valid + schema.invalid}</strong>
-          <span>Detected script blocks</span>
+          <strong>{sources.length}</strong>
+          <span>Retained markup sources</span>
         </div>
         <div>
           <strong>{report.items.length}</strong>
@@ -159,6 +159,11 @@ export default function SchemaPanel({
           <span>Review suggestions</span>
         </div>
       </div>
+      {schema.markupWarnings?.map((w) => (
+        <p key={w} className={styles.alert}>
+          {w}
+        </p>
+      ))}
       <p className={styles.scope}>
         Checks include JSON syntax, typed entities, selected property formats,
         local references, and documented field profiles. They do not certify
@@ -319,13 +324,20 @@ export default function SchemaPanel({
           <h4>
             {report.items.length
               ? "No items match these filters."
-              : "No typed JSON-LD items could be inspected."}
+              : "No typed entities could be inspected."}
           </h4>
           <p>
-            Some websites insert markup after JavaScript runs. Paste the
-            rendered page HTML or JSON-LD into the dedicated validator to
+            No markup found in returned HTML is not proof that the rendered page
+            has none. Some websites insert markup after JavaScript runs. Paste
+            the rendered page HTML or JSON-LD into the dedicated validator to
             inspect it.
           </p>
+          <Link
+            className={styles.button}
+            href="/tools/structured-data-validator"
+          >
+            Open Structured Data Validator <ArrowUpRight size={14} />
+          </Link>
         </div>
       )}
       <details className={styles.method}>
@@ -338,8 +350,9 @@ export default function SchemaPanel({
         </p>
         <p>
           Unknown types remain visible with basic checks. Custom contexts,
-          remote references, full vocabulary conformance, Microdata, and RDFa
-          are not validated.
+          remote references, and full vocabulary conformance are not validated.
+          Basic embedded Microdata and Schema.org RDFa are normalized for
+          inspection.
         </p>
         <p>
           Visible-content accuracy, Google feature policies, and actual

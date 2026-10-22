@@ -9,7 +9,12 @@ export type Section =
   | "schema"
   | "ai-search";
 export type Status = "critical" | "warning" | "passed" | "info" | "unchecked";
-export type Block = { id: string; tag: string; text: string };
+export type Block = {
+  id: string;
+  tag: string;
+  text: string;
+  listItem?: number;
+};
 export type PageLink = { href: string; text: string; rel: string };
 export type PageImage = {
   src: string;
@@ -36,6 +41,10 @@ export type PageSnapshot = {
   ogDescription: string;
   ogImage: string;
   siteName: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  twitterCard?: string;
   blocks: Block[];
   links: PageLink[];
   images: PageImage[];
@@ -44,6 +53,8 @@ export type PageSnapshot = {
     valid: number;
     invalid: number;
     samples: string[];
+    sampleFormats?: ("JSON-LD" | "Microdata" | "RDFa")[];
+    markupWarnings?: string[];
     invalidSamples?: { raw: string; block: number }[];
   };
   author: string;

@@ -61,7 +61,7 @@ const faqs = [
   },
   {
     q: "Does the score predict rankings or AI citations?",
-    a: "No. It summarizes completed checklist items using visible weights. Editorial suggestions remain separate. Google rankings, indexing, rich results, and AI citations cannot be guaranteed by a checklist score.",
+    a: "No. It summarizes measured checks across eight weighted categories. Coverage is shown, and incomplete scores remain provisional. Editorial suggestions remain separate. Google rankings, indexing, rich results, and AI citations cannot be guaranteed by a checklist score.",
   },
   {
     q: "Can I analyze long articles or JavaScript websites?",
@@ -94,17 +94,17 @@ const areas = [
   [
     "03",
     "Content and links",
-    "Review structured passages, independent list items, repetition, anchors, and existing internal links. Investigate broader opportunities with the specialist tools.",
+    "Review whole-article readability, keyword coverage, repetition, anchors, and existing internal links. Investigate broader opportunities with the specialist tools.",
   ],
   [
     "04",
     "Technical foundations",
-    "Inspect response evidence, robots directives, canonical declarations, language, viewport, and optional performance measurements.",
+    "Inspect response evidence, robots directives, canonical declarations, language, viewport, and links to dedicated performance tests.",
   ],
   [
     "05",
     "Structured data",
-    "Inspect individual JSON-LD entities, source syntax, and supported property checks. Correct source drafts and review broader eligibility before publishing.",
+    "Inspect JSON-LD, embedded Microdata, basic Schema.org RDFa, and supported property checks. Correct source drafts and review broader eligibility before publishing.",
   ],
   [
     "06",

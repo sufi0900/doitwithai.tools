@@ -22,11 +22,21 @@ export class PageCollector {
     landmark: boolean;
     main: boolean;
     text: string;
+    order: number;
+    entity?: Record<string, unknown>;
+    format?: "Microdata" | "RDFa";
   }[] = [];
-  private blocks: (Block & { main: boolean })[] = [];
+  private blocks: (Block & { main: boolean; order: number })[] = [];
   private links: (PageSnapshot["links"][number] & { main: boolean })[] = [];
   private images: (PageSnapshot["images"][number] & { main: boolean })[] = [];
   private sequence = 0;
+  private nestedMarkup = new WeakSet<object>();
+  private markupProperties = 0;
+  private markupSize = 0;
+  private markupEntities: {
+    value: Record<string, unknown>;
+    format: "Microdata" | "RDFa";
+  }[] = [];
   private textSize = 0;
   private warnings = new Set<string>();
   private parser: Parser;
@@ -75,7 +85,14 @@ export class PageCollector {
             ),
           );
           const landmark = Boolean(
-            parent?.landmark || ["nav", "footer", "aside"].includes(name),
+            parent?.landmark ||
+            ["nav", "footer", "aside"].includes(name) ||
+            ["navigation", "contentinfo", "complementary"].includes(
+              attrs.role || "",
+            ) ||
+            /(?:^|[\s_-])(?:byline|author-card|author-info|post-meta|entry-meta|toc|table-of-contents|tableofcontents|breadcrumbs?|share-buttons)(?:$|[\s_-])/i.test(
+              `${attrs.class || ""} ${attrs.id || ""}`,
+            ),
           );
           const main = Boolean(
             parent?.main ||
@@ -83,7 +100,65 @@ export class PageCollector {
             name === "article" ||
             attrs.role === "main",
           );
-          const frame = { name, attrs, hidden, landmark, main, text: "" };
+          const frame: PageCollector["frames"][number] = {
+            name,
+            attrs,
+            hidden,
+            landmark,
+            main,
+            text: "",
+            order: this.sequence++,
+          };
+          const rawTypes =
+            attrs.itemscope !== undefined ? attrs.itemtype : attrs.typeof;
+          const rdfaSchema =
+            attrs.vocab?.replace(/\/$/, "") === "https://schema.org" ||
+            attrs.vocab?.replace(/\/$/, "") === "http://schema.org" ||
+            this.frames.some((f) =>
+              /schema\.org/.test(
+                `${f.attrs.vocab || ""} ${f.attrs.prefix || ""}`,
+              ),
+            );
+          if (
+            rawTypes &&
+            (attrs.itemscope !== undefined ||
+              rdfaSchema ||
+              /https?:\/\/schema\.org\//.test(rawTypes))
+          ) {
+            const types = rawTypes
+              .split(/\s+/)
+              .map((t) =>
+                t
+                  .replace(/^https?:\/\/schema\.org\//, "")
+                  .replace(/^schema:/, ""),
+              )
+              .filter((t) => /^[A-Za-z][A-Za-z0-9]*$/.test(t));
+            if (types.length && this.markupEntities.length < 200) {
+              frame.entity = Object.create(null);
+              frame.entity!["@context"] = "https://schema.org";
+              frame.entity!["@type"] = types.length === 1 ? types[0] : types;
+              const id = absoluteUrl(attrs.itemid || attrs.about || "", url);
+              if ((attrs.itemid || attrs.about) && id)
+                frame.entity!["@id"] = id;
+              frame.format =
+                attrs.itemscope !== undefined ? "Microdata" : "RDFa";
+              this.markupEntities.push({
+                value: frame.entity!,
+                format: frame.format,
+              });
+            } else this.truncated();
+          }
+          if (attrs.itemref || attrs.inlist !== undefined) {
+            this.page.schemas.markupWarnings ||= [];
+            if (
+              !this.page.schemas.markupWarnings.includes(
+                "Advanced itemref and RDFa list relationships require a dedicated rendered inspection.",
+              )
+            )
+              this.page.schemas.markupWarnings.push(
+                "Advanced itemref and RDFa list relationships require a dedicated rendered inspection.",
+              );
+          }
           if (this.frames.length >= 200)
             throw new Error(
               "This HTML is nested too deeply to analyze safely. Paste the main article section instead.",
@@ -106,6 +181,9 @@ export class PageCollector {
               "og:title": "ogTitle",
               "og:description": "ogDescription",
               "og:site_name": "siteName",
+              "twitter:title": "twitterTitle",
+              "twitter:description": "twitterDescription",
+              "twitter:card": "twitterCard",
               author: "author",
               "article:author": "author",
               "article:modified_time": "modified",
@@ -114,6 +192,11 @@ export class PageCollector {
               (this.page as any)[fields[key]] = content;
             if (key === "og:image" && !this.page.ogImage)
               this.page.ogImage = absoluteUrl(content, url);
+            if (
+              ["twitter:image", "twitter:image:src"].includes(key) &&
+              !this.page.twitterImage
+            )
+              this.page.twitterImage = absoluteUrl(content, url);
           }
           if (
             name === "link" &&
@@ -124,6 +207,14 @@ export class PageCollector {
               this.page.canonical = absoluteUrl(attrs.href || "", url);
           }
           if (name === "img" && !hidden && !landmark) {
+            const anchor = [...this.frames]
+              .reverse()
+              .find((f) => f.name === "a");
+            if (anchor && attrs.alt)
+              anchor.text += attrs.alt.slice(
+                0,
+                Math.max(0, 300 - anchor.text.length),
+              );
             if (this.images.length < 300)
               this.images.push({
                 src: absoluteUrl(attrs.src || attrs["data-src"] || "", url),
@@ -142,6 +233,47 @@ export class PageCollector {
           const frame = this.frames.pop();
           if (!frame || frame.name !== name) return;
           const text = clean(frame.text);
+          const property = frame.attrs.itemprop || frame.attrs.property;
+          const owner = [...this.frames].reverse().find((f) => f.entity);
+          if (
+            property &&
+            owner?.entity &&
+            this.markupProperties < 1000 &&
+            this.markupSize < 100000
+          ) {
+            if (frame.entity) this.nestedMarkup.add(frame.entity);
+            let value: unknown =
+              frame.entity ||
+              frame.attrs.content ||
+              frame.attrs.datetime ||
+              text;
+            const rawUrl =
+              frame.attrs.href || frame.attrs.src || frame.attrs.resource;
+            if (!frame.entity && rawUrl)
+              value = absoluteUrl(rawUrl, this.page.url);
+            for (const raw of property.split(/\s+/).slice(0, 10)) {
+              const key = raw
+                .replace(/^https?:\/\/schema\.org\//, "")
+                .replace(/^schema:/, "");
+              if (
+                !/^[a-zA-Z][a-zA-Z0-9]*$/.test(key) ||
+                ["constructor", "prototype"].includes(key)
+              )
+                continue;
+              this.markupProperties++;
+              this.markupSize += typeof value === "string" ? value.length : 10;
+              if (this.markupProperties > 1000 || this.markupSize > 100000) {
+                this.truncated();
+                break;
+              }
+              const current = owner.entity[key];
+              if (current === undefined) owner.entity[key] = value;
+              else
+                owner.entity[key] = Array.isArray(current)
+                  ? [...current.slice(0, 99), value]
+                  : [current, value];
+            }
+          }
           if (name === "title") {
             this.page.titleCount++;
             if (this.page.titleCount === 1)
@@ -149,7 +281,8 @@ export class PageCollector {
           }
           if (
             name === "script" &&
-            (frame.attrs.type || "").toLowerCase() === "application/ld+json"
+            (frame.attrs.type || "").split(";")[0].trim().toLowerCase() ===
+              "application/ld+json"
           ) {
             if (
               this.page.schemas.valid + this.page.schemas.invalid >= 40 ||
@@ -169,8 +302,11 @@ export class PageCollector {
                   ) +
                   frame.text.length <=
                 150000
-              )
+              ) {
                 this.page.schemas.samples.push(frame.text);
+                this.page.schemas.sampleFormats ||= [];
+                this.page.schemas.sampleFormats.push("JSON-LD");
+              }
               const visit = (v: unknown, depth = 0) => {
                 if (!v || typeof v !== "object" || depth > 20) return;
                 if (Array.isArray(v)) {
@@ -217,8 +353,14 @@ export class PageCollector {
                 this.textSize + text.length <= 160000
               ) {
                 this.blocks.push({
-                  id: `block:${this.sequence++}`,
+                  id: `block:${frame.order}`,
+                  order: frame.order,
                   tag: name,
+                  listItem:
+                    name === "li"
+                      ? frame.order
+                      : [...this.frames].reverse().find((f) => f.name === "li")
+                          ?.order,
                   text,
                   main: frame.main,
                 });
@@ -276,7 +418,8 @@ export class PageCollector {
     if (raw) {
       if (
         raw.name === "script" &&
-        (raw.attrs.type || "").toLowerCase() === "application/ld+json"
+        (raw.attrs.type || "").split(";")[0].trim().toLowerCase() ===
+          "application/ld+json"
       )
         raw.text += text.slice(0, Math.max(0, 100000 - raw.text.length));
       return;
@@ -287,7 +430,12 @@ export class PageCollector {
       .find((f) => BLOCK_TAG.test(f.name));
     const title = this.frames.find((f) => f.name === "title");
     const anchor = [...this.frames].reverse().find((f) => f.name === "a");
-    for (const item of new Set([block, title, anchor]))
+    for (const item of new Set([
+      block,
+      title,
+      anchor,
+      ...this.frames.filter((f) => f.attrs.itemprop || f.attrs.property),
+    ]))
       if (item) {
         if (item.text.length + text.length > 12000 && item === block)
           this.truncated();
@@ -308,7 +456,43 @@ export class PageCollector {
       : "page body excluding navigation, footer, and sidebars";
     const strip = <T extends { main: boolean }>(items: T[]) =>
       items.filter((i) => !main || i.main).map(({ main: _, ...i }) => i);
-    this.page.blocks = strip(this.blocks);
+    this.page.blocks = strip(this.blocks.sort((a, b) => a.order - b.order)).map(
+      ({ order: _, ...block }) => block,
+    );
+    // Normalize bounded embedded markup for the shared inspector. JavaScript is never executed.
+    for (const format of ["Microdata", "RDFa"] as const) {
+      const entities = this.markupEntities.filter((e) => e.format === format);
+      if (!entities.length) continue;
+      const raw = JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": entities
+          .filter((e) => !this.nestedMarkup.has(e.value))
+          .map((e) => e.value),
+      });
+      const used =
+        this.page.schemas.samples.reduce((n, s) => n + s.length, 0) +
+        (this.page.schemas.invalidSamples || []).reduce(
+          (n, s) => n + s.raw.length,
+          0,
+        );
+      if (
+        used + raw.length > 150000 ||
+        this.page.schemas.samples.length >= 40
+      ) {
+        this.truncated();
+        continue;
+      }
+      this.page.schemas.samples.push(raw);
+      this.page.schemas.sampleFormats ||= [];
+      this.page.schemas.sampleFormats.push(format);
+      for (const e of entities)
+        for (const type of [e.value["@type"]].flat())
+          if (
+            typeof type === "string" &&
+            !this.page.schemas.types.includes(type)
+          )
+            this.page.schemas.types.push(type);
+    }
     this.page.links = strip(this.links);
     this.page.images = strip(this.images);
     this.page.warnings.push(...this.warnings);

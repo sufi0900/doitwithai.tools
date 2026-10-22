@@ -49,6 +49,18 @@ import styles from "./analyzer.module.css";
 import ScoreGauge from "./ScoreGauge";
 import SchemaPanel from "@/features/schema-inspector/SchemaPanel";
 import AnswerReadinessPanel from "./AnswerReadinessPanel";
+import {
+  CategoryReport,
+  ContentReport,
+  SocialPreview,
+  TechnicalReport,
+  EvidenceReview,
+  EvidenceReviewScope,
+} from "./ReportPanels";
+import { PRESETS, textLayout } from "@/features/serp-preview/preview";
+import { categoryScores } from "./scoring";
+import { tools } from "@/features/tool-catalog/catalog";
+import { linkReport } from "./metrics";
 import type { EditorialReview } from "./review";
 import { sampleReviewBlocks } from "./audit";
 
@@ -99,17 +111,37 @@ function Badge({ status }: { status: Status }) {
     </span>
   );
 }
-function pixelWidth(text: string, size: number) {
-  if (typeof document === "undefined") return null;
-  const context = document.createElement("canvas").getContext("2d");
-  if (!context) return null;
-  context.font = `${size}px Arial`;
-  return Math.round(context.measureText(text).width);
-}
 function SearchPreview({ page }: { page: PageSnapshot }) {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
-  const titleWidth = pixelWidth(page.title, 20),
-    descriptionWidth = pixelWidth(page.description, 14);
+  const [layouts, setLayouts] = useState<{
+    title: ReturnType<typeof textLayout>;
+    description: ReturnType<typeof textLayout>;
+  } | null>(null);
+  useEffect(() => {
+    const context = document.createElement("canvas").getContext("2d");
+    if (!context) {
+      setLayouts(null);
+      return;
+    }
+    const preset = PRESETS[device];
+    context.font = "400 20px Arial";
+    const title = textLayout(
+      page.title,
+      preset.titleWidth,
+      preset.titleLines,
+      (t) => context.measureText(t).width,
+    );
+    context.font = "400 14px Arial";
+    const description = textLayout(
+      page.description,
+      preset.descriptionWidth,
+      preset.descriptionLines,
+      (t) => context.measureText(t).width,
+    );
+    setLayouts({ title, description });
+  }, [page.title, page.description, device]);
+  const titleWidth = layouts?.title.pixels ?? null,
+    descriptionWidth = layouts?.description.pixels ?? null;
   return (
     <section
       className={styles.previewCard}
@@ -152,10 +184,13 @@ function SearchPreview({ page }: { page: PageSnapshot }) {
           </span>
         </div>
         <div className={styles.serpTitle}>
-          {page.title || "Add a descriptive page title"}
+          {layouts?.title.lines.join("\n") ||
+            page.title ||
+            "Add a descriptive page title"}
         </div>
         <p>
-          {page.description ||
+          {layouts?.description.lines.join("\n") ||
+            page.description ||
             "Add a page-specific description to preview your proposed search snippet."}
         </p>
       </div>
@@ -170,6 +205,20 @@ function SearchPreview({ page }: { page: PageSnapshot }) {
           {page.description.length} characters
         </span>
       </div>
+      {layouts && (
+        <p className={styles.muted}>
+          {layouts.title.truncated
+            ? "Title may be clipped. "
+            : "Title fits this preview guide. "}
+          {layouts.description.truncated
+            ? "Description may be clipped. "
+            : "Description fits this preview guide. "}
+          Guide: title {PRESETS[device].titleWidth}px ×{" "}
+          {PRESETS[device].titleLines} line(s); description{" "}
+          {PRESETS[device].descriptionWidth}px ×{" "}
+          {PRESETS[device].descriptionLines} lines.
+        </p>
+      )}
       <p className={styles.muted}>
         Illustrative preview. Widths, line wrapping, and search engine rewrites
         can change the actual result.
@@ -183,6 +232,9 @@ export default function AnalyzerClient() {
     [html, setHtml] = useState("");
   const [keyword, setKeyword] = useState(""),
     [audience, setAudience] = useState("");
+  const [secondary, setSecondary] = useState(""),
+    [related, setRelated] = useState(""),
+    [targetGrade, setTargetGrade] = useState(9);
   const [page, setPage] = useState<PageSnapshot | null>(null),
     [changes, setChanges] = useState<Change[]>([]);
   const [mode, setMode] = useState<"audit" | "improve">("audit"),
@@ -220,17 +272,18 @@ export default function AnalyzerClient() {
   );
   const active = mode === "improve" ? draft : page;
   const findings = useMemo(
-    () => (active ? auditPage(active, keyword) : []),
-    [active, keyword],
+    () => (active ? auditPage(active, keyword, targetGrade) : []),
+    [active, keyword, targetGrade],
   );
   const summary = summarize(findings);
+  const categorySummaries = categoryScores(findings);
   const reviewFingerprint = useMemo(
     () => JSON.stringify({ blocks: active?.blocks, keyword, audience }),
     [active, keyword, audience],
   );
   const originalSummary = useMemo(
-    () => summarize(page ? auditPage(page, keyword) : []),
-    [page, keyword],
+    () => summarize(page ? auditPage(page, keyword, targetGrade) : []),
+    [page, keyword, targetGrade],
   );
   const visible = findings
     .filter(
@@ -566,9 +619,14 @@ export default function AnalyzerClient() {
           original: page,
           keyword,
           audience,
-          findings: page ? auditPage(page, keyword) : [],
+          secondary,
+          related,
+          targetGrade,
+          categoryScores: categoryScores(findings),
+          scoringCoverage: summary.coverage,
+          findings: page ? auditPage(page, keyword, targetGrade) : [],
           proposedChanges: changes,
-          draftFindings: draft ? auditPage(draft, keyword) : [],
+          draftFindings: draft ? auditPage(draft, keyword, targetGrade) : [],
           editorialReview:
             review?.fingerprint === reviewFingerprint ? review.result : null,
           note: "Draft changes have not been published. Scores reflect completed checks, not rankings.",
@@ -665,20 +723,49 @@ export default function AnalyzerClient() {
               </p>
             </>
           )}
-          <details className={styles.options}>
+          <details open className={styles.options}>
             <summary>
-              Page context{" "}
+              Keyword and reader context{" "}
               <span>Optional, useful for targeted improvements</span>
             </summary>
             <div className={styles.contextGrid}>
               <label>
-                Target phrase
+                Primary keyword
                 <input
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   maxLength={100}
                   placeholder="e.g. content planning"
                 />
+              </label>
+              <label>
+                Secondary keywords
+                <input
+                  value={secondary}
+                  onChange={(e) => setSecondary(e.target.value)}
+                  maxLength={600}
+                  placeholder="Comma-separated supporting phrases"
+                />
+              </label>
+              <label>
+                Related topics and terms
+                <input
+                  value={related}
+                  onChange={(e) => setRelated(e.target.value)}
+                  maxLength={600}
+                  placeholder="Comma-separated concepts to inspect"
+                />
+              </label>
+              <label>
+                Reading level
+                <select
+                  value={targetGrade}
+                  onChange={(e) => setTargetGrade(Number(e.target.value))}
+                >
+                  <option value={9}>General readers</option>
+                  <option value={11}>Professional readers</option>
+                  <option value={13}>Technical readers</option>
+                </select>
               </label>
               <label>
                 Target reader
@@ -751,757 +838,758 @@ export default function AnalyzerClient() {
         </section>
       )}
       {page && active && (
-        <div ref={reportRef} className={styles.report} aria-busy={loading}>
-          <header className={styles.reportHeader}>
-            <div className={styles.reportIdentity}>
-              <span className={styles.eyebrow}>
-                {page.source === "paste" ? "HTML snapshot" : "Page audit"} ·{" "}
-                {page.partial ? "Partial coverage" : "Returned HTML"}
-              </span>
-              <h2>{page.title || "Your page audit"}</h2>
-              <p>{page.url || "Pasted page HTML"}</p>
-              <small>
-                Checked {new Date(page.checkedAt).toLocaleString()} ·{" "}
-                {page.scope}
-              </small>
-            </div>
-            <div className={styles.headerActions}>
-              <button
-                className={styles.quiet}
-                type="button"
-                onClick={reportExport}
-              >
-                <Download size={15} />
-                Export report
-              </button>
-              <button
-                className={styles.quiet}
-                type="button"
-                onClick={() => setMethodology((v) => !v)}
-                aria-expanded={methodology}
-              >
-                <CircleHelp size={15} />
-                How scoring works
-              </button>
-            </div>
-          </header>
-          {notice && (
-            <p role="status" className={styles.notice}>
-              {notice}
-            </p>
-          )}
-          {page.warnings.map((w) => (
-            <p key={w} className={styles.warningNote}>
-              <TriangleAlert size={16} />
-              {w}
-            </p>
-          ))}
-          {methodology && (
-            <div className={styles.method}>
-              <h3>A checklist score, with visible limits</h3>
-              <p>
-                Completed weighted checks earn full points when passed, half
-                when flagged for review, and zero for a critical finding.
+        <EvidenceReviewScope key={page.checkedAt}>
+          <div ref={reportRef} className={styles.report} aria-busy={loading}>
+            <header className={styles.reportHeader}>
+              <div className={styles.reportIdentity}>
+                <span className={styles.eyebrow}>
+                  {page.source === "paste" ? "HTML snapshot" : "Page audit"} ·{" "}
+                  {page.partial ? "Partial coverage" : "Returned HTML"}
+                </span>
+                <h2>{page.title || "Your page audit"}</h2>
+                <p>{page.url || "Pasted page HTML"}</p>
+                <small>
+                  Checked {new Date(page.checkedAt).toLocaleString()} ·{" "}
+                  {page.scope}
+                </small>
+              </div>
+              <div className={styles.headerActions}>
+                <button
+                  className={styles.quiet}
+                  type="button"
+                  onClick={reportExport}
+                >
+                  <Download size={15} />
+                  Export report
+                </button>
+                <button
+                  className={styles.quiet}
+                  type="button"
+                  onClick={() => setMethodology((v) => !v)}
+                  aria-expanded={methodology}
+                >
+                  <CircleHelp size={15} />
+                  How scoring works
+                </button>
+              </div>
+            </header>
+            {notice && (
+              <p role="status" className={styles.notice}>
+                {notice}
               </p>
-              <p>
-                Unchecked and informational items do not affect the score.
-                Editorial suggestions, keyword counts, and llms.txt never
-                increase it.
+            )}
+            {page.warnings.map((w) => (
+              <p key={w} className={styles.warningNote}>
+                <TriangleAlert size={16} />
+                {w}
               </p>
-              <p>
-                Partial extraction excludes otherwise passing body checks from
-                scoring. This is our checklist score, not a Google score or
-                ranking forecast.
-              </p>
-              <div className={styles.weightList}>
-                {findings
-                  .filter((f) => f.weight > 0)
-                  .map((f) => (
-                    <span key={f.id}>
-                      {f.title} <b>{f.weight} pts</b>
+            ))}
+            {methodology && (
+              <div className={styles.method}>
+                <h3>A checklist score, with visible limits</h3>
+                <p>
+                  Eight categories contribute up to 100 points. Within each
+                  category, measured checks earn full points when passed, half
+                  for warnings, and zero for critical findings.
+                </p>
+                <p>
+                  Unknown checks earn no points and reduce visible coverage.
+                  Scores use assessed weight only. Below 60% coverage, the
+                  overall score is withheld.
+                </p>
+                <p>
+                  Below 90% coverage, scores are provisional. Manual
+                  acknowledgments never increase audit health. Product weights
+                  are not Google ranking factors.
+                </p>
+                <div className={styles.weightList}>
+                  {categorySummaries.map((c) => (
+                    <span key={c.id}>
+                      {c.label} <b>{c.weight} pts</b>
                     </span>
                   ))}
+                </div>
               </div>
-            </div>
-          )}
-          <section className={styles.scoreHero} aria-label="Page audit summary">
-            <ScoreGauge score={summary.score} critical={summary.critical > 0} />
-            <div>
-              <span className={styles.eyebrow}>
-                {mode === "improve" ? "Your working draft" : "Your page audit"}
-              </span>
-              <h3>
-                {summary.critical
-                  ? "Resolve the critical findings first."
-                  : summary.score === null
-                    ? "More evidence is needed."
-                    : summary.score >= 80
-                      ? "A good foundation to build on."
-                      : summary.score >= 50
-                        ? "Useful improvements are within reach."
-                        : "Start with the essentials."}
-              </h3>
-              <p>
-                {mode === "improve"
-                  ? `Draft estimate. Original snapshot: ${originalSummary.score ?? "not available"}/100.`
-                  : "Your checklist score reflects completed checks. Inspect the evidence before making changes."}
-              </p>
-              <small>
-                {summary.assessed} of {summary.total} checks assessed ·{" "}
-                {page.partial ? "Partial extraction" : "Returned HTML"} ·
-                Rankings and AI citations are not predicted.
-              </small>
-            </div>
-          </section>
-          <div className={styles.metrics}>
-            <div>
-              <span>Needs attention</span>
-              <strong className={styles.redText}>
-                {summary.critical}
-                <small> critical</small>
-              </strong>
-              <p>{summary.warnings} review item(s)</p>
-            </div>
-            <div>
-              <span>Checks passed</span>
-              <strong className={styles.greenText}>{summary.passed}</strong>
-              <p>Inspect the evidence behind each result</p>
-            </div>
-            <div>
-              <span>Coverage</span>
-              <strong>
-                {summary.assessed}
-                <small>/{summary.total}</small>
-              </strong>
-              <p>
-                {summary.total - summary.assessed} not checked ·{" "}
-                {page.partial ? "Partial page" : "HTML only"}
-              </p>
-            </div>
-          </div>
-          <div className={styles.modeBar}>
-            <div className={styles.segment}>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("audit");
-                  setFilter("all");
-                }}
-                aria-pressed={mode === "audit"}
-              >
-                <Search size={16} />
-                Audit
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("improve");
-                  setFilter("all");
-                }}
-                aria-pressed={mode === "improve"}
-              >
-                <PencilLine size={16} />
-                Improve <span>{changes.length}</span>
-              </button>
-            </div>
-            <p>
-              {mode === "audit"
-                ? "Original page evidence. Start with the highest priority findings."
-                : "Working draft. Changes here do not update your live website."}
-            </p>
-          </div>
-          <div className={styles.workspace}>
-            <nav className={styles.auditNav} aria-label="Audit sections">
-              {SECTIONS.map((s, i) => {
-                const I = icons[i],
-                  count = findings.filter(
-                    (f) =>
-                      f.section === s.id &&
-                      ["critical", "warning"].includes(f.status),
-                  ).length;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    aria-current={section === s.id ? "page" : undefined}
-                    onClick={() => {
-                      setSection(s.id);
-                      setFilter("all");
-                    }}
-                  >
-                    <I size={17} />
-                    <span>{s.label}</span>
-                    {count > 0 && <b>{count}</b>}
-                  </button>
-                );
-              })}
-              <div className={styles.navNote}>
-                <ShieldCheck size={18} />
+            )}
+            <section
+              className={styles.scoreHero}
+              aria-label="Page audit summary"
+            >
+              <ScoreGauge
+                score={summary.score}
+                critical={summary.critical > 0}
+              />
+              <div>
+                <span className={styles.eyebrow}>
+                  {mode === "improve"
+                    ? "Your working draft"
+                    : "Your page audit"}
+                </span>
+                <h3>
+                  {summary.critical
+                    ? "Resolve the critical findings first."
+                    : summary.score === null
+                      ? "More evidence is needed."
+                      : summary.score >= 80
+                        ? "A good foundation to build on."
+                        : summary.score >= 50
+                          ? "Useful improvements are within reach."
+                          : "Start with the essentials."}
+                </h3>
                 <p>
-                  Inspect evidence. Review changes. Verify after publishing.
+                  {mode === "improve"
+                    ? `Draft estimate. Original snapshot: ${originalSummary.score ?? "not available"}/100.`
+                    : "Your checklist score reflects completed checks. Inspect the evidence before making changes."}
+                </p>
+                <small>
+                  {summary.coverage}% weighted coverage ·{" "}
+                  {summary.provisional
+                    ? "Provisional score"
+                    : "Measured checklist"}{" "}
+                  · {summary.assessed} of {summary.total} checks assessed ·{" "}
+                  {page.partial ? "Partial extraction" : "Returned HTML"} ·
+                  Rankings and AI citations are not predicted.
+                </small>
+              </div>
+            </section>
+            <div className={styles.metrics}>
+              <div>
+                <span>Needs attention</span>
+                <strong className={styles.redText}>
+                  {summary.critical}
+                  <small> critical</small>
+                </strong>
+                <p>{summary.warnings} review item(s)</p>
+              </div>
+              <div>
+                <span>Checks passed</span>
+                <strong className={styles.greenText}>{summary.passed}</strong>
+                <p>Inspect the evidence behind each result</p>
+              </div>
+              <div>
+                <span>Coverage</span>
+                <strong>
+                  {summary.coverage}
+                  <small>%</small>
+                </strong>
+                <p>
+                  {summary.unchecked} not checked · {summary.informational}{" "}
+                  informational · {page.partial ? "Partial page" : "HTML only"}
                 </p>
               </div>
-            </nav>
-            <div className={styles.canvas}>
-              {section === "overview" && (
-                <>
-                  <div className={styles.sectionHeading}>
-                    <div>
-                      <span className={styles.eyebrow}>
-                        Your next best actions
+            </div>
+            <CategoryReport
+              findings={findings}
+              onSelect={(s) => {
+                setSection(s);
+                setFilter("all");
+              }}
+            />
+            <div className={styles.modeBar}>
+              <div className={styles.segment}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("audit");
+                    setFilter("all");
+                  }}
+                  aria-pressed={mode === "audit"}
+                >
+                  <Search size={16} />
+                  Audit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("improve");
+                    setFilter("all");
+                  }}
+                  aria-pressed={mode === "improve"}
+                >
+                  <PencilLine size={16} />
+                  Improve <span>{changes.length}</span>
+                </button>
+              </div>
+              <p>
+                {mode === "audit"
+                  ? "Original page evidence. Start with the highest priority findings."
+                  : "Working draft. Changes here do not update your live website."}
+              </p>
+            </div>
+            <div className={styles.workspace}>
+              <nav className={styles.auditNav} aria-label="Audit sections">
+                {SECTIONS.map((s, i) => {
+                  const I = icons[i],
+                    count = findings.filter(
+                      (f) =>
+                        f.section === s.id &&
+                        ["critical", "warning"].includes(f.status),
+                    ).length;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      aria-current={section === s.id ? "page" : undefined}
+                      onClick={() => {
+                        setSection(s.id);
+                        setFilter("all");
+                      }}
+                    >
+                      <I size={17} />
+                      <span>
+                        {s.label}
+                        {s.id !== "overview" && (
+                          <small className={styles.navScore}>
+                            {categorySummaries.find((c) => c.id === s.id)
+                              ?.score ?? "Not assessed"}
+                            {categorySummaries.find((c) => c.id === s.id)
+                              ?.score !== null
+                              ? "/100"
+                              : ""}
+                          </small>
+                        )}
                       </span>
-                      <h3>Start where it matters.</h3>
+                      {count > 0 && <b>{count}</b>}
+                    </button>
+                  );
+                })}
+                <div className={styles.navNote}>
+                  <ShieldCheck size={18} />
+                  <p>
+                    Inspect evidence. Review changes. Verify after publishing.
+                  </p>
+                </div>
+              </nav>
+              <div className={styles.canvas}>
+                {section === "overview" && (
+                  <>
+                    <div className={styles.sectionHeading}>
+                      <div>
+                        <span className={styles.eyebrow}>
+                          Your next best actions
+                        </span>
+                        <h3>Start where it matters.</h3>
+                      </div>
+                      <span className={styles.muted}>
+                        Priority reflects our checklist
+                      </span>
                     </div>
-                    <span className={styles.muted}>
-                      Priority reflects our checklist
-                    </span>
-                  </div>
-                  <SearchPreview page={active} />
-                </>
-              )}
-              {section === "search" && (
-                <>
-                  <SearchPreview page={active} />
-                  <div className={styles.quickFields}>
-                    {[
-                      ["title", "Page title", active.title],
-                      ["description", "Meta description", active.description],
-                    ].map(([field, label, text]) => (
-                      <div key={field}>
-                        <span className={styles.eyebrow}>{label}</span>
-                        <p>{text || "Not found"}</p>
+                    <SearchPreview page={active} />
+                  </>
+                )}
+                {section === "search" && (
+                  <>
+                    <SearchPreview page={active} />
+                    <SocialPreview page={active} />
+                    <div className={styles.quickFields}>
+                      {[
+                        ["title", "Page title", active.title],
+                        ["description", "Meta description", active.description],
+                      ].map(([field, label, text]) => (
+                        <div key={field}>
+                          <span className={styles.eyebrow}>{label}</span>
+                          <p>{text || "Not found"}</p>
+                          <button
+                            className={styles.quiet}
+                            type="button"
+                            onClick={() =>
+                              selectEditor(
+                                field,
+                                label,
+                                field as "title" | "description",
+                              )
+                            }
+                          >
+                            <PencilLine size={14} />
+                            Edit & compare
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {section === "headings" && (
+                  <section className={styles.outline}>
+                    <div className={styles.panelTitle}>
+                      <h3>Your heading hierarchy</h3>
+                      <span>{headings.length} headings</span>
+                    </div>
+                    {headings.length ? (
+                      headings.map((b, i) => (
+                        <div
+                          key={b.id}
+                          className={`${styles.headingRow} ${b.tag === "h1" ? styles.mainHeading : ""}`}
+                          style={
+                            {
+                              "--level": Number(b.tag[1]) - 1,
+                            } as React.CSSProperties
+                          }
+                        >
+                          <span className={styles.headingBadge}>
+                            {b.tag.toUpperCase()}
+                          </span>
+                          <span className={styles.headingText}>
+                            {b.tag !== "h1" && <ChevronRight size={14} />}
+                            {b.text || "Empty heading"}
+                          </span>
+                          <span className={styles.headingNumber}>{i + 1}</span>
+                          <button
+                            type="button"
+                            className={styles.iconButton}
+                            aria-label={`Edit ${b.tag}: ${b.text}`}
+                            onClick={() =>
+                              selectEditor(
+                                b.id,
+                                `${b.tag.toUpperCase()} heading`,
+                                "heading",
+                              )
+                            }
+                          >
+                            <PencilLine size={15} />
+                          </button>
+                          {mode === "improve" && (
+                            <select
+                              aria-label={`Heading level for ${b.text}`}
+                              value={b.tag}
+                              onChange={(e) =>
+                                updateChange(`level:${b.id}`, e.target.value)
+                              }
+                            >
+                              {[1, 2, 3, 4, 5, 6].map((l) => (
+                                <option key={l} value={`h${l}`}>
+                                  H{l}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className={styles.muted}>
+                        No visible headings extracted. Check coverage before
+                        changing the page.
+                      </p>
+                    )}
+                  </section>
+                )}
+                {section === "content" && (
+                  <ContentReport
+                    page={active}
+                    primary={keyword}
+                    secondary={secondary}
+                    related={related}
+                    targetGrade={targetGrade}
+                  />
+                )}
+                {section === "links" && (
+                  <section className={styles.evidencePanel}>
+                    <h3>Links and anchor review</h3>
+                    <div className={styles.dataGrid}>
+                      {["Internal", "External", "Unknown"].map((type) => (
+                        <div key={type}>
+                          <span>{type} links</span>
+                          <strong>
+                            {
+                              linkReport(active).filter((l) => l.type === type)
+                                .length
+                            }
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                    <p className={styles.muted}>
+                      Relevant competitor sources can be useful citations.
+                      Destination authority, accuracy, and competitor status
+                      were not independently verified.
+                    </p>
+                    <p className={styles.muted}>
+                      Destinations were not fetched. Counts cover {active.scope}
+                      .
+                    </p>
+                    <div className={styles.tableWrap}>
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Anchor</th>
+                            <th>Destination</th>
+                            <th>Type</th>
+                            <th>Link attributes</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {active.links.slice(0, 120).map((l, i) => (
+                            <tr key={i}>
+                              <td>{l.text || "No text anchor"}</td>
+                              <td>
+                                <a
+                                  href={l.href}
+                                  rel="noreferrer"
+                                  target="_blank"
+                                >
+                                  {l.href}
+                                  <ArrowUpRight size={12} />
+                                </a>
+                              </td>
+                              <td>
+                                {page.url &&
+                                new URL(l.href).origin ===
+                                  new URL(page.url).origin
+                                  ? "Internal"
+                                  : "External"}
+                              </td>
+                              <td>{l.rel || "No rel attributes"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {!active.links.length && <p>No links were extracted.</p>}
+                    <Link
+                      href="/tools/internal-link-opportunity-finder"
+                      className={styles.toolLink}
+                    >
+                      Discover relevant internal link targets{" "}
+                      <ArrowRight size={15} />
+                    </Link>
+                  </section>
+                )}
+                {section === "media" && (
+                  <section className={styles.evidencePanel}>
+                    <h3>Image alternatives</h3>
+                    <p className={styles.muted}>
+                      Images are listed without downloading their files. Review
+                      purpose before adding alternative text.
+                    </p>
+                    {active.images.slice(0, 100).map((image, i) => (
+                      <div className={styles.imageRow} key={i}>
+                        <div>
+                          <strong>Image {i + 1}</strong>
+                          <small>{image.src || "Source unavailable"}</small>
+                          <p>
+                            {image.alt === null
+                              ? "Missing alt attribute"
+                              : image.alt === ""
+                                ? "Empty alt attribute · may be decorative"
+                                : image.alt}
+                          </p>
+                        </div>
                         <button
                           className={styles.quiet}
                           type="button"
                           onClick={() =>
                             selectEditor(
-                              field,
-                              label,
-                              field as "title" | "description",
+                              `image:${i}`,
+                              `Image ${i + 1} alternative`,
+                              "alt",
                             )
                           }
                         >
                           <PencilLine size={14} />
-                          Edit & compare
+                          Edit alt
                         </button>
                       </div>
                     ))}
-                  </div>
-                </>
-              )}
-              {section === "headings" && (
-                <section className={styles.outline}>
-                  <div className={styles.panelTitle}>
-                    <h3>Your heading hierarchy</h3>
-                    <span>{headings.length} headings</span>
-                  </div>
-                  {headings.length ? (
-                    headings.map((b, i) => (
-                      <div
-                        key={b.id}
-                        className={`${styles.headingRow} ${b.tag === "h1" ? styles.mainHeading : ""}`}
-                        style={
-                          {
-                            "--level": Number(b.tag[1]) - 1,
-                          } as React.CSSProperties
-                        }
-                      >
-                        <span className={styles.headingBadge}>
-                          {b.tag.toUpperCase()}
-                        </span>
-                        <span className={styles.headingText}>
-                          {b.tag !== "h1" && <ChevronRight size={14} />}
-                          {b.text || "Empty heading"}
-                        </span>
-                        <span className={styles.headingNumber}>{i + 1}</span>
-                        <button
-                          type="button"
-                          className={styles.iconButton}
-                          aria-label={`Edit ${b.tag}: ${b.text}`}
-                          onClick={() =>
-                            selectEditor(
-                              b.id,
-                              `${b.tag.toUpperCase()} heading`,
-                              "heading",
-                            )
-                          }
-                        >
-                          <PencilLine size={15} />
-                        </button>
-                        {mode === "improve" && (
-                          <select
-                            aria-label={`Heading level for ${b.text}`}
-                            value={b.tag}
-                            onChange={(e) =>
-                              updateChange(`level:${b.id}`, e.target.value)
-                            }
-                          >
-                            {[1, 2, 3, 4, 5, 6].map((l) => (
-                              <option key={l} value={`h${l}`}>
-                                H{l}
-                              </option>
-                            ))}
-                          </select>
+                    {!active.images.length && (
+                      <p>
+                        No images extracted from the selected content scope.
+                      </p>
+                    )}
+                  </section>
+                )}
+                {section === "schema" && (
+                  <SchemaPanel
+                    schema={active.schemas}
+                    pageUrl={active.url}
+                    partial={active.partial}
+                    onApply={(field, raw) => {
+                      updateChange(field, raw);
+                      setMode("improve");
+                    }}
+                  />
+                )}
+                {section === "technical" && <TechnicalReport page={active} />}
+                {section === "ai-search" && (
+                  <AnswerReadinessPanel
+                    page={active}
+                    onEdit={(field, label) => {
+                      const b = active.blocks.find((b) => b.id === field);
+                      if (b)
+                        selectEditor(
+                          field,
+                          label,
+                          /^h/.test(b.tag) ? "heading" : "passage",
+                        );
+                    }}
+                  />
+                )}
+                {section === "ai-search" && (
+                  <EvidenceReview key={active.checkedAt} page={active} />
+                )}
+                {section === "ai-search" && (
+                  <section className={styles.evidencePanel}>
+                    <span className={styles.eyebrow}>
+                      Clarity, evidence, and access
+                    </span>
+                    <h3>Useful content comes first.</h3>
+                    <p className={styles.muted}>
+                      Optional editorial review checks a representative sample
+                      against your page promise and supplied audience. It does
+                      not verify facts or search rankings.
+                    </p>
+                    <button
+                      className={styles.suggestButton}
+                      type="button"
+                      disabled={reviewBusy || !active.blocks.length}
+                      onClick={reviewContent}
+                    >
+                      {reviewBusy ? (
+                        <Loader2 size={16} className={styles.spin} />
+                      ) : (
+                        <Sparkles size={16} />
+                      )}
+                      {reviewBusy
+                        ? "Reviewing sampled passages…"
+                        : "Review content clarity & evidence"}
+                    </button>
+                    {reviewError && (
+                      <p role="alert" className={styles.error}>
+                        {reviewError}
+                      </p>
+                    )}
+                    {review && review.fingerprint !== reviewFingerprint && (
+                      <p className={styles.warningNote}>
+                        Your content or context changed. Run the editorial
+                        review again for this version.
+                      </p>
+                    )}
+                    {review && review.fingerprint === reviewFingerprint && (
+                      <div className={styles.editorialReview}>
+                        <p>{review.result.summary}</p>
+                        <p className={styles.muted}>
+                          {review.blocks} sampled blocks reviewed. These are
+                          editorial suggestions, separate from your checklist
+                          score.
+                        </p>
+                        {review.result.insights.map((insight, i) => (
+                          <article className={styles.finding} key={i}>
+                            <span className={styles.badge + " " + styles.info}>
+                              {insight.topic} · editorial review
+                            </span>
+                            <blockquote className={styles.evidence}>
+                              {insight.quote}
+                            </blockquote>
+                            <p>{insight.observation}</p>
+                            <p className={styles.advice}>{insight.action}</p>
+                            <button
+                              type="button"
+                              className={styles.quiet}
+                              onClick={() => {
+                                const b = active.blocks.find(
+                                  (b) => b.id === insight.blockId,
+                                );
+                                if (b)
+                                  selectEditor(
+                                    b.id,
+                                    "Review selected passage",
+                                    /^h/.test(b.tag) ? "heading" : "passage",
+                                  );
+                              }}
+                            >
+                              <PencilLine size={14} />
+                              Review passage
+                            </button>
+                          </article>
+                        ))}
+                        {!review.result.insights.length && (
+                          <p className={styles.muted}>
+                            No additional evidence-backed suggestions were
+                            returned for this sample. This does not certify the
+                            full page.
+                          </p>
                         )}
                       </div>
-                    ))
-                  ) : (
-                    <p className={styles.muted}>
-                      No visible headings extracted. Check coverage before
-                      changing the page.
+                    )}
+
+                    <p>
+                      Review claims, explain unfamiliar entities, and make your
+                      page useful for its intended reader. These checks cannot
+                      predict AI citations.
                     </p>
-                  )}
-                </section>
-              )}
-              {section === "content" && (
-                <section className={styles.contentBlocks}>
-                  <div className={styles.panelTitle}>
-                    <div>
-                      <h3>Read the extracted content</h3>
-                      <p className={styles.muted}>
-                        Lists stay separate. Select a passage to improve it.
-                      </p>
+                    <div className={styles.typeChips}>
+                      <span>llms.txt: {active.resources.llms}</span>
+                      <span>robots.txt: {active.resources.robots}</span>
+                      <span>
+                        Author metadata:{" "}
+                        {active.author ? "found" : "not detected"}
+                      </span>
                     </div>
-                    <span>
-                      {words(
-                        active.blocks.map((b) => b.text).join(" "),
-                      ).length.toLocaleString()}{" "}
-                      words
-                    </span>
-                  </div>
-                  {active.blocks.slice(0, 200).map((b) => (
-                    <div
-                      key={b.id}
-                      className={`${styles.textBlock} ${words(b.text).length > 120 ? styles.denseBlock : ""}`}
-                    >
-                      <span>{b.tag.toUpperCase()}</span>
-                      <p>{b.text || "Empty heading"}</p>
-                      <button
-                        className={styles.iconButton}
-                        type="button"
-                        aria-label={`Edit ${b.tag} passage`}
-                        onClick={() =>
-                          selectEditor(
-                            b.id,
-                            /^h/.test(b.tag) ? "Heading" : "Content passage",
-                            /^h/.test(b.tag) ? "heading" : "passage",
-                          )
-                        }
-                      >
-                        <PencilLine size={15} />
-                      </button>
-                    </div>
-                  ))}
-                  {active.blocks.length > 200 && (
                     <p className={styles.muted}>
-                      Showing the first 200 blocks. The exported report includes
-                      all retained blocks.
+                      Crawl access and indexability are summarized here. Use the
+                      dedicated crawler checker for detailed rules and access
+                      matrices.
                     </p>
-                  )}
-                </section>
-              )}
-              {section === "links" && (
-                <section className={styles.evidencePanel}>
-                  <h3>Extracted links</h3>
-                  <p className={styles.muted}>
-                    Destinations were not fetched. Counts cover {active.scope}.
-                  </p>
-                  <div className={styles.tableWrap}>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Anchor</th>
-                          <th>Destination</th>
-                          <th>Type</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {active.links.slice(0, 120).map((l, i) => (
-                          <tr key={i}>
-                            <td>{l.text || "No text anchor"}</td>
-                            <td>
-                              <a href={l.href} rel="noreferrer" target="_blank">
-                                {l.href}
-                                <ArrowUpRight size={12} />
-                              </a>
-                            </td>
-                            <td>
-                              {page.url &&
-                              new URL(l.href).origin ===
-                                new URL(page.url).origin
-                                ? "Internal"
-                                : "External"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {!active.links.length && <p>No links were extracted.</p>}
-                  <Link
-                    href="/tools/internal-link-opportunity-finder"
-                    className={styles.toolLink}
-                  >
-                    Discover relevant internal link targets{" "}
-                    <ArrowRight size={15} />
-                  </Link>
-                </section>
-              )}
-              {section === "media" && (
-                <section className={styles.evidencePanel}>
-                  <h3>Image alternatives</h3>
-                  <p className={styles.muted}>
-                    Images are listed without downloading their files. Review
-                    purpose before adding alternative text.
-                  </p>
-                  {active.images.slice(0, 100).map((image, i) => (
-                    <div className={styles.imageRow} key={i}>
-                      <div>
-                        <strong>Image {i + 1}</strong>
-                        <small>{image.src || "Source unavailable"}</small>
-                        <p>
-                          {image.alt === null
-                            ? "Missing alt attribute"
-                            : image.alt === ""
-                              ? "Empty alt attribute · may be decorative"
-                              : image.alt}
-                        </p>
-                      </div>
-                      <button
-                        className={styles.quiet}
-                        type="button"
-                        onClick={() =>
-                          selectEditor(
-                            `image:${i}`,
-                            `Image ${i + 1} alternative`,
-                            "alt",
-                          )
-                        }
-                      >
-                        <PencilLine size={14} />
-                        Edit alt
-                      </button>
-                    </div>
-                  ))}
-                  {!active.images.length && (
-                    <p>No images extracted from the selected content scope.</p>
-                  )}
-                </section>
-              )}
-              {section === "schema" && (
-                <SchemaPanel
-                  schema={active.schemas}
-                  pageUrl={active.url}
-                  partial={active.partial}
-                  onApply={(field, raw) => {
-                    updateChange(field, raw);
-                    setMode("improve");
-                  }}
-                />
-              )}
-              {section === "technical" && (
-                <section className={styles.evidencePanel}>
-                  <span className={styles.eyebrow}>Technical overview</span>
-                  <h3>Check access before polishing content.</h3>
-                  <p>
-                    Review the response, indexing directives, and canonical
-                    findings below. Crawling and indexability support discovery;
-                    they do not guarantee indexing speed or AI visibility.
-                  </p>
-                  <div className={styles.technicalLinks}>
                     <Link
                       href="/tools/robots-txt-generator"
                       className={styles.toolLink}
                     >
-                      Crawler access & robots rules <ArrowUpRight size={15} />
+                      Open crawler access checker <ArrowRight size={15} />
                     </Link>
                     <Link
-                      href="/tools/core-web-vitals-checker"
+                      href="/tools/ai-citation-readiness-checker"
                       className={styles.toolLink}
                     >
-                      Mobile & desktop performance <ArrowUpRight size={15} />
+                      Open the dedicated AI content readiness review{" "}
+                      <ArrowRight size={15} />
                     </Link>
-                    <Link
-                      href="/tools/sitemap-xml-generator"
-                      className={styles.toolLink}
+                  </section>
+                )}
+                <div className={styles.findingHeader}>
+                  <h3>
+                    {section === "overview"
+                      ? "Priority findings"
+                      : "Findings & next steps"}
+                  </h3>
+                  <label className={styles.filter}>
+                    Show
+                    <select
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
                     >
-                      Sitemap validation <ArrowUpRight size={15} />
-                    </Link>
-                  </div>
-                </section>
-              )}
-              {section === "ai-search" && (
-                <AnswerReadinessPanel
-                  page={active}
-                  onEdit={(field, label) => {
-                    const b = active.blocks.find((b) => b.id === field);
-                    if (b)
-                      selectEditor(
-                        field,
-                        label,
-                        /^h/.test(b.tag) ? "heading" : "passage",
-                      );
-                  }}
-                />
-              )}
-              {section === "ai-search" && (
-                <section className={styles.evidencePanel}>
-                  <span className={styles.eyebrow}>
-                    Clarity, evidence, and access
-                  </span>
-                  <h3>Useful content comes first.</h3>
-                  <p className={styles.muted}>
-                    Optional editorial review checks a representative sample
-                    against your page promise and supplied audience. It does not
-                    verify facts or search rankings.
-                  </p>
-                  <button
-                    className={styles.suggestButton}
-                    type="button"
-                    disabled={reviewBusy || !active.blocks.length}
-                    onClick={reviewContent}
-                  >
-                    {reviewBusy ? (
-                      <Loader2 size={16} className={styles.spin} />
-                    ) : (
-                      <Sparkles size={16} />
-                    )}
-                    {reviewBusy
-                      ? "Reviewing sampled passages…"
-                      : "Review content clarity & evidence"}
-                  </button>
-                  {reviewError && (
-                    <p role="alert" className={styles.error}>
-                      {reviewError}
-                    </p>
-                  )}
-                  {review && review.fingerprint !== reviewFingerprint && (
-                    <p className={styles.warningNote}>
-                      Your content or context changed. Run the editorial review
-                      again for this version.
-                    </p>
-                  )}
-                  {review && review.fingerprint === reviewFingerprint && (
-                    <div className={styles.editorialReview}>
-                      <p>{review.result.summary}</p>
-                      <p className={styles.muted}>
-                        {review.blocks} sampled blocks reviewed. These are
-                        editorial suggestions, separate from your checklist
-                        score.
-                      </p>
-                      {review.result.insights.map((insight, i) => (
-                        <article className={styles.finding} key={i}>
-                          <span className={styles.badge + " " + styles.info}>
-                            {insight.topic} · editorial review
-                          </span>
-                          <blockquote className={styles.evidence}>
-                            {insight.quote}
-                          </blockquote>
-                          <p>{insight.observation}</p>
-                          <p className={styles.advice}>{insight.action}</p>
+                      <option value="all">All findings</option>
+                      <option value="critical">Critical</option>
+                      <option value="warning">Review</option>
+                      {section !== "overview" && (
+                        <>
+                          <option value="passed">Passed</option>
+                          <option value="info">Opportunities</option>
+                          <option value="unchecked">Not checked</option>
+                        </>
+                      )}
+                    </select>
+                  </label>
+                </div>
+                <div className={styles.findings}>
+                  {visible.map((f) => (
+                    <article
+                      key={f.id}
+                      className={`${styles.finding} ${styles[`finding_${f.status}`]}`}
+                    >
+                      <div className={styles.findingTop}>
+                        <Badge status={f.status} />
+                        <span className={styles.muted}>
+                          {SECTIONS.find((s) => s.id === f.section)?.short}
+                        </span>
+                      </div>
+                      <h4>{f.title}</h4>
+                      <p className={styles.evidence}>{f.evidence}</p>
+                      <p className={styles.advice}>{f.advice}</p>
+                      <div className={styles.findingActions}>
+                        {f.field && (
                           <button
-                            type="button"
                             className={styles.quiet}
-                            onClick={() => {
-                              const b = active.blocks.find(
-                                (b) => b.id === insight.blockId,
-                              );
-                              if (b)
-                                selectEditor(
-                                  b.id,
-                                  "Review selected passage",
-                                  /^h/.test(b.tag) ? "heading" : "passage",
-                                );
-                            }}
+                            type="button"
+                            onClick={() => editFinding(f)}
                           >
                             <PencilLine size={14} />
-                            Review passage
+                            Review & improve
                           </button>
-                        </article>
-                      ))}
-                      {!review.result.insights.length && (
-                        <p className={styles.muted}>
-                          No additional evidence-backed suggestions were
-                          returned for this sample. This does not certify the
-                          full page.
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <p>
-                    Review claims, explain unfamiliar entities, and make your
-                    page useful for its intended reader. These checks cannot
-                    predict AI citations.
-                  </p>
-                  <div className={styles.typeChips}>
-                    <span>llms.txt: {active.resources.llms}</span>
-                    <span>robots.txt: {active.resources.robots}</span>
-                    <span>
-                      Author metadata:{" "}
-                      {active.author ? "found" : "not detected"}
-                    </span>
-                  </div>
-                  <p className={styles.muted}>
-                    Crawl access and indexability are summarized here. Use the
-                    dedicated crawler checker for detailed rules and access
-                    matrices.
-                  </p>
-                  <Link
-                    href="/tools/robots-txt-generator"
-                    className={styles.toolLink}
-                  >
-                    Open crawler access checker <ArrowRight size={15} />
-                  </Link>
-                  <Link
-                    href="/tools/ai-citation-readiness-checker"
-                    className={styles.toolLink}
-                  >
-                    Open the dedicated AI content readiness review{" "}
-                    <ArrowRight size={15} />
-                  </Link>
-                </section>
-              )}
-              <div className={styles.findingHeader}>
-                <h3>
-                  {section === "overview"
-                    ? "Priority findings"
-                    : "Findings & next steps"}
-                </h3>
-                <label className={styles.filter}>
-                  Show
-                  <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                  >
-                    <option value="all">All findings</option>
-                    <option value="critical">Critical</option>
-                    <option value="warning">Review</option>
-                    {section !== "overview" && (
-                      <>
-                        <option value="passed">Passed</option>
-                        <option value="info">Opportunities</option>
-                        <option value="unchecked">Not checked</option>
-                      </>
-                    )}
-                  </select>
-                </label>
-              </div>
-              <div className={styles.findings}>
-                {visible.map((f) => (
-                  <article
-                    key={f.id}
-                    className={`${styles.finding} ${styles[`finding_${f.status}`]}`}
-                  >
-                    <div className={styles.findingTop}>
-                      <Badge status={f.status} />
-                      <span className={styles.muted}>
-                        {SECTIONS.find((s) => s.id === f.section)?.short}
-                      </span>
-                    </div>
-                    <h4>{f.title}</h4>
-                    <p className={styles.evidence}>{f.evidence}</p>
-                    <p className={styles.advice}>{f.advice}</p>
-                    <div className={styles.findingActions}>
-                      {f.field && (
-                        <button
-                          className={styles.quiet}
-                          type="button"
-                          onClick={() => editFinding(f)}
+                        )}
+                        <Link
+                          className={styles.toolLink}
+                          href={`/tools/${f.tool}`}
                         >
-                          <PencilLine size={14} />
-                          Review & improve
-                        </button>
-                      )}
-                      <Link
-                        className={styles.toolLink}
-                        href={`/tools/${f.tool}`}
-                      >
-                        Open specialist tool <ArrowUpRight size={14} />
-                      </Link>
-                    </div>
-                  </article>
-                ))}
-              </div>
-              {!visible.length && (
-                <div className={styles.noFindings}>
-                  <CheckCircle2 size={28} />
-                  <h4>
-                    {filter === "all"
-                      ? "No priority issues found in these checks."
-                      : "No findings match this filter."}
-                  </h4>
-                  <p>
-                    Review coverage and unchecked items before drawing
-                    conclusions about the whole page.
-                  </p>
-                </div>
-              )}
-              {mode === "improve" && (
-                <section className={styles.changePanel}>
-                  <div className={styles.panelTitle}>
-                    <div>
-                      <span className={styles.eyebrow}>Your working draft</span>
-                      <h3>{changes.length} proposed change(s)</h3>
-                    </div>
-                    <button
-                      className={styles.quiet}
-                      type="button"
-                      disabled={!changes.length}
-                      onClick={() =>
-                        download(
-                          "on-page-changes.csv",
-                          changesCsv(
-                            changes.map((c) => ({
-                              ...c,
-                              field: fieldLabel(c.field),
-                            })),
-                          ),
-                          "text/csv;charset=utf-8",
-                        )
-                      }
-                    >
-                      <Download size={14} />
-                      Export changes
-                    </button>
-                  </div>
-                  {changes.length ? (
-                    changes.map((c) => (
-                      <div className={styles.change} key={c.field}>
-                        <div>
-                          <strong>{fieldLabel(c.field)}</strong>
-                          <del>{c.before || "Not present"}</del>
-                          <ins>{c.after || "Empty alternative"}</ins>
-                        </div>
-                        <button
-                          className={styles.iconButton}
-                          type="button"
-                          aria-label={`Undo ${fieldLabel(c.field)}`}
-                          onClick={() =>
-                            setChanges((old) =>
-                              old.filter((x) => x.field !== c.field),
-                            )
-                          }
-                        >
-                          <RotateCcw size={16} />
-                        </button>
+                          Open{" "}
+                          {tools.find((t) => t.slug === f.tool)?.name ||
+                            f.tool.replace(/-/g, " ")}{" "}
+                          <ArrowUpRight size={14} />
+                        </Link>
                       </div>
-                    ))
-                  ) : (
-                    <p className={styles.muted}>
-                      Choose a field or passage to edit. Accepted changes appear
-                      here, with undo available.
+                    </article>
+                  ))}
+                </div>
+                {!visible.length && (
+                  <div className={styles.noFindings}>
+                    <CheckCircle2 size={28} />
+                    <h4>
+                      {filter === "all"
+                        ? "No priority issues found in these checks."
+                        : "No findings match this filter."}
+                    </h4>
+                    <p>
+                      Review coverage and unchecked items before drawing
+                      conclusions about the whole page.
                     </p>
-                  )}
-                  <p className={styles.muted}>
-                    Publish approved changes in your website editor, then run a
-                    new URL audit. Recent imports may be cached for two minutes.
-                  </p>
-                </section>
-              )}
+                  </div>
+                )}
+                {mode === "improve" && (
+                  <section className={styles.changePanel}>
+                    <div className={styles.panelTitle}>
+                      <div>
+                        <span className={styles.eyebrow}>
+                          Your working draft
+                        </span>
+                        <h3>{changes.length} proposed change(s)</h3>
+                      </div>
+                      <button
+                        className={styles.quiet}
+                        type="button"
+                        disabled={!changes.length}
+                        onClick={() =>
+                          download(
+                            "on-page-changes.csv",
+                            changesCsv(
+                              changes.map((c) => ({
+                                ...c,
+                                field: fieldLabel(c.field),
+                              })),
+                            ),
+                            "text/csv;charset=utf-8",
+                          )
+                        }
+                      >
+                        <Download size={14} />
+                        Export changes
+                      </button>
+                    </div>
+                    {changes.length ? (
+                      changes.map((c) => (
+                        <div className={styles.change} key={c.field}>
+                          <div>
+                            <strong>{fieldLabel(c.field)}</strong>
+                            <del>{c.before || "Not present"}</del>
+                            <ins>{c.after || "Empty alternative"}</ins>
+                          </div>
+                          <button
+                            className={styles.iconButton}
+                            type="button"
+                            aria-label={`Undo ${fieldLabel(c.field)}`}
+                            onClick={() =>
+                              setChanges((old) =>
+                                old.filter((x) => x.field !== c.field),
+                              )
+                            }
+                          >
+                            <RotateCcw size={16} />
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className={styles.muted}>
+                        Choose a field or passage to edit. Accepted changes
+                        appear here, with undo available.
+                      </p>
+                    )}
+                    <p className={styles.muted}>
+                      Publish approved changes in your website editor, then run
+                      a new URL audit. Recent imports may be cached for two
+                      minutes.
+                    </p>
+                  </section>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </EvidenceReviewScope>
       )}
       {editor && (
         <div

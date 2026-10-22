@@ -55,7 +55,7 @@ export function schemaSources(schema: PageSnapshot["schemas"]): SchemaSource[] {
   return [
     ...schema.samples.map((raw, i) => ({
       field: `schema:${i}`,
-      label: `JSON-LD source ${i + 1}`,
+      label: `${schema.sampleFormats?.[i] || "JSON-LD"} source ${i + 1}${schema.sampleFormats?.[i] && schema.sampleFormats[i] !== "JSON-LD" ? " (normalized)" : ""}`,
       raw,
     })),
     ...(schema.invalidSamples || []).map((s, i) => ({

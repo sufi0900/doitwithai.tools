@@ -3,21 +3,11 @@ import {
   inspectSchemas,
   schemaSources,
 } from "@/features/schema-inspector/inspect";
-export const words = (text: string) =>
-  text.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || [];
-export const normalize = (text: string) => words(text.toLowerCase()).join(" ");
-export function phraseCount(text: string, phrase: string) {
-  const source = ` ${normalize(text)} `,
-    target = normalize(phrase);
-  if (!target) return 0;
-  let count = 0,
-    at = 0;
-  while ((at = source.indexOf(` ${target} `, at)) >= 0) {
-    count++;
-    at += target.length + 1;
-  }
-  return count;
-}
+import { words, normalize, phraseCount } from "./text";
+export { words, normalize, phraseCount } from "./text";
+import { readabilityReport } from "./metrics";
+import { answerReadiness } from "./readiness";
+export { summarize } from "./scoring";
 export function applyDraft(
   page: PageSnapshot,
   changes: Change[],
@@ -112,7 +102,11 @@ export function applyDraft(
   }
   return next;
 }
-export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
+export function auditPage(
+  page: PageSnapshot,
+  keyword = "",
+  targetGrade = 9,
+): Finding[] {
   const findings: Finding[] = [];
   const add = (
     id: string,
@@ -146,7 +140,13 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
   add(
     "response",
     "technical",
-    live ? (page.status === 200 ? "passed" : "warning") : "unchecked",
+    live
+      ? page.status === 200
+        ? "passed"
+        : page.status && page.status >= 400
+          ? "critical"
+          : "warning"
+      : "unchecked",
     "Page response",
     live
       ? `HTTP ${page.status}; ${page.redirects} redirect(s).`
@@ -343,6 +343,22 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     "readability-checker",
     4,
   );
+  const reading = readabilityReport(page, targetGrade);
+  const english = /^en(?:-|$)/i.test(page.language);
+  add(
+    "readability",
+    "content",
+    !english || !reading.sentenceCount
+      ? "unchecked"
+      : bodyStatus(reading.grade > targetGrade + 2 ? "warning" : "passed"),
+    "Whole-article readability",
+    english
+      ? `Estimated grade ${reading.grade.toFixed(1)}; target grade ${targetGrade}; ${reading.longSentences} sentences exceed 25 words.`
+      : "English reading formulas require an English document language declaration.",
+    "Reading levels are estimates for your selected audience. Paragraph and list boundaries are preserved.",
+    "readability-checker",
+    3,
+  );
   const longBlocks = page.blocks.filter(
     (b) => !/^h/.test(b.tag) && words(b.text).length > 120,
   );
@@ -408,12 +424,14 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
   add(
     "internal-links",
     "links",
-    !page.url ? "unchecked" : bodyStatus(internal.length ? "passed" : "info"),
+    !page.url
+      ? "unchecked"
+      : bodyStatus(internal.length ? "passed" : "warning"),
     "Internal links",
     `${internal.length} extracted link(s) to the same origin.`,
     "Add helpful links where readers need context. Discovering new targets needs additional website pages.",
     "internal-link-opportunity-finder",
-    1,
+    3,
   );
   const generic = page.links.filter(
     (l) => /^(click here|here|read more|learn more)$/i.test(l.text) || !l.text,
@@ -426,7 +444,7 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     `${generic.length} empty or generic text anchor(s). Image-only links need an accessibility review.`,
     "Use descriptive anchors where appropriate. Inspect image links before treating missing text as an error.",
     "internal-link-opportunity-finder",
-    1,
+    3,
   );
   add(
     "link-status",
@@ -436,6 +454,7 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     `${external.length} external link(s). Linked destinations were not fetched.`,
     "Broken links, orphan pages, incoming links, and new target opportunities require a separate crawl.",
     "internal-link-opportunity-finder",
+    2,
   );
   const noAlt = page.images.filter((i) => i.alt === null),
     emptyAlt = page.images.filter((i) => i.alt === "");
@@ -465,24 +484,29 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     "schema",
     page.schemas.invalid
       ? "warning"
-      : page.schemas.valid
+      : page.schemas.samples.length
         ? bodyStatus("passed")
         : "info",
     "Structured data syntax",
     `${page.schemas.valid} valid JSON-LD block(s); ${page.schemas.invalid} invalid block(s).`,
     "JSON validity does not establish rich result eligibility. Validate relevant types and compare markup with visible content.",
     "structured-data-validator",
-    page.schemas.valid || page.schemas.invalid ? 2 : 0,
+    2,
   );
   const schemaReport = inspectSchemas(schemaSources(page.schemas));
   add(
     "schema-fields",
     "schema",
-    schemaReport.errors ? "warning" : "info",
+    !schemaReport.items.length ||
+      schemaReport.limited ||
+      schemaReport.items.some((i) => !i.covered)
+      ? "unchecked"
+      : bodyStatus(schemaReport.errors ? "warning" : "passed"),
     "Schema entities & field checks",
     `${schemaReport.items.length} typed entities across ${schemaReport.types.length} distinct types; ${schemaReport.errors} local errors; ${schemaReport.warnings} review suggestions.`,
     "Inspect each entity card. These checks cover selected field profiles, not full Schema.org conformance or Google eligibility.",
     "structured-data-validator",
+    3,
   );
   add(
     "schema-types",
@@ -490,7 +514,7 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     "info",
     "Detected schema types",
     page.schemas.types.join(", ") ||
-      "No JSON-LD types extracted. Microdata and RDFa were not assessed.",
+      "No typed entities were extracted from supported embedded markup. JavaScript-generated markup was not inspected.",
     "Add markup only when appropriate. Missing schema is not a universal SEO failure, and special AI schema is not required.",
     "schema-markup-generator",
   );
@@ -499,9 +523,25 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     "schema",
     "unchecked",
     "Rich result eligibility",
-    "JSON-LD parsing, entity inspection, and selected local field checks completed.",
+    "Embedded markup extraction and selected local checks do not establish Google rich result eligibility.",
     "Use the schema tool and Google's Rich Results Test for supported feature requirements. Display is never guaranteed.",
     "schema-markup-generator",
+  );
+  const readiness = answerReadiness(page);
+  const openings = [readiness.opening, ...readiness.sections];
+  const available = openings.filter((s) => s.passage);
+  const framing = available.filter((s) => s.status === "review");
+  add(
+    "answer-framing",
+    "ai-search",
+    !available.length
+      ? "unchecked"
+      : bodyStatus(framing.length ? "warning" : "passed"),
+    "Section opening clarity cues",
+    `${available.length} openings inspected; ${framing.length} contain generic introductory framing or dense text.`,
+    "Inspect the quoted openings in context. This measures framing cues, not answer accuracy or citation likelihood.",
+    "ai-citation-readiness-checker",
+    2,
   );
   add(
     "author",
@@ -537,6 +577,7 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     "No live search-result comparison or factual verification was performed.",
     "Review whether the page delivers its promise. Use the intent tool for a separate editorial assessment.",
     "search-intent-checker",
+    3,
   );
   add(
     "robots-file",
@@ -583,33 +624,6 @@ export function auditPage(page: PageSnapshot, keyword = ""): Finding[] {
     "keyword-cannibalization-finder",
   );
   return findings;
-}
-export function summarize(findings: Finding[], section?: Section) {
-  const selected = findings.filter(
-    (f) => !section || section === "overview" || f.section === section,
-  );
-  const eligible = selected.filter(
-    (f) => f.weight > 0 && ["passed", "critical", "warning"].includes(f.status),
-  );
-  const total = eligible.reduce((n, f) => n + f.weight, 0);
-  const earned = eligible.reduce(
-    (n, f) =>
-      n +
-      (f.status === "passed"
-        ? f.weight
-        : f.status === "warning"
-          ? f.weight * 0.5
-          : 0),
-    0,
-  );
-  return {
-    score: total ? Math.round((100 * earned) / total) : null,
-    assessed: selected.filter((f) => f.status !== "unchecked").length,
-    total: selected.length,
-    critical: selected.filter((f) => f.status === "critical").length,
-    warnings: selected.filter((f) => f.status === "warning").length,
-    passed: selected.filter((f) => f.status === "passed").length,
-  };
 }
 export function changesCsv(changes: Change[]) {
   const quote = (s: string) =>

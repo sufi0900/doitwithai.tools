@@ -228,7 +228,8 @@ test("claim cues remain editorial prompts and new schema findings link to the va
   assert.equal(answerReadiness(p).claims.length, 1);
   const f = auditPage(p).find((f) => f.id === "schema-fields")!;
   assert.equal(f.tool, "structured-data-validator");
-  assert.equal(f.weight, 0);
+  assert.equal(f.weight, 3);
+  assert.equal(f.status, "unchecked");
 });
 
 test("pasted draft conversion preserves list boundaries and escapes executable markup", () => {
