@@ -9,7 +9,7 @@ const retiredToolURLs = new Set([
   `${baseURL}/ai-seo-tools`,
 ]);
 // Resource documents are downloads, not editorial detail pages.
-const staticPaths = ["", "/ai-tools", "/ai-seo", "/ai-code", "/ai-learn-earn", "/free-ai-resources", "/blogs", "/about", "/contact", "/navigation", "/author/sufian-mustafa", "/faq", "/categories", "/privacy", "/terms-and-conditions", "/brand-assets"];
+const staticPaths = ["", "/prompts", "/ai-tools", "/ai-seo", "/ai-code", "/ai-learn-earn", "/free-ai-resources", "/blogs", "/about", "/contact", "/navigation", "/author/sufian-mustafa", "/faq", "/categories", "/privacy", "/terms-and-conditions", "/brand-assets"];
 
 export default async function sitemap() {
   const [posts, blogCategories] = await Promise.all([fetchURLs(), fetchBlogCategorySlugs()]);

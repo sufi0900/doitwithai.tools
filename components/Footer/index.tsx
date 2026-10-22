@@ -231,6 +231,7 @@ Put AI to work with practical tools, step-by-step guides, and free resources for
                 <ul className="space-y-2 sm:space-y-3 w-full">
                   {[
                     { href: "/tools", text: "AI tools" },
+                    { href: "/prompts", text: "AI prompt library" },
                     { href: "/ai-seo", text: "Learn with AI" },
                     { href: "/blogs", text: "All articles" },
                     { href: "/author/sufian-mustafa", text: "About Author" },

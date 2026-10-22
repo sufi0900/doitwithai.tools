@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-22T12:25:29.498Z",
+  "generated": "2026-10-22T20:24:35.692Z",
   "static_pages": [
     {
       "url": "/",
@@ -71,6 +71,12 @@
     {
       "url": "/tools",
       "title": "Tools",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/prompts",
+      "title": "AI Prompt Library",
       "priority": "high",
       "type": "static"
     },
@@ -285,5 +291,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 47
+  "total_pages": 48
 }

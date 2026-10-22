@@ -184,6 +184,9 @@ export default function ToolsPage() {
             Check accuracy, relevance, and your page content before using it.
           </p>
           <div className="mt-4 flex flex-wrap gap-6 text-sm font-semibold text-primary dark:text-[#93B4FF]">
+            <Link href="/prompts" className="hover:underline">
+              Explore prompt previews →
+            </Link>
             <Link href="/ai-seo" className="hover:underline">
               Read SEO guides →
             </Link>

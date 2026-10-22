@@ -37,6 +37,7 @@ const menuData: Menu[] = [
     title: "Pages",
     newTab: false,
     submenu: [
+      { id: 101, title: "AI Prompts", path: "/prompts", newTab: false },
       {
         id: 3,
         title: "Free AI Resources",
