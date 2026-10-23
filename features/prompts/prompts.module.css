@@ -1378,3 +1378,34 @@
   margin-top: -5px;
   margin-bottom: 18px;
 }
+/* Finished guides have a clear primary action; previews retain quieter links. */
+.card[data-status="published"] {
+  border-color: #a9b9ff;
+}
+.card[data-status="published"] .sampleLabel {
+  background: var(--soft);
+  border-color: #a9b9ff;
+  color: var(--tone);
+}
+.card[data-status="published"] .cardAction {
+  border: 1px solid #4058d0;
+  border-radius: 9px;
+  padding: 12px 16px;
+  background: #4058d0;
+  color: #fff;
+  box-shadow: 0 4px 12px #5271ff20;
+  text-decoration: none;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.card[data-status="published"] .cardAction:hover {
+  background: #3147b6;
+  box-shadow: 0 5px 16px #5271ff30;
+}
+.card:focus-within {
+  border-color: #5271ff;
+}
+:global(.dark) .page .card[data-status="published"] .cardAction {
+  color: #fff !important;
+}

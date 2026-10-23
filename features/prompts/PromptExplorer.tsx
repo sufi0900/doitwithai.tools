@@ -207,10 +207,9 @@ export default function PromptExplorer() {
                     <Link
                       className={styles.cardAction}
                       href={promptPath(prompt.id)}
+                      aria-label={`${detail.ready ? "Read the guide" : "Preview detail page"}: ${prompt.title}`}
                     >
-                      {promptDetails[prompt.id].ready
-                        ? "Read the guide"
-                        : "Preview detail page"}{" "}
+                      {detail.ready ? "Read the guide" : "Preview detail page"}{" "}
                       <ArrowRight size={17} aria-hidden="true" />
                     </Link>
                   </div>

@@ -1,8 +1,8 @@
 export const promptHero = {
-  src: "/prompts/metadata-prompts-hero.webp",
+  src: "/prompts/metadata-prompts-hero-v2.webp",
   width: 1600,
   height: 900,
-  alt: "Do It With AI Tools branding with sculpted paper and title-description cards on a blue background.",
+  alt: "ChatGPT prompts for meta titles and descriptions, beside a screen showing a sample prompt and Copy prompt button in Do It With AI Tools blue branding.",
 };
 export const metadataGuides = {
   title: {

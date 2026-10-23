@@ -862,6 +862,7 @@
 }
 .context {
   border: 2px solid #9bb0ff;
+  scroll-margin-top: 110px;
   background: linear-gradient(135deg, #f0f4ff, var(--paper));
   box-shadow: 0 10px 35px #5271ff10;
   padding: 28px;
@@ -936,6 +937,7 @@
   min-height: 80px;
 }
 .promptNavigator {
+  scroll-margin-top: 110px;
   border: 1px solid var(--line);
   background: var(--paper);
   padding: 22px;
@@ -959,6 +961,68 @@
   padding: 8px 11px;
   min-height: 40px;
   background: var(--soft);
+}
+.article .section .browsePrompts {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.customizeReturn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  margin: 30px 0;
+  border: 1px solid #9bb0ff;
+  border-radius: 14px;
+  background: var(--soft);
+}
+.customizeReturn > div {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+.customizeReturn h3 {
+  font-size: 21px;
+  margin-bottom: 9px;
+}
+.customizeReturn p:not(.kicker) {
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.65;
+}
+.article .section .customizeLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 9px;
+  background: #4058d0;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.article .section .customizeLink:hover {
+  background: #3147b6;
+}
+.customizeLink svg,
+.browsePrompts svg {
+  flex-shrink: 0;
+}
+@media (max-width: 540px) {
+  .customizeReturn {
+    padding: 20px;
+  }
+  .customizeLink {
+    width: 100%;
+  }
 }
 .guideCard {
   display: grid;

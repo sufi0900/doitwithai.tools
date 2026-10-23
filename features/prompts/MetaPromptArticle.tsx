@@ -98,6 +98,7 @@ export default function MetaPromptArticle({
             <a href="#prompts" className={styles.primary}>
               Find your prompt <ArrowUpRight size={17} />
             </a>
+            <a href="#prompt-customizer">Customize all {promptCount} prompts</a>
             <a href="#worked-example">See the worked example</a>
           </div>
         </header>
@@ -111,8 +112,8 @@ export default function MetaPromptArticle({
             sizes="(max-width: 768px) 100vw, 1200px"
           />
           <figcaption>
-            Brand artwork for our title and description prompt guide. The cards
-            are illustrative, not a live search result.
+            Copyable ChatGPT prompts for meta titles and descriptions. The
+            screen is an illustrative mockup.
           </figcaption>
         </figure>
         <div className={styles.layout}>

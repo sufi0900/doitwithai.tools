@@ -8,7 +8,7 @@ The hub lives at `/prompts`. It contains one completed article and six explicitl
 
 The prior title and description prompt URLs permanently redirect to this combined guide.
 The article contains a featured image, separate definitions, nine distinct prompt tasks, a worked example, tools, checklists, and FAQs.
-Guide images and titles were verified against the published Sanity documents on October 24, 2026.
+Guide images and titles were verified against the published Sanity documents during the earlier article review.
 The CMS content and schemas were not changed.
 
 ## Source organization
@@ -22,6 +22,9 @@ The CMS content and schemas were not changed.
 The existing Inter article style informed the reading scale. Body text uses 18px on desktop, 20px on wide screens, and 16px on mobile.
 Captions, controls, headings, and code retain separate sizes. Dark mode uses higher-contrast reading text.
 The page brief opens by default. Related-page examples include identifiers, summaries, titles, and descriptions.
+A hero shortcut links to the customization workspace. Its top link lets readers browse the nine prompts first.
+The closing customization action returns to the same brief, reopens it, and focuses its first field without clearing entries.
+Native anchor navigation and scroll margins keep the destination below the site header.
 A prompt navigator links to individual tasks. Every task includes the relevant source context and a human review action.
 
 ## Predictable listing layout
@@ -30,6 +33,8 @@ All cards occupy one grid cell. Published entries never span additional columns.
 The grid uses three, two, or one column according to available width. Covers keep the same 16:9 ratio.
 Future articles define their own `cover` and `promptCount` instead of inheriting the first article’s artwork.
 Adding another article places it in the next normal grid position. Status labels identify previews without changing their dimensions.
+Published cards use a filled blue guide button, a restrained border, and a clear keyboard focus state.
+Preview actions stay quieter. Every action has an accessible name identifying its destination guide.
 
 ## Handoff and verification boundaries
 
@@ -47,8 +52,8 @@ Managed browser visual QA remains unavailable because its startup flags are inco
 
 ### AI-generated featured artwork
 
-Built-in image generation was used with the existing logo as an edit reference. The exact generation brief follows:
+Built-in image generation edited the previous branded cover. The exact current edit brief follows:
 
-> Expand the supplied brand emblem into a finished premium wide editorial cover image for Do It With AI Tools. The supplied image is the exact brand logo: preserve it faithfully as a small crisp circular badge near the upper left, not a redesigned logo. Landscape 16:9 composition. Brand background #5271FF, with rich blue tonal depth and subtle soft cream accents. Visually communicate ChatGPT-assisted writing of meta titles and meta descriptions: a beautifully rendered sculptural cream paper ribbon curves around two floating editorial cards, one bearing a bold short title line, the other softer paragraph lines, with a small sparkling idea motif. High-end editorial 3D illustration with tactile paper, frosted glass, soft studio lighting, carefully composed shadows, real depth and material, polished magazine cover quality. Clearly an artwork, not an HTML UI, not a flow chart, not a code-generated infographic, no browser window. No people. Large legible exact headline 'Meta titles & descriptions' in warm white, placed in generous negative space on the left or top with excellent contrast. Small restrained brand text 'DO IT WITH AI TOOLS'. Keep visual elements spacious and balanced with no text overlap. Do not add promises, results, percentages, charts, fabricated ChatGPT logos, extra words or watermarks. This is a replacement featured image for a practical prompt article.
+> Use case: precise-object-edit. Asset type: 16:9 editorial featured image for a practical prompt guide. Input image 1 is the edit target. Keep the exact existing d + AI circuit brand emblem and restrained DO IT WITH AI TOOLS branding at upper left. Keep the rich #5271FF blue background, warm white palette, premium soft studio light, tactile paper and subtle 3D depth. Replace the generic headline on the LEFT with this complete, clearly legible exact headline: 'ChatGPT prompts for meta titles & descriptions'. Set 'ChatGPT prompts for' as a readable introductory line above 'Meta titles & descriptions', balanced within the left half with generous margins. Replace the floating abstract cards on the RIGHT with one elegant, mostly front-facing desktop screen mockup showing a prompt-writing panel. Inside the screen, include exact readable panel heading 'META TITLE PROMPT', prompt text 'Write five title options from this page summary. Keep the topic clear. Avoid unsupported claims.', and a distinct blue button labeled 'Copy prompt' with a small copy icon. Include a second subtle tab labeled 'Meta description'. The screen is an illustrative editorial mockup, not an actual ChatGPT screenshot; no ChatGPT logo or fabricated branding. It should unmistakably communicate that this article contains copyable prompts. Maintain large readable typography and hierarchy without text overlap. Keep blue sculptural background details restrained. No people, no metrics, no ranking promises, no charts, no watermarks, no extra slogans. Finished polished landscape 16:9 cover artwork.
 
-Project asset: `public/prompts/metadata-prompts-hero.webp`, 1600×900, approximately 99 KB. It replaces the earlier coded illustration in the article, card, and social metadata.
+Project asset: `public/prompts/metadata-prompts-hero-v2.webp`, 1600×900, approximately 105 KB. The article, card, social metadata, and Article schema share this versioned image. It includes the complete prompt-guide heading and an illustrative prompt screen with a Copy prompt button.
