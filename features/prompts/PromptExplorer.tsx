@@ -13,19 +13,14 @@ import {
   Mail,
   Sparkles,
 } from "lucide-react";
-import {
-  filterPreviews,
-  promptCategories,
-  promptPreviews,
-  type CategoryId,
-} from "./catalog";
+import { filterPreviews, promptCategories, type CategoryId } from "./catalog";
 import styles from "./prompts.module.css";
-import { promptDetails, promptPath } from "./details";
+import { promptDetails, promptPath, publishedPrompts } from "./details";
 
 export default function PromptExplorer() {
   const [category, setCategory] = useState<CategoryId>("all");
   const [query, setQuery] = useState("");
-  const results = filterPreviews(category, query);
+  const results = filterPreviews(category, query, publishedPrompts);
   const categoryName = promptCategories.find(
     (item) => item.id === category,
   )?.name;
@@ -44,7 +39,7 @@ export default function PromptExplorer() {
           <p className={styles.eyebrow}>FIND YOUR NEXT WORKFLOW</p>
           <h2 id="library-heading">The prompt library</h2>
         </div>
-        <span className={styles.previewPill}>Guides & previews</span>
+        <span className={styles.previewPill}>Practical prompt guides</span>
       </div>
       <div className={styles.libraryLayout}>
         <aside className={styles.sidebar} aria-label="Prompt categories">
@@ -66,8 +61,8 @@ export default function PromptExplorer() {
                 <span>{item.name}</span>
                 <small>
                   {item.id === "all"
-                    ? promptPreviews.length
-                    : promptPreviews.filter((p) => p.category === item.id)
+                    ? publishedPrompts.length
+                    : publishedPrompts.filter((p) => p.category === item.id)
                         .length}
                 </small>
               </button>
@@ -89,7 +84,7 @@ export default function PromptExplorer() {
           <div className={styles.searchBar}>
             <Search size={20} aria-hidden="true" />
             <label htmlFor="prompt-search" className={styles.srOnly}>
-              Search prompt previews
+              Search prompt guides
             </label>
             <input
               id="prompt-search"
@@ -99,7 +94,7 @@ export default function PromptExplorer() {
               onChange={(e) => {
                 setQuery(e.target.value);
               }}
-              placeholder="Try meta titles, readability, or search intent…"
+              placeholder="Search meta titles, descriptions, or page types…"
             />
             {query ? (
               <button onClick={() => setQuery("")} aria-label="Clear search">
@@ -114,8 +109,8 @@ export default function PromptExplorer() {
             </p>
           </div>
           <p className={styles.previewNotice}>
-            Explore the complete meta title workflow or preview upcoming guides.
-            Every card opens its own page.
+            Open a guide to customize its prompts, copy them, and review your
+            results with a practical checklist.
           </p>
           <div className={styles.cardGrid}>
             {results.map((prompt) => {
@@ -127,9 +122,7 @@ export default function PromptExplorer() {
                   key={prompt.id}
                   data-tone={prompt.category}
                   data-cover={cover ? "image" : "illustration"}
-                  data-status={
-                    promptDetails[prompt.id].ready ? "published" : "preview"
-                  }
+                  data-status="published"
                 >
                   <div className={styles.cardCover}>
                     {cover ? (
@@ -165,9 +158,7 @@ export default function PromptExplorer() {
                           }
                         </span>
                         <span className={styles.coverCaption}>
-                          {detail.ready
-                            ? "Practical prompt workflow"
-                            : "A workflow taking shape"}
+                          Practical prompt workflow
                         </span>
                       </>
                     )}
@@ -180,20 +171,17 @@ export default function PromptExplorer() {
                             ?.name
                         }
                       </span>
-                      <span className={styles.sampleLabel}>
-                        {promptDetails[prompt.id].ready
-                          ? "FIELD GUIDE"
-                          : "PREVIEW"}
-                      </span>
+                      <span className={styles.sampleLabel}>FIELD GUIDE</span>
                     </div>
                     <h4>
                       <Link href={promptPath(prompt.id)}>{prompt.title}</Link>
                     </h4>
                     <p>{prompt.description}</p>
                     <p className={styles.cardFormat}>
-                      {detail.ready
-                        ? `${detail.promptCount ? detail.promptCount + " copyable prompts · " : ""}Article guide`
-                        : "Upcoming prompt guide"}
+                      {detail.promptCount
+                        ? `${detail.promptCount} copyable prompts · `
+                        : ""}
+                      Article guide
                     </p>
                     <div className={styles.outcome}>
                       <span>WHAT YOU’LL WORK TOWARD</span>
@@ -207,10 +195,9 @@ export default function PromptExplorer() {
                     <Link
                       className={styles.cardAction}
                       href={promptPath(prompt.id)}
-                      aria-label={`${detail.ready ? "Read the guide" : "Preview detail page"}: ${prompt.title}`}
+                      aria-label={`Read the guide: ${prompt.title}`}
                     >
-                      {detail.ready ? "Read the guide" : "Preview detail page"}{" "}
-                      <ArrowRight size={17} aria-hidden="true" />
+                      Read the guide <ArrowRight size={17} aria-hidden="true" />
                     </Link>
                   </div>
                 </article>
@@ -220,10 +207,14 @@ export default function PromptExplorer() {
           {!results.length ? (
             <div className={styles.empty}>
               <Search size={30} aria-hidden="true" />
-              <h3>No matching previews yet</h3>
-              <p>Try a broader term or explore another category.</p>
+              <h3>
+                {query.trim()
+                  ? "No matching guides"
+                  : "No published guides in this category yet"}
+              </h3>
+              <p>Browse all published guides or try another search.</p>
               <button onClick={reset} className={styles.primary}>
-                Show all previews
+                Show all guides
               </button>
             </div>
           ) : null}

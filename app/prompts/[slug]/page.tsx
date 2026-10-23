@@ -4,17 +4,20 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight, CheckCircle2 } from "lucide-react";
 import PromptBuilder from "@/features/prompts/PromptBuilder";
-import { promptPreviews, promptCategories } from "@/features/prompts/catalog";
+import { promptCategories } from "@/features/prompts/catalog";
 import {
   findPromptDetail,
   promptDetails,
   promptPath,
+  publishedPrompts,
 } from "@/features/prompts/details";
 import styles from "@/features/prompts/prompts.module.css";
 const origin = "https://doitwithai.tools";
 export const dynamicParams = false;
 export function generateStaticParams() {
-  return Object.values(promptDetails).map((detail) => ({ slug: detail.slug }));
+  return publishedPrompts.map((prompt) => ({
+    slug: promptDetails[prompt.id].slug,
+  }));
 }
 export function generateMetadata({
   params,
@@ -25,15 +28,16 @@ export function generateMetadata({
   if (!item) return {};
   const { detail, prompt } = item;
   const cover = detail.cover;
+  const description = detail.description || prompt.description;
   return {
     metadataBase: new URL(origin),
     title: `${detail.title} | Do It With AI Tools`,
-    description: prompt.description,
+    description,
     alternates: { canonical: `${origin}${promptPath(prompt.id)}` },
     robots: { index: detail.ready, follow: true },
     openGraph: {
       title: detail.title,
-      description: prompt.description,
+      description,
       url: `${origin}${promptPath(prompt.id)}`,
       type: detail.ready ? "article" : "website",
       images: [
@@ -48,7 +52,7 @@ export function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: detail.title,
-      description: prompt.description,
+      description,
       images: [cover?.src || "/prompts/opengraph-image"],
     },
   };
@@ -63,7 +67,7 @@ export default function PromptDetailPage({
   const { prompt, detail } = item;
   const category = promptCategories.find((c) => c.id === prompt.category);
   const url = `${origin}${promptPath(prompt.id)}`;
-  const related = promptPreviews
+  const related = publishedPrompts
     .filter((p) => p.id !== prompt.id)
     .sort(
       (a, b) =>
@@ -95,7 +99,7 @@ export default function PromptDetailPage({
               ...(detail.cover
                 ? { image: new URL(detail.cover.src, origin).href }
                 : {}),
-              description: prompt.description,
+              description: detail.description || prompt.description,
               url,
               mainEntityOfPage: url,
               author: {

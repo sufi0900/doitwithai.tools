@@ -1,6 +1,6 @@
-/** Editorial previews only. Replace this source with published Sanity documents later. */
+/** Frontend editorial registry. Only ready guides are exposed through details.ts. */
 export const promptCategories = [
-  { id: "all", name: "All workflows", description: "Explore every preview" },
+  { id: "all", name: "All workflows", description: "Explore published guides" },
   {
     id: "on-page",
     name: "On-page SEO",
@@ -191,9 +191,10 @@ export const promptPreviews: PromptPreview[] = [
 export function filterPreviews(
   category: CategoryId,
   query: string,
+  items: readonly PromptPreview[] = promptPreviews,
 ): PromptPreview[] {
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  return promptPreviews.filter(
+  return items.filter(
     (p) =>
       (category === "all" || p.category === category) &&
       terms.every((term) =>

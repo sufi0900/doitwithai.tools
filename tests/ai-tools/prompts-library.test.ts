@@ -48,15 +48,18 @@ test("every sample has valid categories, declared inputs, and a live tool destin
   }
 });
 
-test("detail routes are unique and only completed workflows are indexable", async () => {
-  const { promptDetails, promptPath, findPromptDetail } =
+test("only published guides appear in public search and resolve as detail routes", async () => {
+  const { promptDetails, promptPath, findPromptDetail, publishedPrompts } =
     await import("../../features/prompts/details");
   const slugs = Object.values(promptDetails).map((detail) => detail.slug);
   assert.equal(new Set(slugs).size, promptPreviews.length);
   for (const prompt of promptPreviews) {
     const detail = promptDetails[prompt.id];
     assert.match(detail.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-    assert.equal(findPromptDetail(detail.slug)?.prompt.id, prompt.id);
+    assert.equal(
+      findPromptDetail(detail.slug)?.prompt.id,
+      detail.ready ? prompt.id : undefined,
+    );
     assert.equal(promptPath(prompt.id), `/prompts/${detail.slug}`);
     assert.deepEqual(
       Object.keys(detail.example).sort(),
@@ -64,6 +67,18 @@ test("detail routes are unique and only completed workflows are indexable", asyn
     );
   }
   assert.equal(findPromptDetail("missing-page"), undefined);
+  assert.deepEqual(
+    filterPreviews("all", "", publishedPrompts).map((p) => p.id),
+    ["meta-title"],
+  );
+  assert.deepEqual(
+    filterPreviews("on-page", "meta descriptions", publishedPrompts).map(
+      (p) => p.id,
+    ),
+    ["meta-title"],
+  );
+  assert.deepEqual(filterPreviews("technical", "", publishedPrompts), []);
+  assert.deepEqual(filterPreviews("all", "outreach", publishedPrompts), []);
   assert.deepEqual(
     Object.entries(promptDetails)
       .filter(([, detail]) => detail.ready)

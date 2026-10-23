@@ -4,6 +4,7 @@ export type PromptDetail = {
   slug: string;
   ready: boolean;
   title: string;
+  description?: string;
   overview: string;
   cover?: { src: string; alt: string; width: number; height: number };
   promptCount?: number;
@@ -20,6 +21,8 @@ export const promptDetails: Record<string, PromptDetail> = {
     cover: promptHero,
     promptCount: 9,
     title: "ChatGPT prompts for meta titles and meta descriptions",
+    description:
+      "Use nine ChatGPT prompts for meta titles and meta descriptions. Customize the page brief, compare drafts, and review your metadata before publishing.",
     overview:
       "Use this workflow when your page has a clear topic but its title feels vague, repetitive, or disconnected from the reader’s goal. Start with an accurate summary, compare distinct angles, then preview your preferred title before publishing.",
     example: {
@@ -200,11 +203,14 @@ export const promptDetails: Record<string, PromptDetail> = {
     ],
   },
 };
+export const publishedPrompts = promptPreviews.filter(
+  (prompt) => promptDetails[prompt.id]?.ready,
+);
 export function promptPath(id: string) {
   return `/prompts/${promptDetails[id].slug}`;
 }
 export function findPromptDetail(slug: string) {
-  const prompt = promptPreviews.find(
+  const prompt = publishedPrompts.find(
     (item) => promptDetails[item.id]?.slug === slug,
   );
   return prompt ? { prompt, detail: promptDetails[prompt.id] } : undefined;

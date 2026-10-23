@@ -1,6 +1,7 @@
 # Frontend prompt articles
 
-The hub lives at `/prompts`. It contains one completed article and six explicitly labeled future previews.
+The hub lives at `/prompts`. Only the completed meta title and meta description guide is public.
+All category filters remain visible. Counts and empty states reflect published guides, rather than draft placeholders.
 
 ## Article and navigation
 
@@ -32,9 +33,9 @@ A prompt navigator links to individual tasks. Every task includes the relevant s
 All cards occupy one grid cell. Published entries never span additional columns.
 The grid uses three, two, or one column according to available width. Covers keep the same 16:9 ratio.
 Future articles define their own `cover` and `promptCount` instead of inheriting the first article’s artwork.
-Adding another article places it in the next normal grid position. Status labels identify previews without changing their dimensions.
+Adding another published article places it in the next normal grid position with the same dimensions.
 Published cards use a filled blue guide button, a restrained border, and a clear keyboard focus state.
-Preview actions stay quieter. Every action has an accessible name identifying its destination guide.
+Every action has an accessible name identifying its destination guide.
 
 ## Handoff and verification boundaries
 
@@ -44,7 +45,10 @@ Inputs are held in memory. Changing relevant inputs invalidates an earlier copie
 Generated examples are illustrative, and no live model evaluation or citation uplift is claimed.
 The artwork is not a screenshot. The existing guide visuals retain their contextual captions.
 
-Only finished articles allow indexing and enter the sitemap. Canonicals, social images, Article markup, and breadcrumbs follow the current article records.
+`publishedPrompts` is the shared source for cards, category counts, structured listings, static detail routes, related guides, and the sitemap.
+Unfinished entries stay in the internal editorial registry for future work. They have no public card or generated detail page.
+Unknown and unfinished slugs return 404. Only finished articles allow indexing and enter the sitemap.
+Canonicals, social images, Article markup, and breadcrumbs follow the current article records.
 Both metadata generators link back to this article. The article links to both generators, their full guides, and the SERP Simulator.
 
 Checks cover 18 prompt, routing, catalog, and foundation tests, plus TypeScript and targeted lint.

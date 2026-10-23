@@ -7,17 +7,23 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import PromptExplorer from "@/features/prompts/PromptExplorer";
+import {
+  publishedPrompts,
+  promptDetails,
+  promptPath,
+} from "@/features/prompts/details";
 import styles from "@/features/prompts/prompts.module.css";
 
 const origin = "https://doitwithai.tools";
 const title = "AI Prompts for SEO & Content Writing | Do It With AI Tools";
 const description =
-  "Explore our SEO and content prompt library. Browse workflows for titles, headings, keyword research, technical reviews, and clearer writing.";
+  "Explore our SEO and content prompt library. Use nine customizable ChatGPT prompts to draft, compare, and improve meta titles and descriptions.";
 export const metadata: Metadata = {
   metadataBase: new URL(origin),
   title,
   description,
   alternates: { canonical: `${origin}/prompts` },
+  robots: { index: true, follow: true },
   openGraph: { title, description, url: `${origin}/prompts`, type: "website" },
   twitter: { card: "summary_large_image", title, description },
 };
@@ -25,7 +31,7 @@ const steps = [
   {
     icon: Compass,
     title: "Start with the task",
-    text: "Choose the outcome you need, from a clearer title to a more useful opening paragraph.",
+    text: "Choose a prompt for drafting, comparing, or refining your meta title and description.",
   },
   {
     icon: SlidersHorizontal,
@@ -48,11 +54,24 @@ export default function PromptsPage() {
         url: `${origin}/prompts`,
         name: title,
         description,
+        mainEntity: { "@id": `${origin}/prompts#guides` },
         isPartOf: {
           "@type": "WebSite",
           name: "Do It With AI Tools",
           url: origin,
         },
+      },
+      {
+        "@type": "ItemList",
+        "@id": `${origin}/prompts#guides`,
+        name: "Published SEO prompt guides",
+        numberOfItems: publishedPrompts.length,
+        itemListElement: publishedPrompts.map((prompt, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: promptDetails[prompt.id].title,
+          url: `${origin}${promptPath(prompt.id)}`,
+        })),
       },
       {
         "@type": "BreadcrumbList",
@@ -105,7 +124,9 @@ export default function PromptsPage() {
               </Link>
             </div>
             <p className={styles.heroNote}>
-              One complete guide · Six upcoming workflow previews
+              {publishedPrompts.length} published{" "}
+              {publishedPrompts.length === 1 ? "guide" : "guides"} · Customize,
+              copy, and review
             </p>
           </div>
           <div
@@ -197,10 +218,11 @@ export default function PromptsPage() {
           <div className={styles.faq}>
             <h2>A few useful answers</h2>
             <details>
-              <summary>Are these published prompt guides?</summary>
+              <summary>Which prompt guides are available?</summary>
               <p>
-                The meta title workflow is a complete guide. Other cards open
-                dedicated design previews while their full guides are prepared.
+                Start with our complete meta title and meta description guide.
+                It includes nine customizable ChatGPT prompts, a worked example,
+                and a review checklist.
               </p>
             </details>
             <details>
@@ -222,8 +244,8 @@ export default function PromptsPage() {
             <details>
               <summary>Do I need to sign in?</summary>
               <p>
-                No sign-in is needed to browse these previews or customize and
-                copy a sample prompt.
+                No sign-in is needed to browse the guides or customize and copy
+                their prompts.
               </p>
             </details>
           </div>

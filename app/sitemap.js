@@ -1,5 +1,5 @@
 import { fetchBlogCategorySlugs, fetchURLs } from "./lib/sanity";
-import { promptDetails } from "../features/prompts/details";
+import { publishedPrompts, promptPath } from "../features/prompts/details";
 import registry from "../features/tool-catalog/registry.json";
 import { contentSitemapEntries, toolSitemapEntries } from "../features/guides/content-routes.mjs";
 
@@ -17,6 +17,6 @@ export default async function sitemap() {
   const dynamicEntries = contentSitemapEntries(posts, baseURL);
   const guides = dynamicEntries.some((entry) => entry.url.startsWith(`${baseURL}/guides/`)) ? [{ url: `${baseURL}/guides` }] : [];
   const categoryEntries = blogCategories.map((category) => ({ url: `${baseURL}/blogs/category/${category.slug}`, ...(category._updatedAt ? { lastModified: new Date(category._updatedAt) } : {}) }));
-  const entries = [...staticPaths.map((path) => ({ url: `${baseURL}${path}` })), ...toolEntries, ...Object.values(promptDetails).filter((detail) => detail.ready).map((detail) => ({ url: `${baseURL}/prompts/${detail.slug}` })), ...guides, ...dynamicEntries, ...categoryEntries].filter((entry) => !retiredToolURLs.has(entry.url));
+  const entries = [...staticPaths.map((path) => ({ url: `${baseURL}${path}` })), ...toolEntries, ...publishedPrompts.map((prompt) => ({ url: `${baseURL}${promptPath(prompt.id)}` })), ...guides, ...dynamicEntries, ...categoryEntries].filter((entry) => !retiredToolURLs.has(entry.url));
   return [...new Map(entries.map((entry) => [entry.url, entry])).values()];
 }
