@@ -1,42 +1,44 @@
-# Prompt library frontend
+# Frontend prompt articles
 
-Route: `/prompts`. Current state: an editorial preview, with eight explicitly labeled sample cards.
+The hub lives at `/prompts`. It contains one completed article and six explicitly labeled future previews.
 
-## Experience
+## First article
 
-- Category filters, case-insensitive multi-term search, and a useful empty state.
-- Each card opens an inline workspace with input fields, a compiled sample prompt, clipboard action, manual copy fallback, and a review checklist.
-- Inputs are held in component memory. Nothing is sent to a server or stored across visits.
-- Categories wrap on small screens. Cards use three, two, or one column as space allows.
-- Keyboard focus moves to the expanded preview. Reduced-motion preferences are respected.
-- No unpublished detail links, fictional usage metrics, ratings, or claims of model testing.
+`/prompts/chatgpt-prompts-for-meta-title-and-meta-description`
 
-## SEO
+Both `/prompts/meta-title-prompts` and `/prompts/meta-description-prompts` permanently redirect to this combined guide.
+The article includes a featured illustration, definitions, evidence-based AI-search context, usage steps, five prompts, a fictional worked example, tool and guide links, a checklist, and FAQs.
+No rankings, traffic, AI citations, or recorded model results are promised.
 
-The page exports canonical, title, description, Open Graph, and Twitter metadata. It renders a CollectionPage and BreadcrumbList.
-Samples are not represented as published Article or ItemList entities. Filters do not create crawlable URL combinations.
-The hub is linked from the header Pages menu, footer, and tools directory. Only the hub enters the sitemap.
+## Authoring and layout
 
-## Next phase
+- `MetaPromptArticle.tsx` owns the article layout and surrounding content.
+- `EditorialSection` accepts arbitrary JSX, allowing different section types and ordering in future articles.
+- `meta-workflow.ts` holds the five independent prompt instructions and optional example context.
+- `PromptSeries.tsx` compiles shared inputs, copies prompts, and builds ChatGPT handoff links.
+- `editorial.module.css` styles the article. `prompts.module.css` styles the library and generic previews.
+- `details.ts` controls stable slugs and indexing readiness. Unfinished pages use noindex and stay out of the sitemap.
 
-Replace `features/prompts/catalog.ts` preview data through a server-side adapter after the Sanity prompt schemas are added.
-Keep stable prompt IDs, independent detail slugs, multiple category references, tags, required inputs, template, tutorial, examples, checklist, author, and review dates.
-Use registered tool IDs for tool relationships and Sanity references for articles. Resolve those into validated paths on the server.
-Render only published documents as real linked cards. Keep empty categories out of indexable category archives.
-Use separate detail pages at `/prompts/[slug]`, with unique metadata and canonical URLs.
-Add published detail URLs to the sitemap and revalidate affected pages from the existing Sanity publishing webhook.
-Do not count preview cards as published prompts. Remove the preview notice once actual published content replaces them.
+The featured PNG is rendered from the tracked SVG with Sharp. It is an illustration, not a screenshot.
+Each completed card has an article cover, topic, outcome, and reading link. Preview cards retain clear preview labels.
 
-## Current scope
+## Handoff behavior
 
-No schema deployment, content migration, or live Sanity writes were performed for this frontend task.
+The `prompt` query parameter follows a link convention observed on OpenAI’s official training walkthrough. It is not treated as a stable API contract.
+Long encoded URLs fall back to copying and a plain ChatGPT link. Clipboard failures select text for manual copying.
+Every prompt includes its own context because links can open separate conversations.
+Changing inputs invalidates a prior copied confirmation. Inputs are held only in component memory.
+No model requests run on this website. Browser behavior for ChatGPT prefilling remains unverified.
 
-## Dedicated detail pages update
+## Linking and SEO
 
-Cards now link to `/prompts/[slug]`. Titles also link to the same page. The inline hub workspace has been removed.
-Each page has server-rendered task guidance, prompt builder, example inputs/output, steps, mistakes, review checklist, and related workflows.
-The builder includes an illustrative example action and manual clipboard fallback. Example outputs are labeled as illustrative, never model test results.
-`features/prompts/details.ts` controls stable slugs and publication readiness. Only the complete meta title workflow currently has `ready: true`.
-Ready pages allow indexing, enter the sitemap, and include Article markup. Preview pages have real canonical URLs but use `noindex, follow` and stay out of the sitemap.
-Unknown slugs return 404. Future prompt variants serving the same task should be sections on the existing workflow page, unless they satisfy a different user need.
-This update supersedes the earlier statements about hub-only indexing and inline sample workspaces.
+The article links to both metadata generators, their existing guides, and the SERP Simulator.
+Both generators link back through the shared ToolResources component.
+Server-rendered content includes canonical metadata, a featured social image, Article markup, breadcrumbs, and crawlable internal links.
+The existing sitemap derives the completed article URL from its readiness record.
+No Sanity content or schemas have been changed. A later server-side content adapter can replace frontend authoring without changing stable URLs.
+
+## Verification
+
+Prompt, handoff, route, catalog, and foundation checks cover 17 tests. TypeScript and targeted lint pass.
+Managed browser preview remains unavailable because its startup flags are incompatible with Next.js. Do not claim browser visual QA passed.

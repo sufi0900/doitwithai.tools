@@ -1209,3 +1209,130 @@
 :global(.dark) .detailSection p > a {
   color: #aabaff;
 }
+.cardGrid .card {
+  padding: 0;
+  overflow: hidden;
+  transition:
+    box-shadow 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+.cardGrid .card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px #26386412;
+}
+.cardCover {
+  min-height: 143px;
+  background: linear-gradient(135deg, #eef2ff, #e3eaff);
+  border-bottom: 1px solid var(--line);
+  padding: 23px;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.cardCover:after {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border: 1px solid #5271ff20;
+  border-radius: 24px;
+  right: -25px;
+  top: 28px;
+  transform: rotate(25deg);
+}
+.coverIcon {
+  color: var(--tone);
+  margin-bottom: 5px;
+}
+.coverLabel {
+  font-size: 13px;
+  font-weight: 750;
+  color: #253c76;
+}
+.coverCaption {
+  font-size: 10px;
+  color: #536990;
+}
+.cardContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 22px;
+  min-width: 0;
+}
+.cardContent h4 {
+  margin-top: 18px;
+  font-size: 19px;
+}
+.cardContent > p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.cardContent .outcome {
+  margin-top: auto;
+}
+.cardCover > img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.card[data-featured="true"] {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-color: #b8c6ff;
+}
+.card[data-featured="true"] .cardCover {
+  padding: 0;
+  background: #edf1ff;
+  border-bottom: 0;
+  border-right: 1px solid var(--line);
+  min-height: 230px;
+}
+.card[data-featured="true"] .cardCover:after {
+  display: none;
+}
+.card[data-featured="true"] h4 {
+  font-size: 23px;
+}
+.cardAction svg {
+  transition: transform 0.2s;
+}
+.card:hover .cardAction svg {
+  transform: translateX(3px);
+}
+:global(.dark) .cardCover {
+  background: linear-gradient(135deg, #1b2c4c, #243859);
+}
+:global(.dark) .coverLabel {
+  color: #d1dcff;
+}
+:global(.dark) .coverCaption {
+  color: #aabbdc;
+}
+@media (max-width: 540px) {
+  .card[data-featured="true"] {
+    grid-column: auto;
+    display: flex;
+  }
+  .card[data-featured="true"] .cardCover {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    min-height: 0;
+  }
+  .card[data-featured="true"] h4 {
+    font-size: 22px;
+  }
+  .cardCover {
+    min-height: 145px;
+  }
+  .cardContent {
+    padding: 21px;
+  }
+}

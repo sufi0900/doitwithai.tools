@@ -49,10 +49,10 @@ export const promptPreviews: PromptPreview[] = [
   {
     id: "meta-title",
     category: "on-page",
-    title: "Write a title worth clicking",
+    title: "ChatGPT prompts for meta titles and descriptions",
     description:
-      "Turn a page summary into clear title options that match the reader’s goal.",
-    outcome: "Five title options with a short reason for each",
+      "Five connected prompts to brief, draft, compare, and refine your title-description pair.",
+    outcome: "A clear, supported title and description pair",
     tags: ["Meta titles", "Search intent"],
     inputs: ["Page summary", "Primary keyword", "Target reader"],
     template:
@@ -141,27 +141,6 @@ export const promptPreviews: PromptPreview[] = [
       "Read the revision aloud.",
     ],
     tool: { name: "Readability Checker", href: "/tools/readability-checker" },
-  },
-  {
-    id: "meta-description",
-    category: "on-page",
-    title: "Describe the value of your page",
-    description:
-      "Write concise meta descriptions with specific, supported reasons to visit.",
-    outcome: "Three description options with different angles",
-    tags: ["Meta descriptions", "Search previews"],
-    inputs: ["Page summary", "Primary keyword"],
-    template:
-      "Write three distinct meta descriptions based only on {{Page summary}}. Use {{Primary keyword}} naturally when it fits. Explain what readers will find. Avoid generic openings, keyword stuffing, and unsupported promises. Show each option with a character count. Note that display length varies and requires a separate pixel preview.",
-    checks: [
-      "Keep the description specific to this page.",
-      "Check the search preview.",
-      "Avoid presenting a fixed length as a Google rule.",
-    ],
-    tool: {
-      name: "SERP Simulator",
-      href: "/tools/serp-rich-result-preview-generator",
-    },
   },
   {
     id: "outreach",

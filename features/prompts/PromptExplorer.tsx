@@ -1,7 +1,18 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Search, X } from "lucide-react";
+import Image from "next/image";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Search,
+  X,
+  FileText,
+  ScanLine,
+  PenLine,
+  Mail,
+  Sparkles,
+} from "lucide-react";
 import {
   filterPreviews,
   promptCategories,
@@ -107,48 +118,88 @@ export default function PromptExplorer() {
             Every card opens its own page.
           </p>
           <div className={styles.cardGrid}>
-            {results.map((prompt, i) => (
+            {results.map((prompt) => (
               <article
                 className={styles.card}
                 key={prompt.id}
                 data-tone={prompt.category}
+                data-featured={promptDetails[prompt.id].ready || undefined}
               >
-                <div className={styles.cardMeta}>
-                  <span className={styles.topic}>
-                    {
-                      promptCategories.find((c) => c.id === prompt.category)
-                        ?.name
-                    }
-                  </span>
-                  <span className={styles.sampleLabel}>
-                    {promptDetails[prompt.id].ready ? "GUIDE" : "PREVIEW"}
-                  </span>
+                <div className={styles.cardCover}>
+                  {promptDetails[prompt.id].ready ? (
+                    <Image
+                      src="/prompts/meta-title-description.png"
+                      alt="A page brief connects to a title and description draft."
+                      width={1200}
+                      height={650}
+                      sizes="(max-width: 540px) 100vw, 420px"
+                    />
+                  ) : (
+                    <>
+                      <div className={styles.coverIcon}>
+                        {prompt.category === "technical" ? (
+                          <ScanLine size={28} />
+                        ) : prompt.category === "content" ? (
+                          <PenLine size={28} />
+                        ) : prompt.category === "off-page" ? (
+                          <Mail size={28} />
+                        ) : prompt.category === "ai-search" ? (
+                          <Sparkles size={28} />
+                        ) : prompt.category === "keywords" ? (
+                          <Search size={28} />
+                        ) : (
+                          <FileText size={28} />
+                        )}
+                      </div>
+                      <span className={styles.coverLabel}>
+                        {
+                          promptCategories.find((c) => c.id === prompt.category)
+                            ?.name
+                        }
+                      </span>
+                      <span className={styles.coverCaption}>
+                        A workflow taking shape
+                      </span>
+                    </>
+                  )}
                 </div>
-                <span className={styles.cardNumber} aria-hidden="true">
-                  {String(i + 1).padStart(2, "0")} /
-                </span>
-                <h4>
-                  <Link href={promptPath(prompt.id)}>{prompt.title}</Link>
-                </h4>
-                <p>{prompt.description}</p>
-                <div className={styles.outcome}>
-                  <span>WHAT YOU’LL WORK TOWARD</span>
-                  <p>{prompt.outcome}</p>
+                <div className={styles.cardContent}>
+                  <div className={styles.cardMeta}>
+                    <span className={styles.topic}>
+                      {
+                        promptCategories.find((c) => c.id === prompt.category)
+                          ?.name
+                      }
+                    </span>
+                    <span className={styles.sampleLabel}>
+                      {promptDetails[prompt.id].ready
+                        ? "FIELD GUIDE"
+                        : "PREVIEW"}
+                    </span>
+                  </div>
+                  <h4>
+                    <Link href={promptPath(prompt.id)}>{prompt.title}</Link>
+                  </h4>
+                  <p>{prompt.description}</p>
+                  <div className={styles.outcome}>
+                    <span>WHAT YOU’LL WORK TOWARD</span>
+                    <p>{prompt.outcome}</p>
+                  </div>
+                  <div className={styles.tags}>
+                    {prompt.tags.map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
+                  </div>
+                  <Link
+                    className={styles.cardAction}
+                    href={promptPath(prompt.id)}
+                  >
+                    {promptDetails[prompt.id].ready
+                      ? "Read the guide"
+                      : "Preview detail page"}{" "}
+                    <ArrowRight size={17} aria-hidden="true" />
+                  </Link>
                 </div>
-                <div className={styles.tags}>
-                  {prompt.tags.map((tag) => (
-                    <span key={tag}>{tag}</span>
-                  ))}
-                </div>
-                <Link
-                  className={styles.cardAction}
-                  href={promptPath(prompt.id)}
-                >
-                  {promptDetails[prompt.id].ready
-                    ? "Open prompt guide"
-                    : "Preview detail page"}{" "}
-                  <ArrowRight size={17} aria-hidden="true" />
-                </Link>
               </article>
             ))}
           </div>

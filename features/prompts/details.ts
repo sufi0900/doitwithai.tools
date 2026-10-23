@@ -12,9 +12,9 @@ export type PromptDetail = {
 };
 export const promptDetails: Record<string, PromptDetail> = {
   "meta-title": {
-    slug: "meta-title-prompts",
+    slug: "chatgpt-prompts-for-meta-title-and-meta-description",
     ready: true,
-    title: "AI prompts for writing better meta titles",
+    title: "ChatGPT prompts for meta titles and meta descriptions",
     overview:
       "Use this workflow when your page has a clear topic but its title feels vague, repetitive, or disconnected from the reader’s goal. Start with an accurate summary, compare distinct angles, then preview your preferred title before publishing.",
     example: {
@@ -140,32 +140,6 @@ export const promptDetails: Record<string, PromptDetail> = {
     mistakes: [
       "Removing qualifications to make sentences shorter.",
       "Turning every sentence into the same short pattern.",
-    ],
-  },
-  "meta-description": {
-    slug: "meta-description-prompts",
-    ready: false,
-    title: "AI prompts for writing useful meta descriptions",
-    overview:
-      "Explain what the page offers in a short, accurate description. This sample provides an editable workflow while the full guide is prepared.",
-    example: {
-      "Page summary":
-        "A guide to writing image alt text, including product and chart examples.",
-      "Primary keyword": "image alt text",
-    },
-    output:
-      "Learn how to write image alt text with clear examples for product images and charts, plus guidance on when descriptions are useful.",
-    exampleNote:
-      "The description uses only details supplied in the summary. Display may vary in search results.",
-    steps: [
-      "Summarize the real content.",
-      "Generate distinct description angles.",
-      "Remove unsupported claims.",
-      "Preview the wording with the page title.",
-    ],
-    mistakes: [
-      "Reusing one description everywhere.",
-      "Treating a character target as a guarantee against truncation.",
     ],
   },
   outreach: {

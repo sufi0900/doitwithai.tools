@@ -1,3 +1,4 @@
+import MetaPromptArticle from "@/features/prompts/MetaPromptArticle";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -36,9 +37,12 @@ export function generateMetadata({
       type: detail.ready ? "article" : "website",
       images: [
         {
-          url: "/prompts/opengraph-image",
+          url:
+            prompt.id === "meta-title"
+              ? "/prompts/meta-title-description.png"
+              : "/prompts/opengraph-image",
           width: 1200,
-          height: 630,
+          height: prompt.id === "meta-title" ? 650 : 630,
           alt: "SEO and content writing prompts",
         },
       ],
@@ -47,7 +51,11 @@ export function generateMetadata({
       card: "summary_large_image",
       title: detail.title,
       description: prompt.description,
-      images: ["/prompts/opengraph-image"],
+      images: [
+        prompt.id === "meta-title"
+          ? "/prompts/meta-title-description.png"
+          : "/prompts/opengraph-image",
+      ],
     },
   };
 }
@@ -90,6 +98,9 @@ export default function PromptDetailPage({
             {
               "@type": "Article",
               headline: detail.title,
+              ...(prompt.id === "meta-title"
+                ? { image: `${origin}/prompts/meta-title-description.png` }
+                : {}),
               description: prompt.description,
               url,
               mainEntityOfPage: url,
@@ -103,6 +114,7 @@ export default function PromptDetailPage({
         : []),
     ],
   };
+  if (prompt.id === "meta-title") return <MetaPromptArticle schema={schema} />;
   return (
     <div className={styles.page}>
       <script

@@ -105,7 +105,7 @@ export default function PromptsPage() {
               </Link>
             </div>
             <p className={styles.heroNote}>
-              One complete guide · Seven upcoming workflow previews
+              One complete guide · Six upcoming workflow previews
             </p>
           </div>
           <div
