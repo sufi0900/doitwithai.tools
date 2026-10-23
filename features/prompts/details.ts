@@ -1,9 +1,12 @@
+import { promptHero } from "./article-assets";
 import { promptPreviews } from "./catalog";
 export type PromptDetail = {
   slug: string;
   ready: boolean;
   title: string;
   overview: string;
+  cover?: { src: string; alt: string; width: number; height: number };
+  promptCount?: number;
   example: Record<string, string>;
   output: string;
   exampleNote: string;
@@ -14,6 +17,8 @@ export const promptDetails: Record<string, PromptDetail> = {
   "meta-title": {
     slug: "chatgpt-prompts-for-meta-title-and-meta-description",
     ready: true,
+    cover: promptHero,
+    promptCount: 9,
     title: "ChatGPT prompts for meta titles and meta descriptions",
     overview:
       "Use this workflow when your page has a clear topic but its title feels vague, repetitive, or disconnected from the reader’s goal. Start with an accurate summary, compare distinct angles, then preview your preferred title before publishing.",

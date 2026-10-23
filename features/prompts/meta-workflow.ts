@@ -5,8 +5,10 @@ export const contextFields = [
   "Primary keyword",
   "Target reader",
   "Brand name",
+  "Page type",
   "Current title",
   "Current description",
+  "Related pages",
 ] as const;
 export type ContextField = (typeof contextFields)[number];
 export const exampleContext: Record<ContextField, string> = {
@@ -15,12 +17,15 @@ export const exampleContext: Record<ContextField, string> = {
   "Primary keyword": "image alt text",
   "Target reader": "Bloggers and small business website owners",
   "Brand name": "Example Studio",
+  "Page type": "Informational article",
+  "Related pages":
+    "Page ID: guide-alt-text\nSummary: A guide to writing alt text, with chart examples.\nCurrent title: Image SEO Guide\nCurrent description: Learn how to write descriptions for charts and product images.\n\nPage ID: alt-text-tool\nSummary: An interactive tool that drafts alt text from supplied image context.\nCurrent title: Image SEO Guide\nCurrent description: Create a draft image description from your own context.",
   "Current title": "The Ultimate Image SEO Guide",
   "Current description":
     "Learn the best secrets to rank every image first with amazing SEO strategies.",
 };
-const source = `# Page context\nPage content: {{Page content}}\nPrimary keyword: {{Primary keyword}}\nTarget reader: {{Target reader}}\nBrand name, if useful: {{Brand name}}`;
-export const metaPromptSeries = [
+const source = `# Page context\nPage content: {{Page content}}\nPrimary keyword: {{Primary keyword}}\nTarget reader: {{Target reader}}\nBrand name, if useful: {{Brand name}}\nPage type: {{Page type}}`;
+const corePromptSeries = [
   {
     id: "page-brief",
     label: "Understand",
@@ -72,6 +77,61 @@ export const metaPromptSeries = [
     template: `Edit the following metadata pair conservatively.\n\n${source}\nTitle: {{Current title}}\nDescription: {{Current description}}\n\n# Editing rules\nPreserve factual scope and the main subject. Remove vague openings, repeated keywords, and unsupported promises. Keep language natural. Do not replace precise terms with misleading shorter ones. Explain every meaningful change. If a claim cannot be supported, flag it rather than inventing evidence.\n\n# Output\nReturn the edited title and description, a short change log, and a human review checklist. Include a reminder to check display width in a preview tool. Do not claim the wording guarantees Google rankings or AI citations.`,
   },
 ];
+
+// Distinct editing tasks extend the core sequence without repeating the same generation request.
+const intentPrompt = {
+  id: "reader-intent",
+  label: "Match the task",
+  title: "Choose an angle that matches the reader’s task",
+  intro:
+    "Use this when several title angles seem plausible. Work from the page itself before guessing what a searcher wants.",
+  after:
+    "Treat these as interpretations. Check actual search results separately when search intent is uncertain.",
+  template: `Review the likely reader task for this page. Do not browse or claim to have inspected live search results.\n\n${source}\n\n# Task\nSummarize the question the page answers. Identify whether its supplied content mainly teaches, compares, offers a product, or explains a service. Point to the material supporting that interpretation. Separate the main task from secondary tasks.\n\n# Metadata direction\nSuggest three title-description angles. For each, show the reader task, the specific page evidence, a draft pair, and what the pair deliberately leaves out. Avoid invented prices, locations, results, and promises. Keep the subject clear to someone seeing the pair without surrounding context.\n\n# Review\nList any uncertainty that could change the recommended angle. Do not invent keyword volume, difficulty, ranking position, or AI citation likelihood.`,
+};
+const pageTypePrompt = {
+  id: "page-type",
+  label: "Adapt the format",
+  title: "Adapt the pair for an article, product, or service page",
+  intro:
+    "The useful detail changes with the page type. A product page may need a model name, while a guide may need its practical examples.",
+  after:
+    "Check that the suggested details are actually present. Do not add shipping terms, local availability, or guarantees from memory.",
+  template: `Adapt the metadata to the supplied page type.\n\n${source}\nCurrent title: {{Current title}}\nCurrent description: {{Current description}}\n\n# Requirements\nFor an article, emphasize the question answered and useful examples. For a product page, use only supplied product names, models, and distinguishing facts. For a service page, use only supplied services, audience details, and confirmed locations. If the page type is missing or unclear, ask one focused question.\n\nKeep the title and description specific to this page. Avoid stock phrases that could describe any website. Do not invent prices, ratings, stock status, credentials, delivery terms, or results.\n\n# Output\nReturn two different pairs, each followed by the facts used, the intended reader task, and details that need checking. Explain how the page type affected the wording.`,
+};
+const rewritePrompt = {
+  id: "rewrite-review",
+  label: "Investigate wording",
+  title: "Review a title that differs from the search result",
+  intro:
+    "Use this when your saved title and the visible search title differ. This prompt reviews the wording without claiming to diagnose Google’s systems.",
+  after:
+    "A wording review cannot establish why Google changed a title. Compare the page, template, and observed search result before making changes.",
+  template: `Review possible wording issues in this page title.\n\n${source}\nSaved title: {{Current title}}\nSaved description: {{Current description}}\nObserved search title, if available: [paste the exact observed title, query, device, and observation date]\n\n# Review only the supplied evidence\nCheck whether the saved title is vague, repeated boilerplate, incomplete, outdated, or inconsistent with the page’s main topic. Distinguish an observed mismatch from a confirmed problem. A query-specific display difference is not proof that the page is penalized.\n\n# Output\nReturn each observation, its evidence, what remains unknown, and a possible editorial improvement. Offer two accurate replacement pairs only if the supplied content supports them. List the site checks still needed, including the rendered title element and the main visible heading. Do not state a definite cause for a search engine rewrite.`,
+};
+const batchPrompt = {
+  id: "unique-pages",
+  label: "Check uniqueness",
+  title: "Separate similar titles across a small page group",
+  intro:
+    "Use this for a supplied set of related pages. It distinguishes useful page differences without claiming to crawl the website.",
+  after:
+    "Keep one pair per distinct page purpose. If two pages serve the same task, review their content strategy before rewriting their metadata.",
+  template: `Review only this supplied page group. Do not claim to crawl URLs or detect site-wide duplication.\n\nRelated pages: {{Related pages}}\n\n# Required source data\nEach row should include a stable page identifier, a content summary, current title, and current description. If a row is incomplete, list the missing fields and skip its rewrite.\n\n# Task\nFlag identical or highly repetitive wording. Identify the real distinction between each pair of pages from the summaries. Separate a metadata similarity from a possible overlap in page purpose. Do not call that overlap proven keyword cannibalization.\n\n# Output\nReturn a table with page identifier, observed overlap, supported unique detail, proposed title, proposed description, and a verification note. Preserve identifiers exactly. Do not add unsupported modifiers merely to make rows look different. Finish with the cases that need a human decision before publication.`,
+};
+export const metaPromptSeries = [
+  corePromptSeries[0],
+  intentPrompt,
+  corePromptSeries[1],
+  corePromptSeries[2],
+  pageTypePrompt,
+  corePromptSeries[3],
+  rewritePrompt,
+  batchPrompt,
+  corePromptSeries[4],
+];
+export const promptCount = metaPromptSeries.length;
+
 export function chatGPTLink(prompt: string): string | null {
   // Prefill follows OpenAI's published training-page link convention. Keep Copy available for session differences.
   const url = new URL("https://chatgpt.com/");

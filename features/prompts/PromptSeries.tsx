@@ -7,6 +7,7 @@ import {
   contextFields,
   exampleContext,
   metaPromptSeries,
+  promptCount,
 } from "./meta-workflow";
 import styles from "./editorial.module.css";
 function PromptBlock({
@@ -102,15 +103,18 @@ function PromptBlock({
 }
 export default function PromptSeries() {
   const [values, setValues] = useState<Record<string, string>>({});
+  const filledFields = contextFields.filter((name) =>
+    values[name]?.trim(),
+  ).length;
   return (
     <>
       <div className={styles.context}>
         <div>
-          <p className={styles.kicker}>ONE BRIEF FOR ALL FIVE PROMPTS</p>
-          <h3>Add your page context</h3>
+          <p className={styles.kicker}>START HERE · YOUR PROMPT WORKSPACE</p>
+          <h3>Customize all {promptCount} prompts with one page brief</h3>
           <p>
-            These optional fields replace the placeholders below. You can also
-            copy a prompt and edit it in ChatGPT.
+            Add the details you have. The prompts use the matching details as
+            you type. Start with the example if you want to try it first.
           </p>
         </div>
         <div className={styles.contextActions}>
@@ -119,17 +123,39 @@ export default function PromptSeries() {
           </button>
           <button onClick={() => setValues({})}>Clear</button>
         </div>
-        <details>
+        <p className={styles.contextProgress} role="status">
+          {filledFields} of {contextFields.length} context fields added. Your
+          details fill the matching fields in the prompts below.
+        </p>
+        <details open>
           <summary>
-            Customize the prompts <ChevronDown size={16} aria-hidden="true" />
+            Your page brief <ChevronDown size={16} aria-hidden="true" />
           </summary>
           <div className={styles.contextGrid}>
             {contextFields.map((name) => (
               <label key={name}>
                 {name}
+                {name === "Related pages" ? (
+                  <small>
+                    For the page-group prompt. Include identifiers, summaries,
+                    titles, and descriptions.
+                  </small>
+                ) : name === "Current title" ||
+                  name === "Current description" ? (
+                  <small>
+                    Used by review and editing prompts. Add your selected draft
+                    here.
+                  </small>
+                ) : null}
                 <textarea
-                  rows={name === "Page content" ? 5 : 2}
-                  maxLength={name === "Page content" ? 4000 : 600}
+                  rows={
+                    name === "Page content" || name === "Related pages" ? 5 : 2
+                  }
+                  maxLength={
+                    name === "Page content" || name === "Related pages"
+                      ? 4000
+                      : 600
+                  }
                   value={values[name] || ""}
                   placeholder={`Add ${name.toLowerCase()}…`}
                   onChange={(e) =>
@@ -152,6 +178,16 @@ export default function PromptSeries() {
           paste it. Review before sending.
         </p>
       </div>
+      <nav className={styles.promptNavigator} aria-label="Choose a prompt">
+        <h3>Choose your starting point</h3>
+        <div>
+          {metaPromptSeries.map((item, index) => (
+            <a key={item.id} href={`#${item.id}`}>
+              {index + 1}. {item.label}
+            </a>
+          ))}
+        </div>
+      </nav>
       {metaPromptSeries.map((item, index) => (
         <PromptBlock key={item.id} item={item} values={values} index={index} />
       ))}

@@ -1282,25 +1282,6 @@
   width: 100%;
   height: auto;
 }
-.card[data-featured="true"] {
-  grid-column: span 2;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  border-color: #b8c6ff;
-}
-.card[data-featured="true"] .cardCover {
-  padding: 0;
-  background: #edf1ff;
-  border-bottom: 0;
-  border-right: 1px solid var(--line);
-  min-height: 230px;
-}
-.card[data-featured="true"] .cardCover:after {
-  display: none;
-}
-.card[data-featured="true"] h4 {
-  font-size: 23px;
-}
 .cardAction svg {
   transition: transform 0.2s;
 }
@@ -1317,22 +1298,83 @@
   color: #aabbdc;
 }
 @media (max-width: 540px) {
-  .card[data-featured="true"] {
-    grid-column: auto;
-    display: flex;
-  }
-  .card[data-featured="true"] .cardCover {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-    min-height: 0;
-  }
-  .card[data-featured="true"] h4 {
-    font-size: 22px;
-  }
   .cardCover {
     min-height: 145px;
   }
   .cardContent {
     padding: 21px;
   }
+}
+/* All articles use the same card footprint, including future published entries. */
+.cardGrid {
+  align-items: stretch;
+}
+.cardGrid .card {
+  display: flex;
+  grid-column: auto;
+  min-width: 0;
+}
+.cardGrid .cardCover {
+  aspect-ratio: 16/9;
+  min-height: 0;
+  flex-shrink: 0;
+}
+.card[data-cover="image"] .cardCover {
+  padding: 0;
+  background: #5271ff;
+}
+.card[data-cover="image"] .cardCover:after {
+  display: none;
+}
+.cardCover > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cardContent h4 {
+  font-size: 21px;
+  line-height: 1.4;
+}
+.cardContent > p {
+  font-size: 15px;
+  line-height: 1.7;
+}
+.cardContent .outcome p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.cardContent .topic {
+  font-size: 12px;
+}
+.cardContent .sampleLabel {
+  font-size: 10px;
+}
+.cardContent .tags span {
+  font-size: 11px;
+}
+.cardContent .cardAction {
+  font-size: 14px;
+  min-height: 48px;
+  align-self: stretch;
+}
+.coverLabel {
+  font-size: 16px;
+}
+.coverCaption {
+  font-size: 12px;
+}
+@media (max-width: 540px) {
+  .cardContent h4 {
+    font-size: 22px;
+  }
+  .cardContent > p {
+    font-size: 15px;
+  }
+}
+.cardContent .cardFormat {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 650;
+  margin-top: -5px;
+  margin-bottom: 18px;
 }

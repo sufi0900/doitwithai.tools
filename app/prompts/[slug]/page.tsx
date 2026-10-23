@@ -24,6 +24,7 @@ export function generateMetadata({
   const item = findPromptDetail(params.slug);
   if (!item) return {};
   const { detail, prompt } = item;
+  const cover = detail.cover;
   return {
     metadataBase: new URL(origin),
     title: `${detail.title} | Do It With AI Tools`,
@@ -37,13 +38,10 @@ export function generateMetadata({
       type: detail.ready ? "article" : "website",
       images: [
         {
-          url:
-            prompt.id === "meta-title"
-              ? "/prompts/meta-title-description.png"
-              : "/prompts/opengraph-image",
-          width: 1200,
-          height: prompt.id === "meta-title" ? 650 : 630,
-          alt: "SEO and content writing prompts",
+          url: cover?.src || "/prompts/opengraph-image",
+          width: cover?.width || 1200,
+          height: cover?.height || 630,
+          alt: cover?.alt || "SEO and content writing prompts",
         },
       ],
     },
@@ -51,11 +49,7 @@ export function generateMetadata({
       card: "summary_large_image",
       title: detail.title,
       description: prompt.description,
-      images: [
-        prompt.id === "meta-title"
-          ? "/prompts/meta-title-description.png"
-          : "/prompts/opengraph-image",
-      ],
+      images: [cover?.src || "/prompts/opengraph-image"],
     },
   };
 }
@@ -98,8 +92,8 @@ export default function PromptDetailPage({
             {
               "@type": "Article",
               headline: detail.title,
-              ...(prompt.id === "meta-title"
-                ? { image: `${origin}/prompts/meta-title-description.png` }
+              ...(detail.cover
+                ? { image: new URL(detail.cover.src, origin).href }
                 : {}),
               description: prompt.description,
               url,

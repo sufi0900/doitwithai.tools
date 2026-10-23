@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Check, FileText, Layers3, ScanLine } from "lucide-react";
+import { ArrowUpRight, Check } from "lucide-react";
 import PromptSeries from "./PromptSeries";
-import { metaPromptSeries } from "./meta-workflow";
+import { metaPromptSeries, promptCount } from "./meta-workflow";
+import { promptHero, metadataGuides } from "./article-assets";
 import styles from "./editorial.module.css";
 
 export function EditorialSection({
@@ -23,6 +24,29 @@ export function EditorialSection({
       <h2>{title}</h2>
       {children}
     </section>
+  );
+}
+function GuideCard({ guide }: { guide: typeof metadataGuides.title }) {
+  return (
+    <aside className={styles.guideCard} aria-label="Read the full guide">
+      <Link href={guide.href} className={styles.guideImage}>
+        <Image
+          src={guide.image}
+          width={guide.width}
+          height={guide.height}
+          alt={guide.alt}
+          sizes="(max-width: 640px) 100vw, 420px"
+        />
+      </Link>
+      <div className={styles.guideCopy}>
+        <p className={styles.kicker}>GO DEEPER</p>
+        <h3>{guide.title}</h3>
+        <Link href={guide.href} className={styles.guideButton}>
+          Read the full guide <ArrowUpRight size={17} aria-hidden="true" />
+        </Link>
+      </div>
+      <p className={styles.guideCaption}>{guide.caption}</p>
+    </aside>
   );
 }
 export default function MetaPromptArticle({
@@ -61,13 +85,13 @@ export default function MetaPromptArticle({
             you publish.
           </p>
           <p className={styles.heroSummary}>
-            Use these five prompts to turn real page content into title and
+            Use these nine prompts to turn real page content into title and
             description drafts. Each step includes context, constraints, and a
             human review task.
           </p>
           <div className={styles.author}>
             <Link href="/author/sufian-mustafa">By Sufian Mustafa</Link>
-            <span>5 copyable prompts</span>
+            <span>{promptCount} copyable prompts</span>
             <span>Examples + review checklist</span>
           </div>
           <div className={styles.heroActions}>
@@ -79,16 +103,16 @@ export default function MetaPromptArticle({
         </header>
         <figure className={styles.featured}>
           <Image
-            src="/prompts/meta-title-description.png"
-            alt="A page brief connects to a title and description draft, followed by fact checking and previewing."
-            width={1200}
-            height={650}
+            src={promptHero.src}
+            alt={promptHero.alt}
+            width={promptHero.width}
+            height={promptHero.height}
             priority
             sizes="(max-width: 768px) 100vw, 1200px"
           />
           <figcaption>
-            A connected workflow, from a factual page brief to a reviewed
-            metadata pair. Illustration, not a live Google result.
+            Brand artwork for our title and description prompt guide. The cards
+            are illustrative, not a live search result.
           </figcaption>
         </figure>
         <div className={styles.layout}>
@@ -96,9 +120,13 @@ export default function MetaPromptArticle({
             <p className={styles.kicker}>INSIDE THIS GUIDE</p>
             <nav aria-label="Article contents">
               <a href="#basics">Start with the basics</a>
+              <a href="#meta-title-definition">What is a meta title?</a>
+              <a href="#meta-description-definition">
+                What is a meta description?
+              </a>
               <a href="#ai-search">Where AI search fits</a>
               <a href="#how-to-use">How to use the prompts</a>
-              <a href="#prompts">The five-prompt sequence</a>
+              <a href="#prompts">The prompt collection</a>
               {metaPromptSeries.map((p, i) => (
                 <a key={p.id} href={`#${p.id}`} className={styles.tocSub}>
                   {i + 1}. {p.label}
@@ -120,48 +148,80 @@ export default function MetaPromptArticle({
               title="Two fields, one clear promise"
             >
               <p>
-                A meta title describes the page in its HTML title element. A
-                meta description gives a short summary of what the page offers.
+                A title introduces the page’s subject. A description explains
+                the useful detail a reader can expect after clicking.
               </p>
               <p>
-                Google can use these signals when presenting a search result. It
-                can also choose different wording from the page.
+                Review them together, but give each field its own job. The
+                prompts below cover drafting, page types, wording checks, and
+                final editing.
               </p>
-              <div className={styles.definitionGrid}>
-                <div>
-                  <FileText size={23} aria-hidden="true" />
-                  <h3>The title names the task</h3>
-                  <p>
-                    Help readers recognize the subject and the reason to open
-                    this particular page.
-                  </p>
-                </div>
-                <div>
-                  <Layers3 size={23} aria-hidden="true" />
-                  <h3>The description adds context</h3>
-                  <p>
-                    Explain the useful detail, example, or scope that the title
-                    does not have room to cover.
-                  </p>
-                </div>
+            </EditorialSection>
+            <EditorialSection
+              id="meta-title-definition"
+              kicker="NAME THE PAGE CLEARLY"
+              title="What is a meta title?"
+            >
+              <p>
+                A meta title is the text in a page’s HTML title element. Google
+                may use it to create the clickable title in search results.
+              </p>
+              <p>
+                It can also appear in a browser tab. It does not have to be
+                identical to the page’s H1 heading.
+              </p>
+              <p>
+                A useful title names the specific topic and sets an accurate
+                expectation. For our example, “Image Alt Text Examples” is
+                clearer than “Everything About Images.”
+              </p>
+              <div className={styles.htmlExample}>
+                <span>HTML example</span>
+                <code>
+                  &lt;title&gt;How to Write Image Alt Text, With
+                  Examples&lt;/title&gt;
+                </code>
               </div>
-              <p>
-                For example, a guide with chart examples can say so. It should
-                not promise a complete image SEO strategy unless it covers that.
-              </p>
-              <p>
-                Our approach starts with evidence from the page. The prompts
-                then help you compare angles without adding claims the content
-                cannot support.
-              </p>
+              <GuideCard guide={metadataGuides.title} />
               <p className={styles.source}>
                 Reference:{" "}
                 <a href="https://developers.google.com/search/docs/appearance/title-link">
                   Google’s title link guidance
-                </a>{" "}
-                and{" "}
+                </a>
+                .
+              </p>
+            </EditorialSection>
+            <EditorialSection
+              id="meta-description-definition"
+              kicker="EXPLAIN WHAT THE READER WILL FIND"
+              title="What is a meta description?"
+            >
+              <p>
+                A meta description is a short HTML summary of a webpage. Google
+                may use it for a search snippet or select page text instead.
+              </p>
+              <p>
+                Use it to describe the page’s practical value. Mention examples,
+                products, or specific scope only when the content supports them.
+              </p>
+              <p>
+                The alt text guide’s description could mention products, charts,
+                and decorative images. It should not promise first-place
+                rankings.
+              </p>
+              <div className={styles.htmlExample}>
+                <span>HTML example</span>
+                <code>
+                  &lt;meta name=&quot;description&quot; content=&quot;Write
+                  useful image alt text with examples for products and
+                  charts.&quot; /&gt;
+                </code>
+              </div>
+              <GuideCard guide={metadataGuides.description} />
+              <p className={styles.source}>
+                Reference:{" "}
                 <a href="https://developers.google.com/search/docs/appearance/snippet">
-                  description guidance
+                  Google’s description guidance
                 </a>
                 .
               </p>
@@ -211,7 +271,7 @@ export default function MetaPromptArticle({
             <EditorialSection
               id="how-to-use"
               kicker="A LITTLE PREPARATION SAVES REWRITING"
-              title="How to use this prompt sequence"
+              title="How to use the prompt collection"
             >
               <div className={styles.steps}>
                 {[
@@ -242,7 +302,7 @@ export default function MetaPromptArticle({
                 ))}
               </div>
               <p>
-                You do not have to run all five prompts. Each carries its own
+                You do not have to run all nine prompts. Each carries its own
                 page context, so you can use it in a fresh conversation.
               </p>
               <p>
@@ -253,7 +313,7 @@ export default function MetaPromptArticle({
             <EditorialSection
               id="prompts"
               kicker="COPY, CUSTOMIZE, AND REVIEW"
-              title="Five ChatGPT prompts for your metadata workflow"
+              title="Nine ChatGPT prompts for your metadata workflow"
             >
               <p>
                 Use the optional context fields once, then choose the prompt
@@ -358,7 +418,10 @@ export default function MetaPromptArticle({
                     Create alternatives and inspect the wording before choosing
                     a title.
                   </p>
-                  <Link href="/tools/meta-title-generator">
+                  <Link
+                    className={styles.resourcePrimary}
+                    href="/tools/meta-title-generator"
+                  >
                     Open title generator <ArrowUpRight size={16} />
                   </Link>
                   <Link href="/ai-seo/meta-title">
@@ -372,7 +435,10 @@ export default function MetaPromptArticle({
                     Draft page-specific summaries and compare different
                     supported angles.
                   </p>
-                  <Link href="/tools/meta-description-generator">
+                  <Link
+                    className={styles.resourcePrimary}
+                    href="/tools/meta-description-generator"
+                  >
                     Open description generator <ArrowUpRight size={16} />
                   </Link>
                   <Link href="/ai-seo/meta-description">
@@ -381,7 +447,12 @@ export default function MetaPromptArticle({
                 </div>
               </div>
               <div className={styles.toolBand}>
-                <ScanLine size={27} aria-hidden="true" />
+                <Image
+                  src="/Png-Logo-of-Do-it-with-ai-tools.png"
+                  width={48}
+                  height={48}
+                  alt=""
+                />
                 <div>
                   <h3>Check the pair in a search preview</h3>
                   <p>

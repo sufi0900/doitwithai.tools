@@ -51,9 +51,15 @@ export const promptPreviews: PromptPreview[] = [
     category: "on-page",
     title: "ChatGPT prompts for meta titles and descriptions",
     description:
-      "Five connected prompts to brief, draft, compare, and refine your title-description pair.",
+      "Nine focused prompts to brief, draft, compare, and refine your title-description pair.",
     outcome: "A clear, supported title and description pair",
-    tags: ["Meta titles", "Search intent"],
+    tags: [
+      "Meta titles",
+      "Meta descriptions",
+      "Search intent",
+      "Page types",
+      "Bulk editing",
+    ],
     inputs: ["Page summary", "Primary keyword", "Target reader"],
     template:
       "Act as an SEO editor. Use the page summary below to write five distinct meta title options. Match the reader’s goal. Use the primary keyword naturally without repeating it. Keep claims supported by the summary. Vary the wording and explain each option briefly. Do not promise rankings.\n\nPage summary: {{Page summary}}\nPrimary keyword: {{Primary keyword}}\nTarget reader: {{Target reader}}\n\nReturn a table with title, character count, and rationale. Pixel width must be checked separately.",
