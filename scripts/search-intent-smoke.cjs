@@ -122,14 +122,14 @@ const screenshotDir =
         '[aria-label="Keyword intent results"]',
       ).textContent;
       return (
-        text.indexOf("Informational") < text.indexOf("Copy results") &&
+        text.indexOf("Copy results") < text.indexOf("Informational") &&
         text.indexOf("Informational") <
           text.indexOf("Intent is an interpretation")
       );
     });
     assert.ok(
       resultOrder,
-      "Intent must appear before saving controls and method details",
+      "Shared saving controls precede cards, and intent precedes method details",
     );
     assert.equal(
       await page.$$eval("#intent-checker [data-intent]", (els) => els.length),

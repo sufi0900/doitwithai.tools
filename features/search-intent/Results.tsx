@@ -16,13 +16,30 @@ export default function IntentResults({
 }) {
   return (
     <>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-xl font-bold text-white">Your intent results</h3>
-        <span className="text-sm text-slate-300">
-          {report.items.length}{" "}
-          {report.items.length === 1 ? "keyword" : "keywords"}
-        </span>
-      </div>
+      <section
+        aria-label="Result controls"
+        className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4"
+      >
+        <div>
+          <h3 className="text-base font-bold text-white">Intent results</h3>
+          <p className="mt-1 text-xs text-slate-400">
+            {report.items.length}{" "}
+            {report.items.length === 1
+              ? "keyword reviewed"
+              : "keywords reviewed"}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={onCopy} className={action}>
+            <Copy aria-hidden className="h-4 w-4" />
+            Copy results
+          </button>
+          <button type="button" onClick={onDownload} className={action}>
+            <Download aria-hidden className="h-4 w-4" />
+            Download CSV
+          </button>
+        </div>
+      </section>
       <div className="space-y-5">
         {report.items.map((item) => {
           const tone = intentPresentation[item.primary];
@@ -30,7 +47,7 @@ export default function IntentResults({
             <article
               key={item.index}
               aria-labelledby={`intent-query-${item.index}`}
-              className={`min-w-0 rounded-2xl border border-t-4 border-white/15 bg-slate-950/70 p-5 shadow-lg sm:p-6 ${tone.border}`}
+              className={`min-w-0 rounded-2xl border border-t-2 border-white/15 bg-slate-950/70 p-4 sm:p-5 ${tone.border}`}
             >
               <h4
                 id={`intent-query-${item.index}`}
@@ -43,7 +60,7 @@ export default function IntentResults({
               </p>
               <p
                 data-intent={item.primary}
-                className={`mt-2 inline-flex max-w-full break-words rounded-xl border px-4 py-3 text-xl font-extrabold leading-7 sm:text-2xl ${tone.classes}`}
+                className={`mt-2 inline-flex max-w-full break-words rounded-xl border px-3 py-1.5 text-sm font-semibold leading-6 ${tone.classes}`}
               >
                 {item.primary}
               </p>
@@ -62,7 +79,7 @@ export default function IntentResults({
                   <dt className="text-xs font-bold uppercase tracking-wide text-blue-200">
                     What the reader wants
                   </dt>
-                  <dd className="mt-2 break-words text-base leading-7 text-white">
+                  <dd className="mt-2 break-words text-sm leading-7 text-white">
                     {item.task}
                   </dd>
                 </div>
@@ -146,25 +163,7 @@ export default function IntentResults({
           )}
         </details>
       </div>
-      <section
-        aria-label="Save or use your results"
-        className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-      >
-        <h4 className="text-sm font-bold text-white">Keep your results</h4>
-        <p className="mt-1 text-xs leading-6 text-slate-400">
-          Copy the full interpretation or download a spreadsheet file.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" onClick={onCopy} className={action}>
-            <Copy aria-hidden className="h-4 w-4" />
-            Copy results
-          </button>
-          <button type="button" onClick={onDownload} className={action}>
-            <Download aria-hidden className="h-4 w-4" />
-            Download CSV
-          </button>
-        </div>
-      </section>
+
       <Link
         href="/tools/article-outline-generator"
         className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold leading-6 text-blue-200 underline"

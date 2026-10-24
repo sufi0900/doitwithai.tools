@@ -317,6 +317,55 @@ export default function Page() {
             be researching features, pricing, alternatives, or account access.
           </p>
         </section>
+        <section aria-labelledby="intent-strategies">
+          <h2 id="intent-strategies" className="text-3xl font-black">
+            Different intents need different content strategies
+          </h2>
+          <p className={prose}>
+            Match the page to the reader’s next task. These starting strategies
+            help you turn an intent label into a useful experience.
+          </p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {[
+              [
+                "Informational",
+                "Readers want an explanation or practical guidance.",
+                "Give a clear answer, useful steps, and worked examples. Link to relevant next learning steps.",
+              ],
+              [
+                "Navigational",
+                "Readers want a known website, account, or destination.",
+                "Make the destination easy to identify. Keep access instructions short and avoid unrelated introductions.",
+              ],
+              [
+                "Commercial investigation",
+                "Readers are evaluating alternatives before choosing.",
+                "Compare meaningful criteria, costs, limitations, and suitable use cases. Support recommendations with evidence.",
+              ],
+              [
+                "Transactional",
+                "Readers want to buy, book, download, or register.",
+                "Explain the offer, requirements, and terms. Provide a clear action that matches the query.",
+              ],
+              [
+                "Mixed or unclear",
+                "The wording supports several tasks or lacks enough context.",
+                "Inspect current results in your target market. Choose a primary purpose before combining competing page formats.",
+              ],
+            ].map(([name, overview, strategy]) => (
+              <article
+                key={name}
+                className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700"
+              >
+                <h3 className="text-lg font-bold">{name}</h3>
+                <p className={prose}>{overview}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  <strong>Content strategy</strong> {strategy}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
         <section>
           <h2 className="text-3xl font-black">
             Choose the type, format, and angle separately

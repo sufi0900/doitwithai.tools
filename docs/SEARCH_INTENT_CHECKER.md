@@ -105,3 +105,12 @@ No alternative server or browser infrastructure was launched. The browser-smoke 
 Interactive focus, scrolling, clipboard, downloads, responsive visuals, and live AI availability remain unverified.
 Server-rendered checks establish markup structure, not browser behavior or visual correctness.
 No live provider request, Google result measurement, credential change, or deployment was performed.
+
+
+## October 25 follow-up visual refinement
+
+Intent labels now use compact typography aligned with their surrounding content.
+Cards use lighter top accents, reduced padding, and consistent body sizes.
+One shared toolbar contains the result count, Copy results, and Download CSV before all query cards.
+The educational section explains each intent, its reader goal, and a practical content strategy.
+Focused tests and TypeScript passed. Browser visuals remain unverified because the managed preview cannot start this Next.js project.

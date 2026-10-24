@@ -42,7 +42,7 @@ test("every intent keeps its named meaning and a distinct color, including uncer
   assert.match(intentPresentation["Mixed / unclear"].meaning, /context/);
 });
 
-test("results put actual intent ahead of limitations and save controls for every query", () => {
+test("results keep a compact shared toolbar before query cards and limitations after them", () => {
   const $ = load(
     renderToStaticMarkup(
       React.createElement(IntentResults, {
@@ -70,10 +70,10 @@ test("results put actual intent ahead of limitations and save controls for every
   const text = $("body").text();
   assert.ok(text.indexOf("Informational") < text.indexOf(report.notice));
   assert.ok(
-    text.indexOf(report.items[4].keyword) < text.indexOf("Copy results"),
+    text.indexOf("Copy results") < text.indexOf(report.items[0].keyword),
   );
   assert.ok(
-    text.indexOf(report.items[4].keyword) < text.indexOf("Download CSV"),
+    text.indexOf("Download CSV") < text.indexOf(report.items[0].keyword),
   );
   assert.equal($("button").length, 2);
   assert.equal($("button[type='button']").length, 2);
