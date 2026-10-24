@@ -577,7 +577,7 @@
       "id": "search-intent-checker",
       "slug": "search-intent-checker",
       "name": "Search Intent Checker",
-      "description": "Interpret keyword intent, inspect reader tasks and supporting cues, and plan suitable page formats without invented search metrics.",
+      "description": "Check keyword intent with clear labels, reader tasks, and suggested page formats. Review supporting cues and save your results.",
       "categories": [
         "ai-seo",
         "content-writing"
@@ -585,6 +585,7 @@
       "tags": [
         "search intent",
         "keyword intent",
+        "keyword intent checker",
         "content planning"
       ],
       "kind": "AI-assisted",

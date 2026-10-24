@@ -10,14 +10,14 @@ import SearchIntentClient from "@/features/search-intent/Client";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl = "https://doitwithai.tools/tools/search-intent-checker";
 const description =
-  "Check likely keyword intent, identify the reader task, and plan a suitable page format. Use a free quick check or AI review with optional search-result notes.";
+  "Free keyword intent checker for search intent analysis. Identify informational, navigational, commercial, or transactional queries and choose a suitable page format.";
 const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Search Intent Checker", category: "AI SEO · Content Planning", ctaText: "Understand. Verify. Plan.", features: "Reader Tasks,Intent Cues,Content Angles" })}`;
 export const metadata: Metadata = {
-  title: "Search Intent Checker | Free Keyword Intent Analysis",
+  title: "Keyword Intent Checker | Free Search Intent Analysis",
   description,
   alternates: { canonical: pageUrl },
   openGraph: {
-    title: "Search Intent Checker",
+    title: "Keyword Intent Checker | Search Intent Analysis",
     description,
     url: pageUrl,
     type: "website",
@@ -25,12 +25,16 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Search Intent Checker",
+    title: "Keyword Intent Checker | Search Intent Analysis",
     description,
     images: [image],
   },
 };
 const faqs = [
+  [
+    "Is keyword intent different from search intent?",
+    "Both describe the task behind a search query. This keyword intent checker and search intent checker use the same workspace and intent categories.",
+  ],
   [
     "Does this tool check live Google results?",
     "No. Quick check uses query wording. AI review interprets your supplied text. Optional result notes are user-provided and are not independently verified.",
@@ -95,11 +99,26 @@ export default function Page() {
       {
         "@type": "WebApplication",
         name: "Search Intent Checker",
+        alternateName: "Keyword Intent Checker",
+        featureList: [
+          "Check up to ten keyword queries",
+          "Identify likely primary and secondary intent",
+          "Review supporting wording cues and suggested page formats",
+          "Copy results or download CSV",
+        ],
         url: pageUrl,
         description,
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any",
         browserRequirements: "Requires JavaScript",
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqs.map(([question, answer]) => ({
+          "@type": "Question",
+          name: question,
+          acceptedAnswer: { "@type": "Answer", text: answer },
+        })),
       },
       {
         "@type": "BreadcrumbList",
@@ -153,14 +172,13 @@ export default function Page() {
               Search Intent Checker
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-300">
-              Understand what a reader may want before deciding what to publish.
-              Turn query wording into a reader task, page format, and content
-              angle.
+              Use this free keyword intent checker to understand what readers
+              want. Check likely intent, inspect the wording, and choose a
+              suitable page format before writing.
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-400">
-              Start with a quick check. Add context for a more detailed
-              interpretation. Every result stays clearly separate from live
-              search verification.
+              Check one keyword or compare up to ten queries. See clear intent
+              labels, practical reader tasks, and suggested next steps.
             </p>
           </div>
           <SearchIntentClient />
@@ -201,9 +219,7 @@ export default function Page() {
       </section>
       <div className="mx-auto max-w-5xl space-y-16 px-4 py-16 sm:px-6">
         <section>
-          <h2 className="text-3xl font-black">
-            How to use the search intent checker
-          </h2>
+          <h2 className="text-3xl font-black">How to check keyword intent</h2>
           <ol className="mt-6 grid gap-5 sm:grid-cols-3">
             {[
               [
@@ -230,10 +246,13 @@ export default function Page() {
           </ol>
         </section>
         <section>
-          <h2 className="text-3xl font-black">What search intent means</h2>
+          <h2 className="text-3xl font-black">
+            Keyword intent and search intent explained
+          </h2>
           <p className={prose}>
-            Search intent is the task behind a query. Someone may want to
-            understand, compare, purchase, or reach a known destination.
+            Keyword intent, also called search intent, is the task behind a
+            query. Someone may want to understand, compare, purchase, or reach a
+            known destination.
           </p>
           <p className={prose}>
             The same topic can support several tasks. “Meta title examples” and
@@ -280,6 +299,19 @@ export default function Page() {
               </tbody>
             </table>
           </div>
+          <p className={prose}>
+            The four common intent types describe different reader goals. A
+            mixed result needs more context, rather than an arbitrary confidence
+            score. Semrush’s{" "}
+            <a
+              href="https://www.semrush.com/blog/keyword-intent/"
+              rel="noopener noreferrer"
+              className="text-primary underline dark:text-blue-300"
+            >
+              keyword intent guide
+            </a>{" "}
+            also explains why one keyword can support multiple intents.
+          </p>
           <p className={prose}>
             A brand name alone does not prove navigational intent. Readers may
             be researching features, pricing, alternatives, or account access.
@@ -470,7 +502,7 @@ export default function Page() {
         </section>
         <section>
           <h2 className="text-3xl font-black">
-            Search intent checker questions
+            Keyword intent checker questions
           </h2>
           <div className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200 px-5 dark:divide-slate-700 dark:border-slate-700">
             {faqs.map(([question, answer]) => (

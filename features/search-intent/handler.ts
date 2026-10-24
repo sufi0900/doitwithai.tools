@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   const model = getGeminiModel("SEARCH_INTENT");
   if (!isAiConfigured(model))
     return error(
-      "Neither Gemini nor Groq is configured. The no-API quick check remains available.",
+      "Detailed review is currently unavailable. You can still check keyword wording.",
       503,
       "AI_NOT_CONFIGURED",
     );
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     const failure = geminiFailure(cause);
     return error(
       failure?.message ||
-        "The AI interpretation failed coverage or evidence checks. Your inputs are preserved. Try the no-API quick check.",
+        "The AI interpretation failed coverage or evidence checks. Your inputs are preserved. Try the quick keyword check.",
       failure?.status || 502,
       failure?.code || "OUTPUT_VALIDATION_FAILED",
     );

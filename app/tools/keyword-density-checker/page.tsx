@@ -389,7 +389,7 @@ export default function Page() {
               href="/tools/search-intent-checker"
               className="text-primary underline dark:text-blue-300"
             >
-              Search Intent Checker
+              Keyword Intent Checker
             </Link>
             . Keyword repetition cannot replace a clear purpose or useful
             evidence.

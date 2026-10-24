@@ -117,14 +117,36 @@ const screenshotDir =
       3,
     );
     assert.equal(calls, 0);
+    const resultOrder = await page.evaluate(() => {
+      const text = document.querySelector(
+        '[aria-label="Keyword intent results"]',
+      ).textContent;
+      return (
+        text.indexOf("Informational") < text.indexOf("Copy results") &&
+        text.indexOf("Informational") <
+          text.indexOf("Intent is an interpretation")
+      );
+    });
+    assert.ok(
+      resultOrder,
+      "Intent must appear before saving controls and method details",
+    );
+    assert.equal(
+      await page.$$eval("#intent-checker [data-intent]", (els) => els.length),
+      3,
+    );
     await page.evaluate(() =>
       [...document.querySelectorAll("button")]
-        .find((el) => el.textContent.includes("Quick check"))
+        .find((el) => el.textContent.includes("Check keyword intent"))
         .click(),
     );
     assert.equal(calls, 0);
     const original = await page.$eval("#intent-keywords", (el) => el.value);
-    await page.click('#intent-checker button[type="submit"]');
+    await page.evaluate(() =>
+      [...document.querySelectorAll("#intent-checker button")]
+        .find((el) => el.textContent.includes("Review with AI"))
+        .click(),
+    );
     await page.waitForSelector('[role="alert"]');
     assert.ok(
       (await page.$eval('[role="alert"]', (el) => el.textContent)).includes(
@@ -140,11 +162,15 @@ const screenshotDir =
       3,
     );
     mode = "success";
-    await page.click('#intent-checker button[type="submit"]');
+    await page.evaluate(() =>
+      [...document.querySelectorAll("#intent-checker button")]
+        .find((el) => el.textContent.includes("Review with AI"))
+        .click(),
+    );
     await page.waitForFunction(() =>
       document
         .querySelector("#intent-checker")
-        ?.textContent.includes("AI estimate"),
+        ?.textContent.includes("AI interpretation of your keywords"),
     );
     assert.equal(calls, 2);
     assert.ok(

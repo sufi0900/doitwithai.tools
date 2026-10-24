@@ -46,6 +46,62 @@ The audience and AI SEO articles were reviewed through retrieval on October 15, 
 
 Focused tests cover input limits, duplicate queries, ambiguous and mixed wording, exact evidence/coverage checks, spreadsheet safety, API configuration, body limits, model budget, provider errors, refund/burst behavior and actual mocked Gemini-to-Groq transport through the route. Existing adapter tests cover timeout allocation and schema validation. No live paid/provider call is made by these tests. Browser and deployment verification outcomes are reported separately; mocks do not establish live provider availability.
 
-Validation completed: 127 AI-tool tests, 11 catalogue/foundation checks, TypeScript, production compilation/prerendering and local browser smoke. Browser checks cover five widths, local quick checks without API calls, simulated AI success and provider failures, preserved inputs/results, catalogue registration, canonical/schema metadata, dark mode and reduced motion. Mobile and desktop screenshots were visually reviewed. No live authenticated provider result or live Google search was claimed.
+Initial release validation: 127 AI-tool tests, 11 catalogue/foundation checks, TypeScript, production compilation/prerendering and local browser smoke. Browser checks cover five widths, local quick checks without API calls, simulated AI success and provider failures, preserved inputs/results, catalogue registration, canonical/schema metadata, dark mode and reduced motion. Mobile and desktop screenshots were visually reviewed. No live authenticated provider result or live Google search was claimed.
 
 Run browser checks after building with `node --import tsx scripts/search-intent-smoke.cjs`. Screenshots default to the operating system temporary directory; override with `SMOKE_OUTPUT_DIR`.
+
+## October 25, 2026: result hierarchy and keyword targeting
+
+The existing canonical route remains unchanged. No second keyword-intent landing page or duplicate sitemap entry was created.
+
+### User journey
+
+- Check keyword intent is now the primary submit action. It produces an immediate wording-based interpretation.
+- Review with AI remains a separate, deliberate action. Its context fields are grouped under optional disclosure.
+- Successful checks focus and scroll to the results region. Reduced-motion preferences disable smooth scrolling.
+- The first result content shows the keyword, prominent intent label, reader task, and suggested page format.
+- Informational labels are blue. Navigation is violet, commercial investigation is amber, and transactional intent is emerald.
+- Mixed or unclear intent is neutral gray. Visible labels and explanations preserve meaning without relying on color.
+- Supporting cues, content angles, next steps, and uncertainty remain available within each result's disclosure.
+- Method details and limitations follow the result cards. A short estimate label remains visible.
+- Copy results and Download CSV appear below the results, within a clearly named save section.
+- Copied results now retain secondary intent and quoted evidence. Existing CSV formula protections remain unchanged.
+- Changed inputs display a stale-results notice. Failed reviews preserve prior results and the entered queries.
+- A visible loading indicator accompanies detailed review. The live status region remains outside the busy results region.
+- Neither check mode produces statistical confidence, measured intent probabilities, or ranking predictions.
+
+### Search presentation
+
+Metadata now targets Keyword Intent Checker while retaining search-intent language and the existing H1.
+The definition explains both terms. Examples retain the four common intent categories and a separate uncertainty case.
+Application structured data includes an alternate name and accurate feature descriptions.
+FAQ structured data matches the nine visible questions. It does not promise enhanced search presentation.
+The shared registry includes keyword-intent discovery wording. The Keyword Density Checker links here using the Keyword Intent Checker name.
+
+Primary sources reviewed on October 25, 2026:
+
+- https://www.semrush.com/blog/keyword-intent/
+- https://developers.google.com/search/docs/appearance/title-link
+
+Semrush explains the synonymous terms, four common categories, and mixed intents.
+Google recommends descriptive, concise titles without keyword stuffing. This revision keeps a single useful page rather than duplicating near-identical tools.
+
+### Validation for this revision
+
+Passed checks:
+
+- 383 AI-tool feature and regression tests, including five new result-presentation tests.
+- Eleven catalogue and foundation tests, producing 394 unique passing tests overall.
+- TypeScript with incremental caching disabled.
+- Targeted lint, with no file warnings or errors. The existing missing-pages-directory configuration diagnostic remains.
+- Final production build, with 95 static pages generated. Existing unrelated image and local environment warnings remain.
+- Rendered title, description, canonical URL, social image, application schema, and nine matching FAQ entries.
+- Primary-action markup, separate live region, registry identity, one sitemap entry, and relevant internal links.
+- All five intent colors exist in the emitted production CSS.
+- Updated browser-smoke script syntax and whitespace checks.
+
+The managed browser preview failed before startup because it passed unsupported flags to Next.js.
+No alternative server or browser infrastructure was launched. The browser-smoke script was updated but was not executed for this revision.
+Interactive focus, scrolling, clipboard, downloads, responsive visuals, and live AI availability remain unverified.
+Server-rendered checks establish markup structure, not browser behavior or visual correctness.
+No live provider request, Google result measurement, credential change, or deployment was performed.

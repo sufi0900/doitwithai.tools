@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { Search, Sparkles, Download, Copy, ArrowRight } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Search, Sparkles, Loader2 } from "lucide-react";
+import IntentResults from "./Results";
+import { copyReport } from "./presentation";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import {
   inputSchema,
@@ -25,6 +26,21 @@ export default function SearchIntentClient() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const active = useRef<AbortController | null>(null);
+  const results = useRef<HTMLDivElement | null>(null);
+  const [completedInput, setCompletedInput] = useState("");
+  useEffect(() => {
+    if (!report) return;
+    const frame = requestAnimationFrame(() => {
+      results.current?.focus({ preventScroll: true });
+      results.current?.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [report]);
   useEffect(() => () => active.current?.abort(), []);
   const input = () =>
     inputSchema.safeParse({
@@ -33,19 +49,35 @@ export default function SearchIntentClient() {
       market,
       notes,
     });
-  function quick() {
+  function quick(event?: React.FormEvent) {
+    event?.preventDefault();
+    if (active.current) return;
     const parsed = input();
     if (!parsed.success) {
       setError(parsed.error.issues[0].message);
       return;
     }
     setReport(quickAnalyze(parsed.data));
+    setCompletedInput(JSON.stringify(parsed.data));
     setError("");
     setStatus(
-      "Quick check complete. Choose a detailed review to include your audience context and pasted notes.",
+      "Keyword check complete. Choose Review with AI to include your audience context and pasted notes.",
     );
   }
   function example() {
+    if (active.current) return;
+    setCompletedInput(
+      JSON.stringify({
+        keywords: [
+          "how to write a meta title",
+          "best AI writing tools",
+          "buy a keyword research course",
+        ],
+        audience: "Content creators planning their first SEO articles",
+        market: "English-language readers",
+        notes: "",
+      }),
+    );
     setKeywords(
       "how to write a meta title\nbest AI writing tools\nbuy a keyword research course",
     );
@@ -69,8 +101,7 @@ export default function SearchIntentClient() {
       "Example loaded. Review the suggested reader tasks and content angles.",
     );
   }
-  async function analyze(event: React.FormEvent) {
-    event.preventDefault();
+  async function analyze() {
     if (active.current) return;
     const parsed = input();
     if (!parsed.success) {
@@ -97,6 +128,7 @@ export default function SearchIntentClient() {
         meta?: { provider?: string };
       }>(response);
       setReport(validateOutput(payload.result, parsed.data));
+      setCompletedInput(JSON.stringify(parsed.data));
       setStatus(
         "AI review completed. Validate the interpretation against current search results before writing.",
       );
@@ -118,17 +150,8 @@ export default function SearchIntentClient() {
   async function copy() {
     if (!report) return;
     try {
-      await navigator.clipboard.writeText(
-        [
-          report.method,
-          report.notice,
-          ...report.items.map(
-            (i) =>
-              `${i.keyword}\n${i.primary}\nReader task: ${i.task}\nFormat: ${i.format}\nAngle: ${i.angle}\nNext step: ${i.nextStep}\nUncertainty: ${i.uncertainty}`,
-          ),
-        ].join("\n\n"),
-      );
-      setStatus("Planning notes copied.");
+      await navigator.clipboard.writeText(copyReport(report));
+      setStatus("Intent results copied.");
     } catch {
       setStatus("Clipboard access is unavailable. Download the CSV instead.");
     }
@@ -146,18 +169,26 @@ export default function SearchIntentClient() {
     anchor.click();
     URL.revokeObjectURL(url);
   }
+  const parsedCurrent = input();
+  const stale =
+    report &&
+    (!parsedCurrent.success ||
+      JSON.stringify(parsedCurrent.data) !== completedInput);
   return (
     <section
       id="intent-checker"
       aria-label="Search intent analysis workspace"
       className="rounded-[28px] border border-white/10 bg-slate-900/80 p-5 shadow-2xl sm:p-8"
     >
+      <div role="status" aria-live="polite" className="sr-only">
+        {status}
+      </div>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <form onSubmit={analyze} className="min-w-0">
+        <form onSubmit={quick} className="min-w-0">
           <div className="mb-5 flex items-center gap-3">
             <Search aria-hidden className="h-6 w-6 text-blue-300" />
             <h2 className="text-xl font-bold text-white">
-              Start with the reader’s query
+              Check your keyword’s intent
             </h2>
           </div>
           <fieldset disabled={busy} className="space-y-5">
@@ -186,68 +217,79 @@ export default function SearchIntentClient() {
                 className="mt-2 text-xs leading-6 text-slate-400"
               >
                 One per line. Up to 10 distinct queries, 120 characters each.
+                Quick checks use English wording cues.
               </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="intent-audience"
-                  className="text-sm font-semibold text-white"
-                >
-                  Intended audience{" "}
-                  <span className="font-normal text-slate-400">optional</span>
-                </label>
-                <input
-                  id="intent-audience"
-                  value={audience}
-                  onChange={(e) => setAudience(e.target.value)}
-                  maxLength={300}
-                  placeholder="SEO beginners, small businesses"
-                  className={field}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="intent-market"
-                  className="text-sm font-semibold text-white"
-                >
-                  Market and language{" "}
-                  <span className="font-normal text-slate-400">optional</span>
-                </label>
-                <input
-                  id="intent-market"
-                  value={market}
-                  onChange={(e) => setMarket(e.target.value)}
-                  maxLength={100}
-                  placeholder="United States, English"
-                  className={field}
-                />
-              </div>
             </div>
             <details className="rounded-xl border border-white/10 p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-white">
-                Add search-result notes for one query
+              <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-white">
+                Add context for an AI review{" "}
+                <span className="font-normal text-slate-400">optional</span>
               </summary>
-              <label
-                htmlFor="intent-notes"
-                className="mt-3 block text-xs leading-6 text-slate-300"
-              >
-                Paste titles, snippets, and page types you observed. Use one
-                keyword. AI reviews these notes without opening any URLs.
-              </label>
-              <textarea
-                id="intent-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={5}
-                maxLength={4000}
-                placeholder="Example notes: several comparison pages, one tutorial, and two product pages. Include actual titles when possible."
-                className={field}
-              />
-              <p className="mt-2 text-xs text-slate-400">
-                {notes.length.toLocaleString()} / 4,000 characters. Remove
-                private information before submitting.
+              <p className="mb-4 mt-2 text-xs leading-6 text-slate-400">
+                Audience, market, and result notes are used only by Review with
+                AI.
               </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="intent-audience"
+                    className="text-sm font-semibold text-white"
+                  >
+                    Intended audience{" "}
+                    <span className="font-normal text-slate-400">optional</span>
+                  </label>
+                  <input
+                    id="intent-audience"
+                    value={audience}
+                    onChange={(e) => setAudience(e.target.value)}
+                    maxLength={300}
+                    placeholder="SEO beginners, small businesses"
+                    className={field}
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="intent-market"
+                    className="text-sm font-semibold text-white"
+                  >
+                    Market and language{" "}
+                    <span className="font-normal text-slate-400">optional</span>
+                  </label>
+                  <input
+                    id="intent-market"
+                    value={market}
+                    onChange={(e) => setMarket(e.target.value)}
+                    maxLength={100}
+                    placeholder="United States, English"
+                    className={field}
+                  />
+                </div>
+              </div>
+              <details className="mt-4 rounded-xl border border-white/10 p-4">
+                <summary className="cursor-pointer text-sm font-semibold text-white">
+                  Add search-result notes for one query
+                </summary>
+                <label
+                  htmlFor="intent-notes"
+                  className="mt-3 block text-xs leading-6 text-slate-300"
+                >
+                  Paste titles, snippets, and page types you observed. Use one
+                  keyword. AI reviews these notes without opening any URLs.
+                </label>
+                <textarea
+                  id="intent-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={5}
+                  maxLength={4000}
+                  placeholder="Example notes: several comparison pages, one tutorial, and two product pages. Include actual titles when possible."
+                  className={field}
+                />
+                <p className="mt-2 text-xs text-slate-400">
+                  {notes.length.toLocaleString()} / 4,000 characters. Remove
+                  private information before submitting.
+                </p>
+              </details>
             </details>
             <div className="flex flex-wrap gap-3">
               <button
@@ -256,15 +298,23 @@ export default function SearchIntentClient() {
                   button + " bg-[#5271ff] text-white hover:bg-blue-600"
                 }
               >
-                <Sparkles aria-hidden className="h-4 w-4" />
-                {busy ? "Reviewing…" : "Review with AI"}
+                <Search aria-hidden className="h-4 w-4" />
+                Check keyword intent
               </button>
               <button
                 type="button"
-                onClick={quick}
+                onClick={analyze}
                 className={button + " text-white"}
               >
-                Quick check
+                {busy ? (
+                  <Loader2
+                    aria-hidden
+                    className="animate-spin motion-reduce:animate-none h-4 w-4"
+                  />
+                ) : (
+                  <Sparkles aria-hidden className="h-4 w-4" />
+                )}
+                {busy ? "Reviewing…" : "Review with AI"}
               </button>
               <button
                 type="button"
@@ -285,152 +335,74 @@ export default function SearchIntentClient() {
             </button>
           )}
           <p className="mt-5 text-xs leading-6 text-slate-400">
-            Quick check uses keyword wording. Detailed review includes your
-            supplied context and notes.
+            Check keyword intent uses English wording cues. Review with AI
+            includes your supplied context and notes.
           </p>
           <p className="mt-2 text-xs leading-6 text-slate-400">
             AI allowance: 15 reviews per day and five starts per ten minutes.
             Failed reviews release their allowance.
           </p>
         </form>
-        <div className="min-w-0" aria-busy={busy}>
-          <div
-            role="status"
-            aria-live="polite"
-            className="text-sm leading-6 text-blue-100"
-          >
-            {status}
-          </div>
+        <div
+          ref={results}
+          tabIndex={-1}
+          className="min-w-0 scroll-mt-32 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-300"
+          role="region"
+          aria-label="Keyword intent results"
+          aria-busy={busy}
+        >
+          {busy && (
+            <div className="mb-4 flex items-center gap-3 rounded-xl border border-blue-300/30 bg-blue-400/10 p-4 text-sm leading-6 text-blue-100">
+              <Loader2
+                aria-hidden
+                className="animate-spin motion-reduce:animate-none h-5 w-5 shrink-0"
+              />
+              Reviewing your keywords. Previous results remain below.
+            </div>
+          )}
           {error && (
             <div
               role="alert"
-              className="mt-4 break-words rounded-xl border border-rose-300/30 bg-rose-400/10 p-4 text-sm leading-7 text-rose-100"
+              className="mb-4 break-words rounded-xl border border-rose-300/30 bg-rose-400/10 p-4 text-sm leading-7 text-rose-100"
             >
               {error}
             </div>
           )}
+          {stale && (
+            <p className="mb-4 rounded-xl border border-amber-300/30 bg-amber-400/10 p-4 text-sm leading-6 text-amber-100">
+              Inputs changed. These results belong to your previous check. Run
+              another check to update them.
+            </p>
+          )}
           {!report ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-white/15 p-7">
-              <h3 className="text-xl font-bold text-white">
-                An intent label should lead to a useful decision
+            <div className="rounded-2xl border border-dashed border-blue-300/30 bg-blue-400/5 p-6 sm:p-7">
+              <Search aria-hidden className="h-7 w-7 text-blue-300" />
+              <h3 className="mt-4 text-2xl font-bold text-white">
+                What does your reader want?
               </h3>
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                See the likely reader task, supporting wording, page format,
-                content angle, and next step. Ambiguous queries stay uncertain.
+                Enter a keyword to see its likely intent and a suggested page
+                format.
               </p>
               <p className="mt-4 text-xs leading-6 text-slate-400">
-                Try an example to explore the results before checking your own
-                keywords.
+                For example, “how to write a meta title” suggests an
+                informational guide.
               </p>
             </div>
           ) : (
-            <>
-              <div className="mt-5 rounded-2xl border border-blue-300/20 bg-blue-400/5 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h3 className="font-bold text-white">{report.method}</h3>
-                  <span className="text-xs text-slate-300">
-                    {report.items.length} queries
-                  </span>
-                </div>
-                <p className="mt-3 text-xs leading-6 text-slate-300">
-                  {report.notice}
-                </p>
-                {(report.audience || report.market) && (
-                  <p className="mt-2 break-words text-xs text-slate-400">
-                    Context supplied:{" "}
-                    {[report.audience, report.market]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                )}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={copy}
-                    className={button + " text-white"}
-                  >
-                    <Copy aria-hidden className="h-4 w-4" />
-                    Copy plan
-                  </button>
-                  <button
-                    type="button"
-                    onClick={download}
-                    className={button + " text-white"}
-                  >
-                    <Download aria-hidden className="h-4 w-4" />
-                    Export CSV
-                  </button>
-                </div>
-              </div>
-              <div className="mt-5 space-y-4">
-                {report.items.map((item) => (
-                  <article
-                    key={item.index}
-                    className="rounded-2xl border border-white/10 bg-slate-950/50 p-5"
-                  >
-                    <h4 className="break-words text-lg font-bold text-white">
-                      {item.keyword}
-                    </h4>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-blue-400/15 px-3 py-1 text-xs font-semibold text-blue-200">
-                        {item.primary}
-                      </span>
-                      {item.secondary && (
-                        <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-300">
-                          Possible secondary · {item.secondary}
-                        </span>
-                      )}
-                    </div>
-                    <dl className="mt-4 space-y-4">
-                      {[
-                        ["Reader task", item.task],
-                        ["Page format", item.format],
-                        ["Content angle", item.angle],
-                        ["Appropriate next step", item.nextStep],
-                        ["What to verify", item.uncertainty],
-                      ].map(([label, value]) => (
-                        <div key={label}>
-                          <dt className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                            {label}
-                          </dt>
-                          <dd className="mt-1 break-words text-sm leading-7 text-slate-200">
-                            {value}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                    <div className="mt-4 border-t border-white/10 pt-3">
-                      <p className="text-xs font-bold text-slate-400">
-                        Supporting cues
-                      </p>
-                      {item.evidence.length ? (
-                        <ul className="mt-2 space-y-2">
-                          {item.evidence.map((e, i) => (
-                            <li
-                              key={i}
-                              className="break-words text-xs leading-6 text-slate-300"
-                            >
-                              {e.source}: “{e.quote}”
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="mt-2 text-xs leading-6 text-slate-400">
-                          No explicit wording cue. Check the live result mix.
-                        </p>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-              <Link
-                href="/tools/article-outline-generator"
-                className="mt-5 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-blue-200 underline"
-              >
-                Turn the reviewed task into an outline
-                <ArrowRight aria-hidden className="h-4 w-4" />
-              </Link>
-            </>
+            <IntentResults
+              report={report}
+              onCopy={copy}
+              onDownload={download}
+            />
+          )}
+          {status && !busy && (
+            <p
+              className="mt-4 text-xs leading-6 text-slate-400"
+              aria-hidden="true"
+            >
+              {status}
+            </p>
           )}
         </div>
       </div>
