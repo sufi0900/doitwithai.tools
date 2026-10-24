@@ -37,6 +37,20 @@ const entries = [
     limit:
       "A nearby link is only a candidate. Factual accuracy and source support require evidence review.",
   },
+  {
+    id: "schema",
+    name: "Structured data and optional files",
+    measure: "Extracted markup and llms.txt availability.",
+    limit:
+      "Presence does not earn a citation bonus. No special AI markup or llms.txt file is required for Google AI features.",
+  },
+  {
+    id: "response",
+    name: "Optional performance test",
+    measure: "Published-page lab scores and available real-user measurements.",
+    limit:
+      "Performance describes page experience, not citation probability. Missing field data remains unavailable evidence.",
+  },
 ];
 export default function Methodology() {
   return (

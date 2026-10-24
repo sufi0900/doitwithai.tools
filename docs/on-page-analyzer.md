@@ -145,3 +145,10 @@ The shared opening review no longer uses length to decide an opening label and a
 The shared importer distinguishes source refusals from tool quotas and preserves those details for concurrent callers.
 Full article review, optional local edits, and cross-tool URL recall are documented in `docs/citation-criteria-review.md`.
 The analyzer retains its separately documented product audit weights. Neither interface predicts citations or factual accuracy.
+
+## Dedicated citation dashboard
+
+The citation checker now uses a results-first dashboard and an optional passage-review workspace.
+It reuses the existing structured-data inspector, claim-review helpers, editorial-review endpoint, and Core Web Vitals client.
+Coverage and manual review progress are operational measures, not citation scores. Optional markup and llms.txt presence do not add citation bonuses.
+See `docs/citation-dashboard.md` for the complete behavior and verification limits.

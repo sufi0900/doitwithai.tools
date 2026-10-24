@@ -68,7 +68,7 @@ export function citationReview(page: PageSnapshot) {
       action,
       tool,
       basis: criterionBasis(id),
-      optional: ["structure", "paragraphs"].includes(id),
+      optional: ["structure", "paragraphs", "llms"].includes(id),
     });
   add(
     "scope",
@@ -146,6 +146,18 @@ export function citationReview(page: PageSnapshot) {
     `${page.schemas.valid} parsed source blocks; ${page.schemas.invalid} invalid blocks. Types: ${page.schemas.types.slice(0, 12).join(", ") || "none retained"}.`,
     "Validate extracted markup and compare it with visible content. No special AI schema is required; parsed markup does not certify eligibility.",
     "structured-data-validator",
+  );
+  add(
+    "llms",
+    "Optional llms.txt availability",
+    page.resources.llms === "unknown" ? "unknown" : "observed",
+    page.resources.llms === "found"
+      ? "An llms.txt text file was found."
+      : page.resources.llms === "missing"
+        ? "No llms.txt file was found."
+        : "This optional file was not checked.",
+    "This is file availability only. It is not required for Google AI features and does not increase a citation score.",
+    "llms-txt-generator",
   );
   const h1 = page.blocks.filter((b) => b.tag === "h1").length;
   const subheadings = page.blocks.filter((b) => /^h[2-6]$/.test(b.tag)).length;

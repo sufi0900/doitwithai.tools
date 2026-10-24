@@ -1,15 +1,16 @@
 "use client";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
-import AnswerReadinessPanel from "../on-page-analyzer/AnswerReadinessPanel";
+import type { Review } from "../content-evidence/analyze";
+import Dashboard from "./Dashboard";
+import { passageFlags } from "./workspace";
+import dashboardStyles from "./dashboard.module.css";
 import type { PageSnapshot } from "../on-page-analyzer/types";
 import { importCitationPage } from "./client";
 import { draftPage } from "./draft-html";
-import ReviewWorkspace from "./ReviewWorkspace";
 import styles from "../content-evidence/evidence.module.css";
-import analyzerStyles from "../on-page-analyzer/analyzer.module.css";
 const ContentEditor = dynamic(() => import("./ContentEditor"), {
   ssr: false,
   loading: () => (
@@ -31,6 +32,41 @@ export default function CitationReadinessClient() {
   const [error, setError] = useState(""),
     [sourceError, setSourceError] = useState(false),
     [dirty, setDirty] = useState(false);
+  const [view, setView] = useState<"results" | "article">("results"),
+    [editorOpened, setEditorOpened] = useState(false);
+  const [navigation, setNavigation] = useState(0),
+    [reportVersion, setReportVersion] = useState(0);
+  const [reviews, setReviews] = useState<Record<string, Review>>({});
+  const [focusRequest, setFocusRequest] = useState<{
+    blockId: string;
+    nonce: number;
+  } | null>(null);
+  const [flagLimit, setFlagLimit] = useState(20);
+  const resultRef = useRef<HTMLDivElement>(null),
+    articleRef = useRef<HTMLDivElement>(null);
+  const flags = useMemo(() => (page ? passageFlags(page) : []), [page]);
+  function go(next: "results" | "article", blockId?: string) {
+    if (next === "article") {
+      setEditorOpened(true);
+      setFocusRequest(blockId ? { blockId, nonce: Date.now() } : null);
+    }
+    setView(next);
+    setNavigation((n) => n + 1);
+  }
+  useEffect(() => {
+    if (!navigation) return;
+    const frame = requestAnimationFrame(() => {
+      const node = view === "results" ? resultRef.current : articleRef.current;
+      node?.focus({ preventScroll: true });
+      node?.scrollIntoView({
+        block: "start",
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [navigation, view]);
   const request = useRef<AbortController | null>(null);
   useEffect(() => () => request.current?.abort(), []);
   const invalidate = () => {
@@ -40,12 +76,19 @@ export default function CitationReadinessClient() {
     setError("");
     setSourceError(false);
     setDirty(true);
+    setNavigation(0);
   };
   const setDocument = (value: PageSnapshot, showReport = true) => {
     setEditorBase(value);
     setEditorKey((old) => old + 1);
     setPage(showReport ? value : null);
     setDirty(false);
+    setReviews({});
+    setReportVersion((n) => n + 1);
+    setEditorOpened(!showReport);
+    setFocusRequest(null);
+    setFlagLimit(20);
+    go(showReport ? "results" : "article");
   };
   function switchMode(value: Mode) {
     invalidate();
@@ -97,8 +140,8 @@ export default function CitationReadinessClient() {
         </span>
         <h2>Review a page or unpublished article</h2>
         <p className={styles.small}>
-          Import a URL to fill the article editor automatically. For unavailable
-          pages, paste formatted content or copied HTML.
+          Analyze a URL to see your readiness review first. Open the article
+          review separately to inspect or edit highlighted passages.
         </p>
         <p className={styles.small}>
           No universal H1 count, paragraph length, or first-sentence formula
@@ -108,7 +151,7 @@ export default function CitationReadinessClient() {
           {(
             [
               ["url", "Public URL"],
-              ["text", "Article editor"],
+              ["text", "Paste new article"],
               ["html", "Page HTML"],
             ] as const
           ).map(([value, label]) => (
@@ -163,7 +206,7 @@ export default function CitationReadinessClient() {
             {mode === "url"
               ? "Use an accessible public page. Access restrictions can prevent importing. A refusal is not an SEO or citation verdict."
               : mode === "text"
-                ? "Paste your article in the editor below. Paragraphs, headings, lists, and safe links remain distinct. Published access is not checked."
+                ? "Paste formatted content in Article review, then analyze it. Drafts preserve headings and lists; published access remains unchecked."
                 : "Up to 750,000 characters. Copied HTML is inspected without running scripts. Live response headers and crawler policies remain unchecked."}
           </p>
           <div className={`${styles.actions} mt-5`}>
@@ -181,10 +224,10 @@ export default function CitationReadinessClient() {
                   />
                 )}
                 {loading
-                  ? "Importing page…"
+                  ? "Analyzing page…"
                   : mode === "url"
-                    ? "Import URL into article review"
-                    : "Import HTML into article review"}
+                    ? "Check citation readiness"
+                    : "Analyze page HTML"}
               </button>
             )}
             <button
@@ -213,6 +256,10 @@ export default function CitationReadinessClient() {
                 setEditorBase(mode === "text" ? draftPage("") : null);
                 setEditorKey((old) => old + 1);
                 setDirty(false);
+                setReviews({});
+                setEditorOpened(mode === "text");
+                setNavigation(0);
+                setView(mode === "text" ? "article" : "results");
               }}
             >
               Clear
@@ -223,7 +270,7 @@ export default function CitationReadinessClient() {
           {loading
             ? "Importing retained text and available metadata. You can cancel without losing the previous report."
             : page && !dirty
-              ? "Review ready. Inspect the article and evidence below."
+              ? "Review ready. Your results dashboard is available below."
               : ""}
         </p>
         {error && (
@@ -264,29 +311,146 @@ export default function CitationReadinessClient() {
           update it.
         </p>
       )}
-      {editorBase && (
-        <ContentEditor
-          key={editorKey}
-          page={editorBase}
-          onReview={(draft) => {
-            setPage(draft);
-            setDirty(false);
-          }}
-        />
+      {loading && (
+        <section
+          className={dashboardStyles.loading}
+          role="status"
+          aria-live="polite"
+        >
+          <div className={dashboardStyles.loader} aria-hidden="true" />
+          <div>
+            <h3>Building your citation readiness review</h3>
+            <p>
+              Reading returned content, available metadata, and crawler
+              policies. This can take a moment.
+            </p>
+            <p>
+              {page
+                ? "Your previous report remains available. You can cancel this import."
+                : "You can cancel this import without losing your input."}
+            </p>
+          </div>
+        </section>
       )}
       {page && (
-        <>
+        <div
+          className={dashboardStyles.viewTabs}
+          role="group"
+          aria-label="Review workspace view"
+        >
+          <button
+            type="button"
+            className={view === "results" ? styles.primary : styles.secondary}
+            aria-pressed={view === "results"}
+            onClick={() => go("results")}
+          >
+            Review results
+          </button>
+          <button
+            type="button"
+            className={view === "article" ? styles.primary : styles.secondary}
+            aria-pressed={view === "article"}
+            onClick={() => go("article")}
+          >
+            Article review · {flags.length} cues
+          </button>
+        </div>
+      )}
+      {page && (
+        <div
+          ref={resultRef}
+          tabIndex={-1}
+          hidden={view !== "results"}
+          className={dashboardStyles.resultTarget}
+          aria-label="Citation readiness results"
+          aria-busy={loading}
+        >
           {page.contentEdited && (
             <p className={styles.warning}>
-              Content findings describe your local draft. Available response
-              metadata and crawler rules still describe the original import.
+              Content findings describe your local draft. Imported metadata and
+              markup still describe the original page.
             </p>
           )}
-          <ReviewWorkspace page={page} />
-          <div className={analyzerStyles.app}>
-            <AnswerReadinessPanel page={page} />
+          <Dashboard
+            key={reportVersion}
+            page={page}
+            reviews={reviews}
+            onSave={(id, value) =>
+              setReviews((old) => ({ ...old, [id]: value }))
+            }
+            onLocate={(id) => go("article", id)}
+            onOpenArticle={() => go("article")}
+          />
+        </div>
+      )}
+      {editorBase && editorOpened && (
+        <div
+          ref={articleRef}
+          tabIndex={-1}
+          hidden={view !== "article"}
+          className={dashboardStyles.resultTarget}
+          aria-label="Article passage review"
+        >
+          <div className={dashboardStyles.articleLayout}>
+            <ContentEditor
+              key={editorKey}
+              page={editorBase}
+              reviewPage={page || editorBase}
+              flags={flags}
+              reviews={reviews}
+              focusRequest={focusRequest}
+              onReview={(draft) => {
+                setPage(draft);
+                setDirty(false);
+                setReviews({});
+                setReportVersion((n) => n + 1);
+                go("results");
+              }}
+            />
+            <aside
+              className={dashboardStyles.flagRail}
+              aria-label="Passage review cues"
+            >
+              <h3>Locate a passage</h3>
+              <p>
+                Yellow: review cue. Green: evidence recorded by you. Red: marked
+                for revision. Unflagged text is not certified correct.
+              </p>
+              {flags.slice(0, flagLimit).map((flag) => (
+                <button
+                  type="button"
+                  key={flag.id}
+                  aria-pressed={focusRequest?.blockId === flag.blockId}
+                  onClick={() => go("article", flag.blockId)}
+                >
+                  <strong>
+                    Passage {flag.index + 1} · {flag.label}
+                  </strong>
+                  <span className="mt-1 block">{flag.detail}</span>
+                </button>
+              ))}
+              {!flags.length && (
+                <p>
+                  No retained cue is available. You can still inspect or paste
+                  content and run a review.
+                </p>
+              )}
+              {flags.length > flagLimit && (
+                <button
+                  type="button"
+                  onClick={() => setFlagLimit((n) => n + 20)}
+                >
+                  Show more passage cues
+                </button>
+              )}
+              {page && (
+                <button type="button" onClick={() => go("results")}>
+                  Back to review results
+                </button>
+              )}
+            </aside>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

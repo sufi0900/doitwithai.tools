@@ -91,3 +91,9 @@ Targeted lint also exposed existing unescaped apostrophes in three touched URL t
 Browser preview could not start because the managed command could not resolve `next`.
 No replacement browser server or deployment was introduced.
 Browser editor interactions, responsive visuals, native suggestion behavior, and production imports remain unverified.
+
+## Results-first follow-up
+
+The results dashboard now appears before the optional article review workspace.
+See `docs/citation-dashboard.md` for category navigation, passage highlights, manual decisions, optional editorial review, performance, and validation.
+The editor-first arrangement described in the original revision is superseded by this results-first journey.

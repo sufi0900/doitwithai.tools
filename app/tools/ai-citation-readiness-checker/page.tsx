@@ -95,6 +95,21 @@ const faqs = [
     answer:
       "Export JSON or CSV with action items, scope, and retained opening passages. Reports remain in this session and do not publish website changes.",
   },
+  {
+    question: "What does audit coverage measure?",
+    answer:
+      "Coverage shows how many non-optional checks have evidence. Restrictions can still exist at full coverage. It is not a citation probability.",
+  },
+  {
+    question: "Does recording evidence verify a claim?",
+    answer:
+      "It records your manual decision and updates review progress. AI passage review considers supplied text and notes without independently verifying online facts.",
+  },
+  {
+    question: "When should I open article review?",
+    answer:
+      "Start with the results dashboard. Open article review to locate highlighted passages, inspect evidence cues, or edit a local draft and update the review.",
+  },
 ];
 
 const structuredData = {
@@ -112,10 +127,10 @@ const structuredData = {
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       description: metadata.description,
       featureList: [
-        "Evidence-based action plan and explicit unknown states",
+        "Results-first dashboard with audit coverage and clear evidence states",
         "Live URL analysis with safe public fetch",
-        "Rich text article review with transparent whole-paragraph cues",
-        "Search crawler rules, Google directive review, and CSV or JSON exports",
+        "Separate article review with passage highlights and manual evidence decisions",
+        "Search crawler rules, markup inspection, optional performance tests, and exports",
       ],
       creator: {
         "@type": "Person",
@@ -197,8 +212,9 @@ export default function CitationReadinessPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Review documented access controls and clearly labeled editorial
-              cues. Import a URL into the article editor, or paste your content.
+              Review crawler access, content structure, authorship, and source
+              cues in one dashboard. Open highlighted passages only when you
+              need article review.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
               {[

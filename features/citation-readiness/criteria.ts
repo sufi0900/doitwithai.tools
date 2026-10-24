@@ -58,7 +58,7 @@ export function criterionBasis(id: string): EvidenceBasis {
         "Reviews sourcing and attribution cues. Presence alone cannot establish expertise, originality, or factual accuracy.",
       references: [bing],
     };
-  if (id === "schema")
+  if (id === "schema" || id === "llms")
     return {
       label: "General search guidance",
       explanation:

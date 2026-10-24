@@ -796,7 +796,7 @@
       "id": "ai-citation-readiness-checker",
       "slug": "ai-citation-readiness-checker",
       "name": "AI Citation Readiness Checker",
-      "description": "Review crawler rules, snippet controls, full article content, and source cues. Inspect transparent criteria and export evidence without predicting citations.",
+      "description": "Review crawler access, article structure, claims, authorship, and markup in one dashboard. Locate highlighted passages and record evidence decisions.",
       "categories": [
         "ai-seo",
         "content-writing"
@@ -810,7 +810,9 @@
         "snippet controls",
         "opening paragraphs",
         "article review",
-        "editorial evidence"
+        "editorial evidence",
+        "readiness dashboard",
+        "claim review"
       ],
       "kind": "Deterministic",
       "status": "live",

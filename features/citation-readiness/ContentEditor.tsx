@@ -1,7 +1,15 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { EditorContent, Extension, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import type { Review } from "../content-evidence/analyze";
+import {
+  reviewBlockPositions,
+  locateReviewBlock,
+  normalizePassage,
+} from "./editor-markers";
+import { articleMarkerTones, type PassageFlag } from "./workspace";
 import { Plugin } from "@tiptap/pm/state";
 import { SafeLink } from "../readability/components/rich-text";
 import type { RichDocument } from "../readability/engine/document";
@@ -17,14 +25,42 @@ import editorStyles from "./content-editor.module.css";
 export default function ContentEditor({
   page,
   onReview,
+  reviewPage,
+  flags = [],
+  reviews = {},
+  focusRequest,
 }: {
   page: PageSnapshot;
   onReview: (page: PageSnapshot) => void;
+  reviewPage?: PageSnapshot;
+  flags?: PassageFlag[];
+  reviews?: Record<string, Review>;
+  focusRequest?: { blockId: string; nonce: number } | null;
 }) {
   const [notice, setNotice] = useState(""),
     [dirty, setDirty] = useState(false);
-  const latest = useRef({ page });
-  latest.current = { page };
+  const tones = useMemo(
+    () => articleMarkerTones(flags, reviews),
+    [flags, reviews],
+  );
+  const latest = useRef({
+    page,
+    reviewPage: reviewPage || page,
+    flags,
+    reviews,
+    dirty,
+    tones,
+    focusRequest,
+  });
+  latest.current = {
+    page,
+    reviewPage: reviewPage || page,
+    flags,
+    reviews,
+    dirty,
+    tones,
+    focusRequest,
+  };
   const editor = useEditor(
     {
       immediatelyRender: false,
@@ -49,6 +85,46 @@ export default function ContentEditor({
                   return true;
                 },
                 props: {
+                  decorations(state) {
+                    const current = latest.current;
+                    if (current.dirty) return DecorationSet.empty;
+                    const decorations: Decoration[] = [];
+                    reviewBlockPositions(state.doc).forEach(
+                      (position, index) => {
+                        const block = current.reviewPage.blocks[index];
+                        if (
+                          !block ||
+                          normalizePassage(block.text) !== position.text
+                        )
+                          return;
+                        const tone = current.tones.get(block.id);
+                        const selected =
+                          current.focusRequest?.blockId === block.id;
+                        if (tone || selected)
+                          decorations.push(
+                            Decoration.node(
+                              position.pos,
+                              position.pos + position.size,
+                              {
+                                "data-review-tone": tone || "selected",
+                                "data-citation-selected": selected
+                                  ? "true"
+                                  : "false",
+                                "data-citation-block": block.id,
+                                title: !tone
+                                  ? "Selected passage"
+                                  : tone === "recorded"
+                                    ? "Evidence recorded by you, not independently verified"
+                                    : tone === "revision"
+                                      ? "Marked for revision by you"
+                                      : "Editorial review cue",
+                              },
+                            ),
+                          );
+                      },
+                    );
+                    return DecorationSet.create(state.doc, decorations);
+                  },
                   handlePaste(_, event) {
                     if (
                       (event.clipboardData?.getData("text/html").length || 0) >
@@ -102,6 +178,41 @@ export default function ContentEditor({
     setDirty(false);
     setNotice("");
   }, [editor, page]);
+  useEffect(() => {
+    if (editor)
+      editor.view.dispatch(editor.state.tr.setMeta("citation-markers", true));
+  }, [editor, flags, reviews, reviewPage, dirty, focusRequest]);
+  useEffect(() => {
+    if (!editor || !focusRequest) return;
+    if (dirty) {
+      setNotice(
+        "The draft has changed. Update the review before locating earlier findings.",
+      );
+      return;
+    }
+    const index = (reviewPage || page).blocks.findIndex(
+      (b) => b.id === focusRequest.blockId,
+    );
+    const source = (reviewPage || page).blocks[index];
+    const target = source
+      ? locateReviewBlock(editor.state.doc, index, source.text)
+      : null;
+    if (target !== null) {
+      editor.commands.setTextSelection(target);
+      editor.commands.focus(undefined, { scrollIntoView: false });
+      const dom = editor.view.domAtPos(target).node;
+      const element = dom instanceof Element ? dom : dom.parentElement;
+      element?.scrollIntoView({
+        block: "center",
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+      setNotice(
+        "Selected passage located. Review its highlighted context before editing.",
+      );
+    }
+  }, [editor, focusRequest, page, reviewPage, dirty]);
   function recheck() {
     if (!editor) return;
     try {
@@ -138,16 +249,16 @@ export default function ContentEditor({
       aria-label="Retained article content"
     >
       <span className={styles.eyebrow}>Complete retained content</span>
-      <h2>Inspect your article, then recheck a draft</h2>
+      <h2>Review flagged passages in your article</h2>
       <p className={styles.small}>
-        The URL import fills this editor automatically. Headings and list items
-        remain separate; original styling and media are excluded. Pasted table
-        cells become separate paragraphs.
+        Highlighted passages show editorial cues and your saved decisions.
+        Headings and list items remain separate. Original styling and media are
+        excluded.
       </p>
       <p className={styles.small}>
-        You can also paste formatted content here. Editing supports a local
-        review, with detailed rewriting and evidence decisions kept in dedicated
-        tools.
+        Yellow means review a cue. Green means evidence recorded by you. Red
+        means you marked a revision. These colors do not establish factual
+        accuracy.
       </p>
       <div
         role="group"
@@ -168,7 +279,9 @@ export default function ContentEditor({
           disabled={!editor}
           onClick={recheck}
         >
-          Recheck this draft
+          {page.blocks.length
+            ? "Update review from draft"
+            : "Analyze this article"}
         </button>
         <button
           type="button"
@@ -182,7 +295,7 @@ export default function ContentEditor({
             );
           }}
         >
-          Restore imported content
+          Restore original content
         </button>
         <span className={styles.small}>
           {dirty
@@ -194,8 +307,9 @@ export default function ContentEditor({
         {notice}
       </p>
       <p className={styles.small}>
-        Claims are flagged for evidence review, not automatically fact-checked.
-        No word count or first-sentence pattern proves citation eligibility.
+        Updating the draft resets saved claim decisions for this report. Claims
+        are not automatically fact-checked. No word count or first-sentence
+        pattern proves citation eligibility.
       </p>
     </section>
   );
