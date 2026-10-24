@@ -102,7 +102,7 @@ Live provider and production fetching behavior still require a configured deploy
 ## Follow-up tools
 
 1. Extend existing keyword analysis into keyword coverage and distribution.
-2. Add Content Evidence Review using the same claim cues and manual review model.
+2. Content Evidence Review is available at `/tools/content-evidence-review`, with extended claim cues, source context, saved decisions, and exports.
 3. Add External Link and Source Review with source context, not invented authority scores.
 4. Expand the existing AI Citation Readiness Checker before introducing another overlapping tool.
 5. Reuse the existing schema validator, internal-link finder, and multi-page cannibalization checker.

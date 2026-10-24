@@ -59,7 +59,8 @@
         "readability-checker",
         "schema-markup-generator",
         "core-web-vitals-checker",
-        "llms-txt-generator"
+        "llms-txt-generator",
+        "content-evidence-review"
       ],
       "topics": [
         "on-page",
@@ -100,6 +101,42 @@
       "topics": [
         "technical",
         "on-page"
+      ]
+    },
+    {
+      "id": "content-evidence-review",
+      "slug": "content-evidence-review",
+      "name": "Content Evidence Review",
+      "description": "Flag claims, inspect nearby source candidates, record editorial decisions, and export a practical evidence review.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "claims",
+        "source context",
+        "credibility",
+        "editorial review",
+        "E-E-A-T"
+      ],
+      "kind": "Editorial review",
+      "status": "live",
+      "addedAt": "2026-10-24",
+      "featuredOrder": 4.5,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
+        "ai-citation-readiness-checker",
+        "readability-checker"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
       ]
     },
     {
@@ -346,7 +383,8 @@
         "h1-heading-generator",
         "meta-description-generator",
         "image-alt-text-generator",
-        "keyword-density-checker"
+        "keyword-density-checker",
+        "content-evidence-review"
       ],
       "topics": [
         "writing"
@@ -739,7 +777,8 @@
         "structured-data-validator",
         "llms-txt-generator",
         "readability-checker",
-        "schema-markup-generator"
+        "schema-markup-generator",
+        "content-evidence-review"
       ],
       "topics": [
         "ai-search",

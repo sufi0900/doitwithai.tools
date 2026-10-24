@@ -388,6 +388,12 @@ export class PageCollector {
                   href,
                   text: text.slice(0, 300),
                   rel: frame.attrs.rel || "",
+                  blockId: (() => {
+                    const block = [...this.frames]
+                      .reverse()
+                      .find((f) => BLOCK_TAG.test(f.name));
+                    return block ? `block:${block.order}` : undefined;
+                  })(),
                   main: frame.main,
                 });
               else if (this.links.length >= 1000) this.truncated();

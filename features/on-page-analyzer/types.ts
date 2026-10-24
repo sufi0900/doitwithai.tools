@@ -15,7 +15,12 @@ export type Block = {
   text: string;
   listItem?: number;
 };
-export type PageLink = { href: string; text: string; rel: string };
+export type PageLink = {
+  href: string;
+  text: string;
+  rel: string;
+  blockId?: string;
+};
 export type PageImage = {
   src: string;
   alt: string | null;

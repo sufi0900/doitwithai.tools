@@ -231,6 +231,13 @@ export function EvidenceReview({ page }: { page: PageSnapshot }) {
         Flagged wording may need evidence. This checklist records your review
         and does not verify facts or change measured audit health.
       </p>
+      <p className={styles.muted}>
+        Need source notes and an exportable editorial checklist? Open{" "}
+        <Link href="/tools/content-evidence-review">
+          Content Evidence Review
+        </Link>
+        .
+      </p>
       {claims.length ? (
         <>
           <progress
