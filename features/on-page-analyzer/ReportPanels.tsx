@@ -284,6 +284,13 @@ export function EvidenceReview({ page }: { page: PageSnapshot }) {
       <details className={styles.options}>
         <summary>Extracted external sources</summary>
         <p className={styles.muted}>
+          Inspect anchor wording and link relationships in{" "}
+          <Link href="/tools/external-link-source-review">
+            External Link and Source Review
+          </Link>
+          .
+        </p>
+        <p className={styles.muted}>
           These links are not automatically matched to individual claims.
         </p>
         {linkReport(page)

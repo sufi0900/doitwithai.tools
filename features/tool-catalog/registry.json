@@ -60,7 +60,8 @@
         "schema-markup-generator",
         "core-web-vitals-checker",
         "llms-txt-generator",
-        "content-evidence-review"
+        "content-evidence-review",
+        "external-link-source-review"
       ],
       "topics": [
         "on-page",
@@ -132,7 +133,44 @@
       "relatedToolSlugs": [
         "on-page-ai-seo-analyzer",
         "ai-citation-readiness-checker",
-        "readability-checker"
+        "readability-checker",
+        "external-link-source-review"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
+      ]
+    },
+    {
+      "id": "external-link-source-review",
+      "slug": "external-link-source-review",
+      "name": "External Link and Source Review",
+      "description": "Inspect outbound links, anchor wording, source context, and relationship attributes. Save editorial decisions and export a source review.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "external links",
+        "source review",
+        "anchor text",
+        "nofollow",
+        "sponsored"
+      ],
+      "kind": "Editorial review",
+      "status": "live",
+      "addedAt": "2026-10-24",
+      "featuredOrder": 4.6,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "content-evidence-review",
+        "on-page-ai-seo-analyzer",
+        "internal-link-opportunity-finder"
       ],
       "topics": [
         "on-page",

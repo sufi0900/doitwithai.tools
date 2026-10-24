@@ -34,7 +34,7 @@ Related links connect the analyzer, readability editor, and citation readiness c
 
 ## Next deliveries
 
-1. External Link and Source Review, without invented authority or competitor penalties.
+1. Completed: External Link and Source Review at `/tools/external-link-source-review`. See `docs/external-link-source-review.md`.
 2. Extend the existing keyword checker with keyword coverage and distribution.
 3. Expand the existing citation readiness checker rather than duplicating it.
 

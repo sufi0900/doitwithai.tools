@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-24T01:53:41.405Z",
+  "generated": "2026-10-24T12:46:44.971Z",
   "static_pages": [
     {
       "url": "/",
@@ -107,6 +107,12 @@
     {
       "url": "/tools/content-evidence-review",
       "title": "Content Evidence Review",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/external-link-source-review",
+      "title": "External Link and Source Review",
       "priority": "high",
       "type": "static"
     },
@@ -297,5 +303,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 49
+  "total_pages": 50
 }
