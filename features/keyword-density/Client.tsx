@@ -1,5 +1,6 @@
 "use client";
 import { useDeferredValue, useMemo, useState } from "react";
+import CoveragePanel from "./CoveragePanel";
 import {
   analyze,
   distribution,
@@ -194,13 +195,13 @@ export default function KeywordDensityClient() {
           className="mt-5 block text-sm font-bold"
           htmlFor="density-targets"
         >
-          Target phrases, optional
+          Target phrase plan, optional
           <textarea
             id="density-targets"
             className={field}
             rows={3}
             maxLength={1300}
-            placeholder="One phrase per line, up to ten"
+            placeholder="First line: focus phrase. Following lines: supporting phrases. Up to ten total."
             value={rawTargets}
             onChange={(e) => setRawTargets(e.target.value)}
           />
@@ -319,7 +320,11 @@ export default function KeywordDensityClient() {
             when they make your explanation accurate and clear.
           </p>
         </section>
-        <section className="rounded-[28px] border border-white/20 bg-white p-5 text-slate-950 dark:border-slate-700 dark:bg-[#1D2430] dark:text-white sm:p-7">
+        <section
+          id="keyword-context"
+          tabIndex={-1}
+          className="scroll-mt-28 rounded-[28px] border border-white/20 bg-white p-5 text-slate-950 dark:border-slate-700 dark:bg-[#1D2430] dark:text-white sm:p-7"
+        >
           <h2 className="text-xl font-black">Inspect repetition in context</h2>
           <p className="mt-3 break-words text-sm leading-7 text-slate-500 dark:text-slate-300">
             {selected
@@ -364,6 +369,25 @@ export default function KeywordDensityClient() {
           </p>
         </section>
       </div>
+      <CoveragePanel
+        text={deferred}
+        tokens={report.tokens}
+        targets={targets.values}
+        updating={updating}
+        error={targets.error}
+        onSelect={(phrase) => {
+          setSelected(phrase);
+          const target = document.getElementById("keyword-context");
+          target?.focus({ preventScroll: true });
+          target?.scrollIntoView({
+            block: "start",
+            behavior: globalThis.matchMedia("(prefers-reduced-motion: reduce)")
+              .matches
+              ? "auto"
+              : "smooth",
+          });
+        }}
+      />
     </div>
   );
 }

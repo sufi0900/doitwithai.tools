@@ -10,10 +10,10 @@ import Client from "@/features/keyword-density/Client";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl = "https://doitwithai.tools/tools/keyword-density-checker";
 const description =
-  "Check keyword density and repeated phrases in your text. Inspect paragraph-level frequency, highlight exact matches, and export a CSV report.";
+  "Check keyword density, target phrase coverage, and distribution. Compare body matches with page fields, inspect highlighted context, and export reports.";
 const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Keyword Density Checker", category: "SEO · Content Editing", ctaText: "Count. Inspect. Edit.", features: "Phrase Counts,Context Highlights,Live Counts" })}`;
 export const metadata: Metadata = {
-  title: "Free Keyword Density Checker and Repetition Finder",
+  title: "Free Keyword Density and Coverage Checker",
   description,
   alternates: { canonical: pageUrl },
   openGraph: {
@@ -32,6 +32,18 @@ export const metadata: Metadata = {
 };
 const prose = "mt-4 text-base leading-8 text-slate-600 dark:text-slate-300";
 const faqs = [
+  [
+    "Does keyword coverage measure topical completeness?",
+    "No. It reports exact normalized matches for the phrases you supply. Synonyms and relevant ideas may communicate the same topic without matching those phrases.",
+  ],
+  [
+    "How is distribution measured?",
+    "The body is divided into thirds by word-token position. Each occurrence belongs to the third where it starts. No particular distribution is required.",
+  ],
+  [
+    "Do page titles and headings change the body density?",
+    "Optional page fields are checked separately. They never enter the body denominator. Leave them blank to mark those fields as not supplied.",
+  ],
   [
     "Is there an ideal keyword density?",
     "This tool does not prescribe a percentage. Use frequency to inspect wording, then judge relevance, accuracy, and readability in context.",
@@ -62,7 +74,7 @@ const faqs = [
   ],
   [
     "How long can my article be?",
-    "You can paste up to 150,000 characters. Analysis uses the full supplied text, without AI sampling. Split longer documents into sections.",
+    "You can paste up to 150,000 characters. Counts cover the full supplied text. Split longer documents into sections.",
   ],
   [
     "Does keyword frequency measure search demand?",
@@ -140,6 +152,44 @@ export default function Page() {
         </div>
       </section>
       <div className="mx-auto max-w-5xl space-y-14 px-4 py-16 sm:px-6">
+        <section>
+          <h2 className="text-3xl font-black">
+            Review your phrase plan across the page
+          </h2>
+          <p className={prose}>
+            Add one focus phrase first, followed by supporting phrases. The
+            coverage workspace shows which targets appear in the body and
+            supplied page fields.
+          </p>
+          <p className={prose}>
+            Paste the title, description, and headings into the optional fields.
+            These placement checks stay separate from body frequency.
+          </p>
+          <p className={prose}>
+            Use the distribution cards to inspect the beginning, middle, and
+            end. A technical definition may repeat a phrase naturally within one
+            section.
+          </p>
+          <p className={prose}>
+            Occurrences per 100 words count matches. Matched-word coverage
+            counts distinct body words occupied by your plan, without
+            double-counting overlaps.
+          </p>
+          <p className={prose}>
+            For example, “AI writing tools” occupies three words. A second
+            target such as “writing tools” can overlap those words without
+            increasing their combined coverage.
+          </p>
+          <p className={prose}>
+            Missing exact wording is a prompt to read the passage. It does not
+            prove that a topic is missing or needs another keyword insertion.
+          </p>
+          <p className={prose}>
+            Export the coverage CSV to keep phrase counts, first-match
+            positions, paragraph presence, distribution, and optional field
+            matches together.
+          </p>
+        </section>
         <section>
           <h2 className="text-3xl font-black">How to check keyword density</h2>
           <ol className="mt-6 grid gap-5 sm:grid-cols-3">

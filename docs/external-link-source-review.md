@@ -39,4 +39,4 @@ TypeScript and targeted lint passed, with an existing image-element warning in t
 The production build passed. Rendered output verified canonical metadata, one H1, description, social image, input controls, application schema, sitemap membership, and analyzer links.
 Browser interactions and live production URL imports remain unverified.
 
-Queue state: this delivery is complete. Continue with keyword coverage and distribution next; do not recreate this tool.
+Queue state: this delivery is complete. Keyword coverage and distribution is also complete; see `docs/keyword-coverage.md`. Continue with citation readiness next.

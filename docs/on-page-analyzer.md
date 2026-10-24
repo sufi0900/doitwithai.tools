@@ -101,7 +101,7 @@ Live provider and production fetching behavior still require a configured deploy
 
 ## Follow-up tools
 
-1. Extend existing keyword analysis into keyword coverage and distribution.
+1. Completed: the existing Keyword Density Checker now includes phrase-plan coverage, optional page-field matching, word-position distribution, and a coverage CSV.
 2. Content Evidence Review is available at `/tools/content-evidence-review`, with extended claim cues, source context, saved decisions, and exports.
 3. External Link and Source Review is available at `/tools/external-link-source-review`, with per-occurrence context, relationship guidance, decisions, and exports.
 4. Expand the existing AI Citation Readiness Checker before introducing another overlapping tool.

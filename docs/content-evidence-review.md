@@ -35,7 +35,7 @@ Related links connect the analyzer, readability editor, and citation readiness c
 ## Next deliveries
 
 1. Completed: External Link and Source Review at `/tools/external-link-source-review`. See `docs/external-link-source-review.md`.
-2. Extend the existing keyword checker with keyword coverage and distribution.
+2. Completed: the existing `/tools/keyword-density-checker` now includes keyword coverage and distribution. See `docs/keyword-coverage.md`.
 3. Expand the existing citation readiness checker rather than duplicating it.
 
 ## Research and validation

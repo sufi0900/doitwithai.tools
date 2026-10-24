@@ -455,9 +455,17 @@ export function ContentReport({
           </p>
         )}
         <p className={styles.muted}>
-          Distribution uses three equal groups of retained content blocks.
+          Distribution here uses three equal groups of retained content blocks.
           Related concepts and natural wording may communicate relevance without
           exact matches.
+        </p>
+        <p className={styles.muted}>
+          For word-position distribution and separate title, description, and
+          heading checks, open the{" "}
+          <Link href="/tools/keyword-density-checker#keyword-coverage">
+            Keyword Density and Coverage Checker
+          </Link>
+          .
         </p>
         <Link
           href="/tools/keyword-cannibalization-finder"
