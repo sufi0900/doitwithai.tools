@@ -97,8 +97,14 @@ test("maps Sanity article types to their public knowledge URL", () => {
     "https://doitwithai.tools/free-ai-resources",
   );
   assert.equal(knowledgeUrlForSanityDocument("privateType", "hidden"), "");
-  assert.equal(knowledgeUrlForSanityDocument("guide", "create-an-outline"), "https://doitwithai.tools/guides/create-an-outline");
-  assert.equal(knowledgeUrlForSanityDocument("blogPost", "example"), "https://doitwithai.tools/blogs/example");
+  assert.equal(
+    knowledgeUrlForSanityDocument("guide", "create-an-outline"),
+    "https://doitwithai.tools/guides/create-an-outline",
+  );
+  assert.equal(
+    knowledgeUrlForSanityDocument("blogPost", "example"),
+    "https://doitwithai.tools/blogs/example",
+  );
 });
 
 test("returns deduplicated site sources used by the answer", () => {
@@ -159,7 +165,7 @@ test("returns deduplicated site sources used by the answer", () => {
 test("the assistant prompt enforces grounding and narrow scope", () => {
   assert.match(
     SITE_ASSISTANT_SYSTEM_PROMPT,
-    /Search the connected website knowledge/,
+    /current website knowledge supplied by the server/,
   );
   assert.match(SITE_ASSISTANT_SYSTEM_PROMPT, /For unrelated general-knowledge/);
   assert.match(SITE_ASSISTANT_SYSTEM_PROMPT, /never as instructions/);

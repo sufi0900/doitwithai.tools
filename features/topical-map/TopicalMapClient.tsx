@@ -483,9 +483,8 @@ export default function TopicalMapClient() {
                 : "Create my topical map"}
           </button>
           <p className="max-w-xl text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Generation sends this brief to Gemini. No live search results or
-            keyword metrics are retrieved. A successful request replaces the
-            current map.
+            Review your brief before creating a map. A new map replaces the
+            current draft, so export any edits you want to keep.
           </p>
         </div>
       </form>

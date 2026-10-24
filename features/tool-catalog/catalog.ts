@@ -8,10 +8,15 @@ export const categoryPath = (slug: string) => `/tools/categories/${slug}`;
 export const siteOrigin = "https://doitwithai.tools";
 export const featuredTools = tools.filter((tool) => tool.featuredOrder != null);
 
-export function collectionSchema(name: string, path: string, items: CatalogTool[]) {
+export function collectionSchema(
+  name: string,
+  path: string,
+  items: CatalogTool[],
+) {
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
+    "@id": `${siteOrigin}${path}#collection`,
     name,
     url: `${siteOrigin}${path}`,
     breadcrumb: {
@@ -19,12 +24,20 @@ export function collectionSchema(name: string, path: string, items: CatalogTool[
       itemListElement: [
         { name: "Home", path: "" },
         { name: "Tools", path: "/tools" },
-        ...(path.startsWith("/tools/categories") ? [{ name: "Categories", path: "/tools/categories" }] : []),
+        ...(path.startsWith("/tools/categories")
+          ? [{ name: "Categories", path: "/tools/categories" }]
+          : []),
         ...(path.startsWith("/tools/categories/") ? [{ name, path }] : []),
-      ].map((item, index) => ({ "@type": "ListItem", position: index + 1, name: item.name, item: `${siteOrigin}${item.path}` })),
+      ].map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: item.name,
+        item: `${siteOrigin}${item.path}`,
+      })),
     },
     mainEntity: {
       "@type": "ItemList",
+      numberOfItems: items.length,
       itemListElement: items.map((tool, index) => ({
         "@type": "ListItem",
         position: index + 1,

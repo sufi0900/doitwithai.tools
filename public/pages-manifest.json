@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-03T18:10:13.506Z",
+  "generated": "2026-10-24T01:53:41.405Z",
   "static_pages": [
     {
       "url": "/",
@@ -75,6 +75,12 @@
       "type": "static"
     },
     {
+      "url": "/prompts",
+      "title": "AI Prompt Library",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories",
       "title": "Tool Categories",
       "priority": "medium",
@@ -84,6 +90,24 @@
       "url": "/guides",
       "title": "Practical Guides",
       "priority": "medium",
+      "type": "static"
+    },
+    {
+      "url": "/tools/on-page-ai-seo-analyzer",
+      "title": "On-page AI SEO Analyzer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/structured-data-validator",
+      "title": "Structured Data Validator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/content-evidence-review",
+      "title": "Content Evidence Review",
+      "priority": "high",
       "type": "static"
     },
     {
@@ -117,6 +141,150 @@
       "type": "static"
     },
     {
+      "url": "/tools/article-outline-generator",
+      "title": "Article Outline Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/readability-checker",
+      "title": "Readability Checker and Improver",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/image-alt-text-generator",
+      "title": "Image Alt Text Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/keyword-clustering-tool",
+      "title": "Keyword Clustering Tool",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/topical-map-generator",
+      "title": "AI Topical Map Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/internal-link-opportunity-finder",
+      "title": "Internal Link Opportunity Finder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/search-intent-checker",
+      "title": "Search Intent Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/seo-content-brief-generator",
+      "title": "SEO Content Brief Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-faq-generator",
+      "title": "AI FAQ Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/keyword-density-checker",
+      "title": "Keyword Density and Repetition Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/robots-txt-generator",
+      "title": "Robots.txt Generator & AI Crawler Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/llms-txt-generator",
+      "title": "llms.txt Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-citation-readiness-checker",
+      "title": "AI Citation Readiness Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/gsc-striking-distance-finder",
+      "title": "GSC Striking Distance Finder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/indexnow-key-generator",
+      "title": "IndexNow Key Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/keyword-cannibalization-finder",
+      "title": "Keyword Cannibalization Finder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/sitemap-xml-generator",
+      "title": "Sitemap XML Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/redirect-rule-generator",
+      "title": "Redirect Rule Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/og-twitter-preview-generator",
+      "title": "OG & Twitter Card Preview Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/hreflang-generator",
+      "title": "Hreflang Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/core-web-vitals-checker",
+      "title": "Core Web Vitals Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/serp-rich-result-preview-generator",
+      "title": "SERP & Rich Result Preview",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/entity-sameas-finder",
+      "title": "Entity & sameAs Finder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/heading-structure-analyzer",
+      "title": "Heading Structure Analyzer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -129,5 +297,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 21
+  "total_pages": 49
 }

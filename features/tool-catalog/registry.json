@@ -22,12 +22,137 @@
   ],
   "tools": [
     {
+      "id": "on-page-ai-seo-analyzer",
+      "slug": "on-page-ai-seo-analyzer",
+      "name": "On-page AI SEO Analyzer",
+      "description": "Audit your page in one workspace. Inspect evidence, improve selected text, review draft changes, and export a practical action plan.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "on-page SEO",
+        "page audit",
+        "AI SEO",
+        "content optimization"
+      ],
+      "kind": "Audit & improve",
+      "status": "live",
+      "addedAt": "2026-10-22",
+      "featuredOrder": 0,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        },
+        {
+          "path": "/ai-seo/meta-title",
+          "title": "Write useful page titles"
+        }
+      ],
+      "relatedToolSlugs": [
+        "structured-data-validator",
+        "heading-structure-analyzer",
+        "meta-title-generator",
+        "meta-description-generator",
+        "internal-link-opportunity-finder",
+        "readability-checker",
+        "schema-markup-generator",
+        "core-web-vitals-checker",
+        "llms-txt-generator",
+        "content-evidence-review"
+      ],
+      "topics": [
+        "on-page",
+        "technical",
+        "ai-search",
+        "writing"
+      ]
+    },
+    {
+      "id": "structured-data-validator",
+      "slug": "structured-data-validator",
+      "name": "Structured Data Validator",
+      "description": "Inspect individual JSON-LD entities, review supported field checks, correct source drafts, and export reviewed structured data.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "schema validation",
+        "JSON-LD",
+        "structured data",
+        "technical SEO"
+      ],
+      "kind": "Validate & correct",
+      "status": "live",
+      "addedAt": "2026-10-22",
+      "featuredOrder": 2.5,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/schema-markup-optimization",
+          "title": "Understand useful structured data"
+        }
+      ],
+      "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
+        "schema-markup-generator",
+        "serp-rich-result-preview-generator"
+      ],
+      "topics": [
+        "technical",
+        "on-page"
+      ]
+    },
+    {
+      "id": "content-evidence-review",
+      "slug": "content-evidence-review",
+      "name": "Content Evidence Review",
+      "description": "Flag claims, inspect nearby source candidates, record editorial decisions, and export a practical evidence review.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "claims",
+        "source context",
+        "credibility",
+        "editorial review",
+        "E-E-A-T"
+      ],
+      "kind": "Editorial review",
+      "status": "live",
+      "addedAt": "2026-10-24",
+      "featuredOrder": 4.5,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
+        "ai-citation-readiness-checker",
+        "readability-checker"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
+      ]
+    },
+    {
       "id": "meta-title-generator",
       "slug": "meta-title-generator",
       "name": "Meta Title Generator",
       "description": "Compare AI-assisted title ideas with pixel checks and a search-result preview.",
-      "categories": ["ai-seo", "content-writing"],
-      "tags": ["title tags", "SERP", "content"],
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "title tags",
+        "SERP",
+        "content"
+      ],
       "legacyPath": "/ai-seo/meta-title-generator",
       "kind": "AI-assisted",
       "status": "live",
@@ -40,10 +165,15 @@
         }
       ],
       "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
         "slug-generator",
         "schema-markup-generator",
         "meta-description-generator",
         "h1-heading-generator"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
       ]
     },
     {
@@ -51,8 +181,15 @@
       "slug": "slug-generator",
       "name": "Slug Generator",
       "description": "Create short, readable URL slugs that reflect your page's subject and intent.",
-      "categories": ["ai-seo", "content-writing"],
-      "tags": ["URLs", "permalinks", "content"],
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "URLs",
+        "permalinks",
+        "content"
+      ],
       "legacyPath": "/ai-seo/slug-url-generator",
       "kind": "AI-assisted",
       "status": "live",
@@ -69,6 +206,9 @@
         "schema-markup-generator",
         "meta-description-generator",
         "h1-heading-generator"
+      ],
+      "topics": [
+        "writing"
       ]
     },
     {
@@ -76,8 +216,14 @@
       "slug": "schema-markup-generator",
       "name": "Schema Markup Generator",
       "description": "Prepare and validate structured data for your pages. Review the output before adding it to your website.",
-      "categories": ["ai-seo"],
-      "tags": ["JSON-LD", "structured data", "technical SEO"],
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "JSON-LD",
+        "structured data",
+        "technical SEO"
+      ],
       "legacyPath": "/ai-seo/schema-markup-generator",
       "kind": "AI-assisted",
       "status": "live",
@@ -90,10 +236,14 @@
         }
       ],
       "relatedToolSlugs": [
+        "structured-data-validator",
         "meta-title-generator",
         "slug-generator",
         "meta-description-generator",
         "h1-heading-generator"
+      ],
+      "topics": [
+        "technical"
       ]
     },
     {
@@ -101,8 +251,14 @@
       "slug": "meta-description-generator",
       "name": "Meta Description Generator",
       "description": "Draft and compare page-specific meta descriptions with character checks and an illustrative preview.",
-      "categories": ["ai-seo", "content-writing"],
-      "tags": ["snippets", "content"],
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "snippets",
+        "content"
+      ],
       "kind": "AI-assisted",
       "status": "live",
       "addedAt": "2026-10-03",
@@ -113,15 +269,29 @@
           "title": "How to write meta descriptions"
         }
       ],
-      "relatedToolSlugs": ["meta-title-generator", "h1-heading-generator"]
+      "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
+        "meta-title-generator",
+        "h1-heading-generator"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
+      ]
     },
     {
       "id": "h1-heading-generator",
       "slug": "h1-heading-generator",
       "name": "H1 Heading Generator",
       "description": "Create and compare clear main headings based on the content your page actually offers.",
-      "categories": ["ai-seo", "content-writing"],
-      "tags": ["headings", "content"],
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "headings",
+        "content"
+      ],
       "kind": "AI-assisted",
       "status": "live",
       "addedAt": "2026-10-03",
@@ -132,15 +302,29 @@
           "title": "How to write H1 headings"
         }
       ],
-      "relatedToolSlugs": ["meta-title-generator", "meta-description-generator"]
+      "relatedToolSlugs": [
+        "meta-title-generator",
+        "meta-description-generator"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
+      ]
     },
     {
       "id": "article-outline-generator",
       "slug": "article-outline-generator",
       "name": "Article Outline Generator",
       "description": "Shape an article plan with heading alternatives, section goals, evidence prompts, and editable H2/H3 structure.",
-      "categories": ["ai-seo", "content-writing"],
-      "tags": ["outlines", "article planning", "headings"],
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "outlines",
+        "article planning",
+        "headings"
+      ],
       "kind": "AI-assisted",
       "status": "live",
       "addedAt": "2026-10-03",
@@ -161,16 +345,29 @@
         "meta-description-generator",
         "image-alt-text-generator",
         "keyword-clustering-tool",
-        "topical-map-generator"
+        "topical-map-generator",
+        "search-intent-checker",
+        "seo-content-brief-generator",
+        "ai-faq-generator"
+      ],
+      "topics": [
+        "writing"
       ]
     },
     {
       "id": "readability-checker",
       "slug": "readability-checker",
       "name": "Readability Checker and Improver",
-      "description": "Inspect long passages locally and compare editable AI revisions while reviewing meaning and important details.",
-      "categories": ["ai-seo", "content-writing"],
-      "tags": ["readability", "editing", "plain language"],
+      "description": "Check readability with live highlights, an estimated grade, and one-click fixes. Compare optional AI revisions for selected text.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "readability",
+        "editing",
+        "plain language"
+      ],
       "kind": "AI-assisted",
       "status": "live",
       "addedAt": "2026-10-04",
@@ -185,7 +382,12 @@
         "article-outline-generator",
         "h1-heading-generator",
         "meta-description-generator",
-        "image-alt-text-generator"
+        "image-alt-text-generator",
+        "keyword-density-checker",
+        "content-evidence-review"
+      ],
+      "topics": [
+        "writing"
       ]
     },
     {
@@ -193,8 +395,15 @@
       "slug": "image-alt-text-generator",
       "name": "Image Alt Text Generator",
       "description": "Draft image alternatives from uploads or descriptions, consider page purpose, and review editable wording before publishing.",
-      "categories": ["ai-seo", "content-writing"],
-      "tags": ["images", "alt text", "accessibility"],
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "images",
+        "alt text",
+        "accessibility"
+      ],
       "kind": "AI-assisted",
       "status": "live",
       "addedAt": "2026-10-04",
@@ -209,6 +418,10 @@
         "readability-checker",
         "article-outline-generator",
         "meta-description-generator"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
       ]
     },
     {
@@ -216,8 +429,15 @@
       "slug": "keyword-clustering-tool",
       "name": "Keyword Clustering Tool",
       "description": "Group supplied keywords by reader task or topic, refine memberships, and export an editable content plan.",
-      "categories": ["ai-seo", "content-writing"],
-      "tags": ["keywords", "clustering", "content planning"],
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "keywords",
+        "clustering",
+        "content planning"
+      ],
       "kind": "AI-assisted",
       "status": "live",
       "addedAt": "2026-10-04",
@@ -232,7 +452,14 @@
         "article-outline-generator",
         "h1-heading-generator",
         "meta-title-generator",
-        "topical-map-generator"
+        "topical-map-generator",
+        "search-intent-checker",
+        "seo-content-brief-generator",
+        "keyword-density-checker"
+      ],
+      "topics": [
+        "keywords",
+        "writing"
       ]
     },
     {
@@ -240,8 +467,15 @@
       "slug": "topical-map-generator",
       "name": "AI Topical Map Generator",
       "description": "Explore an editable topic hierarchy from a seed or brief, plan pillars and supporting tasks, and keep keyword metrics clearly unverified.",
-      "categories": ["ai-seo", "content-writing"],
-      "tags": ["topical maps", "content planning", "keyword ideas"],
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "topical maps",
+        "content planning",
+        "keyword ideas"
+      ],
       "kind": "AI-assisted",
       "status": "live",
       "addedAt": "2026-10-04",
@@ -259,8 +493,599 @@
       "relatedToolSlugs": [
         "keyword-clustering-tool",
         "article-outline-generator",
-        "h1-heading-generator"
+        "h1-heading-generator",
+        "search-intent-checker"
+      ],
+      "topics": [
+        "keywords",
+        "writing"
       ]
+    },
+    {
+      "id": "internal-link-opportunity-finder",
+      "slug": "internal-link-opportunity-finder",
+      "name": "Internal Link Opportunity Finder",
+      "description": "Discover relevant website pages and review exact anchor placements, explanations, and bounded page coverage.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "internal links",
+        "anchors",
+        "content optimization"
+      ],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-14",
+      "featuredOrder": 12,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research and content planning"
+        }
+      ],
+      "relatedToolSlugs": [
+        "article-outline-generator",
+        "keyword-clustering-tool",
+        "topical-map-generator"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
+      ]
+    },
+    {
+      "id": "search-intent-checker",
+      "slug": "search-intent-checker",
+      "name": "Search Intent Checker",
+      "description": "Interpret keyword intent, inspect reader tasks and supporting cues, and plan suitable page formats without invented search metrics.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "search intent",
+        "keyword intent",
+        "content planning"
+      ],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-15",
+      "featuredOrder": 13,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research and planning with ChatGPT"
+        },
+        {
+          "path": "/ai-seo/chatgpt-target-audience-research",
+          "title": "Understand reader needs and audience context"
+        },
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Separate AI assistance from search visibility outcomes"
+        }
+      ],
+      "relatedToolSlugs": [
+        "keyword-clustering-tool",
+        "article-outline-generator",
+        "meta-title-generator",
+        "internal-link-opportunity-finder",
+        "seo-content-brief-generator",
+        "ai-faq-generator"
+      ],
+      "topics": [
+        "keywords",
+        "writing"
+      ]
+    },
+    {
+      "id": "seo-content-brief-generator",
+      "slug": "seo-content-brief-generator",
+      "name": "SEO Content Brief Generator",
+      "description": "Create an editable writer handoff with reader goals, section instructions, research gaps, and suggested internal links.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "content briefs",
+        "writer instructions",
+        "content planning"
+      ],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-15",
+      "featuredOrder": 14,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-target-audience-research",
+          "title": "Understand your intended reader"
+        },
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research and planning"
+        }
+      ],
+      "relatedToolSlugs": [
+        "search-intent-checker",
+        "article-outline-generator",
+        "internal-link-opportunity-finder",
+        "readability-checker",
+        "ai-faq-generator"
+      ],
+      "topics": [
+        "writing"
+      ]
+    },
+    {
+      "id": "ai-faq-generator",
+      "slug": "ai-faq-generator",
+      "name": "AI FAQ Generator",
+      "description": "Draft FAQs from your text, inspect matched source quotes, identify research gaps, and export only reviewed answers.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "FAQs",
+        "questions and answers",
+        "source quotes"
+      ],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-17",
+      "featuredOrder": 15,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-target-audience-research",
+          "title": "Understand reader needs before writing FAQs"
+        },
+        {
+          "path": "/ai-seo/ai-readability-tools",
+          "title": "Write clear answers without losing meaning"
+        }
+      ],
+      "relatedToolSlugs": [
+        "seo-content-brief-generator",
+        "search-intent-checker",
+        "article-outline-generator",
+        "readability-checker"
+      ],
+      "topics": [
+        "writing"
+      ]
+    },
+    {
+      "id": "keyword-density-checker",
+      "slug": "keyword-density-checker",
+      "name": "Keyword Density and Repetition Checker",
+      "description": "Count keywords and repeated phrases, inspect paragraph-level frequency, highlight matches, and export a CSV report.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "keyword density",
+        "keyword frequency",
+        "repetition"
+      ],
+      "kind": "Content checker",
+      "status": "live",
+      "addedAt": "2026-10-18",
+      "featuredOrder": 16,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/ai-readability-tools",
+          "title": "Improve readability without losing meaning"
+        },
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Plan relevant keywords and reader tasks"
+        }
+      ],
+      "relatedToolSlugs": [
+        "readability-checker",
+        "search-intent-checker",
+        "keyword-clustering-tool",
+        "seo-content-brief-generator"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
+      ]
+    },
+    {
+      "id": "robots-txt-generator",
+      "slug": "robots-txt-generator",
+      "name": "Robots.txt Generator & AI Crawler Checker",
+      "description": "Build or validate robots.txt with a live access matrix for 14 named AI crawlers, plus fetch-and-check for a live site.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "robots.txt",
+        "AI crawlers",
+        "GEO",
+        "technical SEO"
+      ],
+      "kind": "Deterministic",
+      "status": "live",
+      "addedAt": "2026-10-19",
+      "featuredOrder": 17,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "llms-txt-generator",
+        "schema-markup-generator",
+        "ai-citation-readiness-checker"
+      ],
+      "topics": [
+        "technical"
+      ]
+    },
+    {
+      "id": "llms-txt-generator",
+      "slug": "llms-txt-generator",
+      "name": "llms.txt Generator",
+      "description": "Build a spec-compliant llms.txt file by hand or imported from your sitemap.xml, with a validation checklist, copy, and download.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "llms.txt",
+        "AI search",
+        "GEO",
+        "technical SEO"
+      ],
+      "kind": "Deterministic",
+      "status": "live",
+      "addedAt": "2026-10-19",
+      "featuredOrder": 18,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "schema-markup-generator",
+        "slug-generator",
+        "meta-title-generator"
+      ],
+      "topics": [
+        "ai-search"
+      ]
+    },
+    {
+      "id": "ai-citation-readiness-checker",
+      "slug": "ai-citation-readiness-checker",
+      "name": "AI Citation Readiness Checker",
+      "description": "Review content readiness with a structural checklist, section-opening evidence, author details, and practical editorial suggestions.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "AI search",
+        "GEO",
+        "citations",
+        "content audit"
+      ],
+      "kind": "Deterministic",
+      "status": "live",
+      "addedAt": "2026-10-19",
+      "featuredOrder": 19,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
+        "structured-data-validator",
+        "llms-txt-generator",
+        "readability-checker",
+        "schema-markup-generator",
+        "content-evidence-review"
+      ],
+      "topics": [
+        "ai-search",
+        "writing"
+      ]
+    },
+    {
+      "id": "gsc-striking-distance-finder",
+      "slug": "gsc-striking-distance-finder",
+      "name": "GSC Striking Distance Finder",
+      "description": "Find search queries close to stronger visibility using your Search Console CSV export.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "search visibility"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 19,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "keyword-cannibalization-finder",
+        "meta-title-generator"
+      ],
+      "topics": [
+        "keywords"
+      ]
+    },
+    {
+      "id": "indexnow-key-generator",
+      "slug": "indexnow-key-generator",
+      "name": "IndexNow Key Generator",
+      "description": "Create an IndexNow key, verify its published file, and submit changed URLs.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "search visibility"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 20,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "sitemap-xml-generator",
+        "robots-txt-generator"
+      ],
+      "topics": [
+        "technical"
+      ]
+    },
+    {
+      "id": "keyword-cannibalization-finder",
+      "slug": "keyword-cannibalization-finder",
+      "name": "Keyword Cannibalization Finder",
+      "description": "Review queries shared by multiple pages and identify overlap worth investigating.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "search visibility"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 21,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "gsc-striking-distance-finder",
+        "internal-link-opportunity-finder"
+      ],
+      "topics": [
+        "keywords"
+      ]
+    },
+    {
+      "id": "sitemap-xml-generator",
+      "slug": "sitemap-xml-generator",
+      "name": "Sitemap XML Generator",
+      "description": "Create sitemap files from URL lists, or validate an existing sitemap.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 22,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "robots-txt-generator",
+        "indexnow-key-generator"
+      ],
+      "topics": [
+        "technical"
+      ]
+    },
+    {
+      "id": "redirect-rule-generator",
+      "slug": "redirect-rule-generator",
+      "name": "Redirect Rule Generator",
+      "description": "Generate redirect rules for your hosting platform and check for loops and chains.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 23,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "sitemap-xml-generator",
+        "slug-generator"
+      ],
+      "topics": [
+        "technical"
+      ]
+    },
+    {
+      "id": "og-twitter-preview-generator",
+      "slug": "og-twitter-preview-generator",
+      "name": "OG & Twitter Card Preview Generator",
+      "description": "Preview social cards, review image dimensions, and prepare sharing tags.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 24,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "meta-title-generator",
+        "meta-description-generator"
+      ],
+      "topics": [
+        "social"
+      ]
+    },
+    {
+      "id": "hreflang-generator",
+      "slug": "hreflang-generator",
+      "name": "Hreflang Generator",
+      "description": "Build reciprocal language and region annotations and review existing tags.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 25,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "sitemap-xml-generator",
+        "robots-txt-generator"
+      ],
+      "topics": [
+        "technical"
+      ]
+    },
+    {
+      "id": "core-web-vitals-checker",
+      "slug": "core-web-vitals-checker",
+      "name": "Core Web Vitals Checker",
+      "description": "Review mobile and desktop performance with field measurements and lab results.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "technical SEO"
+      ],
+      "kind": "SEO tool",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 26,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "ai-citation-readiness-checker",
+        "robots-txt-generator"
+      ],
+      "topics": [
+        "technical"
+      ]
+    },
+    {
+      "id": "serp-rich-result-preview-generator",
+      "slug": "serp-rich-result-preview-generator",
+      "name": "SERP & Rich Result Preview",
+      "description": "Preview search snippets and inspect supported structured data before publishing.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "SERP",
+        "structured data"
+      ],
+      "kind": "Utility",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 27,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "structured-data-validator",
+        "on-page-ai-seo-analyzer",
+        "meta-title-generator",
+        "schema-markup-generator"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
+      ]
+    },
+    {
+      "id": "entity-sameas-finder",
+      "slug": "entity-sameas-finder",
+      "name": "Entity & sameAs Finder",
+      "description": "Find Wikidata entities, verify profile links, and build sameAs structured data.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "entities",
+        "sameAs"
+      ],
+      "kind": "Utility",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 28,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "schema-markup-generator",
+        "ai-citation-readiness-checker"
+      ],
+      "topics": [
+        "ai-search",
+        "writing"
+      ]
+    },
+    {
+      "id": "heading-structure-analyzer",
+      "slug": "heading-structure-analyzer",
+      "name": "Heading Structure Analyzer",
+      "description": "Check a webpage URL, HTML, or Markdown for heading hierarchy, skipped levels, duplicates, and target phrase placement.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "headings",
+        "content structure"
+      ],
+      "kind": "Utility",
+      "status": "live",
+      "addedAt": "2026-10-20",
+      "featuredOrder": 29,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "on-page-ai-seo-analyzer",
+        "h1-heading-generator",
+        "readability-checker"
+      ],
+      "topics": [
+        "on-page",
+        "writing"
+      ]
+    }
+  ],
+  "topics": [
+    {
+      "id": "on-page",
+      "name": "On-page SEO"
+    },
+    {
+      "id": "technical",
+      "name": "Technical SEO"
+    },
+    {
+      "id": "keywords",
+      "name": "Keyword research"
+    },
+    {
+      "id": "ai-search",
+      "name": "AI search"
+    },
+    {
+      "id": "social",
+      "name": "Social media"
+    },
+    {
+      "id": "writing",
+      "name": "Content writing"
     }
   ]
 }
