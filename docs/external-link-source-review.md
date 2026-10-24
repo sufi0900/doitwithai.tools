@@ -3,7 +3,7 @@
 Delivery status: implemented. Route: `/tools/external-link-source-review`.
 
 This completes the first queued delivery after Content Evidence Review.
-Next: extend the existing keyword checker with coverage and distribution, then expand the citation readiness checker.
+The keyword coverage and citation readiness follow-up deliveries are now complete.
 
 ## Behavior and limits
 
@@ -39,4 +39,4 @@ TypeScript and targeted lint passed, with an existing image-element warning in t
 The production build passed. Rendered output verified canonical metadata, one H1, description, social image, input controls, application schema, sitemap membership, and analyzer links.
 Browser interactions and live production URL imports remain unverified.
 
-Queue state: this delivery is complete. Keyword coverage and distribution is also complete; see `docs/keyword-coverage.md`. Continue with citation readiness next.
+Queue state: this delivery is complete. Keyword coverage and distribution is also complete; see `docs/keyword-coverage.md`. Citation readiness is also complete; see `docs/citation-readiness-expansion.md`.

@@ -796,7 +796,7 @@
       "id": "ai-citation-readiness-checker",
       "slug": "ai-citation-readiness-checker",
       "name": "AI Citation Readiness Checker",
-      "description": "Review content readiness with a structural checklist, section-opening evidence, author details, and practical editorial suggestions.",
+      "description": "Review opening paragraphs, search crawler rules, snippet controls, and source cues. Export an evidence-based action plan with clear limits.",
       "categories": [
         "ai-seo",
         "content-writing"
@@ -805,7 +805,10 @@
         "AI search",
         "GEO",
         "citations",
-        "content audit"
+        "content audit",
+        "crawler access",
+        "snippet controls",
+        "opening paragraphs"
       ],
       "kind": "Deterministic",
       "status": "live",
@@ -818,11 +821,14 @@
         "llms-txt-generator",
         "readability-checker",
         "schema-markup-generator",
-        "content-evidence-review"
+        "content-evidence-review",
+        "external-link-source-review",
+        "keyword-density-checker"
       ],
       "topics": [
         "ai-search",
-        "writing"
+        "writing",
+        "on-page"
       ]
     },
     {

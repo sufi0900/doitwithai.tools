@@ -21,7 +21,7 @@ const pageUrl = "https://doitwithai.tools/tools/ai-citation-readiness-checker";
 export const metadata: Metadata = {
   title: "AI Citation Readiness Checker | Free GEO Tool",
   description:
-    "Review a page's answer placement, section openings, authorship clues, and supporting evidence. Inspect content readiness without predicting AI citations.",
+    "Review opening paragraphs, crawler rules, snippet controls, and sourcing cues. Export an evidence-based action plan without predicting AI citations.",
   keywords: [
     "AI citation checker",
     "answer engine optimization",
@@ -70,24 +70,29 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
-    question: "Does this check whether my page has been cited?",
+    question: "Does this tool detect actual AI citations?",
     answer:
-      "No. This is a page-structure review, not a citation tracker. It reports which structural checks passed and which need attention.",
+      "No. It reviews extracted content and access evidence. It cannot measure citation likelihood, factual accuracy, authority, or actual indexing.",
   },
   {
-    question: "Can I review the results before using them?",
+    question: "What can I review before publishing?",
     answer:
-      "Yes. Review the output and adjust it for your website before copying, downloading, or publishing it.",
+      "Paste a draft to inspect complete opening paragraphs and editorial cues. Paste HTML for page metadata. Published access requires a public URL.",
   },
   {
-    question: "Why can't some checks run on pasted text?",
+    question: "Why are some checks not established?",
     answer:
-      "Author bylines, publish dates, outbound links, and JSON-LD only exist in a page's live HTML and metadata. Pasted text is scored on structure and clarity; headings, lists, paragraph length, and opening-sentence patterns; using # and - as lightweight Markdown hints.",
+      "Drafts lack live response headers and robots policies. Partial HTML can omit evidence. Missing evidence stays unknown rather than becoming a pass.",
   },
   {
-    question: "What does a low score actually mean?",
+    question: "Do I need special AI markup or a fixed answer length?",
     answer:
-      "It highlights completed structural checks worth reviewing. Optional numbers, question headings, lists, external links, and structured data do not add points. It does not mean the content is inaccurate or low quality, and a high score does not mean it will be cited.",
+      "No special AI schema or fixed answer length guarantees inclusion. Review useful answers, sourcing, technical access, and the needs of your readers.",
+  },
+  {
+    question: "Can I save the review?",
+    answer:
+      "Export JSON or CSV with action items, scope, and retained opening passages. Reports remain in this session and do not publish website changes.",
   },
 ];
 
@@ -106,10 +111,10 @@ const structuredData = {
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       description: metadata.description,
       featureList: [
-        "12-point structural checklist",
+        "Evidence-based action plan and explicit unknown states",
         "Live URL analysis with safe public fetch",
-        "Instant client-side scoring for pasted drafts",
-        "Category breakdown: answer clarity, structure, evidence, technical",
+        "Whole-paragraph review for unpublished drafts",
+        "Search crawler rules, Google directive review, and CSV or JSON exports",
       ],
       creator: {
         "@type": "Person",
@@ -191,13 +196,13 @@ export default function CitationReadinessPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Analyze a live URL or paste a draft. A 12-point, fully explainable
-              checklist scores direct-answer clarity, scannability, evidence,
-              and structured data.
+              Review complete opening paragraphs, search crawler rules, and
+              supporting context. Import a public URL, paste HTML, or inspect an
+              unpublished draft.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
               {[
-                [ListChecks, "12 explainable checks"],
+                [ListChecks, "Evidence-based action plan"],
                 [ShieldCheck, "Review before publishing"],
               ].map(([Icon, label]) => {
                 const FeatureIcon = Icon as typeof ListChecks;

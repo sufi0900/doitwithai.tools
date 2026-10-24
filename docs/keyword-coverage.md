@@ -33,7 +33,7 @@ Its audit uses retained content blocks; the dedicated checker uses pasted-body w
 
 External Link and Source Review: complete.
 Keyword coverage and distribution: complete.
-Next and final queued delivery: expand the existing AI Citation Readiness Checker.
+Final queued delivery is complete: the existing AI Citation Readiness Checker expansion. See `docs/citation-readiness-expansion.md`.
 
 ## Validation
 

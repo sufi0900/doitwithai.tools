@@ -1,302 +1,226 @@
 "use client";
-
-import { useMemo, useState } from "react";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  FileText,
-  Globe,
-  Loader2,
-  MinusCircle,
-  XCircle,
-} from "lucide-react";
-import {
-  inputClass as sharedInputClass,
-  panelClass,
-  primaryButton,
-  secondaryButton,
-} from "@/features/writing-tools/config";
-const inputClass = `${sharedInputClass} min-w-0`;
-import DetailedReadiness from "./DetailedReadiness";
-import type { PageSnapshot } from "@/features/on-page-analyzer/types";
-import { analyzeDocument } from "./analyzer";
-import { extractFromText } from "./extract-from-text";
-import { analyzeUrl } from "./client";
-import type { AnalysisResult, CheckStatus } from "./types";
-
-type Mode = "url" | "text";
-
-const STATUS_STYLE: Record<
-  CheckStatus,
-  { icon: typeof CheckCircle2; className: string }
-> = {
-  pass: {
-    icon: CheckCircle2,
-    className: "text-emerald-600 dark:text-emerald-400",
-  },
-  warn: {
-    icon: AlertTriangle,
-    className: "text-amber-600 dark:text-amber-400",
-  },
-  fail: { icon: XCircle, className: "text-rose-600 dark:text-rose-400" },
-  na: { icon: MinusCircle, className: "text-slate-400 dark:text-slate-500" },
-};
-
-function scoreLabel(score: number) {
-  if (score >= 80)
-    return {
-      text: "Strong",
-      className: "text-emerald-600 dark:text-emerald-400",
-    };
-  if (score >= 55)
-    return {
-      text: "Needs work",
-      className: "text-amber-600 dark:text-amber-400",
-    };
-  return { text: "Weak", className: "text-rose-600 dark:text-rose-400" };
-}
-
-function ResultsPanel({ result }: { result: AnalysisResult }) {
-  const label = scoreLabel(result.score);
-  const grouped = (
-    ["answer", "structure", "evidence", "technical"] as const
-  ).map((categoryId) => ({
-    category: result.categories.find((item) => item.id === categoryId),
-    checks: result.checks.filter((check) => check.category === categoryId),
-  }));
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-5 rounded-2xl border border-slate-200 p-5 dark:border-slate-700">
-        <div className="text-center">
-          <p className="text-4xl font-black text-slate-950 dark:text-white">
-            {result.score}
-          </p>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            / 100
-          </p>
-        </div>
-        <div>
-          <p className={`text-sm font-extrabold ${label.className}`}>
-            {label.text}
-          </p>
-          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-            Review the page checks and suggested improvements before editing.
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {grouped.map(({ category, checks }) => (
-          <div
-            key={category?.id}
-            className="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-[#4662df] dark:text-blue-300">
-                {category?.name}
-              </h3>
-              {category && category.possible > 0 && (
-                <span className="text-xs font-semibold text-slate-400">
-                  {Math.round((category.earned / category.possible) * 100)}%
-                </span>
-              )}
-            </div>
-            <ul className="mt-3 space-y-2">
-              {checks.map((check) => {
-                const style = STATUS_STYLE[check.status];
-                const Icon = style.icon;
-                return (
-                  <li
-                    key={check.id}
-                    className="flex items-start gap-2 text-xs leading-5"
-                  >
-                    <Icon
-                      className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${style.className}`}
-                    />
-                    <span>
-                      <span className="font-bold text-slate-700 dark:text-slate-200">
-                        {check.label}:
-                      </span>{" "}
-                      <span className="text-slate-500 dark:text-slate-400">
-                        {check.detail}
-                      </span>
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Loader2 } from "lucide-react";
+import AnswerReadinessPanel from "../on-page-analyzer/AnswerReadinessPanel";
+import type { PageSnapshot } from "../on-page-analyzer/types";
+import { importCitationPage } from "./client";
+import { draftPage, MAX_DRAFT } from "./draft-html";
+import ReviewWorkspace from "./ReviewWorkspace";
+import styles from "../content-evidence/evidence.module.css";
+import analyzerStyles from "../on-page-analyzer/analyzer.module.css";
+type Mode = "url" | "text" | "html";
+export const exampleDraft =
+  "# What is internal linking?\n\nInternal linking connects pages on the same website. It helps readers discover related information and understand a site's structure.\n\n## How do you choose an anchor?\n\nIn this guide, we explore the changing world of search.\n\nChoose descriptive wording that explains the destination. Avoid forcing keywords into every link.\n\n## What did our example test measure?\n\nWe tested three anchor labels in an illustrative exercise. These example results are not published research.\n\n- State the method.\n- Explain limitations.\n- Record supporting evidence.";
 export default function CitationReadinessClient() {
-  const [mode, setMode] = useState<Mode>("url");
-  const [url, setUrl] = useState("");
-  const [draft, setDraft] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [urlResult, setUrlResult] = useState<{
-    result: AnalysisResult;
-    title: string;
-    wordCount: number;
-    finalUrl: string;
-    page?: PageSnapshot;
-  } | null>(null);
-
-  const textResult = useMemo(() => {
-    if (!draft.trim()) return null;
-    return analyzeDocument(extractFromText(draft));
-  }, [draft]);
-
-  async function handleAnalyzeUrl() {
-    if (!url.trim()) return;
-    setLoading(true);
+  const [mode, setMode] = useState<Mode>("url"),
+    [input, setInput] = useState("");
+  const [page, setPage] = useState<PageSnapshot | null>(null),
+    [loading, setLoading] = useState(false);
+  const [error, setError] = useState(""),
+    [dirty, setDirty] = useState(false);
+  const request = useRef<AbortController | null>(null);
+  useEffect(() => () => request.current?.abort(), []);
+  const invalidate = () => {
+    request.current?.abort();
+    request.current = null;
+    setLoading(false);
     setError("");
-    setUrlResult(null);
-    const outcome = await analyzeUrl(url.trim());
+    setDirty(true);
+  };
+  function example() {
+    invalidate();
+    setMode("text");
+    setInput(exampleDraft);
+    setPage(draftPage(exampleDraft));
+    setDirty(false);
+  }
+  async function analyze(event: FormEvent) {
+    event.preventDefault();
+    if (!input.trim()) {
+      setError("Add a public URL or content to review.");
+      return;
+    }
+    if (
+      mode !== "url" &&
+      input.length > (mode === "text" ? MAX_DRAFT : 750_000)
+    ) {
+      setError(
+        mode === "text"
+          ? "Paste up to 150,000 characters, or review your draft in sections."
+          : "Paste up to 750,000 HTML characters, or review the main article section.",
+      );
+      return;
+    }
+    invalidate();
+    if (mode === "text") {
+      setPage(draftPage(input));
+      setDirty(false);
+      return;
+    }
+    const controller = new AbortController();
+    request.current = controller;
+    setLoading(true);
+    const outcome = await importCitationPage(
+      mode === "url" ? { url: input.trim() } : { html: input },
+      controller.signal,
+    );
+    if (controller.signal.aborted || request.current !== controller) return;
     setLoading(false);
     if (outcome.ok === false) {
       setError(outcome.message);
       return;
     }
-    setUrlResult({
-      result: outcome.result,
-      title: outcome.doc.title,
-      wordCount: outcome.doc.wordCount,
-      finalUrl: outcome.doc.finalUrl,
-      page: outcome.page,
-    });
+    setPage(outcome.page);
+    setDirty(false);
   }
-
   return (
-    <div
-      id="ai-citation-readiness-checker"
-      className={`${panelClass} p-5 sm:p-8`}
-    >
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setMode("url")}
-          className={mode === "url" ? primaryButton : secondaryButton}
-        >
-          <Globe className="h-3.5 w-3.5" /> Analyze a URL
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("text")}
-          className={mode === "text" ? primaryButton : secondaryButton}
-        >
-          <FileText className="h-3.5 w-3.5" /> Paste content
-        </button>
-      </div>
-
-      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div>
+    <div id="ai-citation-readiness-checker" className={styles.workspace}>
+      <div className={styles.inputPanel}>
+        <span className={styles.eyebrow}>
+          Clarity, access, and supporting context
+        </span>
+        <h2>Review a page or unpublished draft</h2>
+        <p className={styles.small}>
+          Inspect observable evidence and complete opening paragraphs. This
+          review cannot determine whether an AI service will cite your page.
+        </p>
+        <div className={styles.modes} aria-label="Input type">
+          {(
+            [
+              ["url", "Public URL"],
+              ["text", "Draft text"],
+              ["html", "Page HTML"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              type="button"
+              key={value}
+              aria-pressed={mode === value}
+              onClick={() => {
+                invalidate();
+                setMode(value);
+                setInput("");
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <form onSubmit={analyze} aria-busy={loading}>
+          <label htmlFor="citation-input">
+            {mode === "url"
+              ? "Public page URL"
+              : mode === "text"
+                ? "Draft text with optional Markdown headings"
+                : "Page HTML or copied rendered HTML"}
+          </label>
           {mode === "url" ? (
-            <>
-              <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                Public page URL
-              </label>
-              <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
-                <input
-                  className={inputClass}
-                  value={url}
-                  onChange={(event) => setUrl(event.target.value)}
-                  placeholder="https://example.com/article"
-                  inputMode="url"
+            <input
+              id="citation-input"
+              type="url"
+              inputMode="url"
+              value={input}
+              onChange={(e) => {
+                invalidate();
+                setInput(e.target.value);
+              }}
+              placeholder="https://example.com/article"
+              required
+              aria-describedby="citation-help"
+            />
+          ) : (
+            <textarea
+              id="citation-input"
+              rows={12}
+              value={input}
+              onChange={(e) => {
+                invalidate();
+                setInput(e.target.value);
+              }}
+              required
+              aria-describedby="citation-help"
+            />
+          )}
+          <p id="citation-help" className={styles.small}>
+            {mode === "url"
+              ? "Use an accessible public page. Returned HTML can omit content added later by scripts. Images and videos are not downloaded."
+              : mode === "text"
+                ? "Up to 150,000 characters. Use blank lines for paragraphs, # for headings, and - for list items. Live access remains unchecked."
+                : "Up to 750,000 characters. Pasted HTML is inspected without running scripts. Live response headers and crawler policies remain unchecked."}
+          </p>
+          <div className={`${styles.actions} mt-5`}>
+            <button
+              className={styles.primary}
+              type="submit"
+              disabled={loading || !input.trim()}
+            >
+              {loading && (
+                <Loader2
+                  size={16}
+                  className={styles.spinner}
+                  aria-hidden="true"
                 />
-                <button
-                  type="button"
-                  onClick={handleAnalyzeUrl}
-                  disabled={loading || !url.trim()}
-                  className={`${primaryButton} shrink-0`}
-                >
-                  {loading ? (
-                    <Loader2 className="animate-spin h-4 w-4" />
-                  ) : (
-                    <Globe className="h-4 w-4" />
-                  )}
-                  {loading ? "Analyzing…" : "Analyze"}
-                </button>
-              </div>
-              <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-                Checks headings, paragraphs, lists, author, dates, outbound
-                links, and JSON-LD on the live page. Use an accessible public
-                page.
-              </p>
-              {error && (
-                <p className="mt-2 text-xs font-semibold text-rose-600 dark:text-rose-400">
-                  {error}
-                </p>
               )}
-              {urlResult && (
-                <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                  Analyzed{" "}
-                  <span className="font-semibold text-slate-700 dark:text-slate-200">
-                    {urlResult.title || urlResult.finalUrl}
-                  </span>{" "}
-                  ; {urlResult.wordCount.toLocaleString()} words.
-                </p>
-              )}
-            </>
-          ) : (
-            <>
-              <label className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                Paste your draft
-              </label>
-              <textarea
-                className={`${inputClass} mt-1.5 min-h-[320px] resize-y font-mono text-xs`}
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder={
-                  "# Your H1 title\n\nA short, direct opening paragraph.\n\n## A question your reader would ask?\n\n- Point one\n- Point two"
-                }
-              />
-              <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-                Use{" "}
-                <code className="rounded bg-slate-100 px-1 py-0.5 font-mono dark:bg-slate-800">
-                  #
-                </code>{" "}
-                for headings and{" "}
-                <code className="rounded bg-slate-100 px-1 py-0.5 font-mono dark:bg-slate-800">
-                  -
-                </code>{" "}
-                for list items to get a full structural read. Author, dates,
-                links, and schema can't be checked from pasted text; analyze the
-                live URL once it's published for those.
-              </p>
-            </>
-          )}
-        </div>
-
-        <div className="lg:sticky lg:top-24 lg:self-start">
-          {mode === "url" ? (
-            urlResult ? (
-              <ResultsPanel result={urlResult.result} />
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400 dark:border-slate-700">
-                Results will appear here after you analyze a URL.
-              </div>
-            )
-          ) : textResult ? (
-            <ResultsPanel result={textResult} />
-          ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-400 dark:border-slate-700">
-              Start pasting to see a live score.
-            </div>
-          )}
-        </div>
+              {loading
+                ? "Reviewing page…"
+                : mode === "url"
+                  ? "Import and review URL"
+                  : "Review content"}
+            </button>
+            <button
+              className={styles.secondary}
+              type="button"
+              onClick={example}
+            >
+              Try example
+            </button>
+            {loading && (
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={invalidate}
+              >
+                Cancel import
+              </button>
+            )}
+            <button
+              className={styles.secondary}
+              type="button"
+              onClick={() => {
+                invalidate();
+                setInput("");
+                setPage(null);
+                setDirty(false);
+              }}
+            >
+              Clear
+            </button>
+          </div>
+        </form>
+        <p role="status" className={styles.notice}>
+          {loading
+            ? "Importing retained text and available page metadata. You can cancel without losing the previous report."
+            : ""}
+        </p>
+        {error && (
+          <p role="alert" className={styles.error}>
+            {error}
+          </p>
+        )}
       </div>
-      {(mode === "url" ? urlResult : textResult) && (
-        <DetailedReadiness
-          initialPage={mode === "url" ? urlResult?.page : undefined}
-          url={mode === "url" ? urlResult?.finalUrl || "" : ""}
-          draft={mode === "text" ? draft : ""}
-        />
+      {page && (
+        <>
+          {dirty && (
+            <p className={styles.warning}>
+              The report below belongs to the previous input. Run another review
+              to update it.
+            </p>
+          )}
+          <ReviewWorkspace page={page} />
+          <div className={analyzerStyles.app}>
+            <AnswerReadinessPanel page={page} />
+          </div>
+        </>
       )}
     </div>
   );

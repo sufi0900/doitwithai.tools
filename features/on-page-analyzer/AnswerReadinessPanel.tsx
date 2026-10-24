@@ -112,8 +112,10 @@ export default function AnswerReadinessPanel({
       >
         <h4>Can search crawlers access this URL path?</h4>
         <p className={styles.muted}>
-          Search crawler policy contributes to this category. Training
-          preferences do not earn or lose points. Firewall access remains
+          {onNavigate
+            ? "Search crawler policy contributes to this audit category. "
+            : "These rules describe search crawler policy for this path. "}
+          Training preferences remain separate. Firewall access remains
           unverified.
         </p>
         <div className={styles.crawlerGrid}>
@@ -141,8 +143,8 @@ export default function AnswerReadinessPanel({
             .filter((c) => !c.scored)
             .map((c) => (
               <p key={c.token}>
-                <strong>{c.token}:</strong> {c.status} · {c.purpose}. No score
-                effect.
+                <strong>{c.token}:</strong> {c.status} · {c.purpose}. Separate
+                from search crawler findings.
               </p>
             ))}
         </details>
@@ -268,6 +270,14 @@ export default function AnswerReadinessPanel({
           >
             Performance report <ArrowUpRight size={14} />
           </Link>
+          {onNavigate && (
+            <Link
+              className={styles.toolLink}
+              href="/tools/ai-citation-readiness-checker"
+            >
+              AI Citation Readiness Checker <ArrowUpRight size={14} />
+            </Link>
+          )}
           <Link
             className={styles.toolLink}
             href="/tools/structured-data-validator"

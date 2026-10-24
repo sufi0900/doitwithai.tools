@@ -42,16 +42,24 @@ export function citationDocument(page: PageSnapshot): NormalizedDoc {
       schema.items.some((i) => i.properties.some(([k]) => k === "dateModified"))
         ? true
         : null,
-    outboundLinkDomains: [
-      ...new Set(
-        page.links
-          .filter(
-            (l) =>
-              page.url && new URL(l.href).origin !== new URL(page.url).origin,
-          )
-          .map((l) => new URL(l.href).hostname),
-      ),
-    ],
+    outboundLinkDomains: page.url
+      ? [
+          ...new Set(
+            page.links.flatMap((link) => {
+              try {
+                const target = new URL(link.href),
+                  origin = new URL(page.url);
+                return /^https?:$/.test(target.protocol) &&
+                  target.origin !== origin.origin
+                  ? [target.hostname]
+                  : [];
+              } catch {
+                return [];
+              }
+            }),
+          ),
+        ]
+      : null,
     schemaTypes: page.schemas.types,
     hasCanonical: Boolean(page.canonical),
     wordCount: page.blocks.reduce(
@@ -60,12 +68,16 @@ export function citationDocument(page: PageSnapshot): NormalizedDoc {
     ),
   };
 }
-export async function analyzeUrl(url: string): Promise<UrlAnalysisResult> {
+export async function importCitationPage(
+  input: { url?: string; html?: string },
+  signal?: AbortSignal,
+): Promise<UrlAnalysisResult> {
   try {
     const response = await fetch("/api/ai-tools/on-page/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify(input),
+      signal,
     });
     const payload = await response.json().catch(() => null);
     if (!response.ok || !payload?.result || payload.error)
@@ -88,4 +100,8 @@ export async function analyzeUrl(url: string): Promise<UrlAnalysisResult> {
         "Could not reach the analyzer. Check your connection and try again.",
     };
   }
+}
+
+export function analyzeUrl(url: string, signal?: AbortSignal) {
+  return importCitationPage({ url }, signal);
 }
