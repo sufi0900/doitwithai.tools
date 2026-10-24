@@ -796,7 +796,7 @@
       "id": "ai-citation-readiness-checker",
       "slug": "ai-citation-readiness-checker",
       "name": "AI Citation Readiness Checker",
-      "description": "Review opening paragraphs, search crawler rules, snippet controls, and source cues. Export an evidence-based action plan with clear limits.",
+      "description": "Review crawler rules, snippet controls, full article content, and source cues. Inspect transparent criteria and export evidence without predicting citations.",
       "categories": [
         "ai-seo",
         "content-writing"
@@ -808,7 +808,9 @@
         "content audit",
         "crawler access",
         "snippet controls",
-        "opening paragraphs"
+        "opening paragraphs",
+        "article review",
+        "editorial evidence"
       ],
       "kind": "Deterministic",
       "status": "live",

@@ -13,7 +13,7 @@ export type UrlAnalysisResult =
       doc: { title: string; wordCount: number; finalUrl: string };
       page: PageSnapshot;
     }
-  | { ok: false; message: string };
+  | { ok: false; message: string; code?: string; targetStatus?: number };
 export function citationDocument(page: PageSnapshot): NormalizedDoc {
   const schema = inspectSchemas(schemaSources(page.schemas));
   return {
@@ -84,6 +84,8 @@ export async function importCitationPage(
       return {
         ok: false,
         message: payload?.error?.message || "The page could not be analyzed.",
+        code: payload?.error?.code,
+        targetStatus: payload?.error?.targetStatus,
       };
     const page = payload.result as PageSnapshot,
       doc = citationDocument(page);

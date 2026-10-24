@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useState } from "react";
 import { useReports } from "./useReports";
@@ -103,7 +104,7 @@ export default function CoreWebVitalsClient() {
       className={`${panelClass} relative p-5 sm:p-8`}
     >
       <div className="flex flex-col gap-3 xl:flex-row">
-        <input
+        <ToolUrlInput
           className={`${inputClass} h-12 flex-1`}
           value={url}
           onChange={(event) => {

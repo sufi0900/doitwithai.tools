@@ -31,6 +31,8 @@ export type PageImage = {
 export type PageSnapshot = {
   url: string;
   checkedAt: string;
+  contentEdited?: boolean;
+  contentReviewedAt?: string;
   source: "url" | "paste";
   status: number | null;
   title: string;

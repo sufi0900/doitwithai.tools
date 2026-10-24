@@ -1,3 +1,5 @@
+import { analyzeEvidence } from "../content-evidence/analyze";
+import { criterionBasis, type EvidenceBasis } from "./criteria";
 import { answerReadiness } from "../on-page-analyzer/readiness";
 import { crawlerReadiness } from "../on-page-analyzer/crawlers";
 import type { PageSnapshot } from "../on-page-analyzer/types";
@@ -9,6 +11,8 @@ export type ReviewRow = {
   evidence: string;
   action: string;
   tool: string;
+  basis: EvidenceBasis;
+  optional: boolean;
 };
 // These rules describe Google directives only. Other engines can interpret directives differently.
 export function googleRestrictions(raw: string[]) {
@@ -42,6 +46,7 @@ export function googleRestrictions(raw: string[]) {
   return { noindex, nosnippet: nosnippet || maxSnippet === 0, maxSnippet };
 }
 export function citationReview(page: PageSnapshot) {
+  const evidence = analyzeEvidence(page);
   const answer = answerReadiness(page),
     policy = googleRestrictions(page.robots);
   const live = page.source === "url",
@@ -54,7 +59,17 @@ export function citationReview(page: PageSnapshot) {
     evidence: string,
     action: string,
     tool: string,
-  ) => rows.push({ id, label, state, evidence, action, tool });
+  ) =>
+    rows.push({
+      id,
+      label,
+      state,
+      evidence,
+      action,
+      tool,
+      basis: criterionBasis(id),
+      optional: ["structure", "paragraphs"].includes(id),
+    });
   add(
     "scope",
     "Extraction coverage",
@@ -137,11 +152,7 @@ export function citationReview(page: PageSnapshot) {
   add(
     "structure",
     "Headings and reading structure",
-    h1 > 1 || (h1 === 0 && complete)
-      ? "review"
-      : complete
-        ? "observed"
-        : "unknown",
+    complete ? "observed" : "unknown",
     `${h1} H1 headings and ${subheadings} subheadings retained.`,
     "Check the main topic and section hierarchy. Multiple H1 headings are an editorial review cue, not proof of a search violation.",
     "heading-structure-analyzer",
@@ -152,7 +163,7 @@ export function citationReview(page: PageSnapshot) {
   add(
     "paragraphs",
     "Dense paragraphs",
-    long ? "review" : complete ? "observed" : "unknown",
+    complete ? "observed" : "unknown",
     `${long} retained paragraphs exceed 150 words. This threshold is an editorial cue, not an AI requirement.`,
     "Keep useful detail and exceptions. Split dense passages only when doing so improves reading flow.",
     "readability-checker",
@@ -187,13 +198,16 @@ export function citationReview(page: PageSnapshot) {
   add(
     "sources",
     "Claims and supporting context",
-    answer.claims.length ? "review" : "unknown",
-    `${answer.claims.length} passages contain claim cues. Their accuracy and source support were not verified.`,
+    evidence.claims.length ? "review" : "unknown",
+    `${evidence.claims.length} passages contain claim cues. Their accuracy and source support were not verified.`,
     "Review factual statements and original methods in Content Evidence Review. Inspect link context in External Link and Source Review.",
     "content-evidence-review",
   );
   return {
-    version: 1,
+    version: 2,
+    claims: evidence.claims,
+    contentEdited: Boolean(page.contentEdited),
+    contentReviewedAt: page.contentReviewedAt || null,
     url: page.url,
     checkedAt: page.checkedAt,
     source: page.source,
@@ -207,6 +221,7 @@ export function citationReview(page: PageSnapshot) {
       reason: s.reason,
       paragraph: s.passage?.text || "",
       context: s.paragraphs.slice(1).map((p) => p.text),
+      signals: s.signals,
     })),
     limits:
       "English editorial cues only. No factual verification, authority rating, actual indexing check, or citation prediction. Rendered content, data-nosnippet attributes, and firewall access remain unverified.",
@@ -218,13 +233,23 @@ const cell = (value: unknown) => {
 };
 export function readinessCsv(report: ReturnType<typeof citationReview>) {
   return [
-    ["Type", "Item", "State", "Evidence", "Action or context"],
+    [
+      "Type",
+      "Item",
+      "State",
+      "Evidence",
+      "Action or context",
+      "Basis",
+      "References",
+    ],
     ...report.rows.map((r) => [
       "Check",
       r.label,
       r.state,
       r.evidence,
       r.action,
+      r.basis.label,
+      r.basis.references.map((ref) => ref.url).join(" "),
     ]),
     ...report.openings.map((r) => [
       "Opening",
@@ -232,6 +257,15 @@ export function readinessCsv(report: ReturnType<typeof citationReview>) {
       r.state,
       r.paragraph,
       `${r.reason}\n${r.context.join("\n")}`,
+    ]),
+    ...report.claims.map((claim) => [
+      "Claim cue",
+      claim.section,
+      "Not verified",
+      claim.text,
+      claim.cues.join("; "),
+      "Editorial evidence review",
+      claim.sources.map((source) => source.href).join(" "),
     ]),
     ...report.warnings.map((warning) => [
       "Scope warning",
@@ -248,6 +282,8 @@ export function readinessCsv(report: ReturnType<typeof citationReview>) {
       report.limits,
     ],
   ]
-    .map((row) => row.map(cell).join(","))
+    .map((row) =>
+      Array.from({ length: 7 }, (_, i) => cell(row[i] ?? "")).join(","),
+    )
     .join("\r\n");
 }

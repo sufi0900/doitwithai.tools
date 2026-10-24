@@ -22,7 +22,7 @@ function wordsIn(text: string) {
 }
 
 const CATEGORY_NAMES: Record<CheckResult["category"], string> = {
-  answer: "Direct-answer clarity",
+  answer: "Opening passage observations",
   structure: "Scannability & structure",
   evidence: "Evidence & trust signals",
   technical: "Structured data (URL analysis only)",
@@ -40,23 +40,18 @@ const CHECKS: CheckDef[] = [
   {
     id: "has-h1",
     category: "answer",
-    label: "Page has a single clear H1",
-    weight: 10,
-    evaluate: (doc) =>
-      doc.h1Count === 1
-        ? { status: "pass", detail: "One H1 found." }
-        : doc.h1Count === 0
-          ? { status: "fail", detail: "No H1 heading detected." }
-          : {
-              status: "warn",
-              detail: `${doc.h1Count} H1 headings found — keep it to one.`,
-            },
+    label: "H1 count (optional writing context)",
+    weight: 0,
+    evaluate: (doc) => ({
+      status: "na",
+      detail: `${doc.h1Count} H1 headings observed. Count alone is not a citation requirement.`,
+    }),
   },
   {
     id: "first-paragraph-short",
     category: "answer",
     label: "Opening passage is easy to review",
-    weight: 10,
+    weight: 0,
     evaluate: (doc) => {
       const first = doc.paragraphs[0];
       if (!first)
@@ -73,15 +68,9 @@ const CHECKS: CheckDef[] = [
             "Opening passage starts with introductory framing. Consider whether an earlier key point would help readers.",
         };
       }
-      if (count > 70) {
-        return {
-          status: "warn",
-          detail: `Opening paragraph is ${count} words — review where the main point appears. This length is an editorial prompt, not an AI requirement.`,
-        };
-      }
       return {
         status: "pass",
-        detail: `Opening paragraph is ${count} words. Check whether it actually addresses the topic.`,
+        detail: `Opening paragraph is ${count} words. Length alone cannot establish whether it answers the topic or will be cited.`,
       };
     },
   },
@@ -109,21 +98,12 @@ const CHECKS: CheckDef[] = [
   {
     id: "has-subheadings",
     category: "structure",
-    label: "Uses subheadings to break up the content",
-    weight: 10,
-    evaluate: (doc) => {
-      const subCount = doc.headings.filter(
-        (heading) => heading.level >= 2,
-      ).length;
-      if (subCount >= 2)
-        return { status: "pass", detail: `${subCount} subheadings found.` };
-      if (subCount === 1)
-        return {
-          status: "warn",
-          detail: "Only one subheading — add more to mark topic shifts.",
-        };
-      return { status: "fail", detail: "No subheadings found." };
-    },
+    label: "Subheadings (optional writing context)",
+    weight: 0,
+    evaluate: (doc) => ({
+      status: "na",
+      detail: `${doc.headings.filter((h) => h.level >= 2).length} subheadings observed. Use sections where they help readers.`,
+    }),
   },
   {
     id: "has-lists-or-tables",
@@ -145,11 +125,11 @@ const CHECKS: CheckDef[] = [
   {
     id: "paragraph-length",
     category: "structure",
-    label: "Paragraphs stay scannable",
-    weight: 10,
+    label: "Paragraph length (optional writing context)",
+    weight: 0,
     evaluate: (doc) => {
       if (!doc.paragraphs.length)
-        return { status: "fail", detail: "No paragraphs found." };
+        return { status: "na", detail: "No paragraphs found." };
       const long = doc.paragraphs.filter(
         (paragraph) => wordsIn(paragraph) > 150,
       ).length;
@@ -159,13 +139,13 @@ const CHECKS: CheckDef[] = [
       );
       if (long > 0) {
         return {
-          status: "warn",
-          detail: `${long} paragraph(s) over 150 words (average is ${avg} words). Split the long ones.`,
+          status: "na",
+          detail: `${long} paragraphs exceed our 150-word review threshold. Average: ${avg} words. Neither number establishes citation quality.`,
         };
       }
       return {
-        status: "pass",
-        detail: `Average paragraph length is ${avg} words.`,
+        status: "na",
+        detail: `Average paragraph length is ${avg} words. This is writing context, not a citation rule.`,
       };
     },
   },
@@ -194,7 +174,7 @@ const CHECKS: CheckDef[] = [
     id: "has-author",
     category: "evidence",
     label: "Author is identified",
-    weight: 8,
+    weight: 0,
     evaluate: (doc) =>
       doc.hasAuthor === null
         ? {
@@ -213,7 +193,7 @@ const CHECKS: CheckDef[] = [
     id: "has-dates",
     category: "evidence",
     label: "Published or updated date is present",
-    weight: 9,
+    weight: 0,
     evaluate: (doc) =>
       doc.hasPublishedDate === null && doc.hasModifiedDate === null
         ? {
@@ -323,16 +303,11 @@ export function analyzeDocument(doc: NormalizedDoc): AnalysisResult {
     };
   });
 
-  const totalPossible = categories.reduce(
-    (sum, category) => sum + category.possible,
-    0,
-  );
-  const totalEarned = categories.reduce(
-    (sum, category) => sum + category.earned,
-    0,
-  );
-  const score =
-    totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100) : 0;
-
-  return { score, checks, categories };
+  return {
+    score: null,
+    scoreReason:
+      "No validated citation-probability formula is available. Review individual evidence instead.",
+    checks,
+    categories,
+  };
 }

@@ -135,3 +135,13 @@ Research references for this revision:
 - https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec
 - https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers
 - https://blogs.bing.com/webmaster/2026/2/Introducing-AI-Performance-in-Bing-Webmaster-Tools-Public-Preview/
+
+
+## Citation criteria follow-up
+
+The dedicated citation checker now exposes source-linked methodology and exact opening-cue explanations.
+H1 count and paragraph length do not create citation penalties. Its compatibility score is unavailable rather than invented.
+The shared opening review no longer uses length to decide an opening label and avoids English rules on declared non-English pages.
+The shared importer distinguishes source refusals from tool quotas and preserves those details for concurrent callers.
+Full article review, optional local edits, and cross-tool URL recall are documented in `docs/citation-criteria-review.md`.
+The analyzer retains its separately documented product audit weights. Neither interface predicts citations or factual accuracy.

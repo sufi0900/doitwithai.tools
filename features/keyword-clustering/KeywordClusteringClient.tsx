@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -961,7 +962,7 @@ export default function KeywordClusteringClient() {
                     >
                       Existing or proposed page URL
                     </label>
-                    <input
+                    <ToolUrlInput
                       id="cluster-page-url"
                       type="url"
                       maxLength={2000}

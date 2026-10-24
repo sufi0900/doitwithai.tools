@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
@@ -138,7 +139,7 @@ function ClaimCard({
         <div className={styles.fieldGrid}>
           <label htmlFor={`${id}-source`}>
             Evidence URL <span>Optional</span>
-            <input
+            <ToolUrlInput
               id={`${id}-source`}
               type="url"
               maxLength={2048}
@@ -381,7 +382,7 @@ export default function Client() {
               ? "Public article URL"
               : "Page URL for link classification"}
             <span>{mode === "url" ? "Required" : "Optional"}</span>
-            <input
+            <ToolUrlInput
               id="evidence-url"
               type="url"
               value={url}

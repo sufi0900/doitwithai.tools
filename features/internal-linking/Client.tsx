@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useRef, useState, useEffect } from "react";
 import {
   Search,
@@ -161,7 +162,7 @@ export default function Client() {
         >
           <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
             Article URL
-            <input
+            <ToolUrlInput
               required
               type="url"
               maxLength={2000}
@@ -178,7 +179,7 @@ export default function Client() {
             <div className="mt-5 space-y-5">
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
                 Sitemap URL
-                <input
+                <ToolUrlInput
                   type="url"
                   maxLength={2000}
                   value={sitemapUrl}

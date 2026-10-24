@@ -1,4 +1,5 @@
 import { assertSafeFetchUrl } from "@/features/schema-generator/server/fetch-page";
+import { PageImportError, sourceHttpError } from "../import-errors";
 import { PageCollector } from "./extract";
 const MAX_BYTES = 8_000_000;
 const userAgent = "DoItWithAI-OnPageAudit/1.0 (+https://doitwithai.tools)";
@@ -31,9 +32,7 @@ export async function fetchAuditPage(
     }
     if (!response.ok) {
       await response.body?.cancel();
-      throw new Error(
-        `The website returned HTTP ${response.status}. Try Paste HTML if you can access the page.`,
-      );
+      throw sourceHttpError(response.status);
     }
     if (
       !/text\/html|application\/xhtml\+xml/i.test(
@@ -86,10 +85,31 @@ export async function fetchAuditPage(
           break;
         }
       }
+    } catch (error) {
+      await reader.cancel().catch(() => undefined);
+      throw error;
     } finally {
       reader.releaseLock();
     }
     const page = collector.finish();
+    const retainedWords = page.blocks.reduce(
+      (n, b) => n + b.text.split(/\s+/).length,
+      0,
+    );
+    if (
+      retainedWords < 80 &&
+      /\b(?:verify (?:access|you are|you're)|checking (?:your |the )?browser|enable javascript|captcha|security check|request (?:has been |is )?blocked)\b/i.test(
+        page.blocks.map((b) => b.text).join(" "),
+      ) &&
+      /^(?:just a moment|access denied|attention required|verify (?:you are|you're) human|security verification)[.!…\s]*$/i.test(
+        page.title.trim(),
+      )
+    )
+      throw new PageImportError(
+        "SOURCE_CHALLENGE",
+        "The source returned an access challenge instead of article content. Paste the article text or copied HTML to continue.",
+        response.status,
+      );
     // Optional files have a separate short deadline. Failure never erases the main report.
     const files = await Promise.allSettled(
       ["robots.txt", "llms.txt"].map(async (path) => {

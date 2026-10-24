@@ -67,7 +67,7 @@ export function inspectCrawlerPath(
       0,
       ...group.userAgents.map((a) =>
         a.trim() !== "*" && productToken(a) === token.toLowerCase() && a.trim()
-          ? a.trim().length
+          ? productToken(a).length
           : 0,
       ),
     ),

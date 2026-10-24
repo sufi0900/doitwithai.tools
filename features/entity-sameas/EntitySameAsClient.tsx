@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, Check, Copy, Download, ExternalLink, Info, Loader2, Search } from "lucide-react";
@@ -342,7 +343,7 @@ export default function EntitySameAsClient() {
                   <label className="mb-1 block text-xs font-semibold text-slate-300" htmlFor="es-url">
                     Official website URL (the page where this markup will live)
                   </label>
-                  <input id="es-url" type="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://example.com/" className={inputClass} />
+                  <ToolUrlInput id="es-url" type="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://example.com/" className={inputClass} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-semibold text-slate-300" htmlFor="es-desc">

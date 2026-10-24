@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -757,7 +758,7 @@ export default function TopicalMapClient() {
                     Existing page URL{" "}
                     <span className="font-normal">(optional)</span>
                   </label>
-                  <input
+                  <ToolUrlInput
                     id="topic-url"
                     type="url"
                     className={field}

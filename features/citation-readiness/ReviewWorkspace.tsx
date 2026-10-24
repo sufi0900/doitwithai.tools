@@ -3,7 +3,12 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Download } from "lucide-react";
 import type { PageSnapshot } from "../on-page-analyzer/types";
-import { citationReview, readinessCsv, type ReviewState } from "./review";
+import {
+  citationReview,
+  readinessCsv,
+  type ReviewState,
+  type ReviewRow,
+} from "./review";
 import styles from "../content-evidence/evidence.module.css";
 const labels: Record<ReviewState, string> = {
   restriction: "Restriction detected",
@@ -41,6 +46,44 @@ function download(body: string, format: "json" | "csv") {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+function ReviewCard({ row }: { row: ReviewRow }) {
+  return (
+    <article className="min-w-0 rounded-xl border border-slate-200 p-5 dark:border-slate-700">
+      <span
+        className={`inline-flex rounded-md border px-2 py-1 text-xs font-semibold ${colors[row.state]}`}
+      >
+        {labels[row.state]}
+      </span>
+      <h3 className="mt-3 text-lg font-bold">{row.label}</h3>
+      <p className="mt-3 break-words text-sm leading-7">{row.evidence}</p>
+      <p className={styles.small}>{row.action}</p>
+      <details className="mt-4 text-sm leading-7">
+        <summary className="cursor-pointer font-semibold">
+          Basis: {row.basis.label}
+        </summary>
+        <p className={styles.small}>{row.basis.explanation}</p>
+        {row.basis.references.map((ref) => (
+          <a
+            key={ref.url}
+            className="mt-2 block text-[#4058d0] underline dark:text-blue-200"
+            href={ref.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {ref.name}
+          </a>
+        ))}
+      </details>
+      <Link
+        className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#4058d0] underline dark:text-blue-200"
+        href={`/tools/${row.tool}`}
+      >
+        {tools[row.tool]}
+        <ArrowUpRight size={14} aria-hidden="true" />
+      </Link>
+    </article>
+  );
+}
 export default function ReviewWorkspace({ page }: { page: PageSnapshot }) {
   const report = useMemo(() => citationReview(page), [page]);
   return (
@@ -62,7 +105,10 @@ export default function ReviewWorkspace({ page }: { page: PageSnapshot }) {
               inspection.
             </p>
             <span className={styles.url}>
-              {page.url || "Pasted content"} · {page.checkedAt}
+              {page.url || "Pasted content"} · Imported {page.checkedAt}
+              {page.contentReviewedAt && (
+                <> · Draft reviewed {page.contentReviewedAt}</>
+              )}
             </span>
           </div>
           <div className={styles.actions}>
@@ -86,7 +132,10 @@ export default function ReviewWorkspace({ page }: { page: PageSnapshot }) {
           {(Object.keys(labels) as ReviewState[]).map((state) => (
             <div key={state}>
               <strong>
-                {report.rows.filter((r) => r.state === state).length}
+                {
+                  report.rows.filter((r) => !r.optional && r.state === state)
+                    .length
+                }
               </strong>
               <span>{labels[state]}</span>
             </div>
@@ -107,7 +156,7 @@ export default function ReviewWorkspace({ page }: { page: PageSnapshot }) {
           </p>
           <p>
             Exports include retained opening paragraphs and action items. They
-            do not include results from other tools or publish changes.
+            do not include saved decisions from other tools or publish changes.
           </p>
         </details>
         {page.partial && (
@@ -116,32 +165,86 @@ export default function ReviewWorkspace({ page }: { page: PageSnapshot }) {
             absence on the full page.
           </p>
         )}
+        <p className={styles.small}>
+          Counts exclude optional heading and paragraph measurements. They are
+          evidence states, not a citation score.
+        </p>
         <div className="mt-6 grid min-w-0 gap-4 md:grid-cols-2">
-          {report.rows.map((row) => (
-            <article
-              key={row.id}
-              className="min-w-0 rounded-xl border border-slate-200 p-5 dark:border-slate-700"
-            >
-              <span
-                className={`inline-flex rounded-md border px-2 py-1 text-xs font-semibold ${colors[row.state]}`}
-              >
-                {labels[row.state]}
-              </span>
-              <h3 className="mt-3 text-lg font-bold">{row.label}</h3>
-              <p className="mt-3 break-words text-sm leading-7">
-                {row.evidence}
-              </p>
-              <p className={styles.small}>{row.action}</p>
-              <Link
-                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#4058d0] underline dark:text-blue-200"
-                href={`/tools/${row.tool}`}
-              >
-                {tools[row.tool]}
-                <ArrowUpRight size={14} aria-hidden="true" />
-              </Link>
-            </article>
-          ))}
+          {report.rows
+            .filter((row) => !row.optional)
+            .map((row) => (
+              <ReviewCard key={row.id} row={row} />
+            ))}
         </div>
+        <details className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700">
+          <summary className="cursor-pointer font-bold">
+            Optional writing context, with no citation verdict
+          </summary>
+          <p className={styles.small}>
+            H1 count and paragraph length are measured for context. They do not
+            establish eligibility or produce a penalty.
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            {report.rows
+              .filter((row) => row.optional)
+              .map((row) => (
+                <ReviewCard key={row.id} row={row} />
+              ))}
+          </div>
+        </details>
+        <section
+          className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700"
+          aria-label="Claim evidence preview"
+        >
+          <h3 className="text-lg font-bold">
+            Claims to review, not verified facts
+          </h3>
+          <p className={styles.small}>
+            {report.claims.length} passages matched shared evidence-review cues.
+            This preview shows up to five; exports include all detected
+            passages.
+          </p>
+          {report.claims.slice(0, 5).map((claim) => (
+            <details
+              key={claim.id}
+              className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700"
+            >
+              <summary className="cursor-pointer text-sm font-semibold">
+                {claim.section} · {claim.cues.join(", ")}
+              </summary>
+              <blockquote className="mt-3 break-words border-l-2 border-[#5271ff] pl-4 text-sm leading-7">
+                {claim.text}
+              </blockquote>
+              <p className={styles.small}>
+                {claim.sources.length} nearby source candidates. A nearby link
+                does not establish support or accuracy.
+              </p>
+              {claim.sources.map((source) => (
+                <a
+                  key={source.href}
+                  href={source.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 block break-all text-sm text-[#4058d0] underline dark:text-blue-200"
+                >
+                  {source.text || source.href}
+                </a>
+              ))}
+            </details>
+          ))}
+          {!report.claims.length && (
+            <p className={styles.small}>
+              No supported cue pattern matched. This does not certify that every
+              claim is correct or that no evidence is needed.
+            </p>
+          )}
+          <Link
+            href="/tools/content-evidence-review"
+            className="mt-4 inline-flex text-sm font-bold text-[#4058d0] underline dark:text-blue-200"
+          >
+            Open Content Evidence Review
+          </Link>
+        </section>
         <div className={styles.nextStep}>
           <h3 className="font-bold">Continue with supporting evidence</h3>
           <p>

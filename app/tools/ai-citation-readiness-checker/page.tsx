@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import CitationReadinessClient from "@/features/citation-readiness/CitationReadinessClient";
+import Methodology from "@/features/citation-readiness/Methodology";
 import CitationReadinessEducation from "@/features/citation-readiness/CitationReadinessEducation";
 
 const pageUrl = "https://doitwithai.tools/tools/ai-citation-readiness-checker";
@@ -77,7 +78,7 @@ const faqs = [
   {
     question: "What can I review before publishing?",
     answer:
-      "Paste a draft to inspect complete opening paragraphs and editorial cues. Paste HTML for page metadata. Published access requires a public URL.",
+      "Use the article editor for complete opening paragraphs and editorial cues. Paste HTML for metadata. Published access requires a public URL.",
   },
   {
     question: "Why are some checks not established?",
@@ -113,7 +114,7 @@ const structuredData = {
       featureList: [
         "Evidence-based action plan and explicit unknown states",
         "Live URL analysis with safe public fetch",
-        "Whole-paragraph review for unpublished drafts",
+        "Rich text article review with transparent whole-paragraph cues",
         "Search crawler rules, Google directive review, and CSV or JSON exports",
       ],
       creator: {
@@ -192,13 +193,12 @@ export default function CitationReadinessPage() {
             <h1 className="mt-7 text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
               AI Citation Readiness Checker for
               <span className={`block ${toolHeroHeading}`}>
-                Quotable, Structured Pages
+                Clarity, Access, and Evidence
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Review complete opening paragraphs, search crawler rules, and
-              supporting context. Import a public URL, paste HTML, or inspect an
-              unpublished draft.
+              Review documented access controls and clearly labeled editorial
+              cues. Import a URL into the article editor, or paste your content.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
               {[
@@ -218,6 +218,12 @@ export default function CitationReadinessPage() {
               })}
             </div>
             <a
+              href="#citation-methodology"
+              className="mt-5 block text-sm font-semibold text-blue-200 underline"
+            >
+              Read the criteria and evidence
+            </a>
+            <a
               href="#ai-citation-readiness-checker"
               className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
             >
@@ -231,6 +237,7 @@ export default function CitationReadinessPage() {
         </div>
       </div>
 
+      <Methodology />
       <CitationReadinessEducation />
 
       <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">

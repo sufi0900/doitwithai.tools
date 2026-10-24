@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { z } from "zod";
@@ -413,7 +414,7 @@ export default function SerpPreviewClient() {
           Start with a webpage URL
         </label>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-          <input
+          <ToolUrlInput
             id="serp-import-url"
             disabled={importing}
             className={`${inputClass} min-w-0 flex-1`}
@@ -543,7 +544,7 @@ export default function SerpPreviewClient() {
                 htmlFor="serp-url"
               >
                 Display URL
-                <input
+                <ToolUrlInput
                   id="serp-url"
                   className={`${inputClass} mt-2`}
                   value={snippet.url}

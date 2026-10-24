@@ -1,9 +1,11 @@
 "use client";
+import { analyzeEvidence } from "../content-evidence/analyze";
 import { useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
-  CheckCircle2,
+  Info,
+  MinusCircle,
   PencilLine,
   TriangleAlert,
   UserRound,
@@ -23,6 +25,11 @@ export default function AnswerReadinessPanel({
 }) {
   const report = useMemo(() => answerReadiness(page), [page]);
   const crawlers = useMemo(() => crawlerReadiness(page), [page]);
+  const evidenceCount = useMemo(
+    () =>
+      onNavigate ? report.claims.length : analyzeEvidence(page).claims.length,
+    [page, onNavigate, report.claims.length],
+  );
   const renderPassage = (s: AnswerSection, label: string) => (
     <details
       key={s.heading?.id || "opening"}
@@ -36,8 +43,10 @@ export default function AnswerReadinessPanel({
           >
             {s.status === "review" ? (
               <TriangleAlert size={12} />
+            ) : s.status === "unknown" ? (
+              <MinusCircle size={12} />
             ) : (
-              <CheckCircle2 size={12} />
+              <Info size={12} />
             )}
             {s.label}
           </span>
@@ -49,6 +58,30 @@ export default function AnswerReadinessPanel({
         <blockquote className={styles.evidence}>{s.passage.text}</blockquote>
       )}
       <p className={styles.advice}>{s.reason}</p>
+      <details className={styles.options}>
+        <summary>Why this label was shown</summary>
+        <p>
+          Editorial heuristic: {s.signals.rule}. No citation probability or
+          semantic completeness was measured.
+        </p>
+        <p>
+          Retained words: {s.signals.wordCount}. Word count does not decide this
+          label.
+        </p>
+        <p>Framing phrase: {s.signals.framing || "None matched"}.</p>
+        <p>
+          Topic terms checked:{" "}
+          {s.signals.topicTerms.join(", ") || "Unavailable"}.
+        </p>
+        <p>
+          Exact topic matches: {s.signals.matchedTerms.join(", ") || "None"}.
+          Explanation cue: {s.signals.explanationCue || "None matched"}.
+        </p>
+        <p>
+          Synonyms, personal stories, and engaging introductions can still serve
+          readers. A first-sentence answer is not a universal requirement.
+        </p>
+      </details>
       {s.paragraphs.length > 1 && (
         <details className={styles.options}>
           <summary>
@@ -97,7 +130,7 @@ export default function AnswerReadinessPanel({
           <span>Authorship entries detected</span>
         </div>
         <div>
-          <strong>{report.claims.length}</strong>
+          <strong>{evidenceCount}</strong>
           <span>Passages with claim cues</span>
         </div>
       </div>
@@ -180,7 +213,7 @@ export default function AnswerReadinessPanel({
         <div>
           <h4>Evidence and attribution</h4>
           <p>
-            {report.claims.length} claim passages need editorial attention.{" "}
+            {evidenceCount} claim passages need editorial attention.{" "}
             {
               page.links.filter((l) => {
                 try {
@@ -194,7 +227,10 @@ export default function AnswerReadinessPanel({
           </p>
           <p className={styles.muted}>
             A source link does not establish that it supports a particular
-            claim. Review individual claims in Content and readability.
+            claim.
+            {onNavigate
+              ? " Review individual claims in Content and readability."
+              : " Use Content Evidence Review for detailed source notes and decisions."}
           </p>
         </div>
       </div>

@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -188,8 +189,8 @@ export default function IndexNowClient() {
           <label className="mb-1 block text-xs font-semibold text-slate-300" htmlFor="indexnow-host">
             Your website domain
           </label>
-          <input
-            id="indexnow-host"
+          <ToolUrlInput
+            id="indexnow-host" urlKind="domain"
             type="text"
             value={hostInput}
             onChange={(event) => setHostInput(event.target.value)}

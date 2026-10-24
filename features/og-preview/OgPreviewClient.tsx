@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
 import {
@@ -146,7 +147,7 @@ export default function OgPreviewClient() {
           <div>
             <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Page URL</label>
             <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
-              <input
+              <ToolUrlInput
                 className={inputClass}
                 value={state.pageUrl}
                 onChange={(event) => update("pageUrl", event.target.value)}
@@ -196,7 +197,7 @@ export default function OgPreviewClient() {
           <div>
             <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Image URL</label>
             <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
-              <input className={inputClass} value={state.imageUrl} onChange={(event) => { update("imageUrl", event.target.value); setImageProbe(null); }} placeholder="https://example.com/cover.jpg" inputMode="url" />
+              <ToolUrlInput className={inputClass} value={state.imageUrl} onChange={(event) => { update("imageUrl", event.target.value); setImageProbe(null); }} placeholder="https://example.com/cover.jpg" inputMode="url" />
               <button type="button" onClick={handleCheckImage} disabled={checkingImage || !state.imageUrl.trim()} className={`${secondaryButton} shrink-0`}>
                 {checkingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5" />}
                 {checkingImage ? "Checking…" : "Check dimensions"}

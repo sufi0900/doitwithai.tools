@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import {
   ChevronDown,
@@ -363,9 +364,9 @@ export default function MetaTitleForm({ busy, onSubmit }: Props) {
                 label="Page URL"
                 htmlFor="pageUrl"
                 optional
-                hint="Used only in your preview; the generator does not fetch it."
+                hint="Used for your preview. The page is not imported."
               >
-                <input
+                <ToolUrlInput
                   id="pageUrl"
                   value={form.pageUrl}
                   onChange={(event) => update("pageUrl", event.target.value)}

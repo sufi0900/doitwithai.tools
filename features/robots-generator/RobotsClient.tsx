@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
 import {
@@ -228,7 +229,7 @@ export default function RobotsClient() {
             Site URL
           </label>
           <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
-            <input
+            <ToolUrlInput
               className={inputClass}
               value={siteUrl}
               onChange={(event) => setSiteUrl(event.target.value)}
@@ -250,7 +251,7 @@ export default function RobotsClient() {
             </button>
           </div>
           <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Fetches the site's public /robots.txt and loads it into the builder
+            Fetches the site&apos;s public /robots.txt and loads it into the builder
             below for review. Review before publishing
           </p>
         </div>
@@ -379,7 +380,7 @@ export default function RobotsClient() {
             <div className="mt-3 space-y-2">
               {state.sitemapUrls.map((url, index) => (
                 <div key={index} className="flex gap-2">
-                  <input
+                  <ToolUrlInput
                     className={inputClass}
                     value={url}
                     onChange={(event) => setSitemap(index, event.target.value)}
@@ -561,7 +562,7 @@ export default function RobotsClient() {
             <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono dark:bg-slate-800">
               robots.txt
             </code>{" "}
-            at your site's root (e.g.{" "}
+            at your site&apos;s root (e.g.{" "}
             <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono dark:bg-slate-800">
               /robots.txt
             </code>

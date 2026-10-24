@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import {
   useEffect,
@@ -299,7 +300,7 @@ export default function HeadingAnalyzerClient() {
             <label htmlFor="ha-url" className="mb-2 block text-sm font-bold">
               Website or article URL
             </label>
-            <input
+            <ToolUrlInput
               id="ha-url"
               type="text"
               inputMode="url"

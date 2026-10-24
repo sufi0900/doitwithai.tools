@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useMemo, useRef, useState } from "react";
 import { Dataset, readConsoleFile, reportInfo, csvCell } from "./import";
 import { parseGscCsv } from "@/features/gsc-striking-distance/gscAnalysis";
@@ -197,7 +198,7 @@ export default function ConsoleImportPanel({
                 className="mt-3 block break-words text-xs text-slate-300"
               >
                 {d.name}
-                <input
+                <ToolUrlInput
                   aria-label={"Filtered page URL for " + d.name}
                   className={control + " mt-1"}
                   value={contexts[i] || ""}

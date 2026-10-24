@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
 import {
@@ -248,7 +249,7 @@ export default function LlmsTxtClient() {
               only reads public XML.
             </p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <input
+              <ToolUrlInput
                 className={inputClass}
                 value={sitemapUrl}
                 onChange={(event) => setSitemapUrl(event.target.value)}
@@ -341,7 +342,7 @@ export default function LlmsTxtClient() {
                           placeholder="Page title"
                           maxLength={120}
                         />
-                        <input
+                        <ToolUrlInput
                           className={inputClass}
                           value={link.url}
                           onChange={(event) =>
@@ -463,12 +464,12 @@ export default function LlmsTxtClient() {
             <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono dark:bg-slate-800">
               llms.txt
             </code>{" "}
-            at your site's root (e.g.{" "}
+            at your site&apos;s root (e.g.{" "}
             <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono dark:bg-slate-800">
               /llms.txt
             </code>
-            ). If your robots.txt blocks AI crawlers, they can't reach this file
-            either; allow the crawlers you want citing you.
+            ). Check path-specific crawler rules before assuming the file can be retrieved.
+            This file does not guarantee crawling or citations.
           </section>
         </div>
       </div>

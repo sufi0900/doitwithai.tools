@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FileCode2, Globe2, Loader2, RotateCcw } from "lucide-react";
 import SchemaPanel from "./SchemaPanel";
@@ -222,7 +223,7 @@ export default function ValidatorClient() {
           <label className={styles.editorLabel}>
             Public page URL{" "}
             {mode === "code" ? "(optional for pasted HTML)" : ""}
-            <input
+            <ToolUrlInput
               type="url"
               value={url}
               maxLength={2048}

@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -628,7 +629,7 @@ export default function AnalyzerClient() {
               : "Page URL for resolving links (optional)"}
           </label>
           <div className={styles.urlRow}>
-            <input
+            <ToolUrlInput
               id="audit-url"
               type="url"
               value={url}

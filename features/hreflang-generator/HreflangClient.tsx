@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
 import {
@@ -108,7 +109,7 @@ export default function HreflangClient() {
         <div className="mt-5 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
           <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Page URL</label>
           <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
-            <input
+            <ToolUrlInput
               className={inputClass}
               value={pageUrl}
               onChange={(event) => setPageUrl(event.target.value)}
@@ -121,7 +122,7 @@ export default function HreflangClient() {
             </button>
           </div>
           <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Reads the page's existing &lt;link rel=&quot;alternate&quot; hreflang&gt; tags and loads them into the builder below. Review and export your results.
+            Reads the page&apos;s existing &lt;link rel=&quot;alternate&quot; hreflang&gt; tags and loads them into the builder below. Review and export your results.
           </p>
         </div>
       )}
@@ -153,7 +154,7 @@ export default function HreflangClient() {
                     onChange={(event) => updateEntry(entry.id, { code: event.target.value })}
                     placeholder="en-US"
                   />
-                  <input
+                  <ToolUrlInput
                     className={inputClass}
                     value={entry.url}
                     onChange={(event) => updateEntry(entry.id, { url: event.target.value })}
@@ -201,7 +202,7 @@ export default function HreflangClient() {
               </button>
             </div>
             <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-              Use the HTML tags in your page's &lt;head&gt;. Use the HTTP header format for non-HTML files (PDFs, etc.) where you can't add &lt;link&gt; tags.
+              Use the HTML tags in your page&apos;s &lt;head&gt;. Use the HTTP header format for non-HTML files (PDFs, etc.) where you cannot add &lt;link&gt; tags.
             </p>
           </section>
         </div>

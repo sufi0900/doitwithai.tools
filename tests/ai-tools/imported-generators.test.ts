@@ -31,7 +31,8 @@ test("imported citation checker gives bounded results and marks missing HTML sig
       "# A useful guide\n\nThis guide explains the topic clearly.\n\n## Steps\n\n- Review the evidence\n- Check the source",
     ),
   );
-  assert.ok(result.score >= 0 && result.score <= 100);
+  assert.equal(result.score, null);
+  assert.match(result.scoreReason, /individual evidence/);
   assert.equal(result.checks.length, 12);
   assert.ok(result.checks.some((c) => c.status === "na"));
 });

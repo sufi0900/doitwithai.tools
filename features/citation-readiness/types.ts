@@ -37,7 +37,8 @@ export type CategoryScore = {
 };
 
 export type AnalysisResult = {
-  score: number;
+  score: number | null;
+  scoreReason: string;
   checks: CheckResult[];
   categories: CategoryScore[];
 };

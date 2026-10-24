@@ -3,6 +3,7 @@ import { z } from "zod";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { extractHtml } from "@/features/on-page-analyzer/server/extract";
+import { importFailure } from "@/features/on-page-analyzer/import-errors";
 import { fetchAuditPage } from "@/features/on-page-analyzer/server/fetch";
 import type { PageSnapshot } from "@/features/on-page-analyzer/types";
 export const runtime = "nodejs";
@@ -83,16 +84,8 @@ export async function POST(request: NextRequest) {
   if (running) {
     try {
       return json({ result: await running, cached: true });
-    } catch {
-      return json(
-        {
-          error: {
-            message:
-              "The page could not be imported. Paste its HTML to continue.",
-          },
-        },
-        422,
-      );
+    } catch (e) {
+      return json({ error: importFailure(e) }, 422);
     }
   }
   if (pending.size >= 8)
@@ -145,16 +138,8 @@ export async function POST(request: NextRequest) {
     await limit.release?.().catch(() => undefined);
     try {
       return json({ result: await shared, cached: true });
-    } catch {
-      return json(
-        {
-          error: {
-            message:
-              "The page could not be imported. Paste its HTML to continue.",
-          },
-        },
-        422,
-      );
+    } catch (e) {
+      return json({ error: importFailure(e) }, 422);
     }
   }
   if (pending.size >= 8) {
@@ -179,12 +164,7 @@ export async function POST(request: NextRequest) {
     return json({ result: page, cached: false });
   } catch (e) {
     await limit.release?.().catch(() => undefined);
-    const message =
-      e instanceof Error &&
-      /^(The |Enter |Only |Private |URLs )/.test(e.message)
-        ? e.message
-        : "The page could not be read in time. Paste its HTML to continue.";
-    return json({ error: { message } }, 422);
+    return json({ error: importFailure(e) }, 422);
   } finally {
     pending.delete(key);
   }

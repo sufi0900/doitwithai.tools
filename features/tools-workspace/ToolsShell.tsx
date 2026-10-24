@@ -24,6 +24,7 @@ import { topics, getTopicMeta, topicStyle } from "../tool-catalog/discovery";
 import { ToolActions } from "./ToolActions";
 import { useWorkspace, type WorkspaceView } from "./WorkspaceProvider";
 import "./workspace.css";
+import { RecentUrlSettings } from "../tool-ui/recent-urls/RecentUrlsProvider";
 
 const TOPIC_ICONS: Record<string, typeof Search> = {
   "on-page": Search,
@@ -288,6 +289,7 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
               No matching tools. Try another name or tag.
             </p>
           )}
+        <RecentUrlSettings />
         <details className="workspace-collections">
           <summary>Browse collections</summary>
           <div>

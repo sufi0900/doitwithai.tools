@@ -80,3 +80,13 @@ No alternative browser server was introduced. Browser interaction, responsive vi
 3. Existing AI Citation Readiness Checker expansion: complete in this delivery.
 
 All agreed deliveries are complete. Pause the recurring build task after verifying the remote commit.
+
+
+## Subsequent criteria review
+
+See `docs/citation-criteria-review.md` for the current behavior and validation.
+The article editor now accepts 160,000 text characters. The older draft-text conversion helper retains its 150,000-character ceiling.
+H1 count and paragraph-length measurements are optional context, outside main counts.
+Compatibility responses now return a null numerical score with an explanation.
+Imported article content can be reviewed and edited locally, with original access metadata distinguished from draft changes.
+Shared URL recall and typed source-refusal recovery are included in the follow-up revision.

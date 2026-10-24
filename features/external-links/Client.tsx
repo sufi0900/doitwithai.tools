@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Loader2 } from "lucide-react";
@@ -306,7 +307,7 @@ export default function Client() {
             {mode === "url"
               ? "Public article URL"
               : "Page URL, optional but needed to separate internal links"}
-            <input
+            <ToolUrlInput
               id="external-page-url"
               type="url"
               required={mode === "url"}
