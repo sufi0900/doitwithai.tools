@@ -46,15 +46,28 @@ test("working personas retain required fields without manufactured evidence or d
   missing.segments[0].findings = missing.segments[0].findings.filter(
     (f) => f.topic !== "Decision role",
   );
-  assert.throws(() => validateOutput(missing, input));
+  assert.equal(
+    validateOutput(missing, input).segments[0].findings.find(
+      (f) => f.topic === "Decision role",
+    )?.state,
+    "Unknown",
+  );
   const invented = exampleReport();
   invented.segments[0].findings[0].evidence = [
     { source: "Customer notes", quote: "invented statement" },
   ];
-  assert.throws(() => validateOutput(invented, input));
+  assert.equal(
+    validateOutput(invented, input).segments[0].findings[0].state,
+    "Unknown",
+  );
   const demographic = exampleReport();
   demographic.segments[0].findings[0].topic = "Demographics";
-  assert.throws(() => validateOutput(demographic, input));
+  assert.equal(
+    validateOutput(demographic, input).segments[0].findings.find(
+      (f) => f.topic === "Demographics",
+    )?.state,
+    "Unknown",
+  );
   const duplicate = exampleReport();
   duplicate.segments.push(structuredClone(duplicate.segments[0]));
   assert.throws(() => validateOutput(duplicate, input));
@@ -74,7 +87,10 @@ test("only exact customer-note quotations can support a finding, not business po
     "Supported by supplied notes",
   );
   f.evidence = [{ source: "Business brief", quote: input.brief }];
-  assert.throws(() => validateOutput(report, input));
+  assert.equal(
+    validateOutput(report, input).segments[0].findings[0].state,
+    "Unknown",
+  );
   assert.match(
     audiencePrompt(input).system,
     /Website text explains positioning/,
@@ -132,4 +148,26 @@ test("audience route validates bodies, preserves fallback configuration, and ref
     process.env = env;
     client.generate = generate;
   }
+});
+
+test("all channels and offline planning provide five persona-based ideas", async () => {
+  const { platformNames, channelIdeas, inputErrors } =
+    await import("../../features/audience-research/planning");
+  assert.equal(platformNames.length, 11);
+  for (const name of platformNames) {
+    const ideas = channelIdeas(exampleReport().segments[0], name);
+    assert.equal(ideas.length, 5);
+    assert.equal(new Set(ideas.map((i) => i.format)).size, 5);
+    assert.ok(ideas.every((i) => i.idea.length > 20 && i.test.length > 20));
+  }
+  assert.ok(inputErrors({ brief: "short", websiteText: "", goal: "" }).brief);
+  assert.ok(inputErrors({ brief: "short", websiteText: "", goal: "" }).goal);
+  assert.equal(
+    inputErrors({
+      brief: "",
+      websiteText: "A complete imported business description.",
+      goal: "Identify useful customer needs.",
+    }).brief,
+    "",
+  );
 });

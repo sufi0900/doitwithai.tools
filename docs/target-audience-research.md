@@ -95,3 +95,47 @@ Responsive visuals, keyboard navigation, live generation, source imports, clipbo
 - Existing unrelated image and missing local-service configuration warnings remain in build output.
 
 No production deployment was performed. Live imports, generated personas, and browser behavior remain verification gaps rather than passed checks.
+
+## October 25 expansion and error recovery
+
+The screenshots show an output-validation rejection and a separate generic request failure.
+The referenced preview resolves to deployment `dpl_kGWcFRqBGjcFmWTWp3sfi1Xt9TvS`, using the original audience-tool commit.
+The older runtime-log request exceeded Hobby retention. A permitted recent window returned no matching audience records.
+The exact cause of the historical generic failure remains unconfirmed. No production success is inferred from those log results.
+
+Incomplete persona fields now become Unknown instead of discarding an otherwise usable report.
+Repeated fields are combined. Unsupported quotations are removed and the associated finding becomes Unknown.
+A supported label still requires an exact quotation from supplied customer notes.
+Unsupported demographic assertions are downgraded. A malformed overall response still fails safely and releases its allowance.
+Validation failures log error types and field paths without logging customer text or complete model responses.
+The prompt requests one or two concise personas, reducing pressure on the existing output budget.
+
+The channel selector was removed from the interface. The legacy input field remains compatible but does not select a preferred channel.
+Every persona receives five context-based starter ideas for Search, TikTok, YouTube, LinkedIn, Instagram, Facebook, Reddit, Pinterest, X, Email, and Offline.
+These use persona findings and explicit platform formats. They are editorial starter templates, not separately researched platform findings.
+Additional generated experiments remain available. Full JSON and copied exports include the starter ideas without extra generation requests.
+Offline options include demonstrations, interviews, partnerships, printed information, and small pilots.
+
+The overview now exposes goals, pain points, interests, and decision criteria for each segment.
+Profile cards show age range, location, gender, purchase budget, hobbies, and behavior when established, or Unknown when unavailable.
+Bank balances are not estimated. Persona portraits were omitted to avoid extra image requests and false visual demographic signals.
+
+The form now focuses invalid required fields and presents inline messages beside them.
+A sensible editable goal is prefilled. Website-mode primary submission imports missing context before generating the plan.
+The explicit Import action still reads context without generating a report.
+Combined browser waiting is bounded separately from unchanged server deadlines and source protections.
+Request errors appear beside the main action and receive focus instead of remaining above an unseen result area.
+A native loading dialog shows the active step, blocks background interaction, supports cancellation, and uses reduced-motion styling.
+
+Additional primary references:
+
+- https://www.gov.uk/service-manual/user-research/start-by-learning-user-needs
+- https://www.sba.gov/counseling/plan-your-business/
+
+The explanatory content now covers offline businesses, meaningful persona fields, wasted promotion effort, and practical validation.
+
+Expansion verification passed: 390 tool regression tests, eleven foundation/catalogue tests, explicit TypeScript, targeted lint, and production build.
+Rendered checks confirmed loading-dialog markup, field-help associations, prefilled goal, removed channel selector, offline content, canonical, FAQ consistency, and sitemap uniqueness.
+The six focused audience tests cover recovery, evidence downgrades, required-field helpers, and five distinct formats across eleven channels.
+Browser focus, native-dialog behavior, responsive visuals, actual generation, clipboard, and live imports remain unverified.
+Existing unrelated build warnings remain unchanged.

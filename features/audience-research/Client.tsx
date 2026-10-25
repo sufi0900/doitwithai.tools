@@ -1,6 +1,12 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { Loader2, Users, Download, Copy, ArrowUpRight } from "lucide-react";
+import {
+  channelIdeas,
+  platformNames,
+  demographicProfile,
+  inputErrors,
+} from "./planning";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import type { PageSnapshot } from "@/features/on-page-analyzer/types";
@@ -18,7 +24,7 @@ const initial: AudienceInput = {
   websiteText: "",
   notes: "",
   market: "",
-  goal: "",
+  goal: "Identify potential customers and useful ways to reach them.",
   businessType: "Blog or publication",
   stage: "New idea",
   focus: "Explore options",
@@ -60,6 +66,22 @@ export default function AudienceClient() {
     source: string;
   } | null>(null);
   const [decisions, setDecisions] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState({ brief: "", goal: "" });
+  const dialog = useRef<HTMLDialogElement>(null),
+    actionError = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (busy) dialog.current?.showModal();
+    else dialog.current?.close();
+  }, [busy]);
+  useEffect(() => {
+    if (error) {
+      actionError.current?.focus({ preventScroll: true });
+      actionError.current?.scrollIntoView({
+        block: "center",
+        behavior: "auto",
+      });
+    }
+  }, [error]);
   const active = useRef<AbortController | null>(null),
     result = useRef<HTMLDivElement>(null);
   useEffect(() => () => active.current?.abort(), []);
@@ -81,12 +103,32 @@ export default function AudienceClient() {
     value: AudienceInput[K],
   ) {
     setInput((p) => ({ ...p, [key]: value }));
+    setError("");
+    if (key === "brief" || key === "websiteText" || key === "goal")
+      setFieldErrors(inputErrors({ ...input, [key]: value }));
   }
   async function run(kind: "import" | "plan") {
     if (active.current) return;
+    const needsImport =
+      kind === "plan" &&
+      mode === "website" &&
+      !input.websiteText &&
+      !!url.trim();
     const parsed = inputSchema.safeParse(input);
-    if (kind === "plan" && !parsed.success) {
-      setError(parsed.error.issues[0].message);
+    if (
+      kind === "plan" &&
+      !parsed.success &&
+      (!needsImport || !input.goal.trim())
+    ) {
+      const errors = inputErrors(input);
+      setFieldErrors(errors);
+      const target = document.getElementById(
+        errors.brief ? "audience-brief" : "audience-goal",
+      );
+      target?.focus();
+      target?.scrollIntoView({ block: "center", behavior: "auto" });
+      if (!errors.brief && !errors.goal)
+        setError(parsed.error.issues[0].message);
       return;
     }
     if (kind === "import" && !url.trim()) {
@@ -97,8 +139,9 @@ export default function AudienceClient() {
     active.current = controller;
     const timeout = setTimeout(
       () => controller.abort(),
-      kind === "import" ? 30000 : 55000,
+      kind === "import" ? 30000 : needsImport ? 90000 : 55000,
     );
+    setFieldErrors({ brief: "", goal: "" });
     setBusy(kind);
     setError("");
     setMessage(
@@ -107,7 +150,8 @@ export default function AudienceClient() {
         : "Building a working audience plan.",
     );
     try {
-      if (kind === "import") {
+      let planInput = parsed.success ? parsed.data : input;
+      if (kind === "import" || needsImport) {
         const response = await fetch("/api/ai-tools/on-page/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -129,14 +173,18 @@ export default function AudienceClient() {
             "This page did not expose enough readable text. Describe your offer instead.",
           );
         update("websiteText", text);
+        planInput = { ...input, websiteText: text };
         setImportNote(
           `Imported ${text.length.toLocaleString()} characters from ${page.url}. ${page.partial ? "The source import was partial. " : ""}Only this page was read. Review the text below before planning.`,
         );
         setMessage(
           "Website context imported. Add your goal, then build an audience plan.",
         );
-      } else {
-        const data = parsed.success ? parsed.data : input;
+        if (kind === "import") return;
+        setBusy("plan");
+      }
+      {
+        const data = inputSchema.parse(planInput);
         const response = await fetch("/api/ai-tools/audience-research", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -178,7 +226,7 @@ export default function AudienceClient() {
       brief:
         "A learning website offering practical SEO guides and tools for independent business bloggers.",
       goal: "Help readers write and review accurate page metadata.",
-      focus: "TikTok" as const,
+      focus: "Explore options" as const,
     };
     setInput(data);
     setUrl("");
@@ -205,6 +253,13 @@ export default function AudienceClient() {
           {
             ...saved,
             reviewerDecisions: decisions,
+            channelStarterIdeas: saved.report.segments.map((persona) => ({
+              segment: persona.name,
+              channels: platformNames.map((channel) => ({
+                channel,
+                ideas: channelIdeas(persona, channel),
+              })),
+            })),
             limits:
               "Working hypotheses and supplied notes, not verified audience demographics or measured platform presence.",
           },
@@ -226,7 +281,21 @@ export default function AudienceClient() {
     if (!saved) return;
     try {
       await navigator.clipboard.writeText(
-        JSON.stringify({ ...saved, reviewerDecisions: decisions }, null, 2),
+        JSON.stringify(
+          {
+            ...saved,
+            reviewerDecisions: decisions,
+            channelStarterIdeas: saved.report.segments.map((persona) => ({
+              segment: persona.name,
+              channels: platformNames.map((channel) => ({
+                channel,
+                ideas: channelIdeas(persona, channel),
+              })),
+            })),
+          },
+          null,
+          2,
+        ),
       );
       setMessage("Full audience plan copied.");
     } catch {
@@ -237,6 +306,39 @@ export default function AudienceClient() {
     persona = saved?.report.segments[selected];
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:p-7">
+      <dialog
+        ref={dialog}
+        onCancel={(e) => {
+          e.preventDefault();
+          active.current?.abort();
+        }}
+        aria-labelledby="audience-loading-title"
+        className="m-auto w-[min(90vw,440px)] rounded-2xl border border-slate-200 bg-white p-7 text-slate-900 shadow-2xl backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+      >
+        <Loader2
+          size={36}
+          className="animate-spin motion-reduce:animate-none mx-auto text-blue-600"
+          aria-hidden
+        />
+        <h2
+          id="audience-loading-title"
+          className="mt-4 text-center text-xl font-bold"
+        >
+          {busy === "import"
+            ? "Reading your page"
+            : "Preparing your audience plan"}
+        </h2>
+        <p className="mt-3 text-center text-sm leading-7">
+          Your previous results are preserved. This can take a little time.
+        </p>
+        <button
+          type="button"
+          className={button + " mt-5 w-full"}
+          onClick={() => active.current?.abort()}
+        >
+          Cancel and keep my inputs
+        </button>
+      </dialog>
       <div
         role="status"
         aria-live="polite"
@@ -246,6 +348,7 @@ export default function AudienceClient() {
       </div>
       <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">
         <form
+          noValidate
           className="min-w-0"
           onSubmit={(e) => {
             e.preventDefault();
@@ -316,6 +419,10 @@ export default function AudienceClient() {
               </label>
               <textarea
                 id="audience-brief"
+                aria-invalid={!!fieldErrors.brief}
+                aria-describedby="audience-brief-help"
+                required={!input.websiteText}
+                minLength={input.websiteText ? undefined : 25}
                 className={field}
                 rows={5}
                 maxLength={5000}
@@ -323,6 +430,17 @@ export default function AudienceClient() {
                 onChange={(e) => update("brief", e.target.value)}
                 placeholder="What will you offer? Which problem does it solve? What makes it useful?"
               />
+              <p
+                id="audience-brief-help"
+                className={
+                  fieldErrors.brief
+                    ? "mt-2 text-sm text-red-600 dark:text-red-300"
+                    : "mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400"
+                }
+              >
+                {fieldErrors.brief ||
+                  "Required unless page context is imported. Use at least 25 characters."}
+              </p>
             </div>
             {input.websiteText && (
               <details>
@@ -391,8 +509,11 @@ export default function AudienceClient() {
               />
             </label>
             <label className="block text-sm font-semibold">
-              Decision this research should inform
+              Decision this research should inform (editable)
               <textarea
+                id="audience-goal"
+                aria-invalid={!!fieldErrors.goal}
+                aria-describedby="audience-goal-error"
                 required
                 className={field}
                 rows={2}
@@ -402,20 +523,18 @@ export default function AudienceClient() {
                 placeholder="Choose an initial audience and plan useful launch content."
               />
             </label>
-            <label className="block text-sm font-semibold">
-              Channel focus
-              <select
-                className={field}
-                value={input.focus}
-                onChange={(e) =>
-                  update("focus", e.target.value as AudienceInput["focus"])
-                }
+            {fieldErrors.goal && (
+              <p
+                id="audience-goal-error"
+                className="text-sm text-red-600 dark:text-red-300"
               >
-                {["Explore options", ...channels].map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
-            </label>
+                {fieldErrors.goal}
+              </p>
+            )}
+            <p className="text-xs leading-6 text-slate-500 dark:text-slate-400">
+              Every plan includes ideas for social platforms, search, email, and
+              offline opportunities.
+            </p>
             <details className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
               <summary className="cursor-pointer text-sm font-semibold">
                 Add anonymized customer notes
@@ -450,6 +569,17 @@ export default function AudienceClient() {
               </button>
             </div>
           </fieldset>
+          {error && (
+            <p
+              ref={actionError}
+              tabIndex={-1}
+              role="alert"
+              className="mt-3 rounded-xl border border-red-300 bg-red-50 p-4 text-sm leading-7 text-red-900 dark:bg-red-950/40 dark:text-red-100"
+            >
+              {error}
+            </p>
+          )}
+
           {busy && (
             <button
               type="button"
@@ -482,14 +612,6 @@ export default function AudienceClient() {
               {busy === "import"
                 ? "Reading public page context…"
                 : "Building working personas and a validation plan…"}
-            </p>
-          )}
-          {error && (
-            <p
-              role="alert"
-              className="mb-4 break-words rounded-xl border border-red-300 bg-red-50 p-4 text-sm leading-7 text-red-800 dark:bg-red-950/30 dark:text-red-200"
-            >
-              {error}
             </p>
           )}
           {!saved ? (
@@ -565,6 +687,42 @@ export default function AudienceClient() {
                 <div className="space-y-5">
                   <p className="text-base leading-8">{saved.report.summary}</p>
                   <div className="grid gap-3 sm:grid-cols-2">
+                    {saved.report.segments.map((segment) => (
+                      <section
+                        key={segment.name}
+                        className="rounded-xl bg-blue-50 p-4 dark:bg-blue-950/30"
+                      >
+                        <h3 className="font-bold">{segment.name}</h3>
+                        <p className="mt-2 text-sm leading-7">{segment.fit}</p>
+                        {[
+                          "Goals",
+                          "Pain points",
+                          "Interests",
+                          "Decision criteria",
+                        ].map((topic) => (
+                          <p key={topic} className="mt-2 text-sm leading-7">
+                            <strong>{topic}</strong>{" "}
+                            {segment.findings.find((f) => f.topic === topic)
+                              ?.value || "Not established."}
+                          </p>
+                        ))}
+                      </section>
+                    ))}
+                  </div>
+                  <p className="text-sm leading-7">
+                    Explore five starter ideas for each of{" "}
+                    {platformNames.length} online and offline channels in
+                    Content and channels.
+                  </p>
+                  {saved.report.reviewNotes?.map((note) => (
+                    <p
+                      key={note}
+                      className="rounded-lg bg-amber-50 p-3 text-sm dark:bg-amber-950/30"
+                    >
+                      {note}
+                    </p>
+                  ))}
+                  <div className="grid gap-3 sm:grid-cols-2">
                     {saved.report.segments.map((s, i) => (
                       <button
                         key={s.name}
@@ -616,6 +774,26 @@ export default function AudienceClient() {
                     </p>
                     {tab === "Buyer personas" ? (
                       <div className="mt-5 space-y-4">
+                        <section className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
+                          <h4 className="font-bold">
+                            Profile details to establish
+                          </h4>
+                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                            {demographicProfile(persona).map(
+                              ({ topic, finding, note }) => (
+                                <div key={topic}>
+                                  <h5 className="text-sm font-bold">{topic}</h5>
+                                  <p className="text-sm leading-7">
+                                    {finding?.value || "Not established"}
+                                  </p>
+                                  <p className="text-xs leading-6 text-slate-500 dark:text-slate-400">
+                                    {finding?.state || "Unknown"}. {note}
+                                  </p>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </section>
                         {persona.findings.map((f, i) => {
                           const key = `${selected}-${i}`;
                           return (
@@ -685,52 +863,60 @@ export default function AudienceClient() {
                       </div>
                     ) : (
                       <div className="mt-5 space-y-4">
-                        {persona.outreach.map((o, i) => (
-                          <section
-                            key={i}
-                            className="rounded-xl border border-slate-200 p-5 dark:border-slate-700"
+                        <p className="text-sm leading-7">
+                          These starter ideas use persona context and platform
+                          formats. They are planning suggestions, not proof of
+                          audience presence.
+                        </p>
+                        {platformNames.map((channel) => (
+                          <details
+                            key={channel}
+                            className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
                           >
-                            <h4 className="font-bold">
-                              {o.channel} · Suggested experiment
-                            </h4>
-                            <p className="mt-2 text-sm leading-7">
-                              {o.rationale}
-                            </p>
-                            <dl className="mt-3 space-y-3 text-sm leading-7">
-                              {[
-                                ["Content idea", o.contentIdea],
-                                ["Format", o.format],
-                                ["Small test", o.experiment],
-                                ["Observe", o.metric],
-                              ].map(([name, value]) => (
-                                <div key={name}>
-                                  <dt className="font-semibold">{name}</dt>
-                                  <dd>{value}</dd>
-                                </div>
+                            <summary className="min-h-11 cursor-pointer py-2 font-bold">
+                              {channel} · Five ideas
+                            </summary>
+                            <ol className="mt-3 list-decimal space-y-5 pl-5">
+                              {channelIdeas(persona, channel).map((idea, i) => (
+                                <li key={i} className="text-sm leading-7">
+                                  <strong>{idea.format}</strong>
+                                  <p>{idea.idea}</p>
+                                  <p className="mt-2 text-slate-500 dark:text-slate-300">
+                                    Test: {idea.test}
+                                  </p>
+                                </li>
                               ))}
-                            </dl>
+                            </ol>
+                          </details>
+                        ))}
+                        <h4 className="font-bold">
+                          Additional tailored experiments
+                        </h4>
+                        {persona.outreach.map((o, i) => (
+                          <div
+                            key={i}
+                            className="rounded-xl bg-slate-100 p-4 text-sm leading-7 dark:bg-slate-800"
+                          >
+                            <strong>{o.channel}</strong>
+                            <p>{o.contentIdea}</p>
+                            <p>{o.experiment}</p>
                             {destinations[o.channel] && (
                               <a
-                                className="mt-4 inline-flex min-h-11 items-center gap-2 font-semibold text-blue-700 underline dark:text-blue-300"
+                                className="mt-3 inline-flex min-h-11 items-center gap-2 font-semibold text-blue-700 underline dark:text-blue-300"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 href={
                                   destinations[o.channel] +
                                   (o.channel === "Instagram"
                                     ? ""
                                     : encodeURIComponent(o.topic))
                                 }
-                                target="_blank"
-                                rel="noopener noreferrer"
                               >
                                 Explore {o.channel}
                                 <ArrowUpRight size={15} aria-hidden />
                               </a>
                             )}
-                            <p className="mt-2 text-xs leading-6">
-                              Check relevance, community rules, and actual
-                              conversations before choosing a channel. Results
-                              may require sign-in.
-                            </p>
-                          </section>
+                          </div>
                         ))}
                       </div>
                     )}

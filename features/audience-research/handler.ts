@@ -114,9 +114,22 @@ export async function POST(request: NextRequest) {
     );
   } catch (cause) {
     const failure = geminiFailure(cause);
+    if (!failure)
+      process.stderr.write(
+        JSON.stringify({
+          event: "audience_output_validation_failed",
+          reason: cause instanceof Error ? cause.name : "Unknown",
+          fields:
+            typeof cause === "object" && cause && "issues" in cause
+              ? (cause as { issues: { path: unknown[] }[] }).issues
+                  .slice(0, 8)
+                  .map((i) => i.path.join("."))
+              : [],
+        }) + "\n",
+      );
     return error(
       failure?.message ||
-        "The audience plan failed evidence or structure checks. Your inputs are preserved. Please try again.",
+        "Some audience sections could not be completed. Your inputs are preserved. Try a shorter brief or review the example.",
       failure?.status || 502,
       failure?.code || "OUTPUT_VALIDATION_FAILED",
     );

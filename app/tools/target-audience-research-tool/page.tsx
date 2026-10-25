@@ -48,7 +48,7 @@ const faqs = [
   ],
   [
     "Can I plan TikTok content for my audience?",
-    "Yes. Choose TikTok as your channel focus. Review suggested formats and small experiments before deciding whether the channel attracts relevant people.",
+    "Yes. Every plan includes five TikTok starter ideas alongside other channels. Review and test them before assuming the platform attracts relevant customers.",
   ],
   [
     "What if my page cannot be imported?",
@@ -312,6 +312,96 @@ export default function Page() {
             Respect community rules. Research destinations are discovery links,
             not endorsements of a group or permission to send unsolicited
             messages.
+          </p>
+        </section>
+        <section>
+          <h2 className="text-3xl font-bold">
+            Audience planning for local and offline businesses
+          </h2>
+          <p className={p}>
+            You do not need a website to use this tool. Describe your shop,
+            service, product, publication, or business idea in plain language.
+          </p>
+          <p className={p}>
+            For a local service, explain where you can operate, what customers
+            need, and which alternatives they currently use.
+          </p>
+          <p className={p}>
+            The offline plan suggests interviews, relevant venues,
+            demonstrations, partner conversations, and small pilots. These are
+            research options, not confirmed customer locations.
+          </p>
+          <p className={p}>
+            Ask people about their most recent experience with the problem.
+            Their actual decisions are more useful than agreement with a
+            hypothetical sales pitch.
+          </p>
+          <p className={p}>
+            <a
+              className="text-blue-700 underline dark:text-blue-300"
+              href="https://www.gov.uk/service-manual/user-research/start-by-learning-user-needs"
+            >
+              GOV.UK’s user research guidance
+            </a>{" "}
+            recommends reviewing existing evidence and learning about real user
+            needs before defining profiles.
+          </p>
+        </section>
+        <section>
+          <h2 className="text-3xl font-bold">
+            A detailed persona should help you make decisions
+          </h2>
+          <p className={p}>
+            Review goals, barriers, interests, behavior, buying triggers, and
+            decision criteria. These details help you choose useful messages,
+            formats, and next actions.
+          </p>
+          <p className={p}>
+            Age, location, gender, hobbies, and purchase budget can matter in
+            some markets. They should remain unknown when your evidence does not
+            establish them.
+          </p>
+          <p className={p}>
+            A business description cannot reveal a customer’s bank balance.
+            Investigate willingness to pay and relevant purchasing constraints
+            through appropriate customer research.
+          </p>
+          <p className={p}>
+            For B2B offers, separate the user, buyer, and approver. One person’s
+            daily workflow may differ from the concerns of the purchasing team.
+          </p>
+          <p className={p}>
+            Use the profile as a working map. Revise it when interviews, support
+            questions, observations, or customer feedback contradict your
+            assumptions.
+          </p>
+        </section>
+        <section>
+          <h2 className="text-3xl font-bold">
+            Reduce wasted content and promotion work
+          </h2>
+          <p className={p}>
+            Without a specific audience problem, a business can produce generic
+            content, choose unsuitable channels, or explain features that
+            customers do not value.
+          </p>
+          <p className={p}>
+            This workspace organizes the initial questions. It connects a
+            possible audience with pain points, useful content, and a small test
+            you can observe.
+          </p>
+          <p className={p}>
+            Each channel includes five starter ideas adapted to the working
+            persona. Compare social posts, search content, consent-based emails,
+            and offline activities.
+          </p>
+          <p className={p}>
+            Start with a manageable experiment. Look for relevant questions and
+            meaningful actions before investing in a larger campaign.
+          </p>
+          <p className={p}>
+            The suggestions do not replace interviews, market data, or sales
+            evidence. They help you decide what to investigate next.
           </p>
         </section>
         <section>
