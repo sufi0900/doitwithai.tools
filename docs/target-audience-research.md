@@ -18,6 +18,7 @@ Reports include:
 - A business offer summary and exact source passages explaining potential audience fit.
 - One or two requested working personas, with users and buyers distinguished where relevant.
 - Context, decision role, goals, pain points, interests, buying triggers, objections, and decision criteria.
+- Eight proposed profile assumptions, each containing a rationale, validation question, and optional matching source quotation.
 - Eleven channel plans, each containing five tailored ideas, audience context, rationale, an experiment, and an observable metric.
 - Interview questions, validation tasks, exclusions, and unresolved research questions.
 - Review decisions, JSON and clipboard exports, and findings CSV with spreadsheet-formula protection.
@@ -41,7 +42,7 @@ Website mode also exposed optional context as prominent form fields and defaulte
 These defaults could influence an otherwise valid website plan.
 
 The demographic placeholder panel and deterministic channel generator were removed.
-Useful operational hypotheses appear first. Unsupported demographic details remain within a compact research-gaps disclosure.
+Useful operational hypotheses appear first. A separate proposed profile now provides testable demographic and purchasing assumptions, without labeling them as established customer facts.
 The generation prompt explicitly requests concrete topics, audience tasks, actual offerings, and channel-specific ideas.
 The overview now shows the offer, source passages, and explanations supporting the proposed segments.
 A report cannot silently substitute the illustrative example after a failed request.
@@ -78,7 +79,7 @@ Supported by supplied notes still requires an exact quote from Customer notes.
 Customer notes are not independently verified.
 
 Invalid quotation references are removed. Operational suggestions remain clearly labeled hypotheses instead of becoming empty profile fields.
-Unsupported age, gender, budget, hobbies, or demographic assertions remain Unknown.
+Unsupported demographic assertions in factual findings remain Unknown. Proposed profile values remain separately labeled planning assumptions, rather than factual findings.
 Bank balances, customer identities, platform membership, research findings, and measured confidence are not invented.
 
 Each persona must retain at least six populated core operational findings.
@@ -110,6 +111,51 @@ The landing page retains one H1, a canonical URL, application markup, breadcrumb
 Source and channel links use fixed destinations and encoded search terms. No generated destinations are trusted or opened automatically.
 No posts, emails, third-party messages, or private account actions are performed.
 
+## Proposed audience sweet spot
+
+The user requested useful demographic guesses after reviewing the earlier evidence-only profile.
+Each persona now includes eight distinct, generated assumptions:
+
+- Age range.
+- Gender.
+- Countries and markets.
+- Interests and hobbies.
+- Purchase budget.
+- Financial fit.
+- Work or life stage.
+- Decision style.
+
+Every card contains a proposed value, a business-specific rationale, and a validation question.
+The label states Assumptions to test. A sweet spot does not mean a statistically optimal or observed audience.
+The profile is generated within the existing bounded request. No separate demographic request or service was added.
+The output ceiling remains 8,000 tokens. Concise profile values and explanations limit additional output.
+
+The prompt requests broad experimental age cohorts with comparison groups, rather than claimed customer-age concentrations.
+It distinguishes child users from adult buyers, and intended wearers from purchasers or gift buyers.
+Gender remains inclusive unless the offer explicitly addresses a particular audience.
+Countries represent candidate markets, respecting stated service areas and availability.
+Website language does not establish visitor nationality. Unrelated hobbies and demographic stereotypes are discouraged.
+Budget figures are illustrative purchasing scenarios, with currency and frequency, rather than inferred personal spending power.
+Financial fit describes purchasing constraints. Personal bank balances, savings, and net worth are not estimated.
+The normalizer replaces personal wealth figures in that section with an affordability question.
+
+Profiles require all eight distinct topics. Source quotes must match supplied text.
+A matching quote explains the planning rationale; it does not verify demographic distributions.
+Review options include Use for initial test, Revise before testing, and Not relevant.
+These decisions do not turn an assumption into verified research.
+Full JSON and clipboard reports contain the profile and review decisions.
+CSV exports include proposed profile rows, Planning assumption labels, rationales, and validation questions.
+Formula protection covers the new rows.
+
+Additional sources reviewed on October 25, 2026:
+
+- https://www.nngroup.com/articles/persona-types/
+- https://developers.google.com/search/docs/fundamentals/creating-helpful-content
+
+Nielsen Norman Group describes proto personas based on existing knowledge and assumptions, separate from research-based personas.
+Google emphasizes helpful, reliable content. It does not certify demographic guesses or guarantee rankings for this implementation.
+This supports transparent planning drafts, rather than presenting generated demographics as observed facts.
+
 ## Research basis
 
 Reviewed on October 25, 2026:
@@ -120,7 +166,7 @@ Reviewed on October 25, 2026:
 - https://www.sba.gov/counseling/plan-your-business/
 
 The primary guidance separates business context, proposed audiences, and actual customer research.
-It supports reviewing tasks, needs, behavior, constraints, and customer evidence rather than filling profiles with demographic assumptions.
+It supports reviewing tasks, needs, behavior, constraints, and customer evidence while keeping proposed assumptions distinct from observed demographics.
 No quantitative keyword volumes, difficulty estimates, audience sizes, ranking forecasts, or platform reach claims were available or invented.
 
 ## Verification
@@ -129,7 +175,7 @@ No quantitative keyword volumes, difficulty estimates, audience sizes, ranking f
 - Eleven catalogue and foundation tests passed, giving 407 unique passing tests.
 - Explicit TypeScript passed. Targeted lint passed with the existing missing-pages-directory configuration diagnostic.
 - The production build passed, generating 97 static pages. Existing unrelated warnings remain.
-- Rendered checks passed for one H1, canonical, sitemap identity, application schema, and all eight matching FAQ entries.
+- Rendered checks passed for one H1, canonical, sitemap identity, application schema, and all eight matching FAQ entries at that delivery.
 - Initial markup checks passed for URL-first submission, optional collapsed context, field-help associations, catalogue presence, and loading-dialog markup.
 - Fixture tests cover representative late-page content, same-origin selection, request bounds, supporting-page refusals, cancellation, evidence labels, report completeness, and channel coverage.
 - Git whitespace checks passed.
@@ -139,3 +185,21 @@ That DNS failure does not establish a website error. Live source imports remain 
 Live generation, native-dialog behavior, keyboard interactions, responsive visuals, clipboard, and downloads remain unverified.
 The previously unavailable managed preview was not retried without an infrastructure repair.
 No production deployment, secret changes, private login, or third-party messages were performed.
+
+
+## Sweet spot verification
+
+- All 401 tool feature and regression tests passed, including seventeen focused audience tests.
+- Eleven catalogue and foundation tests passed, giving 412 unique passing tests.
+- Explicit TypeScript and targeted lint passed. The existing missing-pages-directory diagnostic remains.
+- The production build passed and generated 97 static pages. Existing unrelated warnings remain.
+- Rendered checks passed for canonical, one H1, sitemap identity, application schema, nine matching FAQs, and the public methodology section.
+- Rendered initial form checks preserved URL-only input, collapsed optional context, and loading-dialog markup.
+- Profile component tests confirmed all eight cards, distinct accessible headings, labeled controls, independent review states, escaped text, and visible assumption labels.
+- Feature tests covered website-only profiles, required topics, resource bounds, evidence quotations, financial-estimate normalization, idempotent validation, and CSV formula protection.
+- Git whitespace checks passed.
+
+Browser interaction, responsive visuals, actual generation, clipboard, downloads, and production imports remain unverified.
+No new live source probe was necessary because the shared importer was unchanged.
+The previous managed-preview startup problem remains unresolved. No unsupported browser workaround was used.
+No deployment, secret changes, private login, or third-party messages were performed.

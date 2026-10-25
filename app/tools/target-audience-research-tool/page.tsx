@@ -47,6 +47,10 @@ const faqs = [
     "No. Supplied customer notes can support individual findings, but they are not independently verified. Other findings remain hypotheses or unknowns.",
   ],
   [
+    "Can I get age, gender, and budget suggestions?",
+    "Yes. The proposed audience sweet spot provides starting assumptions, reasons, and validation questions. These suggestions do not establish actual customer demographics or personal wealth.",
+  ],
+  [
     "Can I plan TikTok content for my audience?",
     "Yes. Each plan includes five tailored TikTok ideas alongside other channels. Test them before assuming the platform attracts relevant customers.",
   ],
@@ -192,8 +196,9 @@ export default function Page() {
             decisions.
           </p>
           <p className={p}>
-            A convincing profile can still be fictional. Avoid filling gaps with
-            invented ages, income, hobbies, or platform preferences.
+            A proposed profile can guide an initial test. Keep assumptions
+            separate from observed customer facts, and revise them when evidence
+            disagrees.
           </p>
           <p className={p}>
             Our{" "}
@@ -208,8 +213,9 @@ export default function Page() {
           </p>
           <p className={p}>
             This tool applies that workflow. Business context suggests possible
-            segments. Customer notes can support specific findings, while
-            unestablished details remain unknown.
+            segments. The sweet spot provides testable profile assumptions.
+            Customer notes can support specific findings without verifying the
+            entire persona.
           </p>
         </section>
         <section>
@@ -358,9 +364,10 @@ export default function Page() {
             formats, and next actions.
           </p>
           <p className={p}>
-            Age, location, gender, hobbies, and purchase budget can matter in
-            some markets. They should remain unknown when your evidence does not
-            establish them.
+            The proposed audience sweet spot suggests age cohorts, gender focus,
+            candidate markets, relevant interests, purchase budgets, and
+            decision styles. Each suggestion includes a reason and a validation
+            question.
           </p>
           <p className={p}>
             A business description cannot reveal a customer’s bank balance.
@@ -375,6 +382,59 @@ export default function Page() {
             Use the profile as a working map. Revise it when interviews, support
             questions, observations, or customer feedback contradict your
             assumptions.
+          </p>
+        </section>
+        <section>
+          <h2 className="text-3xl font-bold">
+            How to use an audience sweet spot
+          </h2>
+          <p className={p}>
+            A sweet spot here means a proposed starting audience, not a measured
+            concentration of customers or a statistically optimal target.
+          </p>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {[
+              [
+                "Start with a test cohort",
+                "Use a proposed age band or market as a test group. Keep comparison groups so you can challenge the initial assumption.",
+              ],
+              [
+                "Check the business reason",
+                "Review how each suggestion relates to the offer, task, price, or service area. Avoid narrowing audiences through unrelated stereotypes.",
+              ],
+              [
+                "Replace guesses with learning",
+                "Compare customer interviews, relevant analytics, and purchase decisions. Keep, revise, or discard assumptions as the evidence develops.",
+              ],
+            ].map(([title, text]) => (
+              <article
+                key={title}
+                className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700"
+              >
+                <h3 className="text-lg font-bold">{title}</h3>
+                <p className={p}>{text}</p>
+              </article>
+            ))}
+          </div>
+          <p className={p}>
+            <a
+              href="https://www.nngroup.com/articles/persona-types/"
+              className="font-semibold text-blue-700 underline dark:text-blue-300"
+            >
+              Nielsen Norman Group’s persona guidance
+            </a>{" "}
+            describes lightweight personas built from existing knowledge and
+            assumptions. They provide a starting point before further research.
+          </p>
+          <p className={p}>
+            For a clothing business, distinguish the intended wearer from the
+            buyer or gift purchaser. For children’s products, separate child
+            users from adult purchasing decisions.
+          </p>
+          <p className={p}>
+            Countries are candidate markets to investigate, subject to service
+            availability. Spending ranges are illustrative purchasing scenarios,
+            not estimates of account funds or customer wealth.
           </p>
         </section>
         <section>

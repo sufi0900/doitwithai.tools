@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Loader2, Users, Download, Copy, ArrowUpRight } from "lucide-react";
 import { inputErrors } from "./planning";
+import ProposedProfile from "./ProposedProfile";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { importAudienceWebsite } from "./website";
@@ -846,6 +847,17 @@ export default function AudienceClient() {
                     )}
                     {tab === "Buyer personas" ? (
                       <div className="mt-5 space-y-4">
+                        <ProposedProfile
+                          profile={persona.proposedProfile}
+                          decisions={decisions}
+                          segmentIndex={selected}
+                          onDecision={(key, value) =>
+                            setDecisions((previous) => ({
+                              ...previous,
+                              [key]: value,
+                            }))
+                          }
+                        />
                         {persona.findings.map((f, i) => {
                           const key = `${selected}-${i}`;
                           if (f.state === "Unknown") return null;
@@ -908,12 +920,12 @@ export default function AudienceClient() {
                         })}
                         <details className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
                           <summary className="cursor-pointer text-sm font-semibold">
-                            Research gaps and demographic limits
+                            Research gaps to investigate
                           </summary>
                           <p className="mt-3 text-sm leading-7">
-                            A website cannot establish actual customer ages,
-                            genders, hobbies, or spending budgets. These details
-                            need relevant customer research.
+                            Use the proposed profile as a planning draft. Review
+                            these open questions before treating assumptions as
+                            customer facts.
                           </p>
                           {persona.findings
                             .filter((f) => f.state === "Unknown")
