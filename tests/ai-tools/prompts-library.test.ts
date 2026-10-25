@@ -69,7 +69,7 @@ test("only published guides appear in public search and resolve as detail routes
   assert.equal(findPromptDetail("missing-page"), undefined);
   assert.deepEqual(
     filterPreviews("all", "", publishedPrompts).map((p) => p.id),
-    ["meta-title"],
+    ["search-intent", "meta-title"],
   );
   assert.deepEqual(
     filterPreviews("on-page", "meta descriptions", publishedPrompts).map(
@@ -83,7 +83,7 @@ test("only published guides appear in public search and resolve as detail routes
     Object.entries(promptDetails)
       .filter(([, detail]) => detail.ready)
       .map(([id]) => id),
-    ["meta-title"],
+    ["search-intent", "meta-title"],
   );
 });
 
@@ -131,4 +131,34 @@ test("the supplied context example fills every prompt without unresolved placeho
     filterPreviews("all", "bulk").map((p) => p.id),
     ["meta-title"],
   );
+});
+
+test("intent workflows carry independent context and preserve evidence limits", async () => {
+  const { intentPrompts, intentExample } =
+    await import("../../features/prompts/intent-workflow");
+  const { promptDetails, findPromptDetail } =
+    await import("../../features/prompts/details");
+  assert.equal(intentPrompts.length, 6);
+  assert.equal(
+    promptDetails["search-intent"].promptCount,
+    intentPrompts.length,
+  );
+  assert.equal(
+    findPromptDetail("chatgpt-prompts-for-search-intent")?.prompt.id,
+    "search-intent",
+  );
+  assert.equal(new Set(intentPrompts.map((p) => p.id)).size, 6);
+  for (const prompt of intentPrompts) {
+    const fields = [...prompt.template.matchAll(/\{\{([^{}]+)\}\}/g)].map(
+      (match) => match[1],
+    );
+    assert.deepEqual([...new Set(fields)].sort(), [...prompt.inputs].sort());
+    assert.doesNotMatch(
+      fillPreview(prompt.template, intentExample),
+      /\{\{[^{}]+\}\}/,
+    );
+    assert.match(prompt.template, /Never invent browsing/);
+    assert.match(prompt.template, /observations from interpretations/);
+    assert.equal(prompt.tool.href, "/tools/search-intent-checker");
+  }
 });

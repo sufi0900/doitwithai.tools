@@ -47,6 +47,24 @@ export type PromptPreview = {
 };
 export const promptPreviews: PromptPreview[] = [
   {
+    id: "search-intent",
+    category: "keywords",
+    title: "ChatGPT prompts for search intent and keyword intent",
+    description:
+      "Six prompts to interpret queries, review result notes, resolve mixed intent, and plan useful content.",
+    outcome: "An evidence-aware content plan",
+    tags: ["Search intent", "Keyword intent", "Content strategy"],
+    inputs: ["Keywords", "Audience and market", "Observed results"],
+    template:
+      "Review {{Keywords}} for {{Audience and market}}. Use {{Observed results}} only as supplied evidence. Identify likely intent, reader task, exact cues, and uncertainty. Never invent browsing or keyword metrics.",
+    checks: ["Verify cues.", "Inspect current results."],
+    tool: {
+      name: "Search Intent Checker",
+      href: "/tools/search-intent-checker",
+    },
+  },
+
+  {
     id: "meta-title",
     category: "on-page",
     title: "ChatGPT prompts for meta titles and descriptions",

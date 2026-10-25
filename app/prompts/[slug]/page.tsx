@@ -1,3 +1,4 @@
+import IntentPromptArticle from "@/features/prompts/IntentPromptArticle";
 import MetaPromptArticle from "@/features/prompts/MetaPromptArticle";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -112,6 +113,8 @@ export default function PromptDetailPage({
         : []),
     ],
   };
+  if (prompt.id === "search-intent")
+    return <IntentPromptArticle schema={schema} />;
   if (prompt.id === "meta-title") return <MetaPromptArticle schema={schema} />;
   return (
     <div className={styles.page}>

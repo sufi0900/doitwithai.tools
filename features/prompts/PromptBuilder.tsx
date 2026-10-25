@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
+import { chatGPTLink } from "./meta-workflow";
 import { Copy } from "lucide-react";
 import { fillPreview, type PromptPreview } from "./catalog";
 import styles from "./prompts.module.css";
@@ -10,6 +11,7 @@ export default function PromptBuilder({
   prompt: PromptPreview;
   example: Record<string, string>;
 }) {
+  const outputId = useId();
   const [values, setValues] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const output = useRef<HTMLTextAreaElement>(null);
@@ -77,11 +79,11 @@ export default function PromptBuilder({
       </div>
       <div className={styles.outputPanel}>
         <h3>2. Copy your prompt</h3>
-        <label className={styles.srOnly} htmlFor="compiled-prompt">
+        <label className={styles.srOnly} htmlFor={outputId}>
           Customized prompt
         </label>
         <textarea
-          id="compiled-prompt"
+          id={outputId}
           ref={output}
           className={styles.promptText}
           rows={15}
@@ -92,6 +94,18 @@ export default function PromptBuilder({
           <Copy size={16} aria-hidden="true" />
           Copy prompt
         </button>
+        {chatGPTLink(text) ? (
+          <a
+            className={styles.textLink}
+            href={chatGPTLink(text)!}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open in ChatGPT
+          </a>
+        ) : (
+          <p>Copy this longer prompt into your assistant.</p>
+        )}
         <p className={styles.copyStatus} role="status">
           {message || "Unfilled fields remain visible as {{placeholders}}."}
         </p>

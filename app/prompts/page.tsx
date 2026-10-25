@@ -17,7 +17,7 @@ import styles from "@/features/prompts/prompts.module.css";
 const origin = "https://doitwithai.tools";
 const title = "AI Prompts for SEO & Content Writing | Do It With AI Tools";
 const description =
-  "Explore our SEO and content prompt library. Use nine customizable ChatGPT prompts to draft, compare, and improve meta titles and descriptions.";
+  "Explore practical ChatGPT prompt guides for meta titles, descriptions, and search intent. Customize your brief, copy prompts, and review worked examples.";
 export const metadata: Metadata = {
   metadataBase: new URL(origin),
   title,

@@ -15,6 +15,35 @@ export type PromptDetail = {
   mistakes: string[];
 };
 export const promptDetails: Record<string, PromptDetail> = {
+  "search-intent": {
+    slug: "chatgpt-prompts-for-search-intent",
+    ready: true,
+    promptCount: 6,
+    title: "ChatGPT prompts for search intent and keyword intent",
+    description:
+      "Use six customizable ChatGPT prompts for keyword and search intent. Review supplied evidence, resolve mixed intent, and choose useful page formats.",
+    overview:
+      "Understand the reader task before deciding what to publish. Separate wording clues from observed search results and turn reviewed intent into a focused brief.",
+    example: {
+      Keywords: "how to write a meta title",
+      "Audience and market": "New bloggers, English, United States",
+      "Observed results": "Not collected. Use wording only.",
+    },
+    output:
+      "Likely informational intent. A practical guide may fit. Confirm against current results before choosing the final format.",
+    exampleNote: "Illustrative interpretation, not a live search measurement.",
+    steps: [
+      "Enter your query.",
+      "Collect actual result notes.",
+      "Review the evidence.",
+      "Choose a focused page purpose.",
+    ],
+    mistakes: [
+      "Inventing search results.",
+      "Treating an intent label as a ranking guarantee.",
+    ],
+  },
+
   "meta-title": {
     slug: "chatgpt-prompts-for-meta-title-and-meta-description",
     ready: true,

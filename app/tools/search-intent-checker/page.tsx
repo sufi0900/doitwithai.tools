@@ -317,6 +317,21 @@ export default function Page() {
             be researching features, pricing, alternatives, or account access.
           </p>
         </section>
+        <section className="rounded-2xl border border-[#5271FF]/30 bg-[#5271FF]/5 p-6">
+          <h2 className="text-2xl font-bold">
+            Use ChatGPT prompts to explore keyword intent
+          </h2>
+          <p className={prose}>
+            Review wording cues, compare supplied search-result notes, and turn
+            mixed intent into a focused content brief.
+          </p>
+          <Link
+            href="/prompts/chatgpt-prompts-for-search-intent"
+            className="mt-4 inline-flex min-h-11 items-center font-bold text-primary underline dark:text-blue-300"
+          >
+            Read the search intent prompt guide
+          </Link>
+        </section>
         <section aria-labelledby="intent-strategies">
           <h2 id="intent-strategies" className="text-3xl font-black">
             Different intents need different content strategies

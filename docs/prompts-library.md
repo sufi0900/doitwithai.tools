@@ -61,3 +61,16 @@ Built-in image generation edited the previous branded cover. The exact current e
 > Use case: precise-object-edit. Asset type: 16:9 editorial featured image for a practical prompt guide. Input image 1 is the edit target. Keep the exact existing d + AI circuit brand emblem and restrained DO IT WITH AI TOOLS branding at upper left. Keep the rich #5271FF blue background, warm white palette, premium soft studio light, tactile paper and subtle 3D depth. Replace the generic headline on the LEFT with this complete, clearly legible exact headline: 'ChatGPT prompts for meta titles & descriptions'. Set 'ChatGPT prompts for' as a readable introductory line above 'Meta titles & descriptions', balanced within the left half with generous margins. Replace the floating abstract cards on the RIGHT with one elegant, mostly front-facing desktop screen mockup showing a prompt-writing panel. Inside the screen, include exact readable panel heading 'META TITLE PROMPT', prompt text 'Write five title options from this page summary. Keep the topic clear. Avoid unsupported claims.', and a distinct blue button labeled 'Copy prompt' with a small copy icon. Include a second subtle tab labeled 'Meta description'. The screen is an illustrative editorial mockup, not an actual ChatGPT screenshot; no ChatGPT logo or fabricated branding. It should unmistakably communicate that this article contains copyable prompts. Maintain large readable typography and hierarchy without text overlap. Keep blue sculptural background details restrained. No people, no metrics, no ranking promises, no charts, no watermarks, no extra slogans. Finished polished landscape 16:9 cover artwork.
 
 Project asset: `public/prompts/metadata-prompts-hero-v2.webp`, 1600×900, approximately 105 KB. The article, card, social metadata, and Article schema share this versioned image. It includes the complete prompt-guide heading and an illustrative prompt screen with a Copy prompt button.
+
+## Search intent guide
+
+The published library now includes `/prompts/chatgpt-prompts-for-search-intent`.
+One guide covers search intent and keyword intent rather than creating overlapping pages.
+It includes six independent prompts, editable context, illustrative examples, result-review limits, and practical next steps.
+The guide reuses the established editorial typography and responsive prompt builder.
+Each builder now creates a unique output ID. Its accessible label targets the correct output when several builders appear together.
+The shared builder includes an optional ChatGPT handoff using the existing URL-length guard.
+Long prompts retain a copy-first fallback. Opening ChatGPT is a user action, not an automatic request.
+Published-guide discovery, categories, metadata, and sitemap entries use the existing registry.
+The Search Intent Checker links directly to the guide, which links back to relevant tools.
+The article uses Article schema, without invented ratings, dates, or claims of tested search performance.
