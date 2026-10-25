@@ -1,141 +1,141 @@
 # Target audience research workspace
 
-Date: October 25, 2026.
+Updated: October 25, 2026.
 Route: `/tools/target-audience-research-tool`.
 Generation endpoint: `/api/ai-tools/audience-research`.
 
-## Research and positioning
+## Current workflow
 
-Primary sources reviewed:
+Website mode is the default. Enter a public URL and choose Build audience plan.
+The same action imports context and requests a report. A separate import action is no longer required.
+A brief, market, goal, business type, stage, and customer notes are optional in website mode.
+Business type and stage default to Infer from context, avoiding the previous publication and new-idea assumptions.
+Without a website, idea mode requires a brief containing at least 25 characters.
+An empty goal is allowed. Missing goals receive a general audience-planning default.
+
+Reports include:
+
+- A business offer summary and exact source passages explaining potential audience fit.
+- One or two requested working personas, with users and buyers distinguished where relevant.
+- Context, decision role, goals, pain points, interests, buying triggers, objections, and decision criteria.
+- Eleven channel plans, each containing five tailored ideas, audience context, rationale, an experiment, and an observable metric.
+- Interview questions, validation tasks, exclusions, and unresolved research questions.
+- Review decisions, JSON and clipboard exports, and findings CSV with spreadsheet-formula protection.
+
+Channels include Search, TikTok, YouTube, LinkedIn, Instagram, Facebook, Reddit, Pinterest, X, Email, and Offline.
+The channel plan covers the business, with relevant personas identified within each channel.
+It does not multiply an identical template library across personas.
+
+## Screenshot investigation
+
+The screenshots show contextual persona findings alongside a largely empty demographic panel and repeated channel wording.
+They do not establish a failed website import or a provider outage.
+
+Three concrete implementation problems were found:
+
+1. The persona view inserted six demographic placeholders regardless of relevance or available evidence.
+2. Fifty-five channel ideas were constructed from five fixed sentences, rather than generated as business-specific recommendations.
+3. Website context retained only the first 6,000 characters, potentially excluding later offerings and relevant business pages.
+
+Website mode also exposed optional context as prominent form fields and defaulted to a publication starting a new idea.
+These defaults could influence an otherwise valid website plan.
+
+The demographic placeholder panel and deterministic channel generator were removed.
+Useful operational hypotheses appear first. Unsupported demographic details remain within a compact research-gaps disclosure.
+The generation prompt explicitly requests concrete topics, audience tasks, actual offerings, and channel-specific ideas.
+The overview now shows the offer, source passages, and explanations supporting the proposed segments.
+A report cannot silently substitute the illustrative example after a failed request.
+
+## Website context and safety
+
+`website.ts` reuses the existing `/api/ai-tools/on-page/analyze` importer for every page.
+The submitted page can supply at most two additional same-origin business links.
+Eligible paths cover About, Company, Services, Products, Solutions, Tools, and Features.
+Selection is shallow. Supporting pages are not recursively followed.
+Links with credentials, query parameters, unsupported schemes, unrelated origins, account paths, or common media extensions are excluded.
+The shared importer still checks public destinations, DNS, ports, redirects, content types, deadlines, and resource bounds.
+This feature does not bypass source restrictions or execute page JavaScript.
+
+Related imports run concurrently after the primary page is read.
+Refused supporting pages do not discard usable primary context. Coverage notes disclose skipped or partial pages.
+An unreadable primary page produces a clear error rather than synthetic audience output.
+
+Context selection preserves metadata, headings, and sampled passages across the page.
+The primary page receives up to 5,500 characters. Each supporting page receives up to 3,000 characters.
+Combined website context is capped at 12,000 characters.
+This is a bounded context review, not an exhaustive website crawl or access to analytics and customer records.
+
+The browser waits at most 115 seconds for combined import and generation, with cancellation throughout.
+Existing server deadlines remain unchanged. Cancelling browser waiting does not promise a server-side rollback.
+Imports retain their existing cache, allowance, public URL protections, and failure policies.
+Up to three imports can count toward the shared import allowance for one audience plan.
+
+## Evidence boundaries and output checks
+
+Website positioning can justify potential audience hypotheses. It cannot establish actual customer demographics or confirmed platform preferences.
+The interface labels inferred needs as Hypothesis.
+Supported by supplied notes still requires an exact quote from Customer notes.
+Customer notes are not independently verified.
+
+Invalid quotation references are removed. Operational suggestions remain clearly labeled hypotheses instead of becoming empty profile fields.
+Unsupported age, gender, budget, hobbies, or demographic assertions remain Unknown.
+Bank balances, customer identities, platform membership, research findings, and measured confidence are not invented.
+
+Each persona must retain at least six populated core operational findings.
+This completeness requirement is an output safeguard, not a market confidence or audience quality score.
+Duplicate segment names, unmatched business-context quotations, repeated channel entries, and repeated ideas fail validation.
+All eleven channels must appear once, with five distinct ideas each.
+The specific boilerplate reported in the screenshots is rejected.
+Incomplete reports preserve previous results and release their generation reservation.
+
+The updated prompt requests an offer summary, exact audience clues, and concise operational persona details.
+A single generation request now includes the tailored channel plans, with an 8,000-token ceiling.
+The existing Gemini-first/Groq fallback, 45-second deadline, and no-additional-retry policy remain active.
+JSON input remains bounded at 64 KB. Briefs and notes remain capped at 5,000 and 4,000 characters.
+The generation allowance remains fifteen successful plans daily and five starts per ten minutes.
+No new credentials, subscriptions, services, dependencies, or secret changes were introduced.
+Public copy does not expose these implementation details.
+
+## Interface and integrations
+
+The main action handles website import and report creation.
+Additional context is collapsed in website mode and visible in idea mode.
+Invalid required fields receive inline feedback and focus. Closed context sections open before invalid fields receive focus.
+Request errors appear beside the main action and receive focus.
+A native loading dialog displays the current import or generation stage, supports cancellation, and respects reduced motion.
+Successful reports receive result focus and navigation. Failed requests preserve earlier reports.
+
+The existing registry entry, dashboard discovery, categories, topics, sitemap identity, and related-tool links remain intact.
+The landing page retains one H1, a canonical URL, application markup, breadcrumbs, and eight matching FAQ entries.
+Source and channel links use fixed destinations and encoded search terms. No generated destinations are trusted or opened automatically.
+No posts, emails, third-party messages, or private account actions are performed.
+
+## Research basis
+
+Reviewed on October 25, 2026:
 
 - https://doitwithai.tools/ai-seo/chatgpt-target-audience-research
-- https://www.sba.gov/counseling/plan-your-business/
-- https://blog.hubspot.com/marketing/buyer-persona-research
-
-The existing audience guide separates observed customer evidence, interpretation, hypotheses, and unknowns.
-This tool preserves those boundaries instead of turning a website description into purported customer demographics.
-SBA and HubSpot guidance informed interview questions, evidence gaps, and iterative validation tasks.
-
-Search-result research found existing target audience generators, buyer persona generators, and website-to-persona tools.
-The chosen primary phrase is target audience research tool. Buyer persona generator and audience planning are supporting concepts.
-No measured keyword volume, difficulty, ranking forecast, or demand estimate was available or invented.
-One route combines these closely related jobs, avoiding duplicate landing pages.
-
-## Supported workflows
-
-- A new business, publication, or product idea without a website.
-- An existing business using one public page as editable positioning context.
-- Audience refinement using anonymized customer notes and a specific business decision.
-- B2B, B2C, publication, and mixed contexts, with optional market and language information.
-- Optional channel focus, including TikTok, without assuming that the audience is present there.
-
-The workspace has overview, buyer persona, content/channel, and validation views.
-Each report contains one to three segments, exclusions, eight required persona fields, interview questions, experiments, and unknowns.
-Required fields cover context, decision role, goals, pain points, interests, buying triggers, objections, and decision criteria.
-Messaging and demographics can appear when useful. Demographics cannot be presented as guesses.
-Findings are labeled Hypothesis, Supported by supplied notes, or Unknown.
-Only exact quotes from supplied customer notes can support the second label.
-Notes are not independently verified. Neither supplied business text nor imported positioning proves actual customer characteristics.
-Evidence validation rejects fabricated quotes, missing persona fields, duplicate fields, and unsupported evidence labels.
-
-## Imports and resource boundaries
-
-URL import reuses `/api/ai-tools/on-page/analyze` unchanged.
-Its public URL and redirect protections, source error handling, quotas, caching, and fetch bounds remain active.
-Only one page is imported. The audience workspace retains up to 6,000 characters from its title, description, and readable blocks.
-Images, videos, linked pages, analytics, account data, and customer lists are not downloaded by this workflow.
-Users can inspect and edit the retained context. Protected or unreadable pages have an idea/paste alternative.
-Imported text does not trigger generation automatically. Changing the URL clears prior imported text.
-
-Inputs bound brief, website text, and customer notes to 5,000, 6,000, and 4,000 characters respectively.
-The generation endpoint caps JSON input at 64 KB and output at 6,000 tokens.
-It uses the existing Gemini-first/Groq fallback with a 45-second deadline and no additional retries.
-The route duration remains 60 seconds. There are no new credentials, subscriptions, or dependencies.
-Generation limits are fifteen successful plans daily and five starts per ten minutes.
-Failures and rejected output release reservations. No new quota bypass was introduced.
-Public copy describes user limits without exposing provider architecture.
-
-## Review, channels, and exports
-
-Channel links use a fixed destination map and encoded search terms, never generated URLs.
-Suggestions are experiments rather than verified community membership or platform preference.
-Instagram links to its home page, while Email has no fabricated community destination.
-Channel research and generated plans never send messages, publish posts, or scrape signed-in accounts.
-Reviewer decisions represent user judgment and do not change measured evidence states or create a score.
-The full JSON report and copied report include inputs, provenance notes, and reviewer decisions.
-Findings CSV exports persona findings and validation questions with spreadsheet-formula protection.
-Data remains in the active page session until exported. Reloading does not promise saved history.
-Failed requests preserve the previous result. Edited inputs display a stale-results notice.
-Loading feedback, cancellation, reduced-motion navigation, accessible field labels, and result focus are included.
-
-## Integration
-
-The shared registry adds dashboard discovery, on-page/content discovery topics, categories, sitemap, and related resources.
-Categories remain AI SEO and Content Writing. Topics are keywords and writing.
-The Search Intent Checker links directly to this workflow, with reciprocal catalogue relationships from content briefs.
-The landing page includes tool methodology, examples through the client, explanatory content, relevant guides, and matching FAQ schema.
-
-## Validation
-
-Feature tests cover input bounds, complete personas, evidence quotations, demographic limits, duplicate segments, CSV safety, route configuration, refunds, and burst limits.
-Existing shared-importer and provider tests remain part of the regression suite.
-No live provider result, production URL import, or browser interaction is claimed by fixture tests.
-The managed browser preview remains unavailable because it passes unsupported Next.js startup flags.
-Responsive visuals, keyboard navigation, live generation, source imports, clipboard, and downloads require browser or production verification.
-
-## Delivered verification
-
-- 389 tool feature and regression tests passed, including five new audience tests.
-- Eleven catalogue and foundation tests passed, giving 400 unique passing tests.
-- Explicit TypeScript and targeted lint passed. The existing missing-pages-directory configuration diagnostic remains.
-- The final production build passed and generated 97 static pages.
-- Rendered checks passed for title, description, canonical, social image, application schema, and eight matching FAQ entries.
-- Initial form and result-region markup, one sitemap entry, dashboard discovery, and reciprocal tool links passed.
-- Small blue text and the primary action use darker brand variants for better text contrast.
-- Existing unrelated image and missing local-service configuration warnings remain in build output.
-
-No production deployment was performed. Live imports, generated personas, and browser behavior remain verification gaps rather than passed checks.
-
-## October 25 expansion and error recovery
-
-The screenshots show an output-validation rejection and a separate generic request failure.
-The referenced preview resolves to deployment `dpl_kGWcFRqBGjcFmWTWp3sfi1Xt9TvS`, using the original audience-tool commit.
-The older runtime-log request exceeded Hobby retention. A permitted recent window returned no matching audience records.
-The exact cause of the historical generic failure remains unconfirmed. No production success is inferred from those log results.
-
-Incomplete persona fields now become Unknown instead of discarding an otherwise usable report.
-Repeated fields are combined. Unsupported quotations are removed and the associated finding becomes Unknown.
-A supported label still requires an exact quotation from supplied customer notes.
-Unsupported demographic assertions are downgraded. A malformed overall response still fails safely and releases its allowance.
-Validation failures log error types and field paths without logging customer text or complete model responses.
-The prompt requests one or two concise personas, reducing pressure on the existing output budget.
-
-The channel selector was removed from the interface. The legacy input field remains compatible but does not select a preferred channel.
-Every persona receives five context-based starter ideas for Search, TikTok, YouTube, LinkedIn, Instagram, Facebook, Reddit, Pinterest, X, Email, and Offline.
-These use persona findings and explicit platform formats. They are editorial starter templates, not separately researched platform findings.
-Additional generated experiments remain available. Full JSON and copied exports include the starter ideas without extra generation requests.
-Offline options include demonstrations, interviews, partnerships, printed information, and small pilots.
-
-The overview now exposes goals, pain points, interests, and decision criteria for each segment.
-Profile cards show age range, location, gender, purchase budget, hobbies, and behavior when established, or Unknown when unavailable.
-Bank balances are not estimated. Persona portraits were omitted to avoid extra image requests and false visual demographic signals.
-
-The form now focuses invalid required fields and presents inline messages beside them.
-A sensible editable goal is prefilled. Website-mode primary submission imports missing context before generating the plan.
-The explicit Import action still reads context without generating a report.
-Combined browser waiting is bounded separately from unchanged server deadlines and source protections.
-Request errors appear beside the main action and receive focus instead of remaining above an unseen result area.
-A native loading dialog shows the active step, blocks background interaction, supports cancellation, and uses reduced-motion styling.
-
-Additional primary references:
-
 - https://www.gov.uk/service-manual/user-research/start-by-learning-user-needs
+- https://business.gov.au/marketing-and-advertising/identify-your-target-market
 - https://www.sba.gov/counseling/plan-your-business/
 
-The explanatory content now covers offline businesses, meaningful persona fields, wasted promotion effort, and practical validation.
+The primary guidance separates business context, proposed audiences, and actual customer research.
+It supports reviewing tasks, needs, behavior, constraints, and customer evidence rather than filling profiles with demographic assumptions.
+No quantitative keyword volumes, difficulty estimates, audience sizes, ranking forecasts, or platform reach claims were available or invented.
 
-Expansion verification passed: 390 tool regression tests, eleven foundation/catalogue tests, explicit TypeScript, targeted lint, and production build.
-Rendered checks confirmed loading-dialog markup, field-help associations, prefilled goal, removed channel selector, offline content, canonical, FAQ consistency, and sitemap uniqueness.
-The six focused audience tests cover recovery, evidence downgrades, required-field helpers, and five distinct formats across eleven channels.
-Browser focus, native-dialog behavior, responsive visuals, actual generation, clipboard, and live imports remain unverified.
-Existing unrelated build warnings remain unchanged.
+## Verification
+
+- All 396 tool feature and regression tests passed, including twelve focused audience and website-context tests.
+- Eleven catalogue and foundation tests passed, giving 407 unique passing tests.
+- Explicit TypeScript passed. Targeted lint passed with the existing missing-pages-directory configuration diagnostic.
+- The production build passed, generating 97 static pages. Existing unrelated warnings remain.
+- Rendered checks passed for one H1, canonical, sitemap identity, application schema, and all eight matching FAQ entries.
+- Initial markup checks passed for URL-first submission, optional collapsed context, field-help associations, catalogue presence, and loading-dialog markup.
+- Fixture tests cover representative late-page content, same-origin selection, request bounds, supporting-page refusals, cancellation, evidence labels, report completeness, and channel coverage.
+- Git whitespace checks passed.
+
+A live shared-fetcher probe of `https://doitwithai.tools/` failed with `getaddrinfo EAI_AGAIN` in this environment.
+That DNS failure does not establish a website error. Live source imports remain unverified.
+Live generation, native-dialog behavior, keyboard interactions, responsive visuals, clipboard, and downloads remain unverified.
+The previously unavailable managed preview was not retried without an infrastructure repair.
+No production deployment, secret changes, private login, or third-party messages were performed.

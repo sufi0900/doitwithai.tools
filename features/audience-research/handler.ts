@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   const input = inputSchema.safeParse(raw);
   if (!input.success)
     return error(
-      "Describe your offer, choose your business context, and provide a goal. Keep customer notes below 4,000 characters.",
+      "Import a public website or describe your idea in at least 25 characters. Keep customer notes below 4,000 characters.",
       422,
       "VALIDATION_ERROR",
     );
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     const response = await getGeminiClient().generate(
       {
         model,
-        max_output_tokens: 6000,
+        max_output_tokens: 8000,
         store: false,
         input: [
           { role: "system", content: prompt.system },
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
       );
     return error(
       failure?.message ||
-        "Some audience sections could not be completed. Your inputs are preserved. Try a shorter brief or review the example.",
+        "The audience plan was incomplete. Your website context and previous results are preserved. Try again or use a more specific public page.",
       failure?.status || 502,
       failure?.code || "OUTPUT_VALIDATION_FAILED",
     );

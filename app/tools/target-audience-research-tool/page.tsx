@@ -36,7 +36,7 @@ const faqs = [
   ],
   [
     "Will a website URL reveal my actual customers?",
-    "No. One imported page supplies business context. It does not reveal visitor demographics, customer identities, purchases, or verified platform preferences.",
+    "No. Up to three public pages supply business context for suggested audiences. They do not reveal actual visitors, purchases, or verified platform preferences.",
   ],
   [
     "What is the difference between a target audience and a buyer persona?",
@@ -48,7 +48,7 @@ const faqs = [
   ],
   [
     "Can I plan TikTok content for my audience?",
-    "Yes. Every plan includes five TikTok starter ideas alongside other channels. Review and test them before assuming the platform attracts relevant customers.",
+    "Yes. Each plan includes five tailored TikTok ideas alongside other channels. Test them before assuming the platform attracts relevant customers.",
   ],
   [
     "What if my page cannot be imported?",
@@ -65,12 +65,12 @@ const faqs = [
 ];
 const sections = [
   [
-    "Start with a specific offer",
-    "Explain what you plan to publish, sell, or provide. Include the problem, relevant alternatives, and the decision this research should inform.",
+    "Start with your website or idea",
+    "Enter a public website and build your plan directly. Without a website, describe what you plan to publish, sell, or provide.",
   ],
   [
     "Add context without inventing certainty",
-    "Import one public page or paste your brief. Add anonymized interviews, customer questions, or support themes when available.",
+    "The tool selects public page passages and relevant business pages. Optional customer notes can help refine the suggested segments.",
   ],
   [
     "Review personas and test the gaps",
@@ -96,7 +96,7 @@ export default function Page() {
                 applicationCategory: "BusinessApplication",
                 operatingSystem: "Any",
                 featureList: [
-                  "Business idea and public-page context",
+                  "Website-only and business idea planning",
                   "Working buyer personas with evidence states",
                   "Content and channel experiments",
                   "Validation questions and report exports",
@@ -264,8 +264,9 @@ export default function Page() {
           </p>
           <p className={p}>
             For an existing website, compare customer questions, support issues,
-            relevant analytics, and interviews. A homepage explains positioning,
-            not the composition of actual visitors.
+            relevant analytics, and interviews. Public pages explain positioning
+            and suggest possible audience needs. They cannot establish the
+            composition of actual visitors.
           </p>
           <p className={p}>
             The{" "}
@@ -391,9 +392,9 @@ export default function Page() {
             you can observe.
           </p>
           <p className={p}>
-            Each channel includes five starter ideas adapted to the working
-            persona. Compare social posts, search content, consent-based emails,
-            and offline activities.
+            Each channel includes five tailored ideas connected to the offer and
+            proposed audience needs. Compare social posts, search content,
+            consent-based emails, and offline activities.
           </p>
           <p className={p}>
             Start with a manageable experiment. Look for relevant questions and

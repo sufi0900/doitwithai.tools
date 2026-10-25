@@ -35,8 +35,7 @@ test("audience input supports ideas and imported context while bounding research
   for (const value of [
     { ...input, brief: "short" },
     { ...input, notes: "x".repeat(4001) },
-    { ...input, websiteText: "x".repeat(6001) },
-    { ...input, goal: "" },
+    { ...input, websiteText: "x".repeat(12001) },
   ])
     assert.equal(inputSchema.safeParse(value).success, false);
 });
@@ -58,7 +57,7 @@ test("working personas retain required fields without manufactured evidence or d
   ];
   assert.equal(
     validateOutput(invented, input).segments[0].findings[0].state,
-    "Unknown",
+    "Hypothesis",
   );
   const demographic = exampleReport();
   demographic.segments[0].findings[0].topic = "Demographics";
@@ -89,7 +88,7 @@ test("only exact customer-note quotations can support a finding, not business po
   f.evidence = [{ source: "Business brief", quote: input.brief }];
   assert.equal(
     validateOutput(report, input).segments[0].findings[0].state,
-    "Unknown",
+    "Hypothesis",
   );
   assert.match(
     audiencePrompt(input).system,
@@ -131,7 +130,7 @@ test("audience route validates bodies, preserves fallback configuration, and ref
       assert.equal((await POST(req(input))).status, 502);
     client.generate = (async (params, options) => {
       assert.equal(params.model, "fixture-model");
-      assert.equal(params.max_output_tokens, 6000);
+      assert.equal(params.max_output_tokens, 8000);
       assert.equal(params.store, false);
       assert.equal(options?.timeout, 45000);
       assert.equal(options?.maxRetries, 0);
@@ -150,24 +149,52 @@ test("audience route validates bodies, preserves fallback configuration, and ref
   }
 });
 
-test("all channels and offline planning provide five persona-based ideas", async () => {
-  const { platformNames, channelIdeas, inputErrors } =
+test("all eleven channels have concrete ideas, and goals remain optional", async () => {
+  const { inputErrors } =
     await import("../../features/audience-research/planning");
-  assert.equal(platformNames.length, 11);
-  for (const name of platformNames) {
-    const ideas = channelIdeas(exampleReport().segments[0], name);
-    assert.equal(ideas.length, 5);
-    assert.equal(new Set(ideas.map((i) => i.format)).size, 5);
-    assert.ok(ideas.every((i) => i.idea.length > 20 && i.test.length > 20));
+  const report = validateOutput(exampleReport(), input);
+  assert.equal(report.channelPlan.length, 11);
+  for (const plan of report.channelPlan) {
+    assert.equal(plan.ideas.length, 5);
+    assert.equal(new Set(plan.ideas).size, 5);
   }
   assert.ok(inputErrors({ brief: "short", websiteText: "", goal: "" }).brief);
-  assert.ok(inputErrors({ brief: "short", websiteText: "", goal: "" }).goal);
   assert.equal(
-    inputErrors({
-      brief: "",
-      websiteText: "A complete imported business description.",
-      goal: "Identify useful customer needs.",
-    }).brief,
+    inputErrors({ brief: "", websiteText: input.brief, goal: "" }).brief,
     "",
   );
+  assert.equal(
+    inputSchema.safeParse({ websiteText: input.brief }).success,
+    true,
+  );
+  assert.equal(
+    inputSchema.safeParse({ websiteText: input.brief, goal: "" }).success,
+    true,
+  );
+  assert.equal(
+    inputSchema.parse({ websiteText: input.brief }).businessType,
+    "Infer from context",
+  );
+});
+
+test("reject hollow profiles, repeated channels, invented context, and boilerplate ideas", () => {
+  const hollow = exampleReport();
+  hollow.segments[0].findings.forEach((f) => {
+    f.state = "Unknown";
+  });
+  assert.throws(() => validateOutput(hollow, input), /Too few useful/);
+  const repeated = exampleReport();
+  repeated.channelPlan[1].channel = repeated.channelPlan[0].channel;
+  assert.throws(() => validateOutput(repeated, input), /each channel/);
+  const invented = exampleReport();
+  invented.audienceClues[0].quote =
+    "Customers buy ten subscriptions every month";
+  assert.throws(
+    () => validateOutput(invented, input),
+    /No matching business context/,
+  );
+  const template = exampleReport();
+  template.channelPlan[0].ideas[0] =
+    "Explain a practical first step toward this goal: write better pages";
+  assert.throws(() => validateOutput(template, input), /specific topics/);
 });

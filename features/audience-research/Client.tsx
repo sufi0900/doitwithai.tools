@@ -1,15 +1,10 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { Loader2, Users, Download, Copy, ArrowUpRight } from "lucide-react";
-import {
-  channelIdeas,
-  platformNames,
-  demographicProfile,
-  inputErrors,
-} from "./planning";
+import { inputErrors } from "./planning";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
-import type { PageSnapshot } from "@/features/on-page-analyzer/types";
+import { importAudienceWebsite } from "./website";
 import {
   channels,
   inputSchema,
@@ -25,8 +20,8 @@ const initial: AudienceInput = {
   notes: "",
   market: "",
   goal: "Identify potential customers and useful ways to reach them.",
-  businessType: "Blog or publication",
-  stage: "New idea",
+  businessType: "Infer from context",
+  stage: "Infer from context",
   focus: "Explore options",
 };
 const field =
@@ -48,12 +43,15 @@ const destinations: Record<(typeof channels)[number], string> = {
   Facebook: "https://www.facebook.com/search/top?q=",
   Reddit: "https://www.reddit.com/search/?q=",
   Email: "",
+  Pinterest: "https://www.pinterest.com/search/pins/?q=",
+  X: "https://x.com/search?q=",
+  Offline: "",
 };
 export default function AudienceClient() {
   const [input, setInput] = useState<AudienceInput>(initial),
     [url, setUrl] = useState(""),
     [importNote, setImportNote] = useState(""),
-    [mode, setMode] = useState("idea"),
+    [mode, setMode] = useState("website"),
     [busy, setBusy] = useState<"import" | "plan" | null>(null),
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
@@ -66,12 +64,16 @@ export default function AudienceClient() {
     source: string;
   } | null>(null);
   const [decisions, setDecisions] = useState<Record<string, string>>({});
-  const [fieldErrors, setFieldErrors] = useState({ brief: "", goal: "" });
+  const [fieldErrors, setFieldErrors] = useState({
+    brief: "",
+    goal: "",
+    url: "",
+  });
   const dialog = useRef<HTMLDialogElement>(null),
     actionError = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
-    if (busy) dialog.current?.showModal();
-    else dialog.current?.close();
+    if (busy && !dialog.current?.open) dialog.current?.showModal();
+    else if (!busy) dialog.current?.close();
   }, [busy]);
   useEffect(() => {
     if (error) {
@@ -105,43 +107,58 @@ export default function AudienceClient() {
     setInput((p) => ({ ...p, [key]: value }));
     setError("");
     if (key === "brief" || key === "websiteText" || key === "goal")
-      setFieldErrors(inputErrors({ ...input, [key]: value }));
+      setFieldErrors((previous) => ({
+        ...previous,
+        ...inputErrors({ ...input, [key]: value }),
+      }));
   }
   async function run(kind: "import" | "plan") {
     if (active.current) return;
     const needsImport =
       kind === "plan" &&
       mode === "website" &&
-      !input.websiteText &&
+      !input.websiteText.trim() &&
       !!url.trim();
-    const parsed = inputSchema.safeParse(input);
+    const candidate = {
+      ...input,
+      websiteText: mode === "website" ? input.websiteText : "",
+    };
+    const parsed = inputSchema.safeParse(candidate);
     if (
-      kind === "plan" &&
-      !parsed.success &&
-      (!needsImport || !input.goal.trim())
+      (kind === "import" || mode === "website") &&
+      !url.trim() &&
+      !candidate.websiteText.trim()
     ) {
-      const errors = inputErrors(input);
-      setFieldErrors(errors);
+      setFieldErrors({
+        brief: "",
+        goal: "",
+        url: "Enter a public website or article URL.",
+      });
+      const target = document.getElementById("audience-url");
+      target?.closest("details")?.setAttribute("open", "");
+      target?.focus();
+      target?.scrollIntoView({ block: "center", behavior: "auto" });
+      return;
+    }
+    if (kind === "plan" && !parsed.success && !needsImport) {
+      const errors = inputErrors(candidate);
+      setFieldErrors({ ...errors, url: "" });
       const target = document.getElementById(
         errors.brief ? "audience-brief" : "audience-goal",
       );
+      target?.closest("details")?.setAttribute("open", "");
       target?.focus();
       target?.scrollIntoView({ block: "center", behavior: "auto" });
-      if (!errors.brief && !errors.goal)
-        setError(parsed.error.issues[0].message);
-      return;
-    }
-    if (kind === "import" && !url.trim()) {
-      setError("Enter a public website or article URL.");
+      if (!errors.brief) setError(parsed.error.issues[0].message);
       return;
     }
     const controller = new AbortController();
     active.current = controller;
     const timeout = setTimeout(
       () => controller.abort(),
-      kind === "import" ? 30000 : needsImport ? 90000 : 55000,
+      kind === "import" ? 60000 : needsImport ? 115000 : 55000,
     );
-    setFieldErrors({ brief: "", goal: "" });
+    setFieldErrors({ brief: "", goal: "", url: "" });
     setBusy(kind);
     setError("");
     setMessage(
@@ -150,37 +167,28 @@ export default function AudienceClient() {
         : "Building a working audience plan.",
     );
     try {
-      let planInput = parsed.success ? parsed.data : input;
+      let planInput = parsed.success ? parsed.data : candidate;
+      let sourceNote = mode === "website" ? importNote : "";
       if (kind === "import" || needsImport) {
-        const response = await fetch("/api/ai-tools/on-page/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
-          signal: controller.signal,
-        });
-        const body = await readToolResponse<{ result: PageSnapshot }>(response);
-        const page = body.result;
-        const text = [
-          page.title,
-          page.description,
-          ...page.blocks.map((b) => b.text),
-        ]
-          .filter(Boolean)
-          .join("\n")
-          .slice(0, 6000);
-        if (text.length < 25)
-          throw Error(
-            "This page did not expose enough readable text. Describe your offer instead.",
-          );
-        update("websiteText", text);
-        planInput = { ...input, websiteText: text };
-        setImportNote(
-          `Imported ${text.length.toLocaleString()} characters from ${page.url}. ${page.partial ? "The source import was partial. " : ""}Only this page was read. Review the text below before planning.`,
+        setBusy("import");
+        const context = await importAudienceWebsite(
+          url,
+          controller.signal,
+          setMessage,
         );
+        update("websiteText", context.text);
+        planInput = { ...candidate, websiteText: context.text };
+        sourceNote = context.note;
+        setImportNote(context.note);
         setMessage(
-          "Website context imported. Add your goal, then build an audience plan.",
+          "Website context is ready. Building specific personas and channel ideas.",
         );
-        if (kind === "import") return;
+        if (kind === "import") {
+          setMessage(
+            "Website context imported. Build your audience plan when ready.",
+          );
+          return;
+        }
         setBusy("plan");
       }
       {
@@ -192,11 +200,13 @@ export default function AudienceClient() {
           signal: controller.signal,
         });
         const body = await readToolResponse<{ result: unknown }>(response);
+        const report = validateOutput(body.result, data);
+        setInput(data);
         setSaved({
-          report: validateOutput(body.result, data),
+          report,
           input: data,
           example: false,
-          source: importNote,
+          source: sourceNote,
         });
         setTab("Overview");
         setSelected(0);
@@ -229,6 +239,8 @@ export default function AudienceClient() {
       focus: "Explore options" as const,
     };
     setInput(data);
+    setMode("idea");
+    setFieldErrors({ brief: "", goal: "", url: "" });
     setUrl("");
     setImportNote("");
     setSaved({
@@ -253,13 +265,6 @@ export default function AudienceClient() {
           {
             ...saved,
             reviewerDecisions: decisions,
-            channelStarterIdeas: saved.report.segments.map((persona) => ({
-              segment: persona.name,
-              channels: platformNames.map((channel) => ({
-                channel,
-                ideas: channelIdeas(persona, channel),
-              })),
-            })),
             limits:
               "Working hypotheses and supplied notes, not verified audience demographics or measured platform presence.",
           },
@@ -285,13 +290,6 @@ export default function AudienceClient() {
           {
             ...saved,
             reviewerDecisions: decisions,
-            channelStarterIdeas: saved.report.segments.map((persona) => ({
-              segment: persona.name,
-              channels: platformNames.map((channel) => ({
-                channel,
-                ideas: channelIdeas(persona, channel),
-              })),
-            })),
           },
           null,
           2,
@@ -329,7 +327,8 @@ export default function AudienceClient() {
             : "Preparing your audience plan"}
         </h2>
         <p className="mt-3 text-center text-sm leading-7">
-          Your previous results are preserved. This can take a little time.
+          {message ||
+            "Your previous results are preserved. This can take a little time."}
         </p>
         <button
           type="button"
@@ -357,8 +356,8 @@ export default function AudienceClient() {
         >
           <h2 className="text-xl font-bold">Start with your business</h2>
           <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            Describe a new idea, paste an article, or import one public page.
-            Add customer evidence when available.
+            Enter a website and build your plan in one step. You can also start
+            with a business idea without a website.
           </p>
           <fieldset disabled={!!busy} className="mt-5 space-y-5">
             <div
@@ -367,8 +366,8 @@ export default function AudienceClient() {
               aria-label="Starting point"
             >
               {[
-                ["idea", "Idea or pasted brief"],
                 ["website", "Website or article URL"],
+                ["idea", "Idea or pasted brief"],
               ].map(([value, label]) => (
                 <button
                   key={value}
@@ -392,169 +391,201 @@ export default function AudienceClient() {
                 <ToolUrlInput
                   id="audience-url"
                   className={field}
+                  aria-invalid={!!fieldErrors.url}
+                  aria-describedby="audience-url-help"
                   value={url}
                   onChange={(e) => {
                     setUrl(e.target.value);
+                    setFieldErrors((previous) => ({ ...previous, url: "" }));
                     update("websiteText", "");
                     setImportNote("");
                   }}
                   placeholder="https://example.com/about"
                 />
-                <button
-                  type="button"
-                  className={button + " mt-3"}
-                  onClick={() => run("import")}
+                <p
+                  id="audience-url-help"
+                  className={
+                    fieldErrors.url
+                      ? "mt-2 text-sm text-red-600 dark:text-red-300"
+                      : "mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400"
+                  }
                 >
-                  Import website context
-                </button>
-                <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-                  One readable page, not a site crawl. Protected pages may
-                  require a pasted brief.
+                  {fieldErrors.url ||
+                    "Build your plan directly. We read this page and up to two relevant business pages. No additional brief is required."}
                 </p>
               </div>
             )}
-            <div>
-              <label htmlFor="audience-brief" className="text-sm font-semibold">
-                Your idea, offer, or article brief
-              </label>
-              <textarea
-                id="audience-brief"
-                aria-invalid={!!fieldErrors.brief}
-                aria-describedby="audience-brief-help"
-                required={!input.websiteText}
-                minLength={input.websiteText ? undefined : 25}
-                className={field}
-                rows={5}
-                maxLength={5000}
-                value={input.brief}
-                onChange={(e) => update("brief", e.target.value)}
-                placeholder="What will you offer? Which problem does it solve? What makes it useful?"
-              />
-              <p
-                id="audience-brief-help"
-                className={
-                  fieldErrors.brief
-                    ? "mt-2 text-sm text-red-600 dark:text-red-300"
-                    : "mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400"
-                }
-              >
-                {fieldErrors.brief ||
-                  "Required unless page context is imported. Use at least 25 characters."}
-              </p>
-            </div>
-            {input.websiteText && (
-              <details>
-                <summary className="cursor-pointer text-sm font-semibold">
-                  Review imported page text
-                </summary>
-                <p className="mt-2 break-words text-xs leading-6">
-                  {importNote}
-                </p>
-                <label htmlFor="audience-import" className="sr-only">
-                  Imported page context
-                </label>
-                <textarea
-                  id="audience-import"
-                  rows={6}
-                  className={field}
-                  maxLength={6000}
-                  value={input.websiteText}
-                  onChange={(e) => update("websiteText", e.target.value)}
-                />
-              </details>
-            )}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="text-sm font-semibold">
-                Business type
-                <select
-                  className={field}
-                  value={input.businessType}
-                  onChange={(e) =>
-                    update(
-                      "businessType",
-                      e.target.value as AudienceInput["businessType"],
-                    )
-                  }
-                >
-                  {["Blog or publication", "B2B", "B2C", "Mixed"].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-sm font-semibold">
-                Current stage
-                <select
-                  className={field}
-                  value={input.stage}
-                  onChange={(e) =>
-                    update("stage", e.target.value as AudienceInput["stage"])
-                  }
-                >
-                  {["New idea", "Existing business", "Audience refinement"].map(
-                    (s) => (
-                      <option key={s}>{s}</option>
-                    ),
-                  )}
-                </select>
-              </label>
-            </div>
-            <label className="block text-sm font-semibold">
-              Market and language <span className="font-normal">optional</span>
-              <input
-                className={field}
-                maxLength={300}
-                value={input.market}
-                onChange={(e) => update("market", e.target.value)}
-                placeholder="Pakistan, Urdu and English"
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Decision this research should inform (editable)
-              <textarea
-                id="audience-goal"
-                aria-invalid={!!fieldErrors.goal}
-                aria-describedby="audience-goal-error"
-                required
-                className={field}
-                rows={2}
-                maxLength={400}
-                value={input.goal}
-                onChange={(e) => update("goal", e.target.value)}
-                placeholder="Choose an initial audience and plan useful launch content."
-              />
-            </label>
-            {fieldErrors.goal && (
-              <p
-                id="audience-goal-error"
-                className="text-sm text-red-600 dark:text-red-300"
-              >
-                {fieldErrors.goal}
-              </p>
-            )}
-            <p className="text-xs leading-6 text-slate-500 dark:text-slate-400">
-              Every plan includes ideas for social platforms, search, email, and
-              offline opportunities.
-            </p>
-            <details className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+            <details
+              open={mode === "idea"}
+              className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+            >
               <summary className="cursor-pointer text-sm font-semibold">
-                Add anonymized customer notes
+                {mode === "website"
+                  ? "Optional context and preferences"
+                  : "Describe your business idea"}
               </summary>
-              <p className="mt-2 text-xs leading-6">
-                Include real interview findings, customer questions, or
-                feedback. Add dates and context. Remove personal information.
-                Notes are not independently verified.
-              </p>
-              <label htmlFor="audience-notes" className="sr-only">
-                Customer evidence notes
-              </label>
-              <textarea
-                id="audience-notes"
-                className={field}
-                rows={5}
-                maxLength={4000}
-                value={input.notes}
-                onChange={(e) => update("notes", e.target.value)}
-              />
+              <div className="mt-4 space-y-5">
+                <div>
+                  <label
+                    htmlFor="audience-brief"
+                    className="text-sm font-semibold"
+                  >
+                    Your idea, offer, or article brief{" "}
+                    {mode === "website" ? "(optional)" : ""}
+                  </label>
+                  <textarea
+                    id="audience-brief"
+                    aria-invalid={!!fieldErrors.brief}
+                    aria-describedby="audience-brief-help"
+                    required={mode === "idea"}
+                    minLength={mode === "idea" ? 25 : undefined}
+                    className={field}
+                    rows={5}
+                    maxLength={5000}
+                    value={input.brief}
+                    onChange={(e) => update("brief", e.target.value)}
+                    placeholder="What will you offer? Which problem does it solve? What makes it useful?"
+                  />
+                  <p
+                    id="audience-brief-help"
+                    className={
+                      fieldErrors.brief
+                        ? "mt-2 text-sm text-red-600 dark:text-red-300"
+                        : "mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400"
+                    }
+                  >
+                    {fieldErrors.brief ||
+                      (mode === "website"
+                        ? "Optional. Your website supplies the business context."
+                        : "Describe your offer in at least 25 characters.")}
+                  </p>
+                </div>
+                {input.websiteText && (
+                  <details>
+                    <summary className="cursor-pointer text-sm font-semibold">
+                      Review imported page text
+                    </summary>
+                    <p className="mt-2 break-words text-xs leading-6">
+                      {importNote}
+                    </p>
+                    <label htmlFor="audience-import" className="sr-only">
+                      Imported page context
+                    </label>
+                    <textarea
+                      id="audience-import"
+                      rows={6}
+                      className={field}
+                      maxLength={12000}
+                      value={input.websiteText}
+                      onChange={(e) => update("websiteText", e.target.value)}
+                    />
+                  </details>
+                )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="text-sm font-semibold">
+                    Business type
+                    <select
+                      className={field}
+                      value={input.businessType}
+                      onChange={(e) =>
+                        update(
+                          "businessType",
+                          e.target.value as AudienceInput["businessType"],
+                        )
+                      }
+                    >
+                      {[
+                        "Infer from context",
+                        "Blog or publication",
+                        "B2B",
+                        "B2C",
+                        "Mixed",
+                      ].map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-sm font-semibold">
+                    Current stage
+                    <select
+                      className={field}
+                      value={input.stage}
+                      onChange={(e) =>
+                        update(
+                          "stage",
+                          e.target.value as AudienceInput["stage"],
+                        )
+                      }
+                    >
+                      {[
+                        "Infer from context",
+                        "New idea",
+                        "Existing business",
+                        "Audience refinement",
+                      ].map((s) => (
+                        <option key={s}>{s}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label className="block text-sm font-semibold">
+                  Market and language{" "}
+                  <span className="font-normal">optional</span>
+                  <input
+                    className={field}
+                    maxLength={300}
+                    value={input.market}
+                    onChange={(e) => update("market", e.target.value)}
+                    placeholder="Pakistan, Urdu and English"
+                  />
+                </label>
+                <label className="block text-sm font-semibold">
+                  Decision this research should inform (optional)
+                  <textarea
+                    id="audience-goal"
+                    aria-invalid={!!fieldErrors.goal}
+                    aria-describedby="audience-goal-help"
+                    className={field}
+                    rows={2}
+                    maxLength={400}
+                    value={input.goal}
+                    onChange={(e) => update("goal", e.target.value)}
+                    placeholder="Choose an initial audience and plan useful launch content."
+                  />
+                </label>
+                <p
+                  id="audience-goal-help"
+                  className="text-xs leading-6 text-slate-500 dark:text-slate-400"
+                >
+                  Leave this blank to identify potential customers and useful
+                  ways to reach them.
+                </p>
+                <p className="text-xs leading-6 text-slate-500 dark:text-slate-400">
+                  Every plan includes ideas for social platforms, search, email,
+                  and offline opportunities.
+                </p>
+                <details className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                  <summary className="cursor-pointer text-sm font-semibold">
+                    Add anonymized customer notes
+                  </summary>
+                  <p className="mt-2 text-xs leading-6">
+                    Include real interview findings, customer questions, or
+                    feedback. Add dates and context. Remove personal
+                    information. Notes are not independently verified.
+                  </p>
+                  <label htmlFor="audience-notes" className="sr-only">
+                    Customer evidence notes
+                  </label>
+                  <textarea
+                    id="audience-notes"
+                    className={field}
+                    rows={5}
+                    maxLength={4000}
+                    value={input.notes}
+                    onChange={(e) => update("notes", e.target.value)}
+                  />
+                </details>
+              </div>
             </details>
             <div className="flex flex-wrap gap-3">
               <button
@@ -685,7 +716,40 @@ export default function AudienceClient() {
               </div>
               {tab === "Overview" && (
                 <div className="space-y-5">
-                  <p className="text-base leading-8">{saved.report.summary}</p>
+                  <section className="rounded-2xl border border-[#5271FF]/30 bg-[#5271FF]/5 p-5">
+                    <h3 className="text-lg font-bold">
+                      What this business offers
+                    </h3>
+                    <p className="mt-2 text-sm leading-7">
+                      {saved.report.offer}
+                    </p>
+                    <p className="mt-4 text-base leading-8">
+                      {saved.report.summary}
+                    </p>
+                    {saved.source && (
+                      <p className="mt-3 break-words text-xs leading-6 text-slate-500 dark:text-slate-400">
+                        {saved.source}
+                      </p>
+                    )}
+                  </section>
+                  <section>
+                    <h3 className="font-bold">Why these audiences fit</h3>
+                    <div className="mt-3 space-y-3">
+                      {saved.report.audienceClues.map((clue, i) => (
+                        <div
+                          key={i}
+                          className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+                        >
+                          <blockquote className="border-l-2 border-[#5271FF] pl-3 text-sm leading-7">
+                            {clue.source}: “{clue.quote}”
+                          </blockquote>
+                          <p className="mt-2 text-sm leading-7">
+                            {clue.meaning}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {saved.report.segments.map((segment) => (
                       <section
@@ -710,9 +774,9 @@ export default function AudienceClient() {
                     ))}
                   </div>
                   <p className="text-sm leading-7">
-                    Explore five starter ideas for each of{" "}
-                    {platformNames.length} online and offline channels in
-                    Content and channels.
+                    Explore five tailored ideas for each of{" "}
+                    {saved.report.channelPlan.length} online and offline
+                    channels in Content and channels.
                   </p>
                   {saved.report.reviewNotes?.map((note) => (
                     <p
@@ -753,49 +817,38 @@ export default function AudienceClient() {
               {(tab === "Buyer personas" || tab === "Content and channels") &&
                 persona && (
                   <>
-                    <label className="block text-sm font-semibold">
-                      Audience segment
-                      <select
-                        className={field}
-                        value={selected}
-                        onChange={(e) => setSelected(Number(e.target.value))}
-                      >
-                        {saved.report.segments.map((s, i) => (
-                          <option value={i} key={s.name}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <h3 className="mt-5 text-lg font-bold">{persona.name}</h3>
-                    <p className="mt-2 text-sm leading-7">{persona.fit}</p>
-                    <p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">
-                      Outside this segment: {persona.notFor}
-                    </p>
+                    {tab === "Buyer personas" && (
+                      <>
+                        <label className="block text-sm font-semibold">
+                          Audience segment
+                          <select
+                            className={field}
+                            value={selected}
+                            onChange={(e) =>
+                              setSelected(Number(e.target.value))
+                            }
+                          >
+                            {saved.report.segments.map((s, i) => (
+                              <option value={i} key={s.name}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <h3 className="mt-5 text-lg font-bold">
+                          {persona.name}
+                        </h3>
+                        <p className="mt-2 text-sm leading-7">{persona.fit}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">
+                          Outside this segment: {persona.notFor}
+                        </p>
+                      </>
+                    )}
                     {tab === "Buyer personas" ? (
                       <div className="mt-5 space-y-4">
-                        <section className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
-                          <h4 className="font-bold">
-                            Profile details to establish
-                          </h4>
-                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                            {demographicProfile(persona).map(
-                              ({ topic, finding, note }) => (
-                                <div key={topic}>
-                                  <h5 className="text-sm font-bold">{topic}</h5>
-                                  <p className="text-sm leading-7">
-                                    {finding?.value || "Not established"}
-                                  </p>
-                                  <p className="text-xs leading-6 text-slate-500 dark:text-slate-400">
-                                    {finding?.state || "Unknown"}. {note}
-                                  </p>
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        </section>
                         {persona.findings.map((f, i) => {
                           const key = `${selected}-${i}`;
+                          if (f.state === "Unknown") return null;
                           return (
                             <section
                               key={f.topic}
@@ -808,9 +861,7 @@ export default function AudienceClient() {
                                     "rounded-full px-3 py-1 text-xs font-semibold " +
                                     (f.state === "Supported by supplied notes"
                                       ? "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100"
-                                      : f.state === "Unknown"
-                                        ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                                        : "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100")
+                                      : "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100")
                                   }
                                 >
                                   {f.state}
@@ -855,6 +906,26 @@ export default function AudienceClient() {
                             </section>
                           );
                         })}
+                        <details className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
+                          <summary className="cursor-pointer text-sm font-semibold">
+                            Research gaps and demographic limits
+                          </summary>
+                          <p className="mt-3 text-sm leading-7">
+                            A website cannot establish actual customer ages,
+                            genders, hobbies, or spending budgets. These details
+                            need relevant customer research.
+                          </p>
+                          {persona.findings
+                            .filter((f) => f.state === "Unknown")
+                            .map((f) => (
+                              <p
+                                key={f.topic}
+                                className="mt-2 text-sm leading-7"
+                              >
+                                <strong>{f.topic}:</strong> {f.question}
+                              </p>
+                            ))}
+                        </details>
                         <p className="text-xs leading-6">
                           Saved decisions reflect your judgment. They do not
                           independently verify a persona or change its evidence
@@ -863,61 +934,79 @@ export default function AudienceClient() {
                       </div>
                     ) : (
                       <div className="mt-5 space-y-4">
+                        <h3 className="text-lg font-bold">
+                          A channel plan for this business
+                        </h3>
                         <p className="text-sm leading-7">
-                          These starter ideas use persona context and platform
-                          formats. They are planning suggestions, not proof of
-                          audience presence.
+                          Each channel includes five ideas based on the offer
+                          and audience needs. Channel suitability remains a
+                          hypothesis to test.
                         </p>
-                        {platformNames.map((channel) => (
+                        {saved.report.channelPlan.map((plan) => (
                           <details
-                            key={channel}
+                            key={plan.channel}
                             className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
                           >
                             <summary className="min-h-11 cursor-pointer py-2 font-bold">
-                              {channel} · Five ideas
+                              {plan.channel} · Five tailored ideas
                             </summary>
-                            <ol className="mt-3 list-decimal space-y-5 pl-5">
-                              {channelIdeas(persona, channel).map((idea, i) => (
-                                <li key={i} className="text-sm leading-7">
-                                  <strong>{idea.format}</strong>
-                                  <p>{idea.idea}</p>
-                                  <p className="mt-2 text-slate-500 dark:text-slate-300">
-                                    Test: {idea.test}
-                                  </p>
-                                </li>
+                            <p className="mt-2 text-sm leading-7">
+                              <strong>Audience:</strong> {plan.audience}
+                            </p>
+                            <p className="mt-2 text-sm leading-7">
+                              {plan.rationale}
+                            </p>
+                            <ol className="mt-3 list-decimal space-y-3 pl-5 text-sm leading-7">
+                              {plan.ideas.map((idea, i) => (
+                                <li key={i}>{idea}</li>
                               ))}
                             </ol>
+                            <div className="mt-4 rounded-lg bg-slate-100 p-3 text-sm leading-7 dark:bg-slate-800">
+                              <p>
+                                <strong>Try:</strong> {plan.experiment}
+                              </p>
+                              <p className="mt-2">
+                                <strong>Observe:</strong> {plan.metric}
+                              </p>
+                            </div>
                           </details>
                         ))}
-                        <h4 className="font-bold">
-                          Additional tailored experiments
-                        </h4>
-                        {persona.outreach.map((o, i) => (
-                          <div
-                            key={i}
-                            className="rounded-xl bg-slate-100 p-4 text-sm leading-7 dark:bg-slate-800"
-                          >
-                            <strong>{o.channel}</strong>
-                            <p>{o.contentIdea}</p>
-                            <p>{o.experiment}</p>
-                            {destinations[o.channel] && (
-                              <a
-                                className="mt-3 inline-flex min-h-11 items-center gap-2 font-semibold text-blue-700 underline dark:text-blue-300"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                href={
-                                  destinations[o.channel] +
-                                  (o.channel === "Instagram"
-                                    ? ""
-                                    : encodeURIComponent(o.topic))
-                                }
-                              >
-                                Explore {o.channel}
-                                <ArrowUpRight size={15} aria-hidden />
-                              </a>
-                            )}
-                          </div>
-                        ))}
+                        <details className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
+                          <summary className="cursor-pointer font-bold">
+                            Priority experiments by persona
+                          </summary>
+                          {saved.report.segments.map((segment) => (
+                            <section
+                              key={segment.name}
+                              className="mt-4 space-y-3"
+                            >
+                              <h4 className="font-bold">{segment.name}</h4>
+                              {segment.outreach.map((o, i) => (
+                                <div key={i} className="text-sm leading-7">
+                                  <strong>{o.channel}</strong>
+                                  <p>{o.contentIdea}</p>
+                                  <p>{o.experiment}</p>
+                                  {destinations[o.channel] && (
+                                    <a
+                                      className="mt-2 inline-flex min-h-11 items-center gap-2 font-semibold text-blue-700 underline dark:text-blue-300"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      href={
+                                        destinations[o.channel] +
+                                        (o.channel === "Instagram"
+                                          ? ""
+                                          : encodeURIComponent(o.topic))
+                                      }
+                                    >
+                                      Explore {o.channel}
+                                      <ArrowUpRight size={15} aria-hidden />
+                                    </a>
+                                  )}
+                                </div>
+                              ))}
+                            </section>
+                          ))}
+                        </details>
                       </div>
                     )}
                   </>
