@@ -40,6 +40,18 @@ export default async function ToolResources({ slug }: { slug: string }) {
                 </Link>
               </li>
             ) : null}
+            {["keyword-research-tool", "keyword-clustering-tool"].includes(
+              slug,
+            ) && (
+              <li>
+                <Link
+                  href="/prompts/keyword-research-prompts"
+                  className="text-primary underline dark:text-blue-200"
+                >
+                  100 keyword research prompts for SEO and YouTube
+                </Link>
+              </li>
+            )}
             {tool.relatedGuides.map((guide) => (
               <li key={guide.path}>
                 <Link

@@ -47,6 +47,33 @@ export type PromptPreview = {
 };
 export const promptPreviews: PromptPreview[] = [
   {
+    id: "keyword-research",
+    category: "keywords",
+    title: "100 keyword research prompts",
+    description:
+      "Explore ten workflows for discovery, intent, competitors, clustering, FAQs, YouTube, local businesses, and agency delivery.",
+    outcome: "A reviewed keyword research workflow",
+    tags: [
+      "Keyword research",
+      "Long-tail keywords",
+      "YouTube",
+      "Clustering",
+      "FAQs",
+    ],
+    inputs: ["Business", "Audience", "Market"],
+    template:
+      "Create a keyword research plan for {{Business}}, serving {{Audience}} in {{Market}}. Separate keyword ideas from observed data. Never invent search metrics.",
+    checks: [
+      "Use identified source data.",
+      "Review page fit.",
+      "Preserve uncertainty.",
+    ],
+    tool: {
+      name: "Keyword Research Tool",
+      href: "/tools/keyword-research-tool",
+    },
+  },
+  {
     id: "search-intent",
     category: "keywords",
     title: "ChatGPT prompts for search intent",

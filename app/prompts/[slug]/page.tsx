@@ -1,3 +1,4 @@
+import KeywordPromptArticle from "@/features/prompts/KeywordPromptArticle";
 import IntentPromptArticle from "@/features/prompts/IntentPromptArticle";
 import MetaPromptArticle from "@/features/prompts/MetaPromptArticle";
 import type { Metadata } from "next";
@@ -97,6 +98,9 @@ export default function PromptDetailPage({
             {
               "@type": "Article",
               headline: detail.title,
+              ...(detail.publishedAt
+                ? { datePublished: detail.publishedAt }
+                : {}),
               ...(detail.cover
                 ? { image: new URL(detail.cover.src, origin).href }
                 : {}),
@@ -113,6 +117,8 @@ export default function PromptDetailPage({
         : []),
     ],
   };
+  if (prompt.id === "keyword-research")
+    return <KeywordPromptArticle schema={schema} />;
   if (prompt.id === "search-intent")
     return <IntentPromptArticle schema={schema} />;
   if (prompt.id === "meta-title") return <MetaPromptArticle schema={schema} />;

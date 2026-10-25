@@ -69,7 +69,7 @@ test("only published guides appear in public search and resolve as detail routes
   assert.equal(findPromptDetail("missing-page"), undefined);
   assert.deepEqual(
     filterPreviews("all", "", publishedPrompts).map((p) => p.id),
-    ["search-intent", "meta-title"],
+    ["keyword-research", "search-intent", "meta-title"],
   );
   assert.deepEqual(
     filterPreviews("on-page", "meta descriptions", publishedPrompts).map(
@@ -83,7 +83,7 @@ test("only published guides appear in public search and resolve as detail routes
     Object.entries(promptDetails)
       .filter(([, detail]) => detail.ready)
       .map(([id]) => id),
-    ["search-intent", "meta-title"],
+    ["keyword-research", "search-intent", "meta-title"],
   );
 });
 

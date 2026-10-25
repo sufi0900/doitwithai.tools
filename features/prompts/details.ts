@@ -8,6 +8,7 @@ export type PromptDetail = {
   overview: string;
   cover?: { src: string; alt: string; width: number; height: number };
   promptCount?: number;
+  publishedAt?: string;
   example: Record<string, string>;
   output: string;
   exampleNote: string;
@@ -15,6 +16,42 @@ export type PromptDetail = {
   mistakes: string[];
 };
 export const promptDetails: Record<string, PromptDetail> = {
+  "keyword-research": {
+    slug: "keyword-research-prompts",
+    ready: true,
+    publishedAt: "2026-10-25",
+    promptCount: 100,
+    title: "100 Keyword Research Prompts for SEO and YouTube",
+    description:
+      "Use 100 keyword research prompts for discovery, intent, competitors, clustering, FAQs, YouTube, local SEO, and agency workflows. Customize and copy each prompt.",
+    overview:
+      "Turn a research brief into useful keyword ideas, evidence reviews, page groups, and content decisions with ten focused workflows.",
+    cover: {
+      src: "/prompts/keyword-research-prompts-hero.webp",
+      width: 1600,
+      height: 900,
+      alt: "100 keyword research prompts beside a screen with discover, group, review, and copy controls.",
+    },
+    example: {
+      Business: "A local coffee business offering beginner espresso classes",
+      Audience: "Home brewers choosing their first class",
+      Market: "United Kingdom, English",
+    },
+    output:
+      "A provisional list of class, comparison, and home-brewing query candidates requiring demand and search-result validation.",
+    exampleNote: "Illustrative example, not measured demand.",
+    steps: [
+      "Choose the next research task.",
+      "Supply the required material.",
+      "Copy and run one prompt.",
+      "Review the evidence before deciding.",
+    ],
+    mistakes: [
+      "Inventing metrics.",
+      "Copying competitor positioning.",
+      "Creating one page per wording variation.",
+    ],
+  },
   "search-intent": {
     cover: intentPromptHero,
     slug: "chatgpt-prompts-for-search-intent",
