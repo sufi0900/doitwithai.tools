@@ -1,7 +1,7 @@
 "use client";
 import { useId, useRef, useState } from "react";
 import { chatGPTLink } from "./meta-workflow";
-import { Copy } from "lucide-react";
+import { Copy, ArrowUpRight } from "lucide-react";
 import { fillPreview, type PromptPreview } from "./catalog";
 import styles from "./prompts.module.css";
 export default function PromptBuilder({
@@ -34,7 +34,7 @@ export default function PromptBuilder({
         <div className={styles.outputTitle}>
           <h3>1. Add your context</h3>
           <button
-            className={styles.textLink}
+            className={styles.utilityAction}
             onClick={() => {
               setValues({ ...example });
               setMessage(
@@ -68,7 +68,7 @@ export default function PromptBuilder({
           </label>
         ))}
         <button
-          className={styles.textLink}
+          className={styles.utilityAction}
           onClick={() => {
             setValues({});
             setMessage("Inputs cleared.");
@@ -90,22 +90,25 @@ export default function PromptBuilder({
           readOnly
           value={text}
         />
-        <button className={styles.primary} onClick={copy}>
-          <Copy size={16} aria-hidden="true" />
-          Copy prompt
-        </button>
-        {chatGPTLink(text) ? (
-          <a
-            className={styles.textLink}
-            href={chatGPTLink(text)!}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open in ChatGPT
-          </a>
-        ) : (
-          <p>Copy this longer prompt into your assistant.</p>
-        )}
+        <div className={styles.promptActions}>
+          <button type="button" className={styles.primary} onClick={copy}>
+            <Copy size={16} aria-hidden="true" />
+            Copy prompt
+          </button>
+          {chatGPTLink(text) ? (
+            <a
+              className={styles.secondaryAction}
+              href={chatGPTLink(text)!}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open in ChatGPT
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </a>
+          ) : (
+            <p>Copy this longer prompt into your assistant.</p>
+          )}
+        </div>
         <p className={styles.copyStatus} role="status">
           {message || "Unfilled fields remain visible as {{placeholders}}."}
         </p>

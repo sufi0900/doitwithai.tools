@@ -74,3 +74,33 @@ Long prompts retain a copy-first fallback. Opening ChatGPT is a user action, not
 Published-guide discovery, categories, metadata, and sitemap entries use the existing registry.
 The Search Intent Checker links directly to the guide, which links back to relevant tools.
 The article uses Article schema, without invented ratings, dates, or claims of tested search performance.
+
+## Search intent guide visual and editorial polish
+
+The headline and listing now use ChatGPT prompts for search intent. The existing slug remains unchanged.
+Keyword intent appears naturally as a synonym and in relevant tool guidance.
+The guide now includes a featured image, the existing author portrait, practical optimization guidance, and related reading cards.
+The featured image is shared by the article, library card, social metadata, and Article schema.
+Its 1600 by 900 WebP weighs 86,378 bytes. It is rendered responsively with explicit dimensions.
+Shared prompt builders have a spaced action row with a proper secondary ChatGPT button.
+Secondary actions include visible keyboard focus and stack on narrow screens. Utility buttons also receive consistent borders and padding.
+Editorial link styling cannot turn the secondary action back into an underlined text link.
+
+Primary references reviewed on October 25, 2026:
+
+- https://developers.google.com/search/docs/fundamentals/creating-helpful-content
+- https://ahrefs.com/blog/search-intent/
+- https://www.semrush.com/blog/keyword-intent/
+
+Community search surfaced questions about tool labels disagreeing with observed results and adding words without resolving intent.
+These questions informed practical FAQs. Community opinions were not treated as search-engine rules or evidence of ranking effects.
+The guide keeps page type, format, and angle distinct, and preserves uncertainty when supplied evidence conflicts.
+
+Image production used the built-in image-generation skill, followed by an editorial correction and WebP encoding.
+Final brief: blue #5271FF branding, a search-intent prompt headline, and a desktop mockup with reader-task, wording-cue, and uncertainty instructions.
+The final asset is `public/prompts/search-intent-prompts-hero.webp`.
+The generated cover was visually inspected. This does not establish browser layout or interaction correctness.
+
+This revision passed twenty focused prompt and intent tests, explicit TypeScript, targeted lint, and the production build.
+Rendered checks confirm the cover, portrait, simplified title, social image, Article image, six action groups, internal links, canonical, sitemap, and unique IDs.
+Existing unrelated build warnings remain. Browser responsiveness, focus behavior, clipboard actions, and live ChatGPT navigation remain unverified.

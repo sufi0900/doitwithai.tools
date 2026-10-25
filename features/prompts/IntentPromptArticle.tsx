@@ -1,3 +1,5 @@
+import Image from "next/image";
+import polish from "./intent-article.module.css";
 import Link from "next/link";
 import PromptBuilder from "./PromptBuilder";
 import { intentExample, intentPrompts } from "./intent-workflow";
@@ -27,7 +29,7 @@ export default function IntentPromptArticle({
           <p className={styles.kicker}>
             KEYWORD RESEARCH · SIX PRACTICAL PROMPTS
           </p>
-          <h1>ChatGPT prompts for search intent and keyword intent</h1>
+          <h1>ChatGPT prompts for search intent</h1>
           <p className={styles.dek}>
             Understand the task behind a query before choosing what to publish.
           </p>
@@ -36,21 +38,45 @@ export default function IntentPromptArticle({
             Customize each brief, review uncertainty, and build a focused
             content plan.
           </p>
-          <p className={styles.author}>
-            By <Link href="/author/sufian-mustafa">Sufian Mustafa</Link>
-          </p>
+          <Link href="/author/sufian-mustafa" className={polish.authorCard}>
+            <Image
+              src="/sufi.jpeg"
+              width={48}
+              height={48}
+              alt="Sufian Mustafa"
+              className={polish.avatar}
+            />
+            <span>
+              <strong>Sufian Mustafa</strong>
+              <span>Founder and author · Do It With AI Tools</span>
+            </span>
+          </Link>
           <div className={styles.heroActions}>
             <a className={styles.primary} href="#intent-prompts">
               Choose a prompt
             </a>
             <Link
-              className="inline-flex min-h-11 items-center underline"
+              className={polish.secondaryButton}
               href="/tools/search-intent-checker"
             >
               Use Search Intent Checker
             </Link>
           </div>
         </header>
+        <figure className={polish.cover}>
+          <Image
+            src="/prompts/search-intent-prompts-hero.webp"
+            width={1600}
+            height={900}
+            alt="Search intent prompts beside a screen showing a query, reusable prompt, and Copy prompt button."
+            sizes="(max-width: 1200px) 100vw, 1100px"
+            priority
+          />
+          <figcaption>
+            Reusable prompts for reviewing reader goals and choosing a useful
+            content format.
+          </figcaption>
+        </figure>
         <div className="mx-auto max-w-4xl space-y-12">
           <nav
             aria-label="Guide contents"
@@ -60,6 +86,9 @@ export default function IntentPromptArticle({
             <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-base">
               <li>
                 <a href="#intent-basics">Understand intent</a>
+              </li>
+              <li>
+                <a href="#intent-optimization">Optimize your page</a>
               </li>
               <li>
                 <a href="#intent-workflow">Follow the workflow</a>
@@ -155,6 +184,76 @@ export default function IntentPromptArticle({
             <p>
               Mixed intent is possible. Do not force a single label when the
               wording or observed results support competing tasks.
+            </p>
+          </section>
+          <section id="intent-optimization" className={styles.section}>
+            <h2>How to turn search intent into a useful page</h2>
+            <p>
+              Search engines interpret queries and assess which pages may
+              satisfy them. A modifier is a clue, rather than a complete
+              explanation of the reader.
+            </p>
+            <p>
+              For a practical review, separate the reader’s task from the page’s
+              format. Then decide what evidence, examples, or functionality
+              would complete that task.
+            </p>
+            <h3>Choose the type, format, and angle separately</h3>
+            <p>
+              A page type could be a guide, product page, category, or
+              interactive tool. A format could be a tutorial, comparison, or
+              checklist.
+            </p>
+            <p>
+              The angle identifies the audience or constraint you serve. For
+              example, beginners may need setup steps, while experienced teams
+              may need workflow comparisons.
+            </p>
+            <p>
+              Ahrefs’{" "}
+              <a href="https://ahrefs.com/blog/search-intent/">
+                search intent guide
+              </a>{" "}
+              explains this distinction. Use it to interpret evidence without
+              copying another page’s structure blindly.
+            </p>
+            <h3>Make the next action match the reader’s task</h3>
+            <p>
+              A tutorial can offer a worked example or relevant tool. A
+              comparison should help readers choose using clear criteria and
+              disclosed limitations.
+            </p>
+            <p>
+              A transactional page needs understandable terms and an accessible
+              action. A navigational page should make the intended destination
+              easy to find.
+            </p>
+            <h3>Use a keyword intent checker as a starting point</h3>
+            <p>
+              Enter the exact query in our{" "}
+              <Link href="/tools/search-intent-checker">
+                Search Intent Checker
+              </Link>
+              . Inspect its supporting wording and suggested reader task.
+            </p>
+            <p>
+              For a deeper review, add your audience and current result notes.
+              Our tool interprets those notes without independently verifying
+              the result sample.
+            </p>
+            <p>
+              If the evidence conflicts, preserve that uncertainty. Recheck the
+              exact query, market, and language before changing a useful page.
+            </p>
+            <h3>Review usefulness after publishing</h3>
+            <p>
+              Compare relevant Search Console queries with the page’s purpose.
+              Look for mismatched promises, missing examples, or an action that
+              interrupts the reader’s task.
+            </p>
+            <p>
+              Clicks and position alone do not establish an intent problem.
+              Check changes in context before making large rewrites.
             </p>
           </section>
           <section id="intent-workflow" className={styles.section}>
@@ -319,9 +418,45 @@ export default function IntentPromptArticle({
               </li>
             </ul>
           </section>
+          <section className={styles.section}>
+            <h2>Keep building your content workflow</h2>
+            <div className={polish.readingGrid}>
+              {[
+                [
+                  "/ai-seo/chatgpt-target-audience-research",
+                  "Research your target audience",
+                  "Clarify who the page serves before selecting its angle.",
+                ],
+                [
+                  "/ai-seo/chatgpt-keyword-research",
+                  "Plan keyword research with ChatGPT",
+                  "Connect query ideas with the questions your content needs to answer.",
+                ],
+                [
+                  "/prompts/chatgpt-prompts-for-meta-title-and-meta-description",
+                  "Write accurate titles and descriptions",
+                  "Use your reviewed page purpose to create a faithful search preview.",
+                ],
+              ].map(([href, title, description]) => (
+                <Link href={href} key={href} className={polish.readingCard}>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                  <span>Read the guide ↗</span>
+                </Link>
+              ))}
+            </div>
+          </section>
           <section id="intent-faq" className={styles.section}>
             <h2>Questions about search intent prompts</h2>
             {[
+              [
+                "Why can a tool label disagree with the results I see?",
+                "A wording estimate and a live result sample use different evidence. Check the exact query, location, language, and date before accepting either interpretation.",
+              ],
+              [
+                "Should I add more words when a page does not match intent?",
+                "Extra text may not solve a task mismatch. First check the page type, opening promise, useful examples, and next action.",
+              ],
               [
                 "Are search intent and keyword intent different?",
                 "Both terms describe the reader task behind a search query. Use the same evidence-led workflow for either term.",

@@ -1409,3 +1409,65 @@
 :global(.dark) .page .card[data-status="published"] .cardAction {
   color: #fff !important;
 }
+
+/* Shared prompt actions remain distinct within editorial and library layouts. */
+.promptActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 14px;
+}
+.promptActions > .primary,
+.promptActions > .secondaryAction {
+  min-height: 46px;
+  text-decoration: none !important;
+  line-height: 1.4;
+}
+.promptActions > .secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 1px solid var(--line, #cbd5e1);
+  border-radius: 10px;
+  color: var(--ink, #182441) !important;
+  background: var(--paper, var(--surface, #fff));
+  font-size: 13px;
+  font-weight: 700;
+}
+.promptActions > .secondaryAction:hover {
+  border-color: #5271ff;
+  background: var(--soft, #f2f5fc);
+}
+.utilityAction {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--line, #cbd5e1);
+  border-radius: 8px;
+  color: var(--ink, #182441);
+  background: var(--soft, #f2f5fc);
+  font-size: 12px;
+  font-weight: 650;
+}
+.utilityAction:hover {
+  border-color: #5271ff;
+}
+.promptActions > a:focus-visible,
+.promptActions > button:focus-visible,
+.utilityAction:focus-visible {
+  outline: 2px solid #5271ff;
+  outline-offset: 3px;
+}
+@media (max-width: 480px) {
+  .promptActions {
+    align-items: stretch;
+  }
+  .promptActions > .primary,
+  .promptActions > .secondaryAction {
+    flex: 1 1 100%;
+  }
+}

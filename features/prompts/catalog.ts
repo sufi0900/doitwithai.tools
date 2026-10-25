@@ -49,7 +49,7 @@ export const promptPreviews: PromptPreview[] = [
   {
     id: "search-intent",
     category: "keywords",
-    title: "ChatGPT prompts for search intent and keyword intent",
+    title: "ChatGPT prompts for search intent",
     description:
       "Six prompts to interpret queries, review result notes, resolve mixed intent, and plan useful content.",
     outcome: "An evidence-aware content plan",

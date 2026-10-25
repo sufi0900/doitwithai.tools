@@ -1,4 +1,4 @@
-import { promptHero } from "./article-assets";
+import { promptHero, intentPromptHero } from "./article-assets";
 import { promptPreviews } from "./catalog";
 export type PromptDetail = {
   slug: string;
@@ -16,12 +16,13 @@ export type PromptDetail = {
 };
 export const promptDetails: Record<string, PromptDetail> = {
   "search-intent": {
+    cover: intentPromptHero,
     slug: "chatgpt-prompts-for-search-intent",
     ready: true,
     promptCount: 6,
-    title: "ChatGPT prompts for search intent and keyword intent",
+    title: "ChatGPT prompts for search intent",
     description:
-      "Use six customizable ChatGPT prompts for keyword and search intent. Review supplied evidence, resolve mixed intent, and choose useful page formats.",
+      "Use six customizable ChatGPT prompts to understand search intent. Review evidence, resolve mixed queries, and choose useful page formats.",
     overview:
       "Understand the reader task before deciding what to publish. Separate wording clues from observed search results and turn reviewed intent into a focused brief.",
     example: {

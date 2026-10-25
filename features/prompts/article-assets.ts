@@ -28,3 +28,10 @@ export const metadataGuides = {
       "From our meta description guide. Search systems may select different snippet text.",
   },
 };
+
+export const intentPromptHero = {
+  src: "/prompts/search-intent-prompts-hero.webp",
+  width: 1600,
+  height: 900,
+  alt: "ChatGPT prompts for search intent beside a desktop screen showing a reusable prompt and Copy prompt button.",
+};
