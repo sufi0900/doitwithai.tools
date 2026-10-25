@@ -48,7 +48,7 @@ All prompts have not been benchmarked against every assistant. The article state
 
 The article uses readable body text, expandable prompt cards, a ten-workflow index, and responsive controls.
 A shared brief appears before the prompt list, with return links at the bottom.
-The author portrait uses the existing `/sufi.jpeg` asset.
+The author portrait uses an optimized copy of the supplied image at `/prompts/sufian-mustafa-portrait.webp`.
 The page includes an example, source notes, six FAQs, related reading, and contextual promotional cards for existing tools.
 The existing published prompt registry supplies listing cards, static parameters, canonical metadata, and sitemap discovery.
 Only the new completed guide is marked ready. Existing unfinished placeholders remain excluded.
@@ -81,3 +81,15 @@ The managed browser preview was unavailable because its startup flags are incomp
 Responsive behavior was reviewed in code, without a visual browser pass.
 Browser interactions, responsive visuals, clipboard, downloads, and actual ChatGPT handoff remain unverified.
 No production deployment, private login, third-party message, paid subscription, or credential change was performed.
+
+## Author and contextual link polish
+
+The supplied portrait replaces the previous photo in this article.
+The 384-pixel WebP portrait is 14 KB, compared with the 5.5 MB original upload.
+Fixed width, height, and flex sizing prevent the portrait from stretching within the author row.
+Each workflow destination appears once, with the tool name as its visible label.
+The full article includes at most three contextual links to any individual tool.
+Validation includes the prompt tests, TypeScript, targeted lint, and production compilation.
+Browser visual and interaction checks remain unavailable in this environment.
+The continuation check passed all 13 focused prompt tests, TypeScript, targeted lint, and production compilation.
+The full continuation build stopped during page-data collection because local Sanity configuration lacks `projectId`.

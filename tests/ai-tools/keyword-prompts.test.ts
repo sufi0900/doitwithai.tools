@@ -6,6 +6,7 @@ import { load } from "cheerio";
 import prompts from "../../features/prompts/keyword-prompts.json";
 import categories from "../../features/prompts/keyword-categories.json";
 import Library from "../../features/prompts/KeywordPromptLibrary";
+import Article from "../../features/prompts/KeywordPromptArticle";
 import { fillPreview } from "../../features/prompts/catalog";
 import {
   publishedPrompts,
@@ -86,4 +87,29 @@ test("the server-rendered library exposes all one hundred prompts, navigation, a
     assert.equal(card.find("label textarea").length, 1);
   }
   assert.ok($('textarea[aria-label="Manual prompt copy fallback"]').length);
+});
+
+test("workflow tool links use names and appear once per destination", () => {
+  const $ = load(renderToStaticMarkup(React.createElement(Library)));
+  const links = $('a[href^="/tools/"]').toArray();
+  const hrefs = links.map((node) => $(node).attr('href'));
+  assert.equal(new Set(hrefs).size, hrefs.length);
+  assert.equal(links.length, 6);
+  for (const node of links) assert.ok(!$(node).text().includes('related tool'));
+});
+
+
+test("the complete article bounds repeated tool links and uses the supplied author portrait", () => {
+  const $ = load(renderToStaticMarkup(React.createElement(Article, {schema: {"@graph": []}})));
+  const counts = new Map<string, number>();
+  $('a[href^="/tools/"]').each((_, node) => {
+    const path = $(node).attr('href')!;
+    counts.set(path, (counts.get(path) || 0) + 1);
+  });
+  for (const [path, count] of counts) assert.ok(count <= 3, `${path} repeated ${count} times`);
+  assert.equal(counts.get('/tools/keyword-research-tool'), 3);
+  const portrait = $('img[alt="Sufian Mustafa"]');
+  assert.equal(portrait.length, 1);
+  assert.ok(portrait.attr('src')!.includes('sufian-mustafa-portrait'));
+  assert.equal(portrait.attr('width'), portrait.attr('height'));
 });

@@ -275,12 +275,14 @@ export default function KeywordPromptLibrary() {
               <p className="mt-3 text-base leading-8 text-slate-600 dark:text-slate-300">
                 {c.intro}
               </p>
-              <Link
-                className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 underline dark:text-blue-200"
-                href={`/tools/${c.tool}`}
-              >
-                Use the related tool
-              </Link>
+              {c.showToolLink && (
+                <Link
+                  className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 underline dark:text-blue-200"
+                  href={`/tools/${c.tool}`}
+                >
+                  Use {c.toolName}
+                </Link>
+              )}
             </div>
             <div className="space-y-4">
               {prompts.map((p) => {

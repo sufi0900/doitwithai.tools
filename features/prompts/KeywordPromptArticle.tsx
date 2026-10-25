@@ -84,16 +84,16 @@ export default function KeywordPromptArticle({
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <Link
               href="/author/sufian-mustafa"
-              className="inline-flex items-center gap-3"
+              className="inline-flex min-w-0 items-center gap-3"
             >
               <Image
-                src="/sufi.jpeg"
+                src="/prompts/sufian-mustafa-portrait.webp"
                 width={48}
                 height={48}
                 alt="Sufian Mustafa"
-                className="rounded-full"
+                className="!h-12 !w-12 shrink-0 rounded-full object-cover object-[center_25%]"
               />
-              <span className="text-sm leading-6">
+              <span className="min-w-0 text-sm leading-6">
                 <strong className="block">Sufian Mustafa</strong>Founder and
                 author · Do It With AI Tools
               </span>
