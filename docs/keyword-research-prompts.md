@@ -49,7 +49,7 @@ All prompts have not been benchmarked against every assistant. The article state
 The article uses readable body text, expandable prompt cards, a ten-workflow index, and responsive controls.
 A shared brief appears before the prompt list, with return links at the bottom.
 The author portrait uses an optimized copy of the supplied image at `/prompts/sufian-mustafa-portrait.webp`.
-The page includes an example, source notes, six FAQs, related reading, and contextual promotional cards for existing tools.
+The page includes an example, six FAQs, related reading, and contextual promotional cards for existing tools and guides.
 The existing published prompt registry supplies listing cards, static parameters, canonical metadata, and sitemap discovery.
 Only the new completed guide is marked ready. Existing unfinished placeholders remain excluded.
 The keyword research and clustering tool resources link back to the article without changing the guide registry’s path contract.
@@ -93,3 +93,25 @@ Validation includes the prompt tests, TypeScript, targeted lint, and production 
 Browser visual and interaction checks remain unavailable in this environment.
 The continuation check passed all 13 focused prompt tests, TypeScript, targeted lint, and production compilation.
 The full continuation build stopped during page-data collection because local Sanity configuration lacks `projectId`.
+
+## Branded editorial refresh
+
+The metadata prompt guide supplied the design reference for the keyword research page.
+Three responsive guide cards link to the published keyword research guide, search intent prompts, and AI versus traditional research comparison.
+The cards appear before the instructions, after the intent workflow, and after the metrics workflow.
+In-workflow promotions are hidden while searching or filtering, keeping focused results uncluttered.
+Published blog cover URLs were confirmed through the CMS. Links remain capped at three occurrences per destination.
+The public research notes and external source list were removed. Research provenance remains in this internal document.
+The closing tool panel and guide cards use the original square brand logo with fixed, equal dimensions.
+
+The rebuilt cover uses brand blue, a desktop prompt mockup, and the original logo asset.
+Built-in image generation created the illustration. The exact source logo and brand label were then applied during asset preparation.
+Final asset: `public/prompts/keyword-research-prompts-hero-v2.webp`, 1600 × 900, approximately 99 KB.
+The article, listing cover, Open Graph image, and structured-data image resolve through the new asset path.
+Generation brief: a blue editorial cover reading “100 Keyword Research Prompts”, with Discover, Group, Review, and Copy prompt controls.
+The brief excluded people, invented metrics, and ranking promises, and reserved a strip for the supplied logo.
+
+All 14 focused prompt checks passed, including guide placement, retained prompts, source-link removal, and destination repetition limits.
+The full production build passed with the existing public Sanity project and dataset supplied for this local check.
+TypeScript, targeted lint, and whitespace validation passed. Existing unrelated build warnings remain.
+Browser visual verification remains unavailable because no supported browser binary is installed locally.

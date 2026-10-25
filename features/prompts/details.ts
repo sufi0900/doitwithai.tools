@@ -27,7 +27,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Turn a research brief into useful keyword ideas, evidence reviews, page groups, and content decisions with ten focused workflows.",
     cover: {
-      src: "/prompts/keyword-research-prompts-hero.webp",
+      src: "/prompts/keyword-research-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "100 keyword research prompts beside a screen with discover, group, review, and copy controls.",

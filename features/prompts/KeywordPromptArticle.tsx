@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Library from "./KeywordPromptLibrary";
+import KeywordGuideCard, { keywordGuides } from "./KeywordGuideCard";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";
 const button =
@@ -119,7 +120,7 @@ export default function KeywordPromptArticle({
         </header>
         <figure>
           <Image
-            src="/prompts/keyword-research-prompts-hero.webp"
+            src="/prompts/keyword-research-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="100 keyword research prompts beside a desktop screen with discover, group, review, and copy prompt controls."
@@ -151,6 +152,7 @@ export default function KeywordPromptArticle({
             Review the outputs between steps.
           </p>
         </section>
+        <KeywordGuideCard guide={keywordGuides.research} />
         <section className="mb-12">
           <h2 className="text-3xl font-bold">
             How to use these keyword research prompts
@@ -208,6 +210,16 @@ export default function KeywordPromptArticle({
         </section>
         <Library />
         <section className="my-14 rounded-2xl bg-[#101e43] p-6 text-white sm:p-8">
+          <div className="mb-6 flex items-center gap-3 text-sm font-semibold text-blue-100">
+            <Image
+              src="/doitwithai-logo-square.png"
+              width={40}
+              height={40}
+              alt=""
+              className="!h-10 !w-10 shrink-0 rounded-lg object-contain"
+            />
+            <span>Do It With AI Tools</span>
+          </div>
           <p className="text-sm font-semibold text-blue-200">
             PUT YOUR RESEARCH INTO PRACTICE
           </p>
@@ -321,57 +333,6 @@ export default function KeywordPromptArticle({
               </Link>
             ))}
           </div>
-        </section>
-        <section className="my-12">
-          <h2 className="text-3xl font-bold">Research notes and sources</h2>
-          <p className={body}>
-            These original prompts were organized after reviewing our existing
-            guides and the sources below. They are not copied competitor prompt
-            lists.
-          </p>
-          <ul className="mt-5 list-disc space-y-3 pl-5 text-base leading-8">
-            {[
-              [
-                "https://ahrefs.com/blog/keyword-clustering/",
-                "Ahrefs on clustering by similar intent",
-              ],
-              [
-                "https://help.ahrefs.com/en/articles/72265-what-does-kd-stand-for-in-keywords-explorer",
-                "Ahrefs on its provider-specific difficulty metric",
-              ],
-              [
-                "https://www.semrush.com/blog/youtube-keyword-research/",
-                "Semrush on YouTube keyword research",
-              ],
-              [
-                "https://support.google.com/youtube/answer/9962575?hl=en",
-                "YouTube on search relevance, engagement, and quality",
-              ],
-              [
-                "https://developers.google.com/google-ads/api/docs/keyword-planning/generate-historical-metrics",
-                "Google on historical keyword metrics",
-              ],
-            ].map(([href, label]) => (
-              <li key={href}>
-                <a
-                  className="font-semibold text-blue-700 underline dark:text-blue-200"
-                  href={href}
-                >
-                  {label}
-                </a>
-              </li>
-            ))}
-          </ul>
-          <p className={body}>
-            Ahrefs describes clustering around similar intent and defines its
-            own difficulty metric. YouTube describes search using relevance,
-            engagement, and quality, beyond keyword wording alone.
-          </p>
-          <p className={body}>
-            These principles inform the workflows, not a guarantee of ranking
-            gains. We have not benchmarked all prompts across every assistant or
-            measured their search-performance effects.
-          </p>
         </section>
         <section className="my-12">
           <h2 className="text-3xl font-bold">

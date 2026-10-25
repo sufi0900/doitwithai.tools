@@ -5,6 +5,7 @@ import data from "./keyword-prompts.json";
 import categories from "./keyword-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
+import KeywordGuideCard, { keywordGuides } from "./KeywordGuideCard";
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold transition hover:border-[#5271FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271FF] dark:border-slate-600";
 const field =
@@ -262,120 +263,130 @@ export default function KeywordPromptLibrary() {
       {categories.map((c) => {
         const prompts = shown.filter((p) => p.category === c.id);
         return prompts.length ? (
-          <section
-            id={`workflow-${c.id}`}
-            key={c.id}
-            className="mb-10 scroll-mt-32"
-            aria-labelledby={`workflow-title-${c.id}`}
-          >
-            <div className="mb-4">
-              <h3 id={`workflow-title-${c.id}`} className="text-2xl font-bold">
-                {c.name}
-              </h3>
-              <p className="mt-3 text-base leading-8 text-slate-600 dark:text-slate-300">
-                {c.intro}
-              </p>
-              {c.showToolLink && (
-                <Link
-                  className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 underline dark:text-blue-200"
-                  href={`/tools/${c.tool}`}
+          <React.Fragment key={c.id}>
+            <section
+              id={`workflow-${c.id}`}
+              className="mb-10 scroll-mt-32"
+              aria-labelledby={`workflow-title-${c.id}`}
+            >
+              <div className="mb-4">
+                <h3
+                  id={`workflow-title-${c.id}`}
+                  className="text-2xl font-bold"
                 >
-                  Use {c.toolName}
-                </Link>
-              )}
-            </div>
-            <div className="space-y-4">
-              {prompts.map((p) => {
-                const prompt = text(p),
-                  url = chatGPTLink(prompt);
-                return (
-                  <details
-                    key={p.id}
-                    id={p.id}
-                    className="scroll-mt-32 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                  {c.name}
+                </h3>
+                <p className="mt-3 text-base leading-8 text-slate-600 dark:text-slate-300">
+                  {c.intro}
+                </p>
+                {c.showToolLink && (
+                  <Link
+                    className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-blue-700 underline dark:text-blue-200"
+                    href={`/tools/${c.tool}`}
                   >
-                    <summary className="cursor-pointer p-5 marker:text-[#5271FF]">
-                      <span className="mr-3 inline-flex min-w-10 justify-center rounded-lg bg-[#5271FF]/10 px-2 py-1 text-sm font-bold text-blue-800 dark:text-blue-200">
-                        {p.number}
-                      </span>
-                      <span className="text-lg font-bold">{p.title}</span>
-                    </summary>
-                    <div className="border-t border-slate-200 p-5 dark:border-slate-700">
-                      <p className="text-base leading-8">{p.task}</p>
-                      <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                        <strong>Prepare:</strong> {p.inputs}.
-                      </p>
-                      <label className="mt-4 block text-sm font-semibold">
-                        Your task-specific material
-                        <textarea
-                          rows={3}
-                          maxLength={12000}
-                          className={field}
-                          placeholder={p.inputs}
-                          value={specific[p.id] || ""}
-                          onChange={(e) => {
-                            setSpecific((prev) => ({
-                              ...prev,
-                              [p.id]: e.target.value,
-                            }));
-                            setCopied("");
-                          }}
-                        />
-                      </label>
-                      <pre
-                        className="mt-5 max-h-[520px] overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-slate-100 p-4 font-mono text-sm leading-7 dark:bg-slate-950"
-                        tabIndex={0}
-                        aria-label={`Prompt ${p.number} text`}
-                      >
-                        {prompt}
-                      </pre>
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        <button
-                          className={button + " bg-[#4058D0] text-white"}
-                          onClick={() => copy(p)}
+                    Use {c.toolName}
+                  </Link>
+                )}
+              </div>
+              <div className="space-y-4">
+                {prompts.map((p) => {
+                  const prompt = text(p),
+                    url = chatGPTLink(prompt);
+                  return (
+                    <details
+                      key={p.id}
+                      id={p.id}
+                      className="scroll-mt-32 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                    >
+                      <summary className="cursor-pointer p-5 marker:text-[#5271FF]">
+                        <span className="mr-3 inline-flex min-w-10 justify-center rounded-lg bg-[#5271FF]/10 px-2 py-1 text-sm font-bold text-blue-800 dark:text-blue-200">
+                          {p.number}
+                        </span>
+                        <span className="text-lg font-bold">{p.title}</span>
+                      </summary>
+                      <div className="border-t border-slate-200 p-5 dark:border-slate-700">
+                        <p className="text-base leading-8">{p.task}</p>
+                        <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                          <strong>Prepare:</strong> {p.inputs}.
+                        </p>
+                        <label className="mt-4 block text-sm font-semibold">
+                          Your task-specific material
+                          <textarea
+                            rows={3}
+                            maxLength={12000}
+                            className={field}
+                            placeholder={p.inputs}
+                            value={specific[p.id] || ""}
+                            onChange={(e) => {
+                              setSpecific((prev) => ({
+                                ...prev,
+                                [p.id]: e.target.value,
+                              }));
+                              setCopied("");
+                            }}
+                          />
+                        </label>
+                        <pre
+                          className="mt-5 max-h-[520px] overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-slate-100 p-4 font-mono text-sm leading-7 dark:bg-slate-950"
+                          tabIndex={0}
+                          aria-label={`Prompt ${p.number} text`}
                         >
-                          {copied === p.id ? "Copied prompt" : "Copy prompt"}
-                        </button>
-                        {url ? (
-                          <a
-                            className={
-                              button +
-                              " bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
-                            }
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          {prompt}
+                        </pre>
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          <button
+                            className={button + " bg-[#4058D0] text-white"}
+                            onClick={() => copy(p)}
                           >
-                            Open in ChatGPT ↗
+                            {copied === p.id ? "Copied prompt" : "Copy prompt"}
+                          </button>
+                          {url ? (
+                            <a
+                              className={
+                                button +
+                                " bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                              }
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Open in ChatGPT ↗
+                            </a>
+                          ) : (
+                            <span className="self-center text-sm leading-7">
+                              This prompt is too long for a prefilled link. Copy
+                              it instead.
+                            </span>
+                          )}
+                          <a
+                            className={button}
+                            href={`#${p.id}`}
+                            aria-label={`Link to prompt ${p.number}`}
+                          >
+                            Link to prompt
                           </a>
-                        ) : (
-                          <span className="self-center text-sm leading-7">
-                            This prompt is too long for a prefilled link. Copy
-                            it instead.
-                          </span>
-                        )}
-                        <a
-                          className={button}
-                          href={`#${p.id}`}
-                          aria-label={`Link to prompt ${p.number}`}
-                        >
-                          Link to prompt
-                        </a>
+                        </div>
+                        <p className="mt-4 text-sm leading-7">
+                          <strong>Expected output:</strong> {p.output}
+                        </p>
+                        <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                          <strong>Review:</strong> Check source rows, missing
+                          evidence, and page fit before acting. The output is a
+                          draft, not a validated keyword strategy.
+                        </p>
                       </div>
-                      <p className="mt-4 text-sm leading-7">
-                        <strong>Expected output:</strong> {p.output}
-                      </p>
-                      <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                        <strong>Review:</strong> Check source rows, missing
-                        evidence, and page fit before acting. The output is a
-                        draft, not a validated keyword strategy.
-                      </p>
-                    </div>
-                  </details>
-                );
-              })}
-            </div>
-          </section>
+                    </details>
+                  );
+                })}
+              </div>
+            </section>
+            {category === "all" && !query.trim() && c.id === "intent" && (
+              <KeywordGuideCard guide={keywordGuides.intent} />
+            )}
+            {category === "all" && !query.trim() && c.id === "metrics" && (
+              <KeywordGuideCard guide={keywordGuides.evidence} />
+            )}
+          </React.Fragment>
         ) : null;
       })}
       {!shown.length && (

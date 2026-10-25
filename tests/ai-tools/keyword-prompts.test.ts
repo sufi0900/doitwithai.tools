@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { ImageConfigContext } from "next/dist/shared/lib/image-config-context.shared-runtime";
+import { imageConfigDefault } from "next/dist/shared/lib/image-config";
 import { load } from "cheerio";
 import prompts from "../../features/prompts/keyword-prompts.json";
 import categories from "../../features/prompts/keyword-categories.json";
@@ -13,6 +15,22 @@ import {
   promptDetails,
   promptPath,
 } from "../../features/prompts/details";
+
+// Supply the same remote image policy that Next.js loads when serving this page.
+function renderPromptMarkup(element: React.ReactElement) {
+  return renderToStaticMarkup(
+    React.createElement(
+      ImageConfigContext.Provider,
+      {
+        value: {
+          ...imageConfigDefault,
+          remotePatterns: [{ protocol: "https", hostname: "cdn.sanity.io" }],
+        },
+      },
+      element,
+    ),
+  );
+}
 
 test("one hundred distinct prompts cover ten complete workflows with bounded, actionable briefs", () => {
   assert.equal(prompts.length, 100);
@@ -59,7 +77,7 @@ test("the ready guide resolves through the shared editorial registry without pla
   assert.ok(filled.includes(`[${prompts[0].inputs}: paste here]`));
 });
 test("the server-rendered library exposes all one hundred prompts, navigation, and usable copy alternatives", () => {
-  const $ = load(renderToStaticMarkup(React.createElement(Library)));
+  const $ = load(renderPromptMarkup(React.createElement(Library)));
   assert.equal($('details[id^="keyword-prompt-"]').length, 100);
   assert.equal($('nav[aria-label="Keyword prompt workflows"] a').length, 10);
   const ids = $("[id]")
@@ -90,26 +108,70 @@ test("the server-rendered library exposes all one hundred prompts, navigation, a
 });
 
 test("workflow tool links use names and appear once per destination", () => {
-  const $ = load(renderToStaticMarkup(React.createElement(Library)));
+  const $ = load(renderPromptMarkup(React.createElement(Library)));
   const links = $('a[href^="/tools/"]').toArray();
-  const hrefs = links.map((node) => $(node).attr('href'));
+  const hrefs = links.map((node) => $(node).attr("href"));
   assert.equal(new Set(hrefs).size, hrefs.length);
   assert.equal(links.length, 6);
-  for (const node of links) assert.ok(!$(node).text().includes('related tool'));
+  for (const node of links) assert.ok(!$(node).text().includes("related tool"));
 });
 
-
 test("the complete article bounds repeated tool links and uses the supplied author portrait", () => {
-  const $ = load(renderToStaticMarkup(React.createElement(Article, {schema: {"@graph": []}})));
+  const $ = load(
+    renderPromptMarkup(
+      React.createElement(Article, { schema: { "@graph": [] } }),
+    ),
+  );
   const counts = new Map<string, number>();
   $('a[href^="/tools/"]').each((_, node) => {
-    const path = $(node).attr('href')!;
+    const path = $(node).attr("href")!;
     counts.set(path, (counts.get(path) || 0) + 1);
   });
-  for (const [path, count] of counts) assert.ok(count <= 3, `${path} repeated ${count} times`);
-  assert.equal(counts.get('/tools/keyword-research-tool'), 3);
+  for (const [path, count] of counts)
+    assert.ok(count <= 3, `${path} repeated ${count} times`);
+  assert.equal(counts.get("/tools/keyword-research-tool"), 3);
   const portrait = $('img[alt="Sufian Mustafa"]');
   assert.equal(portrait.length, 1);
-  assert.ok(portrait.attr('src')!.includes('sufian-mustafa-portrait'));
-  assert.equal(portrait.attr('width'), portrait.attr('height'));
+  assert.ok(portrait.attr("src")!.includes("sufian-mustafa-portrait"));
+  assert.equal(portrait.attr("width"), portrait.attr("height"));
+});
+
+test("editorial cards follow relevant workflows without exposing competitor source links", () => {
+  const $ = load(
+    renderPromptMarkup(
+      React.createElement(Article, { schema: { "@graph": [] } }),
+    ),
+  );
+  assert.equal($("aside").length, 3);
+  assert.equal(
+    $("#workflow-intent").next("aside").find("a").attr("href"),
+    "/prompts/chatgpt-prompts-for-search-intent",
+  );
+  assert.equal(
+    $("#workflow-metrics").next("aside").find("a").attr("href"),
+    "/ai-seo/ai-vs-traditional-keyword-research",
+  );
+  assert.equal($('a[href*="ahrefs.com"], a[href*="semrush.com"]').length, 0);
+  assert.ok(!$("h2").text().includes("Research notes and sources"));
+  assert.equal(
+    $("header")
+      .next("figure")
+      .find("img")
+      .attr("src")
+      ?.includes("keyword-research-prompts-hero-v2"),
+    true,
+  );
+  assert.equal(
+    promptDetails["keyword-research"].cover?.src,
+    "/prompts/keyword-research-prompts-hero-v2.webp",
+  );
+  const counts = new Map<string, number>();
+  $('a[href^="/ai-seo/"], a[href^="/tools/"], a[href^="/prompts/"]').each(
+    (_, node) => {
+      const path = $(node).attr("href")!;
+      counts.set(path, (counts.get(path) || 0) + 1);
+    },
+  );
+  for (const [path, count] of counts)
+    assert.ok(count <= 3, `${path} repeated ${count} times`);
 });
