@@ -201,28 +201,6 @@ const Header = () => {
                               }
                             `}
                           >
-                            {menuItem.title === "SEO with AI" && (
-                              <>
-                                <span
-                                  className={`absolute -left-1 -top-1 animate-ping-star ${
-                                    active
-                                      ? "text-gray-700 drop-shadow-lg dark:text-white"
-                                      : "text-yellow-400"
-                                  }`}
-                                >
-                                  &#10022;
-                                </span>
-                                <span
-                                  className={`absolute -bottom-1 -right-1 animate-ping-star ${
-                                    active
-                                      ? "text-gray-700 drop-shadow-lg dark:text-white"
-                                      : "text-blue-400"
-                                  }`}
-                                >
-                                  &#10022;
-                                </span>
-                              </>
-                            )}
                             <span className="relative z-10">
                               {menuItem.title}
                             </span>
@@ -547,28 +525,6 @@ const Header = () => {
                               }
                             `}
                           >
-                            {menuItem.title === "SEO with AI" && (
-                              <>
-                                <span
-                                  className={`absolute -left-1 -top-1 animate-ping-star ${
-                                    active
-                                      ? "text-black drop-shadow-lg dark:text-white"
-                                      : "text-yellow-400"
-                                  }`}
-                                >
-                                  &#10022;
-                                </span>
-                                <span
-                                  className={`absolute -bottom-1 -right-1 animate-ping-star ${
-                                    active
-                                      ? "text-yellow drop-shadow-lg dark:text-white"
-                                      : "text-blue-400"
-                                  }`}
-                                >
-                                  &#10022;
-                                </span>
-                              </>
-                            )}
                             <span className="relative z-10">
                               {menuItem.title}
                             </span>

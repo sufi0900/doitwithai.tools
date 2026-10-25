@@ -201,6 +201,8 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
           const items = tools.filter(
             (tool) =>
               tool.topics.includes(topic.id) &&
+              (tool.id !== "on-page-ai-seo-analyzer" ||
+                topic.id === "on-page") &&
               (!trimmedQuery ||
                 [tool.name, ...tool.tags].some((text) =>
                   text.toLowerCase().includes(trimmedQuery),
@@ -253,15 +255,7 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
                       className={`workspace-nav-link ${tool.id === "on-page-ai-seo-analyzer" ? "workspace-flagship-link" : ""}`}
                     >
                       <span className="workspace-tool-dot" aria-hidden="true" />
-                      <span className="min-w-0 flex-1">
-                        {tool.id === "on-page-ai-seo-analyzer" && (
-                          <span className="workspace-flagship-label">
-                            <Sparkles size={10} />
-                            Flagship
-                          </span>
-                        )}
-                        {tool.name}
-                      </span>
+                      <span className="min-w-0 flex-1">{tool.name}</span>
                       {workspace.saved.includes(tool.id) && (
                         <Bookmark
                           size={12}

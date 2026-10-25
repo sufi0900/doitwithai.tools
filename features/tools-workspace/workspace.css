@@ -488,69 +488,41 @@
   color: var(--topic-accent-dark);
   background: rgba(var(--topic-rgb), 0.12);
 }
+/* The flagship keeps the same row geometry as every other tool. */
 .workspace-nav-link.workspace-flagship-link {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border: 1px solid #5271ff45;
-  background: linear-gradient(110deg, #5271ff15, #5271ff05);
+  color: #344fc4;
   font-weight: 800;
-  color: #2d4dc7;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  box-shadow: 0 3px 12px #5271ff0a;
 }
-.workspace-flagship-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 8px;
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: #3959db;
-  margin-bottom: 4px;
-}
-.workspace-flagship-link::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: linear-gradient(
-    110deg,
-    transparent 20%,
-    #5271ff18 50%,
-    transparent 80%
-  );
-  transform: translateX(-110%);
-  animation: flagship-sheen 8s ease-in-out 2;
+.workspace-flagship-link > .min-w-0 {
+  animation: flagship-text-glow 4s ease-in-out 2;
 }
 .dark .workspace-nav-link.workspace-flagship-link {
-  color: #c1ceff;
-  border-color: #7f9aff66;
-  background: linear-gradient(110deg, #5271ff30, #5271ff12);
-}
-.dark .workspace-flagship-label {
   color: #b8c9ff;
 }
 [data-tool-slug][data-flagship="true"] {
-  border-color: #5271ff70;
-  box-shadow: 0 10px 28px #5271ff0c;
+  border-color: #5271ff80;
+  box-shadow: 0 8px 28px #5271ff18;
+  background-image: linear-gradient(135deg, #5271ff0c, transparent 65%);
 }
-@keyframes flagship-sheen {
+[data-tool-slug][data-flagship="true"] h2,
+[data-tool-slug][data-flagship="true"] h3 {
+  color: #344fc4;
+}
+.dark [data-tool-slug][data-flagship="true"] h2,
+.dark [data-tool-slug][data-flagship="true"] h3 {
+  color: #b8c9ff;
+}
+@keyframes flagship-text-glow {
   0%,
-  65% {
-    transform: translateX(-110%);
-  }
-  95%,
   100% {
-    transform: translateX(110%);
+    text-shadow: none;
+  }
+  50% {
+    text-shadow: 0 0 12px #5271ff55;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .workspace-flagship-link::after {
+  .workspace-flagship-link > .min-w-0 {
     animation: none;
-    display: none;
   }
 }

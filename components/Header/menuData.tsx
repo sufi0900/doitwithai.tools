@@ -15,20 +15,20 @@ const menuData: Menu[] = [
   },
   {
     id: 2,
-    title: "SEO with AI",
+    title: "SEO Hub",
     path: "/ai-seo",
     newTab: false,
   },
   {
     id: 43,
-    title: "All Blogs",
+    title: "Blogs",
     path: "/blogs",
     newTab: false,
   },
   {
-    id: 42,
-    title: "Contact Us",
-    path: "/contact",
+    id: 102,
+    title: "Prompts",
+    path: "/prompts",
     newTab: false,
   },
 
@@ -37,7 +37,7 @@ const menuData: Menu[] = [
     title: "Pages",
     newTab: false,
     submenu: [
-      { id: 101, title: "AI Prompts", path: "/prompts", newTab: false },
+      { id: 42, title: "Contact Us", path: "/contact", newTab: false },
       {
         id: 3,
         title: "Free AI Resources",
