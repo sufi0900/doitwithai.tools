@@ -208,7 +208,8 @@
         "search-intent-checker",
         "seo-content-brief-generator",
         "keyword-clustering-tool",
-        "article-outline-generator"
+        "article-outline-generator",
+        "keyword-research-tool"
       ],
       "topics": [
         "keywords",
@@ -531,7 +532,8 @@
         "topical-map-generator",
         "search-intent-checker",
         "seo-content-brief-generator",
-        "keyword-density-checker"
+        "keyword-density-checker",
+        "keyword-research-tool"
       ],
       "topics": [
         "keywords",
@@ -651,7 +653,8 @@
         "internal-link-opportunity-finder",
         "seo-content-brief-generator",
         "ai-faq-generator",
-        "target-audience-research-tool"
+        "target-audience-research-tool",
+        "keyword-research-tool"
       ],
       "topics": [
         "keywords",
@@ -692,7 +695,8 @@
         "internal-link-opportunity-finder",
         "readability-checker",
         "ai-faq-generator",
-        "target-audience-research-tool"
+        "target-audience-research-tool",
+        "keyword-research-tool"
       ],
       "topics": [
         "writing"
@@ -1149,6 +1153,42 @@
       ],
       "topics": [
         "on-page",
+        "writing"
+      ]
+    },
+    {
+      "id": "keyword-research-tool",
+      "slug": "keyword-research-tool",
+      "name": "Keyword Research Tool",
+      "description": "Discover keyword ideas, inferred intent, questions, and proposed page groups. Import your own metrics and export a practical shortlist.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "keyword research",
+        "long-tail keywords",
+        "keyword ideas",
+        "search intent"
+      ],
+      "kind": "Research & plan",
+      "status": "live",
+      "addedAt": "2026-10-25",
+      "featuredOrder": 3.2,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-target-audience-research",
+          "title": "Start with audience needs"
+        }
+      ],
+      "relatedToolSlugs": [
+        "keyword-clustering-tool",
+        "search-intent-checker",
+        "seo-content-brief-generator",
+        "target-audience-research-tool"
+      ],
+      "topics": [
+        "keywords",
         "writing"
       ]
     }
