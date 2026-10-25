@@ -178,6 +178,44 @@
       ]
     },
     {
+      "id": "target-audience-research-tool",
+      "slug": "target-audience-research-tool",
+      "name": "Target Audience Research Tool",
+      "description": "Create working buyer personas, explore reader needs, and plan content and channel experiments from an idea or website brief.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "target audience",
+        "audience research",
+        "buyer persona generator",
+        "customer persona",
+        "content strategy",
+        "TikTok"
+      ],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-10-25",
+      "featuredOrder": 5,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-target-audience-research",
+          "title": "Build audience personas from customer evidence"
+        }
+      ],
+      "relatedToolSlugs": [
+        "search-intent-checker",
+        "seo-content-brief-generator",
+        "keyword-clustering-tool",
+        "article-outline-generator"
+      ],
+      "topics": [
+        "keywords",
+        "writing"
+      ]
+    },
+    {
       "id": "meta-title-generator",
       "slug": "meta-title-generator",
       "name": "Meta Title Generator",
@@ -612,7 +650,8 @@
         "meta-title-generator",
         "internal-link-opportunity-finder",
         "seo-content-brief-generator",
-        "ai-faq-generator"
+        "ai-faq-generator",
+        "target-audience-research-tool"
       ],
       "topics": [
         "keywords",
@@ -652,7 +691,8 @@
         "article-outline-generator",
         "internal-link-opportunity-finder",
         "readability-checker",
-        "ai-faq-generator"
+        "ai-faq-generator",
+        "target-audience-research-tool"
       ],
       "topics": [
         "writing"

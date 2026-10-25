@@ -426,7 +426,14 @@ export default function Page() {
             Use your audience to sharpen the reader task
           </h2>
           <p className={prose}>
-            Our{" "}
+            Start with our{" "}
+            <Link
+              href="/tools/target-audience-research-tool"
+              className="text-primary underline dark:text-blue-300"
+            >
+              Target Audience Research Tool
+            </Link>{" "}
+            to explore working personas and research gaps. Our{" "}
             <Link
               href="/ai-seo/chatgpt-target-audience-research"
               className="text-primary underline dark:text-blue-300"
