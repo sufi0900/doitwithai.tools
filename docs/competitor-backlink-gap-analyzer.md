@@ -24,9 +24,9 @@ The metric column preserves provider labels and raw values. Metrics never determ
 
 ## User workflow
 
-1. Add your website and one to five competitor websites.
+1. Start with your website and one competitor. Add up to four more competitors when needed.
 2. Upload CSV, TSV, or TXT, or paste domain and linking-page lists.
-3. Check header detection and map source, target, anchor, relationship, status, and optional metric columns.
+3. Compare immediately with automatic column detection. Expand column mapping only when your export needs adjustment.
 4. Compare accepted records and review import coverage, duplicates, skipped rows, and provenance.
 5. Filter missing, shared, own-only, or all-competitor sources. Search imported context or exclude domains.
 6. Expand evidence, record review decisions, and export summary or detailed evidence CSV.
@@ -34,6 +34,14 @@ The metric column preserves provider labels and raw values. Metrics never determ
 8. Copy supplied competitor source URLs for live verification in the existing verifier.
 
 The worked example uses fictional `.example` domains and explicitly labels its data as illustrative.
+
+The setup shows required domain and backlink-data fields. Missing inputs receive linked summary errors and field-level guidance before comparison starts.
+
+Provider labels, dates, empty-list confirmation, comparison options, saved projects, and extra filters remain available in expandable sections.
+
+A native loading dialog blurs the page and keeps focus inside the dialog. Comparison yields painted frames between datasets without simulated percentages.
+
+Completion moves focus and scroll position to the results. Invalid data moves focus to the affected field and reveals column mapping when needed.
 
 ## Limits and interpretation
 
@@ -63,14 +71,15 @@ The live tool registry places the analyzer in the off-page topic and links it wi
 
 ## Validation
 
-- 24 focused tests cover import formats, manual mappings, accounting, suffix rules, filter semantics, projects, exports, and 5,000-record comparisons.
-- Full feature suite: 454 tests passed. Foundation suite: 11 tests passed.
+- 30 focused tests cover required fields, import formats, manual mappings, accounting, suffix rules, filter semantics, projects, exports, and 5,000-record comparisons.
+- Full feature suite: 460 tests passed. Foundation suite: 11 tests passed.
 - Type checking, lint, and production build passed. Existing repository warnings remain outside this tool's scope.
 - Built HTML checks passed for the H1, canonical, three schema types, fifteen FAQs, and sitemap discovery.
 - Browser smoke script: `scripts/backlink-gap-smoke.cjs`.
 - The browser flow covers the example, views, own-site membership, evidence expansion, CSV export, saved decisions, project restoration, and real UTF-16 upload.
 - The smoke script also checks responsive page overflow, light/dark screenshots, runtime errors, and absence of tool API requests during comparisons.
 - The full browser flow passed against the production build at a 390px mobile viewport and a 1440px desktop viewport.
+- The shared `scripts/backlink-ux-smoke.cjs` additionally checks blank inputs, domain-only submissions, inline errors, focus navigation, automatic mapping, and malformed-CSV recovery.
 
 To run the browser flow, use a local Puppeteer Chrome Headless Shell installation:
 

@@ -103,6 +103,17 @@ Controlled API fixtures exercised the live-mode comparison interface. The pasted
 The final browser run reported no runtime errors or horizontal mobile overflow.
 Existing unrelated build warnings remain; no production deployment is promoted by this change.
 
+## October 26 usability improvements
+
+- Source guidance explains one external linking-page URL per line. Enter adds another page, including pages from different websites.
+- Required labels distinguish the target website from the external source pages.
+- A native loading dialog shows the actual completed-source count, blurs the background, and supports stopping the check.
+- Completion moves keyboard focus and scroll position to the results. Request failures move focus to the error message.
+- Source disclosures use a bordered SVG chevron with open-state rotation and reduced-motion support.
+
+The shared UX browser check covers the real pasted-HTML API request, loading backdrop, dialog focus, cancellation, server errors, and result navigation.
+The existing verifier regression waits for modal closure before saving a live baseline, distinguishing completed work from the loading counter.
+
 ## Sequential off-page roadmap
 
 1. Backlink Verification Tool: first implementation and validation.

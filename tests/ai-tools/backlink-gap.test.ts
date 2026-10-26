@@ -1,5 +1,67 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { requiredInputProblems } from "../../features/backlink-gap/validation";
+
+test("required setup identifies missing domain and backlink data separately for every card", () => {
+  const errors = requiredInputProblems([
+    newDataset("own"),
+    newDataset("competitor-one"),
+  ]);
+  assert.deepEqual(Object.keys(errors.own), ["site", "data"]);
+  assert.deepEqual(Object.keys(errors["competitor-one"]), ["site", "data"]);
+  assert.match(errors.own.data!, /Upload.*paste/);
+  assert.doesNotMatch(errors.own.data!, /Preview/);
+});
+test("entering website domains alone still requires backlink data", () => {
+  const errors = requiredInputProblems([
+    { ...newDataset("own"), site: "own.example" },
+    { ...newDataset("competitor-one"), site: "competitor.example" },
+  ]);
+  assert.equal(errors.own.site, undefined);
+  assert.match(errors.own.data!, /Add backlink data/);
+  assert.match(errors["competitor-one"].data!, /Add backlink data/);
+});
+test("simple lists can compare without requiring the optional preview step", () => {
+  assert.deepEqual(
+    requiredInputProblems([
+      { ...newDataset("own"), site: "own.example", text: "pub.example" },
+      {
+        ...newDataset("competitor-one"),
+        site: "competitor.example",
+        text: "another-pub.example",
+      },
+    ]),
+    {},
+  );
+});
+test("only explicit own-site empty confirmation satisfies the data requirement", () => {
+  const errors = requiredInputProblems([
+    { ...newDataset("own"), site: "own.example", emptyConfirmed: true },
+    {
+      ...newDataset("competitor-one"),
+      site: "competitor.example",
+      emptyConfirmed: true,
+    },
+  ]);
+  assert.equal(errors.own, undefined);
+  assert.match(errors["competitor-one"].data!, /Add backlink data/);
+});
+test("duplicate comparison websites get a field-level domain error", () => {
+  const errors = requiredInputProblems([
+    input("own", "https://www.own.example/", "pub.example"),
+    input("competitor-one", "https://blog.own.example/", "another-pub.example"),
+  ]);
+  assert.match(errors["competitor-one"].site!, /already added/);
+  assert.equal(errors.own, undefined);
+});
+test("an unmapped source column gets a data error with the matching UI instruction", () => {
+  const own = input("own", "own.example", "Odd heading\npub.example");
+  const errors = requiredInputProblems([
+    own,
+    input("competitor-one", "competitor.example", "pub.example"),
+  ]);
+  assert.match(errors.own.data!, /Review column mapping/);
+});
 import {
   sourceIdentity,
   parseTable,

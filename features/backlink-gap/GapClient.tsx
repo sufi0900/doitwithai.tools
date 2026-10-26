@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Copy,
@@ -12,6 +12,15 @@ import {
   Trash2,
 } from "lucide-react";
 import ToolUrlInput from "../tool-ui/ToolUrlInput";
+import ToolRunOverlay, {
+  focusToolSection,
+  paintToolFeedback,
+} from "../tool-ui/ToolRunOverlay";
+import {
+  requiredInputProblems,
+  type DatasetProblems,
+  type InputProblems,
+} from "./validation";
 import {
   buildGap,
   category,
@@ -55,6 +64,7 @@ function DatasetCard({
   onChange,
   onRemove,
   onError,
+  problems,
 }: {
   input: DatasetInput;
   index: number;
@@ -62,6 +72,7 @@ function DatasetCard({
   onChange: (d: DatasetInput) => void;
   onRemove?: () => void;
   onError: (s: string) => void;
+  problems: DatasetProblems;
 }) {
   const isOwn = index === 0;
   function preview(text = input.text, override?: boolean) {
@@ -100,6 +111,7 @@ function DatasetCard({
     <fieldset
       disabled={disabled}
       className={styles.dataset}
+      data-dataset-id={input.id}
       aria-label={
         isOwn ? "Your backlink dataset" : `Competitor ${index} dataset`
       }
@@ -119,8 +131,15 @@ function DatasetCard({
         )}
       </div>
       <label className={styles.label}>
-        {isOwn ? "Your website domain" : "Competitor website domain"}
+        {isOwn ? "Your website domain" : "Competitor website domain"}{" "}
+        <span className={styles.required}>Required</span>
         <ToolUrlInput
+          id={`gap-${input.id}-site`}
+          aria-required="true"
+          aria-invalid={!!problems.site}
+          aria-describedby={
+            problems.site ? `gap-${input.id}-site-error` : undefined
+          }
           inputMode="url"
           type="text"
           urlKind="domain"
@@ -132,38 +151,25 @@ function DatasetCard({
           onChange={(e) => onChange({ ...input, site: e.target.value })}
         />
       </label>
-      <div className={styles.twoFields}>
-        <label className={styles.label}>
-          Data provider
-          <select
-            value={input.provider}
-            onChange={(e) => onChange({ ...input, provider: e.target.value })}
-          >
-            {[
-              "Unspecified",
-              "Google Search Console",
-              "Bing Webmaster Tools",
-              "Ahrefs",
-              "Semrush",
-              "Other export",
-              "Illustrative example",
-            ].map((v) => (
-              <option key={v}>{v}</option>
-            ))}
-          </select>
-        </label>
-        <label className={styles.label}>
-          Export date, if known
-          <input
-            type="date"
-            value={input.date}
-            onChange={(e) => onChange({ ...input, date: e.target.value })}
-          />
-        </label>
-      </div>
+      {problems.site && (
+        <p className={styles.fieldError} id={`gap-${input.id}-site-error`}>
+          {problems.site}
+        </p>
+      )}
+      <p className={styles.dataTitle}>
+        Backlink data{" "}
+        <span className={styles.required}>
+          {input.emptyConfirmed ? "Empty list confirmed" : "Required"}
+        </span>
+      </p>
+      <p className={styles.help}>
+        Add pages or domains that link to{" "}
+        {isOwn ? "your website" : "this competitor"}. A website domain alone
+        cannot find its backlinks.
+      </p>
       <label className={styles.file}>
         <FileUp size={18} aria-hidden />
-        <span>Choose CSV, TSV, or TXT</span>
+        <span>Upload CSV, TSV, or TXT</span>
         <input
           type="file"
           accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
@@ -180,14 +186,16 @@ function DatasetCard({
       </label>
       {input.name && <p className={styles.fileName}>{input.name}</p>}
       <label className={styles.label}>
-        Or paste an export or domain list
+        Or paste linking pages or referring domains
         <textarea
+          id={`gap-${input.id}-data`}
+          aria-required={!input.emptyConfirmed}
+          aria-invalid={!!problems.data}
+          aria-describedby={`gap-${input.id}-data-help${problems.data ? ` gap-${input.id}-data-error` : ""}`}
           value={input.text}
           rows={4}
           maxLength={2_000_000}
-          placeholder={
-            "Source URL,Target URL,Anchor\nhttps://publisher.com/article,https://yourwebsite.com/guide,Your guide"
-          }
+          placeholder={"publisher.com\nanother-publisher.com"}
           onChange={(e) =>
             onChange({
               ...input,
@@ -198,6 +206,15 @@ function DatasetCard({
           }
         />
       </label>
+      <p className={styles.help} id={`gap-${input.id}-data-help`}>
+        One referring domain or page URL per line. Press Enter for another. You
+        can also paste CSV or TSV data.
+      </p>
+      {problems.data && (
+        <p className={styles.fieldError} id={`gap-${input.id}-data-error`}>
+          {problems.data}
+        </p>
+      )}
       <div className={styles.inline}>
         <button
           type="button"
@@ -207,33 +224,75 @@ function DatasetCard({
         >
           Preview columns
         </button>
-        <span className={styles.help}>Up to 5,000 records per dataset.</span>
+        <span className={styles.help}>
+          Up to 5,000 records. Columns are detected when you compare.
+        </span>
       </div>
-      {isOwn && (
-        <label className={styles.check}>
-          <input
-            type="checkbox"
-            checked={input.emptyConfirmed}
-            onChange={(e) =>
-              onChange({
-                ...input,
-                emptyConfirmed: e.target.checked,
-                text: e.target.checked ? "" : input.text,
-                table: e.target.checked ? null : input.table,
-              })
-            }
-          />{" "}
-          I am deliberately comparing against an empty own-site list.
-        </label>
-      )}
-      {input.emptyConfirmed && (
-        <p className={styles.warning}>
-          Every competitor-only source can appear missing from this empty list.
-          This does not establish that your website has no backlinks.
-        </p>
-      )}
+      <details className={styles.optional}>
+        <summary>
+          Optional data details{isOwn ? " and empty-list option" : ""}
+        </summary>
+        <div className={styles.twoFields}>
+          <label className={styles.label}>
+            Data provider
+            <select
+              value={input.provider}
+              onChange={(e) => onChange({ ...input, provider: e.target.value })}
+            >
+              {[
+                "Unspecified",
+                "Google Search Console",
+                "Bing Webmaster Tools",
+                "Ahrefs",
+                "Semrush",
+                "Other export",
+                "Illustrative example",
+              ].map((v) => (
+                <option key={v}>{v}</option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.label}>
+            Export date, if known
+            <input
+              type="date"
+              value={input.date}
+              onChange={(e) => onChange({ ...input, date: e.target.value })}
+            />
+          </label>
+        </div>
+        {isOwn && (
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={input.emptyConfirmed}
+              onChange={(e) =>
+                onChange({
+                  ...input,
+                  emptyConfirmed: e.target.checked,
+                  text: e.target.checked ? "" : input.text,
+                  table: e.target.checked ? null : input.table,
+                })
+              }
+            />{" "}
+            I am deliberately comparing against an empty own-site list.
+          </label>
+        )}
+        {input.emptyConfirmed && (
+          <p className={styles.warning}>
+            Every competitor-only source can appear missing from this empty
+            list. This does not establish that your website has no backlinks.
+          </p>
+        )}
+      </details>
       {input.table && (
-        <div className={styles.mapping}>
+        <details
+          className={styles.mapping}
+          open={input.table.mapping.source < 0 || !!problems.data}
+        >
+          <summary>
+            Review column mapping · {input.table.rows.length} records read
+          </summary>
           <div className={styles.inline}>
             <strong>{input.table.rows.length} data records read</strong>
             <span className={styles.help}>
@@ -331,7 +390,7 @@ function DatasetCard({
               ))}
             </div>
           </details>
-        </div>
+        </details>
       )}
     </fieldset>
   );
@@ -340,7 +399,6 @@ export default function GapClient() {
   const [inputs, setInputs] = useState<DatasetInput[]>([
     newDataset("own"),
     newDataset("competitor-one"),
-    newDataset("competitor-two"),
   ]);
   const [grouping, setGrouping] = useState<GapReport["grouping"]>("domain"),
     [includeInactive, setIncludeInactive] = useState(false);
@@ -353,17 +411,54 @@ export default function GapClient() {
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
     [manualCopy, setManualCopy] = useState("");
+  const [problems, setProblems] = useState<InputProblems>({});
+  const [navigation, setNavigation] = useState<
+    { id: string } | { result: true } | null
+  >(null);
+  const [compareStatus, setCompareStatus] = useState("");
   const nextId = useRef(3),
     projectFile = useRef<HTMLInputElement>(null),
     resultRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (busy || !navigation) return;
+    const frame = requestAnimationFrame(() =>
+      focusToolSection(
+        "result" in navigation
+          ? resultRef.current
+          : document.getElementById(navigation.id),
+      ),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [busy, navigation]);
+  useEffect(() => {
+    if (!error) return;
+    const frame = requestAnimationFrame(() =>
+      focusToolSection(document.getElementById("backlink-gap-errors")),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [error]);
   const filtered = report ? filterGroups(report, filters, reviews) : [],
     pageSize = 25,
     pages = Math.max(1, Math.ceil(filtered.length / pageSize)),
     safePage = Math.min(page, pages - 1);
   const changeInput = (index: number, value: DatasetInput) => {
+    const previous = inputs[index];
+    setProblems((current) => {
+      const next = { ...current, [value.id]: { ...current[value.id] } };
+      if (previous.site !== value.site) delete next[value.id].site;
+      if (
+        previous.text !== value.text ||
+        previous.table !== value.table ||
+        previous.emptyConfirmed !== value.emptyConfirmed
+      )
+        delete next[value.id].data;
+      if (!Object.keys(next[value.id]).length) delete next[value.id];
+      return next;
+    });
     setInputs((prev) => prev.map((d, i) => (i === index ? value : d)));
     setReport(null);
     setError("");
+    setMessage("");
   };
   const changeFilter = (patch: Partial<Filters>) => {
     setFilters((prev) => ({ ...prev, ...patch }));
@@ -371,23 +466,46 @@ export default function GapClient() {
   };
   async function compare(source = inputs, isExample = false) {
     if (busy) return;
-    setBusy(true);
     setError("");
     setMessage("");
     setManualCopy("");
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    setNavigation(null);
+    const required = requiredInputProblems(source);
+    setProblems(required);
+    if (Object.keys(required).length) {
+      setReport(null);
+      const id = Object.keys(required)[0];
+      setNavigation({ id: `gap-${id}-${required[id].site ? "site" : "data"}` });
+      return;
+    }
+    setBusy(true);
+    setReport(null);
+    setCompareStatus("Reading the backlink data you supplied.");
+    const parsed = [...source];
+    let activeId = "";
     try {
-      const parsed = source.map((input) =>
-        input.text.trim() && !input.table
-          ? { ...input, table: parseTable(input.text) }
-          : input,
-      );
-      const datasets = parsed.map(ingest),
-        next = buildGap(
-          datasets,
-          isExample ? "domain" : grouping,
-          isExample ? false : includeInactive,
+      const datasets = [];
+      for (let i = 0; i < parsed.length; i++) {
+        activeId = parsed[i].id;
+        setCompareStatus(
+          `Reading dataset ${i + 1} of ${parsed.length}. Your data stays in this browser.`,
         );
+        await paintToolFeedback();
+        const input = parsed[i];
+        if (input.text.trim() && !input.table)
+          parsed[i] = { ...input, table: parseTable(input.text) };
+        if (parsed[i].table && parsed[i].table!.mapping.source < 0)
+          throw new Error(
+            "Choose the referring-page or domain column under Review column mapping.",
+          );
+        datasets.push(ingest(parsed[i]));
+      }
+      activeId = "";
+      const next = buildGap(
+        datasets,
+        isExample ? "domain" : grouping,
+        isExample ? false : includeInactive,
+      );
       if (isExample) {
         setGrouping("domain");
         setIncludeInactive(false);
@@ -402,17 +520,19 @@ export default function GapClient() {
           ? "Illustrative example loaded. All domains and records in this example are fictional."
           : `${next.groups.length} referring groups compared from the accepted records. Review coverage before choosing outreach targets.`,
       );
-      requestAnimationFrame(() =>
-        resultRef.current?.scrollIntoView({
-          block: "start",
-          behavior: "smooth",
-        }),
-      );
+      setNavigation({ result: true });
     } catch (e) {
       setReport(null);
-      setError(
-        e instanceof Error ? e.message : "The datasets could not be compared.",
-      );
+      setInputs(parsed);
+      const message =
+        e instanceof Error ? e.message : "The datasets could not be compared.";
+      if (activeId) {
+        setProblems({ [activeId]: { data: message } });
+        setNavigation({ id: `gap-${activeId}-data` });
+      } else {
+        setError(message);
+        setNavigation({ id: "backlink-gap-errors" });
+      }
     } finally {
       setBusy(false);
     }
@@ -460,6 +580,7 @@ export default function GapClient() {
       setIncludeInactive(p.includeInactive);
       setReviews(p.reviews);
       setReport(null);
+      setProblems({});
       setError("");
       setMessage(
         "Project restored. Review the inputs and choose Compare supplied backlinks.",
@@ -574,17 +695,47 @@ export default function GapClient() {
       id="backlink-gap-workspace"
       aria-label="Backlink gap comparison workspace"
     >
+      <ToolRunOverlay
+        active={busy}
+        title="Comparing your backlink lists"
+        description={compareStatus}
+      />
       <div className={styles.intro}>
         <div>
           <p className={styles.eyebrow}>COMPARE YOUR SUPPLIED DATA</p>
           <h2>Find the overlap. Keep the evidence.</h2>
           <p>
-            Add your own export and up to five competitor exports. The
-            comparison stays in your browser.
+            Start with your backlink list and one competitor's list. Add more
+            competitors when needed.
           </p>
         </div>
         <span className={styles.badge}>No backlink API key required</span>
       </div>
+      <ol className={styles.steps} aria-label="How to compare backlinks">
+        <li>
+          <strong>1. Your website</strong>
+          <span>Add your domain and backlink data.</span>
+        </li>
+        <li>
+          <strong>2. A competitor</strong>
+          <span>Add their domain and backlink data.</span>
+        </li>
+        <li>
+          <strong>3. Compare</strong>
+          <span>Review sources missing from your list.</span>
+        </li>
+      </ol>
+      <details className={styles.dataHelp}>
+        <summary>Where do I get backlink data?</summary>
+        <p>
+          Use a Search Console export for a website you manage. For competitors,
+          use a backlink provider's export or your own collected list.
+        </p>
+        <p>
+          Paste linking-page URLs or referring domains, one per line. A domain
+          entered above identifies the website; it does not discover backlinks.
+        </p>
+      </details>
       <div className={styles.topActions}>
         <button
           type="button"
@@ -594,35 +745,94 @@ export default function GapClient() {
         >
           Try a worked example
         </button>
-        <button
-          type="button"
-          className={styles.secondary}
-          onClick={() =>
-            download(
-              "Source URL,Target URL,Anchor,Nofollow,Status\r\nhttps://publisher.example/article,https://your-site.example/guide,Example guide,false,Live\r\n",
-              "backlink-gap-template.csv",
-            )
-          }
-        >
-          Download CSV template
-        </button>
-        <button
-          type="button"
-          className={styles.secondary}
-          onClick={() => projectFile.current?.click()}
-          disabled={busy}
-        >
-          Restore project
-        </button>
-        <input
-          ref={projectFile}
-          className={styles.hidden}
-          type="file"
-          accept=".json,application/json"
-          aria-label="Restore backlink gap project"
-          onChange={(e) => void restoreProject(e.target.files?.[0])}
-        />
+        <details className={styles.toolbox}>
+          <summary>Templates and saved projects</summary>
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() =>
+                download(
+                  "Source URL,Target URL,Anchor,Nofollow,Status\r\nhttps://publisher.example/article,https://your-site.example/guide,Example guide,false,Live\r\n",
+                  "backlink-gap-template.csv",
+                )
+              }
+            >
+              Download CSV template
+            </button>
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() => projectFile.current?.click()}
+              disabled={busy}
+            >
+              Restore project
+            </button>
+            <input
+              ref={projectFile}
+              className={styles.hidden}
+              type="file"
+              accept=".json,application/json"
+              aria-label="Restore backlink gap project"
+              onChange={(e) => void restoreProject(e.target.files?.[0])}
+            />
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={exportProject}
+              disabled={busy}
+            >
+              <Download size={16} aria-hidden /> Download project
+            </button>
+          </div>
+        </details>
       </div>
+      {(error || Object.keys(problems).length > 0) && (
+        <div
+          className={styles.error}
+          id="backlink-gap-errors"
+          tabIndex={-1}
+          role="alert"
+        >
+          <strong>
+            {Object.keys(problems).length
+              ? "Check the highlighted fields before comparing."
+              : error}
+          </strong>
+          {Object.keys(problems).length > 0 && (
+            <ul>
+              {inputs.flatMap((input, index) =>
+                (["site", "data"] as const).flatMap((field) => {
+                  const problem = problems[input.id]?.[field];
+                  const id = `gap-${input.id}-${field}`;
+                  return problem
+                    ? [
+                        <li key={id}>
+                          <a
+                            href={`#${id}`}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              focusToolSection(document.getElementById(id));
+                            }}
+                          >
+                            {index === 0
+                              ? "Your website"
+                              : `Competitor ${index}`}{" "}
+                            ·{" "}
+                            {field === "site"
+                              ? "Website domain"
+                              : "Backlink data"}
+                            : {problem}
+                          </a>
+                        </li>,
+                      ]
+                    : [];
+                }),
+              )}
+            </ul>
+          )}
+        </div>
+      )}
       <div className={styles.datasets}>
         {inputs.map((input, index) => (
           <DatasetCard
@@ -630,13 +840,32 @@ export default function GapClient() {
             input={input}
             index={index}
             disabled={busy}
-            onError={setError}
+            problems={problems[input.id] || {}}
+            onError={(message) => {
+              if (message) setReport(null);
+              setProblems((current) => {
+                const next = {
+                  ...current,
+                  [input.id]: { ...current[input.id] },
+                };
+                if (message) next[input.id].data = message;
+                else delete next[input.id].data;
+                if (!Object.keys(next[input.id]).length) delete next[input.id];
+                return next;
+              });
+              if (message) setNavigation({ id: `gap-${input.id}-data` });
+            }}
             onChange={(value) => changeInput(index, value)}
             onRemove={
-              index === 0
+              index === 0 || inputs.length <= 2
                 ? undefined
                 : () => {
                     setInputs((prev) => prev.filter((d) => d.id !== input.id));
+                    setProblems((current) => {
+                      const next = { ...current };
+                      delete next[input.id];
+                      return next;
+                    });
                     setReport(null);
                   }
             }
@@ -663,40 +892,48 @@ export default function GapClient() {
         </span>
       </div>
       <div className={styles.compareBox}>
-        <label className={styles.label}>
-          Group referring sources by
-          <select
-            value={grouping}
-            disabled={busy}
-            onChange={(e) => {
-              setGrouping(e.target.value as GapReport["grouping"]);
-              setReport(null);
-            }}
-          >
-            <option value="domain">
-              Registrable domain, using public suffix rules
-            </option>
-            <option value="host">
-              Exact host, with www grouped with the root host
-            </option>
-          </select>
-        </label>
-        <label className={styles.check}>
-          <input
-            type="checkbox"
-            checked={includeInactive}
-            disabled={busy}
-            onChange={(e) => {
-              setIncludeInactive(e.target.checked);
-              setReport(null);
-            }}
-          />{" "}
-          Include competitor records marked lost or inactive
-        </label>
+        <h3 className={styles.compareTitle}>Ready to compare?</h3>
         <p className={styles.help}>
-          Own-site records always retain membership. Relationship filters cannot
-          turn an existing own-site record into a missing domain.
+          We detect columns automatically and compare referring domains. Preview
+          columns only if you want to check the mapping first.
         </p>
+        <details className={styles.optional}>
+          <summary>Advanced comparison options</summary>
+          <label className={styles.label}>
+            Group referring sources by
+            <select
+              value={grouping}
+              disabled={busy}
+              onChange={(e) => {
+                setGrouping(e.target.value as GapReport["grouping"]);
+                setReport(null);
+              }}
+            >
+              <option value="domain">
+                Website domain, combining its subdomains
+              </option>
+              <option value="host">
+                Exact host, with www grouped with the root host
+              </option>
+            </select>
+          </label>
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={includeInactive}
+              disabled={busy}
+              onChange={(e) => {
+                setIncludeInactive(e.target.checked);
+                setReport(null);
+              }}
+            />{" "}
+            Include competitor records marked lost or inactive
+          </label>
+          <p className={styles.help}>
+            Own-site records always retain membership. Relationship filters
+            cannot turn an existing own-site record into a missing domain.
+          </p>
+        </details>
         <div className={styles.actions}>
           <button
             type="button"
@@ -711,21 +948,8 @@ export default function GapClient() {
             )}
             {busy ? "Comparing records…" : "Compare supplied backlinks"}
           </button>
-          <button
-            type="button"
-            className={styles.secondary}
-            onClick={exportProject}
-            disabled={busy}
-          >
-            <Download size={16} aria-hidden /> Download project
-          </button>
         </div>
       </div>
-      {error && (
-        <p className={styles.error} role="alert">
-          {error}
-        </p>
-      )}
       <p className={styles.notice} role="status" aria-live="polite">
         {message}
       </p>
@@ -738,6 +962,7 @@ export default function GapClient() {
       {report && (
         <div
           ref={resultRef}
+          tabIndex={-1}
           className={styles.results}
           aria-label="Backlink gap results"
         >
@@ -917,43 +1142,6 @@ export default function GapClient() {
               </select>
             </label>
             <label className={styles.label}>
-              Minimum competitors
-              <select
-                value={filters.minimum}
-                disabled={filters.kind === "own-only"}
-                onChange={(e) =>
-                  changeFilter({ minimum: Number(e.target.value) })
-                }
-              >
-                {competitors.map((_, i) => (
-                  <option key={i} value={i + 1}>
-                    {i + 1}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={styles.label}>
-              Competitor relationship evidence
-              <select
-                value={filters.relationship}
-                disabled={filters.kind === "own-only"}
-                onChange={(e) =>
-                  changeFilter({
-                    relationship: e.target.value as Filters["relationship"],
-                  })
-                }
-              >
-                <option value="any">Any supplied relationship</option>
-                <option value="qualified">
-                  nofollow, sponsored, or ugc recorded
-                </option>
-                <option value="no-nofollow-recorded">
-                  No nofollow recorded
-                </option>
-                <option value="unknown">Relationship unknown</option>
-              </select>
-            </label>
-            <label className={styles.label}>
               Review status
               <select
                 value={filters.review}
@@ -977,21 +1165,70 @@ export default function GapClient() {
                 placeholder="Domain, page URL, title, or anchor"
               />
             </label>
-            <label className={styles.label}>
-              Exclude referring domains or hosts
-              <input
-                value={filters.excluded}
-                maxLength={10000}
-                onChange={(e) => changeFilter({ excluded: e.target.value })}
-                placeholder="publisher.com, another-site.com"
-              />
-            </label>
           </div>
-          <p className={styles.help}>
-            Relationship filters select groups with matching competitor
-            evidence. Matrix counts and exports retain all accepted evidence for
-            those groups.
-          </p>
+          <details className={styles.optional}>
+            <summary>
+              More filters
+              {filters.minimum > 1 ||
+              filters.relationship !== "any" ||
+              filters.excluded.trim()
+                ? " · Active"
+                : ""}
+            </summary>
+            <div className={styles.filters}>
+              <label className={styles.label}>
+                Minimum competitors
+                <select
+                  value={filters.minimum}
+                  disabled={filters.kind === "own-only"}
+                  onChange={(e) =>
+                    changeFilter({ minimum: Number(e.target.value) })
+                  }
+                >
+                  {competitors.map((_, i) => (
+                    <option key={i} value={i + 1}>
+                      {i + 1}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={styles.label}>
+                Competitor relationship evidence
+                <select
+                  value={filters.relationship}
+                  disabled={filters.kind === "own-only"}
+                  onChange={(e) =>
+                    changeFilter({
+                      relationship: e.target.value as Filters["relationship"],
+                    })
+                  }
+                >
+                  <option value="any">Any supplied relationship</option>
+                  <option value="qualified">
+                    nofollow, sponsored, or ugc recorded
+                  </option>
+                  <option value="no-nofollow-recorded">
+                    No nofollow recorded
+                  </option>
+                  <option value="unknown">Relationship unknown</option>
+                </select>
+              </label>
+              <label className={styles.label}>
+                Exclude referring domains or hosts
+                <input
+                  value={filters.excluded}
+                  maxLength={10000}
+                  onChange={(e) => changeFilter({ excluded: e.target.value })}
+                  placeholder="publisher.com, another-site.com"
+                />
+              </label>
+            </div>
+            <p className={styles.help}>
+              Relationship filters select groups with matching competitor
+              evidence. Counts and exports retain all accepted evidence for
+              those groups.
+            </p>
+          </details>
           <div className={styles.toolbar}>
             <span>
               {filtered.length} of {report.groups.length} referring groups shown

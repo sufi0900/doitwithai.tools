@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   CheckCheck,
+  ChevronDown,
   Download,
   FileUp,
   Link2,
@@ -30,6 +31,10 @@ import {
 } from "./types";
 import styles from "./backlinks.module.css";
 import ToolUrlInput from "../tool-ui/ToolUrlInput";
+import ToolRunOverlay, {
+  focusToolSection,
+  paintToolFeedback,
+} from "../tool-ui/ToolRunOverlay";
 
 const key = "doitwithai.backlink-baseline.v1";
 function download(text: string, name: string, type: string) {
@@ -55,9 +60,22 @@ export default function BacklinkClient() {
     [planned, setPlanned] = useState(0);
   const [baseline, setBaseline] = useState<SavedRun | null>(null),
     [isExample, setIsExample] = useState(false);
+  const [navigation, setNavigation] = useState<{
+    target: "results" | "error";
+  } | null>(null);
   const controller = useRef<AbortController | null>(null),
     file = useRef<HTMLInputElement>(null),
+    errorRef = useRef<HTMLParagraphElement>(null),
     results = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (busy || !navigation) return;
+    const frame = requestAnimationFrame(() =>
+      focusToolSection(
+        navigation.target === "results" ? results.current : errorRef.current,
+      ),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [busy, navigation]);
   useEffect(() => {
     try {
       const saved = localStorage.getItem(key);
@@ -90,6 +108,7 @@ export default function BacklinkClient() {
     setMessage("");
     setFilter("all");
     setSearch("");
+    setNavigation(null);
     let urls: string[], submitted: Options;
     const evidence = example ? "pasted" : mode;
     try {
@@ -116,6 +135,7 @@ export default function BacklinkClient() {
         throw new Error("Keep pasted HTML below 750,000 characters.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Check your inputs.");
+      setNavigation({ target: "error" });
       return;
     }
     if (example) {
@@ -133,7 +153,9 @@ export default function BacklinkClient() {
     controller.current = abort;
     let completed = 0;
     try {
+      await paintToolFeedback();
       for (let i = 0; i < urls.length; i += 5) {
+        if (abort.signal.aborted) break;
         const response = await fetch("/api/ai-tools/backlink-verifier", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -157,9 +179,11 @@ export default function BacklinkClient() {
         setMessage(`${completed} of ${urls.length} source pages checked.`);
       }
       setMessage(
-        example
-          ? "Example complete. This supplied HTML contains three links. No external websites were fetched."
-          : `${completed} source pages checked. Review the evidence and export your results.`,
+        abort.signal.aborted
+          ? `Stopped after ${completed} of ${urls.length} pages. Remaining pages were not checked.`
+          : example
+            ? "Example complete. This supplied HTML contains three links. No external websites were fetched."
+            : `${completed} source pages checked. Review the evidence and export your results.`,
       );
     } catch (e) {
       if (abort.signal.aborted)
@@ -173,6 +197,7 @@ export default function BacklinkClient() {
     } finally {
       controller.current = null;
       setBusy(false);
+      setNavigation({ target: completed ? "results" : "error" });
     }
   }
   async function importFile(selected?: File) {
@@ -227,6 +252,21 @@ export default function BacklinkClient() {
       aria-label="Backlink verification workspace"
       id="backlink-checker"
     >
+      <ToolRunOverlay
+        active={busy}
+        title={
+          mode === "pasted"
+            ? "Inspecting your supplied HTML"
+            : "Checking your backlink pages"
+        }
+        description={
+          mode === "pasted"
+            ? "Looking for matching links and their attributes in your HTML."
+            : "Requesting your supplied pages and checking their link evidence."
+        }
+        progress={{ completed: reports.length, total: planned }}
+        onCancel={() => controller.current?.abort()}
+      />
       <div className={styles.intro}>
         <div>
           <p className={styles.eyebrow}>CHECK THE EVIDENCE</p>
@@ -271,7 +311,8 @@ export default function BacklinkClient() {
               </button>
             </div>
             <label className={styles.label}>
-              Your target website or page
+              Your target website or page{" "}
+              <span className={styles.required}>Required</span>
               <ToolUrlInput
                 type="text"
                 inputMode="url"
@@ -309,8 +350,10 @@ export default function BacklinkClient() {
               preserves protocol, path, and query.
             </p>
             <label className={styles.label}>
-              Pages that should link to you
+              Pages that should link to you{" "}
+              <span className={styles.required}>Required</span>
               <textarea
+                aria-describedby="backlink-sources-help"
                 value={sources}
                 onChange={(e) => setSources(e.target.value)}
                 rows={6}
@@ -321,6 +364,11 @@ export default function BacklinkClient() {
                 required
               />
             </label>
+            <p className={styles.help} id="backlink-sources-help">
+              Paste one external page URL per line. Press Enter to add another
+              page, including pages from different websites. Use the exact
+              linking page, rather than only its website domain.
+            </p>
             <div className={styles.imports}>
               <button type="button" onClick={() => file.current?.click()}>
                 <FileUp size={15} aria-hidden /> Import source CSV
@@ -502,13 +550,14 @@ export default function BacklinkClient() {
         {message}
       </p>
       {error && (
-        <p className={styles.error} role="alert">
+        <p ref={errorRef} tabIndex={-1} className={styles.error} role="alert">
           {error}
         </p>
       )}
       {!!reports.length && (
         <div
           ref={results}
+          tabIndex={-1}
           className={styles.results}
           aria-label="Verification results"
         >
@@ -625,7 +674,9 @@ export default function BacklinkClient() {
                     · {r.method === "live" ? "Live check" : "Supplied HTML"}
                   </small>
                 </span>
-                <span aria-hidden>⌄</span>
+                <span className={styles.disclosure} aria-hidden="true">
+                  <ChevronDown size={19} strokeWidth={2} />
+                </span>
               </summary>
               <div className={styles.evidence}>
                 <p className={styles.break}>

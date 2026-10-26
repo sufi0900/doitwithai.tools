@@ -21,7 +21,12 @@ async function clickText(page, text) {
     const log = fs.openSync(output + "/server.log", "w");
     server = spawn(
       process.execPath,
-      ["node_modules/next/dist/bin/next", process.env.SMOKE_SERVER_MODE || "dev", "--port", "40791"],
+      [
+        "node_modules/next/dist/bin/next",
+        process.env.SMOKE_SERVER_MODE || "dev",
+        "--port",
+        "40791",
+      ],
       {
         stdio: ["ignore", log, log],
         env: {
@@ -53,7 +58,10 @@ async function clickText(page, text) {
   }
   let browser;
   try {
-    browser = await puppeteer.launch({headless:"shell",args:["--no-sandbox"]});
+    browser = await puppeteer.launch({
+      headless: "shell",
+      args: ["--no-sandbox"],
+    });
     const page = await browser.newPage();
     page.setDefaultTimeout(30000);
     await page.setViewport({ width: 1440, height: 1000 });
@@ -175,10 +183,12 @@ async function clickText(page, text) {
     });
     await clickText(page, "Live page checks");
     await clickText(page, "Verify backlinks");
-    await page.waitForFunction(() =>
-      document
-        .querySelector('[role="status"]')
-        ?.textContent.includes("1 source pages checked"),
+    await page.waitForFunction(
+      () =>
+        !document.querySelector("dialog[open]") &&
+        document
+          .querySelector('#backlink-checker [role="status"]')
+          ?.textContent.startsWith("1 source pages checked"),
     );
     await clickText(page, "Save live baseline");
     await page.waitForFunction(() =>

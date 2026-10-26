@@ -126,7 +126,7 @@
 }
 .datasets {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
   gap: 18px;
   align-items: start;
 }
@@ -137,6 +137,104 @@
   padding: 22px;
   background: var(--paper);
   box-shadow: 0 8px 26px #15234405;
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 25px 0;
+  padding: 0;
+  list-style: none;
+}
+.steps li {
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 17px;
+  background: var(--soft);
+}
+.steps strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 750;
+}
+.steps span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.dataHelp {
+  border: 1px solid #5271ff45;
+  border-radius: 12px;
+  padding: 14px 17px;
+}
+.dataHelp p {
+  font-size: 13px;
+  line-height: 1.9;
+  margin-top: 10px;
+  color: var(--muted);
+}
+.dataTitle {
+  margin-top: 22px;
+  font-size: 13px;
+  font-weight: 750;
+}
+.fieldError {
+  color: #ad233e;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 8px;
+}
+:global(.dark) .fieldError {
+  color: #ffb5c1;
+}
+.label [aria-invalid="true"] {
+  border-color: #c84961;
+  box-shadow: 0 0 0 1px #c8496120;
+}
+.error ul {
+  margin-top: 10px;
+  padding-left: 19px;
+  list-style: disc;
+}
+.error li {
+  margin-top: 7px;
+}
+.error a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.error,
+.label input,
+.label textarea {
+  scroll-margin-top: 125px;
+}
+.optional {
+  border-top: 1px solid var(--line);
+  padding-top: 15px;
+  margin-top: 18px;
+}
+.optional > summary,
+.toolbox > summary,
+.mapping > summary {
+  color: var(--muted);
+}
+.optional[open] > summary,
+.toolbox[open] > summary,
+.mapping[open] > summary {
+  color: var(--ink);
+}
+.toolbox {
+  flex: 1 1 240px;
+  padding: 12px 15px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.compareTitle {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.4;
 }
 .dataset:disabled {
   opacity: 0.65;
@@ -359,6 +457,11 @@
   border-top: 1px solid var(--line);
   padding-top: 32px;
   scroll-margin-top: 110px;
+}
+.results:focus {
+  outline: 2px solid #5271ff35;
+  outline-offset: 8px;
+  border-radius: 12px;
 }
 .stats {
   display: grid;
@@ -678,6 +781,13 @@
   }
 }
 @media (max-width: 520px) {
+  .steps {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+  .steps li {
+    padding: 13px 16px;
+  }
   .workspace {
     padding: 25px 16px 40px;
   }
