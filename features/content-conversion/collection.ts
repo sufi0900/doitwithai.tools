@@ -33,12 +33,53 @@ export const conversionPlan = [
     slug: "article-read-aloud",
     name: "Article read aloud",
     format: "AUDIO",
-    purpose: "Listen to article text with playback and reading controls.",
+    purpose:
+      "Listen to article narration with playback controls and a supported audio download.",
   },
   {
     slug: "blog-to-social-posts",
     name: "Blog to social posts",
     format: "POSTS",
     purpose: "Draft channel-specific posts using the article's actual points.",
+  },
+  {
+    slug: "article-to-markdown",
+    name: "Article to Markdown",
+    format: "MD",
+    purpose:
+      "Download structured Markdown for notes, documentation, or a content workflow.",
+  },
+  {
+    slug: "article-to-epub",
+    name: "Article to EPUB",
+    format: "EPUB",
+    purpose: "Save an article as a reflowable e-book with clear navigation.",
+  },
+  {
+    slug: "blog-to-newsletter",
+    name: "Blog to newsletter",
+    format: "EMAIL",
+    purpose:
+      "Adapt an article into an editable newsletter with downloadable text and HTML.",
+  },
+  {
+    slug: "blog-to-linkedin-carousel",
+    name: "Blog to LinkedIn carousel",
+    format: "SLIDES",
+    purpose:
+      "Turn article ideas into a designed carousel with downloadable PDF and slide assets.",
+  },
+  {
+    slug: "article-to-mp3",
+    name: "Article to MP3",
+    format: "MP3",
+    purpose: "Create a real audio download for offline article listening.",
+  },
+  {
+    slug: "article-to-podcast-script",
+    name: "Article to podcast script",
+    format: "SCRIPT",
+    purpose:
+      "Create an editable podcast script with downloadable text and document formats.",
   },
 ];

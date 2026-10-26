@@ -116,9 +116,9 @@ The existing verifier regression waits for modal closure before saving a live ba
 
 ## Sequential off-page roadmap
 
-Status on October 27, 2026: remaining off-page tools are paused at Sufian's request. Resume only after his explicit instruction.
+Status on October 27, 2026: Sufian explicitly authorized scheduled work on the remaining off-page tools, followed by the full conversion series.
 
-The first three tools are complete. Broken Link Opportunity Finder, Personalized Outreach Email Builder, and Digital PR Planner remain on hold.
+The first three tools are complete. Remaining work is ordered in `docs/tool-build-queue.json`. Do not start before the scheduled automation begins.
 
 1. Backlink Verification Tool: first implementation and validation.
 2. Competitor Backlink Gap Analyzer: research actual export formats before building.

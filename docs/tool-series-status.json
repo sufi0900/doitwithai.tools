@@ -1,8 +1,8 @@
 {
   "updatedAt": "2026-10-27",
   "offPage": {
-    "status": "paused",
-    "resumeCondition": "Resume only after Sufian explicitly asks to continue the off-page series.",
+    "status": "scheduled",
+    "resumeCondition": "Explicitly authorized by Sufian on October 27, 2026; begin with the scheduled queue.",
     "completed": [
       "backlink-verification-tool",
       "competitor-backlink-gap-analyzer",
@@ -15,12 +15,26 @@
     ]
   },
   "contentConversion": {
-    "status": "research-and-category-foundation",
+    "status": "scheduled",
     "category": "content-conversion",
     "topic": "conversion",
     "firstPlannedTool": "article-to-pdf",
     "buildOneAtATime": true,
     "liveConverters": [],
-    "research": "docs/content-conversion-research.md"
-  }
+    "research": "docs/content-conversion-research.md",
+    "plannedTools": [
+      "article-to-pdf",
+      "article-to-word",
+      "blog-to-video-script",
+      "article-read-aloud",
+      "blog-to-social-posts",
+      "article-to-markdown",
+      "article-to-epub",
+      "blog-to-newsletter",
+      "blog-to-linkedin-carousel",
+      "article-to-mp3",
+      "article-to-podcast-script"
+    ]
+  },
+  "buildQueue": "docs/tool-build-queue.json"
 }

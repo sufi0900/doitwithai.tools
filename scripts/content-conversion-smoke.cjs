@@ -79,7 +79,7 @@ const output = process.env.SMOKE_OUTPUT || "/tmp/conversion-category-qa";
     );
     assert.equal(
       await page.$$eval("#conversion-plan li", (nodes) => nodes.length),
-      5,
+      11,
     );
     assert.equal(
       await page.$$eval(
@@ -170,7 +170,7 @@ const output = process.env.SMOKE_OUTPUT || "/tmp/conversion-category-qa";
       JSON.stringify({
         passed: true,
         categoryNavigation: true,
-        plannedFormats: 5,
+        plannedFormats: 11,
         noFakeToolRoutes: true,
         emptyCollectionSchema: true,
         noindex: true,

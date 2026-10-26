@@ -2,7 +2,7 @@
 
 Research date: October 27, 2026. Owner: Sufian Mustafa, Do It With AI Tools.
 
-The remaining off-page tools are paused. The next series will focus on converting article content into useful reading and publishing formats.
+Sufian authorized scheduled creation of the remaining off-page tools, followed by all eleven requested article-conversion capabilities. See `docs/tool-build-queue.json`.
 
 This change creates the category foundation and research roadmap. It does not publish unfinished converter pages or advertise them as working tools.
 
@@ -129,7 +129,7 @@ Browser synthesis voices vary by device. Test unavailable voices, voice loading,
 
 [MDN SpeechSynthesis](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis) documents device voices and playback control. It is not an MP3 encoder interface.
 
-Do not promise downloadable MP3 output or reliable locked-screen playback from browser speech alone. Those claims require separately verified capabilities.
+The scheduled scope now requires real downloadable audio. Browser playback alone does not complete this item; an available audio-generation or encoding pipeline is required.
 
 ### 5. Blog to social posts
 
@@ -141,13 +141,13 @@ Keep scheduling and publishing separate unless explicitly implemented and author
 
 Differentiation: faithful source points, meaningful variations, and destination-aware CTAs. Avoid duplicating generic prompt output across thin platform pages.
 
-## Later tools to evaluate
+## Additional scheduled converters
 
 | Priority group | Candidate                 | Benefit                                                                          | Requirement before building                                                                              |
 | -------------- | ------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | Next           | Article to Markdown       | Reuse article content in notes, documentation, CMSs, and AI workflows.           | Preserve headings, lists, links, code, tables, and image references. Validate developer-specific demand. |
 | Next           | Blog to newsletter        | Produce an email draft with subject options, preview text, body, and source CTA. | Confirm a distinct workflow beyond generic social repurposing.                                           |
-| Next           | Blog to LinkedIn carousel | Turn an article into slide-by-slide educational content.                         | Decide whether output is copy only or an actual designed PDF. Label it accurately.                       |
+| Next           | Blog to LinkedIn carousel | Turn an article into slide-by-slide educational content.                         | Create an actual designed PDF and downloadable slide PNGs.                                               |
 | Next           | Article to EPUB           | Read articles on e-readers with reflowable text and a navigation structure.      | Validate EPUB packaging and test in e-reader software.                                                   |
 | Later          | Article to MP3            | Download narration for offline listening.                                        | Select an audio service or encoder, test byte output, costs, quotas, voices, and retention.              |
 | Later          | Article to podcast script | Produce a solo or two-speaker adaptation from article evidence.                  | Keep the script distinct from generated audio and preserve source claims.                                |
@@ -180,7 +180,9 @@ Advanced options stay collapsed. The initial experience should ask for the artic
 
 ## Search validation before launch
 
-For each tool, obtain a keyword export with the source, collection date, geography, language, match type, monthly range, and reporting period.
+When keyword-volume data is available, record its source, collection date, geography, language, match type, monthly range, and reporting period.
+
+Otherwise, document keyword intent and evidence from current research. Missing paid keyword data does not block implementation and must never become invented metrics.
 
 Start with English queries in the United States. Check the United Kingdom, Canada, and Australia separately where data is available.
 
@@ -196,7 +198,7 @@ Rankings, traffic, and conversion rates need observation after launch. Product c
 - Planned formats are read-only descriptions. They do not link to nonexistent tool pages.
 - The topic metadata is ready for the first live converter. Empty discovery topics remain hidden until tools exist.
 - The empty category keeps noindex and stays outside live-tool sitemaps until its first real tool ships.
-- Off-page work is explicitly paused in the project status record.
+- The updated status record and build queue authorize scheduled off-page work before the conversion series.
 - No conversion engine, TTS service, video renderer, or individual converter is included in this foundation change.
 
 ## Foundation validation
@@ -208,3 +210,11 @@ Rankings, traffic, and conversion rates need observation after launch. Product c
 - The existing live catalog still filters correctly. The planned collection does not expose fake converter links or conversion forms.
 - Desktop and mobile light/dark layouts were reviewed. The tested flow had no runtime errors or horizontal mobile overflow.
 - Browser script: `scripts/content-conversion-smoke.cjs`.
+
+## Scheduled scope update
+
+Sufian explicitly added all six later candidates to the build queue: Markdown, EPUB, newsletter, LinkedIn carousel, MP3, and podcast script.
+
+All converters require useful downloads. The active queue contains three off-page tools and eleven conversion items, for fourteen requested items overall.
+
+Full rendered video remains outside this queue. Read-aloud and MP3 should share an engine where appropriate, with distinct outputs and no redundant thin pages.
