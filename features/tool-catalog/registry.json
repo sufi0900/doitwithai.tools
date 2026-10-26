@@ -170,7 +170,8 @@
       "relatedToolSlugs": [
         "content-evidence-review",
         "on-page-ai-seo-analyzer",
-        "internal-link-opportunity-finder"
+        "internal-link-opportunity-finder",
+        "backlink-verification-tool"
       ],
       "topics": [
         "on-page",
@@ -1191,6 +1192,39 @@
         "keywords",
         "writing"
       ]
+    },
+    {
+      "id": "backlink-verification-tool",
+      "slug": "backlink-verification-tool",
+      "name": "Backlink Verification Tool",
+      "description": "Verify known backlinks with source evidence, anchor and rel checks, redirects, saved manual comparisons, and CSV exports.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "backlink checker",
+        "backlink verification",
+        "off-page SEO",
+        "anchor text"
+      ],
+      "kind": "Verify & compare",
+      "status": "live",
+      "addedAt": "2026-10-26",
+      "featuredOrder": null,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "external-link-source-review",
+        "robots-txt-generator",
+        "internal-link-opportunity-finder"
+      ],
+      "topics": [
+        "off-page"
+      ]
     }
   ],
   "topics": [
@@ -1217,6 +1251,10 @@
     {
       "id": "writing",
       "name": "Content writing"
+    },
+    {
+      "id": "off-page",
+      "name": "Off-page SEO"
     }
   ]
 }

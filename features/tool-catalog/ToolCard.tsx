@@ -31,6 +31,7 @@ import {
 import { getTopicMeta, topicStyle } from "./discovery";
 
 const icons: Record<string, typeof Sparkles> = {
+  "backlink-verification-tool": Link2,
   "on-page-ai-seo-analyzer": ScanText,
   "keyword-research-tool": Search,
   "structured-data-validator": Braces,

@@ -85,9 +85,10 @@ export default function ToolsPage() {
                 </span>
               </h1>
               <p className="mt-2.5 text-sm leading-6 text-slate-300 sm:text-base">
-                Practical utilities for On-Page SEO, Technical SEO, Content
-                Writing, Keyword Research, AI Search (GEO), and Social Media
-                workflows. Built for fast human review before publishing.
+                Practical utilities for On-Page SEO, Technical SEO, Off-Page
+                SEO, Content Writing, Keyword Research, AI Search (GEO), and
+                Social Media workflows. Built for fast human review before
+                publishing.
               </p>
             </div>
 

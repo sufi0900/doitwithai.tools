@@ -10,6 +10,7 @@ import {
   FileCode2,
   KeyRound,
   LayoutGrid,
+  Link2,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
@@ -27,6 +28,7 @@ import "./workspace.css";
 import { RecentUrlSettings } from "../tool-ui/recent-urls/RecentUrlsProvider";
 
 const TOPIC_ICONS: Record<string, typeof Search> = {
+  "off-page": Link2,
   "on-page": Search,
   technical: FileCode2,
   writing: PenTool,

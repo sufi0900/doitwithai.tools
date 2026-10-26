@@ -70,7 +70,7 @@ const TOPIC_METADATA: Record<
   "off-page": {
     shortName: "Off-Page SEO",
     description:
-      "Digital PR, outreach planning, brand mentions, and authority-building workflows.",
+      "Verify known backlinks, review link evidence, and compare manual checks before planning outreach.",
     badgeColor:
       "border-amber-500/25 bg-amber-500/10 text-amber-600 dark:border-amber-400/30 dark:bg-amber-500/[0.15] dark:text-amber-300",
   },
@@ -92,6 +92,7 @@ const TOPIC_COLORS: Record<
   writing: { accent: "#6d28d9", darkAccent: "#c4b5fd", rgb: "139,92,246" },
   keywords: { accent: "#047857", darkAccent: "#6ee7b7", rgb: "16,185,129" },
   "ai-search": { accent: "#0e7490", darkAccent: "#67e8f9", rgb: "6,182,212" },
+  "off-page": { accent: "#92400e", darkAccent: "#fcd34d", rgb: "217,119,6" },
   social: { accent: "#be185d", darkAccent: "#f9a8d4", rgb: "236,72,153" },
 };
 export function topicStyle(meta: TopicMeta): CSSProperties {
