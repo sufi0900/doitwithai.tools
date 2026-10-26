@@ -98,22 +98,26 @@ export default function ToolsPage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {categories
-                  .filter((c) =>
-                    tools.some((t) => t.categories.includes(c.slug)),
+                  .filter(
+                    (c) =>
+                      c.slug === "content-conversion" ||
+                      tools.some((t) => t.categories.includes(c.slug)),
                   )
                   .map((category) => (
                     <Link
                       key={category.slug}
                       href={categoryPath(category.slug)}
-                      className="rounded-xl border border-white/[0.15] bg-white/10 px-3.5 py-2 text-xs font-bold text-white backdrop-blur-sm transition hover:border-[#AEBBFF]/50 hover:bg-white/20"
+                      className={`rounded-xl border px-3.5 py-2 text-xs font-bold backdrop-blur-sm transition ${category.slug === "content-conversion" ? "border-orange-200/30 bg-orange-300/10 text-orange-100 hover:bg-orange-300/20" : "border-white/[0.15] bg-white/10 text-white hover:border-[#AEBBFF]/50 hover:bg-white/20"}`}
                     >
-                      {category.name} (
-                      {
-                        tools.filter((t) =>
-                          t.categories.includes(category.slug),
-                        ).length
-                      }
-                      )
+                      {category.name}{" "}
+                      {category.slug === "content-conversion" &&
+                      !tools.some((t) => t.categories.includes(category.slug))
+                        ? "· Planned"
+                        : `(${
+                            tools.filter((t) =>
+                              t.categories.includes(category.slug),
+                            ).length
+                          })`}
                     </Link>
                   ))}
                 <Link

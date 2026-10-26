@@ -17,7 +17,7 @@ test('registry has unique, route-safe IDs, slugs and category membership', () =>
     assert.ok(tool.categories.every(slug => categories.some(category => category.slug === slug)));
     assert.ok(fs.existsSync(path.join(root, 'app', 'tools', tool.slug, 'page.tsx')));
   }
-  assert.deepEqual(categories.map(item => item.slug), ['ai-seo', 'content-writing', 'productivity']);
+  assert.deepEqual(categories.map(item => item.slug), ['ai-seo', 'content-writing', 'content-conversion', 'productivity']);
   for (const tool of tools) {
     assert.match(tool.addedAt, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(tool.relatedToolSlugs.every(slug => tools.some(item => item.slug === slug)));

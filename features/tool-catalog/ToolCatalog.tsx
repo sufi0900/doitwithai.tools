@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ChevronRight,
+  ArrowRightLeft,
   Bookmark,
   Clock,
   FileCode2,
@@ -29,6 +30,7 @@ import ToolCard from "./ToolCard";
 import { findTools } from "./catalog-core.mjs";
 
 const TOPIC_ICONS: Record<string, typeof Search> = {
+  conversion: ArrowRightLeft,
   "on-page": Search,
   technical: FileCode2,
   writing: PenTool,
@@ -163,6 +165,21 @@ export default function ToolCatalog({ category }: { category?: string }) {
       aria-label="Tool finder"
       className="mt-6 scroll-mt-24"
     >
+      {selected === "content-conversion" &&
+        !tools.some((tool) =>
+          tool.categories.includes("content-conversion"),
+        ) && (
+          <p className="mb-5 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm leading-7 text-orange-900 dark:border-orange-300/25 dark:bg-orange-300/5 dark:text-orange-100">
+            The Content Conversion collection is in preparation.{" "}
+            <Link
+              href="/tools/categories/content-conversion"
+              className="font-bold underline"
+            >
+              View the planned formats
+            </Link>
+            .
+          </p>
+        )}
       {/* Unified Control Hub */}
       <div className="rounded-3xl border border-slate-200/90 bg-white/95 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-[#161F30]/95 sm:p-6">
         {/* Top Row: Workspace View Tabs (All / Saved / Recent) + Layout Switcher */}
@@ -348,7 +365,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
           <div className="mb-2.5 flex items-center justify-between gap-2">
             <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               <Filter size={13} className="text-[#5271FF]" />
-              Digital Marketing & SEO Disciplines
+              Browse by workflow
             </span>
             {topic && (
               <button

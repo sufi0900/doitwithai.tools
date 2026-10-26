@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { conversionCollection } from "../content-conversion/collection";
 import registry from "./registry.json";
 import { tools, type CatalogTool } from "./catalog";
 
@@ -25,6 +26,13 @@ const TOPIC_METADATA: Record<
   string,
   Omit<TopicMeta, "id" | "name" | "accent" | "darkAccent" | "rgb">
 > = {
+  conversion: {
+    shortName: "Content Conversion",
+    description:
+      "Turn articles into clean documents, listening formats, video scripts, and social drafts.",
+    badgeColor:
+      "border-orange-500/25 bg-orange-500/10 text-orange-800 dark:border-orange-300/30 dark:bg-orange-500/[0.15] dark:text-orange-200",
+  },
   "on-page": {
     shortName: "On-Page SEO",
     description:
@@ -87,6 +95,11 @@ const TOPIC_COLORS: Record<
   string,
   { accent: string; darkAccent: string; rgb: string }
 > = {
+  conversion: {
+    accent: conversionCollection.accent,
+    darkAccent: conversionCollection.darkAccent,
+    rgb: conversionCollection.rgb,
+  },
   "on-page": { accent: "#3453d1", darkAccent: "#93b4ff", rgb: "82,113,255" },
   technical: { accent: "#92400e", darkAccent: "#fcd34d", rgb: "217,119,6" },
   writing: { accent: "#6d28d9", darkAccent: "#c4b5fd", rgb: "139,92,246" },
@@ -104,7 +117,7 @@ export function topicStyle(meta: TopicMeta): CSSProperties {
 }
 
 export function getTopicMeta(id: string, fallbackName?: string): TopicMeta {
-  const found = topics.find((t) => t.id === id);
+  const found = registry.topics.find((t) => t.id === id);
   const name = fallbackName || found?.name || id.replace(/-/g, " ");
   const meta = TOPIC_METADATA[id];
   return {

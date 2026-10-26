@@ -1,0 +1,26 @@
+{
+  "updatedAt": "2026-10-27",
+  "offPage": {
+    "status": "paused",
+    "resumeCondition": "Resume only after Sufian explicitly asks to continue the off-page series.",
+    "completed": [
+      "backlink-verification-tool",
+      "competitor-backlink-gap-analyzer",
+      "unlinked-brand-mention-checker"
+    ],
+    "remaining": [
+      "Broken Link Opportunity Finder",
+      "Personalized Outreach Email Builder",
+      "Digital PR and Linkable Asset Planner"
+    ]
+  },
+  "contentConversion": {
+    "status": "research-and-category-foundation",
+    "category": "content-conversion",
+    "topic": "conversion",
+    "firstPlannedTool": "article-to-pdf",
+    "buildOneAtATime": true,
+    "liveConverters": [],
+    "research": "docs/content-conversion-research.md"
+  }
+}

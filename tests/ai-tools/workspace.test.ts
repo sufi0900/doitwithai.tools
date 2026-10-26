@@ -132,7 +132,7 @@ test("category accents remain readable on selected navigation backgrounds", () =
     const values = [luminance(a), luminance(b)].sort((x, y) => y - x);
     return (values[0] + 0.05) / (values[1] + 0.05);
   };
-  for (const topic of topics) {
+  for (const topic of [...topics, { id: "conversion" }]) {
     const meta = getTopicMeta(topic.id),
       rgb = meta.rgb.split(",").map(Number);
     const lightBackground = rgb.map(

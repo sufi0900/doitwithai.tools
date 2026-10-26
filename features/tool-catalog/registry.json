@@ -14,6 +14,12 @@
       "guidePath": "/guides"
     },
     {
+      "slug": "content-conversion",
+      "name": "Content Conversion",
+      "description": "Turn articles into documents, read-aloud content, video scripts, and social drafts. This collection is being prepared.",
+      "guidePath": "/guides"
+    },
+    {
       "slug": "productivity",
       "name": "Productivity",
       "description": "Tools for planning and organizing work are coming next. Browse our current tools while this category grows.",
@@ -1323,6 +1329,10 @@
     {
       "id": "off-page",
       "name": "Off-page SEO"
+    },
+    {
+      "id": "conversion",
+      "name": "Content conversion"
     }
   ]
 }

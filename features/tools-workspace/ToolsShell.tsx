@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  ArrowRightLeft,
   Bookmark,
   ChevronDown,
   Clock,
@@ -28,6 +29,7 @@ import "./workspace.css";
 import { RecentUrlSettings } from "../tool-ui/recent-urls/RecentUrlsProvider";
 
 const TOPIC_ICONS: Record<string, typeof Search> = {
+  conversion: ArrowRightLeft,
   "off-page": Link2,
   "on-page": Search,
   technical: FileCode2,
@@ -290,8 +292,10 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
           <summary>Browse collections</summary>
           <div>
             {categories
-              .filter((category) =>
-                tools.some((tool) => tool.categories.includes(category.slug)),
+              .filter(
+                (category) =>
+                  category.slug === "content-conversion" ||
+                  tools.some((tool) => tool.categories.includes(category.slug)),
               )
               .map((category) => (
                 <Link
