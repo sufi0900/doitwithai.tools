@@ -3,7 +3,7 @@
   "authorizedAt": "2026-10-27",
   "repository": "sufi0900/doitwithai.tools",
   "branch": "feat/homepage-tools-learning",
-  "state": "scheduled",
+  "state": "in-progress",
   "scheduling": {
     "timezone": "Asia/Karachi",
     "initialDelayHours": 3,
@@ -14,10 +14,10 @@
     "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT"
   },
   "runner": {
-    "activeItemId": null,
-    "runId": null,
-    "leaseExpiresAt": null,
-    "lastHeartbeatAt": null
+    "activeItemId": "broken-link-opportunity-finder",
+    "runId": "tool-build-cd288764-e5d5-402e-b0d2-c15aff19d073",
+    "leaseExpiresAt": "2026-10-27T00:26:15+00:00",
+    "lastHeartbeatAt": "2026-10-26T22:56:15+00:00"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -26,13 +26,16 @@
       "id": "broken-link-opportunity-finder",
       "name": "Broken Link Opportunity Finder",
       "series": "off-page",
-      "status": "pending",
-      "requiredOutputs": ["CSV evidence report"],
-      "startedAt": null,
+      "status": "in-progress",
+      "requiredOutputs": [
+        "CSV evidence report"
+      ],
+      "startedAt": "2026-10-26T22:56:15+00:00",
       "completedAt": null,
       "implementationCommit": null,
       "validation": null,
-      "blocker": null
+      "blocker": null,
+      "checkpoint": "Claimed; repository requirements reviewed; researching and implementing next tool."
     },
     {
       "order": 2,
@@ -40,7 +43,10 @@
       "name": "Personalized Outreach Email Builder",
       "series": "off-page",
       "status": "pending",
-      "requiredOutputs": ["TXT draft", "DOCX draft"],
+      "requiredOutputs": [
+        "TXT draft",
+        "DOCX draft"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -53,7 +59,11 @@
       "name": "Digital PR and Linkable Asset Planner",
       "series": "off-page",
       "status": "pending",
-      "requiredOutputs": ["DOCX plan", "Markdown plan", "CSV action list"],
+      "requiredOutputs": [
+        "DOCX plan",
+        "Markdown plan",
+        "CSV action list"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -66,7 +76,9 @@
       "name": "Article to PDF",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["PDF"],
+      "requiredOutputs": [
+        "PDF"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -79,7 +91,9 @@
       "name": "Article to Word",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["DOCX"],
+      "requiredOutputs": [
+        "DOCX"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -92,7 +106,10 @@
       "name": "Blog to Video Script",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["TXT script", "DOCX script"],
+      "requiredOutputs": [
+        "TXT script",
+        "DOCX script"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -105,7 +122,10 @@
       "name": "Article Read Aloud",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["Playable narration", "Valid downloadable audio"],
+      "requiredOutputs": [
+        "Playable narration",
+        "Valid downloadable audio"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -118,7 +138,10 @@
       "name": "Blog to Social Posts",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["TXT", "CSV"],
+      "requiredOutputs": [
+        "TXT",
+        "CSV"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -131,7 +154,9 @@
       "name": "Article to Markdown",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["Markdown"],
+      "requiredOutputs": [
+        "Markdown"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -144,7 +169,9 @@
       "name": "Article to EPUB",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["EPUB"],
+      "requiredOutputs": [
+        "EPUB"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -157,7 +184,10 @@
       "name": "Blog to Newsletter",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["TXT draft", "HTML draft"],
+      "requiredOutputs": [
+        "TXT draft",
+        "HTML draft"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -170,7 +200,10 @@
       "name": "Blog to LinkedIn Carousel",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["Designed PDF", "Slide PNG images"],
+      "requiredOutputs": [
+        "Designed PDF",
+        "Slide PNG images"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -183,7 +216,9 @@
       "name": "Article to MP3",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["Playable MP3 download"],
+      "requiredOutputs": [
+        "Playable MP3 download"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
@@ -196,7 +231,10 @@
       "name": "Article to Podcast Script",
       "series": "content-conversion",
       "status": "pending",
-      "requiredOutputs": ["TXT script", "DOCX script"],
+      "requiredOutputs": [
+        "TXT script",
+        "DOCX script"
+      ],
       "startedAt": null,
       "completedAt": null,
       "implementationCommit": null,
