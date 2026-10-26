@@ -1221,7 +1221,8 @@
         "external-link-source-review",
         "robots-txt-generator",
         "internal-link-opportunity-finder",
-        "competitor-backlink-gap-analyzer"
+        "competitor-backlink-gap-analyzer",
+        "unlinked-brand-mention-checker"
       ],
       "topics": [
         "off-page"
@@ -1255,6 +1256,39 @@
         "backlink-verification-tool",
         "external-link-source-review",
         "target-audience-research-tool"
+      ],
+      "topics": [
+        "off-page"
+      ]
+    },
+    {
+      "id": "unlinked-brand-mention-checker",
+      "slug": "unlinked-brand-mention-checker",
+      "name": "Unlinked Brand Mention Checker",
+      "description": "Check supplied pages for brand mentions, inspect direct website links and surrounding context, and export evidence for manual review.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "unlinked mentions",
+        "brand mentions",
+        "off-page SEO",
+        "link reclamation"
+      ],
+      "kind": "Check mentions",
+      "status": "live",
+      "addedAt": "2026-10-26",
+      "featuredOrder": null,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand brand context in SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "backlink-verification-tool",
+        "competitor-backlink-gap-analyzer",
+        "external-link-source-review"
       ],
       "topics": [
         "off-page"

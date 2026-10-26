@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-26T17:07:41.862Z",
+  "generated": "2026-10-26T18:46:46.175Z",
   "static_pages": [
     {
       "url": "/",
@@ -315,6 +315,12 @@
       "type": "static"
     },
     {
+      "url": "/tools/unlinked-brand-mention-checker",
+      "title": "Unlinked Brand Mention Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -327,5 +333,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 54
+  "total_pages": 55
 }
