@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-24T12:46:44.971Z",
+  "generated": "2026-10-26T17:07:41.862Z",
   "static_pages": [
     {
       "url": "/",
@@ -113,6 +113,12 @@
     {
       "url": "/tools/external-link-source-review",
       "title": "External Link and Source Review",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/target-audience-research-tool",
+      "title": "Target Audience Research Tool",
       "priority": "high",
       "type": "static"
     },
@@ -291,6 +297,24 @@
       "type": "static"
     },
     {
+      "url": "/tools/keyword-research-tool",
+      "title": "Keyword Research Tool",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/backlink-verification-tool",
+      "title": "Backlink Verification Tool",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/competitor-backlink-gap-analyzer",
+      "title": "Competitor Backlink Gap Analyzer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -303,5 +327,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 50
+  "total_pages": 54
 }

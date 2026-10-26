@@ -1220,7 +1220,41 @@
       "relatedToolSlugs": [
         "external-link-source-review",
         "robots-txt-generator",
-        "internal-link-opportunity-finder"
+        "internal-link-opportunity-finder",
+        "competitor-backlink-gap-analyzer"
+      ],
+      "topics": [
+        "off-page"
+      ]
+    },
+    {
+      "id": "competitor-backlink-gap-analyzer",
+      "slug": "competitor-backlink-gap-analyzer",
+      "name": "Competitor Backlink Gap Analyzer",
+      "description": "Compare supplied backlink exports, inspect referring-source overlap, review data coverage, and shortlist prospects with traceable evidence.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "backlink gap",
+        "link intersect",
+        "competitor backlinks",
+        "off-page SEO"
+      ],
+      "kind": "Compare exports",
+      "status": "live",
+      "addedAt": "2026-10-26",
+      "featuredOrder": null,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Review research evidence before choosing a content direction"
+        }
+      ],
+      "relatedToolSlugs": [
+        "backlink-verification-tool",
+        "external-link-source-review",
+        "target-audience-research-tool"
       ],
       "topics": [
         "off-page"
