@@ -14,10 +14,10 @@
     "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT"
   },
   "runner": {
-    "activeItemId": "digital-pr-linkable-asset-planner",
-    "runId": "pr-planner-2026-10-27T030205000Z-sw2jd00",
-    "leaseExpiresAt": "2026-10-27T04:32:05.000Z",
-    "lastHeartbeatAt": "2026-10-27T03:02:05.000Z"
+    "activeItemId": null,
+    "runId": null,
+    "leaseExpiresAt": null,
+    "lastHeartbeatAt": "2026-10-27T03:15:47.000Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -85,18 +85,32 @@
       "id": "digital-pr-linkable-asset-planner",
       "name": "Digital PR and Linkable Asset Planner",
       "series": "off-page",
-      "status": "in-progress",
+      "status": "completed",
       "requiredOutputs": [
         "DOCX plan",
         "Markdown plan",
         "CSV action list"
       ],
       "startedAt": "2026-10-27T03:02:05.000Z",
-      "completedAt": null,
-      "implementationCommit": null,
-      "validation": null,
+      "completedAt": "2026-10-27T03:15:47.000Z",
+      "implementationCommit": "5867f00b2ce150aefb3e8355f46b62bd82618d15",
+      "validation": {
+        "featureTests": 528,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing unrelated warnings",
+        "productionBuild": "passed",
+        "browser": "All four formats and evidence modes, errors, keyboard use, loading, cancellation, result focus, edits, download failures, catalog search, category discovery, desktop/mobile light/dark passed",
+        "downloads": "Actual DOCX, Markdown, and CSV preserved edited text and task status. DOCX ZIP/XML/python-docx validation passed; Python csv parsed seven actions.",
+        "documentRender": "Actual browser-downloaded DOCX rendered to three Letter pages; every page visually inspected.",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "plannerApiRequests": 0,
+        "evidence": "docs/digital-pr-linkable-asset-planner.md",
+        "limitations": "Deterministic guided planning. No AI generation, source verification, finished asset production, contact discovery, sending, or campaign outcome prediction."
+      },
       "blocker": null,
-      "checkpoint": "Claimed; reading architecture and researching planner workflows."
+      "checkpoint": "Published; editable planning, real DOCX/Markdown/CSV exports, production browser flow, and rendered document review passed."
     },
     {
       "order": 4,
