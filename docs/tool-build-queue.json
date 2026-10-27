@@ -14,10 +14,10 @@
     "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT"
   },
   "runner": {
-    "activeItemId": null,
-    "runId": null,
-    "leaseExpiresAt": null,
-    "lastHeartbeatAt": "2026-10-27T02:24:20Z"
+    "activeItemId": "digital-pr-linkable-asset-planner",
+    "runId": "pr-planner-2026-10-27T030205000Z-sw2jd00",
+    "leaseExpiresAt": "2026-10-27T04:32:05.000Z",
+    "lastHeartbeatAt": "2026-10-27T03:02:05.000Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -85,17 +85,18 @@
       "id": "digital-pr-linkable-asset-planner",
       "name": "Digital PR and Linkable Asset Planner",
       "series": "off-page",
-      "status": "pending",
+      "status": "in-progress",
       "requiredOutputs": [
         "DOCX plan",
         "Markdown plan",
         "CSV action list"
       ],
-      "startedAt": null,
+      "startedAt": "2026-10-27T03:02:05.000Z",
       "completedAt": null,
       "implementationCommit": null,
       "validation": null,
-      "blocker": null
+      "blocker": null,
+      "checkpoint": "Claimed; reading architecture and researching planner workflows."
     },
     {
       "order": 4,
