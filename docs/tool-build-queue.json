@@ -14,10 +14,10 @@
     "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT"
   },
   "runner": {
-    "activeItemId": "broken-link-opportunity-finder",
-    "runId": "tool-build-20261027T005800Z-xllyjrcunc",
-    "leaseExpiresAt": "2026-10-27T02:28:00.000Z",
-    "lastHeartbeatAt": "2026-10-27T00:58:00.000Z"
+    "activeItemId": null,
+    "runId": null,
+    "leaseExpiresAt": null,
+    "lastHeartbeatAt": "2026-10-27T01:06:12Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -26,16 +26,28 @@
       "id": "broken-link-opportunity-finder",
       "name": "Broken Link Opportunity Finder",
       "series": "off-page",
-      "status": "in-progress",
+      "status": "completed",
       "requiredOutputs": [
         "CSV evidence report"
       ],
       "startedAt": "2026-10-26T22:56:15+00:00",
-      "completedAt": null,
-      "implementationCommit": null,
-      "validation": null,
+      "completedAt": "2026-10-27T01:06:12Z",
+      "implementationCommit": "01fe889ce1392311477e4ecfc42428335627e2b9",
+      "validation": {
+        "featureTests": 505,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing repository warnings",
+        "productionBuild": "passed",
+        "browser": "desktop, mobile light/dark, errors, loading, result focus, cancellation, filters, supplied HTML, catalog, and CSV downloads passed",
+        "downloads": "Full evidence and candidate CSV saved and parsed with Python csv",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "evidence": "docs/broken-link-opportunity-finder.md",
+        "limitations": "Browser successful scans and service response cases use controlled fixtures. Actual local API validation and fail-closed infrastructure behavior were verified. Live publisher outcomes remain unverified."
+      },
       "blocker": null,
-      "checkpoint": "Resuming existing implementation after expired lease; completing production and browser verification."
+      "checkpoint": "Implementation published; functional, CSV, production build, and browser checks passed."
     },
     {
       "order": 2,

@@ -1,15 +1,15 @@
 {
   "updatedAt": "2026-10-27",
   "offPage": {
-    "status": "scheduled",
+    "status": "in-progress",
     "resumeCondition": "Explicitly authorized by Sufian on October 27, 2026; begin with the scheduled queue.",
     "completed": [
       "backlink-verification-tool",
       "competitor-backlink-gap-analyzer",
-      "unlinked-brand-mention-checker"
+      "unlinked-brand-mention-checker",
+      "broken-link-opportunity-finder"
     ],
     "remaining": [
-      "Broken Link Opportunity Finder",
       "Personalized Outreach Email Builder",
       "Digital PR and Linkable Asset Planner"
     ]
