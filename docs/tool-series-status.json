@@ -14,15 +14,16 @@
     "remaining": []
   },
   "contentConversion": {
-    "status": "scheduled",
+    "status": "in-progress",
     "category": "content-conversion",
     "topic": "conversion",
-    "firstPlannedTool": "article-to-pdf",
+    "firstPlannedTool": "article-to-word",
     "buildOneAtATime": true,
-    "liveConverters": [],
+    "liveConverters": [
+      "article-to-pdf"
+    ],
     "research": "docs/content-conversion-research.md",
     "plannedTools": [
-      "article-to-pdf",
       "article-to-word",
       "blog-to-video-script",
       "article-read-aloud",

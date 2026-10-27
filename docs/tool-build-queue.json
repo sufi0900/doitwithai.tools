@@ -14,10 +14,10 @@
     "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT"
   },
   "runner": {
-    "activeItemId": "article-to-pdf",
-    "runId": "article-pdf-resume-20261027T055125Z-f7d9",
-    "leaseExpiresAt": "2026-10-27T07:58:39.071Z",
-    "lastHeartbeatAt": "2026-10-27T06:28:39.071Z"
+    "activeItemId": null,
+    "runId": null,
+    "leaseExpiresAt": null,
+    "lastHeartbeatAt": "2026-10-27T06:34:05.095Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -117,17 +117,28 @@
       "id": "article-to-pdf",
       "name": "Article to PDF",
       "series": "content-conversion",
-      "status": "in-progress",
+      "status": "completed",
       "requiredOutputs": [
         "PDF"
       ],
       "startedAt": "2026-10-27T04:01:09.000Z",
-      "completedAt": null,
-      "implementationCommit": null,
-      "validation": null,
+      "completedAt": "2026-10-27T06:34:05.095Z",
+      "implementationCommit": "39c61e627a7e6168021a24838f481ec429585caf",
+      "validation": {
+        "featureTests": 543,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing unrelated repository warnings",
+        "productionBuild": "passed; 107 static pages",
+        "browser": "Production server: local HTML/text, editing, keyboard, inline errors, loading, cancellation, result focus, desktop/mobile light/dark, catalog/search and category passed",
+        "downloads": "Three actual browser PDFs parsed with pypdf; all four pages rendered with Poppler and visually inspected. English/Urdu, Letter dimensions, edits, clickable links, selected PNG and omitted-image warning verified. Additional multipage A4/Letter and Urdu table exports reviewed.",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "evidence": "docs/article-to-pdf.md",
+        "limitations": "Live publisher import failed locally with EAI_AGAIN. Successful URL/image-host responses and quota scenarios use controlled fixtures. Real local API validation and fail-closed quota errors passed. Pasted content and PDF processing/downloads were real."
+      },
       "blocker": null,
-      "checkpoint": "Final production build and browser validation after rendered PDF and multilingual UI review.",
-      "workCommit": "d3471f47af4f7444a95b7708bca621ab27ff5e53"
+      "checkpoint": "Validated implementation published; actual PDF downloads parsed/rendered, production build and browser checks passed."
     },
     {
       "order": 5,
