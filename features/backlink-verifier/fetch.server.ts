@@ -77,6 +77,7 @@ export type Fetched = {
   status: number;
   headers: Record<string, string>;
   html: string;
+  data?: Buffer;
   redirects: Hop[];
 };
 /** DNS answers are validated and pinned to the socket; redirects repeat the same guard. */
@@ -86,6 +87,7 @@ export async function fetchPublic(
     signal?: AbortSignal;
     html?: boolean;
     text?: boolean;
+    image?: boolean;
     bytes?: number;
     timeout?: number;
     beforeRequest?: (url: URL) => Promise<void>;
@@ -109,6 +111,7 @@ export async function fetchPublic(
       status: number;
       headers: Record<string, string>;
       html: string;
+      data?: Buffer;
     }>((resolve, reject) => {
       const req = (url.protocol === "https:" ? httpsRequest : httpRequest)(
         url,
@@ -119,8 +122,9 @@ export async function fetchPublic(
           headers: {
             "User-Agent":
               "DoItWithAI-BacklinkVerifier/1.0 (+https://doitwithai.tools)",
-            Accept:
-              options.html === false
+            Accept: options.image
+              ? "image/png,image/jpeg"
+              : options.html === false
                 ? "*/*"
                 : "text/html,application/xhtml+xml",
             "Accept-Encoding": "identity",
@@ -163,17 +167,21 @@ export async function fetchPublic(
           }
           if (
             !(
-              options.text
-                ? /text\/plain/i
-                : /text\/html|application\/xhtml\+xml/i
+              options.image
+                ? /^image\/(?:png|jpeg)(?:;|$)/i
+                : options.text
+                  ? /text\/plain/i
+                  : /text\/html|application\/xhtml\+xml/i
             ).test(headers["content-type"] || "")
           ) {
             response.destroy();
             reject(
               new Error(
-                options.text
-                  ? "Robots policy was not plain text."
-                  : "The source did not return an HTML page.",
+                options.image
+                  ? "Only public PNG and JPEG images are supported."
+                  : options.text
+                    ? "Robots policy was not plain text."
+                    : "The source did not return an HTML page.",
               ),
             );
             return;
@@ -217,7 +225,8 @@ export async function fetchPublic(
             resolve({
               status,
               headers,
-              html: Buffer.concat(chunks).toString("utf8"),
+              html: options.image ? "" : Buffer.concat(chunks).toString("utf8"),
+              ...(options.image ? { data: Buffer.concat(chunks) } : {}),
             }),
           );
           response.on("error", reject);

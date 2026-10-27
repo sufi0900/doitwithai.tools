@@ -64,7 +64,7 @@ export default function ConversionCollection({
               <p className="mt-6 inline-flex items-center gap-2 rounded-full border border-orange-300/25 bg-orange-300/10 px-4 py-2 text-xs font-semibold text-orange-100">
                 <ArrowRightLeft size={15} aria-hidden />
                 {items.length
-                  ? `${items.length} tools available`
+                  ? `${items.length} ${items.length === 1 ? "tool" : "tools"} available`
                   : "Collection in preparation"}
               </p>
               <a
@@ -79,7 +79,7 @@ export default function ConversionCollection({
             </div>
             <div
               className="rounded-3xl border border-orange-200/20 bg-white/[0.04] p-6 sm:p-7"
-              aria-label="Planned article conversion formats"
+              aria-label="Article conversion roadmap"
             >
               <div className="flex items-center gap-4 rounded-2xl border border-orange-200/15 bg-[#352630] p-5">
                 <span className="rounded-xl bg-orange-200/10 p-3 text-orange-200">
@@ -93,14 +93,19 @@ export default function ConversionCollection({
                 </div>
               </div>
               <p className="my-5 text-center text-xs font-semibold uppercase tracking-widest text-orange-200/75">
-                Planned outputs
+                Output roadmap
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  [FileText, "Clean PDF"],
-                  [FileType2, "Editable DOCX"],
-                  [Headphones, "Read aloud"],
-                  [Clapperboard, "Video script"],
+                  [
+                    FileText,
+                    available.has("article-to-pdf")
+                      ? "PDF · Available"
+                      : "PDF · Planned",
+                  ],
+                  [FileType2, "DOCX · Planned"],
+                  [Headphones, "Audio · Planned"],
+                  [Clapperboard, "Script · Planned"],
                 ].map(([Icon, label]) => {
                   const Graphic = Icon as typeof FileText;
                   return (

@@ -33,6 +33,7 @@ import { getTopicMeta, topicStyle } from "./discovery";
 
 const icons: Record<string, typeof Sparkles> = {
   "outreach-email-builder": Mail,
+  "article-to-pdf": FileCode2,
   "digital-pr-linkable-asset-planner": ClipboardList,
   "backlink-verification-tool": Link2,
   "broken-link-opportunity-finder": Link2,

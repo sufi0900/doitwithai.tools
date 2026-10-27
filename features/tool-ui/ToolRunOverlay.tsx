@@ -27,12 +27,16 @@ export default function ToolRunOverlay({
   description,
   progress,
   onCancel,
+  cancelLabel = "Stop checking",
+  hint = "Your results will open below when the check finishes.",
 }: {
   active: boolean;
   title: string;
   description: string;
   progress?: { completed: number; total: number };
   onCancel?: () => void;
+  cancelLabel?: string;
+  hint?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -67,12 +71,10 @@ export default function ToolRunOverlay({
             {progress.completed} of {progress.total} source pages checked
           </p>
         )}
-        <p className={styles.hint}>
-          Your results will open below when the check finishes.
-        </p>
+        <p className={styles.hint}>{hint}</p>
         {onCancel && (
           <button type="button" onClick={onCancel}>
-            Stop checking
+            {cancelLabel}
           </button>
         )}
       </div>

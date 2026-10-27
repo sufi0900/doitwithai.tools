@@ -10,7 +10,7 @@ import {
 export const metadata: Metadata = {
   title: "Tool Categories | Do It With AI Tools",
   description:
-    "Browse practical SEO and content writing tools, plus our planned article conversion collection.",
+    "Browse practical SEO, content writing, and article conversion tools.",
   alternates: { canonical: "https://doitwithai.tools/tools/categories" },
 };
 export default function CategoriesPage() {
