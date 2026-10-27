@@ -3,7 +3,7 @@
   "authorizedAt": "2026-10-27",
   "repository": "sufi0900/doitwithai.tools",
   "branch": "feat/homepage-tools-learning",
-  "state": "in-progress",
+  "state": "blocked",
   "scheduling": {
     "timezone": "Asia/Karachi",
     "initialDelayHours": 3,
@@ -11,13 +11,15 @@
     "policy": "One tool at a time; resume unfinished work; an active build delays the next item.",
     "automationId": "6adfb0bb03bc819180ff4e6cd3a0343a",
     "firstRunAt": "2026-10-27T03:57:47+05:00",
-    "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT"
+    "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT",
+    "pausedAt": "2026-10-27T10:29:38.311Z",
+    "pauseReason": "Execution policy blocked registry.npmjs.org during frozen installation. Offline fallback fails: ERR_PNPM_NO_OFFLINE_TARBALL, @emotion/react 11.14.0 missing. Needs permitted dependency installation or a complete frozen package cache. No bypass attempted."
   },
   "runner": {
-    "activeItemId": "blog-to-video-script",
-    "runId": "video-resume-2026-10-27T10:16:55.986Z",
-    "leaseExpiresAt": "2026-10-27T11:52:03.296Z",
-    "lastHeartbeatAt": "2026-10-27T10:22:03.296Z"
+    "activeItemId": null,
+    "runId": null,
+    "leaseExpiresAt": null,
+    "lastHeartbeatAt": "2026-10-27T10:29:38.311Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -174,7 +176,7 @@
       "id": "blog-to-video-script",
       "name": "Blog to Video Script",
       "series": "content-conversion",
-      "status": "in-progress",
+      "status": "blocked",
       "requiredOutputs": [
         "TXT script",
         "DOCX script"
@@ -182,10 +184,22 @@
       "startedAt": "2026-10-27T07:57:14.926Z",
       "completedAt": null,
       "implementationCommit": null,
-      "validation": null,
-      "blocker": null,
-      "checkpoint": "Source-based editor and TXT/native DOCX implemented; recovery snapshot saved. Fresh dependency installation in progress before final validation.",
-      "workCommit": "863a026d62bd69bc354a578b63da68625ddf45bf"
+      "validation": {
+        "status": "not validated",
+        "syntax": "Browser harness node --check passed",
+        "pending": [
+          "feature/foundation tests",
+          "type check",
+          "repository lint",
+          "production build",
+          "desktop/mobile keyboard/loading/error/dark browser flows",
+          "actual TXT/DOCX downloads and DOCX rendering"
+        ],
+        "evidence": "docs/blog-to-video-script.md"
+      },
+      "blocker": "Execution policy blocked registry.npmjs.org during frozen installation. Offline fallback fails: ERR_PNPM_NO_OFFLINE_TARBALL, @emotion/react 11.14.0 missing. Needs permitted dependency installation or a complete frozen package cache. No bypass attempted.",
+      "checkpoint": "Latest implementation, tests and browser harness saved in recovery commit. Not live or complete. Automation paused; resume this item first.",
+      "workCommit": "3a0e8f5a291dbeebae6f163322763341ac669b2e"
     },
     {
       "order": 7,
