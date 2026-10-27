@@ -222,3 +222,7 @@ Full rendered video remains outside this queue. Read-aloud and MP3 should share 
 ## Article to PDF implementation, October 27, 2026
 
 The first converter now supports public URL import, local pasted text/HTML, editable source review, and genuine A4/Letter PDF downloads with headings, tables, clickable references, and selected PNG/JPEG images. The collection and tool registry expose only this completed converter. Other formats remain queued. Research, implementation decisions, verification evidence, and live-fetch limitations are recorded in `docs/article-to-pdf.md`.
+
+## Article to Word implementation, October 27, 2026
+
+The second converter shares the reviewed article import flow and produces genuine editable DOCX packages. Native heading styles, lists, tables, source/reference links, selected image bytes, Unicode/direction handling, optional page settings, and honest omission warnings are implemented. The registry and collection expose PDF and Word; remaining outputs stay queued. Independent research, decisions, validation, and live-fetch/editor limits are recorded in `docs/article-to-word.md`.

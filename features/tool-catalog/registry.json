@@ -1419,7 +1419,35 @@
       "featuredOrder": null,
       "relatedGuides": [],
       "relatedToolSlugs": [
-        "readability-checker"
+        "readability-checker",
+        "article-to-word"
+      ],
+      "topics": [
+        "conversion"
+      ]
+    },
+    {
+      "id": "article-to-word",
+      "slug": "article-to-word",
+      "name": "Article to Word",
+      "description": "Convert article URLs or pasted text and HTML to editable DOCX. Review headings, lists, tables, source links, and selected images.",
+      "categories": [
+        "content-conversion"
+      ],
+      "tags": [
+        "article to Word",
+        "webpage to Word",
+        "URL to Word",
+        "webpage to DOCX",
+        "editable document"
+      ],
+      "kind": "Convert an article",
+      "status": "live",
+      "addedAt": "2026-10-27",
+      "featuredOrder": null,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "article-to-pdf"
       ],
       "topics": [
         "conversion"

@@ -21,13 +21,13 @@ function join(parts: Uint8Array[]) {
   }
   return result;
 }
-export function zipStored(entries: Record<string, string>) {
+export function zipStored(entries: Record<string, string | Uint8Array>) {
   const chunks: Uint8Array[] = [],
     directory: Uint8Array[] = [];
   let offset = 0;
   for (const [name, text] of Object.entries(entries)) {
     const filename = encoder.encode(name),
-      data = encoder.encode(text),
+      data = typeof text === "string" ? encoder.encode(text) : text,
       crc = crc32(data);
     const local = header(30);
     local.v.setUint32(0, 0x04034b50, true);

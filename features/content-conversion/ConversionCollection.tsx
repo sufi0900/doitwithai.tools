@@ -103,7 +103,12 @@ export default function ConversionCollection({
                       ? "PDF · Available"
                       : "PDF · Planned",
                   ],
-                  [FileType2, "DOCX · Planned"],
+                  [
+                    FileType2,
+                    available.has("article-to-word")
+                      ? "DOCX · Available"
+                      : "DOCX · Planned",
+                  ],
                   [Headphones, "Audio · Planned"],
                   [Clapperboard, "Script · Planned"],
                 ].map(([Icon, label]) => {

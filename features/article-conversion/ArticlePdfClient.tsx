@@ -28,12 +28,18 @@ const primary =
 type Result = {
   url: string;
   name: string;
-  pages: number;
+  pages?: number;
   bytes: number;
   warnings: string[];
   snapshot: string;
 };
-export default function ArticlePdfClient() {
+export default function ArticlePdfClient({
+  format = "pdf",
+}: {
+  format?: "pdf" | "docx";
+}) {
+  const label = format === "docx" ? "Word document" : "PDF";
+  const fileLabel = format === "docx" ? "DOCX" : "PDF";
   const [mode, setMode] = useState<"url" | "text" | "html">("url"),
     [source, setSource] = useState(""),
     [content, setContent] = useState(""),
@@ -135,13 +141,13 @@ export default function ArticlePdfClient() {
         setDestination("review");
         setRevision((n) => n + 1);
         setMessage(
-          "Preview ready. Check the source and text before creating the PDF.",
+          `Preview ready. Check the source and text before creating the ${label}.`,
         );
       }
     } catch (error) {
       if (mounted.current) {
         const msg = c.signal.aborted
-          ? "Import cancelled. Your existing preview and PDF have been kept."
+          ? `Import cancelled. Your existing preview and ${label} have been kept.`
           : error instanceof Error
             ? error.message
             : "The import failed. Try pasted content.";
@@ -169,10 +175,6 @@ export default function ArticlePdfClient() {
     try {
       await paintToolFeedback();
       c.signal.throwIfAborted();
-      const { articlePdf, loadFonts } = await import("./pdf");
-      const fonts = await loadFonts(
-        AbortSignal.any([c.signal, AbortSignal.timeout(18000)]),
-      );
       const images: Record<string, string> = {};
       for (const image of article.blocks
         .filter((b) => b.kind === "image" && b.included)
@@ -196,19 +198,41 @@ export default function ArticlePdfClient() {
           c.signal.throwIfAborted();
         }
       }
-      const built = await articlePdf(article, settings, {
-        ...fonts,
+      let built: {
+        bytes: ArrayBuffer | Uint8Array<ArrayBuffer>;
+        pages?: number;
+        warnings: string[];
+      };
+      const shared = {
         images,
         signal: c.signal,
-        yield: () => new Promise((r) => setTimeout(r, 0)),
-      });
+        yield: () => new Promise<void>((r) => setTimeout(r, 0)),
+      };
+      if (format === "docx") {
+        const { articleDocx } = await import("./docx");
+        built = await articleDocx(article, settings, shared);
+      } else {
+        const { articlePdf, loadFonts } = await import("./pdf");
+        const fonts = await loadFonts(
+          AbortSignal.any([c.signal, AbortSignal.timeout(18000)]),
+        );
+        built = await articlePdf(article, settings, { ...shared, ...fonts });
+      }
       c.signal.throwIfAborted();
-      const blob = new Blob([built.bytes], { type: "application/pdf" }),
+      const blob = new Blob([built.bytes], {
+          type:
+            format === "pdf"
+              ? "application/pdf"
+              : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        }),
         url = URL.createObjectURL(blob);
       if (mounted.current) {
         setResult({
           url,
-          name: filename(article.title),
+          name:
+            format === "docx"
+              ? filename(article.title).replace(/\.pdf$/, ".docx")
+              : filename(article.title),
           pages: built.pages,
           bytes: blob.size,
           warnings: built.warnings,
@@ -216,16 +240,16 @@ export default function ArticlePdfClient() {
         });
         setDestination("result");
         setRevision((n) => n + 1);
-        setMessage("PDF ready. Download your file below.");
+        setMessage(`${label} ready. Download your file below.`);
       } else URL.revokeObjectURL(url);
     } catch (error) {
       if (mounted.current)
         setMessage(
           c.signal.aborted
-            ? "PDF creation cancelled. Your previous file has been kept."
+            ? `${label} creation cancelled. Your previous file has been kept.`
             : error instanceof Error
               ? error.message
-              : "PDF creation failed. Check the article and retry.",
+              : `${label} creation failed. Check the article and retry.`,
         );
     } finally {
       if (mounted.current) setBusy("");
@@ -656,7 +680,7 @@ export default function ArticlePdfClient() {
           )}
           <details className="mt-7 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
             <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-bold">
-              PDF layout options
+              {fileLabel} layout options
               <ChevronDown size={18} aria-hidden />
             </summary>
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -737,9 +761,9 @@ export default function ArticlePdfClient() {
             </div>
           </details>
           <p className="mt-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            The PDF preserves the reviewed wording in a reading layout. Links
-            become numbered references. Website styling, media, and complex
-            table layouts are simplified.
+            {format === "docx"
+              ? "The DOCX contains editable text, heading styles, lists, and table cells. Links become numbered references with clickable destinations. Open the download in Word or another DOCX editor to check pagination; fonts and layout can vary between editors."
+              : "The PDF preserves the reviewed wording in a reading layout. Links become numbered references. Website styling, media, and complex table layouts are simplified."}
           </p>
           <button
             type="button"
@@ -748,7 +772,7 @@ export default function ArticlePdfClient() {
             onClick={create}
           >
             <FileText size={17} aria-hidden />
-            Create downloadable PDF
+            Create downloadable {fileLabel}
           </button>
         </section>
       )}
@@ -766,16 +790,18 @@ export default function ArticlePdfClient() {
             id="article-result-title"
             className="mt-2 text-2xl font-extrabold"
           >
-            Your PDF is ready
+            Your {label} is ready
           </h2>
           <p className="mt-3 break-words text-sm leading-7 text-slate-600 dark:text-slate-300">
-            {result.pages} {result.pages === 1 ? "page" : "pages"} ·{" "}
+            {format === "pdf"
+              ? `${result.pages} ${result.pages === 1 ? "page" : "pages"} · `
+              : "Editable DOCX · "}
             {(result.bytes / 1024).toFixed(0)} KB · {result.name}
           </p>
           {result.snapshot !== JSON.stringify({ article, settings }) && (
             <p className="mt-4 text-sm font-bold text-amber-800 dark:text-amber-200">
-              The article or layout changed. Create the PDF again to include
-              your latest edits.
+              The article or layout changed. Create the {fileLabel} again to
+              include your latest edits.
             </p>
           )}
           {result.warnings.length > 0 && (
@@ -788,16 +814,18 @@ export default function ArticlePdfClient() {
           <div className="mt-5 flex flex-wrap gap-3">
             <a href={result.url} download={result.name} className={primary}>
               <Download size={17} aria-hidden />
-              Download PDF
+              Download {fileLabel}
             </a>
-            <a
-              href={result.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={button}
-            >
-              Open PDF preview
-            </a>
+            {format === "pdf" && (
+              <a
+                href={result.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={button}
+              >
+                Open PDF preview
+              </a>
+            )}
           </div>
           <p className="mt-4 text-xs leading-6 text-slate-600 dark:text-slate-300">
             Download before leaving. Edits and generated files are not saved
@@ -807,7 +835,9 @@ export default function ArticlePdfClient() {
       )}
       <ToolRunOverlay
         active={!!busy}
-        title={busy === "pdf" ? "Creating your PDF" : "Importing your article"}
+        title={
+          busy === "pdf" ? `Creating your ${label}` : "Importing your article"
+        }
         description={
           busy === "pdf"
             ? "Laying out reviewed text and selected images."
@@ -815,7 +845,7 @@ export default function ArticlePdfClient() {
         }
         onCancel={() => abort.current?.abort()}
         cancelLabel="Cancel"
-        hint="The completed preview or PDF will open below."
+        hint={`The completed preview or ${label} will open below.`}
       />
     </div>
   );
