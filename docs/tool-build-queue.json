@@ -14,10 +14,10 @@
     "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT"
   },
   "runner": {
-    "activeItemId": null,
-    "runId": null,
-    "leaseExpiresAt": null,
-    "lastHeartbeatAt": "2026-10-27T06:34:05.095Z"
+    "activeItemId": "article-to-word",
+    "runId": "article-word-20261027T065905645Z-c82f",
+    "leaseExpiresAt": "2026-10-27T08:29:05.645Z",
+    "lastHeartbeatAt": "2026-10-27T06:59:05.645Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -145,15 +145,16 @@
       "id": "article-to-word",
       "name": "Article to Word",
       "series": "content-conversion",
-      "status": "pending",
+      "status": "in-progress",
       "requiredOutputs": [
         "DOCX"
       ],
-      "startedAt": null,
+      "startedAt": "2026-10-27T06:59:05.645Z",
       "completedAt": null,
       "implementationCommit": null,
       "validation": null,
-      "blocker": null
+      "blocker": null,
+      "checkpoint": "Claimed fresh branch; researching editable DOCX and shared conversion architecture."
     },
     {
       "order": 6,
