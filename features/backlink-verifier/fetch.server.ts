@@ -88,6 +88,7 @@ export async function fetchPublic(
     text?: boolean;
     bytes?: number;
     timeout?: number;
+    beforeRequest?: (url: URL) => Promise<void>;
   } = {},
 ): Promise<Fetched> {
   let url = publicUrl(raw);
@@ -103,6 +104,7 @@ export async function fetchPublic(
     if (visited.has(url.href))
       throw new Error("Redirect loop detected. Try the final source URL.");
     visited.add(url.href);
+    await options.beforeRequest?.(new URL(url));
     const result = await new Promise<{
       status: number;
       headers: Record<string, string>;

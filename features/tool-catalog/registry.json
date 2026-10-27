@@ -1228,7 +1228,8 @@
         "robots-txt-generator",
         "internal-link-opportunity-finder",
         "competitor-backlink-gap-analyzer",
-        "unlinked-brand-mention-checker"
+        "unlinked-brand-mention-checker",
+        "broken-link-opportunity-finder"
       ],
       "topics": [
         "off-page"
@@ -1295,6 +1296,39 @@
         "backlink-verification-tool",
         "competitor-backlink-gap-analyzer",
         "external-link-source-review"
+      ],
+      "topics": [
+        "off-page"
+      ]
+    },
+    {
+      "id": "broken-link-opportunity-finder",
+      "slug": "broken-link-opportunity-finder",
+      "name": "Broken Link Opportunity Finder",
+      "description": "Inspect external links on supplied publisher pages. Review 404 and 410 candidates, anchor context, redirects, and downloadable CSV evidence.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "broken link building",
+        "broken external links",
+        "resource pages",
+        "404 checker",
+        "off-page SEO"
+      ],
+      "kind": "Find link candidates",
+      "status": "live",
+      "addedAt": "2026-10-27",
+      "featuredOrder": null,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "backlink-verification-tool",
+        "unlinked-brand-mention-checker"
       ],
       "topics": [
         "off-page"

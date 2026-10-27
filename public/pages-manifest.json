@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-26T18:46:46.175Z",
+  "generated": "2026-10-27T01:00:00.706Z",
   "static_pages": [
     {
       "url": "/",
@@ -321,6 +321,12 @@
       "type": "static"
     },
     {
+      "url": "/tools/broken-link-opportunity-finder",
+      "title": "Broken Link Opportunity Finder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -333,5 +339,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 55
+  "total_pages": 56
 }
