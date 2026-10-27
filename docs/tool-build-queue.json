@@ -18,8 +18,8 @@
   "runner": {
     "activeItemId": "article-read-aloud",
     "runId": "read-aloud-2026-10-27T10:46:01.164Z",
-    "leaseExpiresAt": "2026-10-27T12:16:01.164Z",
-    "lastHeartbeatAt": "2026-10-27T10:46:01.164Z"
+    "leaseExpiresAt": "2026-10-27T13:09:08.429Z",
+    "lastHeartbeatAt": "2026-10-27T11:39:08.429Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -216,7 +216,7 @@
       "implementationCommit": null,
       "validation": null,
       "blocker": null,
-      "checkpoint": "Fresh branch inspected; researching a free real audio generation engine, playback and downloadable WAV."
+      "checkpoint": "Resumed source work after interruption. Real engine WAV synthesis proven; final UI, browser and production checks pending."
     },
     {
       "order": 8,
