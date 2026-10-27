@@ -3,7 +3,7 @@
   "authorizedAt": "2026-10-27",
   "repository": "sufi0900/doitwithai.tools",
   "branch": "feat/homepage-tools-learning",
-  "state": "blocked",
+  "state": "in-progress",
   "scheduling": {
     "timezone": "Asia/Karachi",
     "initialDelayHours": 3,
@@ -16,10 +16,10 @@
     "pauseReason": "Execution policy blocked registry.npmjs.org during frozen installation. Offline fallback fails: ERR_PNPM_NO_OFFLINE_TARBALL, @emotion/react 11.14.0 missing. Needs permitted dependency installation or a complete frozen package cache. No bypass attempted."
   },
   "runner": {
-    "activeItemId": null,
-    "runId": null,
-    "leaseExpiresAt": null,
-    "lastHeartbeatAt": "2026-10-27T10:29:38.311Z"
+    "activeItemId": "article-read-aloud",
+    "runId": "read-aloud-2026-10-27T10:46:01.164Z",
+    "leaseExpiresAt": "2026-10-27T12:16:01.164Z",
+    "lastHeartbeatAt": "2026-10-27T10:46:01.164Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -198,7 +198,7 @@
         "evidence": "docs/blog-to-video-script.md"
       },
       "blocker": "Execution policy blocked registry.npmjs.org during frozen installation. Offline fallback fails: ERR_PNPM_NO_OFFLINE_TARBALL, @emotion/react 11.14.0 missing. Needs permitted dependency installation or a complete frozen package cache. No bypass attempted.",
-      "checkpoint": "Latest implementation, tests and browser harness saved in recovery commit. Not live or complete. Automation paused; resume this item first.",
+      "checkpoint": "Latest implementation, tests and browser harness saved in recovery commit. Not live or complete. Automation paused; resume this item first. User explicitly deferred its testing and authorized moving to Article Read Aloud.",
       "workCommit": "3a0e8f5a291dbeebae6f163322763341ac669b2e"
     },
     {
@@ -206,16 +206,17 @@
       "id": "article-read-aloud",
       "name": "Article Read Aloud",
       "series": "content-conversion",
-      "status": "pending",
+      "status": "in-progress",
       "requiredOutputs": [
         "Playable narration",
         "Valid downloadable audio"
       ],
-      "startedAt": null,
+      "startedAt": "2026-10-27T10:46:01.164Z",
       "completedAt": null,
       "implementationCommit": null,
       "validation": null,
-      "blocker": null
+      "blocker": null,
+      "checkpoint": "Fresh branch inspected; researching a free real audio generation engine, playback and downloadable WAV."
     },
     {
       "order": 8,
@@ -326,5 +327,11 @@
       "validation": null,
       "blocker": null
     }
-  ]
+  ],
+  "selectionOverride": {
+    "requestedAt": "2026-10-27T10:46:01.164Z",
+    "reason": "Sufian explicitly deferred video-script testing and requested the next tool.",
+    "itemId": "article-read-aloud",
+    "deferredItemId": "blog-to-video-script"
+  }
 }
