@@ -14,10 +14,10 @@
     "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT"
   },
   "runner": {
-    "activeItemId": "outreach-email-builder",
-    "runId": "outreach-20261027-b8ljbb9a9pi",
-    "leaseExpiresAt": "2026-10-27T03:39:55Z",
-    "lastHeartbeatAt": "2026-10-27T02:09:55Z"
+    "activeItemId": null,
+    "runId": null,
+    "leaseExpiresAt": null,
+    "lastHeartbeatAt": "2026-10-27T02:24:20Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -54,17 +54,31 @@
       "id": "outreach-email-builder",
       "name": "Personalized Outreach Email Builder",
       "series": "off-page",
-      "status": "in-progress",
+      "status": "completed",
       "requiredOutputs": [
         "TXT draft",
         "DOCX draft"
       ],
       "startedAt": "2026-10-27T01:55:59.000Z",
-      "completedAt": null,
-      "implementationCommit": null,
-      "validation": null,
+      "completedAt": "2026-10-27T02:24:20Z",
+      "implementationCommit": "2514c274e572b5c19d61206f616af1b3efcc96cb",
+      "validation": {
+        "featureTests": 516,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing warnings",
+        "productionBuild": "passed",
+        "browser": "All three purposes, conditional errors, editing without focus jumps, loading, cancellation, result focus, mobile light/dark, clipboard handling, and catalog discovery passed",
+        "downloads": "Actual TXT and native DOCX files preserved edited subject/body. ZIP/XML/python-docx validation passed.",
+        "documentRender": "Two Letter pages rendered and visually inspected; follow-up begins on a new page. Final browser DOCX matched reviewed file byte-for-byte.",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "draftApiRequests": 0,
+        "evidence": "docs/outreach-email-builder.md",
+        "limitations": "Deterministic guided drafting; no AI generation, source verification, recipient lookup, sending, or response prediction."
+      },
       "blocker": null,
-      "checkpoint": "Implementation present locally; 516 feature and 11 foundation tests passed; production build passed; browser and rendered DOCX validation in progress."
+      "checkpoint": "Published; guided drafting, actual TXT/DOCX downloads, browser flow, and rendered document review passed."
     },
     {
       "order": 3,
