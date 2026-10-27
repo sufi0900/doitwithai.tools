@@ -1328,6 +1328,41 @@
       ],
       "relatedToolSlugs": [
         "backlink-verification-tool",
+        "unlinked-brand-mention-checker",
+        "outreach-email-builder"
+      ],
+      "topics": [
+        "off-page"
+      ]
+    },
+    {
+      "id": "outreach-email-builder",
+      "slug": "outreach-email-builder",
+      "name": "Personalized Outreach Email Builder",
+      "description": "Build editable outreach drafts from page-specific facts and reader benefits. Choose a purpose, refine subjects, and download TXT or DOCX.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "outreach email",
+        "link building outreach",
+        "personalized email",
+        "email template",
+        "off-page SEO"
+      ],
+      "kind": "Draft outreach",
+      "status": "live",
+      "addedAt": "2026-10-27",
+      "featuredOrder": null,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "broken-link-opportunity-finder",
         "unlinked-brand-mention-checker"
       ],
       "topics": [

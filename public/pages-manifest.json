@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-27T01:00:00.706Z",
+  "generated": "2026-10-27T02:07:29.029Z",
   "static_pages": [
     {
       "url": "/",
@@ -327,6 +327,12 @@
       "type": "static"
     },
     {
+      "url": "/tools/outreach-email-builder",
+      "title": "Personalized Outreach Email Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -339,5 +345,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 56
+  "total_pages": 57
 }

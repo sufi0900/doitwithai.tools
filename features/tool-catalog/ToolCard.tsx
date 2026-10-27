@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ToolActions } from "../tools-workspace/ToolActions";
 import {
   ClipboardList,
+  Mail,
   Bot,
   FileCode2,
   ListChecks,
@@ -31,6 +32,7 @@ import {
 import { getTopicMeta, topicStyle } from "./discovery";
 
 const icons: Record<string, typeof Sparkles> = {
+  "outreach-email-builder": Mail,
   "backlink-verification-tool": Link2,
   "broken-link-opportunity-finder": Link2,
   "unlinked-brand-mention-checker": TextSearch,
