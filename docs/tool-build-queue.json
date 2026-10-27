@@ -16,8 +16,8 @@
   "runner": {
     "activeItemId": "article-to-pdf",
     "runId": "article-pdf-resume-20261027T055125Z-f7d9",
-    "leaseExpiresAt": "2026-10-27T07:46:06.000Z",
-    "lastHeartbeatAt": "2026-10-27T06:16:06.000Z"
+    "leaseExpiresAt": "2026-10-27T07:58:39.071Z",
+    "lastHeartbeatAt": "2026-10-27T06:28:39.071Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -126,7 +126,7 @@
       "implementationCommit": null,
       "validation": null,
       "blocker": null,
-      "checkpoint": "Fresh dependency install and minimal lockfile validated. 542 feature and 11 foundation tests pass; type checking, lint, and rendered English/Urdu exports pass. Final production build and browser download checks underway. Live import attempt hit local DNS EAI_AGAIN.",
+      "checkpoint": "Final production build and browser validation after rendered PDF and multilingual UI review.",
       "workCommit": "d3471f47af4f7444a95b7708bca621ab27ff5e53"
     },
     {
