@@ -14,10 +14,10 @@
     "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT"
   },
   "runner": {
-    "activeItemId": "article-to-word",
-    "runId": "article-word-20261027T065905645Z-c82f",
-    "leaseExpiresAt": "2026-10-27T08:40:03.747Z",
-    "lastHeartbeatAt": "2026-10-27T07:10:03.747Z"
+    "activeItemId": null,
+    "runId": null,
+    "leaseExpiresAt": null,
+    "lastHeartbeatAt": "2026-10-27T07:15:58.936Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -145,16 +145,29 @@
       "id": "article-to-word",
       "name": "Article to Word",
       "series": "content-conversion",
-      "status": "in-progress",
+      "status": "completed",
       "requiredOutputs": [
         "DOCX"
       ],
       "startedAt": "2026-10-27T06:59:05.645Z",
-      "completedAt": null,
-      "implementationCommit": null,
-      "validation": null,
+      "completedAt": "2026-10-27T07:15:58.936Z",
+      "implementationCommit": "bc1732900c7027b447a21bd45528b1726c3593ac",
+      "validation": {
+        "featureTests": 555,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing unrelated warnings",
+        "productionBuild": "passed; 108 static pages",
+        "browser": "Production Word flow: real pasted HTML/text, source/text/title errors, keyboard, editing, loading, cancellation, stale-file notice, result focus, desktop/mobile light/dark, catalog/search/category passed. Existing PDF smoke also passed.",
+        "downloads": "Three actual browser DOCX downloads passed ZIP CRC, XML/relationships and python-docx parsing. Edited wording, heading styles, native tables, Letter dimensions, links, real embedded PNG and omission warning verified.",
+        "documentRender": "Actual browser files rendered in LibreOffice; all three pages visually inspected. Additional three-page A4 table and Urdu list/table exports reviewed. Direction-relative RTL alignment corrected and revalidated.",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "evidence": "docs/article-to-word.md",
+        "limitations": "Live publisher request failed locally with EAI_AGAIN. URL/image-host success and quota cases use controlled responses; local API validation/fail-closed behavior and actual local conversions/downloads were real. Microsoft Word UI unavailable; LibreOffice verified DOCX. Destination fonts/layout can vary."
+      },
       "blocker": null,
-      "checkpoint": "Native DOCX and shared UI implemented. 566 tests and first production/browser run passed; correcting RTL alignment found during rendering and rerunning final checks."
+      "checkpoint": "Implementation published; actual DOCX downloads parsed and rendered, Word and PDF browser flows and production build passed."
     },
     {
       "order": 6,

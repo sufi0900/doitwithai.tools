@@ -17,14 +17,14 @@
     "status": "in-progress",
     "category": "content-conversion",
     "topic": "conversion",
-    "firstPlannedTool": "article-to-word",
+    "firstPlannedTool": "blog-to-video-script",
     "buildOneAtATime": true,
     "liveConverters": [
-      "article-to-pdf"
+      "article-to-pdf",
+      "article-to-word"
     ],
     "research": "docs/content-conversion-research.md",
     "plannedTools": [
-      "article-to-word",
       "blog-to-video-script",
       "article-read-aloud",
       "blog-to-social-posts",
