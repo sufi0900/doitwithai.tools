@@ -15,9 +15,9 @@
   },
   "runner": {
     "activeItemId": "blog-to-video-script",
-    "runId": "video-script-20261027T075714926Z-91ec",
-    "leaseExpiresAt": "2026-10-27T09:27:14.926Z",
-    "lastHeartbeatAt": "2026-10-27T07:57:14.926Z"
+    "runId": "video-resume-2026-10-27T10:16:55.986Z",
+    "leaseExpiresAt": "2026-10-27T11:46:55.986Z",
+    "lastHeartbeatAt": "2026-10-27T10:16:55.986Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -184,7 +184,7 @@
       "implementationCommit": null,
       "validation": null,
       "blocker": null,
-      "checkpoint": "Fresh branch inspected; researching source-grounded video-script workflows and implementation."
+      "checkpoint": "Resuming expired lease after interrupted workspace; rebuild and verify source-based script editor."
     },
     {
       "order": 7,
