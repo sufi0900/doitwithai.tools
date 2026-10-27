@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-27T02:07:29.029Z",
+  "generated": "2026-10-27T03:06:44.335Z",
   "static_pages": [
     {
       "url": "/",
@@ -333,6 +333,12 @@
       "type": "static"
     },
     {
+      "url": "/tools/digital-pr-linkable-asset-planner",
+      "title": "Digital PR and Linkable Asset Planner",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -345,5 +351,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 57
+  "total_pages": 58
 }

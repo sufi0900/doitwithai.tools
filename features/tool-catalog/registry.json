@@ -1368,6 +1368,35 @@
       "topics": [
         "off-page"
       ]
+    },
+    {
+      "id": "digital-pr-linkable-asset-planner",
+      "slug": "digital-pr-linkable-asset-planner",
+      "name": "Digital PR and Linkable Asset Planner",
+      "description": "Plan a linkable asset with an editable campaign brief, evidence workflow, and action checklist. Download DOCX, Markdown, or CSV.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "digital PR",
+        "linkable assets",
+        "campaign planner",
+        "content strategy",
+        "off-page SEO"
+      ],
+      "kind": "Plan a campaign",
+      "status": "live",
+      "addedAt": "2026-10-27",
+      "featuredOrder": null,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "outreach-email-builder",
+        "backlink-verification-tool"
+      ],
+      "topics": [
+        "off-page"
+      ]
     }
   ],
   "topics": [
