@@ -16,8 +16,8 @@
   "runner": {
     "activeItemId": "article-to-pdf",
     "runId": "article-pdf-2026-10-27T04:01:09.000Z-uv1x0h",
-    "leaseExpiresAt": "2026-10-27T05:31:09.000Z",
-    "lastHeartbeatAt": "2026-10-27T04:01:09.000Z"
+    "leaseExpiresAt": "2026-10-27T05:45:16.000Z",
+    "lastHeartbeatAt": "2026-10-27T04:15:16.000Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -126,7 +126,7 @@
       "implementationCommit": null,
       "validation": null,
       "blocker": null,
-      "checkpoint": "Claimed; researching clean article PDF conversion and inspecting safe extraction."
+      "checkpoint": "Extraction, review UI, PDF engine, routes, and SEO page implemented; dependency setup and feature/export validation underway."
     },
     {
       "order": 5,
