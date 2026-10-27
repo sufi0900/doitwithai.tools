@@ -15,9 +15,9 @@
   },
   "runner": {
     "activeItemId": "article-to-pdf",
-    "runId": "article-pdf-2026-10-27T04:01:09.000Z-uv1x0h",
-    "leaseExpiresAt": "2026-10-27T05:45:16.000Z",
-    "lastHeartbeatAt": "2026-10-27T04:15:16.000Z"
+    "runId": "article-pdf-resume-20261027T055125Z-f7d9",
+    "leaseExpiresAt": "2026-10-27T07:21:25.000Z",
+    "lastHeartbeatAt": "2026-10-27T05:51:25.000Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -126,7 +126,7 @@
       "implementationCommit": null,
       "validation": null,
       "blocker": null,
-      "checkpoint": "Extraction, review UI, PDF engine, routes, and SEO page implemented; dependency setup and feature/export validation underway."
+      "checkpoint": "Resuming stale Article to PDF after workspace reset; rebuilding and revalidating the current branch. Previous incomplete work is not marked complete."
     },
     {
       "order": 5,
