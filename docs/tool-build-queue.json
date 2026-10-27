@@ -16,10 +16,10 @@
     "pauseReason": "Execution policy blocked registry.npmjs.org during frozen installation. Offline fallback fails: ERR_PNPM_NO_OFFLINE_TARBALL, @emotion/react 11.14.0 missing. Needs permitted dependency installation or a complete frozen package cache. No bypass attempted."
   },
   "runner": {
-    "activeItemId": null,
-    "runId": null,
-    "leaseExpiresAt": null,
-    "lastHeartbeatAt": "2026-10-27T12:18:33.000Z"
+    "activeItemId": "article-read-aloud",
+    "runId": "manual-read-aloud-2026-10-27T12-22-54-519Z",
+    "leaseExpiresAt": "2026-10-27T13:52:54.519Z",
+    "lastHeartbeatAt": "2026-10-27T12:22:54.519Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -216,7 +216,7 @@
       "implementationCommit": null,
       "validation": null,
       "blocker": null,
-      "checkpoint": "User requested new-chat handoff. Reader, WAV engine adapter and shared-client integration saved in recovery commit. See docs/article-read-aloud-handoff.md; final validation and page/catalog integration pending.",
+      "checkpoint": "Manual continuation: recovering source, pinned engine and full validation.",
       "workCommit": "8037adc92c27f19cdc83337ada46e596d9fbc933"
     },
     {
