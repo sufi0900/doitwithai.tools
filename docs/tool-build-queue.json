@@ -1,1 +1,338 @@
-{"version": 1, "authorizedAt": "2026-10-27", "repository": "sufi0900/doitwithai.tools", "branch": "feat/homepage-tools-learning", "state": "in-progress", "scheduling": {"timezone": "Asia/Karachi", "initialDelayHours": 3, "intervalHours": 1, "policy": "One tool at a time; resume unfinished work; an active build delays the next item.", "automationId": "6adfb0bb03bc819180ff4e6cd3a0343a", "firstRunAt": "2026-10-27T03:57:47+05:00", "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT", "pausedAt": "2026-10-27T10:29:38.311Z", "pauseReason": "Execution policy blocked registry.npmjs.org during frozen installation. Offline fallback fails: ERR_PNPM_NO_OFFLINE_TARBALL, @emotion/react 11.14.0 missing. Needs permitted dependency installation or a complete frozen package cache. No bypass attempted."}, "runner": {"activeItemId": "article-read-aloud", "runId": "manual-read-aloud-2026-10-27T12-22-54-519Z", "leaseExpiresAt": "2026-10-27T14:30:43.157723+00:00", "lastHeartbeatAt": "2026-10-27T13:00:43.157723+00:00"}, "qualityRequirements": "docs/scheduled-tool-builds.md", "items": [{"order": 1, "id": "broken-link-opportunity-finder", "name": "Broken Link Opportunity Finder", "series": "off-page", "status": "completed", "requiredOutputs": ["CSV evidence report"], "startedAt": "2026-10-26T22:56:15+00:00", "completedAt": "2026-10-27T01:06:12Z", "implementationCommit": "01fe889ce1392311477e4ecfc42428335627e2b9", "validation": {"featureTests": 505, "foundationTests": 11, "typeCheck": "passed", "lint": "passed with existing repository warnings", "productionBuild": "passed", "browser": "desktop, mobile light/dark, errors, loading, result focus, cancellation, filters, supplied HTML, catalog, and CSV downloads passed", "downloads": "Full evidence and candidate CSV saved and parsed with Python csv", "runtimeErrors": 0, "mobileOverflow": false, "evidence": "docs/broken-link-opportunity-finder.md", "limitations": "Browser successful scans and service response cases use controlled fixtures. Actual local API validation and fail-closed infrastructure behavior were verified. Live publisher outcomes remain unverified."}, "blocker": null, "checkpoint": "Implementation published; functional, CSV, production build, and browser checks passed."}, {"order": 2, "id": "outreach-email-builder", "name": "Personalized Outreach Email Builder", "series": "off-page", "status": "completed", "requiredOutputs": ["TXT draft", "DOCX draft"], "startedAt": "2026-10-27T01:55:59.000Z", "completedAt": "2026-10-27T02:24:20Z", "implementationCommit": "2514c274e572b5c19d61206f616af1b3efcc96cb", "validation": {"featureTests": 516, "foundationTests": 11, "typeCheck": "passed", "lint": "passed with existing warnings", "productionBuild": "passed", "browser": "All three purposes, conditional errors, editing without focus jumps, loading, cancellation, result focus, mobile light/dark, clipboard handling, and catalog discovery passed", "downloads": "Actual TXT and native DOCX files preserved edited subject/body. ZIP/XML/python-docx validation passed.", "documentRender": "Two Letter pages rendered and visually inspected; follow-up begins on a new page. Final browser DOCX matched reviewed file byte-for-byte.", "runtimeErrors": 0, "mobileOverflow": false, "draftApiRequests": 0, "evidence": "docs/outreach-email-builder.md", "limitations": "Deterministic guided drafting; no AI generation, source verification, recipient lookup, sending, or response prediction."}, "blocker": null, "checkpoint": "Published; guided drafting, actual TXT/DOCX downloads, browser flow, and rendered document review passed."}, {"order": 3, "id": "digital-pr-linkable-asset-planner", "name": "Digital PR and Linkable Asset Planner", "series": "off-page", "status": "completed", "requiredOutputs": ["DOCX plan", "Markdown plan", "CSV action list"], "startedAt": "2026-10-27T03:02:05.000Z", "completedAt": "2026-10-27T03:15:47.000Z", "implementationCommit": "5867f00b2ce150aefb3e8355f46b62bd82618d15", "validation": {"featureTests": 528, "foundationTests": 11, "typeCheck": "passed", "lint": "passed with existing unrelated warnings", "productionBuild": "passed", "browser": "All four formats and evidence modes, errors, keyboard use, loading, cancellation, result focus, edits, download failures, catalog search, category discovery, desktop/mobile light/dark passed", "downloads": "Actual DOCX, Markdown, and CSV preserved edited text and task status. DOCX ZIP/XML/python-docx validation passed; Python csv parsed seven actions.", "documentRender": "Actual browser-downloaded DOCX rendered to three Letter pages; every page visually inspected.", "runtimeErrors": 0, "mobileOverflow": false, "plannerApiRequests": 0, "evidence": "docs/digital-pr-linkable-asset-planner.md", "limitations": "Deterministic guided planning. No AI generation, source verification, finished asset production, contact discovery, sending, or campaign outcome prediction."}, "blocker": null, "checkpoint": "Published; editable planning, real DOCX/Markdown/CSV exports, production browser flow, and rendered document review passed."}, {"order": 4, "id": "article-to-pdf", "name": "Article to PDF", "series": "content-conversion", "status": "completed", "requiredOutputs": ["PDF"], "startedAt": "2026-10-27T04:01:09.000Z", "completedAt": "2026-10-27T06:34:05.095Z", "implementationCommit": "39c61e627a7e6168021a24838f481ec429585caf", "validation": {"featureTests": 543, "foundationTests": 11, "typeCheck": "passed", "lint": "passed with existing unrelated repository warnings", "productionBuild": "passed; 107 static pages", "browser": "Production server: local HTML/text, editing, keyboard, inline errors, loading, cancellation, result focus, desktop/mobile light/dark, catalog/search and category passed", "downloads": "Three actual browser PDFs parsed with pypdf; all four pages rendered with Poppler and visually inspected. English/Urdu, Letter dimensions, edits, clickable links, selected PNG and omitted-image warning verified. Additional multipage A4/Letter and Urdu table exports reviewed.", "runtimeErrors": 0, "mobileOverflow": false, "evidence": "docs/article-to-pdf.md", "limitations": "Live publisher import failed locally with EAI_AGAIN. Successful URL/image-host responses and quota scenarios use controlled fixtures. Real local API validation and fail-closed quota errors passed. Pasted content and PDF processing/downloads were real."}, "blocker": null, "checkpoint": "Validated implementation published; actual PDF downloads parsed/rendered, production build and browser checks passed."}, {"order": 5, "id": "article-to-word", "name": "Article to Word", "series": "content-conversion", "status": "completed", "requiredOutputs": ["DOCX"], "startedAt": "2026-10-27T06:59:05.645Z", "completedAt": "2026-10-27T07:15:58.936Z", "implementationCommit": "bc1732900c7027b447a21bd45528b1726c3593ac", "validation": {"featureTests": 555, "foundationTests": 11, "typeCheck": "passed", "lint": "passed with existing unrelated warnings", "productionBuild": "passed; 108 static pages", "browser": "Production Word flow: real pasted HTML/text, source/text/title errors, keyboard, editing, loading, cancellation, stale-file notice, result focus, desktop/mobile light/dark, catalog/search/category passed. Existing PDF smoke also passed.", "downloads": "Three actual browser DOCX downloads passed ZIP CRC, XML/relationships and python-docx parsing. Edited wording, heading styles, native tables, Letter dimensions, links, real embedded PNG and omission warning verified.", "documentRender": "Actual browser files rendered in LibreOffice; all three pages visually inspected. Additional three-page A4 table and Urdu list/table exports reviewed. Direction-relative RTL alignment corrected and revalidated.", "runtimeErrors": 0, "mobileOverflow": false, "evidence": "docs/article-to-word.md", "limitations": "Live publisher request failed locally with EAI_AGAIN. URL/image-host success and quota cases use controlled responses; local API validation/fail-closed behavior and actual local conversions/downloads were real. Microsoft Word UI unavailable; LibreOffice verified DOCX. Destination fonts/layout can vary."}, "blocker": null, "checkpoint": "Implementation published; actual DOCX downloads parsed and rendered, Word and PDF browser flows and production build passed."}, {"order": 6, "id": "blog-to-video-script", "name": "Blog to Video Script", "series": "content-conversion", "status": "blocked", "requiredOutputs": ["TXT script", "DOCX script"], "startedAt": "2026-10-27T07:57:14.926Z", "completedAt": null, "implementationCommit": null, "validation": {"status": "not validated", "syntax": "Browser harness node --check passed", "pending": ["feature/foundation tests", "type check", "repository lint", "production build", "desktop/mobile keyboard/loading/error/dark browser flows", "actual TXT/DOCX downloads and DOCX rendering"], "evidence": "docs/blog-to-video-script.md"}, "blocker": "Execution policy blocked registry.npmjs.org during frozen installation. Offline fallback fails: ERR_PNPM_NO_OFFLINE_TARBALL, @emotion/react 11.14.0 missing. Needs permitted dependency installation or a complete frozen package cache. No bypass attempted.", "checkpoint": "Latest implementation, tests and browser harness saved in recovery commit. Not live or complete. Automation paused; resume this item first. User explicitly deferred its testing and authorized moving to Article Read Aloud.", "workCommit": "3a0e8f5a291dbeebae6f163322763341ac669b2e"}, {"order": 7, "id": "article-read-aloud", "name": "Article Read Aloud", "series": "content-conversion", "status": "in-progress", "requiredOutputs": ["Playable narration", "Valid downloadable audio"], "startedAt": "2026-10-27T10:46:01.164Z", "completedAt": null, "implementationCommit": null, "validation": null, "blocker": null, "checkpoint": "Reader/page implemented. 565 feature tests and 11 foundation tests passed. Completing fresh production and browser checks; not yet released.", "workCommit": "8037adc92c27f19cdc83337ada46e596d9fbc933"}, {"order": 8, "id": "blog-to-social-posts", "name": "Blog to Social Posts", "series": "content-conversion", "status": "pending", "requiredOutputs": ["TXT", "CSV"], "startedAt": null, "completedAt": null, "implementationCommit": null, "validation": null, "blocker": null}, {"order": 9, "id": "article-to-markdown", "name": "Article to Markdown", "series": "content-conversion", "status": "pending", "requiredOutputs": ["Markdown"], "startedAt": null, "completedAt": null, "implementationCommit": null, "validation": null, "blocker": null}, {"order": 10, "id": "article-to-epub", "name": "Article to EPUB", "series": "content-conversion", "status": "pending", "requiredOutputs": ["EPUB"], "startedAt": null, "completedAt": null, "implementationCommit": null, "validation": null, "blocker": null}, {"order": 11, "id": "blog-to-newsletter", "name": "Blog to Newsletter", "series": "content-conversion", "status": "pending", "requiredOutputs": ["TXT draft", "HTML draft"], "startedAt": null, "completedAt": null, "implementationCommit": null, "validation": null, "blocker": null}, {"order": 12, "id": "blog-to-linkedin-carousel", "name": "Blog to LinkedIn Carousel", "series": "content-conversion", "status": "pending", "requiredOutputs": ["Designed PDF", "Slide PNG images"], "startedAt": null, "completedAt": null, "implementationCommit": null, "validation": null, "blocker": null}, {"order": 13, "id": "article-to-mp3", "name": "Article to MP3", "series": "content-conversion", "status": "pending", "requiredOutputs": ["Playable MP3 download"], "startedAt": null, "completedAt": null, "implementationCommit": null, "validation": null, "blocker": null}, {"order": 14, "id": "article-to-podcast-script", "name": "Article to Podcast Script", "series": "content-conversion", "status": "pending", "requiredOutputs": ["TXT script", "DOCX script"], "startedAt": null, "completedAt": null, "implementationCommit": null, "validation": null, "blocker": null}], "selectionOverride": {"requestedAt": "2026-10-27T10:46:01.164Z", "reason": "Sufian explicitly deferred video-script testing and requested the next tool.", "itemId": "article-read-aloud", "deferredItemId": "blog-to-video-script"}}
+{
+  "version": 1,
+  "authorizedAt": "2026-10-27",
+  "repository": "sufi0900/doitwithai.tools",
+  "branch": "feat/homepage-tools-learning",
+  "state": "in-progress",
+  "scheduling": {
+    "timezone": "Asia/Karachi",
+    "initialDelayHours": 3,
+    "intervalHours": 1,
+    "policy": "One tool at a time; resume unfinished work; an active build delays the next item.",
+    "automationId": "6adfb0bb03bc819180ff4e6cd3a0343a",
+    "firstRunAt": "2026-10-27T03:57:47+05:00",
+    "schedule": "BEGIN:VEVENT\nDTSTART:20261026T225747Z\nRRULE:FREQ=HOURLY;INTERVAL=1\nEND:VEVENT",
+    "pausedAt": "2026-10-27T10:29:38.311Z",
+    "pauseReason": "Execution policy blocked registry.npmjs.org during frozen installation. Offline fallback fails: ERR_PNPM_NO_OFFLINE_TARBALL, @emotion/react 11.14.0 missing. Needs permitted dependency installation or a complete frozen package cache. No bypass attempted."
+  },
+  "runner": {
+    "activeItemId": "article-read-aloud",
+    "runId": "manual-read-aloud-2026-10-27T12-22-54-519Z",
+    "leaseExpiresAt": "2026-10-27T16:33:08.610372+00:00",
+    "lastHeartbeatAt": "2026-10-27T15:03:08.610372+00:00"
+  },
+  "qualityRequirements": "docs/scheduled-tool-builds.md",
+  "items": [
+    {
+      "order": 1,
+      "id": "broken-link-opportunity-finder",
+      "name": "Broken Link Opportunity Finder",
+      "series": "off-page",
+      "status": "completed",
+      "requiredOutputs": [
+        "CSV evidence report"
+      ],
+      "startedAt": "2026-10-26T22:56:15+00:00",
+      "completedAt": "2026-10-27T01:06:12Z",
+      "implementationCommit": "01fe889ce1392311477e4ecfc42428335627e2b9",
+      "validation": {
+        "featureTests": 505,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing repository warnings",
+        "productionBuild": "passed",
+        "browser": "desktop, mobile light/dark, errors, loading, result focus, cancellation, filters, supplied HTML, catalog, and CSV downloads passed",
+        "downloads": "Full evidence and candidate CSV saved and parsed with Python csv",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "evidence": "docs/broken-link-opportunity-finder.md",
+        "limitations": "Browser successful scans and service response cases use controlled fixtures. Actual local API validation and fail-closed infrastructure behavior were verified. Live publisher outcomes remain unverified."
+      },
+      "blocker": null,
+      "checkpoint": "Implementation published; functional, CSV, production build, and browser checks passed."
+    },
+    {
+      "order": 2,
+      "id": "outreach-email-builder",
+      "name": "Personalized Outreach Email Builder",
+      "series": "off-page",
+      "status": "completed",
+      "requiredOutputs": [
+        "TXT draft",
+        "DOCX draft"
+      ],
+      "startedAt": "2026-10-27T01:55:59.000Z",
+      "completedAt": "2026-10-27T02:24:20Z",
+      "implementationCommit": "2514c274e572b5c19d61206f616af1b3efcc96cb",
+      "validation": {
+        "featureTests": 516,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing warnings",
+        "productionBuild": "passed",
+        "browser": "All three purposes, conditional errors, editing without focus jumps, loading, cancellation, result focus, mobile light/dark, clipboard handling, and catalog discovery passed",
+        "downloads": "Actual TXT and native DOCX files preserved edited subject/body. ZIP/XML/python-docx validation passed.",
+        "documentRender": "Two Letter pages rendered and visually inspected; follow-up begins on a new page. Final browser DOCX matched reviewed file byte-for-byte.",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "draftApiRequests": 0,
+        "evidence": "docs/outreach-email-builder.md",
+        "limitations": "Deterministic guided drafting; no AI generation, source verification, recipient lookup, sending, or response prediction."
+      },
+      "blocker": null,
+      "checkpoint": "Published; guided drafting, actual TXT/DOCX downloads, browser flow, and rendered document review passed."
+    },
+    {
+      "order": 3,
+      "id": "digital-pr-linkable-asset-planner",
+      "name": "Digital PR and Linkable Asset Planner",
+      "series": "off-page",
+      "status": "completed",
+      "requiredOutputs": [
+        "DOCX plan",
+        "Markdown plan",
+        "CSV action list"
+      ],
+      "startedAt": "2026-10-27T03:02:05.000Z",
+      "completedAt": "2026-10-27T03:15:47.000Z",
+      "implementationCommit": "5867f00b2ce150aefb3e8355f46b62bd82618d15",
+      "validation": {
+        "featureTests": 528,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing unrelated warnings",
+        "productionBuild": "passed",
+        "browser": "All four formats and evidence modes, errors, keyboard use, loading, cancellation, result focus, edits, download failures, catalog search, category discovery, desktop/mobile light/dark passed",
+        "downloads": "Actual DOCX, Markdown, and CSV preserved edited text and task status. DOCX ZIP/XML/python-docx validation passed; Python csv parsed seven actions.",
+        "documentRender": "Actual browser-downloaded DOCX rendered to three Letter pages; every page visually inspected.",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "plannerApiRequests": 0,
+        "evidence": "docs/digital-pr-linkable-asset-planner.md",
+        "limitations": "Deterministic guided planning. No AI generation, source verification, finished asset production, contact discovery, sending, or campaign outcome prediction."
+      },
+      "blocker": null,
+      "checkpoint": "Published; editable planning, real DOCX/Markdown/CSV exports, production browser flow, and rendered document review passed."
+    },
+    {
+      "order": 4,
+      "id": "article-to-pdf",
+      "name": "Article to PDF",
+      "series": "content-conversion",
+      "status": "completed",
+      "requiredOutputs": [
+        "PDF"
+      ],
+      "startedAt": "2026-10-27T04:01:09.000Z",
+      "completedAt": "2026-10-27T06:34:05.095Z",
+      "implementationCommit": "39c61e627a7e6168021a24838f481ec429585caf",
+      "validation": {
+        "featureTests": 543,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing unrelated repository warnings",
+        "productionBuild": "passed; 107 static pages",
+        "browser": "Production server: local HTML/text, editing, keyboard, inline errors, loading, cancellation, result focus, desktop/mobile light/dark, catalog/search and category passed",
+        "downloads": "Three actual browser PDFs parsed with pypdf; all four pages rendered with Poppler and visually inspected. English/Urdu, Letter dimensions, edits, clickable links, selected PNG and omitted-image warning verified. Additional multipage A4/Letter and Urdu table exports reviewed.",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "evidence": "docs/article-to-pdf.md",
+        "limitations": "Live publisher import failed locally with EAI_AGAIN. Successful URL/image-host responses and quota scenarios use controlled fixtures. Real local API validation and fail-closed quota errors passed. Pasted content and PDF processing/downloads were real."
+      },
+      "blocker": null,
+      "checkpoint": "Validated implementation published; actual PDF downloads parsed/rendered, production build and browser checks passed."
+    },
+    {
+      "order": 5,
+      "id": "article-to-word",
+      "name": "Article to Word",
+      "series": "content-conversion",
+      "status": "completed",
+      "requiredOutputs": [
+        "DOCX"
+      ],
+      "startedAt": "2026-10-27T06:59:05.645Z",
+      "completedAt": "2026-10-27T07:15:58.936Z",
+      "implementationCommit": "bc1732900c7027b447a21bd45528b1726c3593ac",
+      "validation": {
+        "featureTests": 555,
+        "foundationTests": 11,
+        "typeCheck": "passed",
+        "lint": "passed with existing unrelated warnings",
+        "productionBuild": "passed; 108 static pages",
+        "browser": "Production Word flow: real pasted HTML/text, source/text/title errors, keyboard, editing, loading, cancellation, stale-file notice, result focus, desktop/mobile light/dark, catalog/search/category passed. Existing PDF smoke also passed.",
+        "downloads": "Three actual browser DOCX downloads passed ZIP CRC, XML/relationships and python-docx parsing. Edited wording, heading styles, native tables, Letter dimensions, links, real embedded PNG and omission warning verified.",
+        "documentRender": "Actual browser files rendered in LibreOffice; all three pages visually inspected. Additional three-page A4 table and Urdu list/table exports reviewed. Direction-relative RTL alignment corrected and revalidated.",
+        "runtimeErrors": 0,
+        "mobileOverflow": false,
+        "evidence": "docs/article-to-word.md",
+        "limitations": "Live publisher request failed locally with EAI_AGAIN. URL/image-host success and quota cases use controlled responses; local API validation/fail-closed behavior and actual local conversions/downloads were real. Microsoft Word UI unavailable; LibreOffice verified DOCX. Destination fonts/layout can vary."
+      },
+      "blocker": null,
+      "checkpoint": "Implementation published; actual DOCX downloads parsed and rendered, Word and PDF browser flows and production build passed."
+    },
+    {
+      "order": 6,
+      "id": "blog-to-video-script",
+      "name": "Blog to Video Script",
+      "series": "content-conversion",
+      "status": "blocked",
+      "requiredOutputs": [
+        "TXT script",
+        "DOCX script"
+      ],
+      "startedAt": "2026-10-27T07:57:14.926Z",
+      "completedAt": null,
+      "implementationCommit": null,
+      "validation": {
+        "status": "not validated",
+        "syntax": "Browser harness node --check passed",
+        "pending": [
+          "feature/foundation tests",
+          "type check",
+          "repository lint",
+          "production build",
+          "desktop/mobile keyboard/loading/error/dark browser flows",
+          "actual TXT/DOCX downloads and DOCX rendering"
+        ],
+        "evidence": "docs/blog-to-video-script.md"
+      },
+      "blocker": "Execution policy blocked registry.npmjs.org during frozen installation. Offline fallback fails: ERR_PNPM_NO_OFFLINE_TARBALL, @emotion/react 11.14.0 missing. Needs permitted dependency installation or a complete frozen package cache. No bypass attempted.",
+      "checkpoint": "Latest implementation, tests and browser harness saved in recovery commit. Not live or complete. Automation paused; resume this item first. User explicitly deferred its testing and authorized moving to Article Read Aloud.",
+      "workCommit": "3a0e8f5a291dbeebae6f163322763341ac669b2e"
+    },
+    {
+      "order": 7,
+      "id": "article-read-aloud",
+      "name": "Article Read Aloud",
+      "series": "content-conversion",
+      "status": "in-progress",
+      "requiredOutputs": [
+        "Playable narration",
+        "Valid downloadable audio"
+      ],
+      "startedAt": "2026-10-27T10:46:01.164Z",
+      "completedAt": null,
+      "implementationCommit": null,
+      "validation": null,
+      "blocker": null,
+      "checkpoint": "Reader/page implemented. 565 feature tests and 11 foundation tests passed. Completing fresh production and browser checks; not yet released.",
+      "workCommit": "8037adc92c27f19cdc83337ada46e596d9fbc933"
+    },
+    {
+      "order": 8,
+      "id": "blog-to-social-posts",
+      "name": "Blog to Social Posts",
+      "series": "content-conversion",
+      "status": "pending",
+      "requiredOutputs": [
+        "TXT",
+        "CSV"
+      ],
+      "startedAt": null,
+      "completedAt": null,
+      "implementationCommit": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "order": 9,
+      "id": "article-to-markdown",
+      "name": "Article to Markdown",
+      "series": "content-conversion",
+      "status": "pending",
+      "requiredOutputs": [
+        "Markdown"
+      ],
+      "startedAt": null,
+      "completedAt": null,
+      "implementationCommit": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "order": 10,
+      "id": "article-to-epub",
+      "name": "Article to EPUB",
+      "series": "content-conversion",
+      "status": "pending",
+      "requiredOutputs": [
+        "EPUB"
+      ],
+      "startedAt": null,
+      "completedAt": null,
+      "implementationCommit": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "order": 11,
+      "id": "blog-to-newsletter",
+      "name": "Blog to Newsletter",
+      "series": "content-conversion",
+      "status": "pending",
+      "requiredOutputs": [
+        "TXT draft",
+        "HTML draft"
+      ],
+      "startedAt": null,
+      "completedAt": null,
+      "implementationCommit": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "order": 12,
+      "id": "blog-to-linkedin-carousel",
+      "name": "Blog to LinkedIn Carousel",
+      "series": "content-conversion",
+      "status": "pending",
+      "requiredOutputs": [
+        "Designed PDF",
+        "Slide PNG images"
+      ],
+      "startedAt": null,
+      "completedAt": null,
+      "implementationCommit": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "order": 13,
+      "id": "article-to-mp3",
+      "name": "Article to MP3",
+      "series": "content-conversion",
+      "status": "pending",
+      "requiredOutputs": [
+        "Playable MP3 download"
+      ],
+      "startedAt": null,
+      "completedAt": null,
+      "implementationCommit": null,
+      "validation": null,
+      "blocker": null
+    },
+    {
+      "order": 14,
+      "id": "article-to-podcast-script",
+      "name": "Article to Podcast Script",
+      "series": "content-conversion",
+      "status": "pending",
+      "requiredOutputs": [
+        "TXT script",
+        "DOCX script"
+      ],
+      "startedAt": null,
+      "completedAt": null,
+      "implementationCommit": null,
+      "validation": null,
+      "blocker": null
+    }
+  ],
+  "selectionOverride": {
+    "requestedAt": "2026-10-27T10:46:01.164Z",
+    "reason": "Sufian explicitly deferred video-script testing and requested the next tool.",
+    "itemId": "article-read-aloud",
+    "deferredItemId": "blog-to-video-script"
+  }
+}
