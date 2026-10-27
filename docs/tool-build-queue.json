@@ -16,8 +16,8 @@
   "runner": {
     "activeItemId": "article-to-pdf",
     "runId": "article-pdf-resume-20261027T055125Z-f7d9",
-    "leaseExpiresAt": "2026-10-27T07:21:25.000Z",
-    "lastHeartbeatAt": "2026-10-27T05:51:25.000Z"
+    "leaseExpiresAt": "2026-10-27T07:31:20.000Z",
+    "lastHeartbeatAt": "2026-10-27T06:01:20.000Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -126,7 +126,8 @@
       "implementationCommit": null,
       "validation": null,
       "blocker": null,
-      "checkpoint": "Resuming stale Article to PDF after workspace reset; rebuilding and revalidating the current branch. Previous incomplete work is not marked complete."
+      "checkpoint": "Source recovery snapshot saved as workCommit. It is unfinished and not published as a live tool. Fonts need downloading and dependency setup, build, browser, and export checks must pass before completion.",
+      "workCommit": "d3471f47af4f7444a95b7708bca621ab27ff5e53"
     },
     {
       "order": 5,
