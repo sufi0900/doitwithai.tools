@@ -17,9 +17,9 @@
   },
   "runner": {
     "activeItemId": "article-read-aloud",
-    "runId": "manual-read-aloud-2026-10-27T12-22-54-519Z",
-    "leaseExpiresAt": "2026-10-27T16:33:08.610372+00:00",
-    "lastHeartbeatAt": "2026-10-27T15:03:08.610372+00:00"
+    "runId": "claude-read-aloud-2026-10-28T12-14-11Z",
+    "leaseExpiresAt": "2026-10-28T13:44:11.574859+00:00",
+    "lastHeartbeatAt": "2026-10-28T12:14:11.574859+00:00"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -216,7 +216,7 @@
       "implementationCommit": null,
       "validation": null,
       "blocker": null,
-      "checkpoint": "Reader/page implemented. 565 feature tests and 11 foundation tests passed. Completing fresh production and browser checks; not yet released.",
+      "checkpoint": "Lease claimed by claude-read-aloud-2026-10-28T12-14-11Z. Restoring recovery source from workCommit and vendor engine assets; no checks have passed yet. Not live or complete.",
       "workCommit": "8037adc92c27f19cdc83337ada46e596d9fbc933"
     },
     {
