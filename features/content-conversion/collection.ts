@@ -30,13 +30,6 @@ export const conversionPlan = [
       "Adapt an article into spoken narration with scene and visual suggestions.",
   },
   {
-    slug: "article-read-aloud",
-    name: "Article read aloud",
-    format: "AUDIO",
-    purpose:
-      "Listen to article narration with playback controls and a supported audio download.",
-  },
-  {
     slug: "blog-to-social-posts",
     name: "Blog to social posts",
     format: "POSTS",
@@ -71,9 +64,10 @@ export const conversionPlan = [
   },
   {
     slug: "article-to-mp3",
-    name: "Article to MP3",
+    name: "Article to MP3 & Read Aloud",
     format: "MP3",
-    purpose: "Create a real audio download for offline article listening.",
+    purpose:
+      "Listen to synthetic English narration and download real MP3 or WAV audio.",
   },
   {
     slug: "article-to-podcast-script",

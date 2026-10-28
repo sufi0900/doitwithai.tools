@@ -1420,7 +1420,8 @@
       "relatedGuides": [],
       "relatedToolSlugs": [
         "readability-checker",
-        "article-to-word"
+        "article-to-word",
+        "article-to-mp3"
       ],
       "topics": [
         "conversion"
@@ -1447,10 +1448,42 @@
       "featuredOrder": null,
       "relatedGuides": [],
       "relatedToolSlugs": [
-        "article-to-pdf"
+        "article-to-pdf",
+        "article-to-mp3"
       ],
       "topics": [
         "conversion"
+      ]
+    },
+    {
+      "id": "article-to-mp3",
+      "slug": "article-to-mp3",
+      "name": "Article to MP3 & Read Aloud",
+      "description": "Turn a public article or pasted text into synthetic English narration. Review the text, listen by section, and download real MP3 or WAV audio.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "article to MP3",
+        "text to speech",
+        "read aloud",
+        "audio download",
+        "article narration"
+      ],
+      "kind": "Audio converter",
+      "status": "live",
+      "addedAt": "2026-10-28",
+      "featuredOrder": 45,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "article-to-pdf",
+        "article-to-word",
+        "readability-checker"
+      ],
+      "topics": [
+        "conversion",
+        "writing"
       ]
     }
   ],

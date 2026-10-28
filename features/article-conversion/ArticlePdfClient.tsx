@@ -1,5 +1,7 @@
 "use client";
 import styles from "./article-preview.module.css";
+import dynamic from "next/dynamic";
+const Reader = dynamic(() => import("../read-aloud/Reader"), { ssr: false });
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Download, FileText, Pencil, Trash2, ChevronDown } from "lucide-react";
 import ToolRunOverlay, {
@@ -36,9 +38,10 @@ type Result = {
 export default function ArticlePdfClient({
   format = "pdf",
 }: {
-  format?: "pdf" | "docx";
+  format?: "pdf" | "docx" | "audio";
 }) {
-  const label = format === "docx" ? "Word document" : "PDF";
+  const label =
+    format === "audio" ? "audio" : format === "docx" ? "Word document" : "PDF";
   const fileLabel = format === "docx" ? "DOCX" : "PDF";
   const [mode, setMode] = useState<"url" | "text" | "html">("url"),
     [source, setSource] = useState(""),
@@ -546,7 +549,12 @@ export default function ArticlePdfClient({
                     </button>
                   </div>
                 )}
-                {b.kind === "image" ? (
+                {b.kind === "image" && format === "audio" ? (
+                  <p className="text-sm leading-7">
+                    Image reference: {b.alt}. Image pixels are not narrated or
+                    downloaded.
+                  </p>
+                ) : b.kind === "image" ? (
                   <div className="rounded-xl border border-dashed border-orange-300 p-4 dark:border-orange-800">
                     <label className="flex cursor-pointer items-start gap-3 text-sm leading-7">
                       <input
@@ -678,103 +686,110 @@ export default function ArticlePdfClient({
               </ol>
             </details>
           )}
-          <details className="mt-7 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-            <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-bold">
-              {fileLabel} layout options
-              <ChevronDown size={18} aria-hidden />
-            </summary>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              {(
-                [
-                  [
-                    "size",
-                    "Page size",
+          {format !== "audio" && (
+            <>
+              <details className="mt-7 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-bold">
+                  {fileLabel} layout options
+                  <ChevronDown size={18} aria-hidden />
+                </summary>
+                <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                  {(
                     [
-                      ["a4", "A4"],
-                      ["letter", "Letter"],
-                    ],
-                  ],
-                  [
-                    "fontSize",
-                    "Text size",
-                    [
-                      [10, "10 pt"],
-                      [11, "11 pt"],
-                      [12, "12 pt"],
-                      [14, "14 pt"],
-                    ],
-                  ],
-                  [
-                    "margin",
-                    "Page margins",
-                    [
-                      [36, "Compact"],
-                      [54, "Comfortable"],
-                      [72, "Wide"],
-                    ],
-                  ],
-                  [
-                    "direction",
-                    "Text direction",
-                    [
-                      ["auto", "Automatic"],
-                      ["ltr", "Left to right"],
-                      ["rtl", "Right to left"],
-                    ],
-                  ],
-                ] as const
-              ).map(([id, label, options]) => (
-                <div key={id}>
-                  <label
-                    htmlFor={`article-${id}`}
-                    className="mb-2 block text-sm font-bold"
-                  >
-                    {label}
-                  </label>
-                  <select
-                    id={`article-${id}`}
-                    dir="auto"
-                    className={control}
-                    value={settings[id]}
-                    onChange={(e) =>
-                      setSettings((s) => ({
-                        ...s,
-                        [id]:
-                          id === "fontSize" || id === "margin"
-                            ? Number(e.target.value)
-                            : e.target.value,
-                      }))
-                    }
-                  >
-                    {options.map(([value, label]) => (
-                      <option
-                        key={value}
-                        value={value}
-                        className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                      [
+                        "size",
+                        "Page size",
+                        [
+                          ["a4", "A4"],
+                          ["letter", "Letter"],
+                        ],
+                      ],
+                      [
+                        "fontSize",
+                        "Text size",
+                        [
+                          [10, "10 pt"],
+                          [11, "11 pt"],
+                          [12, "12 pt"],
+                          [14, "14 pt"],
+                        ],
+                      ],
+                      [
+                        "margin",
+                        "Page margins",
+                        [
+                          [36, "Compact"],
+                          [54, "Comfortable"],
+                          [72, "Wide"],
+                        ],
+                      ],
+                      [
+                        "direction",
+                        "Text direction",
+                        [
+                          ["auto", "Automatic"],
+                          ["ltr", "Left to right"],
+                          ["rtl", "Right to left"],
+                        ],
+                      ],
+                    ] as const
+                  ).map(([id, label, options]) => (
+                    <div key={id}>
+                      <label
+                        htmlFor={`article-${id}`}
+                        className="mb-2 block text-sm font-bold"
                       >
                         {label}
-                      </option>
-                    ))}
-                  </select>
+                      </label>
+                      <select
+                        id={`article-${id}`}
+                        dir="auto"
+                        className={control}
+                        value={settings[id]}
+                        onChange={(e) =>
+                          setSettings((s) => ({
+                            ...s,
+                            [id]:
+                              id === "fontSize" || id === "margin"
+                                ? Number(e.target.value)
+                                : e.target.value,
+                          }))
+                        }
+                      >
+                        {options.map(([value, label]) => (
+                          <option
+                            key={value}
+                            value={value}
+                            className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                          >
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </details>
-          <p className="mt-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            {format === "docx"
-              ? "The DOCX contains editable text, heading styles, lists, and table cells. Links become numbered references with clickable destinations. Open the download in Word or another DOCX editor to check pagination; fonts and layout can vary between editors."
-              : "The PDF preserves the reviewed wording in a reading layout. Links become numbered references. Website styling, media, and complex table layouts are simplified."}
-          </p>
-          <button
-            type="button"
-            className={`${primary} mt-5`}
-            disabled={!!busy}
-            onClick={create}
-          >
-            <FileText size={17} aria-hidden />
-            Create downloadable {fileLabel}
-          </button>
+              </details>
+              <p className="mt-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                {format === "docx"
+                  ? "The DOCX contains editable text, heading styles, lists, and table cells. Links become numbered references with clickable destinations. Open the download in Word or another DOCX editor to check pagination; fonts and layout can vary between editors."
+                  : "The PDF preserves the reviewed wording in a reading layout. Links become numbered references. Website styling, media, and complex table layouts are simplified."}
+              </p>
+              <button
+                type="button"
+                className={`${primary} mt-5`}
+                disabled={!!busy}
+                onClick={create}
+              >
+                <FileText size={17} aria-hidden />
+                Create downloadable {fileLabel}
+              </button>
+            </>
+          )}
         </section>
+      )}
+      {article && format === "audio" && (
+        <Reader key={revision} article={article} />
       )}
       {result && (
         <section
