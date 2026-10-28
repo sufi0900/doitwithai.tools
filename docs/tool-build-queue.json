@@ -18,8 +18,8 @@
   "runner": {
     "activeItemId": "article-read-aloud",
     "runId": "codex-read-aloud-2026-10-28T12-58-53-381Z",
-    "leaseExpiresAt": "2026-10-28T14:28:53.381Z",
-    "lastHeartbeatAt": "2026-10-28T12:58:53.381Z"
+    "leaseExpiresAt": "2026-10-28T14:40:23.292Z",
+    "lastHeartbeatAt": "2026-10-28T13:10:23.292Z"
   },
   "qualityRequirements": "docs/scheduled-tool-builds.md",
   "items": [
@@ -216,7 +216,7 @@
       "implementationCommit": null,
       "validation": null,
       "blocker": null,
-      "checkpoint": "Manual continuation by Codex after Sufian confirmed the prior Claude session is stopped. Recovering source and exact engine assets; validation pending.",
+      "checkpoint": "Recovery source and pinned vendor restored; empty/silent chunk rejection and bounded Unicode chunking implemented. 14 focused checks and 11 foundation checks pass. Frozen dependencies installing; full browser/build checks pending.",
       "workCommit": "8037adc92c27f19cdc83337ada46e596d9fbc933"
     },
     {
