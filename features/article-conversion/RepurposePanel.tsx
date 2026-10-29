@@ -13,7 +13,6 @@ import {
   buildSocialPosts,
   buildVideoScript,
   carouselPdf,
-  docxMime,
   newsletterDocx,
   newsletterHtml,
   newsletterTxt,
@@ -30,6 +29,9 @@ import {
   type SocialPost,
   type VideoScriptDraft,
 } from "./formats";
+
+import { docxMime } from "./docx";
+
 
 const field =
   "w-full rounded-xl border border-slate-300 bg-transparent p-3 text-sm leading-7 focus:outline-none focus:ring-2 focus:ring-[#5271ff] dark:border-slate-600";
@@ -218,7 +220,7 @@ export default function RepurposePanel({
       nextAssets.push(
         {
           label: "Download DOCX script",
-          url: URL.createObjectURL(new Blob([docx], { type: docxMime })),
+          url: URL.createObjectURL(new Blob([Uint8Array.from(docx)], { type: docxMime })),
           downloadName: `${baseName}-video-script.docx`,
           primary: true,
         },
@@ -277,7 +279,7 @@ export default function RepurposePanel({
         {
           label: "Download EPUB e-book (.epub)",
           url: URL.createObjectURL(
-            new Blob([epubBytes], { type: "application/epub+zip" }),
+            new Blob([Uint8Array.from(epubBytes)], { type: "application/epub+zip" }),
           ),
           downloadName: `${baseName}.epub`,
           primary: true,
@@ -312,7 +314,7 @@ export default function RepurposePanel({
         },
         {
           label: "Download DOCX draft",
-          url: URL.createObjectURL(new Blob([docx], { type: docxMime })),
+          url: URL.createObjectURL(new Blob([Uint8Array.from(docx)], { type: docxMime })),
           downloadName: `${baseName}-newsletter.docx`,
         },
       );
@@ -322,7 +324,7 @@ export default function RepurposePanel({
       nextAssets.push(
         {
           label: "Download DOCX podcast script",
-          url: URL.createObjectURL(new Blob([docx], { type: docxMime })),
+          url: URL.createObjectURL(new Blob([Uint8Array.from(docx)], { type: docxMime })),
           downloadName: `${baseName}-podcast-script.docx`,
           primary: true,
         },
@@ -392,7 +394,7 @@ export default function RepurposePanel({
           {
             label: "Download Carousel PDF (.pdf)",
             url: URL.createObjectURL(
-              new Blob([pdfBytes], { type: "application/pdf" }),
+              new Blob([Uint8Array.from(pdfBytes)], { type: "application/pdf" }),
             ),
             downloadName: `${baseName}-linkedin-carousel.pdf`,
             primary: true,
@@ -402,7 +404,7 @@ export default function RepurposePanel({
           nextAssets.push({
             label: "Download Slide PNGs (.zip)",
             url: URL.createObjectURL(
-              new Blob([pngZip], { type: "application/zip" }),
+              new Blob([Uint8Array.from(pngZip)], { type: "application/zip" }),
             ),
             downloadName: `${baseName}-carousel-slides.zip`,
           });
