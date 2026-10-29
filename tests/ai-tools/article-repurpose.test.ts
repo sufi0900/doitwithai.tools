@@ -7,6 +7,7 @@ import {
   buildLinkedinCarousel,
   buildNewsletter,
   buildPodcastScript,
+  buildRasterCarouselPdf,
   buildSocialPosts,
   buildVideoScript,
   carouselPdf,
@@ -46,38 +47,41 @@ function sampleArticle() {
   return a;
 }
 
-test("Blog to Video Script generates scenes, timing, TXT, and valid DOCX ZIP", () => {
+test("Blog to Video Script generates sentence-by-sentence visual beats, timing, TXT, and valid DOCX ZIP", () => {
   const a = sampleArticle();
   const yt = buildVideoScript(a, "youtube", 140, 0);
   assert(yt.scenes.length >= 3);
-  assert(yt.totalWords > 10);
-  assert(yt.totalSeconds > 5);
+  assert(yt.scenes.every((s) => s.beats && s.beats.length >= 1));
+  assert(yt.totalWords > 20);
+  assert(yt.totalSeconds > 10);
 
   const shorts = buildVideoScript(a, "shorts", 160, 1);
-  assert(shorts.scenes.length <= 5);
+  assert(shorts.scenes.length >= 2);
 
   const txt = videoScriptTxt(a, yt);
   assert(txt.includes(a.title));
-  assert(txt.includes("NARRATION:"));
+  assert(txt.includes("VOICEOVER:"));
+  assert(txt.includes("BACKGROUND VISUAL:"));
 
   const docx = videoScriptDocx(a, yt);
   assert.equal(docx[0], 0x50);
   assert.equal(docx[1], 0x4b);
 });
 
-test("Blog to Social Posts generates 4 platform drafts and RFC-4180 CSV/TXT exports", () => {
+test("Blog to Social Posts generates 5 platforms with 3 distinct post ideas each and RFC-4180 CSV/TXT exports", () => {
   const a = sampleArticle();
   const posts = buildSocialPosts(a, "takeaways", true);
-  assert.equal(posts.length, 4);
+  assert.equal(posts.length, 5);
   assert.deepEqual(
     posts.map((p) => p.platform),
-    ["LinkedIn", "X / Twitter Thread", "Facebook", "Instagram"],
+    ["LinkedIn", "X / Twitter Thread", "Facebook", "Instagram", "Threads"],
   );
+  assert(posts.every((p) => p.ideas && p.ideas.length === 3));
   const csv = socialPostsCsv(a, posts);
-  assert(csv.startsWith("Platform,Angle,Characters,Post Copy,Source URL"));
+  assert(csv.startsWith("Platform,Variation,Characters,Post Copy,Source URL"));
   assert(csv.includes("LinkedIn"));
   const txt = socialPostsTxt(a, posts);
-  assert(txt.includes("=== LinkedIn"));
+  assert(txt.includes("PLATFORM: LinkedIn"));
 });
 
 test("Article to Markdown preserves frontmatter, headings, tables, and reference links", () => {
@@ -104,11 +108,12 @@ test("Article to EPUB produces a valid OCF EPUB 3 package with uncompressed mime
   assert(xhtml.includes(a.title));
 });
 
-test("Blog to Newsletter generates HTML email template, plain text, and DOCX", () => {
+test("Blog to Newsletter generates 5 subject lines, Why It Matters, checklist, HTML email template, plain text, and DOCX", () => {
   const a = sampleArticle();
-  const draft = buildNewsletter(a);
-  assert.equal(draft.subjectOptions.length, 3);
-  assert(draft.takeaways.length > 0);
+  const draft = buildNewsletter(a, "executive");
+  assert.equal(draft.subjectOptions.length, 5);
+  assert(draft.whyItMatters.length > 10);
+  assert(draft.checklist.length >= 2);
   const html = newsletterHtml(a, draft);
   assert(html.includes("<!DOCTYPE html>"));
   assert(html.includes(a.title));
@@ -119,23 +124,31 @@ test("Blog to Newsletter generates HTML email template, plain text, and DOCX", (
   assert.equal(docx[1], 0x4b);
 });
 
-test("Blog to LinkedIn Carousel builds cover, insight, and CTA slides and exports multi-page PDF", () => {
+test("Blog to LinkedIn Carousel builds cover, comparison, and CTA slides and exports both vector and raster multi-page PDFs", () => {
   const a = sampleArticle();
   const slides = buildLinkedinCarousel(a, 8);
-  assert(slides.length >= 3);
+  assert(slides.length >= 5);
   assert.equal(slides[0].kind, "cover");
   assert.equal(slides[slides.length - 1].kind, "cta");
   const pdf = carouselPdf(slides, "coral", "portrait");
   const text = new TextDecoder().decode(pdf);
   assert(text.startsWith("%PDF-1.4"));
   assert(text.includes(`/Count ${slides.length}`));
+
+  const rasterPdf = buildRasterCarouselPdf(
+    [{ bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), width: 1080, height: 1350 }],
+    540,
+    675,
+  );
+  assert(new TextDecoder().decode(rasterPdf.slice(0, 8)).startsWith("%PDF-1.4"));
 });
 
-test("Article to Podcast Script builds solo and co-host segments with TXT and DOCX exports", () => {
+test("Article to Podcast Script builds solo and co-host segments with show notes, TXT, and DOCX exports", () => {
   const a = sampleArticle();
   const cohost = buildPodcastScript(a, "cohost", 150);
   assert(cohost.segments.some((s) => s.speaker === "Host A"));
   assert(cohost.segments.some((s) => s.speaker === "Host B"));
+  assert(cohost.showNotes.length >= 2);
   const txt = podcastScriptTxt(a, cohost);
   assert(txt.includes("HOST A:"));
   const docx = podcastScriptDocx(a, cohost);

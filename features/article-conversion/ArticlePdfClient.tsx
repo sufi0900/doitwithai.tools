@@ -53,6 +53,19 @@ const FORMAT_LABELS: Record<ConversionFormat, string> = {
   "podcast-script": "podcast script",
 };
 
+const STEP1_ACTION_LABELS: Record<ConversionFormat, string> = {
+  pdf: "Convert Article to PDF",
+  docx: "Convert Article to Word (DOCX)",
+  audio: "Convert Article to MP3 Audio",
+  "video-script": "Generate Video Script",
+  "social-posts": "Generate Social Media Posts",
+  markdown: "Convert Article to Markdown",
+  epub: "Convert Article to EPUB",
+  newsletter: "Generate Newsletter Edition",
+  "linkedin-carousel": "Generate LinkedIn Carousel",
+  "podcast-script": "Generate Podcast Script",
+};
+
 export default function ArticlePdfClient({
   format = "pdf",
 }: {
@@ -73,6 +86,7 @@ export default function ArticlePdfClient({
     [message, setMessage] = useState(""),
     [result, setResult] = useState<Result | null>(null),
     [revision, setRevision] = useState(0),
+    [autoRunSignal, setAutoRunSignal] = useState(0),
     [destination, setDestination] = useState<"review" | "result">("review");
   const abort = useRef<AbortController | null>(null),
     mounted = useRef(true),
@@ -88,7 +102,9 @@ export default function ArticlePdfClient({
   useEffect(() => {
     if (!busy && revision)
       focusToolSection(
-        destination === "review" ? review.current : done.current,
+        destination === "result" && done.current
+          ? done.current
+          : review.current,
       );
   }, [busy, revision, destination]);
   useEffect(
@@ -103,6 +119,118 @@ export default function ArticlePdfClient({
       blocks: a!.blocks.map((b) => (b.id === id ? { ...b, ...value } : b)),
     }));
   }
+
+  async function buildDocExport(
+    targetArticle: Article,
+    currentSettings = settings,
+    signal?: AbortSignal,
+  ) {
+    const err = validate(targetArticle);
+    if (err) {
+      setMessage(err);
+      if (!targetArticle.title.trim())
+        document.getElementById("article-title")?.focus();
+      return;
+    }
+    const localController = signal ? null : new AbortController();
+    const activeSignal = signal || localController!.signal;
+    if (localController) abort.current = localController;
+    setBusy("pdf");
+    try {
+      await paintToolFeedback();
+      activeSignal.throwIfAborted();
+      const images: Record<string, string> = {};
+      for (const image of targetArticle.blocks
+        .filter((b) => b.kind === "image" && b.included)
+        .slice(0, 6)) {
+        activeSignal.throwIfAborted();
+        try {
+          const res = await fetch("/api/ai-tools/article-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: image.src }),
+            signal: AbortSignal.any([
+              activeSignal,
+              AbortSignal.timeout(10000),
+            ]),
+          });
+          const data = await res.json();
+          if (
+            res.ok &&
+            typeof data.data === "string" &&
+            /^data:image\/(png|jpeg);base64,/.test(data.data)
+          )
+            images[image.id] = data.data;
+        } catch {
+          activeSignal.throwIfAborted();
+        }
+      }
+      let built: {
+        bytes: ArrayBuffer | Uint8Array<ArrayBuffer>;
+        pages?: number;
+        warnings: string[];
+      };
+      const shared = {
+        images,
+        signal: activeSignal,
+        yield: () => new Promise<void>((r) => setTimeout(r, 0)),
+      };
+      if (format === "docx") {
+        const { articleDocx } = await import("./docx");
+        built = await articleDocx(targetArticle, currentSettings, shared);
+      } else {
+        const { articlePdf, loadFonts } = await import("./pdf");
+        const fonts = await loadFonts(
+          AbortSignal.any([activeSignal, AbortSignal.timeout(18000)]),
+        );
+        built = await articlePdf(targetArticle, currentSettings, {
+          ...shared,
+          ...fonts,
+        });
+      }
+      activeSignal.throwIfAborted();
+      const blob = new Blob([built.bytes], {
+          type:
+            format === "pdf"
+              ? "application/pdf"
+              : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        }),
+        url = URL.createObjectURL(blob);
+      if (mounted.current) {
+        setResult({
+          url,
+          name:
+            format === "docx"
+              ? filename(targetArticle.title).replace(/\.pdf$/, ".docx")
+              : filename(targetArticle.title),
+          pages: built.pages,
+          bytes: blob.size,
+          warnings: built.warnings,
+          snapshot: JSON.stringify({
+            article: targetArticle,
+            settings: currentSettings,
+          }),
+        });
+        setDestination("result");
+        setRevision((n) => n + 1);
+        setMessage(
+          `Your ${label} and article preview are ready! Click Download ${fileLabel} below.`,
+        );
+      } else URL.revokeObjectURL(url);
+    } catch (error) {
+      if (mounted.current)
+        setMessage(
+          activeSignal.aborted
+            ? `${label} creation cancelled. Your previous file has been kept.`
+            : error instanceof Error
+              ? error.message
+              : `${label} creation failed. Check the article and retry.`,
+        );
+    } finally {
+      if (mounted.current) setBusy("");
+    }
+  }
+
   async function preview(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
@@ -161,11 +289,18 @@ export default function ArticlePdfClient({
         setArticle(next);
         setEditing(false);
         setExpandedPreview(false);
-        setDestination("review");
-        setRevision((n) => n + 1);
-        setMessage(
-          `Preview ready. Check the source and text before creating the ${label}.`,
-        );
+
+        // 2-Step Direct Flow: Immediately generate the target output so Step 2 opens with ready download buttons!
+        if (isDocExport) {
+          await buildDocExport(next, settings, c.signal);
+        } else {
+          setDestination("review");
+          setRevision((n) => n + 1);
+          setAutoRunSignal((n) => n + 1);
+          setMessage(
+            `Article imported. Preparing your ${label} and download buttons…`,
+          );
+        }
       }
     } catch (error) {
       if (mounted.current) {
@@ -182,118 +317,29 @@ export default function ArticlePdfClient({
       if (mounted.current) setBusy("");
     }
   }
+
   async function create() {
     if (!article || busy) return;
-    const err = validate(article);
-    if (err) {
-      setMessage(err);
-      if (!article.title.trim())
-        document.getElementById("article-title")?.focus();
-      return;
-    }
-    const c = new AbortController();
-    abort.current = c;
-    setBusy("pdf");
-    setMessage("");
-    try {
-      await paintToolFeedback();
-      c.signal.throwIfAborted();
-      const images: Record<string, string> = {};
-      for (const image of article.blocks
-        .filter((b) => b.kind === "image" && b.included)
-        .slice(0, 6)) {
-        c.signal.throwIfAborted();
-        try {
-          const res = await fetch("/api/ai-tools/article-image", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: image.src }),
-            signal: AbortSignal.any([c.signal, AbortSignal.timeout(10000)]),
-          });
-          const data = await res.json();
-          if (
-            res.ok &&
-            typeof data.data === "string" &&
-            /^data:image\/(png|jpeg);base64,/.test(data.data)
-          )
-            images[image.id] = data.data;
-        } catch {
-          c.signal.throwIfAborted();
-        }
-      }
-      let built: {
-        bytes: ArrayBuffer | Uint8Array<ArrayBuffer>;
-        pages?: number;
-        warnings: string[];
-      };
-      const shared = {
-        images,
-        signal: c.signal,
-        yield: () => new Promise<void>((r) => setTimeout(r, 0)),
-      };
-      if (format === "docx") {
-        const { articleDocx } = await import("./docx");
-        built = await articleDocx(article, settings, shared);
-      } else {
-        const { articlePdf, loadFonts } = await import("./pdf");
-        const fonts = await loadFonts(
-          AbortSignal.any([c.signal, AbortSignal.timeout(18000)]),
-        );
-        built = await articlePdf(article, settings, { ...shared, ...fonts });
-      }
-      c.signal.throwIfAborted();
-      const blob = new Blob([built.bytes], {
-          type:
-            format === "pdf"
-              ? "application/pdf"
-              : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        }),
-        url = URL.createObjectURL(blob);
-      if (mounted.current) {
-        setResult({
-          url,
-          name:
-            format === "docx"
-              ? filename(article.title).replace(/\.pdf$/, ".docx")
-              : filename(article.title),
-          pages: built.pages,
-          bytes: blob.size,
-          warnings: built.warnings,
-          snapshot: JSON.stringify({ article, settings }),
-        });
-        setDestination("result");
-        setRevision((n) => n + 1);
-        setMessage(`${label} ready. Download your file below.`);
-      } else URL.revokeObjectURL(url);
-    } catch (error) {
-      if (mounted.current)
-        setMessage(
-          c.signal.aborted
-            ? `${label} creation cancelled. Your previous file has been kept.`
-            : error instanceof Error
-              ? error.message
-              : `${label} creation failed. Check the article and retry.`,
-        );
-    } finally {
-      if (mounted.current) setBusy("");
-    }
+    await buildDocExport(article, settings);
   }
+
   return (
     <div className={`${styles.root} mx-auto max-w-6xl px-4 py-12 sm:px-6`}>
       <form onSubmit={preview} noValidate className={panel} aria-busy={!!busy}>
         <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
-          Step 1 · Bring your source
+          Step 1 · Enter your article &amp; convert directly
         </p>
         <h2 className="mt-2 flex items-center gap-3 text-2xl font-extrabold">
           <FileText
             aria-hidden
             className="text-[#9A3412] dark:text-[#FDBA74]"
           />
-          Import your article
+          {STEP1_ACTION_LABELS[format]}
         </h2>
         <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-          Use a public URL, or paste content when a page blocks imports or needs
-          JavaScript.
+          Enter a public article URL, or paste content when a page blocks
+          imports. One click imports your article and prepares your{" "}
+          {label} download immediately.
         </p>
         <fieldset disabled={!!busy} className="mt-6">
           <legend className="sr-only">Article input</legend>
@@ -410,7 +456,7 @@ export default function ArticlePdfClient({
           )}
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="submit" className={primary}>
-              Create article preview
+              {STEP1_ACTION_LABELS[format]}
             </button>
             <button
               type="button"
@@ -421,7 +467,7 @@ export default function ArticlePdfClient({
                 setSource("");
                 setErrors({});
                 setMessage(
-                  "Fictional example loaded. Create a preview to test the workflow.",
+                  `Fictional example loaded. Click "${STEP1_ACTION_LABELS[format]}" to test the 2-step workflow.`,
                 );
               }}
             >
@@ -438,7 +484,7 @@ export default function ArticlePdfClient({
         {message}
       </p>
 
-      {/* ONE Connected Container for Step 2 (Review) + Step 3 (Configure & Create) + Step 4 (Download) */}
+      {/* STEP 2: ONE UNIFIED CONNECTED CONTAINER — Ready Download & Studio at the TOP, Connected Article Review Below */}
       {article && (
         <section
           ref={review}
@@ -446,188 +492,365 @@ export default function ArticlePdfClient({
           aria-labelledby="article-review-title"
           className={`${panel} scroll-mt-28 focus:outline focus:outline-2 focus:outline-[#5271ff]`}
         >
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
-                Step 2 · Review the source
-              </p>
-              <h2
-                id="article-review-title"
-                className="mt-2 text-2xl font-extrabold"
-              >
-                Review your article
-              </h2>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                className={button}
-                aria-pressed={editing}
-                onClick={() => setEditing((v) => !v)}
-              >
-                <Pencil size={16} aria-hidden />
-                {editing ? "Finish editing" : "Edit article sections"}
-              </button>
-            </div>
-          </div>
-          <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            {article.method}. Metadata is copied only when found. Review the
-            attribution and date; missing fields remain blank.
-          </p>
-          <details className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
-            <summary className="cursor-pointer font-bold">
-              Import notes ({article.warnings.length})
-            </summary>
-            <ul className="mt-2 list-disc space-y-2 pl-5">
-              {article.warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          </details>
-          <div className="mt-5 grid gap-5 sm:grid-cols-2">
-            {(
-              [
-                ["title", "Article title (required)"],
-                ["byline", "Byline (review source attribution)"],
-                ["published", "Date from source (optional)"],
-              ] as const
-            ).map(([id, label]) => (
-              <div key={id} className={id === "title" ? "sm:col-span-2" : ""}>
-                <label
-                  htmlFor={`article-${id}`}
-                  className="mb-2 block text-sm font-bold"
-                >
-                  {label}
-                </label>
-                <input
-                  id={`article-${id}`}
-                  dir="auto"
-                  className={control}
-                  value={article[id]}
-                  required={id === "title"}
-                  aria-invalid={id === "title" && !article.title.trim()}
-                  aria-describedby={
-                    id === "title" && !article.title.trim()
-                      ? "article-title-error"
-                      : undefined
-                  }
-                  maxLength={id === "published" ? 100 : 300}
-                  onChange={(e) =>
-                    setArticle((a) => ({ ...a!, [id]: e.target.value }))
-                  }
-                />
-                {id === "title" && !article.title.trim() && (
-                  <p
-                    id="article-title-error"
-                    className="mt-2 text-sm text-red-700 dark:text-red-300"
-                  >
-                    Add an article title before exporting.
+          {/* 1. Ready Result Download Card at the very TOP for PDF & DOCX */}
+          {result && isDocExport && (
+            <div
+              ref={done as any}
+              tabIndex={-1}
+              aria-labelledby="article-result-title"
+              className="mb-7 rounded-2xl border-2 border-[#3452d1] bg-blue-50/40 p-5 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20 sm:p-7"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+                    Step 2 · Your {label} is ready to download
                   </p>
-                )}
+                  <h2
+                    id="article-result-title"
+                    className="mt-1 text-2xl font-extrabold"
+                  >
+                    {article.title}
+                  </h2>
+                  <p className="mt-1 break-words text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {format === "pdf"
+                      ? `${result.pages} ${result.pages === 1 ? "page" : "pages"} · `
+                      : "Editable DOCX · "}
+                    {(result.bytes / 1024).toFixed(0)} KB · {result.name}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <a
+                    href={result.url}
+                    download={result.name}
+                    className={primary}
+                  >
+                    <Download size={17} aria-hidden />
+                    Download {fileLabel}
+                  </a>
+                  {format === "pdf" && (
+                    <a
+                      href={result.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={button}
+                    >
+                      Open PDF preview
+                    </a>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-          {article.source && (
-            <p className="mt-4 break-all text-sm leading-7">
-              Source:{" "}
-              <a
-                href={safeLink(article.source)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#3452d1] underline dark:text-[#b4c3ff]"
-              >
-                {article.source}
-              </a>
-            </p>
-          )}
-
-          {/* Bounded Scrollable Article Preview Box so Step 2 and Step 3 stay visually connected on one screen */}
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/30">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Extracted article content ({article.blocks.length} sections)
-              </span>
-              {article.blocks.length > 5 && (
-                <button
-                  type="button"
-                  className="text-xs font-bold text-[#3452d1] underline dark:text-[#b4c3ff]"
-                  onClick={() => setExpandedPreview((v) => !v)}
-                >
-                  {expandedPreview
-                    ? "Compact scrollable view"
-                    : "Expand full article height"}
-                </button>
+              {result.snapshot !== JSON.stringify({ article, settings }) && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-100/70 p-3 dark:bg-amber-950/40">
+                  <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                    The article or layout changed. Update the {fileLabel} to
+                    include your latest edits.
+                  </p>
+                  <button
+                    type="button"
+                    className={primary}
+                    disabled={!!busy}
+                    onClick={create}
+                  >
+                    <FileText size={16} aria-hidden />
+                    Create downloadable {fileLabel}
+                  </button>
+                </div>
+              )}
+              {result.warnings.length > 0 && (
+                <ul className="mt-4 list-disc space-y-1 pl-5 text-xs leading-6 text-amber-800 dark:text-amber-200">
+                  {result.warnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
               )}
             </div>
-            <div
-              className={`space-y-5 pr-1 ${
-                expandedPreview || editing
-                  ? ""
-                  : "max-h-[360px] overflow-y-auto"
-              }`}
-            >
-              {article.blocks.map((b, n) => (
-                <div
-                  key={b.id}
-                  className={
-                    editing
-                      ? "rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
-                      : ""
-                  }
+          )}
+
+          {/* 2. Ready Audio Player & Download Card at the TOP for Article to MP3 */}
+          {format === "audio" && (
+            <div className="mb-8">
+              <Reader
+                key={revision}
+                article={article}
+                autoRunSignal={autoRunSignal}
+              />
+            </div>
+          )}
+
+          {/* 3. Ready Interactive Studio & Download Card at the TOP for the 7 Repurpose Tools */}
+          {!isDocExport && format !== "audio" && (
+            <div className="mb-8">
+              <RepurposePanel
+                key={revision}
+                article={article}
+                format={format}
+                autoRunSignal={autoRunSignal}
+              />
+            </div>
+          )}
+
+          {/* 4. Connected Source Article Review & Section Editor right below inside the same card */}
+          <div className="border-t border-slate-200 pt-6 dark:border-slate-700">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+                  Connected Source Article · Review or edit sections
+                </p>
+                <h2
+                  id="article-review-title"
+                  className="mt-1 text-xl font-extrabold"
                 >
-                  {editing && (
-                    <div className="mb-3 flex items-center justify-between gap-3">
+                  Review your article
+                </h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  className={button}
+                  aria-pressed={editing}
+                  onClick={() => setEditing((v) => !v)}
+                >
+                  <Pencil size={16} aria-hidden />
+                  {editing ? "Finish editing" : "Edit article sections"}
+                </button>
+              </div>
+            </div>
+
+            {isDocExport && (
+              <details className="mt-4 rounded-xl border border-slate-300 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-bold">
+                  {fileLabel} layout options (Page size, font size, margins)
+                  <ChevronDown size={18} aria-hidden />
+                </summary>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  {(
+                    [
+                      [
+                        "size",
+                        "Page size",
+                        [
+                          ["a4", "A4"],
+                          ["letter", "Letter"],
+                        ],
+                      ],
+                      [
+                        "fontSize",
+                        "Text size",
+                        [
+                          [10, "10 pt"],
+                          [11, "11 pt"],
+                          [12, "12 pt"],
+                          [14, "14 pt"],
+                        ],
+                      ],
+                      [
+                        "margin",
+                        "Page margins",
+                        [
+                          [36, "Compact"],
+                          [54, "Comfortable"],
+                          [72, "Wide"],
+                        ],
+                      ],
+                      [
+                        "direction",
+                        "Text direction",
+                        [
+                          ["auto", "Automatic"],
+                          ["ltr", "Left to right"],
+                          ["rtl", "Right to left"],
+                        ],
+                      ],
+                    ] as const
+                  ).map(([id, label, options]) => (
+                    <div key={id}>
                       <label
-                        htmlFor={`article-block-${b.id}`}
-                        className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300"
+                        htmlFor={`article-${id}`}
+                        className="mb-1 block text-xs font-bold"
                       >
-                        Section {n + 1} · {b.kind}
+                        {label}
                       </label>
-                      <button
-                        type="button"
-                        aria-label={`Remove section ${n + 1}`}
-                        className="rounded-lg p-2 text-red-700 focus-visible:outline-[#5271ff] dark:text-red-300"
-                        onClick={() =>
-                          setArticle((a) => ({
-                            ...a!,
-                            blocks: a!.blocks.filter((old) => old.id !== b.id),
+                      <select
+                        id={`article-${id}`}
+                        dir="auto"
+                        className={control}
+                        value={settings[id]}
+                        onChange={(e) =>
+                          setSettings((s) => ({
+                            ...s,
+                            [id]:
+                              id === "fontSize" || id === "margin"
+                                ? Number(e.target.value)
+                                : e.target.value,
                           }))
                         }
                       >
-                        <Trash2 size={17} aria-hidden />
-                      </button>
+                        {options.map(([value, label]) => (
+                          <option
+                            key={value}
+                            value={value}
+                            className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                          >
+                            {label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                  )}
-                  {b.kind === "image" && !isDocExport ? (
-                    <p className="text-sm leading-7">
-                      Image reference: {b.alt}. Image pixels are not narrated or
-                      embedded in this format.
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className={`${primary} mt-4`}
+                  disabled={!!busy}
+                  onClick={create}
+                >
+                  <FileText size={16} aria-hidden />
+                  Create downloadable {fileLabel}
+                </button>
+              </details>
+            )}
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {(
+                [
+                  ["title", "Article title (required)"],
+                  ["byline", "Byline (review source attribution)"],
+                  ["published", "Date from source (optional)"],
+                ] as const
+              ).map(([id, label]) => (
+                <div
+                  key={id}
+                  className={id === "title" ? "sm:col-span-2" : ""}
+                >
+                  <label
+                    htmlFor={`article-${id}`}
+                    className="mb-1 block text-xs font-bold"
+                  >
+                    {label}
+                  </label>
+                  <input
+                    id={`article-${id}`}
+                    dir="auto"
+                    className={control}
+                    value={article[id]}
+                    required={id === "title"}
+                    aria-invalid={id === "title" && !article.title.trim()}
+                    aria-describedby={
+                      id === "title" && !article.title.trim()
+                        ? "article-title-error"
+                        : undefined
+                    }
+                    maxLength={id === "published" ? 100 : 300}
+                    onChange={(e) =>
+                      setArticle((a) => ({ ...a!, [id]: e.target.value }))
+                    }
+                  />
+                  {id === "title" && !article.title.trim() && (
+                    <p
+                      id="article-title-error"
+                      className="mt-2 text-sm text-red-700 dark:text-red-300"
+                    >
+                      Add an article title before exporting.
                     </p>
-                  ) : b.kind === "image" ? (
-                    <div className="rounded-xl border border-dashed border-orange-300 p-4 dark:border-orange-800">
-                      <label className="flex cursor-pointer items-start gap-3 text-sm leading-7">
-                        <input
-                          type="checkbox"
-                          checked={!!b.included}
-                          onChange={(e) =>
-                            update(b.id, { included: e.target.checked })
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {article.source && (
+              <p className="mt-3 break-all text-xs leading-6">
+                Source:{" "}
+                <a
+                  href={safeLink(article.source)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#3452d1] underline dark:text-[#b4c3ff]"
+                >
+                  {article.source}
+                </a>
+              </p>
+            )}
+
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/30">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-700">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Extracted article content ({article.blocks.length} sections)
+                </span>
+                {article.blocks.length > 5 && (
+                  <button
+                    type="button"
+                    className="text-xs font-bold text-[#3452d1] underline dark:text-[#b4c3ff]"
+                    onClick={() => setExpandedPreview((v) => !v)}
+                  >
+                    {expandedPreview
+                      ? "Compact scrollable view"
+                      : "Expand full article height"}
+                  </button>
+                )}
+              </div>
+              <div
+                className={`space-y-4 pr-1 ${
+                  expandedPreview || editing
+                    ? ""
+                    : "max-h-[340px] overflow-y-auto"
+                }`}
+              >
+                {article.blocks.map((b, n) => (
+                  <div
+                    key={b.id}
+                    className={
+                      editing
+                        ? "rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900"
+                        : ""
+                    }
+                  >
+                    {editing && (
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <label
+                          htmlFor={`article-block-${b.id}`}
+                          className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300"
+                        >
+                          Section {n + 1} · {b.kind}
+                        </label>
+                        <button
+                          type="button"
+                          aria-label={`Remove section ${n + 1}`}
+                          className="rounded-lg p-2 text-red-700 focus-visible:outline-[#5271ff] dark:text-red-300"
+                          onClick={() =>
+                            setArticle((a) => ({
+                              ...a!,
+                              blocks: a!.blocks.filter((old) => old.id !== b.id),
+                            }))
                           }
-                          className="mt-1 h-5 w-5 shrink-0 accent-[#5271ff]"
-                        />
-                        <span>
-                          Include image: {b.alt}
-                          <span className="block break-all text-xs text-slate-600 dark:text-slate-300">
-                            {b.src}
-                          </span>
-                        </span>
-                      </label>
-                      <p className="mt-2 text-xs leading-6 text-slate-600 dark:text-slate-300">
-                        Only selected images are requested during export.
-                        PNG/JPEG up to 1.5 MB and 12 megapixels are supported.
+                        >
+                          <Trash2 size={17} aria-hidden />
+                        </button>
+                      </div>
+                    )}
+                    {b.kind === "image" && !isDocExport ? (
+                      <p className="text-sm leading-7">
+                        Image reference: {b.alt}.
                       </p>
-                    </div>
-                  ) : editing ? (
-                    <>
+                    ) : b.kind === "image" ? (
+                      <div className="rounded-xl border border-dashed border-orange-300 p-4 dark:border-orange-800">
+                        <label className="flex cursor-pointer items-start gap-3 text-sm leading-7">
+                          <input
+                            type="checkbox"
+                            checked={!!b.included}
+                            onChange={(e) =>
+                              update(b.id, { included: e.target.checked })
+                            }
+                            className="mt-1 h-5 w-5 shrink-0 accent-[#5271ff]"
+                          />
+                          <span>
+                            Include image: {b.alt}
+                            <span className="block break-all text-xs text-slate-600 dark:text-slate-300">
+                              {b.src}
+                            </span>
+                          </span>
+                        </label>
+                      </div>
+                    ) : editing ? (
                       <textarea
                         id={`article-block-${b.id}`}
                         dir="auto"
@@ -659,278 +882,74 @@ export default function ArticlePdfClient({
                           )
                         }
                       />
-                      {b.kind === "table" && (
-                        <p className="mt-2 text-xs leading-6">
-                          Table editing: one row per line, tabs between cells.
-                          Paste from a spreadsheet if needed.
-                        </p>
-                      )}
-                    </>
-                  ) : b.kind === "table" ? (
-                    <div
-                      className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700"
-                      role="region"
-                      aria-label={`Article table ${n + 1}`}
-                      tabIndex={0}
-                    >
-                      <table className="w-full text-left text-sm">
-                        <tbody>
-                          {b.cells?.map((row, r) => (
-                            <tr key={r}>
-                              {row.map((cell, c) =>
-                                b.header && r === 0 ? (
-                                  <th
-                                    key={c}
-                                    className="border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800"
-                                  >
-                                    {cell}
-                                  </th>
-                                ) : (
-                                  <td
-                                    key={c}
-                                    className="border border-slate-200 p-3 dark:border-slate-700"
-                                  >
-                                    {cell}
-                                  </td>
-                                ),
-                              )}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : b.kind === "heading" ? (
-                    <h3 dir="auto" className="pt-2 text-xl font-bold">
-                      {b.text}
-                    </h3>
-                  ) : (
-                    <p
-                      dir="auto"
-                      className={`whitespace-pre-wrap break-words text-base leading-8 ${b.kind === "quote" ? "italic text-slate-600 dark:text-slate-300" : ""} ${b.kind === "code" ? "rounded-xl bg-slate-50 p-4 font-mono text-sm dark:bg-slate-800" : ""}`}
-                    >
-                      {b.text}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {article.links.length > 0 && (
-            <details className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-              <summary className="cursor-pointer text-sm font-bold">
-                Article link references ({article.links.length})
-              </summary>
-              <ol className="mt-3 list-decimal space-y-2 pl-5">
-                {article.links.map((l, n) => (
-                  <li key={n} className="break-all text-sm leading-7">
-                    <a
-                      href={safeLink(l.url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#3452d1] underline dark:text-[#b4c3ff]"
-                    >
-                      {l.label}
-                    </a>
-                  </li>
-                ))}
-              </ol>
-            </details>
-          )}
-
-          {/* Connected Step 3 for PDF & DOCX inside the same unified container */}
-          {isDocExport && (
-            <div className="mt-7 border-t border-slate-200 pt-7 dark:border-slate-700">
-              <div className="rounded-2xl border border-orange-200 bg-orange-50/40 p-5 dark:border-orange-900 dark:bg-orange-950/10 sm:p-7">
-                <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
-                  Step 3 · Prepare your {fileLabel}
-                </p>
-                <h3 className="mt-2 text-2xl font-extrabold">
-                  Export &ldquo;{article.title.slice(0, 70)}
-                  {article.title.length > 70 ? "…" : ""}&rdquo;
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                  {format === "docx"
-                    ? "The DOCX contains editable text, heading styles, lists, and table cells. Links become numbered references with clickable destinations. Open the download in Word or another DOCX editor to check pagination; fonts and layout can vary between editors."
-                    : "The PDF preserves the reviewed wording in a reading layout. Links become numbered references. Website styling, media, and complex table layouts are simplified."}
-                </p>
-                <details className="mt-4 rounded-xl border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-                  <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-bold">
-                    {fileLabel} layout options
-                    <ChevronDown size={18} aria-hidden />
-                  </summary>
-                  <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                    {(
-                      [
-                        [
-                          "size",
-                          "Page size",
-                          [
-                            ["a4", "A4"],
-                            ["letter", "Letter"],
-                          ],
-                        ],
-                        [
-                          "fontSize",
-                          "Text size",
-                          [
-                            [10, "10 pt"],
-                            [11, "11 pt"],
-                            [12, "12 pt"],
-                            [14, "14 pt"],
-                          ],
-                        ],
-                        [
-                          "margin",
-                          "Page margins",
-                          [
-                            [36, "Compact"],
-                            [54, "Comfortable"],
-                            [72, "Wide"],
-                          ],
-                        ],
-                        [
-                          "direction",
-                          "Text direction",
-                          [
-                            ["auto", "Automatic"],
-                            ["ltr", "Left to right"],
-                            ["rtl", "Right to left"],
-                          ],
-                        ],
-                      ] as const
-                    ).map(([id, label, options]) => (
-                      <div key={id}>
-                        <label
-                          htmlFor={`article-${id}`}
-                          className="mb-2 block text-sm font-bold"
-                        >
-                          {label}
-                        </label>
-                        <select
-                          id={`article-${id}`}
-                          dir="auto"
-                          className={control}
-                          value={settings[id]}
-                          onChange={(e) =>
-                            setSettings((s) => ({
-                              ...s,
-                              [id]:
-                                id === "fontSize" || id === "margin"
-                                  ? Number(e.target.value)
-                                  : e.target.value,
-                            }))
-                          }
-                        >
-                          {options.map(([value, label]) => (
-                            <option
-                              key={value}
-                              value={value}
-                              className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
-                            >
-                              {label}
-                            </option>
-                          ))}
-                        </select>
+                    ) : b.kind === "table" ? (
+                      <div
+                        className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700"
+                        role="region"
+                        aria-label={`Article table ${n + 1}`}
+                        tabIndex={0}
+                      >
+                        <table className="w-full text-left text-sm">
+                          <tbody>
+                            {b.cells?.map((row, r) => (
+                              <tr key={r}>
+                                {row.map((cell, c) =>
+                                  b.header && r === 0 ? (
+                                    <th
+                                      key={c}
+                                      className="border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800"
+                                    >
+                                      {cell}
+                                    </th>
+                                  ) : (
+                                    <td
+                                      key={c}
+                                      className="border border-slate-200 p-3 dark:border-slate-700"
+                                    >
+                                      {cell}
+                                    </td>
+                                  ),
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
-                    ))}
+                    ) : b.kind === "heading" ? (
+                      <h3 dir="auto" className="pt-2 text-lg font-bold">
+                        {b.text}
+                      </h3>
+                    ) : (
+                      <p
+                        dir="auto"
+                        className={`whitespace-pre-wrap break-words text-sm leading-7 ${b.kind === "quote" ? "italic text-slate-600 dark:text-slate-300" : ""} ${b.kind === "code" ? "rounded-xl bg-slate-50 p-4 font-mono text-xs dark:bg-slate-800" : ""}`}
+                      >
+                        {b.text}
+                      </p>
+                    )}
                   </div>
-                </details>
-                <button
-                  type="button"
-                  className={`${primary} mt-5`}
-                  disabled={!!busy}
-                  onClick={create}
-                >
-                  <FileText size={17} aria-hidden />
-                  Create downloadable {fileLabel}
-                </button>
+                ))}
               </div>
             </div>
-          )}
-
-          {/* Connected Step 3 & Step 4 for Audio inside the same unified container */}
-          {format === "audio" && <Reader key={revision} article={article} />}
-
-          {/* Connected Step 3 & Step 4 for the 7 new Repurpose & Export tools */}
-          {!isDocExport && format !== "audio" && (
-            <RepurposePanel key={revision} article={article} format={format} />
-          )}
-        </section>
-      )}
-
-      {/* Step 4 Result Download Section for PDF & DOCX */}
-      {result && isDocExport && (
-        <section
-          ref={done}
-          tabIndex={-1}
-          aria-labelledby="article-result-title"
-          className={`${panel} mt-7 border-2 border-[#3452d1] bg-blue-50/40 scroll-mt-28 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20`}
-        >
-          <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
-            Step 4 · Save your reading copy
-          </p>
-          <h2
-            id="article-result-title"
-            className="mt-2 text-2xl font-extrabold"
-          >
-            Your {label} is ready
-          </h2>
-          <p className="mt-3 break-words text-sm leading-7 text-slate-600 dark:text-slate-300">
-            {format === "pdf"
-              ? `${result.pages} ${result.pages === 1 ? "page" : "pages"} · `
-              : "Editable DOCX · "}
-            {(result.bytes / 1024).toFixed(0)} KB · {result.name}
-          </p>
-          {result.snapshot !== JSON.stringify({ article, settings }) && (
-            <p className="mt-4 text-sm font-bold text-amber-800 dark:text-amber-200">
-              The article or layout changed. Create the {fileLabel} again to
-              include your latest edits.
-            </p>
-          )}
-          {result.warnings.length > 0 && (
-            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-amber-800 dark:text-amber-200">
-              {result.warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          )}
-          <div className="mt-5 flex flex-wrap gap-3">
-            <a href={result.url} download={result.name} className={primary}>
-              <Download size={17} aria-hidden />
-              Download {fileLabel}
-            </a>
-            {format === "pdf" && (
-              <a
-                href={result.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={button}
-              >
-                Open PDF preview
-              </a>
-            )}
           </div>
-          <p className="mt-4 text-xs leading-6 text-slate-600 dark:text-slate-300">
-            Download before leaving. Edits and generated files are not saved
-            between visits.
-          </p>
         </section>
       )}
 
       <ToolRunOverlay
         active={!!busy}
         title={
-          busy === "pdf" ? `Creating your ${label}` : "Importing your article"
+          busy === "pdf"
+            ? `Creating your ${label}`
+            : `Importing & converting your article to ${label}`
         }
         description={
           busy === "pdf"
-            ? "Laying out reviewed text and selected images."
-            : "Preparing a clean article preview."
+            ? "Preparing your download file."
+            : "Extracting article sections and generating your download."
         }
         onCancel={() => abort.current?.abort()}
         cancelLabel="Cancel"
-        hint={`The completed preview or ${label} will open below.`}
+        hint={`Your ready ${label} download button will appear immediately below.`}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { filename, validate, type Article } from "../article-conversion/model";
 import ToolRunOverlay, {
   paintToolFeedback,
@@ -29,7 +29,13 @@ type Result = {
   snapshot: string;
   warnings: string[];
 };
-export default function Reader({ article }: { article: Article }) {
+export default function Reader({
+  article,
+  autoRunSignal = 0,
+}: {
+  article: Article;
+  autoRunSignal?: number;
+}) {
   const [voice, setVoice] = useState("gmw/en-US"),
     [rate, setRate] = useState(160),
     [excluded, setExcluded] = useState<string[]>([]),
@@ -150,7 +156,7 @@ export default function Reader({ article }: { article: Article }) {
     }
   }
 
-  async function create() {
+  const create = useCallback(async () => {
     if (busy) return;
     previewAudio.current?.pause();
     const err = validate(article) || inputError(items, voice, rate);
@@ -214,7 +220,17 @@ export default function Reader({ article }: { article: Article }) {
     } finally {
       if (mounted.current) setBusy(false);
     }
-  }
+  }, [article, busy, items, rate, snapshot, voice]);
+
+  // 2-Step Direct Flow: Automatically start audio generation when imported in Step 1!
+  const hasAutoRunRef = useRef(0);
+  useEffect(() => {
+    if (autoRunSignal > 0 && hasAutoRunRef.current !== autoRunSignal) {
+      hasAutoRunRef.current = autoRunSignal;
+      create();
+    }
+  }, [autoRunSignal, create]);
+
   const current =
     result?.chapters.findIndex((c) => time >= c.start && time < c.end) ?? -1;
   async function jump(i: number) {
@@ -230,209 +246,17 @@ export default function Reader({ article }: { article: Article }) {
     }
   }
   return (
-    <div className="mt-7 border-t border-slate-200 pt-7 dark:border-slate-700">
-      <section className="rounded-2xl border border-orange-200 bg-orange-50/40 p-5 dark:border-orange-900 dark:bg-orange-950/10 sm:p-7">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
-          Step 3 · Prepare narration for &ldquo;{article.title.slice(0, 70)}
-          {article.title.length > 70 ? "…" : ""}&rdquo;
-        </p>
-        <h2 className="mt-2 text-2xl font-extrabold">
-          Listen to the reviewed article
-        </h2>
-        <p className="mt-3 text-sm leading-7">
-          Clear English speech synthesis creates real MP3 and WAV files with
-          natural pauses between headings, bullet points, and paragraphs. Choose
-          from six distinct US, UK, Indian, and Australian voices, preview any
-          voice before generating, and choose which section starts your audio.
-        </p>
-        <fieldset disabled={busy} className="mt-5">
-          <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-            <div>
-              <label htmlFor="audio-voice" className="mb-2 block font-bold">
-                English voice
-              </label>
-              <select
-                id="audio-voice"
-                className={field}
-                value={voice}
-                onChange={(e) => setVoice(e.target.value)}
-              >
-                {Object.entries(VOICES).map(([key, cfg]) => (
-                  <option
-                    key={key}
-                    className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
-                    value={key}
-                  >
-                    {cfg.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="button"
-              className={button}
-              disabled={busy || previewing}
-              onClick={previewVoice}
-            >
-              {previewing ? "Playing sample…" : "Preview voice"}
-            </button>
-          </div>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="audio-start-section"
-                className="mb-2 block font-bold"
-              >
-                Start narration from
-              </label>
-              <select
-                id="audio-start-section"
-                className={field}
-                value={startFromId}
-                onChange={(e) => setStartFromId(e.target.value)}
-              >
-                <option
-                  value=""
-                  className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
-                >
-                  Beginning of article (Section 1)
-                </option>
-                {allSegments.map((s) => (
-                  <option
-                    key={s.id}
-                    value={s.id}
-                    className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
-                  >
-                    {s.label}: {s.text.slice(0, 65)}
-                    {s.text.length > 65 ? "…" : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col justify-end gap-2">
-              <label className="flex items-center gap-3 text-sm font-semibold leading-6">
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 shrink-0 accent-[#5271ff]"
-                  checked={includeTitle}
-                  onChange={(e) => setIncludeTitle(e.target.checked)}
-                />
-                <span>Read article title at the start</span>
-              </label>
-              {calloutIds.length > 0 && (
-                <button
-                  type="button"
-                  className={`${button} text-left text-xs`}
-                  onClick={() =>
-                    setExcluded(
-                      hasCalloutSkipped
-                        ? excluded.filter((id) => !calloutIds.includes(id))
-                        : [...new Set([...excluded, ...calloutIds])],
-                    )
-                  }
-                >
-                  {hasCalloutSkipped
-                    ? "Include Key Takeaways / summary box"
-                    : "Skip Key Takeaways / summary box"}
-                </button>
-              )}
-            </div>
-          </div>
-
-          <details className="mt-5 rounded-xl border border-slate-300 p-4 dark:border-slate-700">
-            <summary className="cursor-pointer font-bold">
-              Optional speaking rate and text selection
-            </summary>
-            <label htmlFor="audio-rate" className="mb-2 mt-4 block font-bold">
-              Generated speaking rate
-            </label>
-            <select
-              id="audio-rate"
-              className={field}
-              value={rate}
-              onChange={(e) => setRate(Number(e.target.value))}
-            >
-              {[120, 160, 200].map((n) => (
-                <option
-                  key={n}
-                  value={n}
-                  className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
-                >
-                  {n} words per minute
-                </option>
-              ))}
-            </select>
-            <p className="my-4 text-sm leading-7">
-              Up to 20,000 characters and 20 minutes per file. Tables, code, and
-              image pixels are excluded. Numbered citation markers are not
-              spoken. Review any missing context before listening.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                className={button}
-                onClick={() => {
-                  setExcluded([]);
-                  setStartFromId("");
-                }}
-              >
-                Select all text sections
-              </button>
-            </div>
-            <div className="mt-4 max-h-80 space-y-3 overflow-y-auto">
-              {allSegments.map((s) => (
-                <label key={s.id} className="flex gap-3 text-sm leading-7">
-                  <input
-                    type="checkbox"
-                    className="mt-2 h-5 w-5 shrink-0 accent-[#5271ff]"
-                    checked={!effectiveExcluded.includes(s.id)}
-                    onChange={(e) =>
-                      setExcluded(
-                        e.target.checked
-                          ? excluded.filter((id) => id !== s.id)
-                          : [...excluded, s.id],
-                      )
-                    }
-                  />
-                  <span dir="auto">
-                    <strong>{s.label}</strong>: {s.text.slice(0, 180)}
-                    {s.text.length > 180 ? "…" : ""}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </details>
-          <p className="mt-4 text-xs leading-6">
-            {items.length} sections selected ·{" "}
-            {items.reduce((n, s) => n + s.text.length, 0).toLocaleString()}{" "}
-            characters. Parallel synthesis prepares multiple sections at once.
-          </p>
-          <button type="button" className={`${primary} mt-5`} onClick={create}>
-            Create downloadable audio
-          </button>
-        </fieldset>
-      </section>
-      <p
-        id="audio-error"
-        tabIndex={-1}
-        role={error ? "alert" : undefined}
-        className="my-4 text-sm font-bold text-red-700 dark:text-red-300"
-      >
-        {error}
-      </p>
-      <p role="status" className="my-4 text-sm font-semibold leading-7">
-        {message}
-      </p>
+    <div className="space-y-6">
+      {/* Ready Audio Player & Download Card at the top of Step 2 */}
       {result && (
         <section
           ref={done}
           tabIndex={-1}
           aria-labelledby="audio-result-title"
-          className="mt-5 scroll-mt-28 rounded-2xl border-2 border-[#3452d1] bg-blue-50/40 p-5 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20 sm:p-7"
+          className="scroll-mt-28 rounded-2xl border-2 border-[#3452d1] bg-blue-50/40 p-5 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20 sm:p-7"
         >
           <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
-            Step 4 · Listen and save
+            Step 2 · Listen and download your audio
           </p>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -561,7 +385,7 @@ export default function Reader({ article }: { article: Article }) {
             </ul>
           </details>
           <h3 className="mt-6 font-bold">Narrated sections</h3>
-          <ol className="mt-4 max-h-96 space-y-4 overflow-y-auto">
+          <ol className="mt-4 max-h-80 space-y-4 overflow-y-auto">
             {result.chapters.map((c, i) => (
               <li
                 key={c.id}
@@ -584,13 +408,197 @@ export default function Reader({ article }: { article: Article }) {
               </li>
             ))}
           </ol>
-          <p className="mt-5 text-xs leading-6">
-            Download before leaving. Audio and edits are not saved between
-            visits.
-          </p>
         </section>
       )}
-      <p className="mt-4 text-xs leading-6">
+
+      <section className="rounded-2xl border border-orange-200 bg-orange-50/40 p-5 dark:border-orange-900 dark:bg-orange-950/10 sm:p-7">
+        <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+          Voice &amp; Narration Settings for &ldquo;{article.title.slice(0, 68)}
+          {article.title.length > 68 ? "…" : ""}&rdquo;
+        </p>
+        <h2 className="mt-2 text-2xl font-extrabold">
+          Customize voice, starting section, or speaking rate
+        </h2>
+        <fieldset disabled={busy} className="mt-5">
+          <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div>
+              <label htmlFor="audio-voice" className="mb-2 block font-bold">
+                English voice
+              </label>
+              <select
+                id="audio-voice"
+                className={field}
+                value={voice}
+                onChange={(e) => setVoice(e.target.value)}
+              >
+                {Object.entries(VOICES).map(([key, cfg]) => (
+                  <option
+                    key={key}
+                    className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                    value={key}
+                  >
+                    {cfg.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              className={button}
+              disabled={busy || previewing}
+              onClick={previewVoice}
+            >
+              {previewing ? "Playing sample…" : "Preview voice"}
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="audio-start-section"
+                className="mb-2 block font-bold"
+              >
+                Start narration from
+              </label>
+              <select
+                id="audio-start-section"
+                className={field}
+                value={startFromId}
+                onChange={(e) => setStartFromId(e.target.value)}
+              >
+                <option
+                  value=""
+                  className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                >
+                  Beginning of article (Section 1)
+                </option>
+                {allSegments.map((s) => (
+                  <option
+                    key={s.id}
+                    value={s.id}
+                    className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                  >
+                    {s.label}: {s.text.slice(0, 65)}
+                    {s.text.length > 65 ? "…" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col justify-end gap-2">
+              <label className="flex items-center gap-3 text-sm font-semibold leading-6">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 shrink-0 accent-[#5271ff]"
+                  checked={includeTitle}
+                  onChange={(e) => setIncludeTitle(e.target.checked)}
+                />
+                <span>Read article title at the start</span>
+              </label>
+              {calloutIds.length > 0 && (
+                <button
+                  type="button"
+                  className={`${button} text-left text-xs`}
+                  onClick={() =>
+                    setExcluded(
+                      hasCalloutSkipped
+                        ? excluded.filter((id) => !calloutIds.includes(id))
+                        : [...new Set([...excluded, ...calloutIds])],
+                    )
+                  }
+                >
+                  {hasCalloutSkipped
+                    ? "Include Key Takeaways / summary box"
+                    : "Skip Key Takeaways / summary box"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <details className="mt-5 rounded-xl border border-slate-300 p-4 dark:border-slate-700">
+            <summary className="cursor-pointer font-bold">
+              Optional speaking rate and text selection
+            </summary>
+            <label htmlFor="audio-rate" className="mb-2 mt-4 block font-bold">
+              Generated speaking rate
+            </label>
+            <select
+              id="audio-rate"
+              className={field}
+              value={rate}
+              onChange={(e) => setRate(Number(e.target.value))}
+            >
+              {[120, 160, 200].map((n) => (
+                <option
+                  key={n}
+                  value={n}
+                  className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                >
+                  {n} words per minute
+                </option>
+              ))}
+            </select>
+            <p className="my-4 text-sm leading-7">
+              Up to 20,000 characters and 20 minutes per file. Tables, code, and
+              image pixels are excluded. Numbered citation markers are not
+              spoken.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                className={button}
+                onClick={() => {
+                  setExcluded([]);
+                  setStartFromId("");
+                }}
+              >
+                Select all text sections
+              </button>
+            </div>
+            <div className="mt-4 max-h-80 space-y-3 overflow-y-auto">
+              {allSegments.map((s) => (
+                <label key={s.id} className="flex gap-3 text-sm leading-7">
+                  <input
+                    type="checkbox"
+                    className="mt-2 h-5 w-5 shrink-0 accent-[#5271ff]"
+                    checked={!effectiveExcluded.includes(s.id)}
+                    onChange={(e) =>
+                      setExcluded(
+                        e.target.checked
+                          ? excluded.filter((id) => id !== s.id)
+                          : [...excluded, s.id],
+                      )
+                    }
+                  />
+                  <span dir="auto">
+                    <strong>{s.label}</strong>: {s.text.slice(0, 180)}
+                    {s.text.length > 180 ? "…" : ""}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </details>
+          <p className="mt-4 text-xs leading-6">
+            {items.length} sections selected ·{" "}
+            {items.reduce((n, s) => n + s.text.length, 0).toLocaleString()}{" "}
+            characters. Parallel synthesis prepares up to 6 sections at once.
+          </p>
+          <button type="button" className={`${primary} mt-5`} onClick={create}>
+            Create downloadable audio
+          </button>
+        </fieldset>
+      </section>
+      <p
+        id="audio-error"
+        tabIndex={-1}
+        role={error ? "alert" : undefined}
+        className="my-2 text-sm font-bold text-red-700 dark:text-red-300"
+      >
+        {error}
+      </p>
+      <p role="status" className="my-2 text-sm font-semibold leading-7">
+        {message}
+      </p>
+      <p className="text-xs leading-6">
         Local fallback speech engine:{" "}
         <a className="underline" href="/vendor/espeak-ng/NOTICE.md">
           eSpeak NG (GPLv3), source and license
