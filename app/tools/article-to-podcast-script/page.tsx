@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import ArticlePdfClient from "@/features/article-conversion/ArticlePdfClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
@@ -106,7 +106,7 @@ export default function Page() {
           <div className="grid items-center gap-8 lg:grid-cols-[1.3fr_0.8fr]">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-orange-200">
-                Content conversion · Audio show prep
+                Content conversion Â· Audio show prep
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Article to Podcast Script{" "}
@@ -135,7 +135,7 @@ export default function Page() {
           Prepare a natural podcast episode from written research
         </h2>
         <p className={text}>
-          Structure your article's key points into conversational show segments
+          Structure your article&apos;s key points into conversational show segments
           with clear speaker cues, runtime estimates, and show-notes source
           attribution.
         </p>
@@ -144,3 +144,4 @@ export default function Page() {
     </main>
   );
 }
+
