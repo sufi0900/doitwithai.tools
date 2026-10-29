@@ -2,6 +2,10 @@ import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import { safeLink, type Article, type Block } from "./model";
 const plain = (s: string) => s.replace(/\s+/g, " ").trim();
+const TRAILING_CLUTTER_RE =
+  /^(?:•\s*|\d+\.\s*)?(?:leia tamb[eé]m|veja tamb[eé]m|read also|also read|related (?:posts|articles|reads|stories)|further reading|recommended reading|share this (?:article|post))\s*[:\-–]/i;
+const SOURCE_CAPTION_RE =
+  /^(?:•\s*)?(?:image\s+)?(?:source|photo\s+credit|image\s+credit|credit)\s*(?:[:\-–]\s*\S.*)?$/i;
 export function extractArticle(html: string, source = ""): Article {
   if (!html.trim() || new TextEncoder().encode(html).length > 500000)
     throw Error("Supply non-empty HTML within 500 KB.");
@@ -35,7 +39,7 @@ export function extractArticle(html: string, source = ""): Article {
   );
   document
     .querySelectorAll(
-      'script,style,noscript,template,iframe,video,audio,svg,canvas,form,nav,footer,header,aside,[hidden],[aria-hidden="true"]',
+      'script,style,noscript,template,iframe,video,audio,svg,canvas,form,nav,footer,header,aside,figcaption,[hidden],[aria-hidden="true"],.toc,#toc,[id*="ez-toc"],[class*="ez-toc"],[class*="table-of-contents"],[class*="related-post"],[class*="jp-relatedposts"],[class*="sharedaddy"],[class*="share-"],[class*="social-"],[class*="breadcrumb"],[class*="newsletter"],[class*="author-bio"],[class*="comment"]',
     )
     .forEach((n) => n.remove());
   let parsed: ReturnType<Readability["parse"]> = null;
@@ -92,6 +96,14 @@ export function extractArticle(html: string, source = ""): Article {
     return text;
   }
   function add(b: Omit<Block, "id">) {
+    const trimmed = b.text ? b.text.trim() : "";
+    if (trimmed && TRAILING_CLUTTER_RE.test(trimmed)) return;
+    if (
+      trimmed &&
+      trimmed.length < 60 &&
+      SOURCE_CAPTION_RE.test(trimmed.replace(/\s*\[\d+\]/g, "").trim())
+    )
+      return;
     const len = b.text.length + (b.cells?.flat().join("").length || 0);
     if (blocks.length >= 300 || chars + len > 80000) {
       limited = true;
@@ -113,7 +125,11 @@ export function extractArticle(html: string, source = ""): Article {
     }
     if (n.nodeType !== 1) return;
     const tag = n.tagName;
-    if (/^(SCRIPT|STYLE|SVG|IFRAME|FORM|NAV|FOOTER|HEADER|ASIDE)$/.test(tag))
+    if (
+      /^(SCRIPT|STYLE|SVG|IFRAME|FORM|NAV|FOOTER|HEADER|ASIDE|FIGCAPTION)$/.test(
+        tag,
+      )
+    )
       return;
     if (tag === "IMG") {
       images++;

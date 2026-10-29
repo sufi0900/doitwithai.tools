@@ -6,7 +6,7 @@ import ToolFaq from "@/features/tool-ui/ToolFaq";
 const pageUrl = "https://doitwithai.tools/tools/article-to-mp3";
 const title = "Article to MP3 Converter & Read Aloud | Free Audio Download";
 const description =
-  "Turn an article URL or pasted text into synthetic English narration. Review the text, listen with playback controls, and download a real MP3 or WAV file.";
+  "Turn an article URL or pasted text into clear English narration. Review the text, choose from six distinct voices, listen with playback controls, and download a real MP3 or WAV file.";
 export const metadata: Metadata = {
   title,
   description,
@@ -29,7 +29,7 @@ const faqs = [
   {
     question: "How do I turn an article into an MP3?",
     answer:
-      "Import one public article URL or paste text or HTML. Review the extracted title and wording, then create downloadable audio. Press play to check the narration and save the MP3. A WAV alternative is also available.",
+      "Import one public article URL or paste text or HTML. Review the extracted title and wording, choose an English voice and starting section, then create downloadable audio. Press play to check the narration and save the MP3. A WAV alternative is also available.",
   },
   {
     question: "Is this a real MP3 download?",
@@ -37,9 +37,9 @@ const faqs = [
       "Yes. The tool synthesizes speech into PCM audio and encodes it as MPEG Layer III at 64 kbps, mono, 22.05 kHz. It does not rename a text or WAV file as MP3. The WAV alternative retains the PCM source. MP3 encoder padding can make the downloaded duration slightly longer than the displayed source duration.",
   },
   {
-    question: "Are the voices natural or AI voice clones?",
+    question: "What voices are included and can I preview them?",
     answer:
-      "These are basic synthetic English voices from eSpeak NG, with UK and US choices. They can sound robotic. This is not a neural studio voice, voice clone, or human recording. Listen to names, abbreviations, numbers, and pronunciation before sharing.",
+      "You can choose from six distinct English voices across US, UK, Indian, and Australian accents (both female and male voices). Use the Preview voice button to hear a short sample before converting the full article.",
   },
   {
     question: "Does it support Urdu or translate articles?",
@@ -59,12 +59,12 @@ const faqs = [
   {
     question: "Which parts of an article are spoken?",
     answer:
-      "Selected headings, paragraphs, lists, and quotations are spoken in source order. Image pixels, code, and tables are omitted. Numbered citation markers are removed from narration. Review any references or context that the omitted material supplied; this is not OCR or an audiobook adaptation.",
+      "Selected headings, paragraphs, lists, and quotations are spoken in source order with natural pauses between sections. You can choose to include the article title at the start, skip a Key Takeaways summary box, or start narration from any section. Image pixels, code, and tables are omitted, and numbered citation markers are removed.",
   },
   {
     question: "Where is my article processed?",
     answer:
-      "URL importing uses our server. Pasted content, editing, speech synthesis, and MP3 encoding run in your browser. Article text is not sent to a voice provider. Engine files load from this website. Edits and audio are temporary, so download before leaving.",
+      "URL importing and speech synthesis run on demand without storing your article. Pasted content, editing, and MP3 encoding run in your browser, with a local fallback speech engine built in. Edits and audio are temporary, so download before leaving.",
   },
   {
     question: "Can I pause, skip sections, or change speed?",
@@ -154,14 +154,14 @@ export default function Page() {
               </h1>
               <p className="mt-5 text-base leading-8 text-orange-50/85">
                 Give a useful article a listening format. Review the text,
-                create synthetic English narration, and download an MP3 for
-                offline listening.
+                choose from six English voices, and download an MP3 for offline
+                listening.
               </p>
               <div className="mt-6 flex flex-wrap gap-3 text-xs font-semibold text-orange-100">
                 {[
                   "Real MP3 + WAV",
-                  "Editable source text",
-                  "No voice API key",
+                  "6 distinct English voices",
+                  "No voice account needed",
                 ].map((label) => (
                   <span
                     key={label}
@@ -176,12 +176,12 @@ export default function Page() {
               <h2 className="text-lg font-bold">A simple listening workflow</h2>
               <ol className="mt-4 space-y-3 text-sm leading-7 text-orange-50/85">
                 <li>1. Import a URL or paste permitted content</li>
-                <li>2. Check the text and choose an English voice</li>
+                <li>2. Choose a starting section and preview an English voice</li>
                 <li>3. Listen, review, and save the MP3</li>
               </ol>
               <p className="mt-5 border-t border-orange-200/20 pt-4 text-xs leading-6 text-orange-100/80">
-                Basic synthetic voices. Up to 20,000 selected characters and 20
-                minutes. No voice cloning or translation.
+                Six English voices (US, UK, India, Australia). Up to 20,000
+                selected characters and 20 minutes.
               </p>
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function Page() {
             ],
             [
               "Review the narration",
-              "Check the title, source, wording, and omissions. Choose UK or US English. Optional settings let you select sections and generate at 120, 160, or 200 words per minute.",
+              "Check the title, source, wording, and starting section. Choose from six English voices across US, UK, Indian, and Australian accents, and generate at 120, 160, or 200 words per minute.",
             ],
             [
               "Listen and download",
@@ -243,9 +243,9 @@ export default function Page() {
         <p className={text}>
           Paste a short English article you wrote. Correct the title, remove a
           promotional block, and replace a complicated abbreviation with the
-          wording you want spoken. Generate a short sample using the UK or US
-          voice. If a sentence sounds awkward, edit the source and create it
-          again.
+          wording you want spoken. Generate a short sample using your preferred
+          English voice. If a sentence sounds awkward, edit the source and
+          create it again.
         </p>
         <p className={text}>
           MP3 is a smaller listening copy; WAV preserves the uncompressed

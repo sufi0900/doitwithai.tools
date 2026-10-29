@@ -80,8 +80,8 @@ export default function ArticlePdfClient({
   );
   function update(id: string, value: Partial<Block>) {
     setArticle((a) => ({
-      ...a,
-      blocks: a.blocks.map((b) => (b.id === id ? { ...b, ...value } : b)),
+      ...a!,
+      blocks: a!.blocks.map((b) => (b.id === id ? { ...b, ...value } : b)),
     }));
   }
   async function preview(e: FormEvent) {
@@ -414,6 +414,73 @@ export default function ArticlePdfClient({
       >
         {message}
       </p>
+
+      {/* Top Result Download Section for PDF & DOCX so users never have to scroll down */}
+      {result && format !== "audio" && (
+        <section
+          ref={done}
+          tabIndex={-1}
+          aria-labelledby="article-result-title"
+          className={`${panel} mb-7 border-2 border-[#3452d1] bg-blue-50/40 scroll-mt-28 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20`}
+        >
+          <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+            Step 3 · Save your reading copy
+          </p>
+          <h2
+            id="article-result-title"
+            className="mt-2 text-2xl font-extrabold"
+          >
+            Your {label} is ready
+          </h2>
+          <p className="mt-3 break-words text-sm leading-7 text-slate-600 dark:text-slate-300">
+            {format === "pdf"
+              ? `${result.pages} ${result.pages === 1 ? "page" : "pages"} · `
+              : "Editable DOCX · "}
+            {(result.bytes / 1024).toFixed(0)} KB · {result.name}
+          </p>
+          {result.snapshot !== JSON.stringify({ article, settings }) && (
+            <p className="mt-4 text-sm font-bold text-amber-800 dark:text-amber-200">
+              The article or layout changed. Create the {fileLabel} again to
+              include your latest edits.
+            </p>
+          )}
+          {result.warnings.length > 0 && (
+            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-amber-800 dark:text-amber-200">
+              {result.warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <a href={result.url} download={result.name} className={primary}>
+              <Download size={17} aria-hidden />
+              Download {fileLabel}
+            </a>
+            {format === "pdf" && (
+              <a
+                href={result.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={button}
+              >
+                Open PDF preview
+              </a>
+            )}
+          </div>
+          <p className="mt-4 text-xs leading-6 text-slate-600 dark:text-slate-300">
+            Download before leaving. Edits and generated files are not saved
+            between visits.
+          </p>
+        </section>
+      )}
+
+      {/* Top Audio Narration & Download Panel for Article to MP3 so users can generate & download without scrolling */}
+      {article && format === "audio" && (
+        <div className="mb-7">
+          <Reader key={revision} article={article} />
+        </div>
+      )}
+
       {article && (
         <section
           ref={review}
@@ -433,17 +500,124 @@ export default function ArticlePdfClient({
                 Review your article
               </h2>
             </div>
-            <button
-              type="button"
-              className={button}
-              aria-pressed={editing}
-              onClick={() => setEditing((v) => !v)}
-            >
-              <Pencil size={16} aria-hidden />
-              {editing ? "Finish editing" : "Edit article sections"}
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              {format !== "audio" && (
+                <button
+                  type="button"
+                  className={primary}
+                  disabled={!!busy}
+                  onClick={create}
+                >
+                  <FileText size={17} aria-hidden />
+                  Create downloadable {fileLabel}
+                </button>
+              )}
+              <button
+                type="button"
+                className={button}
+                aria-pressed={editing}
+                onClick={() => setEditing((v) => !v)}
+              >
+                <Pencil size={16} aria-hidden />
+                {editing ? "Finish editing" : "Edit article sections"}
+              </button>
+            </div>
           </div>
-          <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+
+          {/* Top layout options bar for PDF and DOCX right above the editor */}
+          {format !== "audio" && (
+            <div className="mt-5 rounded-xl border border-orange-200 bg-orange-50/40 p-4 dark:border-orange-900 dark:bg-orange-950/10">
+              <p className="text-sm leading-7 text-slate-700 dark:text-slate-200">
+                {format === "docx"
+                  ? "The DOCX contains editable text, heading styles, lists, and table cells. Links become numbered references with clickable destinations."
+                  : "The PDF preserves the reviewed wording in a clean reading layout. Links become numbered references."}
+              </p>
+              <details className="mt-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-bold">
+                  {fileLabel} layout options
+                  <ChevronDown size={18} aria-hidden />
+                </summary>
+                <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                  {(
+                    [
+                      [
+                        "size",
+                        "Page size",
+                        [
+                          ["a4", "A4"],
+                          ["letter", "Letter"],
+                        ],
+                      ],
+                      [
+                        "fontSize",
+                        "Text size",
+                        [
+                          [10, "10 pt"],
+                          [11, "11 pt"],
+                          [12, "12 pt"],
+                          [14, "14 pt"],
+                        ],
+                      ],
+                      [
+                        "margin",
+                        "Page margins",
+                        [
+                          [36, "Compact"],
+                          [54, "Comfortable"],
+                          [72, "Wide"],
+                        ],
+                      ],
+                      [
+                        "direction",
+                        "Text direction",
+                        [
+                          ["auto", "Automatic"],
+                          ["ltr", "Left to right"],
+                          ["rtl", "Right to left"],
+                        ],
+                      ],
+                    ] as const
+                  ).map(([id, label, options]) => (
+                    <div key={id}>
+                      <label
+                        htmlFor={`article-${id}`}
+                        className="mb-2 block text-sm font-bold"
+                      >
+                        {label}
+                      </label>
+                      <select
+                        id={`article-${id}`}
+                        dir="auto"
+                        className={control}
+                        value={settings[id]}
+                        onChange={(e) =>
+                          setSettings((s) => ({
+                            ...s,
+                            [id]:
+                              id === "fontSize" || id === "margin"
+                                ? Number(e.target.value)
+                                : e.target.value,
+                          }))
+                        }
+                      >
+                        {options.map(([value, label]) => (
+                          <option
+                            key={value}
+                            value={value}
+                            className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                          >
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </div>
+          )}
+
+          <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
             {article.method}. Metadata is copied only when found. Review the
             attribution and date; missing fields remain blank.
           </p>
@@ -489,7 +663,7 @@ export default function ArticlePdfClient({
                   }
                   maxLength={id === "published" ? 100 : 300}
                   onChange={(e) =>
-                    setArticle((a) => ({ ...a, [id]: e.target.value }))
+                    setArticle((a) => ({ ...a!, [id]: e.target.value }))
                   }
                 />
                 {id === "title" && !article.title.trim() && (
@@ -540,8 +714,8 @@ export default function ArticlePdfClient({
                       className="rounded-lg p-2 text-red-700 focus-visible:outline-[#5271ff] dark:text-red-300"
                       onClick={() =>
                         setArticle((a) => ({
-                          ...a,
-                          blocks: a.blocks.filter((old) => old.id !== b.id),
+                          ...a!,
+                          blocks: a!.blocks.filter((old) => old.id !== b.id),
                         }))
                       }
                     >
@@ -687,165 +861,16 @@ export default function ArticlePdfClient({
             </details>
           )}
           {format !== "audio" && (
-            <>
-              <details className="mt-7 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
-                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-bold">
-                  {fileLabel} layout options
-                  <ChevronDown size={18} aria-hidden />
-                </summary>
-                <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                  {(
-                    [
-                      [
-                        "size",
-                        "Page size",
-                        [
-                          ["a4", "A4"],
-                          ["letter", "Letter"],
-                        ],
-                      ],
-                      [
-                        "fontSize",
-                        "Text size",
-                        [
-                          [10, "10 pt"],
-                          [11, "11 pt"],
-                          [12, "12 pt"],
-                          [14, "14 pt"],
-                        ],
-                      ],
-                      [
-                        "margin",
-                        "Page margins",
-                        [
-                          [36, "Compact"],
-                          [54, "Comfortable"],
-                          [72, "Wide"],
-                        ],
-                      ],
-                      [
-                        "direction",
-                        "Text direction",
-                        [
-                          ["auto", "Automatic"],
-                          ["ltr", "Left to right"],
-                          ["rtl", "Right to left"],
-                        ],
-                      ],
-                    ] as const
-                  ).map(([id, label, options]) => (
-                    <div key={id}>
-                      <label
-                        htmlFor={`article-${id}`}
-                        className="mb-2 block text-sm font-bold"
-                      >
-                        {label}
-                      </label>
-                      <select
-                        id={`article-${id}`}
-                        dir="auto"
-                        className={control}
-                        value={settings[id]}
-                        onChange={(e) =>
-                          setSettings((s) => ({
-                            ...s,
-                            [id]:
-                              id === "fontSize" || id === "margin"
-                                ? Number(e.target.value)
-                                : e.target.value,
-                          }))
-                        }
-                      >
-                        {options.map(([value, label]) => (
-                          <option
-                            key={value}
-                            value={value}
-                            className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
-                          >
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </details>
-              <p className="mt-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                {format === "docx"
-                  ? "The DOCX contains editable text, heading styles, lists, and table cells. Links become numbered references with clickable destinations. Open the download in Word or another DOCX editor to check pagination; fonts and layout can vary between editors."
-                  : "The PDF preserves the reviewed wording in a reading layout. Links become numbered references. Website styling, media, and complex table layouts are simplified."}
-              </p>
-              <button
-                type="button"
-                className={`${primary} mt-5`}
-                disabled={!!busy}
-                onClick={create}
-              >
-                <FileText size={17} aria-hidden />
-                Create downloadable {fileLabel}
-              </button>
-            </>
+            <button
+              type="button"
+              className={`${primary} mt-6`}
+              disabled={!!busy}
+              onClick={create}
+            >
+              <FileText size={17} aria-hidden />
+              Create downloadable {fileLabel}
+            </button>
           )}
-        </section>
-      )}
-      {article && format === "audio" && (
-        <Reader key={revision} article={article} />
-      )}
-      {result && (
-        <section
-          ref={done}
-          tabIndex={-1}
-          aria-labelledby="article-result-title"
-          className={`${panel} mt-7 scroll-mt-28 focus:outline focus:outline-2 focus:outline-[#5271ff]`}
-        >
-          <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
-            Step 3 · Save your reading copy
-          </p>
-          <h2
-            id="article-result-title"
-            className="mt-2 text-2xl font-extrabold"
-          >
-            Your {label} is ready
-          </h2>
-          <p className="mt-3 break-words text-sm leading-7 text-slate-600 dark:text-slate-300">
-            {format === "pdf"
-              ? `${result.pages} ${result.pages === 1 ? "page" : "pages"} · `
-              : "Editable DOCX · "}
-            {(result.bytes / 1024).toFixed(0)} KB · {result.name}
-          </p>
-          {result.snapshot !== JSON.stringify({ article, settings }) && (
-            <p className="mt-4 text-sm font-bold text-amber-800 dark:text-amber-200">
-              The article or layout changed. Create the {fileLabel} again to
-              include your latest edits.
-            </p>
-          )}
-          {result.warnings.length > 0 && (
-            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-amber-800 dark:text-amber-200">
-              {result.warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          )}
-          <div className="mt-5 flex flex-wrap gap-3">
-            <a href={result.url} download={result.name} className={primary}>
-              <Download size={17} aria-hidden />
-              Download {fileLabel}
-            </a>
-            {format === "pdf" && (
-              <a
-                href={result.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={button}
-              >
-                Open PDF preview
-              </a>
-            )}
-          </div>
-          <p className="mt-4 text-xs leading-6 text-slate-600 dark:text-slate-300">
-            Download before leaving. Edits and generated files are not saved
-            between visits.
-          </p>
         </section>
       )}
       <ToolRunOverlay
