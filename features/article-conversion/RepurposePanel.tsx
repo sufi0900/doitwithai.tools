@@ -515,7 +515,7 @@ export default function RepurposePanel({
           {
             label: "Download Carousel PDF (.pdf)",
             url: URL.createObjectURL(
-              new Blob([pdfBytes], { type: "application/pdf" }),
+              new Blob([pdfBytes as any], { type: "application/pdf" }),
             ),
             downloadName: `${baseName}-linkedin-carousel.pdf`,
             primary: true,
@@ -523,7 +523,7 @@ export default function RepurposePanel({
           {
             label: "Download All Slide PNGs (.zip)",
             url: URL.createObjectURL(
-              new Blob([zipBytes], { type: "application/zip" }),
+              new Blob([zipBytes as any], { type: "application/zip" }),
             ),
             downloadName: `${baseName}-carousel-slides.zip`,
           },
@@ -550,7 +550,7 @@ export default function RepurposePanel({
         nextAssets.push(
           {
             label: "Download Storyboard DOCX (.docx)",
-            url: URL.createObjectURL(new Blob([docx], { type: docxMime })),
+            url: URL.createObjectURL(new Blob([docx as any], { type: docxMime })),
             downloadName: `${baseName}-video-script.docx`,
             primary: true,
           },
@@ -616,7 +616,7 @@ export default function RepurposePanel({
           {
             label: "Download EPUB E-Book (.epub)",
             url: URL.createObjectURL(
-              new Blob([epubBytes], { type: "application/epub+zip" }),
+              new Blob([epubBytes as any], { type: "application/epub+zip" }),
             ),
             downloadName: `${baseName}.epub`,
             primary: true,
@@ -644,7 +644,7 @@ export default function RepurposePanel({
           },
           {
             label: "Download Word Draft (.docx)",
-            url: URL.createObjectURL(new Blob([docx], { type: docxMime })),
+            url: URL.createObjectURL(new Blob([docx as any], { type: docxMime })),
             downloadName: `${baseName}-newsletter.docx`,
           },
           {
@@ -661,7 +661,7 @@ export default function RepurposePanel({
         nextAssets.push(
           {
             label: "Download Podcast Script (.docx)",
-            url: URL.createObjectURL(new Blob([docx], { type: docxMime })),
+            url: URL.createObjectURL(new Blob([docx as any], { type: docxMime })),
             downloadName: `${baseName}-podcast-script.docx`,
             primary: true,
           },

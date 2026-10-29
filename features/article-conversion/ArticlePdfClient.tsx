@@ -189,7 +189,7 @@ export default function ArticlePdfClient({
         });
       }
       activeSignal.throwIfAborted();
-      const blob = new Blob([built.bytes], {
+      const blob = new Blob([built.bytes as any], {
           type:
             format === "pdf"
               ? "application/pdf"

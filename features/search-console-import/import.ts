@@ -133,7 +133,7 @@ export async function readConsoleFile(file: {
       throw new Error("This ZIP is incomplete.");
     let content = bytes.subarray(start, start + compressed);
     if (method === 8) {
-      const reader = new Blob([new Uint8Array(content)])
+      const reader = new Blob([new Uint8Array(content) as any])
         .stream()
         .pipeThrough(new DecompressionStream("deflate-raw"))
         .getReader();

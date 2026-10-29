@@ -135,7 +135,7 @@ export default function Reader({
         c.signal,
         () => {},
       );
-      const wavBlob = new Blob([sample.bytes], { type: "audio/wav" });
+      const wavBlob = new Blob([sample.bytes as any], { type: "audio/wav" });
       const url = URL.createObjectURL(wavBlob);
       previewAudio.current?.pause();
       const el = new Audio(url);
@@ -178,14 +178,14 @@ export default function Reader({
           setProgress(`Prepared ${n} of ${total} selected text sections.`);
       });
       c.signal.throwIfAborted();
-      const wav = new Blob([built.bytes], { type: "audio/wav" });
+      const wav = new Blob([built.bytes as any], { type: "audio/wav" });
       setProgress("Encoding your MP3 download.");
       const mp3 = await encodeMp3(built.bytes, c.signal, (percent) => {
         if (mounted.current)
           setProgress(`Encoding your MP3 download · ${percent}%.`);
       });
       c.signal.throwIfAborted();
-      const url = URL.createObjectURL(new Blob([mp3], { type: "audio/mpeg" })),
+      const url = URL.createObjectURL(new Blob([mp3 as any], { type: "audio/mpeg" })),
         wavUrl = URL.createObjectURL(wav);
       if (mounted.current) {
         audio.current?.pause();
