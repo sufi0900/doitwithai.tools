@@ -181,7 +181,6 @@ export function splitText(text: string) {
   while (rest.length > 1000) {
     const boundary = rest.lastIndexOf(" ", 1000);
     let end = boundary > 0 ? boundary : 1000;
-    // Do not split a Unicode surrogate pair in an unbroken URL or word.
     if (/[\uD800-\uDBFF]/.test(rest[end - 1])) end--;
     chunks.push(rest.slice(0, end));
     rest = rest.slice(end).trimStart();
@@ -406,8 +405,6 @@ export async function narrate(
             data[i / 2] = Math.round(Math.max(-1, Math.min(1, a[i])) * 32767);
             if (data[i / 2]) audible = true;
           }
-          // Apply gentle 3-tap warm low-pass filter on real synthesis buffers (>100 samples)
-          // to soften harsh formant buzz while keeping unit-test tiny buffers exact.
           if (data.length > 100) {
             let prev = data[0];
             for (let j = 1; j < data.length - 1; j++) {
@@ -447,43 +444,68 @@ export async function narrate(
   try {
     await waitFor(() => {}, true);
     signal.throwIfAborted();
-    let consecutiveCloudFailures = 0;
+
+    const preparedTexts = items.map(
+      (item) => prepareSpokenText(item.text) || item.text,
+    );
+    const cloudResults: (Int16Array | null)[] = new Array(items.length).fill(
+      null,
+    );
+
+    // Parallel cloud synthesis pool (up to 6 sections synthesized concurrently)
+    if (sharedAudioCtx) {
+      let nextIdx = 0;
+      let completedCloud = 0;
+      let consecutiveFailures = 0;
+      const concurrency = Math.min(6, items.length);
+
+      const runPoolWorker = async () => {
+        while (consecutiveFailures < 3) {
+          const idx = nextIdx++;
+          if (idx >= items.length) break;
+          signal.throwIfAborted();
+          const pcm = await synthesizeCloudNeural(
+            preparedTexts[idx],
+            voice,
+            rate,
+            sharedAudioCtx,
+            signal,
+          );
+          signal.throwIfAborted();
+          if (pcm && pcm.length > 0) {
+            cloudResults[idx] = pcm;
+            consecutiveFailures = 0;
+            completedCloud++;
+            onProgress(completedCloud, items.length);
+          } else {
+            consecutiveFailures++;
+          }
+        }
+      };
+
+      await Promise.all(
+        Array.from({ length: concurrency }, () => runPoolWorker()),
+      );
+    }
 
     for (let i = 0; i < items.length; i++) {
       signal.throwIfAborted();
       const start = samples / SAMPLE_RATE;
-      const prepared = prepareSpokenText(items[i].text) || items[i].text;
-      let usedCloud = false;
+      const cloudPcm = cloudResults[i];
 
-      if (sharedAudioCtx && consecutiveCloudFailures < 3) {
-        const cloudPcm = await synthesizeCloudNeural(
-          prepared,
-          voice,
-          rate,
-          sharedAudioCtx,
-          signal,
-        );
-        signal.throwIfAborted();
-        if (cloudPcm && cloudPcm.length > 0) {
-          usedCloud = true;
-          consecutiveCloudFailures = 0;
-          for (let k = 0; k < cloudPcm.length; k++) {
-            if (cloudPcm[k]) {
-              audible = true;
-              break;
-            }
+      if (cloudPcm && cloudPcm.length > 0) {
+        for (let k = 0; k < cloudPcm.length; k++) {
+          if (cloudPcm[k]) {
+            audible = true;
+            break;
           }
-          samples += cloudPcm.length;
-          if (samples > SAMPLE_RATE * MAX_SECONDS)
-            throw Error("Audio exceeds 20 minutes. Select less text.");
-          chunks.push(cloudPcm);
-        } else {
-          consecutiveCloudFailures++;
         }
-      }
-
-      if (!usedCloud) {
-        for (const text of splitText(prepared)) {
+        samples += cloudPcm.length;
+        if (samples > SAMPLE_RATE * MAX_SECONDS)
+          throw Error("Audio exceeds 20 minutes. Select less text.");
+        chunks.push(cloudPcm);
+      } else {
+        for (const text of splitText(preparedTexts[i])) {
           worker.postMessage({
             method: "set_voice",
             args: [voiceConfig.espeakVoice],
@@ -502,6 +524,7 @@ export async function narrate(
           );
           signal.throwIfAborted();
         }
+        onProgress(i + 1, items.length);
       }
 
       if (items.length > 1 && i < items.length - 1) {
@@ -518,7 +541,6 @@ export async function narrate(
         start,
         end: samples / SAMPLE_RATE,
       });
-      onProgress(i + 1, items.length);
     }
     if (!audible)
       throw Error(

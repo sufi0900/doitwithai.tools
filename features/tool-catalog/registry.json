@@ -1485,6 +1485,219 @@
         "conversion",
         "writing"
       ]
+    },
+    {
+      "id": "blog-to-video-script",
+      "slug": "blog-to-video-script",
+      "name": "Blog to Video Script",
+      "description": "Adapt a public article or pasted text into a structured video script with spoken narration, visual cues, and DOCX or TXT downloads.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "blog to video script",
+        "article to YouTube script",
+        "Shorts script",
+        "video script generator",
+        "content repurposing"
+      ],
+      "kind": "Video script converter",
+      "status": "live",
+      "addedAt": "2026-10-29",
+      "featuredOrder": 46,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "article-to-mp3",
+        "article-to-podcast-script",
+        "blog-to-social-posts"
+      ],
+      "topics": [
+        "conversion",
+        "writing"
+      ]
+    },
+    {
+      "id": "blog-to-social-posts",
+      "slug": "blog-to-social-posts",
+      "name": "Blog to Social Posts",
+      "description": "Turn an article URL or pasted text into channel-specific LinkedIn posts, X threads, Facebook updates, and Instagram captions with CSV and TXT downloads.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "blog to social posts",
+        "article to LinkedIn post",
+        "blog to X thread",
+        "social media repurposing",
+        "CSV schedule"
+      ],
+      "kind": "Social post converter",
+      "status": "live",
+      "addedAt": "2026-10-29",
+      "featuredOrder": 47,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "blog-to-linkedin-carousel",
+        "blog-to-newsletter",
+        "blog-to-video-script"
+      ],
+      "topics": [
+        "conversion",
+        "social"
+      ]
+    },
+    {
+      "id": "article-to-markdown",
+      "slug": "article-to-markdown",
+      "name": "Article to Markdown",
+      "description": "Convert a public webpage or pasted HTML into clean GitHub-Flavored Markdown with YAML frontmatter, tables, and reference links.",
+      "categories": [
+        "content-conversion"
+      ],
+      "tags": [
+        "article to Markdown",
+        "HTML to Markdown",
+        "webpage to MD",
+        "Markdown exporter",
+        "YAML frontmatter"
+      ],
+      "kind": "Markdown converter",
+      "status": "live",
+      "addedAt": "2026-10-29",
+      "featuredOrder": null,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "article-to-pdf",
+        "article-to-word",
+        "article-to-epub"
+      ],
+      "topics": [
+        "conversion"
+      ]
+    },
+    {
+      "id": "article-to-epub",
+      "slug": "article-to-epub",
+      "name": "Article to EPUB",
+      "description": "Save a public article or pasted content as a reflowable EPUB 3 e-book with chapter navigation, clean typography, and source references.",
+      "categories": [
+        "content-conversion"
+      ],
+      "tags": [
+        "article to EPUB",
+        "webpage to e-book",
+        "URL to EPUB",
+        "e-reader export",
+        "offline reading"
+      ],
+      "kind": "EPUB e-book converter",
+      "status": "live",
+      "addedAt": "2026-10-29",
+      "featuredOrder": null,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "article-to-pdf",
+        "article-to-markdown",
+        "article-to-mp3"
+      ],
+      "topics": [
+        "conversion"
+      ]
+    },
+    {
+      "id": "blog-to-newsletter",
+      "slug": "blog-to-newsletter",
+      "name": "Blog to Newsletter",
+      "description": "Adapt an article into an editable email newsletter with subject-line options, preview text, key takeaways, and HTML, TXT, or DOCX downloads.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "blog to newsletter",
+        "article to email",
+        "HTML newsletter generator",
+        "email digest",
+        "content repurposing"
+      ],
+      "kind": "Newsletter converter",
+      "status": "live",
+      "addedAt": "2026-10-29",
+      "featuredOrder": null,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "blog-to-social-posts",
+        "article-to-word",
+        "outreach-email-builder"
+      ],
+      "topics": [
+        "conversion",
+        "writing"
+      ]
+    },
+    {
+      "id": "blog-to-linkedin-carousel",
+      "slug": "blog-to-linkedin-carousel",
+      "name": "Blog to LinkedIn Carousel",
+      "description": "Turn article takeaways into a swipeable LinkedIn carousel with customizable themes, multi-page PDF deck download, and slide PNG images.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "blog to LinkedIn carousel",
+        "LinkedIn PDF carousel",
+        "article to slides",
+        "social slide deck",
+        "carousel generator"
+      ],
+      "kind": "Carousel converter",
+      "status": "live",
+      "addedAt": "2026-10-29",
+      "featuredOrder": 48,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "blog-to-social-posts",
+        "article-to-pdf",
+        "blog-to-video-script"
+      ],
+      "topics": [
+        "conversion",
+        "social"
+      ]
+    },
+    {
+      "id": "article-to-podcast-script",
+      "slug": "article-to-podcast-script",
+      "name": "Article to Podcast Script",
+      "description": "Turn a reviewed article into an editable solo or two-host podcast script with intro hooks, segment transitions, and DOCX or TXT downloads.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "article to podcast script",
+        "blog to podcast",
+        "podcast episode outline",
+        "co-host script",
+        "audio script"
+      ],
+      "kind": "Podcast script converter",
+      "status": "live",
+      "addedAt": "2026-10-29",
+      "featuredOrder": null,
+      "relatedGuides": [],
+      "relatedToolSlugs": [
+        "article-to-mp3",
+        "blog-to-video-script",
+        "article-outline-generator"
+      ],
+      "topics": [
+        "conversion",
+        "writing"
+      ]
     }
   ],
   "topics": [

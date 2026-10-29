@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-28T18:40:49.204Z",
+  "generated": "2026-10-29T15:27:38.432Z",
   "static_pages": [
     {
       "url": "/",
@@ -357,6 +357,48 @@
       "type": "static"
     },
     {
+      "url": "/tools/blog-to-video-script",
+      "title": "Blog to Video Script",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/blog-to-social-posts",
+      "title": "Blog to Social Posts",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/article-to-markdown",
+      "title": "Article to Markdown",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/article-to-epub",
+      "title": "Article to EPUB",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/blog-to-newsletter",
+      "title": "Blog to Newsletter",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/blog-to-linkedin-carousel",
+      "title": "Blog to LinkedIn Carousel",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/article-to-podcast-script",
+      "title": "Article to Podcast Script",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -375,5 +417,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 62
+  "total_pages": 69
 }

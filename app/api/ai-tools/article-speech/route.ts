@@ -3,6 +3,9 @@ import * as tls from "node:tls";
 
 export const maxDuration = 60;
 
+let edgeBlockedUntil = 0;
+let pollyBlockedUntil = 0;
+
 type VoiceSpec = {
   edgeVoice: string;
   edgeLang: string;
@@ -122,8 +125,11 @@ function synthesizeEdgeNeural(
   text: string,
   spec: VoiceSpec,
   rate: number,
-  timeoutMs = 9500,
+  timeoutMs = 4200,
 ): Promise<Buffer> {
+  if (Date.now() < edgeBlockedUntil) {
+    return Promise.reject(new Error("Edge circuit open"));
+  }
   return new Promise((resolve, reject) => {
     const connId = randomUUID().replace(/-/g, "");
     const reqId = randomUUID().replace(/-/g, "");
@@ -159,8 +165,12 @@ function synthesizeEdgeNeural(
       try {
         socket.destroy();
       } catch {}
-      if (err) reject(err);
-      else resolve(data!);
+      if (err) {
+        edgeBlockedUntil = Date.now() + 5 * 60 * 1000;
+        reject(err);
+      } else {
+        resolve(data!);
+      }
     };
 
     const timer = setTimeout(
@@ -388,7 +398,7 @@ async function synthesizeOpenAiTts(
       response_format: "mp3",
       speed,
     }),
-    signal: AbortSignal.any([signal, AbortSignal.timeout(12000)]),
+    signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]),
   });
   if (!res.ok) throw new Error(`OpenAI TTS HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
@@ -401,25 +411,43 @@ async function synthesizePollyTts(
   spec: VoiceSpec,
   signal: AbortSignal,
 ): Promise<Buffer[]> {
-  const pieces = splitSentenceChunks(text, 260);
-  const chunks: Buffer[] = [];
-  for (const piece of pieces) {
-    signal.throwIfAborted();
-    const url = `https://api.streamelements.com/kappa/v2/speech?voice=${encodeURIComponent(spec.pollyVoice)}&text=${encodeURIComponent(piece)}`;
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
-      },
-      signal: AbortSignal.any([signal, AbortSignal.timeout(6500)]),
-    });
-    if (!res.ok) throw new Error(`Polly TTS HTTP ${res.status}`);
-    const arr = Buffer.from(await res.arrayBuffer());
-    if (arr.length < 100) throw new Error("Polly TTS returned empty buffer");
-    chunks.push(arr);
+  if (Date.now() < pollyBlockedUntil) {
+    throw new Error("Polly circuit open");
   }
-  if (!chunks.length) throw new Error("Empty Polly TTS output");
-  return chunks;
+  const pieces = splitSentenceChunks(text, 260);
+  const results: Buffer[] = new Array(pieces.length);
+  const concurrency = 4;
+  try {
+    for (let i = 0; i < pieces.length; i += concurrency) {
+      signal.throwIfAborted();
+      const batch = pieces.slice(i, i + concurrency);
+      const fetched = await Promise.all(
+        batch.map(async (piece) => {
+          const url = `https://api.streamelements.com/kappa/v2/speech?voice=${encodeURIComponent(spec.pollyVoice)}&text=${encodeURIComponent(piece)}`;
+          const res = await fetch(url, {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+            },
+            signal: AbortSignal.any([signal, AbortSignal.timeout(4500)]),
+          });
+          if (!res.ok) throw new Error(`Polly TTS HTTP ${res.status}`);
+          const arr = Buffer.from(await res.arrayBuffer());
+          if (arr.length < 100)
+            throw new Error("Polly TTS returned empty buffer");
+          return arr;
+        }),
+      );
+      for (let j = 0; j < fetched.length; j++) {
+        results[i + j] = fetched[j];
+      }
+    }
+    if (!results.length) throw new Error("Empty Polly TTS output");
+    return results;
+  } catch (err) {
+    pollyBlockedUntil = Date.now() + 5 * 60 * 1000;
+    throw err;
+  }
 }
 
 async function fetchSingleGoogleChunk(
@@ -439,7 +467,7 @@ async function fetchSingleGoogleChunk(
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
         },
-        signal: AbortSignal.any([signal, AbortSignal.timeout(6500)]),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(5500)]),
       });
       if (res.ok) {
         const arr = Buffer.from(await res.arrayBuffer());
@@ -461,7 +489,7 @@ async function synthesizeGoogleTts(
   const pieces = splitSentenceChunks(text, 175);
   const speed = rate <= 120 ? "0.75" : "1";
   const results: Buffer[] = new Array(pieces.length);
-  const concurrency = 4;
+  const concurrency = 6;
   for (let i = 0; i < pieces.length; i += concurrency) {
     signal.throwIfAborted();
     const batch = pieces.slice(i, i + concurrency);
@@ -525,13 +553,7 @@ export async function POST(request: Request) {
       });
     };
 
-    // Tier 1: Microsoft Edge Neural TTS (Studio-quality distinct voices)
-    try {
-      const mp3 = await synthesizeEdgeNeural(rawText, spec, rate, 9500);
-      return respond("edge-neural", [mp3]);
-    } catch {}
-
-    // Tier 2: OpenAI TTS if configured
+    // Tier 1: OpenAI TTS if configured (fastest & highest quality when key is set)
     try {
       const chunks = await synthesizeOpenAiTts(
         rawText,
@@ -542,13 +564,19 @@ export async function POST(request: Request) {
       return respond("openai-tts", chunks);
     } catch {}
 
-    // Tier 3: StreamElements / Amazon Polly Natural Voices (Joanna, Matthew, Brian, Amy, Raveena, Russell)
+    // Tier 2: Microsoft Edge Neural TTS (with fast circuit-breaker if datacenter IP is blocked)
+    try {
+      const mp3 = await synthesizeEdgeNeural(rawText, spec, rate, 4200);
+      return respond("edge-neural", [mp3]);
+    } catch {}
+
+    // Tier 3: StreamElements / Amazon Polly Natural Voices (with fast circuit-breaker)
     try {
       const chunks = await synthesizePollyTts(rawText, spec, request.signal);
       return respond("polly-neural", chunks);
     } catch {}
 
-    // Tier 4: Google Translate Neural TTS (parallel sentence chunks)
+    // Tier 4: Google Translate Neural TTS (parallel sentence chunks, 6-way concurrency)
     const chunks = await synthesizeGoogleTts(
       rawText,
       spec,
