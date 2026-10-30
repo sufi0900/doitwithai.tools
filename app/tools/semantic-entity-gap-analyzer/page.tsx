@@ -273,7 +273,7 @@ export default function SemanticEntityGapAnalyzerPage() {
       </section>
 
       <ToolResources slug="semantic-entity-gap-analyzer" />
-      <ToolFaq title="Semantic entity & competitor gap questions" faqs={faqs} />
+      <ToolFaq faqs={faqs} />
     </div>
   );
 }

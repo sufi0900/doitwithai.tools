@@ -284,7 +284,7 @@ export default function LinkPlacementQualityCheckerPage() {
       </section>
 
       <ToolResources slug="link-placement-quality-checker" />
-      <ToolFaq title="Guest post & link placement vetting questions" faqs={faqs} />
+      <ToolFaq faqs={faqs} />
     </div>
   );
 }

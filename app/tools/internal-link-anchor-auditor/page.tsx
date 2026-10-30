@@ -249,7 +249,7 @@ export default function InternalLinkAnchorAuditorPage() {
       </section>
 
       <ToolResources slug="internal-link-anchor-auditor" />
-      <ToolFaq title="Internal link anchor & cannibalization questions" faqs={faqs} />
+      <ToolFaq faqs={faqs} />
     </div>
   );
 }

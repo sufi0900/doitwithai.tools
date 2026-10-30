@@ -249,7 +249,7 @@ export default function InformationGainAuditorPage() {
       </section>
 
       <ToolResources slug="information-gain-auditor" />
-      <ToolFaq title="Information Gain & content originality questions" faqs={faqs} />
+      <ToolFaq faqs={faqs} />
     </div>
   );
 }

@@ -260,7 +260,7 @@ export default function ContentDecayRefreshAnalyzerPage() {
       </section>
 
       <ToolResources slug="content-decay-refresh-analyzer" />
-      <ToolFaq title="Content decay & GSC refresh questions" faqs={faqs} />
+      <ToolFaq faqs={faqs} />
     </div>
   );
 }

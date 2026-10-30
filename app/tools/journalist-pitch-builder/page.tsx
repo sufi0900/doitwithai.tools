@@ -289,7 +289,7 @@ export default function JournalistPitchBuilderPage() {
       </section>
 
       <ToolResources slug="journalist-pitch-builder" />
-      <ToolFaq title="HARO & journalist pitch builder questions" faqs={faqs} />
+      <ToolFaq faqs={faqs} />
     </div>
   );
 }

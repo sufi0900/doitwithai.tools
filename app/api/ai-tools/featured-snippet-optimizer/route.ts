@@ -116,34 +116,31 @@ export async function POST(request: NextRequest) {
 
   try {
     const client = getGeminiClient();
-    const res = await client.generate(
-      {
-        model,
-        max_output_tokens: 1800,
-        store: false,
-        input: [
-          {
-            role: "system",
-            content:
-              "You are a Senior On-Page SEO & Google Featured Snippet / AI Overview Architect. Given a target query and core facts, write: (1) an exact question/topic H2 heading, (2) a 45-to-58-word ontological definition paragraph ('[Topic] is...') with zero fluff, (3) a 4-to-5-step ordered list with bold lead-ins, and (4) a 3-column comparison/specification table. Use only facts grounded in the user's input.",
-          },
-          {
-            role: "user",
-            content: JSON.stringify({
-              targetQuery: input.targetQuery,
-              coreFacts: input.coreFacts,
-              audienceOrNiche: input.audienceOrNiche,
-            }),
-          },
-        ],
-        text: {
-          format: geminiTextFormat(aiSnippetSchema, "featured_snippet_pack", {
-            compact: true,
+    const res = await client.responses.parse({
+      model,
+      max_output_tokens: 1800,
+      store: false,
+      input: [
+        {
+          role: "system",
+          content:
+            "You are a Senior On-Page SEO & Google Featured Snippet / AI Overview Architect. Given a target query and core facts, write: (1) an exact question/topic H2 heading, (2) a 45-to-58-word ontological definition paragraph ('[Topic] is...') with zero fluff, (3) a 4-to-5-step ordered list with bold lead-ins, and (4) a 3-column comparison/specification table. Use only facts grounded in the user's input.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            targetQuery: input.targetQuery,
+            coreFacts: input.coreFacts,
+            audienceOrNiche: input.audienceOrNiche,
           }),
         },
+      ],
+      text: {
+        format: geminiTextFormat(aiSnippetSchema, "featured_snippet_pack", {
+          compact: true,
+        }),
       },
-      { timeout: 30000 },
-    );
+    });
 
     const parsed = res.output_parsed;
     if (!parsed) {
