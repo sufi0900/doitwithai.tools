@@ -69,6 +69,7 @@ export default function TableOfContentsGeneratorClient() {
     "visual-preview" | "toc-html" | "full-html" | "markdown" | "schema"
   >("toc-html");
   const [selectedJumpSlug, setSelectedJumpSlug] = useState<string>("");
+  const [wrapCode, setWrapCode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -233,14 +234,18 @@ export default function TableOfContentsGeneratorClient() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-12 sm:px-6">
       <ToolRunOverlay
         active={busy}
         title="Generating SEO Table of Contents & Jump Links"
         description="Extracting H2–H4 heading hierarchy, deduplicating URL-safe #anchor slugs, and building <nav> HTML & ItemList JSON-LD."
       />
 
-      <form onSubmit={handleGenerateOrFetch} noValidate className={panel}>
+      <form
+        onSubmit={handleGenerateOrFetch}
+        noValidate
+        className={`${panel} min-w-0`}
+      >
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="flex items-center gap-2.5 text-2xl font-extrabold">
@@ -492,7 +497,7 @@ export default function TableOfContentsGeneratorClient() {
         <div
           ref={studioRef}
           tabIndex={-1}
-          className={`${panel} mt-8 scroll-mt-24 focus:outline-none`}
+          className={`${panel} mt-8 min-w-0 scroll-mt-24 focus:outline-none`}
         >
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-700">
             <div>
@@ -506,8 +511,8 @@ export default function TableOfContentsGeneratorClient() {
             </div>
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.02fr_1.18fr]">
-            <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+          <div className="mt-6 grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+            <div className="min-w-0 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
               <h4 className="text-base font-extrabold">
                 Detected Headings &amp; Editable Anchor Slugs (
                 {mergedItems.length})
@@ -516,19 +521,19 @@ export default function TableOfContentsGeneratorClient() {
                 Click any heading to preview its jump link in the studio on the
                 right, uncheck to exclude, or edit its <code>#anchor-slug</code>.
               </p>
-              <div className="mt-3 max-h-[420px] space-y-2 overflow-y-auto pr-1">
+              <div className="mt-3 max-h-[420px] space-y-2 overflow-y-auto overflow-x-hidden pr-1">
                 {mergedItems.map((it) => {
                   const isHighlighted = selectedJumpSlug === it.slug;
                   return (
                     <div
                       key={it.index}
-                      className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-2.5 text-xs transition ${
+                      className={`flex min-w-0 flex-col gap-2 rounded-xl border p-2.5 text-xs transition ${
                         isHighlighted
                           ? "border-[#3452d1] bg-blue-50/70 ring-2 ring-[#3452d1]/20 dark:border-[#5271ff] dark:bg-blue-950/30"
                           : "border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/40"
                       }`}
                     >
-                      <div className="flex items-center gap-2 font-semibold">
+                      <div className="flex min-w-0 items-start gap-2 font-semibold">
                         <input
                           type="checkbox"
                           checked={it.included}
@@ -542,9 +547,9 @@ export default function TableOfContentsGeneratorClient() {
                               },
                             }))
                           }
-                          className="h-4 w-4 rounded border-slate-300 text-[#3452d1]"
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-[#3452d1]"
                         />
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold dark:bg-slate-800">
+                        <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-bold dark:bg-slate-800">
                           H{it.level}
                         </span>
                         <button
@@ -554,7 +559,7 @@ export default function TableOfContentsGeneratorClient() {
                             setActiveTab("visual-preview");
                             focusToolSection(outputBoxRef.current);
                           }}
-                          className="text-left font-bold text-slate-800 hover:text-[#3452d1] hover:underline dark:text-slate-100 dark:hover:text-[#9aabff]"
+                          className="min-w-0 break-words text-left font-bold text-slate-800 hover:text-[#3452d1] hover:underline dark:text-slate-100 dark:hover:text-[#9aabff]"
                         >
                           {it.text}
                         </button>
@@ -572,7 +577,7 @@ export default function TableOfContentsGeneratorClient() {
                             },
                           }))
                         }
-                        className="w-44 rounded-lg border border-slate-300 bg-transparent px-2.5 py-1 font-mono text-[11px] dark:border-slate-600"
+                        className="w-full min-w-0 rounded-lg border border-slate-300 bg-transparent px-2.5 py-1.5 font-mono text-[11px] dark:border-slate-600"
                       />
                     </div>
                   );
@@ -583,10 +588,10 @@ export default function TableOfContentsGeneratorClient() {
             <div
               ref={outputBoxRef}
               tabIndex={-1}
-              className="scroll-mt-24 rounded-xl border border-slate-200 p-4 focus:outline-none dark:border-slate-700"
+              className="min-w-0 scroll-mt-24 rounded-xl border border-slate-200 p-4 focus:outline-none dark:border-slate-700"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap gap-1.5">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap gap-1.5">
                   {[
                     { id: "toc-html" as const, label: "1. TOC <nav> HTML" },
                     {
@@ -618,7 +623,15 @@ export default function TableOfContentsGeneratorClient() {
                   ))}
                 </div>
                 {activeTab !== "visual-preview" && (
-                  <div className="flex gap-1.5">
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      aria-pressed={wrapCode}
+                      onClick={() => setWrapCode((v) => !v)}
+                      className={secondaryBtn}
+                    >
+                      {wrapCode ? "No Wrap" : "Wrap Lines"}
+                    </button>
                     <button
                       type="button"
                       onClick={async () => {
@@ -677,7 +690,7 @@ export default function TableOfContentsGeneratorClient() {
                             <button
                               type="button"
                               onClick={() => setSelectedJumpSlug(item.slug)}
-                              className={`text-left font-semibold hover:underline ${
+                              className={`break-words text-left font-semibold hover:underline ${
                                 selectedJumpSlug === item.slug
                                   ? "font-extrabold text-[#3452d1] underline dark:text-[#9aabff]"
                                   : "text-slate-700 dark:text-slate-200"
@@ -685,7 +698,7 @@ export default function TableOfContentsGeneratorClient() {
                             >
                               {listStyle === "ol" ? `${idx + 1}. ` : "• "}
                               {item.text}{" "}
-                              <span className="font-mono text-[10px] text-slate-400">
+                              <span className="break-all font-mono text-[10px] text-slate-400">
                                 (#{item.slug})
                               </span>
                             </button>
@@ -698,9 +711,9 @@ export default function TableOfContentsGeneratorClient() {
                     <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50/60 p-3.5 text-xs dark:border-emerald-700 dark:bg-emerald-950/30">
                       <p className="font-extrabold text-emerald-900 dark:text-emerald-200">
                         Active Target Jump-Link Section:{" "}
-                        <code>#{selectedJumpSlug}</code>
+                        <code className="break-all">#{selectedJumpSlug}</code>
                       </p>
-                      <p className="mt-1 font-mono text-[11px] text-emerald-800 dark:text-emerald-300">
+                      <p className="mt-1 break-all font-mono text-[11px] text-emerald-800 dark:text-emerald-300">
                         Full SERP Jump URL: {pageUrl.replace(/#.*$/, "")}#
                         {selectedJumpSlug}
                       </p>
@@ -708,7 +721,13 @@ export default function TableOfContentsGeneratorClient() {
                   )}
                 </div>
               ) : (
-                <pre className="mt-3 max-h-[380px] overflow-auto rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
+                <pre
+                  className={`mt-3 max-h-[380px] w-full max-w-full overflow-auto rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700 ${
+                    wrapCode
+                      ? "whitespace-pre-wrap break-words"
+                      : "whitespace-pre"
+                  }`}
+                >
                   {currentCode}
                 </pre>
               )}
