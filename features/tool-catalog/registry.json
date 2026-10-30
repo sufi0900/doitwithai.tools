@@ -1849,6 +1849,308 @@
         "off-page",
         "writing"
       ]
+    },
+    {
+      "id": "eeat-content-auditor",
+      "slug": "eeat-content-auditor",
+      "name": "E-E-A-T & Helpful Content Trust Auditor",
+      "description": "Audit any webpage or HTML draft across 20 observable Experience, Expertise, Authoritativeness, and Trustworthiness signals with Standard and YMYL modes.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "E-E-A-T checker",
+        "helpful content audit",
+        "author schema",
+        "YMYL SEO",
+        "on-page SEO"
+      ],
+      "kind": "Audit trust signals",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 53,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "entity-sameas-finder",
+        "content-evidence-review",
+        "ai-citation-readiness-checker",
+        "information-gain-auditor"
+      ],
+      "topics": [
+        "on-page",
+        "writing",
+        "ai-search"
+      ]
+    },
+    {
+      "id": "featured-snippet-optimizer",
+      "slug": "featured-snippet-optimizer",
+      "name": "Featured Snippet & AI Overview Passage Optimizer",
+      "description": "Audit H2/H3 answer passages and generate 45–58 word Position Zero definitions, ordered step lists, and comparison tables for Featured Snippets and AI Overviews.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "featured snippet optimizer",
+        "AI Overview optimizer",
+        "Position Zero",
+        "passage optimization",
+        "on-page SEO"
+      ],
+      "kind": "Optimize passages",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 54,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "heading-structure-analyzer",
+        "table-of-contents-generator",
+        "ai-citation-readiness-checker",
+        "semantic-entity-gap-analyzer"
+      ],
+      "topics": [
+        "on-page",
+        "ai-search",
+        "writing"
+      ]
+    },
+    {
+      "id": "semantic-entity-gap-analyzer",
+      "slug": "semantic-entity-gap-analyzer",
+      "name": "Semantic Entity & Competitor Content Gap Analyzer",
+      "description": "Compare your page or draft against top-ranking competitor URLs to extract missing named entities, domain phrases, and H2/H3 subtopics with CSV and DOCX briefs.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "semantic SEO analyzer",
+        "entity gap analyzer",
+        "competitor content gap",
+        "NLP entity extraction",
+        "on-page SEO"
+      ],
+      "kind": "Compare entities",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 55,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "information-gain-auditor",
+        "keyword-density-checker",
+        "entity-sameas-finder",
+        "on-page-ai-seo-analyzer"
+      ],
+      "topics": [
+        "on-page",
+        "writing",
+        "keywords"
+      ]
+    },
+    {
+      "id": "content-decay-refresh-analyzer",
+      "slug": "content-decay-refresh-analyzer",
+      "name": "Content Decay & GSC Refresh Priority Analyzer",
+      "description": "Analyze Google Search Console period comparisons to separate true ranking content decay from AI Overview CTR compression and seasonality. Export CSV and DOCX refresh plans.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "content decay checker",
+        "content refresh tool",
+        "GSC traffic drop",
+        "SEO refresh priority",
+        "on-page SEO"
+      ],
+      "kind": "Prioritize refreshes",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 56,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "gsc-ctr-optimizer",
+        "gsc-striking-distance-finder",
+        "keyword-cannibalization-finder",
+        "semantic-entity-gap-analyzer"
+      ],
+      "topics": [
+        "on-page",
+        "keywords",
+        "writing"
+      ]
+    },
+    {
+      "id": "gsc-ctr-optimizer",
+      "slug": "gsc-ctr-optimizer",
+      "name": "GSC CTR Benchmark & Snippet Click-Loss Calculator",
+      "description": "Compare your Google Search Console CTR against organic position curves, calculate lost monthly clicks, and generate high-CTR title and meta description rewrites.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "GSC CTR calculator",
+        "SEO CTR optimizer",
+        "click deficit finder",
+        "title tag CTR",
+        "on-page SEO"
+      ],
+      "kind": "Recover clicks",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 57,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "meta-title-generator",
+        "serp-rich-result-preview-generator",
+        "content-decay-refresh-analyzer",
+        "gsc-striking-distance-finder"
+      ],
+      "topics": [
+        "on-page",
+        "keywords",
+        "writing"
+      ]
+    },
+    {
+      "id": "internal-link-anchor-auditor",
+      "slug": "internal-link-anchor-auditor",
+      "name": "Internal Link Anchor & Cannibalization Auditor",
+      "description": "Audit internal links across your pages for anchor text cannibalization, generic 'click here' CTAs, accidental nofollow leaks, empty image anchors, and duplicate links.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "internal link checker",
+        "internal anchor auditor",
+        "anchor cannibalization",
+        "internal nofollow",
+        "on-page SEO"
+      ],
+      "kind": "Audit internal links",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 58,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "internal-link-opportunity-finder",
+        "keyword-cannibalization-finder",
+        "anchor-text-analyzer",
+        "heading-structure-analyzer"
+      ],
+      "topics": [
+        "on-page",
+        "technical"
+      ]
+    },
+    {
+      "id": "table-of-contents-generator",
+      "slug": "table-of-contents-generator",
+      "name": "SEO Table of Contents & Jump-Link Generator",
+      "description": "Generate a semantic HTML or Markdown Table of Contents from H2–H4 headings, automatically inject unique id attributes into your article, and export Jump-Link JSON-LD.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "table of contents generator",
+        "HTML TOC generator",
+        "Markdown TOC generator",
+        "SEO jump links",
+        "on-page SEO"
+      ],
+      "kind": "Build jump links",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 59,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "heading-structure-analyzer",
+        "featured-snippet-optimizer",
+        "article-to-markdown",
+        "schema-markup-generator"
+      ],
+      "topics": [
+        "on-page",
+        "writing",
+        "technical"
+      ]
+    },
+    {
+      "id": "information-gain-auditor",
+      "slug": "information-gain-auditor",
+      "name": "Information Gain & Originality Scorer",
+      "description": "Measure how much net-new information your article adds beyond competing SERP pages across 6 concrete dimensions: unique entities, quantitative metrics, and testing proof.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "information gain SEO",
+        "content originality checker",
+        "GEO content audit",
+        "semantic differentiation",
+        "on-page SEO"
+      ],
+      "kind": "Score originality",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 60,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "semantic-entity-gap-analyzer",
+        "eeat-content-auditor",
+        "ai-citation-readiness-checker",
+        "content-evidence-review"
+      ],
+      "topics": [
+        "on-page",
+        "writing",
+        "ai-search"
+      ]
     }
   ],
   "topics": [

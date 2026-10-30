@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-30T07:49:40.785Z",
+  "generated": "2026-10-30T09:48:40.022Z",
   "static_pages": [
     {
       "url": "/",
@@ -423,6 +423,54 @@
       "type": "static"
     },
     {
+      "url": "/tools/eeat-content-auditor",
+      "title": "E-E-A-T & Helpful Content Trust Auditor",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/featured-snippet-optimizer",
+      "title": "Featured Snippet & AI Overview Passage Optimizer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/semantic-entity-gap-analyzer",
+      "title": "Semantic Entity & Competitor Content Gap Analyzer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/content-decay-refresh-analyzer",
+      "title": "Content Decay & GSC Refresh Priority Analyzer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/gsc-ctr-optimizer",
+      "title": "GSC CTR Benchmark & Snippet Click-Loss Calculator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/internal-link-anchor-auditor",
+      "title": "Internal Link Anchor & Cannibalization Auditor",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/table-of-contents-generator",
+      "title": "SEO Table of Contents & Jump-Link Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/information-gain-auditor",
+      "title": "Information Gain & Originality Scorer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -441,5 +489,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 73
+  "total_pages": 81
 }
