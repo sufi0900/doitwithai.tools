@@ -27,7 +27,8 @@ test("tool responses preserve valid results and API error codes", async () => {
       error instanceof ToolResponseError &&
       error.status === 429 &&
       error.code === "PROVIDER_RATE_LIMITED" &&
-      error.message === "Quota exhausted.",
+      error.message ===
+        "You have reached the current usage limit. Please try again later.",
   );
 });
 test("HTML gateway, missing route, access, timeout and empty responses never leak parser errors", async () => {
@@ -82,4 +83,26 @@ test("structured gateway failures produce a recoverable upstream error", async (
       error.code === "UPSTREAM_UNAVAILABLE" &&
       !error.message.includes("Raw origin details"),
   );
+});
+
+test("public tool errors hide operational diagnostics while preserving support codes", async () => {
+  for (const message of [
+    "Generation stopped: REDIS_PLAN_LIMIT. Gemini: not attempted. Groq: not attempted.",
+    "Gemini: PROVIDER_TIMEOUT. Groq: PROVIDER_RATE_LIMITED.",
+    "Neither Gemini nor Groq is configured.",
+    "Missing API key.",
+  ]) {
+    await assert.rejects(
+      readToolResponse(
+        Response.json(
+          { error: { message, code: "INTERNAL_DIAGNOSTIC" } },
+          { status: 503 },
+        ),
+      ),
+      (error) =>
+        error instanceof ToolResponseError &&
+        error.code === "INTERNAL_DIAGNOSTIC" &&
+        !/Gemini|Groq|Redis|API|provider/i.test(error.message),
+    );
+  }
 });

@@ -1,3 +1,8 @@
+import {
+  ToolHeroBackground,
+  toolHeroSurface,
+  toolHeroHeading,
+} from "@/features/tool-ui/ToolHero";
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
@@ -127,12 +132,10 @@ export default function WritingPage({ kind }: { kind: WritingKind }) {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className="relative overflow-hidden bg-slate-950 pb-20 pt-10 text-white sm:pt-16 lg:pb-28">
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-36 top-0 h-96 w-96 rounded-full bg-[#5271ff]/30 blur-3xl" />
-          <div className="absolute -right-28 top-40 h-80 w-80 rounded-full bg-cyan-400/15 blur-3xl" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,white,transparent_82%)]" />
-        </div>
+      <div
+        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}
+      >
+        <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
@@ -157,7 +160,7 @@ export default function WritingPage({ kind }: { kind: WritingKind }) {
             </p>
             <h1 className="mt-7 text-4xl font-black leading-[1.08] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
               AI {page.name}
-              <span className="mt-2 block text-balance bg-gradient-to-r from-[#7f9aff] via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+              <span className={`mt-2 block text-balance ${toolHeroHeading}`}>
                 {description
                   ? "Make Every Word Earn Its Place"
                   : "Give Your Page a Clear Starting Point"}

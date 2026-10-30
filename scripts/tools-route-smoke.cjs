@@ -28,6 +28,7 @@ async function run() {
       "/tools/image-alt-text-generator",
       "/tools/keyword-clustering-tool",
       "/tools/topical-map-generator",
+      "/tools/internal-link-opportunity-finder",
       "/tools/categories/ai-seo",
       "/tools/categories/content-writing",
       "/tools/categories/productivity",
@@ -75,6 +76,7 @@ async function run() {
       "image-alt-text-generator",
       "keyword-clustering-tool",
       "topical-map-generator",
+      "internal-link-opportunity-finder",
     ])
       assert.ok(sitemap.includes(`/tools/${slug}`));
     assert.ok(!sitemap.includes("/ai-seo-tools"));

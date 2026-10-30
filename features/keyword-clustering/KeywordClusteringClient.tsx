@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -233,9 +234,7 @@ export default function KeywordClusteringClient() {
       setImported(rows);
       setColumn(detected >= 0 ? detected : 0);
       setHeader(detected >= 0);
-      setStatus(
-        "File read locally. Choose a column before using its keywords.",
-      );
+      setStatus("File ready. Choose the column containing your keywords.");
     } catch (e) {
       if (version === uploadVersion.current)
         setError(e instanceof Error ? e.message : "Could not read the file.");
@@ -574,8 +573,8 @@ export default function KeywordClusteringClient() {
                 onChange={(e) => void upload(e.target.files?.[0])}
               />
               <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
-                Under 100 KB. Files are read locally. Only the selected keyword
-                column is sent when you generate.
+                Use a CSV or TSV under 100 KB. Choose the column containing the
+                keywords you want to group.
               </p>
             </div>
           </div>
@@ -648,7 +647,7 @@ export default function KeywordClusteringClient() {
           <p className="max-w-xl text-xs leading-6 text-slate-500 dark:text-slate-400">
             {workspace
               ? "A successful generation replaces this draft. Export your edits first. Input edits do not change the current results."
-              : "Generation sends your cleaned list and brief to our AI provider. No live search results or demand metrics are retrieved."}
+              : "Review your keyword list and brief before grouping. Compare the resulting groups with your intended reader tasks."}
           </p>
         </div>
       </form>
@@ -963,7 +962,7 @@ export default function KeywordClusteringClient() {
                     >
                       Existing or proposed page URL
                     </label>
-                    <input
+                    <ToolUrlInput
                       id="cluster-page-url"
                       type="url"
                       maxLength={2000}

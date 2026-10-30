@@ -1,28 +1,209 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ToolCatalog from "@/features/tool-catalog/ToolCatalog";
-import { categories, categoryPath, collectionSchema, tools } from "@/features/tool-catalog/catalog";
+import {
+  categories,
+  categoryPath,
+  collectionSchema,
+  tools,
+} from "@/features/tool-catalog/catalog";
+import { topics, getTopicMeta } from "@/features/tool-catalog/discovery";
 
 export const metadata: Metadata = {
-  title: "Free AI & Productivity Tools | Do It With AI Tools",
-  description: "Browse practical tools for SEO, content, productivity, education, business, and future digital workflows.",
+  title:
+    "Free AI SEO, Content Writing & Digital Marketing Tools | Do It With AI Tools",
+  description:
+    "Explore free SEO and content writing tools. Improve page titles, analyze site structure, research keywords, and preview search and social results.",
   alternates: { canonical: "https://doitwithai.tools/tools" },
-  openGraph: { title: "Free AI & Productivity Tools", description: "Find the right tool for your next digital task.", url: "https://doitwithai.tools/tools", type: "website" },
+  openGraph: {
+    title: "Free AI SEO, Content Writing & Digital Marketing Tools",
+    description:
+      "Practical tools for On-Page SEO, Technical SEO, Content Writing, Keyword Research, and Social Media workflows.",
+    url: "https://doitwithai.tools/tools",
+    type: "website",
+  },
 };
 
 export default function ToolsPage() {
-  return <main className="bg-slate-50 pb-24 pt-12 text-slate-900 dark:bg-[#171C28] dark:text-white">
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema("AI & Productivity Tools Directory", "/tools", tools)).replace(/</g, "\\u003c") }} />
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <nav aria-label="Breadcrumb" className="mb-8 text-sm text-slate-500 dark:text-slate-300"><Link href="/">Home</Link><span aria-hidden="true"> / </span><span aria-current="page">Tools</span></nav>
-      <header className="rounded-3xl border border-blue-400/20 bg-[#182235] p-8 text-white sm:p-12">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#AEBBFF]">Your practical tool workspace</p>
-        <h1 className="mt-4 max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">Less busywork.<br /><span className="text-[#AEBBFF]">More useful work.</span></h1>
-        <p className="mt-5 max-w-2xl leading-8 text-slate-300">Find a tool for your next task. Start with SEO and content writing: create better title candidates, readable URLs, and structured data you can review before publishing.</p>
-        <div className="mt-7 flex flex-wrap gap-3">{categories.map((category) => <Link key={category.slug} href={categoryPath(category.slug)} className="rounded-full border border-blue-300/30 px-4 py-2 text-sm font-semibold hover:bg-white/10">{category.name}</Link>)}</div>
-      </header>
-      <ToolCatalog />
-      <aside className="mt-12 rounded-2xl border border-slate-200 p-6 dark:border-slate-700"><h2 className="text-xl font-bold">Tools for doing. Guides for understanding.</h2><p className="mt-3 leading-7 text-slate-600 dark:text-slate-300">Generated output is a starting point, not a promise of rankings. Check accuracy, relevance, and your page content before using it.</p><div className="mt-4 flex flex-wrap gap-6 text-primary dark:text-blue-200"><Link href="/ai-seo">Read SEO guides →</Link><Link href="/guides">Read writing and productivity guides →</Link><Link href="/tools/categories">Browse tool categories →</Link></div></aside>
+  return (
+    <div className="bg-slate-50 pb-20 pt-6 text-slate-900 dark:bg-[#0F1523] dark:text-white sm:pt-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            collectionSchema(
+              "AI & Productivity Tools Directory",
+              "/tools",
+              tools,
+            ),
+          ).replace(/</g, "\\u003c"),
+        }}
+      />
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Compact Breadcrumb + Workspace Stats */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5">
+            <Link
+              href="/"
+              className="font-medium transition hover:text-[#5271FF]"
+            >
+              Home
+            </Link>
+            <span aria-hidden="true">/</span>
+            <span
+              aria-current="page"
+              className="font-bold text-slate-800 dark:text-slate-200"
+            >
+              Tools Workspace
+            </span>
+          </nav>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-[#5271FF]/30 bg-[#5271FF]/10 px-3 py-1 text-[11px] font-bold text-[#4A6CF7] dark:text-[#AEBBFF]">
+              {tools.length} Live Tools
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-[#161F30] dark:text-slate-300">
+              {topics.length} Marketing Disciplines
+            </span>
+          </div>
+        </div>
+
+        {/* Streamlined, High-Impact Hero Header (keeps Tool Finder above the fold) */}
+        <header className="relative overflow-hidden rounded-3xl border border-[#5271FF]/25 bg-gradient-to-br from-[#131C31] via-[#18233C] to-[#1E2C4F] p-6 text-white shadow-xl sm:p-8">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#5271FF]/20 blur-3xl"
+          />
+          <div className="relative z-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+            <div className="max-w-2xl">
+              <p className="inline-flex items-center gap-2 rounded-full border border-[#AEBBFF]/25 bg-white/5 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-[#AEBBFF]">
+                Digital Marketing & SEO Workspace
+              </p>
+              <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+                Less busywork.{" "}
+                <span className="bg-gradient-to-r from-[#AEBBFF] via-blue-200 to-cyan-200 bg-clip-text text-transparent">
+                  More useful work.
+                </span>
+              </h1>
+              <p className="mt-2.5 text-sm leading-6 text-slate-300 sm:text-base">
+                Practical utilities for On-Page SEO, Technical SEO, Off-Page
+                SEO, Content Writing, Keyword Research, AI Search (GEO), and
+                Social Media workflows. Built for fast human review before
+                publishing.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2.5 lg:items-end">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-[#AEBBFF]">
+                Browse Hub Collections
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {categories
+                  .filter(
+                    (c) =>
+                      c.slug === "content-conversion" ||
+                      tools.some((t) => t.categories.includes(c.slug)),
+                  )
+                  .map((category) => (
+                    <Link
+                      key={category.slug}
+                      href={categoryPath(category.slug)}
+                      className={`rounded-xl border px-3.5 py-2 text-xs font-bold backdrop-blur-sm transition ${category.slug === "content-conversion" ? "border-orange-200/30 bg-orange-300/10 text-orange-100 hover:bg-orange-300/20" : "border-white/[0.15] bg-white/10 text-white hover:border-[#AEBBFF]/50 hover:bg-white/20"}`}
+                    >
+                      {category.name}{" "}
+                      {category.slug === "content-conversion" &&
+                      !tools.some((t) => t.categories.includes(category.slug))
+                        ? "· Planned"
+                        : `(${
+                            tools.filter((t) =>
+                              t.categories.includes(category.slug),
+                            ).length
+                          })`}
+                    </Link>
+                  ))}
+                <Link
+                  href="/tools/categories"
+                  className="rounded-xl border border-[#AEBBFF]/30 bg-[#5271FF]/25 px-3.5 py-2 text-xs font-bold text-[#AEBBFF] transition hover:bg-[#5271FF]/40 hover:text-white"
+                >
+                  All Categories →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Interactive Tool Catalog */}
+        <ToolCatalog />
+
+        {/* SEO Category Architecture & Workflow Guide Section */}
+        <section
+          aria-labelledby="marketing-disciplines-heading"
+          className="mt-14 rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-[#161F30] sm:p-8"
+        >
+          <div className="max-w-3xl">
+            <h2
+              id="marketing-disciplines-heading"
+              className="text-xl font-extrabold text-slate-900 dark:text-white sm:text-2xl"
+            >
+              Built for every stage of your SEO and digital marketing workflow
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Our workspace is organized by core marketing disciplines so you
+              can move from keyword discovery and technical site health to
+              on-page optimization and social distribution.
+            </p>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {topics.map((topic) => {
+              const meta = getTopicMeta(topic.id, topic.name);
+              const count = tools.filter((t) =>
+                t.topics.includes(topic.id),
+              ).length;
+              return (
+                <div
+                  key={topic.id}
+                  className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-[#111827]/60"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {meta.shortName}
+                    </h3>
+                    <span className="rounded-full bg-[#5271FF]/[0.15] px-2.5 py-0.5 text-[11px] font-bold text-[#4A6CF7] dark:text-[#AEBBFF]">
+                      {count} {count === 1 ? "tool" : "tools"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-600 dark:text-slate-400">
+                    {meta.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <aside className="mt-8 rounded-2xl border border-slate-200/90 bg-white p-6 dark:border-slate-800 dark:bg-[#161F30]">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            Tools for doing. Guides for understanding.
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Generated output is a starting point, not a promise of rankings.
+            Check accuracy, relevance, and your page content before using it.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-6 text-sm font-semibold text-primary dark:text-[#93B4FF]">
+            <Link href="/prompts" className="hover:underline">
+              Explore prompt previews →
+            </Link>
+            <Link href="/ai-seo" className="hover:underline">
+              Read SEO guides →
+            </Link>
+            <Link href="/guides" className="hover:underline">
+              Read writing and productivity guides →
+            </Link>
+            <Link href="/tools/categories" className="hover:underline">
+              Browse tool categories →
+            </Link>
+          </div>
+        </aside>
+      </div>
     </div>
-  </main>;
+  );
 }

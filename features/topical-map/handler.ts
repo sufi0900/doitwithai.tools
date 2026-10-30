@@ -1,10 +1,11 @@
+import { rateLimitFailure } from "@/lib/ai-tools/rate-limit";
 import { NextResponse, type NextRequest } from "next/server";
 import { checkAiToolRateLimit } from "@/lib/ai-tools/rate-limit";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
   getGeminiClient,
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
   geminiFailure,
   geminiTextFormat,
 } from "@/lib/ai-tools/gemini";
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       "VALIDATION_ERROR",
     );
   const model = getGeminiModel("TOPICAL_MAP");
-  if (!isGeminiConfigured(model))
+  if (!isAiConfigured(model))
     return error(
       "The map generator has not been connected to Gemini yet.",
       503,
@@ -47,9 +48,9 @@ export async function POST(request: NextRequest) {
   let limit;
   try {
     limit = await checkAiToolRateLimit(request, "topical-map");
-  } catch {
+  } catch (cause) {
     return error(
-      "The generator is temporarily unavailable.",
+      rateLimitFailure(cause).message,
       503,
       "RATE_LIMIT_UNAVAILABLE",
     );

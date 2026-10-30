@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findTools, safeContentHref } from '../features/tool-catalog/catalog-core.mjs';
@@ -59,7 +60,7 @@ test('all API route durations fit the deployed Vercel Hobby limit', () => {
       else if (/^route\.(ts|js)$/.test(entry.name)) routes.push(path);
     }
   }
-  collect(new URL('../app/api/', import.meta.url).pathname);
+  collect(fileURLToPath(new URL('../app/api/', import.meta.url)));
   let configured = 0;
   for (const path of routes) {
     const match = readFileSync(path, 'utf8').match(/export const maxDuration = (\d+)/);

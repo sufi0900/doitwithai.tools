@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -483,9 +484,8 @@ export default function TopicalMapClient() {
                 : "Create my topical map"}
           </button>
           <p className="max-w-xl text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Generation sends this brief to Gemini. No live search results or
-            keyword metrics are retrieved. A successful request replaces the
-            current map.
+            Review your brief before creating a map. A new map replaces the
+            current draft, so export any edits you want to keep.
           </p>
         </div>
       </form>
@@ -758,7 +758,7 @@ export default function TopicalMapClient() {
                     Existing page URL{" "}
                     <span className="font-normal">(optional)</span>
                   </label>
-                  <input
+                  <ToolUrlInput
                     id="topic-url"
                     type="url"
                     className={field}

@@ -1,6 +1,7 @@
 import { z } from "zod";
 export const readabilityInputSchema = z.object({
   text: z.string().trim().min(40).max(4500),
+  blockTypes: z.array(z.enum(["paragraph", "heading", "listItem", "quote", "codeBlock"])).max(300).optional(),
   audience: z.string().trim().max(250).default(""),
   terms: z.string().trim().max(600).default(""),
   tone: z.enum(["clear", "professional", "friendly"]).default("clear"),
@@ -44,6 +45,7 @@ Avoid several consecutive tiny or nearly equal-length prose sentences. Keep clos
 Do not lengthen a useful short statement with filler, impose an alternating pattern, or combine unrelated ideas merely to vary length.
 Use natural transitions, clear references, and repeated key terms to connect ideas. Preserve sequence, contrast, reasons, conditions, and consequences.
 Only use because, therefore, however, first, next, or similar links when the source supports that relationship. Do not start every sentence with a transition.
+RICH TEXT: If blockTypes is provided, it identifies the selected rich-text blocks in order. Keep exactly one output block per input block, separated by a blank line. Preserve list-item boundaries, headings, quotations, and code. Do not add list markers, heading hashes, or quote markers: the editor retains that formatting. Never merge distinct list items into one sentence. Preserve a quotation exactly unless the user is editing their own wording; explain any quotation concerns in the review note. These structural requirements take priority over paragraph-splitting preferences.
 PARAGRAPHS: When splitParagraphs is true, split dense paragraphs at changes of idea or task, using a blank line between paragraphs.
 Usually group 2-3 related sentences, occasionally up to 4, and use a one-sentence paragraph when it has a clear purpose.
 Vary paragraph size naturally. Do not split after every sentence, force equal blocks, or separate a condition from the action it qualifies.

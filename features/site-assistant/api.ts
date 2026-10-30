@@ -1,3 +1,4 @@
+import { publicToolError } from "@/lib/ai-tools/client-response";
 import type { SiteAssistantRequest, SiteAssistantResponse } from "./types";
 
 export async function askSiteAssistant(
@@ -13,8 +14,11 @@ export async function askSiteAssistant(
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     throw new Error(
-      payload?.error?.message ||
-        "The website assistant is unavailable. Please try again.",
+      publicToolError(
+        payload?.error?.message ||
+          "The website assistant is unavailable. Please try again.",
+        response.status,
+      ),
     );
   }
   return payload as SiteAssistantResponse;

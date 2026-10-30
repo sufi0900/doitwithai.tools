@@ -5,6 +5,8 @@
 "use client";
 import { Providers } from "./providers";
 
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import "../styles/index.css";
 import "../components/Hero/critical-hero.css";
 import { useEffect, useState } from "react";
@@ -12,8 +14,9 @@ import { useOnlineStatus } from "./useOnlineStatus";
 import { Inter } from "next/font/google";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import Hero from "@/components/Hero";
+import "@/features/homepage/homepage.css";
 import Header from "@/components/Header";
+import WorkspaceProvider from "@/features/tools-workspace/WorkspaceProvider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { CacheProvider } from "@/React_Query_Caching/CacheProvider";
@@ -57,10 +60,7 @@ export default function RootLayout({ children }) {
 
   const handleOfflineRetry = () => {
     setIsOfflineRetrying(true);
-    // Simulate a network check
     setTimeout(() => {
-      // In a real scenario, you'd check navigator.onLine and perhaps
-      // try to refetch a small asset. For now, we'll just re-evaluate.
       setIsOfflineRetrying(false);
       if (navigator.onLine) {
         window.location.reload();
@@ -68,23 +68,15 @@ export default function RootLayout({ children }) {
     }, 1500);
   };
 
-  // 1) Stick hero CSS + global CSS + carousel CSS + Toaster into a deferred import
   useEffect(() => {
-    // mark that initial paint has happened
     setHydrated(true);
-
-    import("slick-carousel/slick/slick.css");
-    import("slick-carousel/slick/slick-theme.css");
   }, []);
 
-  // online/offline banner
   useEffect(() => {
     const goOnline = () => {
-      // No need to set state here, useOnlineStatus hook handles it
       console.log("You are back online!");
     };
     const goOffline = () => {
-      // No need to set state here, useOnlineStatus hook handles it
       console.log("You are offline.");
     };
     window.addEventListener("online", goOnline);
@@ -113,8 +105,6 @@ export default function RootLayout({ children }) {
         );
       }
 
-      // Cache Storage here is the old Workbox/PWA cache.
-      // It is separate from Redis and your Vercel cache.
       if ("caches" in window) {
         const cacheNames = await caches.keys();
 
@@ -125,8 +115,6 @@ export default function RootLayout({ children }) {
 
       localStorage.setItem(cleanupKey, "done");
 
-      // An unregistered worker may continue controlling the current tab
-      // until that tab reloads.
       if (hadActiveController) {
         window.location.reload();
       }
@@ -137,12 +125,10 @@ export default function RootLayout({ children }) {
     });
   }, []);
 
-  // Scroll to top on navigation
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  // Update refreshCount on component mount or hydration
   useEffect(() => {
     if (hydrated) {
       setRefreshCount((prevCount) => prevCount + 1);
@@ -182,7 +168,6 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#000000" />
 
         {/* Ahrefs Web Analytics */}
-
         <Script
           src="https://analytics.ahrefs.com/analytics.js"
           data-key="vodw9TgfqC4efMfrAO9xrw"
@@ -316,22 +301,25 @@ export default function RootLayout({ children }) {
         )}
 
         <Providers>
-          {isSlugPage ? <ConditionalGlobalHeader /> : <Header />}
-          {isHomePage && <Hero />}
+          <WorkspaceProvider>
+            {isSlugPage ? <ConditionalGlobalHeader /> : <Header />}
 
-          <>
-            <CacheProvider>
-              <main className={isHomePage ? "" : "pt-[80px]"}>{children}</main>
+            <>
+              <CacheProvider>
+                <main className={isHomePage ? "" : "pt-[80px]"}>
+                  {children}
+                </main>
 
-              <Footer />
-              <ScrollToTop />
-              <SiteAssistant />
-            </CacheProvider>
+                <Footer />
+                <ScrollToTop />
+                <SiteAssistant />
+              </CacheProvider>
 
-            <Toaster position="bottom-center" />
-            <SpeedInsights />
-            <Analytics />
-          </>
+              <Toaster position="bottom-center" />
+              <SpeedInsights />
+              <Analytics />
+            </>
+          </WorkspaceProvider>
         </Providers>
       </body>
     </html>
