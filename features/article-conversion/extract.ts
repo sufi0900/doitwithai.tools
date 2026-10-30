@@ -1,19 +1,19 @@
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
 import {
-  plain,
   safeLink,
   type Article,
-  type ArticleBrand,
+  type ArticleBrandMeta,
   type Block,
-  type LinkRef,
 } from "./model";
 
+const plain = (s: string) => s.replace(/\s+/g, " ").trim();
+
 const TRAILING_CLUTTER_RE =
-  /^(related articles|recommended for you|read next|further reading|share this( article| post)?|leave a (comment|reply)|comments|about the author|subscribe to our newsletter|stay updated|follow us on|tags:|categories:|filed under:)$/i;
+  /^(?:•\s*|\d+\.\s*)?(?:leia tamb[eé]m|veja tamb[eé]m|read also|also read|related (?:posts|articles|reads|stories)|further reading|recommended reading|share this (?:article|post))\s*[:\-–]/i;
 
 const SOURCE_CAPTION_RE =
-  /^(source|image source|photo credit|credit|image via|via|screenshot via|chart source)\s*:?\s*[a-z0-9 ._-]{1,50}$/i;
+  /^(?:•\s*)?(?:image\s+)?(?:source|photo\s+credit|image\s+credit|credit)\s*(?:[:\-–]\s*\S.*)?$/i;
 
 function pickBestImgSrc(img: any, base: string): string {
   if (!img) return "";
@@ -78,8 +78,7 @@ function extractJsonLdLogo(doc: any, base: string): string {
 function extractBrandMetadata(
   doc: any,
   base: string,
-  siteNameFallback: string,
-): ArticleBrand | undefined {
+): ArticleBrandMeta | undefined {
   try {
     let domain = "doitwithai.tools";
     try {
@@ -97,7 +96,6 @@ function extractBrandMetadata(
           doc
             .querySelector('meta[name="application-name"]')
             ?.getAttribute("content") ||
-          siteNameFallback ||
           domain,
       ).slice(0, 80) || domain;
 
@@ -115,7 +113,6 @@ function extractBrandMetadata(
       ? rawTheme
       : undefined;
 
-    // Prioritize JSON-LD publisher/organization logo, then header logo <img>, then meta og:logo, then apple-touch-icon / PNG icon
     const jsonLdLogo = extractJsonLdLogo(doc, base);
     const headerImg =
       doc.querySelector(
@@ -154,23 +151,15 @@ function extractBrandMetadata(
 }
 
 export function extractArticle(html: string, source = ""): Article {
-  if (!html.trim()) {
-    throw Error("Supply non-empty HTML within 500 KB.");
-  }
+  if (!html.trim()) throw Error("Supply non-empty HTML within 500 KB.");
 
-  // Strip heavy inline scripts, styles, SVGs, and comments before measuring or parsing
-  // so modern CMS pages (WordPress, Next.js, Webflow) with 1–4 MB of inline CSS/JS import cleanly,
-  // while raw non-HTML strings over 500 KB are still rejected as expected.
   const hasHtmlMarkup = /<(article|main|body|div|p|h1|h2|section|html)\b/i.test(
     html,
   );
   const rawBytes = new TextEncoder().encode(html).length;
-  if (!hasHtmlMarkup && rawBytes > 500000) {
+  if (!hasHtmlMarkup && rawBytes > 500000)
     throw Error("Supply non-empty HTML within 500 KB.");
-  }
-  if (rawBytes > 6000000) {
-    throw Error("Supply non-empty HTML within 500 KB.");
-  }
+  if (rawBytes > 6000000) throw Error("Supply non-empty HTML within 500 KB.");
 
   const preCleanedHtml =
     rawBytes > 350000
@@ -180,103 +169,85 @@ export function extractArticle(html: string, source = ""): Article {
           .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, "")
       : html;
 
-  const base = safeLink(source) || "https://article.invalid/";
-  const { document } = parseHTML(preCleanedHtml);
-  const warnings: string[] = [];
-
-  // Extract brand metadata BEFORE removing header/meta/json-ld nodes
-  const ogSiteName =
-    document
-      .querySelector('meta[property="og:site_name"]')
-      ?.getAttribute("content") || "";
-  const brand = extractBrandMetadata(document, base, ogSiteName);
-
-  document.querySelectorAll("base").forEach((n: any) => n.remove());
-  const removed = document.querySelectorAll(
-    "script,style,noscript,template,iframe,frame,object,embed,form,input,button,select,textarea,svg,canvas,audio,video",
+  const { document } = parseHTML(
+    /<html[\s>]/i.test(preCleanedHtml)
+      ? preCleanedHtml
+      : `<html><body>${preCleanedHtml}</body></html>`,
   );
-  if (removed.length)
-    warnings.push("Interactive, embedded, or script elements were omitted.");
-  removed.forEach((n: any) => n.remove());
+  const base = safeLink(source) || "https://article.invalid/";
+  for (const key of ["documentURI", "baseURI", "URL"])
+    Object.defineProperty(document, key, { value: base, configurable: true });
 
-  // Remove common newsletter popups, share bars, author boxes, and related post widgets before Readability runs
+  const brand = extractBrandMetadata(document, base);
+
+  const title = plain(
+    document
+      .querySelector('meta[property="og:title"]')
+      ?.getAttribute("content") ||
+      document.querySelector("h1")?.textContent ||
+      document.title ||
+      "Untitled article",
+  ).slice(0, 300);
+  const byline = plain(
+      document.querySelector('meta[name="author"]')?.getAttribute("content") ||
+        "",
+    ).slice(0, 300),
+    published = plain(
+      document
+        .querySelector('meta[property="article:published_time"]')
+        ?.getAttribute("content") ||
+        document.querySelector("time[datetime]")?.getAttribute("datetime") ||
+        "",
+    ).slice(0, 100);
+  const embedded = !!document.querySelector(
+    "iframe,video,audio,svg,canvas,form",
+  );
   document
     .querySelectorAll(
-      "nav,footer,aside,.related-posts,.sharedaddy,.jp-relatedposts,.wp-block-post-comments,.comments-area,.post-navigation,.newsletter-signup,.social-share,.share-buttons,.toc,.table-of-contents,.ez-toc-container,#ez-toc-container",
+      'script,style,noscript,template,iframe,video,audio,svg,canvas,form,nav,footer,header,aside,figcaption,[hidden],[aria-hidden="true"],.toc,#toc,[id*="ez-toc"],[class*="ez-toc"],[class*="table-of-contents"],[class*="related-post"],[class*="jp-relatedposts"],[class*="sharedaddy"],[class*="share-"],[class*="social-"],[class*="breadcrumb"],[class*="newsletter"],[class*="author-bio"],[class*="comment"]',
     )
     .forEach((n: any) => n.remove());
-
-  const title =
-    plain(
-      document.querySelector("article h1, main h1, h1")?.textContent ||
-        document
-          .querySelector('meta[property="og:title"],meta[name="twitter:title"]')
-          ?.getAttribute("content") ||
-        document.title ||
-        "",
-    ).slice(0, 300) || "Untitled article";
-  const byline = plain(
-    document
-      .querySelector('[rel="author"],.byline,.author,[itemprop="author"]')
-      ?.textContent ||
-      document
-        .querySelector('meta[name="author"],meta[property="article:author"]')
-        ?.getAttribute("content") ||
-      "",
-  ).slice(0, 300);
-  const published = plain(
-    document.querySelector("time")?.getAttribute("datetime") ||
-      document.querySelector("time")?.textContent ||
-      document
-        .querySelector(
-          'meta[property="article:published_time"],meta[name="date"]',
-        )
-        ?.getAttribute("content") ||
-      "",
-  ).slice(0, 100);
-
-  let readerHtml = "";
   let parsed: ReturnType<Readability["parse"]> = null;
   try {
-    parsed = new Readability(document.cloneNode(true) as any, {
-      charThreshold: 120,
+    parsed = new Readability(document.cloneNode(true) as unknown as Document, {
+      charThreshold: 100,
+      maxElemsToParse: 12000,
     }).parse();
-    readerHtml = parsed?.content || "";
-  } catch {
+  } catch {}
+  const warnings = [
+    "Compare this preview with the original. Extraction may omit sections or retain unrelated text.",
+  ];
+  if (embedded)
     warnings.push(
-      "Primary article reader fallback was used; review extracted sections carefully.",
+      "Interactive content, embedded media, forms, and SVG graphics are omitted.",
+    );
+  let body: any;
+  if (parsed?.content && plain(parsed.textContent || "").length >= 100)
+    body = parseHTML(`<html><body>${parsed.content}</body></html>`).document
+      .body;
+  else {
+    body =
+      document.querySelector("article") ||
+      document.querySelector("main") ||
+      (document.body.textContent?.trim()
+        ? document.body
+        : document.documentElement);
+    warnings.push(
+      "Reader extraction was uncertain. A fallback content area is shown for manual review.",
     );
   }
-  const root = readerHtml
-    ? parseHTML(`<html><body>${readerHtml}</body></html>`).document.body
-    : document.querySelector("article,main,[role='main'],body") || document;
-  if (!readerHtml)
-    warnings.push(
-      "Primary article reader fallback was used; review extracted sections carefully.",
-    );
-  const body = root.cloneNode(true) as any;
-  body
-    .querySelectorAll("nav,footer,header,aside,[role='navigation']")
-    .forEach((n: any) => n.remove());
-
   const blocks: Block[] = [],
-    links: LinkRef[] = [];
+    links: Article["links"] = [];
   let chars = 0,
-    images = 0,
-    limited = false;
-
-  function inline(node: any): string {
-    let text = "";
-    for (const child of Array.from(node.childNodes || []) as any[]) {
-      if (child.nodeType === 3) text += child.textContent || "";
-      else if (child.nodeType === 1) {
-        const tag = child.tagName?.toUpperCase();
-        if (tag === "BR") text += "\n";
-        else if (!/^(UL|OL|TABLE|IMG)$/.test(tag)) text += inline(child);
-      }
-    }
-    const n = node;
-    if (n.tagName?.toUpperCase() === "A") {
+    limited = false,
+    images = 0;
+  function inline(n: any): string {
+    if (n.nodeType === 3) return n.textContent || "";
+    if (n.nodeType !== 1 || /^(SCRIPT|STYLE|SVG|IFRAME|FORM)$/.test(n.tagName))
+      return "";
+    if (n.tagName === "BR") return "\n";
+    const text = Array.from(n.childNodes).map(inline).join("");
+    if (n.tagName === "A") {
       const url = safeLink(n.getAttribute("href") || "", base);
       if (url && !url.includes("article.invalid")) {
         let index = links.findIndex((l) => l.url === url);

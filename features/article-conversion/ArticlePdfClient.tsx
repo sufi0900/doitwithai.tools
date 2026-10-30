@@ -1,81 +1,60 @@
 "use client";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import styles from "./article-preview.module.css";
+import dynamic from "next/dynamic";
+const Reader = dynamic(() => import("../read-aloud/Reader"), { ssr: false });
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   AlertTriangle,
-  ArrowDown,
-  ArrowUp,
   Download,
   FileText,
-  Image as ImageIcon,
-  Plus,
-  RefreshCw,
+  Pencil,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
-import styles from "./article-preview.module.css";
+import ToolRunOverlay, {
+  focusToolSection,
+  paintToolFeedback,
+} from "../tool-ui/ToolRunOverlay";
+import ToolUrlInput from "../tool-ui/ToolUrlInput";
 import {
   defaults,
   exampleHtml,
   filename,
-  fromText,
   safeLink,
+  fromText,
   validate,
   type Article,
   type Block,
-  type BlockKind,
-  type PdfSettings,
+  type Settings,
 } from "./model";
-import {
-  articleWordDocument,
-  docxMime,
-  wordDefaults,
-  wordFilename,
-  type WordSettings,
-} from "./docx";
-import RepurposePanel, { type RepurposeFormat } from "./RepurposePanel";
-import ToolRunOverlay, {
-  focusToolSection,
-  paintToolFeedback,
-} from "@/features/tool-ui/ToolRunOverlay";
-import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
+import RepurposePanel from "./RepurposePanel";
+import type { ConversionFormat } from "./formats";
+export type RepurposeFormat = Exclude<ConversionFormat, "pdf" | "docx" | "audio">;
 
-let fontCache: Promise<{ sans: string; arabic: string }> | null = null;
-function loadFonts() {
-  if (!fontCache)
-    fontCache = Promise.all([
-      fetch("/fonts/article-export/NotoSans-Regular.ttf").then((r) => {
-        if (!r.ok) throw Error("Reader font could not be loaded.");
-        return r.arrayBuffer();
-      }),
-      fetch("/fonts/article-export/NotoNaskhArabic-Regular.ttf").then((r) => {
-        if (!r.ok) throw Error("Arabic reader font could not be loaded.");
-        return r.arrayBuffer();
-      }),
-    ]).then(([sans, arabic]) => ({
-      sans: toBase64(new Uint8Array(sans)),
-      arabic: toBase64(new Uint8Array(arabic)),
-    }));
-  return fontCache;
-}
-function toBase64(bytes: Uint8Array) {
-  let out = "";
-  for (let i = 0; i < bytes.length; i += 8192)
-    out += String.fromCharCode(...bytes.subarray(i, i + 8192));
-  return btoa(out);
-}
 const control =
-  "w-full rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-[#5271ff] dark:border-slate-600";
+  "w-full rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm leading-7 focus:outline-none focus:ring-2 focus:ring-[#5271ff] dark:border-slate-600";
+const panel =
+  "rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900 sm:p-7";
 const button =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271ff] disabled:opacity-50 dark:border-slate-600 dark:hover:bg-slate-800";
+  "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800 disabled:opacity-50";
 const primary =
   "inline-flex items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-3 text-sm font-bold text-white hover:bg-[#2943b5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff] disabled:opacity-50";
-const panel =
-  "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-7";
 
-export type ConversionToolFormat = "pdf" | "docx" | RepurposeFormat;
+type Result = {
+  url: string;
+  name: string;
+  pages?: number;
+  bytes: number;
+  warnings: string[];
+  snapshot: string;
+};
+
+export type ConversionToolFormat = "pdf" | "docx" | "audio" | RepurposeFormat;
 
 const FORMAT_LABELS: Record<ConversionToolFormat, string> = {
   pdf: "PDF",
   docx: "Word document",
+  audio: "audio",
   "video-script": "video script & visual storyboard",
   "social-posts": "15 social media post ideas",
   markdown: "Markdown file",
@@ -88,6 +67,7 @@ const FORMAT_LABELS: Record<ConversionToolFormat, string> = {
 const STEP1_ACTION_LABELS: Record<ConversionToolFormat, string> = {
   pdf: "Import & Generate PDF",
   docx: "Import & Generate Word (.docx)",
+  audio: "Import & Open Audio Studio",
   "video-script": "Import & Generate Video Script",
   "social-posts": "Import & Generate 15 Social Posts",
   markdown: "Import & Convert to Markdown",
@@ -101,41 +81,30 @@ export default function ArticlePdfClient({
   format = "pdf",
 }: {
   format?: ConversionToolFormat;
-} = {}) {
+}) {
   const label = FORMAT_LABELS[format];
+  const fileLabel = format === "docx" ? "DOCX" : "PDF";
   const isDocExport = format === "pdf" || format === "docx";
+  const isRepurpose = !isDocExport && format !== "audio";
 
-  const [mode, setMode] = useState<"url" | "text" | "html">("url");
-  const [source, setSource] = useState("");
-  const [content, setContent] = useState("");
-  const [article, setArticle] = useState<Article | null>(null);
-  const [settings, setSettings] = useState<PdfSettings & WordSettings>(
-    format === "docx" ? { ...defaults, ...wordDefaults } : defaults,
-  );
-  const [busy, setBusy] = useState<"" | "import" | "export">("");
-  const [message, setMessage] = useState("");
-  const [errors, setErrors] = useState<{
-    source?: string;
-    content?: string;
-    review?: string;
-  }>({});
-  const [result, setResult] = useState<{
-    url: string;
-    name: string;
-    pages: number;
-    bytes: number;
-  } | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [expandedPreview, setExpandedPreview] = useState(false);
-  const [revision, setRevision] = useState(0);
-  const [autoRunSignal, setAutoRunSignal] = useState(0);
-  const [destination, setDestination] = useState<"review" | "done" | null>(
-    null,
-  );
-  const abort = useRef<AbortController | null>(null);
-  const mounted = useRef(true);
-  const review = useRef<HTMLElement>(null);
-  const done = useRef<HTMLElement>(null);
+  const [mode, setMode] = useState<"url" | "text" | "html">("url"),
+    [source, setSource] = useState(""),
+    [content, setContent] = useState(""),
+    [article, setArticle] = useState<Article | null>(null),
+    [settings, setSettings] = useState<Settings>(defaults),
+    [editing, setEditing] = useState(false),
+    [busy, setBusy] = useState<"" | "import" | "pdf">(""),
+    [errors, setErrors] = useState<{ source?: string; content?: string }>({}),
+    [message, setMessage] = useState(""),
+    [result, setResult] = useState<Result | null>(null),
+    [revision, setRevision] = useState(0),
+    [autoRunSignal, setAutoRunSignal] = useState(0),
+    [destination, setDestination] = useState<"review" | "result">("review");
+
+  const abort = useRef<AbortController | null>(null),
+    mounted = useRef(true),
+    review = useRef<HTMLElement>(null),
+    done = useRef<HTMLElement>(null);
 
   useEffect(() => {
     mounted.current = true;
@@ -144,117 +113,127 @@ export default function ArticlePdfClient({
       abort.current?.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (!busy && revision)
+      focusToolSection(
+        destination === "review" ? review.current : done.current,
+      );
+  }, [busy, revision, destination]);
+
   useEffect(
     () => () => {
-      if (result?.url) URL.revokeObjectURL(result.url);
+      if (result) URL.revokeObjectURL(result.url);
     },
     [result],
   );
-  useEffect(() => {
-    if (busy || revision === 0) return;
-    if (destination === "done") focusToolSection(done.current);
-    if (destination === "review") focusToolSection(review.current);
-  }, [busy, destination, revision]);
 
-  const counts = useMemo(() => {
-    const blocks = article?.blocks || [];
-    const words = blocks
-      .map((b) => b.text)
-      .join(" ")
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean).length;
-    return {
-      words,
-      blocks: blocks.length,
-      tables: blocks.filter((b) => b.kind === "table").length,
-      images: blocks.filter((b) => b.kind === "image" && b.included).length,
-    };
-  }, [article]);
+  function update(id: string, value: Partial<Block>) {
+    setArticle((a) =>
+      a
+        ? {
+            ...a,
+            blocks: a.blocks.map((b) => (b.id === id ? { ...b, ...value } : b)),
+          }
+        : a,
+    );
+  }
 
   async function buildDocExport(
     targetArticle: Article,
-    currentSettings: PdfSettings & WordSettings,
-    signal?: AbortSignal,
+    currentSettings: Settings,
+    existingSignal?: AbortSignal,
   ) {
-    const reviewError = validate(targetArticle);
-    setErrors((old) => ({ ...old, review: reviewError || undefined }));
-    if (reviewError) {
-      setMessage(reviewError);
+    const err = validate(targetArticle);
+    if (err) {
+      setMessage(err);
+      if (!targetArticle.title.trim())
+        document.getElementById("article-title")?.focus();
       return;
     }
     const c = new AbortController();
     abort.current = c;
-    const activeSignal = signal
-      ? AbortSignal.any([signal, c.signal])
+    const activeSignal = existingSignal
+      ? AbortSignal.any([existingSignal, c.signal])
       : c.signal;
-    setBusy("export");
-    setMessage(`Preparing your ${label}…`);
+    setBusy("pdf");
+    setMessage("");
     try {
       await paintToolFeedback();
-      const images: Record<string, string> = {};
-      const warnings: string[] = [];
-      for (const b of targetArticle.blocks.filter(
-        (x) => x.kind === "image" && x.included && x.src,
-      )) {
-        activeSignal.throwIfAborted();
-        const res = await fetch("/api/ai-tools/article-image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: b.src }),
-          signal: AbortSignal.any([activeSignal, AbortSignal.timeout(9000)]),
-        });
-        const data = await res.json();
-        if (res.ok && data.data) images[b.src!] = data.data;
-        else warnings.push(`Image omitted (${b.alt || b.src}): ${data.error?.message || "import failed"}.`);
-      }
-      const out =
-        format === "docx"
-          ? await articleWordDocument(targetArticle, currentSettings, {
-              images,
-              signal: activeSignal,
-            })
-          : await (async () => {
-              const fonts = await loadFonts();
-              const { articlePdf } = await import("./pdf");
-              return articlePdf(targetArticle, currentSettings, {
-                ...fonts,
-                images,
-                signal: activeSignal,
-              });
-            })();
       activeSignal.throwIfAborted();
-      const blob = new Blob([out.bytes as unknown as BlobPart], {
-        type: format === "docx" ? docxMime : "application/pdf",
-      });
-      const url = URL.createObjectURL(blob);
-      const name =
-        format === "docx"
-          ? wordFilename(targetArticle.title)
-          : filename(targetArticle.title);
-      if (!mounted.current) {
-        URL.revokeObjectURL(url);
-        return;
+      const images: Record<string, string> = {};
+      for (const image of targetArticle.blocks
+        .filter((b) => b.kind === "image" && b.included)
+        .slice(0, 6)) {
+        activeSignal.throwIfAborted();
+        try {
+          const res = await fetch("/api/ai-tools/article-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: image.src }),
+            signal: AbortSignal.any([activeSignal, AbortSignal.timeout(10000)]),
+          });
+          const data = await res.json();
+          if (
+            res.ok &&
+            typeof data.data === "string" &&
+            /^data:image\/(png|jpeg);base64,/.test(data.data)
+          )
+            images[image.id] = data.data;
+        } catch {
+          activeSignal.throwIfAborted();
+        }
       }
-      setArticle((old) =>
-        old
-          ? {
-              ...old,
-              warnings: [...new Set([...old.warnings, ...warnings, ...out.warnings])],
-            }
-          : old,
-      );
-      setResult((old) => {
-        if (old?.url) URL.revokeObjectURL(old.url);
-        return { url, name, pages: out.pages, bytes: out.bytes.byteLength };
-      });
-      setDestination("done");
-      setRevision((n) => n + 1);
-      setMessage(
-        format === "docx"
-          ? `Word document ready (${(out.bytes.byteLength / 1024).toFixed(0)} KB). Download above or customize layout below.`
-          : `PDF ready (${out.pages} ${out.pages === 1 ? "page" : "pages"}). Download above or customize layout below.`,
-      );
+      let built: {
+        bytes: ArrayBuffer | Uint8Array;
+        pages?: number;
+        warnings: string[];
+      };
+      const shared = {
+        images,
+        signal: activeSignal,
+        yield: () => new Promise<void>((r) => setTimeout(r, 0)),
+      };
+      if (format === "docx") {
+        const { articleDocx } = await import("./docx");
+        built = await articleDocx(targetArticle, currentSettings, shared);
+      } else {
+        const { articlePdf, loadFonts } = await import("./pdf");
+        const fonts = await loadFonts(
+          AbortSignal.any([activeSignal, AbortSignal.timeout(18000)]),
+        );
+        built = await articlePdf(targetArticle, currentSettings, {
+          ...shared,
+          ...fonts,
+        });
+      }
+      activeSignal.throwIfAborted();
+      const blob = new Blob([built.bytes as unknown as BlobPart], {
+          type:
+            format === "pdf"
+              ? "application/pdf"
+              : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        }),
+        url = URL.createObjectURL(blob);
+      if (mounted.current) {
+        setResult({
+          url,
+          name:
+            format === "docx"
+              ? filename(targetArticle.title).replace(/\.pdf$/, ".docx")
+              : filename(targetArticle.title),
+          pages: built.pages,
+          bytes: blob.size,
+          warnings: built.warnings,
+          snapshot: JSON.stringify({
+            article: targetArticle,
+            settings: currentSettings,
+          }),
+        });
+        setDestination("result");
+        setRevision((n) => n + 1);
+        setMessage(`${label} ready. Download your file below.`);
+      } else URL.revokeObjectURL(url);
     } catch (error) {
       if (mounted.current)
         setMessage(
@@ -293,7 +272,6 @@ export default function ArticlePdfClient({
     if (Object.keys(issues).length) {
       setArticle(null);
       setResult(null);
-      setDestination(null);
       document
         .getElementById(issues.source ? "article-source" : "article-content")
         ?.focus();
@@ -329,9 +307,6 @@ export default function ArticlePdfClient({
       if (mounted.current) {
         setArticle(next);
         setEditing(false);
-        setExpandedPreview(false);
-
-        // 2-Step Direct Flow: Immediately generate the target output so Step 2 opens with ready download buttons!
         if (isDocExport) {
           await buildDocExport(next, settings, c.signal);
         } else {
@@ -352,10 +327,9 @@ export default function ArticlePdfClient({
             : "The import failed. Try pasted content.";
         setMessage(msg);
         if (!c.signal.aborted) {
-          // Critical fix: Clear stale article & result when a new import fails so old articles/logos never remain displayed below the error!
+          // Clear stale article and result when a new import fails so old articles/logos never remain displayed below the error
           setArticle(null);
           setResult(null);
-          setDestination(null);
           setErrors(mode === "url" ? { source: msg } : { content: msg });
           setTimeout(() => {
             document
@@ -390,9 +364,8 @@ export default function ArticlePdfClient({
           {STEP1_ACTION_LABELS[format]}
         </h2>
         <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-          Enter a public article URL, or paste content when a page blocks
-          imports. One click imports your article and prepares your{" "}
-          {label} download immediately.
+          Use a public URL, or paste content when a page blocks imports or needs
+          JavaScript.
         </p>
         <fieldset disabled={!!busy} className="mt-6">
           <legend className="sr-only">Article input</legend>
@@ -407,7 +380,7 @@ export default function ArticlePdfClient({
                 ["text", "Paste text"],
                 ["html", "Paste HTML"],
               ] as const
-            ).map(([id, label]) => (
+            ).map(([id, btnLabel]) => (
               <button
                 type="button"
                 key={id}
@@ -418,7 +391,7 @@ export default function ArticlePdfClient({
                   setErrors({});
                 }}
               >
-                {label}
+                {btnLabel}
               </button>
             ))}
           </div>
@@ -524,7 +497,7 @@ export default function ArticlePdfClient({
                 setSource("");
                 setErrors({});
                 setMessage(
-                  `Fictional example loaded. Click "${STEP1_ACTION_LABELS[format]}" to test the 2-step workflow.`,
+                  `Fictional example loaded. Click "${STEP1_ACTION_LABELS[format]}" to test the workflow.`,
                 );
               }}
             >
@@ -533,6 +506,7 @@ export default function ArticlePdfClient({
           </div>
         </fieldset>
       </form>
+
       <p
         role="status"
         aria-live="polite"
@@ -541,7 +515,68 @@ export default function ArticlePdfClient({
         {message}
       </p>
 
-      {/* STEP 2: ONE UNIFIED CONNECTED CONTAINER — Ready Download & Studio at the TOP, Connected Article Review Below */}
+      {/* Top Result Download Section for PDF & DOCX */}
+      {result && isDocExport && (
+        <section
+          ref={done}
+          tabIndex={-1}
+          aria-labelledby="article-result-title"
+          className={`${panel} mb-7 scroll-mt-28 border-2 border-[#3452d1] bg-blue-50/40 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20`}
+        >
+          <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+            Step 2 · Save your reading copy
+          </p>
+          <h2
+            id="article-result-title"
+            className="mt-2 text-2xl font-extrabold"
+          >
+            Your {label} is ready
+          </h2>
+          <p className="mt-3 break-words text-sm leading-7 text-slate-600 dark:text-slate-300">
+            {format === "pdf"
+              ? `${result.pages} ${result.pages === 1 ? "page" : "pages"} · `
+              : "Editable DOCX · "}
+            {(result.bytes / 1024).toFixed(0)} KB · {result.name}
+          </p>
+          {result.snapshot !== JSON.stringify({ article, settings }) && (
+            <p className="mt-4 text-sm font-bold text-amber-800 dark:text-amber-200">
+              The article or layout changed. Create the {fileLabel} again to
+              include your latest edits.
+            </p>
+          )}
+          {result.warnings.length > 0 && (
+            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-amber-800 dark:text-amber-200">
+              {result.warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <a href={result.url} download={result.name} className={primary}>
+              <Download size={17} aria-hidden />
+              Download {fileLabel}
+            </a>
+            {format === "pdf" && (
+              <a
+                href={result.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={button}
+              >
+                Open PDF preview
+              </a>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Audio Reader Studio */}
+      {article && format === "audio" && (
+        <div className="mb-7">
+          <Reader key={revision} article={article} />
+        </div>
+      )}
+
       {article && (
         <section
           ref={review}
@@ -549,60 +584,9 @@ export default function ArticlePdfClient({
           aria-labelledby="article-review-title"
           className={`${panel} scroll-mt-28 focus:outline focus:outline-2 focus:outline-[#5271ff]`}
         >
-          {/* 1. Ready Result Download Card at the very TOP for PDF & DOCX */}
-          {result && isDocExport && (
-            <div
-              ref={done as any}
-              tabIndex={-1}
-              aria-labelledby="article-result-title"
-              className="mb-7 rounded-2xl border-2 border-[#3452d1] bg-blue-50/40 p-5 focus:outline focus:outline-2 focus:outline-[#5271ff] dark:border-[#5271ff] dark:bg-blue-950/20 sm:p-7"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
-                    Step 2 · Your {label} is ready to download
-                  </p>
-                  <h2
-                    id="article-result-title"
-                    className="mt-1 text-2xl font-extrabold"
-                  >
-                    {article.title}
-                  </h2>
-                  <p className="mt-1 break-words text-sm leading-7 text-slate-600 dark:text-slate-300">
-                    {format === "pdf"
-                      ? `${result.pages} ${result.pages === 1 ? "page" : "pages"} · `
-                      : "Editable DOCX · "}
-                    {(result.bytes / 1024).toFixed(0)} KB · {result.name}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <a
-                    href={result.url}
-                    download={result.name}
-                    className={primary}
-                  >
-                    <Download size={16} aria-hidden />
-                    {format === "docx"
-                      ? "Download Word (.docx)"
-                      : "Download PDF (.pdf)"}
-                  </a>
-                  <button
-                    type="button"
-                    className={button}
-                    disabled={!!busy}
-                    onClick={create}
-                  >
-                    <RefreshCw size={15} aria-hidden />
-                    Regenerate {label}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* 2. For the 7 Repurpose Formats, render the interactive Studio + Top Download Buttons right here */}
-          {!isDocExport && (
-            <div className="mb-8">
+          {/* Repurpose Studio for the 7 Repurpose Formats */}
+          {isRepurpose && (
+            <div className="mb-8 border-b border-slate-200 pb-8 dark:border-slate-700">
               <RepurposePanel
                 article={article}
                 format={format as RepurposeFormat}
@@ -611,579 +595,393 @@ export default function ArticlePdfClient({
             </div>
           )}
 
-          {/* 3. Connected Source Article Summary & Collapsible Editor */}
-          <div className="border-t border-slate-200 pt-6 dark:border-slate-700">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                  Imported Source Article · {article.method}
-                </p>
-                <h2
-                  id="article-review-title"
-                  className="mt-1 text-xl font-extrabold"
-                >
-                  {article.title}
-                </h2>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  {counts.words} words · {counts.blocks} blocks ·{" "}
-                  {counts.tables} tables · {counts.images} included images
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className={button}
-                  disabled={!!busy}
-                  onClick={() => setEditing((v) => !v)}
-                >
-                  {editing
-                    ? "Close section editor"
-                    : "Edit extracted blocks or layout"}
-                </button>
-              </div>
-            </div>
-
-            {article.warnings.length > 0 && (
-              <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
-                <p className="flex items-center gap-2 font-bold">
-                  <AlertTriangle size={16} aria-hidden />
-                  Extraction notes
-                </p>
-                <ul className="mt-2 list-disc space-y-1 pl-5">
-                  {article.warnings.map((w) => (
-                    <li key={w}>{w}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {errors.review && (
-              <p
-                role="alert"
-                className="mt-4 text-sm font-bold text-red-700 dark:text-red-300"
-              >
-                {errors.review}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
+                Review the source article
               </p>
-            )}
-
-            {/* PDF / DOCX Layout Settings (shown when PDF or DOCX is active) */}
-            {isDocExport && (
-              <fieldset
-                disabled={!!busy}
-                className="mt-6 grid gap-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/40 sm:grid-cols-2 lg:grid-cols-4"
+              <h2
+                id="article-review-title"
+                className="mt-2 text-2xl font-extrabold"
               >
-                <legend className="sr-only">{label} layout settings</legend>
-                <div>
-                  <label
-                    htmlFor="pdf-size"
-                    className="mb-1 block text-xs font-bold"
+                Review your article
+              </h2>
+            </div>
+            <button
+              type="button"
+              className={button}
+              aria-pressed={editing}
+              onClick={() => setEditing((v) => !v)}
+            >
+              <Pencil size={16} aria-hidden />
+              {editing ? "Finish editing" : "Edit article sections"}
+            </button>
+          </div>
+          <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+            {article.method}. Metadata is copied only when found. Review the
+            attribution and date; missing fields remain blank.
+          </p>
+          <details
+            open
+            className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+          >
+            <summary className="cursor-pointer font-bold">
+              Import notes ({article.warnings.length})
+            </summary>
+            <ul className="mt-2 list-disc space-y-2 pl-5">
+              {article.warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          </details>
+          <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            {(
+              [
+                ["title", "Article title (required)"],
+                ["byline", "Byline (review source attribution)"],
+                ["published", "Date from source (optional)"],
+              ] as const
+            ).map(([id, fieldLabel]) => (
+              <div key={id} className={id === "title" ? "sm:col-span-2" : ""}>
+                <label
+                  htmlFor={`article-${id}`}
+                  className="mb-2 block text-sm font-bold"
+                >
+                  {fieldLabel}
+                </label>
+                <input
+                  id={`article-${id}`}
+                  dir="auto"
+                  className={control}
+                  value={article[id]}
+                  required={id === "title"}
+                  aria-invalid={id === "title" && !article.title.trim()}
+                  aria-describedby={
+                    id === "title" && !article.title.trim()
+                      ? "article-title-error"
+                      : undefined
+                  }
+                  maxLength={id === "published" ? 100 : 300}
+                  onChange={(e) =>
+                    setArticle((a) => (a ? { ...a, [id]: e.target.value } : a))
+                  }
+                />
+                {id === "title" && !article.title.trim() && (
+                  <p
+                    id="article-title-error"
+                    className="mt-2 text-sm text-red-700 dark:text-red-300"
                   >
-                    Page size
-                  </label>
-                  <select
-                    id="pdf-size"
-                    className={control}
-                    value={settings.size}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        size: e.target.value as PdfSettings["size"],
-                      })
-                    }
-                  >
-                    <option value="a4">A4</option>
-                    <option value="letter">Letter</option>
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="pdf-margins"
-                    className="mb-1 block text-xs font-bold"
-                  >
-                    Margins
-                  </label>
-                  <select
-                    id="pdf-margins"
-                    className={control}
-                    value={settings.margins}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        margins: e.target.value as PdfSettings["margins"],
-                      })
-                    }
-                  >
-                    <option value="compact">Compact</option>
-                    <option value="comfortable">Comfortable</option>
-                    <option value="wide">Wide</option>
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="pdf-font-size"
-                    className="mb-1 block text-xs font-bold"
-                  >
-                    Body text size
-                  </label>
-                  <select
-                    id="pdf-font-size"
-                    className={control}
-                    value={settings.fontSize}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        fontSize: Number(
-                          e.target.value,
-                        ) as PdfSettings["fontSize"],
-                      })
-                    }
-                  >
-                    <option value={10}>10 pt</option>
-                    <option value={11}>11 pt</option>
-                    <option value={12}>12 pt</option>
-                  </select>
-                </div>
-                <div>
-                  <label
-                    htmlFor="pdf-line-height"
-                    className="mb-1 block text-xs font-bold"
-                  >
-                    Line spacing
-                  </label>
-                  <select
-                    id="pdf-line-height"
-                    className={control}
-                    value={settings.lineHeight}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        lineHeight: Number(
-                          e.target.value,
-                        ) as PdfSettings["lineHeight"],
-                      })
-                    }
-                  >
-                    <option value={1.35}>1.35</option>
-                    <option value={1.5}>1.5</option>
-                    <option value={1.65}>1.65</option>
-                  </select>
-                </div>
-                {format === "docx" && (
-                  <>
-                    <div>
-                      <label
-                        htmlFor="word-font"
-                        className="mb-1 block text-xs font-bold"
-                      >
-                        Word font family
-                      </label>
-                      <select
-                        id="word-font"
-                        className={control}
-                        value={settings.fontFamily}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            fontFamily: e.target
-                              .value as WordSettings["fontFamily"],
-                          })
-                        }
-                      >
-                        <option value="Calibri">Calibri</option>
-                        <option value="Arial">Arial</option>
-                        <option value="Georgia">Georgia</option>
-                        <option value="Times New Roman">Times New Roman</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="word-heading"
-                        className="mb-1 block text-xs font-bold"
-                      >
-                        Heading style
-                      </label>
-                      <select
-                        id="word-heading"
-                        className={control}
-                        value={settings.headingTone}
-                        onChange={(e) =>
-                          setSettings({
-                            ...settings,
-                            headingTone: e.target
-                              .value as WordSettings["headingTone"],
-                          })
-                        }
-                      >
-                        <option value="editorial">Editorial dark</option>
-                        <option value="classic">Classic black</option>
-                        <option value="slate">Slate accent</option>
-                      </select>
-                    </div>
-                  </>
+                    Add an article title before exporting.
+                  </p>
                 )}
-                <div className="flex flex-wrap gap-5 sm:col-span-2 lg:col-span-4">
-                  {(
-                    [
-                      ["includeMeta", "Include source metadata"],
-                      ["includeNumbers", "Include page numbers"],
-                      ["includeLinks", "Include reference list"],
-                      ...(format === "docx"
-                        ? ([
-                            ["includeOutline", "Include heading summary"],
-                          ] as const)
-                        : []),
-                    ] as const
-                  ).map(([key, text]) => (
+              </div>
+            ))}
+          </div>
+          {article.source && (
+            <p className="mt-5 break-all text-sm leading-7">
+              Source:{" "}
+              <a
+                href={safeLink(article.source)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#3452d1] underline dark:text-[#b4c3ff]"
+              >
+                {article.source}
+              </a>
+            </p>
+          )}
+          <div className="mt-7 space-y-5">
+            {article.blocks.map((b, n) => (
+              <div
+                key={b.id}
+                className={
+                  editing
+                    ? "rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+                    : ""
+                }
+              >
+                {editing && (
+                  <div className="mb-3 flex items-center justify-between gap-3">
                     <label
-                      key={key}
-                      className="flex items-center gap-2 text-sm font-semibold"
+                      htmlFor={`article-block-${b.id}`}
+                      className="text-xs font-bold uppercase text-slate-600 dark:text-slate-300"
                     >
-                      <input
-                        type="checkbox"
-                        className="h-5 w-5 accent-[#5271ff]"
-                        checked={Boolean(
-                          settings[key as keyof typeof settings],
-                        )}
-                        onChange={(e) =>
-                          setSettings({ ...settings, [key]: e.target.checked })
-                        }
-                      />
-                      <span>{text}</span>
+                      Section {n + 1} · {b.kind}
                     </label>
-                  ))}
-                  {isDocExport && (
                     <button
                       type="button"
-                      className={`${primary} ml-auto py-2 text-xs`}
-                      onClick={create}
+                      aria-label={`Remove section ${n + 1}`}
+                      className="rounded-lg p-2 text-red-700 focus-visible:outline-[#5271ff] dark:text-red-300"
+                      onClick={() =>
+                        setArticle((a) =>
+                          a
+                            ? {
+                                ...a,
+                                blocks: a.blocks.filter(
+                                  (old) => old.id !== b.id,
+                                ),
+                              }
+                            : a,
+                        )
+                      }
                     >
-                      Apply Layout &amp; Update {label}
+                      <Trash2 size={17} aria-hidden />
                     </button>
-                  )}
-                </div>
-              </fieldset>
-            )}
-
-            {/* Collapsible Metadata & Block Editor */}
-            {editing ? (
-              <div className="mt-6 space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <label
-                      htmlFor="article-title"
-                      className="mb-1 block text-xs font-bold"
-                    >
-                      Title (required)
-                    </label>
-                    <input
-                      id="article-title"
-                      dir="auto"
-                      className={control}
-                      value={article.title}
-                      onChange={(e) =>
-                        setArticle({ ...article, title: e.target.value })
-                      }
-                    />
                   </div>
-                  <div>
-                    <label
-                      htmlFor="article-byline"
-                      className="mb-1 block text-xs font-bold"
-                    >
-                      Author or publication
+                )}
+                {b.kind === "image" && format === "audio" ? (
+                  <p className="text-sm leading-7">
+                    Image reference: {b.alt}. Image pixels are not narrated or
+                    downloaded.
+                  </p>
+                ) : b.kind === "image" ? (
+                  <div className="rounded-xl border border-dashed border-orange-300 p-4 dark:border-orange-800">
+                    <label className="flex cursor-pointer items-start gap-3 text-sm leading-7">
+                      <input
+                        type="checkbox"
+                        checked={!!b.included}
+                        onChange={(e) =>
+                          update(b.id, { included: e.target.checked })
+                        }
+                        className="mt-1 h-5 w-5 shrink-0 accent-[#5271ff]"
+                      />
+                      <span>
+                        Include image: {b.alt}
+                        <span className="block break-all text-xs text-slate-600 dark:text-slate-300">
+                          {b.src}
+                        </span>
+                      </span>
                     </label>
-                    <input
-                      id="article-byline"
-                      dir="auto"
-                      className={control}
-                      value={article.byline}
-                      onChange={(e) =>
-                        setArticle({ ...article, byline: e.target.value })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="article-date"
-                      className="mb-1 block text-xs font-bold"
-                    >
-                      Published date
-                    </label>
-                    <input
-                      id="article-date"
-                      dir="auto"
-                      className={control}
-                      value={article.published}
-                      onChange={(e) =>
-                        setArticle({ ...article, published: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-                <BlockEditor
-                  blocks={article.blocks}
-                  onChange={(blocks) => setArticle({ ...article, blocks })}
-                />
-              </div>
-            ) : (
-              <div className="mt-5">
-                <div
-                  className={`${styles.paper} relative overflow-hidden rounded-xl border border-slate-200 p-5 dark:border-slate-700 ${
-                    expandedPreview ? "" : "max-h-72"
-                  }`}
-                >
-                  <h3 dir="auto" className="text-xl font-bold">
-                    {article.title}
-                  </h3>
-                  {(article.byline || article.published || article.source) && (
-                    <p
-                      dir="auto"
-                      className="mt-1 break-words text-xs leading-6 text-slate-600 dark:text-slate-300"
-                    >
-                      {[article.byline, article.published, article.source]
-                        .filter(Boolean)
-                        .join(" · ")}
+                    <p className="mt-2 text-xs leading-6 text-slate-600 dark:text-slate-300">
+                      Only selected images are requested during export. PNG/JPEG
+                      up to 1.5 MB and 12 megapixels are supported.
                     </p>
-                  )}
-                  <div className="mt-4 space-y-3 text-sm leading-7">
-                    {article.blocks.slice(0, expandedPreview ? 300 : 8).map((b) => (
-                      <PreviewBlock key={b.id} block={b} />
-                    ))}
                   </div>
-                  {!expandedPreview && article.blocks.length > 8 && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent dark:from-slate-900" />
-                  )}
-                </div>
-                {article.blocks.length > 8 && (
-                  <button
-                    type="button"
-                    className="mt-3 text-xs font-bold text-[#3452d1] underline dark:text-blue-300"
-                    onClick={() => setExpandedPreview((v) => !v)}
+                ) : editing ? (
+                  <>
+                    <textarea
+                      id={`article-block-${b.id}`}
+                      dir="auto"
+                      className={control}
+                      rows={
+                        b.kind === "table"
+                          ? 6
+                          : Math.min(
+                              10,
+                              Math.max(3, Math.ceil(b.text.length / 120)),
+                            )
+                      }
+                      maxLength={b.kind === "table" ? 30000 : 12000}
+                      value={
+                        b.kind === "table"
+                          ? b.cells?.map((r) => r.join("\t")).join("\n")
+                          : b.text
+                      }
+                      onChange={(e) =>
+                        update(
+                          b.id,
+                          b.kind === "table"
+                            ? {
+                                cells: e.target.value
+                                  .split("\n")
+                                  .map((r) => r.split("\t")),
+                              }
+                            : { text: e.target.value },
+                        )
+                      }
+                    />
+                    {b.kind === "table" && (
+                      <p className="mt-2 text-xs leading-6">
+                        Table editing: one row per line, tabs between cells.
+                        Paste from a spreadsheet if needed.
+                      </p>
+                    )}
+                  </>
+                ) : b.kind === "table" ? (
+                  <div
+                    className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700"
+                    role="region"
+                    aria-label={`Article table ${n + 1}`}
+                    tabIndex={0}
                   >
-                    {expandedPreview
-                      ? "Collapse source article preview"
-                      : `Show all ${article.blocks.length} extracted article blocks`}
-                  </button>
+                    <table className="w-full text-left text-sm">
+                      <tbody>
+                        {b.cells?.map((row, r) => (
+                          <tr key={r}>
+                            {row.map((cell, c) =>
+                              b.header && r === 0 ? (
+                                <th
+                                  key={c}
+                                  className="border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800"
+                                >
+                                  {cell}
+                                </th>
+                              ) : (
+                                <td
+                                  key={c}
+                                  className="border border-slate-200 p-3 dark:border-slate-700"
+                                >
+                                  {cell}
+                                </td>
+                              ),
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : b.kind === "heading" ? (
+                  <h3 dir="auto" className="pt-3 text-xl font-bold">
+                    {b.text}
+                  </h3>
+                ) : (
+                  <p
+                    dir="auto"
+                    className={`whitespace-pre-wrap break-words text-base leading-8 ${b.kind === "quote" ? "italic text-slate-600 dark:text-slate-300" : ""} ${b.kind === "code" ? "rounded-xl bg-slate-50 p-4 font-mono text-sm dark:bg-slate-800" : ""}`}
+                  >
+                    {b.text}
+                  </p>
                 )}
               </div>
-            )}
+            ))}
           </div>
+          {article.links.length > 0 && (
+            <details className="mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+              <summary className="cursor-pointer text-sm font-bold">
+                Article link references ({article.links.length})
+              </summary>
+              <ol className="mt-3 list-decimal space-y-2 pl-5">
+                {article.links.map((l, n) => (
+                  <li key={n} className="break-all text-sm leading-7">
+                    <a
+                      href={safeLink(l.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#3452d1] underline dark:text-[#b4c3ff]"
+                    >
+                      {l.label}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          )}
+          {isDocExport && (
+            <>
+              <details className="mt-7 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+                <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-bold">
+                  {fileLabel} layout options
+                  <ChevronDown size={18} aria-hidden />
+                </summary>
+                <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                  {(
+                    [
+                      [
+                        "size",
+                        "Page size",
+                        [
+                          ["a4", "A4"],
+                          ["letter", "Letter"],
+                        ],
+                      ],
+                      [
+                        "fontSize",
+                        "Text size",
+                        [
+                          [10, "10 pt"],
+                          [11, "11 pt"],
+                          [12, "12 pt"],
+                          [14, "14 pt"],
+                        ],
+                      ],
+                      [
+                        "margin",
+                        "Page margins",
+                        [
+                          [36, "Compact"],
+                          [54, "Comfortable"],
+                          [72, "Wide"],
+                        ],
+                      ],
+                      [
+                        "direction",
+                        "Text direction",
+                        [
+                          ["auto", "Automatic"],
+                          ["ltr", "Left to right"],
+                          ["rtl", "Right to left"],
+                        ],
+                      ],
+                    ] as const
+                  ).map(([id, optLabel, options]) => (
+                    <div key={id}>
+                      <label
+                        htmlFor={`article-${id}`}
+                        className="mb-2 block text-sm font-bold"
+                      >
+                        {optLabel}
+                      </label>
+                      <select
+                        id={`article-${id}`}
+                        dir="auto"
+                        className={control}
+                        value={settings[id]}
+                        onChange={(e) =>
+                          setSettings((s) => ({
+                            ...s,
+                            [id]:
+                              id === "fontSize" || id === "margin"
+                                ? Number(e.target.value)
+                                : e.target.value,
+                          }))
+                        }
+                      >
+                        {options.map(([value, optText]) => (
+                          <option
+                            key={value}
+                            value={value}
+                            className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white"
+                          >
+                            {optText}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </details>
+              <p className="mt-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                {format === "docx"
+                  ? "The DOCX contains editable text, heading styles, lists, and table cells. Links become numbered references with clickable destinations. Open the download in Word or another DOCX editor to check pagination; fonts and layout can vary between editors."
+                  : "The PDF preserves the reviewed wording in a reading layout. Links become numbered references. Website styling, media, and complex table layouts are simplified."}
+              </p>
+              <button
+                type="button"
+                className={`${primary} mt-5`}
+                disabled={!!busy}
+                onClick={create}
+              >
+                <FileText size={17} aria-hidden />
+                Create downloadable {fileLabel}
+              </button>
+            </>
+          )}
         </section>
       )}
       <ToolRunOverlay
         active={!!busy}
         title={
-          busy === "import"
-            ? `Importing article & building ${label}`
-            : `Generating ${label} download`
+          busy === "pdf" ? `Creating your ${label}` : "Importing your article"
         }
         description={
-          busy === "import"
-            ? "Extracting clean article headings, body text, and brand styling."
-            : `Formatting your ${label} file in the browser.`
+          busy === "pdf"
+            ? "Laying out reviewed text and selected images."
+            : "Preparing a clean article preview."
         }
         onCancel={() => abort.current?.abort()}
+        cancelLabel="Cancel"
+        hint={`The completed preview or ${label} will open below.`}
       />
-    </div>
-  );
-}
-
-function PreviewBlock({ block }: { block: Block }) {
-  if (block.kind === "heading")
-    return (
-      <h4 dir="auto" className="pt-2 text-base font-bold">
-        {block.text}
-      </h4>
-    );
-  if (block.kind === "quote")
-    return (
-      <blockquote
-        dir="auto"
-        className="border-l-4 border-[#9A3412] pl-4 italic"
-      >
-        {block.text}
-      </blockquote>
-    );
-  if (block.kind === "code")
-    return (
-      <pre className="overflow-x-auto rounded-lg bg-slate-100 p-3 text-xs dark:bg-slate-800">
-        {block.text}
-      </pre>
-    );
-  if (block.kind === "table")
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-xs">
-          <tbody>
-            {(block.cells || []).map((r, i) => (
-              <tr key={i}>
-                {r.map((c, j) => (
-                  <td
-                    key={j}
-                    dir="auto"
-                    className="border border-slate-300 p-2 dark:border-slate-600"
-                  >
-                    {c}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  if (block.kind === "image")
-    return (
-      <p className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-        <ImageIcon size={15} aria-hidden />
-        {block.included ? "Included image:" : "Image omitted by default:"}{" "}
-        {block.alt || block.src}
-      </p>
-    );
-  return <p dir="auto">{block.text}</p>;
-}
-
-function BlockEditor({
-  blocks,
-  onChange,
-}: {
-  blocks: Block[];
-  onChange: (b: Block[]) => void;
-}) {
-  function patch(index: number, next: Partial<Block>) {
-    onChange(blocks.map((b, i) => (i === index ? { ...b, ...next } : b)));
-  }
-  function move(index: number, delta: number) {
-    const target = index + delta;
-    if (target < 0 || target >= blocks.length) return;
-    const copy = [...blocks];
-    [copy[index], copy[target]] = [copy[target], copy[index]];
-    onChange(copy);
-  }
-  return (
-    <div className="space-y-4">
-      {blocks.map((b, i) => (
-        <div
-          key={b.id}
-          className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
-        >
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <label className="text-xs font-bold">
-              Section {i + 1}
-              <select
-                aria-label={`Section ${i + 1} type`}
-                className="ml-2 rounded-lg border border-slate-300 bg-transparent px-2 py-1 text-xs dark:border-slate-600"
-                value={b.kind}
-                onChange={(e) =>
-                  patch(i, {
-                    kind: e.target.value as BlockKind,
-                    cells:
-                      e.target.value === "table"
-                        ? b.cells || [["Column", "Value"]]
-                        : undefined,
-                  })
-                }
-              >
-                {(
-                  [
-                    "heading",
-                    "paragraph",
-                    "list",
-                    "quote",
-                    "code",
-                    "table",
-                    "image",
-                  ] as const
-                ).map((k) => (
-                  <option key={k} value={k}>
-                    {k}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className={button}
-                disabled={i === 0}
-                onClick={() => move(i, -1)}
-                aria-label={`Move section ${i + 1} up`}
-              >
-                <ArrowUp size={15} aria-hidden />
-              </button>
-              <button
-                type="button"
-                className={button}
-                disabled={i === blocks.length - 1}
-                onClick={() => move(i, 1)}
-                aria-label={`Move section ${i + 1} down`}
-              >
-                <ArrowDown size={15} aria-hidden />
-              </button>
-              <button
-                type="button"
-                className={button}
-                onClick={() => onChange(blocks.filter((_, j) => j !== i))}
-                aria-label={`Remove section ${i + 1}`}
-              >
-                <Trash2 size={15} aria-hidden />
-              </button>
-            </div>
-          </div>
-          {b.kind === "image" ? (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="h-5 w-5 accent-[#5271ff]"
-                checked={!!b.included}
-                onChange={(e) => patch(i, { included: e.target.checked })}
-              />
-              <span>
-                Include remote image from {b.src || "missing URL"} (
-                {b.alt || "no alt text"})
-              </span>
-            </label>
-          ) : b.kind === "table" ? (
-            <textarea
-              dir="auto"
-              rows={4}
-              aria-label={`Section ${i + 1} table rows, pipe separated`}
-              className={control}
-              value={(b.cells || []).map((r) => r.join(" | ")).join("\n")}
-              onChange={(e) =>
-                patch(i, {
-                  cells: e.target.value
-                    .split(/\r?\n/)
-                    .filter(Boolean)
-                    .map((r) => r.split(/\s*\|\s*/)),
-                })
-              }
-            />
-          ) : (
-            <textarea
-              dir="auto"
-              rows={3}
-              aria-label={`Section ${i + 1} text`}
-              className={control}
-              value={b.text}
-              onChange={(e) => patch(i, { text: e.target.value })}
-            />
-          )}
-        </div>
-      ))}
-      <button
-        type="button"
-        className={button}
-        onClick={() =>
-          onChange([
-            ...blocks,
-            { id: `u${Date.now()}`, kind: "paragraph", text: "New paragraph." },
-          ])
-        }
-      >
-        <Plus size={16} aria-hidden />
-        Add paragraph
-      </button>
     </div>
   );
 }
