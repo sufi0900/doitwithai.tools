@@ -184,14 +184,11 @@ export async function fetchPublic(
             ]),
           );
           if (
-            [301, 302, 303, 307, 308].includes(status) &&
-            headers.location
+            options.html === false ||
+            status >= 300 ||
+            status < 200
           ) {
-            response.resume();
-            return safeResolve({ status, headers, html: "" });
-          }
-          if (options.html === false) {
-            response.resume();
+            response.destroy();
             return safeResolve({ status, headers, html: "" });
           }
 
@@ -209,49 +206,40 @@ export async function fetchPublic(
             const brotli = createBrotliDecompress();
             stream = response.pipe(brotli);
           } else if (encoding && encoding !== "identity") {
-            response.resume();
+            response.destroy();
             return safeReject(
-              new Error("The source page used an unsupported response encoding."),
+              new Error(
+                "The source returned unsupported compressed content. Paste its page HTML instead.",
+              ),
             );
           }
 
-          const type = headers["content-type"] || "";
-          if (options.image) {
-            if (
-              status >= 200 &&
-              status < 300 &&
-              type &&
-              !/^image\/(png|jpe?g|webp|gif|x-icon|vnd\.microsoft\.icon)/i.test(
-                type,
-              )
-            ) {
-              response.resume();
-              return safeReject(
-                new Error("The image response was not a supported image format."),
-              );
-            }
-          } else if (
-            status >= 200 &&
-            status < 300 &&
-            type &&
+          if (
             !(
-              options.text &&
-              /^text\/plain\b/i.test(type)
-            ) &&
-            !/^(text\/html|application\/xhtml\+xml)\b/i.test(type)
+              options.image
+                ? /^image\/(?:png|jpeg)(?:;|$)/i
+                : options.text
+                  ? /text\/plain/i
+                  : /text\/html|application\/xhtml\+xml/i
+            ).test(headers["content-type"] || "")
           ) {
-            response.resume();
+            response.destroy();
             return safeReject(
-              new Error("The source URL did not return an HTML page."),
+              new Error(
+                options.image
+                  ? "Only public PNG and JPEG images are supported."
+                  : options.text
+                    ? "Robots policy was not plain text."
+                    : "The source did not return an HTML page.",
+              ),
             );
           }
 
           const chunks: Buffer[] = [];
           let total = 0;
-          // Allow up to 5 MB of decompressed HTML so modern long-form articles with inline CSS/JS never truncate prematurely
           const max = options.image
-            ? options.bytes || 2000000
-            : Math.max(options.bytes || 2000000, 5000000);
+            ? options.bytes || 2_000_000
+            : Math.max(options.bytes || 2_000_000, 5_000_000);
 
           const tryResolvePartialHtml = () => {
             if (options.image || chunks.length === 0) return false;
@@ -278,8 +266,11 @@ export async function fetchPublic(
                 response.destroy();
                 return;
               }
-              response.destroy(
-                new Error("The source page was too large to inspect safely."),
+              response.destroy();
+              safeReject(
+                new Error(
+                  "The source exceeds the HTML limit. Paste a smaller HTML section.",
+                ),
               );
               return;
             }
@@ -292,7 +283,7 @@ export async function fetchPublic(
               status,
               headers,
               html: options.image ? "" : data.toString("utf8"),
-              data: options.image ? data : undefined,
+              ...(options.image ? { data } : {}),
             });
           });
 
@@ -319,27 +310,21 @@ export async function fetchPublic(
       });
       req.end();
     });
-    if (
-      [301, 302, 303, 307, 308].includes(result.status) &&
-      result.headers.location
-    ) {
-      if (hop === 5)
-        throw new Error(
-          "Too many redirects were encountered. Try the final URL.",
-        );
-      const next = publicUrl(new URL(result.headers.location, url).href);
-      redirects.push({ from: url.href, to: next.href, status: result.status });
+    if ([301, 302, 303, 307, 308].includes(result.status)) {
+      const location = result.headers.location;
+      if (!location) throw new Error("A redirect had no destination URL.");
+      const next = publicUrl(new URL(location, url).href);
+      redirects.push({
+        url: url.href,
+        status: result.status,
+        location: next.href,
+      });
       url = next;
       continue;
     }
-    return {
-      url: url.href,
-      status: result.status,
-      headers: result.headers,
-      html: result.html,
-      data: result.data,
-      redirects,
-    };
+    return { ...result, url: url.href, redirects };
   }
-  throw new Error("Too many redirects were encountered. Try the final URL.");
+  throw new Error(
+    "More than five redirects prevented verification. Enter the final URL.",
+  );
 }

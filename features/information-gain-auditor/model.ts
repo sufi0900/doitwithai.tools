@@ -90,7 +90,6 @@ export function evaluateInformationGain(params: {
 
   const topicClean =
     params.topic.trim() ||
-    yourParsed.stats.title ||
     yourParsed.stats.headings[0] ||
     "this topic";
 
