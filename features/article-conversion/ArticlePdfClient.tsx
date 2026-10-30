@@ -108,6 +108,13 @@ export default function ArticlePdfClient({
 
   useEffect(() => {
     mounted.current = true;
+    if (typeof window !== "undefined") {
+      const qUrl = new URLSearchParams(window.location.search).get("url");
+      if (qUrl && /^https?:\/\//i.test(qUrl.trim())) {
+        setMode("url");
+        setSource(qUrl.trim());
+      }
+    }
     return () => {
       mounted.current = false;
       abort.current?.abort();

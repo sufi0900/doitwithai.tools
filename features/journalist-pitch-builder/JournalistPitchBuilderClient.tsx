@@ -213,7 +213,7 @@ export default function JournalistPitchBuilderClient() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-12 sm:px-6">
       <ToolRunOverlay
         active={busy}
         title="Drafting quote-ready journalist pitches"
@@ -640,7 +640,7 @@ export default function JournalistPitchBuilderClient() {
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-[1.35fr_0.85fr]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             {/* Editable Pitch Studio */}
             <div className={panel}>
               {input.platform !== "featured-qa" && (

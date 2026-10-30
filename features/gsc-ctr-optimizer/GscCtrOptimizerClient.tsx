@@ -144,7 +144,7 @@ export default function GscCtrOptimizerClient() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-12 sm:px-6">
       <ToolRunOverlay
         active={busy}
         title="Calculating CTR deficits & recoverable clicks"

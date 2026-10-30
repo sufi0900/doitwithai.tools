@@ -219,7 +219,7 @@ export default function DisavowFileGeneratorClient() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-12 sm:px-6">
       <ToolRunOverlay
         active={busy}
         title="Validating & normalizing disavow rules"
@@ -656,7 +656,7 @@ export default function DisavowFileGeneratorClient() {
           )}
 
           {/* Side-by-Side Interactive Rule Editor & Live disavow.txt Output */}
-          <div className="grid gap-6 lg:grid-cols-[1.25fr_0.95fr]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.95fr)]">
             <div className={panel}>
               <h3 className="text-lg font-extrabold">
                 Interactive Rule Inspector ({report.entries.length} Entries)
@@ -763,7 +763,7 @@ export default function DisavowFileGeneratorClient() {
                 Exact UTF-8 plain-text file formatted for Google Search Console
                 › Disavow links.
               </p>
-              <pre className="mt-4 max-h-[500px] overflow-auto rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
+              <pre className="mt-4 max-h-[500px] w-full max-w-full overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
                 {report.disavowTxtContent}
               </pre>
             </div>

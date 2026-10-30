@@ -403,7 +403,7 @@ export default function InformationGainAuditorClient() {
   const activeScan = SCAN_STEPS[scanStage] || SCAN_STEPS[0];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-12 sm:px-6">
       <ToolRunOverlay
         active={busy}
         title={activeScan.title}
@@ -620,7 +620,7 @@ export default function InformationGainAuditorClient() {
         >
           {/* Prominent Circular Score Gauge + Verdict Header */}
           <div className={panel}>
-            <div className="grid items-center gap-6 border-b border-slate-200 pb-7 dark:border-slate-700 lg:grid-cols-[200px_1fr_auto]">
+            <div className="grid items-center gap-6 border-b border-slate-200 pb-7 dark:border-slate-700 lg:grid-cols-[200px_minmax(0,1fr)_auto]">
               <div className="flex justify-center rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-800/40">
                 <CircularScoreGauge
                   score={report.overallScore}

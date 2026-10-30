@@ -220,7 +220,7 @@ export default function EeatContentAuditorClient() {
   }, [report, pillarFilter]);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-12 sm:px-6">
       <ToolRunOverlay
         active={busy}
         title="Auditing 20 E-E-A-T & Helpful Content signals"
@@ -306,7 +306,7 @@ export default function EeatContentAuditorClient() {
           })}
         </div>
 
-        <div className="mt-6 grid gap-5 sm:grid-cols-[1.5fr_1fr]">
+        <div className="mt-6 grid gap-5 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
           <div>
             <label htmlFor="eeat-url-input" className="block text-sm font-bold">
               Target Webpage URL{" "}

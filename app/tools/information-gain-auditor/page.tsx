@@ -119,7 +119,7 @@ export default function InformationGainAuditorPage() {
             <span aria-current="page">Information gain auditor</span>
           </nav>
 
-          <div className="grid items-center gap-8 lg:grid-cols-[1.35fr_0.85fr]">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
                 On-page SEO · Content Differentiation & GEO Value

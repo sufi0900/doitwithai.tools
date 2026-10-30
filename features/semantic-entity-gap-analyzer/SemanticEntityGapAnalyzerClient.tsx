@@ -308,7 +308,7 @@ export default function SemanticEntityGapAnalyzerClient() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-12 sm:px-6">
       <ToolRunOverlay
         active={busy}
         title="Extracting semantic entities & competitor gaps"
@@ -553,7 +553,7 @@ export default function SemanticEntityGapAnalyzerClient() {
         >
           {/* KPI Scorecard with Circular Coverage Gauge */}
           <div className={panel}>
-            <div className="grid items-center gap-6 border-b border-slate-200 pb-6 dark:border-slate-700 lg:grid-cols-[150px_1fr_auto]">
+            <div className="grid items-center gap-6 border-b border-slate-200 pb-6 dark:border-slate-700 lg:grid-cols-[150px_minmax(0,1fr)_auto]">
               <div className="flex justify-center">
                 <CoverageCircleGauge score={report.coverageScore} />
               </div>

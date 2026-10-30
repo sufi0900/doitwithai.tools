@@ -61,6 +61,12 @@ export default function ToolsPage() {
             <span className="rounded-full border border-[#5271FF]/30 bg-[#5271FF]/10 px-3 py-1 text-[11px] font-bold text-[#4A6CF7] dark:text-[#AEBBFF]">
               {tools.length} Live Tools
             </span>
+            <Link
+              href="/chrome-extension"
+              className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] font-extrabold text-emerald-700 transition hover:bg-emerald-500/20 dark:text-emerald-300"
+            >
+              ★ Free Chrome Extension
+            </Link>
             <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-800 dark:bg-[#161F30] dark:text-slate-300">
               {topics.length} Marketing Disciplines
             </span>

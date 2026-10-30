@@ -129,7 +129,7 @@ export default function SemanticEntityGapAnalyzerPage() {
             <span aria-current="page">Semantic entity gap analyzer</span>
           </nav>
 
-          <div className="grid items-center gap-8 lg:grid-cols-[1.28fr_0.92fr]">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.28fr)_minmax(0,0.92fr)]">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
                 On-page SEO · Competitor Entity &amp; Topic Coverage
