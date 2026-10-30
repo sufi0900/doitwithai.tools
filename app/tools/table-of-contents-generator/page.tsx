@@ -246,7 +246,7 @@ export default function TableOfContentsGeneratorPage() {
       </section>
 
       <ToolResources slug="table-of-contents-generator" />
-      <ToolFaq faqs={faqs} />
+      <ToolFaq title="SEO Table of Contents & jump-link questions" faqs={faqs} />
     </div>
   );
 }

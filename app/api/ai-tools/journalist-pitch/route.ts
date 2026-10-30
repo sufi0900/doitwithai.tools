@@ -83,37 +83,40 @@ export async function POST(request: NextRequest) {
 
   try {
     const client = getGeminiClient();
-    const response = await client.responses.parse({
-      model,
-      max_output_tokens: 2200,
-      store: false,
-      input: [
-        {
-          role: "system",
-          content:
-            "You are a senior Digital PR & Journalist Relations Editor. Craft 3 distinct, highly quotable journalist pitch responses (1: direct-soundbite, 2: contrarian-data, 3: framework) based strictly on the expert's supplied credentials, thesis, and proof points. Never invent fake awards or unverified claims. Keep soundbites crisp (40–85 words), natural, and ready for a reporter to paste directly into their article.",
-        },
-        {
-          role: "user",
-          content: JSON.stringify({
-            platform: input.platform,
-            outlet: input.publicationOrOutlet,
-            journalist: input.journalistName,
-            topic: input.queryTopic,
-            query: input.journalistQuery,
-            expert: `${input.expertName}, ${input.expertRole} at ${input.brandName} (${input.brandUrl})`,
-            coreThesis: input.coreThesis,
-            proofOrMetric: input.proofOrMetric,
-            practicalTakeaway: input.practicalTakeaway,
+    const response = await client.generate(
+      {
+        model,
+        max_output_tokens: 2200,
+        store: false,
+        input: [
+          {
+            role: "system",
+            content:
+              "You are a senior Digital PR & Journalist Relations Editor. Craft 3 distinct, highly quotable journalist pitch responses (1: direct-soundbite, 2: contrarian-data, 3: framework) based strictly on the expert's supplied credentials, thesis, and proof points. Never invent fake awards or unverified claims. Keep soundbites crisp (40–85 words), natural, and ready for a reporter to paste directly into their article.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              platform: input.platform,
+              outlet: input.publicationOrOutlet,
+              journalist: input.journalistName,
+              topic: input.queryTopic,
+              query: input.journalistQuery,
+              expert: `${input.expertName}, ${input.expertRole} at ${input.brandName} (${input.brandUrl})`,
+              coreThesis: input.coreThesis,
+              proofOrMetric: input.proofOrMetric,
+              practicalTakeaway: input.practicalTakeaway,
+            }),
+          },
+        ],
+        text: {
+          format: geminiTextFormat(aiOutputSchema, "journalist_pitch", {
+            compact: true,
           }),
         },
-      ],
-      text: {
-        format: geminiTextFormat(aiOutputSchema, "journalist_pitch", {
-          compact: true,
-        }),
       },
-    });
+      { timeout: 30000 },
+    );
 
     const parsed = response.output_parsed;
     if (!parsed?.angles?.length) {

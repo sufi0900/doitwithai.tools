@@ -2,6 +2,12 @@ import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
 import { lookup } from "node:dns/promises";
 import { BlockList, isIP } from "node:net";
+import {
+  createBrotliDecompress,
+  createGunzip,
+  createInflate,
+} from "node:zlib";
+import type { Readable } from "node:stream";
 import type { Hop } from "./types";
 
 const blocked4 = new BlockList(),
@@ -99,9 +105,9 @@ export async function fetchPublic(
   const signal = options.signal
     ? AbortSignal.any([
         options.signal,
-        AbortSignal.timeout(options.timeout || 12000),
+        AbortSignal.timeout(options.timeout || 15000),
       ])
-    : AbortSignal.timeout(options.timeout || 12000);
+    : AbortSignal.timeout(options.timeout || 15000);
   for (let hop = 0; hop <= 5; hop++) {
     if (visited.has(url.href))
       throw new Error("Redirect loop detected. Try the final source URL.");
@@ -113,6 +119,23 @@ export async function fetchPublic(
       html: string;
       data?: Buffer;
     }>((resolve, reject) => {
+      let settled = false;
+      const safeResolve = (val: {
+        status: number;
+        headers: Record<string, string>;
+        html: string;
+        data?: Buffer;
+      }) => {
+        if (settled) return;
+        settled = true;
+        resolve(val);
+      };
+      const safeReject = (err: unknown) => {
+        if (settled) return;
+        settled = true;
+        reject(err instanceof Error ? err : new Error(String(err)));
+      };
+
       const req = (url.protocol === "https:" ? httpsRequest : httpRequest)(
         url,
         {
@@ -121,13 +144,14 @@ export async function fetchPublic(
           signal,
           headers: {
             "User-Agent":
-              "DoItWithAI-BacklinkVerifier/1.0 (+https://doitwithai.tools)",
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 (+https://doitwithai.tools)",
             Accept: options.image
-              ? "image/png,image/jpeg"
+              ? "image/png,image/jpeg,image/webp,image/*;q=0.8"
               : options.html === false
                 ? "*/*"
-                : "text/html,application/xhtml+xml",
-            "Accept-Encoding": "identity",
+                : "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br, identity",
           },
           lookup: ((
             hostname: string,
@@ -155,106 +179,167 @@ export async function fetchPublic(
           const status = response.statusCode || 0;
           const headers = Object.fromEntries(
             Object.entries(response.headers).map(([key, v]) => [
-              key,
+              key.toLowerCase(),
               Array.isArray(v) ? v.join(", ") : v || "",
             ]),
           );
-          // Destination checks need only headers. Redirect and HTTP-error bodies are unnecessary.
-          if (options.html === false || status >= 300 || status < 200) {
-            response.destroy();
-            resolve({ status, headers, html: "" });
-            return;
-          }
           if (
-            !(
-              options.image
-                ? /^image\/(?:png|jpeg)(?:;|$)/i
-                : options.text
-                  ? /text\/plain/i
-                  : /text\/html|application\/xhtml\+xml/i
-            ).test(headers["content-type"] || "")
+            [301, 302, 303, 307, 308].includes(status) &&
+            headers.location
           ) {
-            response.destroy();
-            reject(
-              new Error(
-                options.image
-                  ? "Only public PNG and JPEG images are supported."
-                  : options.text
-                    ? "Robots policy was not plain text."
-                    : "The source did not return an HTML page.",
-              ),
-            );
-            return;
+            response.resume();
+            return safeResolve({ status, headers, html: "" });
           }
-          if (
-            headers["content-encoding"] &&
-            headers["content-encoding"] !== "identity"
-          ) {
-            response.destroy();
-            reject(
-              new Error(
-                "The source returned unsupported compressed content. Paste its page HTML instead.",
-              ),
-            );
-            return;
+          if (options.html === false) {
+            response.resume();
+            return safeResolve({ status, headers, html: "" });
           }
-          const maximum = options.bytes || 2_000_000;
-          if (Number(headers["content-length"]) > maximum) {
-            response.destroy();
-            reject(
-              new Error(
-                "The source exceeds the 2 MB HTML limit. Paste a smaller HTML section.",
-              ),
+
+          const encoding = (headers["content-encoding"] || "identity")
+            .toLowerCase()
+            .trim();
+          let stream: Readable = response;
+          if (encoding === "gzip" || encoding === "x-gzip") {
+            const gunzip = createGunzip();
+            stream = response.pipe(gunzip);
+          } else if (encoding === "deflate") {
+            const inflate = createInflate();
+            stream = response.pipe(inflate);
+          } else if (encoding === "br") {
+            const brotli = createBrotliDecompress();
+            stream = response.pipe(brotli);
+          } else if (encoding && encoding !== "identity") {
+            response.resume();
+            return safeReject(
+              new Error("The source page used an unsupported response encoding."),
             );
-            return;
           }
-          const chunks: Buffer[] = [];
-          let count = 0;
-          response.on("data", (chunk: Buffer) => {
-            count += chunk.length;
-            if (count > maximum) {
-              response.destroy();
-              reject(
-                new Error(
-                  "The source exceeds the HTML limit. Paste a smaller HTML section.",
-                ),
+
+          const type = headers["content-type"] || "";
+          if (options.image) {
+            if (
+              status >= 200 &&
+              status < 300 &&
+              type &&
+              !/^image\/(png|jpe?g|webp|gif|x-icon|vnd\.microsoft\.icon)/i.test(
+                type,
+              )
+            ) {
+              response.resume();
+              return safeReject(
+                new Error("The image response was not a supported image format."),
               );
-            } else chunks.push(chunk);
+            }
+          } else if (
+            status >= 200 &&
+            status < 300 &&
+            type &&
+            !(
+              options.text &&
+              /^text\/plain\b/i.test(type)
+            ) &&
+            !/^(text\/html|application\/xhtml\+xml)\b/i.test(type)
+          ) {
+            response.resume();
+            return safeReject(
+              new Error("The source URL did not return an HTML page."),
+            );
+          }
+
+          const chunks: Buffer[] = [];
+          let total = 0;
+          // Allow up to 5 MB of decompressed HTML so modern long-form articles with inline CSS/JS never truncate prematurely
+          const max = options.image
+            ? options.bytes || 2000000
+            : Math.max(options.bytes || 2000000, 5000000);
+
+          const tryResolvePartialHtml = () => {
+            if (options.image || chunks.length === 0) return false;
+            const buffered = Buffer.concat(chunks).toString("utf8");
+            if (
+              buffered.length >= 600 &&
+              /<(article|main|body|p|h1|h2)\b/i.test(buffered)
+            ) {
+              safeResolve({
+                status,
+                headers,
+                html: buffered,
+              });
+              return true;
+            }
+            return false;
+          };
+
+          stream.on("data", (chunk: Buffer) => {
+            if (settled) return;
+            total += chunk.length;
+            if (total > max) {
+              if (tryResolvePartialHtml()) {
+                response.destroy();
+                return;
+              }
+              response.destroy(
+                new Error("The source page was too large to inspect safely."),
+              );
+              return;
+            }
+            chunks.push(chunk);
           });
-          response.on("end", () =>
-            resolve({
+
+          stream.on("end", () => {
+            const data = Buffer.concat(chunks);
+            safeResolve({
               status,
               headers,
-              html: options.image ? "" : Buffer.concat(chunks).toString("utf8"),
-              ...(options.image ? { data: Buffer.concat(chunks) } : {}),
-            }),
-          );
-          response.on("error", reject);
-          response.on("aborted", () =>
-            reject(
+              html: options.image ? "" : data.toString("utf8"),
+              data: options.image ? data : undefined,
+            });
+          });
+
+          response.on("aborted", () => {
+            if (tryResolvePartialHtml()) return;
+            safeReject(
               new Error("The source response ended before all HTML arrived."),
-            ),
-          );
+            );
+          });
+
+          stream.on("error", (err) => {
+            if (tryResolvePartialHtml()) return;
+            safeReject(err);
+          });
+
+          response.on("error", (err) => {
+            if (tryResolvePartialHtml()) return;
+            safeReject(err);
+          });
         },
       );
-      req.on("error", reject);
+      req.on("error", (err) => {
+        safeReject(err);
+      });
       req.end();
     });
-    if ([301, 302, 303, 307, 308].includes(result.status)) {
-      const location = result.headers.location;
-      if (!location) throw new Error("A redirect had no destination URL.");
-      const next = publicUrl(new URL(location, url).href);
-      redirects.push({
-        url: url.href,
-        status: result.status,
-        location: next.href,
-      });
+    if (
+      [301, 302, 303, 307, 308].includes(result.status) &&
+      result.headers.location
+    ) {
+      if (hop === 5)
+        throw new Error(
+          "Too many redirects were encountered. Try the final URL.",
+        );
+      const next = publicUrl(new URL(result.headers.location, url).href);
+      redirects.push({ from: url.href, to: next.href, status: result.status });
       url = next;
       continue;
     }
-    return { ...result, url: url.href, redirects };
+    return {
+      url: url.href,
+      status: result.status,
+      headers: result.headers,
+      html: result.html,
+      data: result.data,
+      redirects,
+    };
   }
-  throw new Error(
-    "More than five redirects prevented verification. Enter the final URL.",
-  );
+  throw new Error("Too many redirects were encountered. Try the final URL.");
 }

@@ -60,8 +60,8 @@ export function inspectHtmlPassagesForSnippets(
 
       let next = node.next();
       let steps = 0;
-      while (next.length && steps < 4 && !/^(h1|h2|h3)$/i.test(next[0]?.tagName || "")) {
-        const nextTag = (next[0]?.tagName || "").toLowerCase();
+      while (next.length && steps < 4 && !/^(h1|h2|h3)$/i.test(String(next.prop("tagName") || ""))) {
+        const nextTag = String(next.prop("tagName") || "").toLowerCase();
         if (!firstPara && nextTag === "p") {
           firstPara = clean(next.text(), 500);
         } else if (nextTag === "ul" || nextTag === "ol") {

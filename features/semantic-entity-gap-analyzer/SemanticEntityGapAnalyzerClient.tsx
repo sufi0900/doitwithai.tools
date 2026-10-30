@@ -16,6 +16,7 @@ import ToolRunOverlay, {
   focusToolSection,
   paintToolFeedback,
 } from "@/features/tool-ui/ToolRunOverlay";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import {
   buildSemanticGapDocx,
   compareSemanticEntityCoverage,
@@ -58,8 +59,71 @@ const primaryBtn =
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
 
+function CoverageCircleGauge({ score }: { score: number }) {
+  const [animated, setAnimated] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setAnimated(Math.max(0, Math.min(100, score))), 60);
+    return () => clearTimeout(t);
+  }, [score]);
+
+  const size = 128;
+  const strokeWidth = 11;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (animated / 100) * circumference;
+  const stroke =
+    score >= 75 ? "#10B981" : score >= 45 ? "#3452D1" : "#F59E0B";
+
+  return (
+    <div
+      className="relative flex shrink-0 items-center justify-center"
+      style={{ width: size, height: size }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="-rotate-90 transform"
+        aria-hidden="true"
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="transparent"
+          stroke="rgba(148, 163, 184, 0.22)"
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="transparent"
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{
+            transition: "stroke-dashoffset 1s cubic-bezier(0.22, 1, 0.36, 1)",
+          }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span className="text-3xl font-black text-slate-900 dark:text-white">
+          {animated}%
+        </span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+          Parity
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function SemanticEntityGapAnalyzerClient() {
-  const [mode, setMode] = useState<"text" | "live">("text");
+  // Default to Live URL mode ("live") as requested so users can directly enter their URL + Competitor URLs
+  const [mode, setMode] = useState<"live" | "text">("live");
   const [targetKeyword, setTargetKeyword] = useState("technical seo audit");
   const [yourUrl, setYourUrl] = useState("");
   const [yourContent, setYourContent] = useState("");
@@ -124,6 +188,7 @@ export default function SemanticEntityGapAnalyzerClient() {
       setBusy(true);
       try {
         await paintToolFeedback();
+        await new Promise((r) => setTimeout(r, 850));
         const comps = [
           comp1Text.trim()
             ? { htmlOrText: comp1Text, url: "Competitor #1" }
@@ -157,7 +222,7 @@ export default function SemanticEntityGapAnalyzerClient() {
 
     if ((!yourUrl.trim() && !yourContent.trim()) || !compUrls.length) {
       setError(
-        "Provide your page URL (or draft text) and 1 to 3 public competitor URLs.",
+        "Enter your page URL and 1 to 3 public competitor URLs (or click 'Load Sample Competitor Gap').",
       );
       return;
     }
@@ -181,9 +246,10 @@ export default function SemanticEntityGapAnalyzerClient() {
       });
       const data = await res.json();
       if (!res.ok || !data.report) {
+        setReport(null);
         setError(
           data?.error?.message ||
-            "Could not fetch one or more URLs. Use Pasted Content mode instead.",
+            "Could not fetch one or more URLs. Switch to 'Compare Pasted Drafts / HTML' mode instead.",
         );
         return;
       }
@@ -191,7 +257,8 @@ export default function SemanticEntityGapAnalyzerClient() {
       setRevision((r) => r + 1);
     } catch (err) {
       if ((err as Error)?.name !== "AbortError") {
-        setError("Comparison interrupted. Try Pasted Content mode.");
+        setReport(null);
+        setError("Comparison interrupted. Try Pasted Drafts mode.");
       }
     } finally {
       setBusy(false);
@@ -245,7 +312,7 @@ export default function SemanticEntityGapAnalyzerClient() {
       <ToolRunOverlay
         active={busy}
         title="Extracting semantic entities & competitor gaps"
-        description="Comparing named entities, technical phrases, word depth, and H2/H3 subtopics between your page and ranking competitors."
+        description="Fetching live pages, comparing named entities, technical phrases, word depth, and H2/H3 subtopics against ranking competitors."
         onCancel={() => {
           abortControllerRef.current?.abort();
           setBusy(false);
@@ -260,9 +327,9 @@ export default function SemanticEntityGapAnalyzerClient() {
               Compare Your Page Entities Against Top-Ranking Competitors
             </h2>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Uncover the exact named entities, technical phrases, and H2/H3
-              subtopics that ranking competitors cover—and see where your draft
-              has gaps.
+              Enter your live URL and up to 3 ranking competitor URLs (or paste
+              drafts) to uncover missing named entities, technical phrases, and
+              H2/H3 subtopics.
             </p>
           </div>
           <button type="button" onClick={loadSample} className={secondaryBtn}>
@@ -278,16 +345,16 @@ export default function SemanticEntityGapAnalyzerClient() {
         >
           {[
             {
-              id: "text" as const,
-              label: "1. Compare Pasted Drafts / HTML (Instant & Offline)",
-              sub: "Paste your draft and 1–2 competitor articles side by side",
-              icon: FileText,
+              id: "live" as const,
+              label: "1. Fetch Live URLs (Your URL + Up to 3 Competitor URLs)",
+              sub: "Automatically fetches live pages, headings, and semantic entities",
+              icon: Globe,
             },
             {
-              id: "live" as const,
-              label: "2. Fetch Live URLs (Your URL + Up to 3 Competitor URLs)",
-              sub: "Automatically extracts body text, headings, and entities",
-              icon: Globe,
+              id: "text" as const,
+              label: "2. Compare Pasted Drafts / HTML (Instant & Offline)",
+              sub: "Paste your draft and 1–2 competitor articles side by side",
+              icon: FileText,
             },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -344,7 +411,47 @@ export default function SemanticEntityGapAnalyzerClient() {
           />
         </div>
 
-        {mode === "text" ? (
+        {mode === "live" ? (
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <div>
+              <label
+                htmlFor="entity-your-url"
+                className="block text-sm font-bold"
+              >
+                Your Page URL (required)
+              </label>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Enter the public URL of your published article or landing page.
+              </p>
+              <ToolUrlInput
+                id="entity-your-url"
+                value={yourUrl}
+                onChange={(e) => setYourUrl(e.target.value)}
+                placeholder="https://your-site.com/your-article"
+                className={`${control} mt-2`}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="entity-comp-urls"
+                className="block text-sm font-bold"
+              >
+                Top-Ranking Competitor URLs (1 to 3 URLs, one per line)
+              </label>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Paste the top 1–3 URLs ranking in Google for your target keyword.
+              </p>
+              <textarea
+                id="entity-comp-urls"
+                rows={3}
+                value={compUrlsInput}
+                onChange={(e) => setCompUrlsInput(e.target.value)}
+                placeholder={`https://competitor1.com/guide\nhttps://competitor2.com/guide`}
+                className={`${control} mt-2 text-xs`}
+              />
+            </div>
+          </div>
+        ) : (
           <div className="mt-6 grid gap-5 lg:grid-cols-3">
             <div>
               <label
@@ -395,47 +502,12 @@ export default function SemanticEntityGapAnalyzerClient() {
               />
             </div>
           </div>
-        ) : (
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <div>
-              <label
-                htmlFor="entity-your-url"
-                className="block text-sm font-bold"
-              >
-                Your Page URL
-              </label>
-              <input
-                id="entity-your-url"
-                type="url"
-                value={yourUrl}
-                onChange={(e) => setYourUrl(e.target.value)}
-                placeholder="https://your-site.com/your-article"
-                className={`${control} mt-1`}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="entity-comp-urls"
-                className="block text-sm font-bold"
-              >
-                Competitor URLs (1 to 3 URLs, one per line)
-              </label>
-              <textarea
-                id="entity-comp-urls"
-                rows={3}
-                value={compUrlsInput}
-                onChange={(e) => setCompUrlsInput(e.target.value)}
-                placeholder={`https://competitor1.com/guide\nhttps://competitor2.com/guide`}
-                className={`${control} mt-1`}
-              />
-            </div>
-          </div>
         )}
 
         {error && (
           <div
             role="alert"
-            className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200"
+            className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-200"
           >
             <AlertTriangle size={18} className="mt-0.5 shrink-0" />
             <span>{error}</span>
@@ -479,16 +551,19 @@ export default function SemanticEntityGapAnalyzerClient() {
           aria-label="Semantic entity gap results"
           className="mt-10 space-y-8 focus:outline-none"
         >
-          {/* KPI Scorecard */}
+          {/* KPI Scorecard with Circular Coverage Gauge */}
           <div className={panel}>
-            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-700">
+            <div className="grid items-center gap-6 border-b border-slate-200 pb-6 dark:border-slate-700 lg:grid-cols-[150px_1fr_auto]">
+              <div className="flex justify-center">
+                <CoverageCircleGauge score={report.coverageScore} />
+              </div>
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
                   Semantic Coverage vs. {report.competitorStats.length}{" "}
                   Competitor(s)
                 </span>
                 <h3 className="mt-1 text-2xl font-black">
-                  Entity & Subtopic Gap Report
+                  Entity &amp; Subtopic Gap Report
                 </h3>
                 <p className="mt-1 text-xs text-slate-500">
                   Your Word Count: <strong>{report.yourStats.wordCount}</strong>{" "}
@@ -518,18 +593,7 @@ export default function SemanticEntityGapAnalyzerClient() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-800/40">
-                <p className="text-xs font-semibold uppercase text-slate-500">
-                  Topic Coverage
-                </p>
-                <p className="mt-2 text-3xl font-black text-[#3452d1] dark:text-[#9aabff]">
-                  {report.coverageScore}%
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Entity parity score
-                </p>
-              </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-xl border border-rose-200 bg-rose-50/50 p-4 dark:border-rose-900/50 dark:bg-rose-950/20">
                 <p className="text-xs font-bold uppercase text-rose-700 dark:text-rose-300">
                   Missing Entities
@@ -615,7 +679,7 @@ export default function SemanticEntityGapAnalyzerClient() {
           <div className={panel}>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <h3 className="text-xl font-extrabold">
-                Semantic Entity & Phrase Matrix ({filteredTerms.length})
+                Semantic Entity &amp; Phrase Matrix ({filteredTerms.length})
               </h3>
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative">

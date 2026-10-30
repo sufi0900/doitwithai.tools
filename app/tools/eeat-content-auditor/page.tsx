@@ -279,7 +279,7 @@ export default function EeatContentAuditorPage() {
       </section>
 
       <ToolResources slug="eeat-content-auditor" />
-      <ToolFaq faqs={faqs} />
+      <ToolFaq title="E-E-A-T & Helpful Content audit questions" faqs={faqs} />
     </div>
   );
 }

@@ -110,6 +110,201 @@ function wrapCanvasText(
  * Miniature SVG layout preview inside each Template Selector Card so the user
  * immediately sees the unique structural architecture of each template.
  */
+/**
+ * 3D-styled animated SVG platform icon for LinkedIn, X (Twitter), Facebook, Instagram, and Threads.
+ */
+function SocialPlatform3DIcon({
+  platform,
+  size = 38,
+}: {
+  platform: string;
+  size?: number;
+}) {
+  const p = platform.toLowerCase();
+  if (p.includes("linkedin")) {
+    return (
+      <span
+        className="group relative inline-flex shrink-0 items-center justify-center rounded-xl p-0.5 shadow-md transition-transform duration-300 hover:-translate-y-0.5 hover:scale-105"
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 48 48" className="h-full w-full drop-shadow-sm">
+          <defs>
+            <linearGradient id="li3d" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#2589FF" />
+              <stop offset="55%" stopColor="#0A66C2" />
+              <stop offset="100%" stopColor="#004182" />
+            </linearGradient>
+            <linearGradient id="liShine" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <rect x="2" y="4" width="44" height="42" rx="12" fill="#002952" />
+          <rect x="2" y="2" width="44" height="42" rx="12" fill="url(#li3d)" />
+          <path d="M14 4h20a10 10 0 0 1 10 10v6H4v-6A10 10 0 0 1 14 4z" fill="url(#liShine)" />
+          <circle cx="15.5" cy="15.5" r="3.2" fill="#FFFFFF" />
+          <rect x="12.8" y="21" width="5.4" height="14" rx="1.5" fill="#FFFFFF" />
+          <path
+            d="M22 21h5.1v2.1h.1c.8-1.4 2.6-2.5 5.1-2.5 5.2 0 6.2 3.3 6.2 7.8V35h-5.4v-5.7c0-1.6-.1-3.6-2.3-3.6-2.3 0-2.7 1.7-2.7 3.5V35H22V21z"
+            fill="#FFFFFF"
+          />
+        </svg>
+      </span>
+    );
+  }
+  if (p.includes("twitter") || p.startsWith("x ") || p === "x") {
+    return (
+      <span
+        className="group relative inline-flex shrink-0 items-center justify-center rounded-xl p-0.5 shadow-md transition-transform duration-300 hover:-translate-y-0.5 hover:scale-105"
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 48 48" className="h-full w-full drop-shadow-sm">
+          <defs>
+            <linearGradient id="x3d" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#334155" />
+              <stop offset="50%" stopColor="#0F172A" />
+              <stop offset="100%" stopColor="#020617" />
+            </linearGradient>
+          </defs>
+          <rect x="2" y="4" width="44" height="42" rx="12" fill="#000000" />
+          <rect x="2" y="2" width="44" height="42" rx="12" fill="url(#x3d)" stroke="#475569" strokeWidth="1" />
+          <path
+            d="M27.2 20.8 36.1 11h-2.2l-7.6 8.4L20.2 11H12l9.4 13.4L12 35h2.2l8.1-9 6.5 9H37l-9.8-14.2Zm-3 3.3-1-1.4L15.1 12.7h3.3l6.1 8.6 1 1.4 7.9 11.1h-3.3l-5.9-9.7Z"
+            fill="#FFFFFF"
+          />
+        </svg>
+      </span>
+    );
+  }
+  if (p.includes("instagram")) {
+    return (
+      <span
+        className="group relative inline-flex shrink-0 items-center justify-center rounded-xl p-0.5 shadow-md transition-transform duration-300 hover:-translate-y-0.5 hover:scale-105"
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 48 48" className="h-full w-full drop-shadow-sm">
+          <defs>
+            <radialGradient id="ig3d" cx="30%" cy="100%" r="110%">
+              <stop offset="0%" stopColor="#FEDA77" />
+              <stop offset="25%" stopColor="#F58529" />
+              <stop offset="55%" stopColor="#DD2A7B" />
+              <stop offset="85%" stopColor="#8134AF" />
+              <stop offset="100%" stopColor="#515BD4" />
+            </radialGradient>
+          </defs>
+          <rect x="2" y="4" width="44" height="42" rx="12" fill="#4A154B" />
+          <rect x="2" y="2" width="44" height="42" rx="12" fill="url(#ig3d)" />
+          <rect x="12" y="11" width="24" height="24" rx="7" fill="none" stroke="#FFFFFF" strokeWidth="2.8" />
+          <circle cx="24" cy="23" r="5.5" fill="none" stroke="#FFFFFF" strokeWidth="2.8" />
+          <circle cx="31" cy="16" r="1.8" fill="#FFFFFF" />
+        </svg>
+      </span>
+    );
+  }
+  if (p.includes("facebook")) {
+    return (
+      <span
+        className="group relative inline-flex shrink-0 items-center justify-center rounded-xl p-0.5 shadow-md transition-transform duration-300 hover:-translate-y-0.5 hover:scale-105"
+        style={{ width: size, height: size }}
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 48 48" className="h-full w-full drop-shadow-sm">
+          <defs>
+            <linearGradient id="fb3d" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#3B82F6" />
+              <stop offset="55%" stopColor="#1877F2" />
+              <stop offset="100%" stopColor="#0C4A9E" />
+            </linearGradient>
+          </defs>
+          <rect x="2" y="4" width="44" height="42" rx="12" fill="#083370" />
+          <rect x="2" y="2" width="44" height="42" rx="12" fill="url(#fb3d)" />
+          <path
+            d="M26.8 36V24.8h3.8l.6-4.4h-4.4v-2.8c0-1.3.4-2.2 2.2-2.2H31.5V11.5c-.4-.1-1.8-.2-3.4-.2-3.4 0-5.7 2.1-5.7 5.9v3.2h-3.8v4.4h3.8V36h4.4z"
+            fill="#FFFFFF"
+          />
+        </svg>
+      </span>
+    );
+  }
+  return (
+    <span
+      className="group relative inline-flex shrink-0 items-center justify-center rounded-xl p-0.5 shadow-md transition-transform duration-300 hover:-translate-y-0.5 hover:scale-105"
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 48 48" className="h-full w-full drop-shadow-sm">
+        <defs>
+          <linearGradient id="th3d" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#4F46E5" />
+            <stop offset="50%" stopColor="#1E1B4B" />
+            <stop offset="100%" stopColor="#090D16" />
+          </linearGradient>
+        </defs>
+        <rect x="2" y="4" width="44" height="42" rx="12" fill="#090D16" />
+        <rect x="2" y="2" width="44" height="42" rx="12" fill="url(#th3d)" />
+        <path
+          d="M24.5 13c-6.2 0-10.5 4.2-10.5 10.2 0 6.2 4.4 10.3 10.8 10.3 3.4 0 6.2-1.1 8-2.9l-1.9-2.1c-1.4 1.3-3.5 2.1-6 2.1-4.5 0-7.6-2.8-7.6-7.4 0-4.4 3-7.3 7.3-7.3 4.1 0 6.8 2.4 6.8 6.1 0 2.2-.9 3.6-2.2 3.6-1 0-1.6-.7-1.6-1.9v-5.3h-2.9v.9c-.8-.8-1.9-1.2-3.2-1.2-2.7 0-4.7 2.1-4.7 5.1 0 3.1 2 5.1 4.7 5.1 1.5 0 2.7-.6 3.4-1.6.4 1.1 1.5 1.7 3 1.7 2.9 0 4.9-2.4 4.9-6.2 0-5.4-3.8-9.2-9.3-9.2zm-2.3 12.6c-1.4 0-2.4-1-2.4-2.5 0-1.5 1-2.5 2.4-2.5s2.4 1 2.4 2.5c0 1.5-1 2.5-2.4 2.5z"
+          fill="#FFFFFF"
+        />
+      </svg>
+    </span>
+  );
+}
+
+/**
+ * Generates a crisp, high-resolution Brand Monogram Badge data URL for external domains
+ * when a remote PNG/JPEG logo cannot be fetched, ensuring stale logos from prior articles never stick.
+ */
+function buildBrandMonogramDataUrl(
+  brandName: string,
+  domain: string,
+  accentColor: string,
+  bgColor: string,
+): string {
+  if (typeof document === "undefined") return "";
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+
+    const cleanSource = (brandName || domain || "Brand")
+      .replace(/^https?:\/\/(www\.)?/i, "")
+      .replace(/[^a-zA-Z0-9 ]/g, " ")
+      .trim();
+    const parts = cleanSource.split(/\s+/).filter(Boolean);
+    const initials =
+      parts.length >= 2
+        ? (parts[0][0] + parts[1][0]).toUpperCase()
+        : cleanSource.slice(0, 2).toUpperCase() || "AI";
+
+    drawRoundedRect(ctx, 4, 4, 120, 120, 28);
+    ctx.fillStyle = accentColor || "#38BDF8";
+    ctx.fill();
+
+    drawRoundedRect(ctx, 12, 12, 104, 104, 22);
+    ctx.fillStyle = bgColor || "#0F172A";
+    ctx.fill();
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "900 50px system-ui, -apple-system, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(initials, 64, 67);
+    return canvas.toDataURL("image/png");
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Realistic miniature slide screenshot preview inside each Template Selector Card
+ * so the user immediately sees how the actual slides look before selecting.
+ */
 function TemplateLayoutThumbnail({
   template,
   bgColor,
@@ -123,197 +318,265 @@ function TemplateLayoutThumbnail({
   cardBgColor: string;
   textColor: string;
 }) {
+  const isLight =
+    bgColor.toLowerCase() === "#fffbf5" ||
+    bgColor.toLowerCase() === "#ffffff" ||
+    bgColor.toLowerCase() === "#f8fafc";
+  const subTextColor = isLight ? "#475569" : "rgba(255,255,255,0.78)";
+
   return (
     <div
-      className="relative mb-2.5 h-24 w-full overflow-hidden rounded-lg border border-slate-300/60 p-2.5 shadow-inner dark:border-slate-700"
-      style={{ backgroundColor: bgColor, color: textColor }}
+      className="relative mb-3 flex h-40 w-full flex-col justify-between overflow-hidden rounded-xl border border-slate-300/80 p-3 shadow-sm transition-transform duration-200 group-hover:scale-[1.01] dark:border-slate-700"
+      style={{
+        backgroundColor: bgColor,
+        color: textColor,
+        backgroundImage:
+          template === "blueprint-grid"
+            ? "linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)"
+            : undefined,
+        backgroundSize: template === "blueprint-grid" ? "14px 14px" : undefined,
+      }}
       aria-hidden="true"
     >
-      {/* Top mini brand bar */}
-      <div className="flex items-center justify-between">
+      {/* Top Mini Slide Header */}
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <span
-            className="inline-block h-2.5 w-2.5 rounded-sm"
+            className="inline-flex h-4 w-4 items-center justify-center rounded text-[8px] font-black text-slate-950"
             style={{ backgroundColor: accentColor }}
-          />
-          <span
-            className="inline-block h-1.5 w-12 rounded opacity-80"
-            style={{ backgroundColor: textColor }}
-          />
+          >
+            ★
+          </span>
+          <span className="truncate text-[9px] font-extrabold tracking-tight opacity-90">
+            BRAND STUDIO
+          </span>
         </div>
         <span
-          className="inline-block h-1.5 w-6 rounded"
-          style={{ backgroundColor: accentColor }}
-        />
-      </div>
-      {/* Mini headline bar */}
-      <div className="mt-2 space-y-1">
-        <div
-          className="h-2 w-3/4 rounded"
-          style={{ backgroundColor: textColor }}
-        />
-        <div
-          className="h-2 w-1/2 rounded"
-          style={{ backgroundColor: accentColor }}
-        />
+          className="rounded-full px-1.5 py-0.5 text-[8px] font-black"
+          style={{
+            backgroundColor: isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.12)",
+            color: accentColor,
+          }}
+        >
+          02 / 08
+        </span>
       </div>
 
-      {/* Distinct structural diagram preview per template */}
+      {/* Mini Kicker + Real Mini Slide Headline */}
+      <div className="mt-1">
+        <p
+          className="text-[7px] font-extrabold uppercase tracking-wider"
+          style={{ color: accentColor }}
+        >
+          STEP 01 · CORE STRATEGY
+        </p>
+        <p className="mt-0.5 line-clamp-1 text-[11px] font-black leading-tight">
+          Scale Content With{" "}
+          <span style={{ color: accentColor }}>Smart Systems</span>
+        </p>
+      </div>
+
+      {/* Template-Specific Realistic Miniature Diagram */}
       {template === "saas-comparison" && (
-        <div className="relative mt-2.5 h-10 w-full">
-          <div className="absolute left-0 top-0 h-7 w-[48%] rounded border border-white/40 bg-white p-1 shadow">
-            <div className="flex gap-0.5">
-              <span className="h-1 w-1 rounded-full bg-red-400" />
-              <span className="h-1 w-1 rounded-full bg-amber-400" />
-              <span className="h-1 w-1 rounded-full bg-emerald-400" />
+        <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+          <div className="rounded-md border border-slate-300/60 bg-white p-1.5 text-slate-900 shadow-sm">
+            <div className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="ml-0.5 text-[7px] font-bold text-slate-500">
+                app.seo
+              </span>
             </div>
-            <div className="mt-1 h-1.5 w-4/5 rounded bg-slate-700" />
+            <p className="mt-1 truncate text-[8px] font-extrabold text-slate-800">
+              1. Audit Signals
+            </p>
+            <p className="truncate text-[7px] text-slate-500">
+              Automated check
+            </p>
           </div>
           <div
-            className="absolute bottom-0 right-0 h-7 w-[48%] rounded border p-1 shadow"
+            className="rounded-md border p-1.5 shadow-sm"
             style={{
               backgroundColor: cardBgColor,
               borderColor: accentColor,
             }}
           >
-            <div
-              className="h-1.5 w-3/4 rounded"
+            <span
+              className="inline-block rounded px-1 py-0.2 text-[7px] font-black text-slate-950"
               style={{ backgroundColor: accentColor }}
-            />
-            <div className="mt-1 h-1 w-full rounded bg-white/70" />
+            >
+              RESULT
+            </span>
+            <p className="mt-0.5 truncate text-[8px] font-extrabold text-white">
+              +42% Higher CTR
+            </p>
+            <p className="truncate text-[7px] text-white/75">
+              Verified output
+            </p>
           </div>
         </div>
       )}
 
       {template === "before-after" && (
-        <div className="mt-2 space-y-1">
+        <div className="mt-1.5 space-y-1">
           <div
-            className="flex items-center justify-between rounded border border-white/20 px-1.5 py-1"
+            className="flex items-center justify-between rounded-md border border-white/15 px-2 py-1"
             style={{ backgroundColor: cardBgColor }}
           >
-            <span className="text-[8px] font-black text-amber-400">BEFORE</span>
-            <span className="h-1.5 w-2/3 rounded bg-white/60" />
+            <span className="text-[7.5px] font-black text-amber-400">
+              ⚠ BEFORE
+            </span>
+            <span className="truncate pl-2 text-[8px] text-white/85">
+              Manual unverified guesswork
+            </span>
           </div>
           <div
-            className="flex items-center justify-between rounded border px-1.5 py-1"
+            className="flex items-center justify-between rounded-md border px-2 py-1"
             style={{
               backgroundColor: cardBgColor,
               borderColor: accentColor,
             }}
           >
             <span
-              className="text-[8px] font-black"
+              className="text-[7.5px] font-black"
               style={{ color: accentColor }}
             >
-              AFTER ✓
+              ✓ AFTER
             </span>
-            <span className="h-1.5 w-2/3 rounded bg-white/90" />
+            <span className="truncate pl-2 text-[8px] font-bold text-white">
+              Structured repeatable system
+            </span>
           </div>
         </div>
       )}
 
       {template === "founder-playbook" && (
-        <div className="mt-2 flex items-center gap-1.5">
-          <div className="flex flex-col items-center gap-1">
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: accentColor }}
-            />
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: accentColor }}
-            />
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: accentColor }}
-            />
-          </div>
-          <div className="flex-1 space-y-1">
-            <div className="h-2.5 w-full rounded border border-slate-300 bg-white" />
-            <div className="h-2.5 w-full rounded border border-slate-300 bg-white" />
-            <div className="h-2.5 w-full rounded border border-slate-300 bg-white" />
-          </div>
+        <div className="mt-1.5 space-y-1">
+          {[
+            ["1", "Extract core entities & proof"],
+            ["2", "Structure high-retention slides"],
+          ].map(([num, label]) => (
+            <div
+              key={num}
+              className="flex items-center gap-1.5 rounded-md border border-slate-300/80 bg-white px-2 py-1 text-slate-900 shadow-xs"
+            >
+              <span
+                className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[7px] font-black text-white"
+                style={{ backgroundColor: accentColor }}
+              >
+                {num}
+              </span>
+              <span className="truncate text-[8px] font-bold">{label}</span>
+            </div>
+          ))}
         </div>
       )}
 
       {template === "executive-editorial" && (
-        <div className="relative mt-2 flex items-center justify-between gap-2">
+        <div className="relative mt-1.5 flex items-center justify-between gap-2">
           <div
-            className="flex-1 rounded border-l-4 p-1.5"
+            className="flex-1 rounded-md border-l-4 p-1.5 text-white"
             style={{
               backgroundColor: cardBgColor,
               borderLeftColor: accentColor,
             }}
           >
-            <div className="h-1.5 w-4/5 rounded bg-white/80" />
-            <div className="mt-1 h-1.5 w-3/5 rounded bg-white/50" />
+            <p
+              className="text-[7px] font-black uppercase"
+              style={{ color: accentColor }}
+            >
+              EXECUTIVE TAKEAWAY
+            </p>
+            <p className="mt-0.5 line-clamp-2 text-[8px] leading-tight text-white/90">
+              Prioritize original data points over generic consensus summaries.
+            </p>
           </div>
           <span
-            className="text-2xl font-black opacity-25"
+            className="text-2xl font-black leading-none opacity-30"
             style={{ color: accentColor }}
           >
-            01
+            02
           </span>
         </div>
       )}
 
       {template === "cyber-dark" && (
-        <div className="mt-2 grid grid-cols-2 gap-1">
+        <div className="mt-1.5 grid grid-cols-2 gap-1">
           <div
-            className="col-span-2 h-3.5 rounded border px-1.5 py-0.5"
+            className="col-span-2 flex items-center justify-between rounded border px-2 py-1"
             style={{
               backgroundColor: cardBgColor,
               borderColor: accentColor,
             }}
-          />
+          >
+            <span
+              className="text-[7.5px] font-black"
+              style={{ color: accentColor }}
+            >
+              ⚡ SIGNAL BOOST
+            </span>
+            <span className="text-[8px] font-bold text-white">98.4% Match</span>
+          </div>
           <div
-            className="h-4 rounded border border-white/15"
+            className="rounded border border-white/15 px-1.5 py-1 text-[7.5px] font-semibold text-white/85"
             style={{ backgroundColor: cardBgColor }}
-          />
+          >
+            01 · Fast Audit
+          </div>
           <div
-            className="h-4 rounded border border-white/15"
+            className="rounded border border-white/15 px-1.5 py-1 text-[7.5px] font-semibold text-white/85"
             style={{ backgroundColor: cardBgColor }}
-          />
+          >
+            02 · Live Export
+          </div>
         </div>
       )}
 
       {template === "blueprint-grid" && (
-        <div className="mt-2.5 flex items-center justify-between gap-1">
-          <div
-            className="h-6 flex-1 rounded border border-white/30 p-1"
-            style={{ backgroundColor: cardBgColor }}
-          />
-          <span className="text-[10px] font-bold" style={{ color: accentColor }}>
-            →
-          </span>
-          <div
-            className="h-6 flex-1 rounded border-2 p-1"
-            style={{
-              backgroundColor: cardBgColor,
-              borderColor: accentColor,
-            }}
-          />
-          <span className="text-[10px] font-bold" style={{ color: accentColor }}>
-            →
-          </span>
-          <div
-            className="h-6 flex-1 rounded border border-white/30 p-1"
-            style={{ backgroundColor: cardBgColor }}
-          />
+        <div className="mt-1.5 flex items-center justify-between gap-1">
+          {[
+            ["01", "Input"],
+            ["02", "Analyze"],
+            ["03", "Publish"],
+          ].map(([step, lbl], idx) => (
+            <div
+              key={step}
+              className="flex-1 rounded border p-1 text-center"
+              style={{
+                backgroundColor: cardBgColor,
+                borderColor: idx === 1 ? accentColor : "rgba(255,255,255,0.25)",
+              }}
+            >
+              <p
+                className="text-[7px] font-black"
+                style={{ color: accentColor }}
+              >
+                {step}
+              </p>
+              <p className="truncate text-[7.5px] font-bold text-white">
+                {lbl}
+              </p>
+            </div>
+          ))}
         </div>
       )}
+
+      {/* Bottom Mini Slide Footer */}
+      <div
+        className="mt-1.5 flex items-center justify-between border-t pt-1 text-[7.5px] font-bold"
+        style={{
+          borderColor: isLight ? "rgba(15,23,42,0.1)" : "rgba(255,255,255,0.12)",
+          color: subTextColor,
+        }}
+      >
+        <span className="truncate">yourwebsite.com</span>
+        <span style={{ color: accentColor }}>Swipe →</span>
+      </div>
     </div>
   );
 }
 
-/**
- * Studio-grade HTML5 Canvas renderer with:
- * - 6 genuinely distinct architectural templates (unique backgrounds + unique diagrams)
- * - 3 distinct slide archetypes:
- *   1. Slide 1 (`cover`): Hero Introduction Slide with "What You'll Learn" preview box & Swipe button
- *   2. Middle Slides (`point` / `comparison`): Step Progress + Template-Specific Visual Diagram
- *   3. Final Slide (`cta`): Quick Implementation Recap Checklist + High-Contrast Website CTA Banner
- */
 function renderSlideCanvas(
   slide: CarouselSlide,
   totalSlides: number,
@@ -1474,8 +1737,33 @@ export default function RepurposePanel({
     };
     setCarouselConfig(nextCfg);
 
+    // Immediately clear any previous article's logo ref so an old logo never leaks onto a new article
+    logoImageRef.current = null;
+    const isDefaultBrand =
+      !article.source || /doitwithai\.tools/i.test(nextCfg.websiteUrl);
     const candidateLogo = article.brand?.logoUrl || "";
-    if (!candidateLogo || /doitwithai\.tools/i.test(candidateLogo)) {
+
+    const applyFallbackMonogram = () => {
+      const monoUrl = buildBrandMonogramDataUrl(
+        nextCfg.brandName,
+        nextCfg.websiteUrl,
+        nextCfg.accentColor,
+        nextCfg.bgColor,
+      );
+      if (!monoUrl) return;
+      const monoImg = new Image();
+      monoImg.onload = () => {
+        logoImageRef.current = monoImg;
+        const withMono = { ...nextCfg, logoDataUrl: monoUrl };
+        setCarouselConfig(withMono);
+        const slides = buildLinkedinCarousel(article, carouselCount);
+        setCarouselSlides(slides);
+        updateCarouselPreviewsAndAssets(slides, withMono);
+      };
+      monoImg.src = monoUrl;
+    };
+
+    if (isDefaultBrand && (!candidateLogo || /doitwithai\.tools/i.test(candidateLogo))) {
       const localImg = new Image();
       localImg.crossOrigin = "anonymous";
       localImg.onload = () => {
@@ -1487,7 +1775,10 @@ export default function RepurposePanel({
         updateCarouselPreviewsAndAssets(slides, withLogo);
       };
       localImg.src = "/logoForHeader.png";
-    } else {
+    } else if (candidateLogo && !/doitwithai\.tools/i.test(candidateLogo)) {
+      // First apply domain monogram immediately so the user sees their own brand right away
+      applyFallbackMonogram();
+      // Then upgrade to the actual site logo if PNG/JPEG fetch succeeds
       fetch("/api/ai-tools/article-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1509,6 +1800,8 @@ export default function RepurposePanel({
           }
         })
         .catch(() => {});
+    } else {
+      applyFallbackMonogram();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [article, format]);
@@ -2077,18 +2370,31 @@ export default function RepurposePanel({
                 {article.title}
               </h2>
             </div>
-            <div className="flex flex-wrap gap-3">
-              {assets.map((a) => (
-                <a
-                  key={a.downloadName}
-                  href={a.url}
-                  download={a.downloadName}
-                  className={a.primary ? primary : button}
-                >
-                  <Download size={16} aria-hidden />
-                  {a.label}
-                </a>
-              ))}
+            <div className="flex flex-wrap items-center gap-3">
+              {format === "linkedin-carousel" ? (
+                <>
+                  <SocialPlatform3DIcon platform="LinkedIn" size={40} />
+                  <a
+                    href="#carousel-slide-deck-downloads"
+                    className={primary}
+                  >
+                    <Download size={16} aria-hidden />
+                    Jump to Slide Previews &amp; Download ↓
+                  </a>
+                </>
+              ) : (
+                assets.map((a) => (
+                  <a
+                    key={a.downloadName}
+                    href={a.url}
+                    download={a.downloadName}
+                    className={a.primary ? primary : button}
+                  >
+                    <Download size={16} aria-hidden />
+                    {a.label}
+                  </a>
+                ))
+              )}
             </div>
           </div>
 
@@ -2440,10 +2746,18 @@ export default function RepurposePanel({
                       key={post.id}
                       className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-base font-extrabold text-[#9A3412] dark:text-[#FDBA74]">
-                          {post.platform}
-                        </span>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <SocialPlatform3DIcon platform={post.platform} size={38} />
+                          <div>
+                            <span className="block text-base font-extrabold text-[#9A3412] dark:text-[#FDBA74]">
+                              {post.platform}
+                            </span>
+                            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                              3 Ready-to-Post Variations
+                            </span>
+                          </div>
+                        </div>
                         <button
                           type="button"
                           className={button}
@@ -3157,10 +3471,46 @@ export default function RepurposePanel({
                 </div>
               </div>
 
+              {/* Primary Download Bar Positioned Directly Above Slide Previews */}
+              <div
+                id="carousel-slide-deck-downloads"
+                className="scroll-mt-24 rounded-2xl border-2 border-[#3452d1] bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-white p-5 shadow-md dark:border-[#5271ff] dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-slate-900"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <SocialPlatform3DIcon platform="LinkedIn" size={44} />
+                    <div>
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
+                        Step 3 · Ready to Export LinkedIn Carousel Deck
+                      </span>
+                      <h3 className="mt-0.5 text-lg font-black">
+                        {carouselSlides.length} High-Resolution Slides ({carouselConfig.aspect === "portrait" ? "1080 × 1350 Portrait" : "1080 × 1080 Square"})
+                      </h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        Download the multi-page PDF for direct LinkedIn document upload, or grab all individual PNG slides.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {assets.map((a) => (
+                      <a
+                        key={a.downloadName}
+                        href={a.url}
+                        download={a.downloadName}
+                        className={a.primary ? primary : button}
+                      >
+                        <Download size={16} aria-hidden />
+                        {a.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               {/* Live Visual Slide Gallery + Per-Slide Editor */}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-lg font-extrabold">
-                  3. Live Slide Previews &amp; Per-Slide Editor (
+                  Live Slide Previews &amp; Per-Slide Editor (
                   {carouselSlides.length} Slides: Cover +{" "}
                   {Math.max(0, carouselSlides.length - 2)} Topic Slides + Closing
                   CTA)

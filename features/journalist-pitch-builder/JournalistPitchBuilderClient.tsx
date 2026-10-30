@@ -229,7 +229,7 @@ export default function JournalistPitchBuilderClient() {
           <div>
             <h2 className="flex items-center gap-2.5 text-2xl font-extrabold">
               <Newspaper aria-hidden className="text-[#5271ff]" />
-              Build a Quote-Ready HARO & Digital PR Pitch
+              Build a Quote-Ready HARO &amp; Digital PR Pitch
             </h2>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Turn a journalist request and your real expertise into 3
@@ -360,7 +360,7 @@ export default function JournalistPitchBuilderClient() {
         {/* Expert Credentials & Attribution Links */}
         <div className="mt-6 border-t border-slate-200 pt-6 dark:border-slate-700">
           <span className="block text-sm font-bold">
-            2. Your Expert Attribution & Backlink Details
+            2. Your Expert Attribution &amp; Backlink Details
           </span>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
@@ -384,7 +384,7 @@ export default function JournalistPitchBuilderClient() {
                 htmlFor="pitch-expert-role"
                 className="block text-xs font-bold"
               >
-                Job Title & Hands-On Credential (required)
+                Job Title &amp; Hands-On Credential (required)
               </label>
               <input
                 id="pitch-expert-role"
@@ -465,7 +465,7 @@ export default function JournalistPitchBuilderClient() {
         {/* Core Thesis, Metric/Proof & Actionable Takeaway */}
         <div className="mt-6 border-t border-slate-200 pt-6 dark:border-slate-700">
           <span className="block text-sm font-bold">
-            3. Your Core Insight, Proof Point & Takeaway
+            3. Your Core Insight, Proof Point &amp; Takeaway
           </span>
           <div className="mt-3 grid gap-4 md:grid-cols-3">
             <div>
@@ -572,7 +572,7 @@ export default function JournalistPitchBuilderClient() {
                   {PLATFORM_META[input.platform].name}
                 </span>
                 <h3 className="mt-1 text-2xl font-black">
-                  Select & Customize Your Journalist Pitch
+                  Select &amp; Customize Your Journalist Pitch
                 </h3>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -644,14 +644,29 @@ export default function JournalistPitchBuilderClient() {
             {/* Editable Pitch Studio */}
             <div className={panel}>
               {input.platform !== "featured-qa" && (
-                <div className="mb-5">
-                  <label
-                    htmlFor="pitch-subject-edit"
-                    className="block text-xs font-bold uppercase tracking-wider text-slate-500"
-                  >
-                    Email Subject Line (Click a preset or edit)
-                  </label>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mb-7 rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-700 dark:bg-slate-800/40">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label
+                      htmlFor="pitch-subject-edit"
+                      className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-200"
+                    >
+                      Email Subject Line (Click a preset or customize below)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(
+                          currentVariation.selectedSubject,
+                        );
+                        setFeedback("Copied email subject line.");
+                      }}
+                      className="text-xs font-bold text-[#3452d1] underline dark:text-[#9aabff]"
+                    >
+                      Copy Subject
+                    </button>
+                  </div>
+
+                  <div className="mt-3.5 flex flex-wrap gap-2.5">
                     {currentVariation.subjectOptions.map((subj) => (
                       <button
                         key={subj}
@@ -659,39 +674,42 @@ export default function JournalistPitchBuilderClient() {
                         onClick={() =>
                           updateCurrentVariation({ selectedSubject: subj })
                         }
-                        className={`rounded-lg border px-2.5 py-1 text-xs font-semibold ${
+                        className={`rounded-xl border px-3.5 py-2 text-left text-xs font-bold transition ${
                           currentVariation.selectedSubject === subj
-                            ? "border-[#3452d1] bg-[#3452d1] text-white"
-                            : "border-slate-300 dark:border-slate-600"
+                            ? "border-[#3452d1] bg-[#3452d1] text-white shadow-xs"
+                            : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                         }`}
                       >
                         {subj}
                       </button>
                     ))}
                   </div>
-                  <input
-                    id="pitch-subject-edit"
-                    type="text"
-                    value={currentVariation.selectedSubject}
-                    onChange={(e) =>
-                      updateCurrentVariation({
-                        selectedSubject: e.target.value,
-                      })
-                    }
-                    className={`${control} mt-2 font-semibold`}
-                  />
+
+                  <div className="mt-4">
+                    <input
+                      id="pitch-subject-edit"
+                      type="text"
+                      value={currentVariation.selectedSubject}
+                      onChange={(e) =>
+                        updateCurrentVariation({
+                          selectedSubject: e.target.value,
+                        })
+                      }
+                      className={`${control} bg-white font-bold dark:bg-slate-900`}
+                    />
+                  </div>
                 </div>
               )}
 
-              <div>
-                <div className="flex items-center justify-between gap-2">
+              <div className="pt-1">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <label
                     htmlFor="pitch-body-edit"
-                    className="block text-xs font-bold uppercase tracking-wider text-slate-500"
+                    className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300"
                   >
                     Full Editable Pitch Response
                   </label>
-                  <span className="text-xs font-semibold text-slate-500">
+                  <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                     {scannability.wordCount} words · ~
                     {scannability.readingSeconds}s journalist scan time
                   </span>
@@ -705,11 +723,11 @@ export default function JournalistPitchBuilderClient() {
                       fullFormattedPitch: e.target.value,
                     })
                   }
-                  className={`${control} mt-2 leading-7`}
+                  className={`${control} mt-2.5 leading-7`}
                 />
               </div>
 
-              <div className="mt-5 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/50 dark:bg-indigo-950/30">
+              <div className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/50 dark:bg-indigo-950/30">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-indigo-800 dark:text-indigo-200">
                     Standalone Copy-Paste Soundbite ({scannability.soundbiteWordCount} words)
@@ -798,15 +816,13 @@ export default function JournalistPitchBuilderClient() {
                     Copy
                   </button>
                 </div>
-                <textarea
-                  rows={5}
-                  aria-label="Follow up email draft"
-                  value={currentVariation.followUpDraft}
-                  onChange={(e) =>
-                    updateCurrentVariation({ followUpDraft: e.target.value })
-                  }
-                  className={`${control} mt-3 text-xs`}
-                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Send only once, 3–4 business days after pitching, if the
+                  article is still in progress:
+                </p>
+                <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3.5 font-sans text-xs leading-6 text-slate-700 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200">
+                  {currentVariation.followUpDraft}
+                </pre>
               </div>
             </div>
           </div>

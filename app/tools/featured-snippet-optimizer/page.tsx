@@ -266,7 +266,7 @@ export default function FeaturedSnippetOptimizerPage() {
       </section>
 
       <ToolResources slug="featured-snippet-optimizer" />
-      <ToolFaq faqs={faqs} />
+      <ToolFaq title="Featured Snippet & AI Overview optimization questions" faqs={faqs} />
     </div>
   );
 }
