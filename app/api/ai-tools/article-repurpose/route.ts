@@ -5,6 +5,7 @@ import {
   getGeminiModel,
   isAiConfigured,
 } from "@/lib/ai-tools/gemini";
+import { ensureStructuredSocialText } from "@/features/article-conversion/formats";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,16 +28,21 @@ const VideoBeatSchema = z.object({
 
 const VideoSceneSchema = z.object({
   title: z.string().min(3).max(120),
-  beats: z.array(VideoBeatSchema).min(1).max(8),
+  beats: z.array(VideoBeatSchema).min(2).max(8),
 });
 
 const VideoScriptAiSchema = z.object({
-  scenes: z.array(VideoSceneSchema).min(3).max(16),
+  scenes: z.array(VideoSceneSchema).min(6).max(16),
 });
 
-const SocialIdeaSchema = z.object({
+const StructuredSocialIdeaSchema = z.object({
   label: z.string().min(3).max(90),
-  content: z.string().min(20).max(2950),
+  hook: z.string().min(10).max(320),
+  problemParagraph: z.string().min(20).max(600),
+  bullets: z.array(z.string().min(8).max(240)).min(3).max(5),
+  closingInsight: z.string().min(10).max(400),
+  ctaLine: z.string().min(10).max(260),
+  hashtags: z.array(z.string().min(2).max(40)).min(3).max(5),
 });
 
 const SocialPlatformSchema = z.object({
@@ -47,11 +53,11 @@ const SocialPlatformSchema = z.object({
     "Instagram",
     "Threads",
   ]),
-  ideas: z.array(SocialIdeaSchema).min(3).max(3),
+  ideas: z.array(StructuredSocialIdeaSchema).min(3).max(3),
 });
 
 const SocialPostsAiSchema = z.object({
-  posts: z.array(SocialPlatformSchema).min(4).max(5),
+  posts: z.array(SocialPlatformSchema).min(5).max(5),
 });
 
 const NewsletterAiSchema = z.object({
@@ -68,7 +74,7 @@ const NewsletterAiSchema = z.object({
         actionItem: z.string().min(10).max(300),
       }),
     )
-    .min(2)
+    .min(3)
     .max(8),
   checklist: z.array(z.string().min(10).max(260)).min(3).max(6),
 });
@@ -86,10 +92,13 @@ const CarouselAiSchema = z.object({
         cardLeftBody: z.string().min(5).max(130),
         cardRightTitle: z.string().min(2).max(40),
         cardRightBody: z.string().min(5).max(130),
+        stepThirdTitle: z.string().min(2).max(40).optional(),
+        stepThirdBody: z.string().min(5).max(130).optional(),
+        bullets: z.array(z.string().min(5).max(110)).min(2).max(4).optional(),
         footer: z.string().min(5).max(90),
       }),
     )
-    .min(5)
+    .min(6)
     .max(12),
 });
 
@@ -104,7 +113,7 @@ const PodcastAiSchema = z.object({
         cue: z.string().min(2).max(80),
       }),
     )
-    .min(4)
+    .min(6)
     .max(20),
 });
 
@@ -112,10 +121,14 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const format = typeof body?.format === "string" ? body.format : "";
-    const title = typeof body?.title === "string" ? body.title.slice(0, 300) : "";
-    const source = typeof body?.source === "string" ? body.source.slice(0, 500) : "";
+    const title =
+      typeof body?.title === "string" ? body.title.slice(0, 300) : "";
+    const source =
+      typeof body?.source === "string" ? body.source.slice(0, 500) : "";
     const articleText =
-      typeof body?.articleText === "string" ? body.articleText.slice(0, 28000) : "";
+      typeof body?.articleText === "string"
+        ? body.articleText.slice(0, 28000)
+        : "";
     const options = body?.options || {};
 
     if (!title || !articleText) {
@@ -125,7 +138,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const model = getGeminiModel("CONVERSION") || getGeminiModel() || "gemini-2.5-flash";
+    const model =
+      getGeminiModel("CONVERSION") || getGeminiModel() || "gemini-2.5-flash";
     if (!isAiConfigured(model, false)) {
       return Response.json(
         { fallback: true },
@@ -140,16 +154,16 @@ export async function POST(request: Request) {
       const parsed = await client.generate(
         {
           model,
-          max_output_tokens: 4000,
+          max_output_tokens: 4500,
           input: [
             {
               role: "system",
               content:
-                "You are an expert YouTube and short-form video producer. Read the entire supplied article, understand every core topic and argument it covers, and write a comprehensive, engaging, voice-friendly video script structured around Problem -> Solution -> Actionable Example. Do NOT copy-paste raw written article sentences; rewrite them into natural spoken English. Pair EVERY single spoken sentence with a specific background visual direction (what screenshot, UI comparison, flowchart infographic, data callout, or B-roll to show behind that exact sentence) and concise on-screen text.",
+                "You are an expert YouTube and short-form video producer. Read the entire supplied article, understand every core topic and argument it covers, and write a comprehensive, engaging, voice-friendly video script structured around Problem -> Solution -> Actionable Example. Cover ALL sections of the article thoroughly (at least 8-12 scenes for YouTube mode, with 3-5 spoken sentences per scene). Do NOT copy-paste raw written article sentences; rewrite them into natural spoken English. Pair EVERY single spoken sentence with a specific background visual direction (what screenshot, UI comparison, flowchart infographic, data callout, or B-roll to show behind that exact sentence) and concise on-screen text.",
             },
             {
               role: "user",
-              content: `Article Title: ${title}\nSource URL: ${source}\nVideo Mode: ${mode === "shorts" ? "60-90s Vertical Shorts/Reels (4-5 punchy scenes)" : "Comprehensive YouTube Deep-Dive (cover all major sections of the article thoroughly)"}\nClosing CTA: ${options.cta || "Read the full article at the link in the description."}\n\nArticle Content:\n${articleText}`,
+              content: `Article Title: ${title}\nSource URL: ${source}\nVideo Mode: ${mode === "shorts" ? "60-90s Vertical Shorts/Reels (6 punchy scenes)" : "Comprehensive YouTube Deep-Dive (8 to 14 scenes covering every major section of the article thoroughly)"}\nClosing CTA: ${options.cta || "Read the full article at the link in the description."}\n\nArticle Content:\n${articleText}`,
             },
           ],
           text: {
@@ -167,12 +181,12 @@ export async function POST(request: Request) {
       const parsed = await client.generate(
         {
           model,
-          max_output_tokens: 4000,
+          max_output_tokens: 4500,
           input: [
             {
               role: "system",
               content:
-                "You are a senior B2B & technical content strategist. Read the full article and craft 3 distinct, high-converting post ideas for EACH platform (LinkedIn, X / Twitter Thread, Facebook, Instagram, Threads). Never start with generic lines like 'Key takeaways from...'. Instead: open with a sharp 1-sentence editorial hook stating the core problem or contrast, follow with a concrete real-world scenario, include a scannable '•' checklist of 4-5 actionable points synthesized from the article, explain the strategic nuance, and close with a natural call-to-action ('For a deeper dive, read our full article: ...') and 4 relevant hashtags.",
+                "You are a senior B2B & technical content strategist. Read the full article and craft 3 distinct, high-converting post ideas for EACH of the 5 platforms (LinkedIn, X / Twitter Thread, Facebook, Instagram, Threads). Never start with generic lines like 'Key takeaways from...'. Return structured fields for each idea: 'hook' (1 sharp opening sentence with a relevant emoji like 🎯, 💡, or ⚡), 'problemParagraph' (2-3 sentences of context), 'bullets' (3-5 actionable points without leading bullet symbols), 'closingInsight' (1-2 sentences of strategic nuance), 'ctaLine' (natural call-to-action with 🌐 emoji and URL), and 'hashtags' (4 hashtags starting with #).",
             },
             {
               role: "user",
@@ -187,7 +201,61 @@ export async function POST(request: Request) {
         },
         { timeout: 35000 },
       );
-      return Response.json({ result: parsed.output_parsed }, { status: 200 });
+
+      // Assemble structured fields into guaranteed multi-line formatted posts!
+      const formattedPosts = parsed.output_parsed.posts.map((p) => ({
+        platform: p.platform,
+        ideas: p.ideas.map((idea) => {
+          const isThread = p.platform === "X / Twitter Thread";
+          const rawUrl = source || "https://doitwithai.tools";
+          let assembled = "";
+          if (isThread) {
+            const tweets = [
+              `🧵 1/${idea.bullets.length + 2} ${idea.hook}\n\n${idea.problemParagraph}`,
+              ...idea.bullets.map(
+                (b, idx) =>
+                  `${idx + 2}/${idea.bullets.length + 2} 📌 ${b.replace(/^\s*(?:[•▪✅✔▸-]|\d+\.)\s*/, "")}`,
+              ),
+              `${idea.bullets.length + 2}/${idea.bullets.length + 2} 💡 ${idea.closingInsight}\n\n🌐 ${idea.ctaLine.replace(/^🌐\s*/, "")}\n${idea.ctaLine.includes("http") ? "" : rawUrl}`.trim(),
+            ];
+            assembled = tweets.join("\n\n---\n\n");
+          } else {
+            const bulletLines = idea.bullets.map(
+              (b) => `• ${b.replace(/^\s*(?:[•▪✅✔▸-]|\d+\.)\s*/, "")}`,
+            );
+            const tags = idea.hashtags
+              .map((t) => (t.startsWith("#") ? t : `#${t}`))
+              .join(" ");
+            const ctaWithUrl = idea.ctaLine.includes("http")
+              ? `🌐 ${idea.ctaLine.replace(/^🌐\s*/, "")}`
+              : `🌐 ${idea.ctaLine.replace(/^🌐\s*/, "")}\n${rawUrl}`;
+            assembled = [
+              idea.hook.match(/^[🎯💡⚡🚀📌🔍🛑✨]/)
+                ? idea.hook
+                : `🎯 ${idea.hook}`,
+              "",
+              idea.problemParagraph,
+              "",
+              ...bulletLines,
+              "",
+              `💡 ${idea.closingInsight.replace(/^💡\s*/, "")}`,
+              "",
+              ctaWithUrl,
+              "",
+              tags,
+            ].join("\n");
+          }
+          return {
+            label: idea.label,
+            content: ensureStructuredSocialText(assembled, p.platform),
+          };
+        }),
+      }));
+
+      return Response.json(
+        { result: { posts: formattedPosts } },
+        { status: 200 },
+      );
     }
 
     if (format === "newsletter") {
@@ -222,12 +290,12 @@ export async function POST(request: Request) {
       const parsed = await client.generate(
         {
           model,
-          max_output_tokens: 3500,
+          max_output_tokens: 4000,
           input: [
             {
               role: "system",
               content:
-                "You design high-converting LinkedIn & Instagram educational carousels. Turn the supplied article into a cohesive slide deck (Slide 1: Cover with a bold hook and a 2-4 word highlightPhrase that appears inside the headline; Middle Slides: step-by-step insights covering all main topics of the article, each with two contrasting diagram box cards [cardLeftTitle/cardLeftBody vs cardRightTitle/cardRightBody] such as 'BEFORE / OLD WAY' vs 'AFTER / BETTER SYSTEM' or 'COMMON MISTAKE' vs 'THE FIX'; Final Slide: CTA slide).",
+                "You design high-converting LinkedIn & Instagram educational carousels. Turn the supplied article into a cohesive slide deck: Slide 1 MUST have kind='cover' (bold introduction hook, a 2-4 word highlightPhrase that appears inside the headline, and 3 'bullets' previewing what the reader will learn); Middle Slides MUST have kind='point' or 'comparison' covering all main topics of the article (with cardLeftTitle/cardLeftBody, cardRightTitle/cardRightBody, stepThirdTitle/stepThirdBody, and 3 bullets); Final Slide MUST have kind='cta' (closing headline, 3 recap 'bullets', and a strong call-to-action in cardRightBody).",
             },
             {
               role: "user",
@@ -255,11 +323,13 @@ export async function POST(request: Request) {
             {
               role: "system",
               content:
-                "You are an award-winning podcast producer. Adapt the entire supplied article into a natural, engaging, conversational broadcast script covering all major points of the article. In Two-Host mode (Host A & Host B), have Host A ask curious, probing questions and frame the problem while Host B breaks down the insights, examples, and frameworks in natural spoken English, ending with a concrete listener action item and show-notes CTA.",
+                mode === "cohost"
+                  ? "You are a podcast showrunner writing a natural, engaging two-host conversation (Host A: Alex, Host B: Maya) that unpacks the entire supplied article section by section with curiosity, real examples, and practical takeaways."
+                  : "You are a solo podcast host delivering a clear, engaging deep-dive episode covering every major section of the supplied article.",
             },
             {
               role: "user",
-              content: `Article Title: ${title}\nSource URL: ${source}\nFormat: ${mode === "cohost" ? "Two-Host Conversation (Host A & Host B)" : "Solo Host"}\n\nArticle Content:\n${articleText}`,
+              content: `Article Title: ${title}\nSource URL: ${source}\nFormat: ${mode}\n\nArticle Content:\n${articleText}`,
             },
           ],
           text: {
@@ -273,8 +343,14 @@ export async function POST(request: Request) {
       return Response.json({ result: parsed.output_parsed }, { status: 200 });
     }
 
-    return Response.json({ fallback: true }, { status: 200 });
+    return Response.json(
+      { error: { message: "Unsupported conversion format." } },
+      { status: 400 },
+    );
   } catch {
-    return Response.json({ fallback: true }, { status: 200 });
+    return Response.json(
+      { fallback: true },
+      { status: 200, headers: { "Cache-Control": "no-store" } },
+    );
   }
 }

@@ -1,11 +1,85 @@
 import { Readability } from "@mozilla/readability";
 import { parseHTML } from "linkedom";
-import { safeLink, type Article, type Block } from "./model";
+import { safeLink, type Article, type ArticleBrandMeta, type Block } from "./model";
 const plain = (s: string) => s.replace(/\s+/g, " ").trim();
 const TRAILING_CLUTTER_RE =
   /^(?:•\s*|\d+\.\s*)?(?:leia tamb[eé]m|veja tamb[eé]m|read also|also read|related (?:posts|articles|reads|stories)|further reading|recommended reading|share this (?:article|post))\s*[:\-–]/i;
 const SOURCE_CAPTION_RE =
   /^(?:•\s*)?(?:image\s+)?(?:source|photo\s+credit|image\s+credit|credit)\s*(?:[:\-–]\s*\S.*)?$/i;
+
+function extractBrandMetadata(document: any, base: string): ArticleBrandMeta | undefined {
+  try {
+    let domain = "";
+    try {
+      const u = new URL(base);
+      if (u.hostname && u.hostname !== "article.invalid") {
+        domain = u.hostname.replace(/^www\./i, "");
+      }
+    } catch {}
+
+    const ogSite = plain(
+      document.querySelector('meta[property="og:site_name"]')?.getAttribute("content") ||
+        document.querySelector('meta[name="application-name"]')?.getAttribute("content") ||
+        "",
+    ).slice(0, 80);
+
+    let siteName = ogSite;
+    if (!siteName && domain) {
+      if (/doitwithai\.tools/i.test(domain)) {
+        siteName = "Do It With AI Tools";
+      } else {
+        const stem = domain.split(".")[0] || domain;
+        siteName = stem.charAt(0).toUpperCase() + stem.slice(1);
+      }
+    }
+
+    const rawColor = plain(
+      document.querySelector('meta[name="theme-color"]')?.getAttribute("content") ||
+        document.querySelector('meta[name="msapplication-TileColor"]')?.getAttribute("content") ||
+        "",
+    );
+    const hexMatch = rawColor.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+    let themeColor = hexMatch ? hexMatch[0] : undefined;
+    if (themeColor && /^#(?:fff|ffffff|000|000000)$/i.test(themeColor)) {
+      themeColor = undefined;
+    }
+
+    let logoCandidate = "";
+    const logoSelectors = [
+      'header img[src*="logo" i]',
+      'nav img[src*="logo" i]',
+      'img[alt*="logo" i]',
+      'img[class*="logo" i]',
+      'link[rel="apple-touch-icon"]',
+      'link[rel="icon"][type="image/png"]',
+    ];
+    for (const sel of logoSelectors) {
+      const el = document.querySelector(sel);
+      if (!el) continue;
+      const raw = el.getAttribute("src") || el.getAttribute("href") || "";
+      const safe = safeLink(raw, base);
+      if (safe && !safe.includes("article.invalid") && /\.(?:png|jpe?g|webp)(?:\?|$)/i.test(safe)) {
+        logoCandidate = safe;
+        break;
+      }
+    }
+
+    if (!logoCandidate && /doitwithai\.tools/i.test(domain)) {
+      logoCandidate = "https://doitwithai.tools/logoForHeader.png";
+    }
+
+    if (!siteName && !domain && !logoCandidate && !themeColor) return undefined;
+    return {
+      ...(siteName ? { siteName } : {}),
+      ...(domain ? { domain } : {}),
+      ...(logoCandidate ? { logoUrl: logoCandidate } : {}),
+      ...(themeColor ? { themeColor } : {}),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 export function extractArticle(html: string, source = ""): Article {
   if (!html.trim() || new TextEncoder().encode(html).length > 500000)
     throw Error("Supply non-empty HTML within 500 KB.");
@@ -15,6 +89,7 @@ export function extractArticle(html: string, source = ""): Article {
   const base = safeLink(source) || "https://article.invalid/";
   for (const key of ["documentURI", "baseURI", "URL"])
     Object.defineProperty(document, key, { value: base, configurable: true });
+  const brand = extractBrandMetadata(document, base);
   const title = plain(
     document
       .querySelector('meta[property="og:title"]')
@@ -243,5 +318,6 @@ export function extractArticle(html: string, source = ""): Article {
     links,
     warnings: [...new Set(warnings)],
     method: parsed ? "Reader extraction" : "Fallback extraction",
+    ...(brand ? { brand } : {}),
   };
 }

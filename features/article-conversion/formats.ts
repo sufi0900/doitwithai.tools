@@ -28,6 +28,17 @@ export const stripRefs = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+/**
+ * Strips SEO metadata suffixes like "| Prompts and examples" or "- Do It With AI Tools"
+ * so referencing the article topic inside a spoken sentence or social hook sounds natural.
+ */
+export function cleanTopicTitle(rawTitle: string): string {
+  const cleaned = stripRefs(rawTitle)
+    .replace(/\s*(?:\||—|–|\s-\s)\s*[^|—–-]{3,65}$/, "")
+    .trim();
+  return cleaned.length >= 6 ? cleaned : stripRefs(rawTitle);
+}
+
 export function countWords(text: string): number {
   const cleaned = text.trim();
   if (!cleaned) return 0;
@@ -59,7 +70,7 @@ export type ArticleSectionGroup = {
 export function groupArticleSections(article: Article): ArticleSectionGroup[] {
   const groups: ArticleSectionGroup[] = [];
   let current: ArticleSectionGroup = {
-    heading: article.title || "Overview",
+    heading: cleanTopicTitle(article.title) || "Overview",
     paragraphs: [],
     bullets: [],
     quotes: [],
@@ -118,7 +129,12 @@ function toSpokenSentence(raw: string, idx: number, isFirstInScene: boolean): st
     .trim();
   if (!s) return "";
   if (!/[.!?]$/.test(s)) s += ".";
-  if (isFirstInScene && idx > 0 && s.length < 140 && !/^(Here|When|Why|How|Let|Start|Instead|The)/i.test(s)) {
+  if (
+    isFirstInScene &&
+    idx > 0 &&
+    s.length < 140 &&
+    !/^(Here|When|Why|How|Let|Start|Instead|The|Now|First)/i.test(s)
+  ) {
     return `Here is what matters next: ${s.charAt(0).toLowerCase()}${s.slice(1)}`;
   }
   return s;
@@ -144,7 +160,13 @@ function inferVisualForSentence(
   const words = sentence
     .replace(/[^\w\s%-]/g, "")
     .split(/\s+/)
-    .filter((w) => w.length > 3 && !/^(that|this|with|from|your|have|more|into|they|will|what|when|were|been)$/i.test(w));
+    .filter(
+      (w) =>
+        w.length > 3 &&
+        !/^(that|this|with|from|your|have|more|into|they|will|what|when|were|been)$/i.test(
+          w,
+        ),
+    );
   const keyPhrase = words.slice(0, 5).join(" ") || sectionHeading.slice(0, 40);
 
   if (/\d+%|\d+\s*(?:times|percent|steps|pillars|hours|minutes|days|x\b)/i.test(sentence)) {
@@ -168,7 +190,7 @@ function inferVisualForSentence(
       onScreenText: `${sectionHeading.slice(0, 48)}`,
     };
   }
-  if (/tool|page|search|url|website|audit|check|inspect|measure|data|dashboard/i.test(lower)) {
+  if (/tool|page|search|url|website|audit|check|inspect|measure|data|dashboard|prompt/i.test(lower)) {
     return {
       visualType: "SCREENSHOT",
       visualDirection: `Close-up annotated browser screenshot or live tool walkthrough demonstrating "${keyPhrase}" with a cursor highlight on the key area.`,
@@ -291,6 +313,7 @@ export function buildVideoScript(
   const err = validate(article);
   if (err) throw Error(err);
 
+  const cleanTopic = cleanTopicTitle(article.title);
   const sections = groupArticleSections(article);
   const allFirstSentences = sections
     .flatMap((sec) => [
@@ -301,26 +324,26 @@ export function buildVideoScript(
 
   const corePremise =
     allFirstSentences[0] ||
-    `Most people miss the underlying system behind ${article.title}.`;
+    `Most people miss the underlying system behind ${cleanTopic}.`;
   const secondPremise =
     allFirstSentences[1] ||
     `In this video, we will break down every step so you can apply it right away.`;
 
   const hooks = [
     [
-      `Most people approach ${article.title} the hard way—and wonder why their results stall.`,
+      `Most people approach ${cleanTopic} the hard way—and wonder why their results stall.`,
       corePremise,
       `In this video, we are breaking down the exact problem-to-solution framework step by step.`,
     ],
     [
       corePremise,
       secondPremise,
-      `Let's walk through how to fix this from the ground up.`,
+      `Let's walk through how to apply ${cleanTopic} from the ground up.`,
     ],
     [
-      `Before you spend another hour on ${article.title}, watch this breakdown.`,
+      `Before you spend another hour on ${cleanTopic}, watch this breakdown.`,
       corePremise,
-      `Here is the complete system and how each part connects.`,
+      `Here is the complete system and how each stage connects.`,
     ],
   ];
   const chosenHookSentences = hooks[hookIndex % hooks.length];
@@ -374,17 +397,22 @@ export function buildVideoScript(
       ? "Scene 1 · Pattern-Interrupt Hook (0–8s)"
       : "Scene 1 · Opening Hook & Problem Setup",
     mode === "shorts" ? chosenHookSentences.slice(0, 2) : chosenHookSentences,
-    article.title,
+    cleanTopic,
   );
 
   // Cover ALL article sections in YouTube mode (up to 16 sections), or top 4 in Shorts mode
   const maxSections = mode === "shorts" ? 4 : Math.min(sections.length, 16);
   for (let i = 0; i < maxSections && i < sections.length; i++) {
     const sec = sections[i];
+    const secHeadingClean = cleanTopicTitle(sec.heading);
     const secSentences: string[] = [];
 
-    if (sec.heading && sec.heading !== article.title && mode === "youtube") {
-      secSentences.push(`Now let's look at ${sec.heading}.`);
+    if (
+      secHeadingClean &&
+      secHeadingClean.toLowerCase() !== cleanTopic.toLowerCase() &&
+      mode === "youtube"
+    ) {
+      secSentences.push(`Now let's look at ${secHeadingClean}.`);
     }
 
     for (const p of sec.paragraphs.slice(0, mode === "shorts" ? 1 : 3)) {
@@ -409,7 +437,7 @@ export function buildVideoScript(
     }
 
     if (sec.quotes.length > 0 && mode === "youtube") {
-      secSentences.push(`As the research highlights: "${sec.quotes[0]}"`);
+      secSentences.push(`As the guide highlights: "${sec.quotes[0]}"`);
     }
 
     const deduped = [...new Set(secSentences)].slice(
@@ -418,16 +446,16 @@ export function buildVideoScript(
     );
     if (deduped.length > 0) {
       createSceneFromSentences(
-        `Scene ${scenes.length + 1} · ${sec.heading.slice(0, 68)}`,
+        `Scene ${scenes.length + 1} · ${secHeadingClean.slice(0, 68)}`,
         deduped,
-        sec.heading,
+        secHeadingClean,
       );
     }
   }
 
   // Closing & Actionable Call to Action
   const closingSentences = [
-    `So if we bring all of this together around ${article.title}, the biggest takeaway is building a repeatable workflow rather than treating each step in isolation.`,
+    `So if we bring all of this together around ${cleanTopic}, the biggest takeaway is building a repeatable workflow rather than treating each step in isolation.`,
     cta.trim() ||
       `Check the link in the description to read the full article and download the resources.`,
   ];
@@ -554,7 +582,7 @@ export function videoScriptDocx(
 }
 
 // ============================================================================
-// 2. BLOG TO SOCIAL POSTS (Multi-Idea Editorial Posts Modeled on User Screenshots)
+// 2. BLOG TO SOCIAL POSTS (Multi-Idea Editorial Posts + Guaranteed Line Formatting)
 // ============================================================================
 export type SocialPostIdea = {
   id: string;
@@ -593,18 +621,89 @@ function extractHashtags(title: string): string {
     "this",
     "guide",
     "complete",
+    "prompts",
+    "examples",
   ]);
-  const words = title
+  const words = cleanTopicTitle(title)
     .replace(/[^\w\s]/g, "")
     .split(/\s+/)
     .filter((w) => w.length >= 3 && !stop.has(w.toLowerCase()));
   const tags = words
     .slice(0, 4)
     .map((w) => `#${w.charAt(0).toUpperCase()}${w.slice(1).toLowerCase()}`);
-  for (const fallback of ["#ContentStrategy", "#DigitalMarketing", "#SEO", "#AIWorkflows"]) {
+  for (const fallback of [
+    "#ContentStrategy",
+    "#DigitalMarketing",
+    "#SEO",
+    "#AIWorkflows",
+  ]) {
     if (tags.length < 4 && !tags.includes(fallback)) tags.push(fallback);
   }
   return tags.join(" ");
+}
+
+/**
+ * Guarantees that any social media post (including AI-generated strings) NEVER
+ * collapses into a single unformatted paragraph. Enforces paragraph breaks (\n\n),
+ * puts every bullet (• / ✅ / →) on its own line, separates numbered tweets,
+ * adds a 🌐 globe icon before bare CTA links, and isolates hashtags on a bottom line.
+ */
+export function ensureStructuredSocialText(
+  rawText: string,
+  platform = "LinkedIn",
+): string {
+  if (!rawText || !rawText.trim()) return "";
+  let s = rawText.replace(/\r\n/g, "\n").trim();
+
+  // 1. Ensure inline bullets (" • ", " ✅ ", " ▪ ") always start on a new line
+  s = s.replace(/([^\n])\s+([•▪✅✔▸])\s+/g, "$1\n$2 ");
+
+  // 2. Ensure inline numbered tweets (" 2/5 ", " 3/5 ", " 2/ ") break cleanly
+  if (/twitter|thread/i.test(platform)) {
+    s = s.replace(/([^\n])\s+(\d+\/\d*\s+)/g, "$1\n\n---\n\n$2");
+  }
+
+  // 3. Separate CTA sentences ("For a deeper dive...", "Read the complete article...", "Explore the full guide...") onto a new paragraph with 🌐
+  s = s.replace(
+    /([^\n])\s+((?:🌐\s*)?(?:For a deeper dive|Read the (?:complete|full) (?:article|guide)|Explore the full guide|Full breakdown)[^#\n]*)/gi,
+    (_m, prev, cta) => `${prev}\n\n${cta.startsWith("🌐") ? cta : `🌐 ${cta}`}`,
+  );
+
+  // 4. Separate trailing hashtag block onto its own bottom paragraph
+  s = s.replace(/([^\n])\s+((?:#[A-Za-z0-9_]+\s*){2,})$/g, "$1\n\n$2");
+
+  // 5. If the opening paragraph before the first bullet is still one giant wall of text (>260 chars with no \n\n), split after the first sentence (the hook!)
+  const parts = s.split("\n");
+  if (parts.length > 0 && parts[0].length > 220) {
+    const firstSents = splitSentences(parts[0]);
+    if (firstSents.length >= 2) {
+      parts[0] = `${firstSents[0]}\n\n${firstSents.slice(1).join(" ")}`;
+    }
+  }
+  s = parts.join("\n");
+
+  // 6. Ensure a blank line before the first bullet list item and after the last bullet list item
+  const lines = s.split("\n");
+  const formattedLines: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trimEnd();
+    const isBullet = /^\s*(?:[•▪✅✔▸]|\d+\.)\s+/.test(line);
+    const prevLine = formattedLines[formattedLines.length - 1] ?? "";
+    const prevWasBullet = /^\s*(?:[•▪✅✔▸]|\d+\.)\s+/.test(prevLine);
+
+    if (isBullet && !prevWasBullet && prevLine.trim() !== "") {
+      formattedLines.push("");
+    }
+    if (!isBullet && prevWasBullet && line.trim() !== "") {
+      formattedLines.push("");
+    }
+    formattedLines.push(line);
+  }
+
+  return formattedLines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 export function buildSocialPosts(
@@ -615,6 +714,7 @@ export function buildSocialPosts(
   const err = validate(article);
   if (err) throw Error(err);
 
+  const cleanTopic = cleanTopicTitle(article.title);
   const sections = groupArticleSections(article);
   const allSentences = sections
     .flatMap((sec) => [
@@ -626,18 +726,18 @@ export function buildSocialPosts(
   const hashtags = extractHashtags(article.title);
   const url = article.source || "https://doitwithai.tools";
   const ctaBlock = includeSourceLink
-    ? `\n\nFor a deeper dive and the full workflow, read the complete article:\n${url}`
-    : `\n\nReview your current workflow against these steps before publishing your next piece.`;
+    ? `\n\n🌐 For a deeper dive and the full workflow, read the complete article:\n${url}`
+    : `\n\n💡 Review your current workflow against these steps before publishing your next piece.`;
 
   const coreOpening =
     allSentences[0] ||
-    `A strong workflow around ${article.title} starts with a clear task, not just more output.`;
+    `A strong workflow around ${cleanTopic} starts with a clear reader task, not just more output.`;
   const secondInsight =
     allSentences[1] ||
-    `When teams skip the structural review, even good ideas get lost in execution.`;
+    `When teams skip the structural review, even strong expertise gets lost in execution.`;
   const thirdInsight =
     allSentences[2] ||
-    `Connecting strategy, creation, and measurement turns isolated efforts into a repeatable system.`;
+    `Connecting strategy, creation, and review turns isolated efforts into a repeatable system.`;
 
   const sectionBullets = sections
     .slice(0, 5)
@@ -647,8 +747,9 @@ export function buildSocialPosts(
         splitSentences(sec.paragraphs[0] || "")[0] ||
         sec.heading;
       const cleanPt = pt.replace(/^\s*(?:[•▪▸◦–—-]|\d+\.)\s*/, "").trim();
-      return sec.heading && sec.heading !== article.title
-        ? `• ${sec.heading}: ${cleanPt}`
+      const headClean = cleanTopicTitle(sec.heading);
+      return headClean && headClean.toLowerCase() !== cleanTopic.toLowerCase()
+        ? `• ${headClean}: ${cleanPt}`
         : `• Step ${idx + 1}: ${cleanPt}`;
     })
     .slice(0, 5);
@@ -657,86 +758,94 @@ export function buildSocialPosts(
     sectionBullets.push(`• ${allSentences[sectionBullets.length]}`);
   }
 
-  // ---- LINKEDIN (3 High-Quality Editorial Ideas matching image_ad573c.png) ----
+  // ---- LINKEDIN (3 High-Quality Editorial Ideas with Strategic Emojis & Spacing) ----
   const linkedinIdeas: SocialPostIdea[] = [
     {
       id: "li-1",
-      label: "Idea 1 · Problem → Checklist & Practical Review",
-      content: [
-        `${article.title} has one clear job: turning scattered effort into a system that actually compounds.`,
-        "",
-        `${coreOpening} ${secondInsight}`,
-        "",
-        "Before scaling your next round of work, review the process as an operator:",
-        ...sectionBullets.slice(0, 4),
-        "",
-        thirdInsight,
-        ctaBlock,
-        "",
-        hashtags,
-      ]
-        .join("\n")
-        .trim(),
+      label: `🎯 Problem → Checklist: ${cleanTopic.slice(0, 38)}`,
+      content: ensureStructuredSocialText(
+        [
+          `🎯 ${cleanTopic} has one clear job: turning scattered effort into a system that actually compounds.`,
+          "",
+          `${coreOpening} ${secondInsight}`,
+          "",
+          "📌 Before scaling your next round of work, review the process as an operator:",
+          "",
+          ...sectionBullets.slice(0, 4),
+          "",
+          `💡 ${thirdInsight}`,
+          ctaBlock,
+          "",
+          hashtags,
+        ].join("\n"),
+        "LinkedIn",
+      ),
     },
     {
       id: "li-2",
-      label: "Idea 2 · Contrarian Hook & Strategic Deep-Dive",
-      content: [
-        `Doing more of the same task faster does not automatically create better results.`,
-        "",
-        `In our latest breakdown on ${article.title}, we looked at why teams hit a ceiling—and what separates isolated experiments from a repeatable operating system:`,
-        "",
-        ...sections.slice(0, 4).map((sec, i) => {
-          const detail =
-            splitSentences(sec.paragraphs[0] || sec.bullets[0] || "")[0] ||
-            sec.heading;
-          return `${i + 1}. ${sec.heading}\n   ${detail}`;
-        }),
-        "",
-        "Human expertise and editorial judgment still set the direction. The system connects the steps so every cycle improves the next one.",
-        ctaBlock,
-        "",
-        hashtags,
-      ]
-        .join("\n")
-        .trim(),
+      label: `💡 Contrarian Hook & 4-Step Framework`,
+      content: ensureStructuredSocialText(
+        [
+          `⚡ Doing more of the same task faster does not automatically create better results.`,
+          "",
+          `In our latest breakdown on ${cleanTopic}, we looked at why teams hit a ceiling—and what separates isolated experiments from a repeatable operating system:`,
+          "",
+          ...sections.slice(0, 4).map((sec, i) => {
+            const detail =
+              splitSentences(sec.paragraphs[0] || sec.bullets[0] || "")[0] ||
+              sec.heading;
+            return `✅ ${i + 1}. ${cleanTopicTitle(sec.heading)} — ${detail}`;
+          }),
+          "",
+          "🔍 Human expertise and editorial judgment still set the direction. The system connects the steps so every cycle improves the next one.",
+          ctaBlock,
+          "",
+          hashtags,
+        ].join("\n"),
+        "LinkedIn",
+      ),
     },
     {
       id: "li-3",
-      label: "Idea 3 · Before vs. After Playbook",
-      content: [
-        `Two workflows can use the exact same tools and produce completely different outcomes.`,
-        "",
-        `BEFORE (Disconnected Execution):\n• Treating each deliverable as a one-off campaign\n• Measuring activity volume instead of audience impact\n• Publishing without a feedback loop`,
-        "",
-        `AFTER (Connected System — ${article.title}):\n${sectionBullets.slice(0, 3).join("\n")}`,
-        "",
-        coreOpening,
-        ctaBlock,
-        "",
-        hashtags,
-      ]
-        .join("\n")
-        .trim(),
+      label: `⚡ Before vs. After Operator Playbook`,
+      content: ensureStructuredSocialText(
+        [
+          `🚀 Two workflows can use the exact same tools and produce completely different outcomes.`,
+          "",
+          `❌ BEFORE (Disconnected Execution):`,
+          `• Treating each deliverable as a one-off campaign`,
+          `• Chasing surface-level scores instead of real reader clarity`,
+          `• Publishing without a structured quality review`,
+          "",
+          `✅ AFTER (Connected System — ${cleanTopic}):`,
+          ...sectionBullets.slice(0, 3),
+          "",
+          `💡 ${coreOpening}`,
+          ctaBlock,
+          "",
+          hashtags,
+        ].join("\n"),
+        "LinkedIn",
+      ),
     },
   ];
 
-  // ---- X / TWITTER THREAD (3 Ideas with strict <280 char tweets) ----
+  // ---- X / TWITTER THREAD (3 Ideas with strict <280 char tweets & clean breaks) ----
   const buildTweetThread = (leadHook: string) => {
     const tweets = [
-      `1/ ${leadHook.slice(0, 220)}\n\nA breakdown on ${article.title.slice(0, 90)}:`,
+      `🧵 1/ ${leadHook.slice(0, 210)}\n\nA practical breakdown on ${cleanTopic.slice(0, 85)} 👇`,
       ...sections.slice(0, 5).map((sec, i) => {
         const body =
           splitSentences(sec.paragraphs[0] || sec.bullets[0] || "")[0] ||
           sec.heading;
-        return `${i + 2}/ ${sec.heading.slice(0, 65)}\n\n${body.slice(0, 185)}`;
+        return `${i + 2}/ 📌 ${cleanTopicTitle(sec.heading).slice(0, 62)}\n\n${body.slice(0, 185)}`;
       }),
     ];
     const lastNum = tweets.length + 1;
     tweets.push(
       includeSourceLink
-        ? `${lastNum}/ Want the full guide and checklist?\n\nRead the complete article here: ${url}`
-        : `${lastNum}/ Bottom line: connect your strategy, execution, and feedback loop so every piece compounds over time.`,
+        ? `${lastNum}/ 🌐 Want the full guide, prompts, and checklist?\n\nRead the complete article here:\n${url}`
+        : `${lastNum}/ 💡 Bottom line: connect your strategy, execution, and feedback loop so every piece compounds over time.`,
     );
     return tweets.join("\n\n---\n\n");
   };
@@ -744,26 +853,31 @@ export function buildSocialPosts(
   const xIdeas: SocialPostIdea[] = [
     {
       id: "x-1",
-      label: "Idea 1 · Step-by-Step Thread (6–7 Tweets)",
+      label: "🧵 Idea 1 · Step-by-Step Thread (6–7 Tweets)",
       content: buildTweetThread(coreOpening),
     },
     {
       id: "x-2",
-      label: "Idea 2 · Contrarian Insight Thread",
+      label: "⚡ Idea 2 · Contrarian Insight Thread",
       content: buildTweetThread(
         `Most teams focus on speed when they should be fixing the underlying workflow. ${secondInsight}`,
       ),
     },
     {
       id: "x-3",
-      label: "Idea 3 · Single High-Impact X Post",
-      content: [
-        `${article.title}:`,
-        "",
-        ...sectionBullets.slice(0, 4).map((b) => b.slice(0, 95)),
-        "",
-        includeSourceLink ? `Full breakdown: ${url}` : coreOpening.slice(0, 120),
-      ].join("\n"),
+      label: "📌 Idea 3 · Single High-Impact X Post",
+      content: ensureStructuredSocialText(
+        [
+          `🎯 ${cleanTopic}:`,
+          "",
+          ...sectionBullets.slice(0, 4).map((b) => b.slice(0, 95)),
+          "",
+          includeSourceLink
+            ? `🌐 Full breakdown: ${url}`
+            : `💡 ${coreOpening.slice(0, 120)}`,
+        ].join("\n"),
+        "X / Twitter Thread",
+      ),
     },
   ];
 
@@ -771,49 +885,54 @@ export function buildSocialPosts(
   const facebookIdeas: SocialPostIdea[] = [
     {
       id: "fb-1",
-      label: "Idea 1 · Reader Task & Practical Review (Editorial Style)",
-      content: [
-        `Your workflow can use the right tools and still miss the core objective.`,
-        "",
-        `${coreOpening} ${secondInsight}`,
-        "",
-        `A practical review from "${article.title}":`,
-        ...sectionBullets.slice(0, 4),
-        "",
-        thirdInsight,
-        ctaBlock,
-      ]
-        .join("\n")
-        .trim(),
+      label: "📌 Idea 1 · Reader Task & Practical Review",
+      content: ensureStructuredSocialText(
+        [
+          `🎯 Your workflow can use the right tools and still miss the core objective.`,
+          "",
+          `${coreOpening} ${secondInsight}`,
+          "",
+          `📋 A practical review from "${cleanTopic}":`,
+          "",
+          ...sectionBullets.slice(0, 4),
+          "",
+          `💡 ${thirdInsight}`,
+          ctaBlock,
+        ].join("\n"),
+        "Facebook",
+      ),
     },
     {
       id: "fb-2",
-      label: "Idea 2 · Story & Solution Breakdown",
-      content: [
-        `Why do some teams get compounding results from ${article.title} while others just create more noise?`,
-        "",
-        coreOpening,
-        "",
-        "Here are the core pillars to focus on:",
-        ...sectionBullets.slice(0, 4),
-        ctaBlock,
-      ]
-        .join("\n")
-        .trim(),
+      label: "💡 Idea 2 · Story & Solution Breakdown",
+      content: ensureStructuredSocialText(
+        [
+          `Why do some teams get compounding results from ${cleanTopic} while others just create more noise?`,
+          "",
+          coreOpening,
+          "",
+          "✅ Here are the core pillars to focus on:",
+          "",
+          ...sectionBullets.slice(0, 4),
+          ctaBlock,
+        ].join("\n"),
+        "Facebook",
+      ),
     },
     {
       id: "fb-3",
-      label: "Idea 3 · Quick Audit Checklist",
-      content: [
-        `Quick checklist for anyone working on ${article.title} this week:`,
-        "",
-        ...sectionBullets.slice(0, 5),
-        "",
-        secondInsight,
-        ctaBlock,
-      ]
-        .join("\n")
-        .trim(),
+      label: "✅ Idea 3 · Quick Audit Checklist",
+      content: ensureStructuredSocialText(
+        [
+          `⚡ Quick checklist for anyone working on ${cleanTopic} this week:`,
+          "",
+          ...sectionBullets.slice(0, 5),
+          "",
+          `💡 ${secondInsight}`,
+          ctaBlock,
+        ].join("\n"),
+        "Facebook",
+      ),
     },
   ];
 
@@ -821,60 +940,69 @@ export function buildSocialPosts(
   const instagramIdeas: SocialPostIdea[] = [
     {
       id: "ig-1",
-      label: "Idea 1 · Quick Fix & Direct Path (Modeled on @doitwithaitools)",
-      content: [
-        `${article.title}. One clear, repeatable system.`,
-        "",
-        `${coreOpening}`,
-        "",
-        `${secondInsight}`,
-        "",
-        "Key steps to review before publishing:",
-        ...sectionBullets.slice(0, 4),
-        "",
-        includeSourceLink
-          ? `Read the complete guide through our profile link, or visit:\n${url}`
-          : "Save this post for your next workflow review.",
-        "",
-        hashtags,
-      ]
-        .join("\n")
-        .trim(),
+      label: "✨ Idea 1 · Quick Fix & Direct Path (@doitwithaitools)",
+      content: ensureStructuredSocialText(
+        [
+          `🎯 ${cleanTopic}. One clear, repeatable system.`,
+          "",
+          `${coreOpening}`,
+          "",
+          `${secondInsight}`,
+          "",
+          "📌 Key steps to review before publishing:",
+          "",
+          ...sectionBullets.slice(0, 4),
+          "",
+          includeSourceLink
+            ? `🌐 Read the complete guide through our profile link, or visit:\n${url}`
+            : "🔖 Save this post for your next workflow review.",
+          "",
+          hashtags,
+        ].join("\n"),
+        "Instagram",
+      ),
     },
     {
       id: "ig-2",
-      label: "Idea 2 · Carousel Companion Caption",
-      content: [
-        `Swipe through to see how ${article.title} works in practice →`,
-        "",
-        ...sections.slice(0, 4).map((sec, i) => `Slide ${i + 2}: ${sec.heading}`),
-        "",
-        thirdInsight,
-        "",
-        includeSourceLink ? `Full article at:\n${url}` : "Save and share with your team.",
-        "",
-        hashtags,
-      ]
-        .join("\n")
-        .trim(),
+      label: "👉 Idea 2 · Carousel Companion Caption",
+      content: ensureStructuredSocialText(
+        [
+          `Swipe through to see how ${cleanTopic} works in practice 👉`,
+          "",
+          ...sections
+            .slice(0, 4)
+            .map((sec, i) => `• Slide 0${i + 2}: ${cleanTopicTitle(sec.heading)}`),
+          "",
+          `💡 ${thirdInsight}`,
+          "",
+          includeSourceLink
+            ? `🌐 Full article at:\n${url}`
+            : "🔖 Save and share with your team.",
+          "",
+          hashtags,
+        ].join("\n"),
+        "Instagram",
+      ),
     },
     {
       id: "ig-3",
-      label: "Idea 3 · Mistakes to Avoid",
-      content: [
-        `Stop treating ${article.title} like a one-off checklist.`,
-        "",
-        coreOpening,
-        "",
-        "What to focus on instead:",
-        ...sectionBullets.slice(0, 3),
-        "",
-        includeSourceLink ? `Visit:\n${url}` : "",
-        "",
-        hashtags,
-      ]
-        .join("\n")
-        .trim(),
+      label: "⚡ Idea 3 · Mistakes to Avoid",
+      content: ensureStructuredSocialText(
+        [
+          `🛑 Stop treating ${cleanTopic} like a one-off checklist.`,
+          "",
+          coreOpening,
+          "",
+          "✅ What to focus on instead:",
+          "",
+          ...sectionBullets.slice(0, 3),
+          "",
+          includeSourceLink ? `🌐 Visit:\n${url}` : "",
+          "",
+          hashtags,
+        ].join("\n"),
+        "Instagram",
+      ),
     },
   ];
 
@@ -882,46 +1010,47 @@ export function buildSocialPosts(
   const threadsIdeas: SocialPostIdea[] = [
     {
       id: "th-1",
-      label: "Idea 1 · High-Signal Concise Note (Modeled on Threads)",
-      content: [
-        `${coreOpening} ${secondInsight}`,
-        "",
-        `Key focus for ${article.title}: ${sections
-          .slice(0, 3)
-          .map((s) => s.heading)
-          .join(" → ")}.`,
-        "",
-        includeSourceLink ? `Explore the full guide:\n${url}` : "",
-      ]
-        .join("\n")
-        .trim()
-        .slice(0, 495),
+      label: "🎯 Idea 1 · High-Signal Concise Note",
+      content: ensureStructuredSocialText(
+        [
+          `🎯 ${coreOpening} ${secondInsight}`,
+          "",
+          `📌 Key focus for ${cleanTopic}: ${sections
+            .slice(0, 3)
+            .map((s) => cleanTopicTitle(s.heading))
+            .join(" → ")}.`,
+          "",
+          includeSourceLink ? `🌐 Explore the full guide:\n${url}` : "",
+        ].join("\n"),
+        "Threads",
+      ).slice(0, 495),
     },
     {
       id: "th-2",
-      label: "Idea 2 · Quick Checklist Thread Starter",
-      content: [
-        `${article.title} in 3 steps:`,
-        ...sectionBullets.slice(0, 3).map((b) => b.slice(0, 110)),
-        "",
-        includeSourceLink ? `Full breakdown: ${url}` : "",
-      ]
-        .join("\n")
-        .trim()
-        .slice(0, 495),
+      label: "✅ Idea 2 · Quick Checklist Starter",
+      content: ensureStructuredSocialText(
+        [
+          `⚡ ${cleanTopic} in 3 steps:`,
+          "",
+          ...sectionBullets.slice(0, 3).map((b) => b.slice(0, 110)),
+          "",
+          includeSourceLink ? `🌐 Full breakdown: ${url}` : "",
+        ].join("\n"),
+        "Threads",
+      ).slice(0, 495),
     },
     {
       id: "th-3",
-      label: "Idea 3 · Discussion Question",
-      content: [
-        `${thirdInsight}`,
-        "",
-        `How is your team handling ${article.title} right now?`,
-        includeSourceLink ? `\nRead our guide: ${url}` : "",
-      ]
-        .join("\n")
-        .trim()
-        .slice(0, 495),
+      label: "💬 Idea 3 · Operator Discussion Question",
+      content: ensureStructuredSocialText(
+        [
+          `💡 ${thirdInsight}`,
+          "",
+          `How is your team handling ${cleanTopic} right now?`,
+          includeSourceLink ? `\n🌐 Read our guide: ${url}` : "",
+        ].join("\n"),
+        "Threads",
+      ).slice(0, 495),
     },
   ];
 
@@ -933,7 +1062,8 @@ export function buildSocialPosts(
       id: "linkedin",
       platform: "LinkedIn",
       angle,
-      content: linkedinIdeas[defaultIdeaIdx]?.content || linkedinIdeas[0].content,
+      content:
+        linkedinIdeas[defaultIdeaIdx]?.content || linkedinIdeas[0].content,
       charLimit: 3000,
       ideas: linkedinIdeas,
     },
@@ -949,7 +1079,8 @@ export function buildSocialPosts(
       id: "facebook",
       platform: "Facebook",
       angle,
-      content: facebookIdeas[defaultIdeaIdx]?.content || facebookIdeas[0].content,
+      content:
+        facebookIdeas[defaultIdeaIdx]?.content || facebookIdeas[0].content,
       charLimit: 2200,
       ideas: facebookIdeas,
     },
@@ -957,7 +1088,8 @@ export function buildSocialPosts(
       id: "instagram",
       platform: "Instagram",
       angle,
-      content: instagramIdeas[defaultIdeaIdx]?.content || instagramIdeas[0].content,
+      content:
+        instagramIdeas[defaultIdeaIdx]?.content || instagramIdeas[0].content,
       charLimit: 2200,
       ideas: instagramIdeas,
     },
@@ -965,7 +1097,8 @@ export function buildSocialPosts(
       id: "threads",
       platform: "Threads",
       angle,
-      content: threadsIdeas[defaultIdeaIdx]?.content || threadsIdeas[0].content,
+      content:
+        threadsIdeas[defaultIdeaIdx]?.content || threadsIdeas[0].content,
       charLimit: 500,
       ideas: threadsIdeas,
     },
@@ -1287,6 +1420,7 @@ export function buildNewsletter(
   const err = validate(article);
   if (err) throw Error(err);
 
+  const cleanTopic = cleanTopicTitle(article.title);
   const grouped = groupArticleSections(article);
   const allSents = grouped
     .flatMap((g) => g.paragraphs.flatMap((p) => splitSentences(p)))
@@ -1294,7 +1428,7 @@ export function buildNewsletter(
 
   const firstPara =
     allSents.slice(0, 2).join(" ") ||
-    `In this edition, we are breaking down "${article.title}" into a practical playbook you can apply right away.`;
+    `In this edition, we are breaking down "${cleanTopic}" into a practical playbook you can apply right away.`;
   const whyItMatters =
     allSents.slice(2, 4).join(" ") ||
     allSents[1] ||
@@ -1309,7 +1443,7 @@ export function buildNewsletter(
     .filter((t) => t.length >= 18)
     .slice(0, 5);
 
-  if (!takeaways.length) takeaways.push(article.title);
+  if (!takeaways.length) takeaways.push(cleanTopic);
 
   const sections = grouped.slice(0, 6).map((g, idx) => {
     const bodySents = g.paragraphs.flatMap((p) => splitSentences(p));
@@ -1320,10 +1454,12 @@ export function buildNewsletter(
     const actionItem =
       g.bullets[0] ||
       bodySents[2] ||
-      `Review how your current workflow handles ${g.heading.toLowerCase()}.`;
+      `Review how your current workflow handles ${cleanTopicTitle(g.heading).toLowerCase()}.`;
     return {
       heading:
-        g.heading === article.title ? `Part ${idx + 1} · Core Premise` : g.heading,
+        cleanTopicTitle(g.heading).toLowerCase() === cleanTopic.toLowerCase()
+          ? `Part ${idx + 1} · Core Premise`
+          : cleanTopicTitle(g.heading),
       summary,
       actionItem,
     };
@@ -1337,11 +1473,11 @@ export function buildNewsletter(
     );
 
   const subjectOptions = [
-    `The playbook for ${article.title}`,
-    `Why most teams get ${article.title} wrong (and how to fix it)`,
-    `[${style === "executive" ? "Briefing" : "Deep Dive"}] ${article.title}`,
-    `${sections.length} takeaways on ${article.title}`,
-    `Before you scale: a practical review of ${article.title}`,
+    `The operator's playbook for ${cleanTopic}`,
+    `Why most teams get ${cleanTopic} wrong (and how to fix it)`,
+    `[${style === "executive" ? "Briefing" : "Deep Dive"}] ${cleanTopic}`,
+    `${sections.length} practical takeaways on ${cleanTopic}`,
+    `Before you scale: a structured review of ${cleanTopic}`,
   ];
 
   const greeting =
@@ -1362,7 +1498,7 @@ export function buildNewsletter(
     takeaways,
     sections,
     checklist,
-    ctaLabel: "Read the full article on our website →",
+    ctaLabel: "🌐 Read the full article on our website →",
     ctaUrl: article.source || "https://doitwithai.tools",
   };
 }
@@ -1492,7 +1628,7 @@ export function newsletterDocx(
 }
 
 // ============================================================================
-// 6. BLOG TO LINKEDIN CAROUSEL (Grand Studio Tool Modeled on image_ad573d.png & image_ad547a.png)
+// 6. BLOG TO LINKEDIN CAROUSEL (6 Distinct Architectural Layout Templates)
 // ============================================================================
 export type CarouselTemplateId =
   | "saas-comparison"
@@ -1527,20 +1663,29 @@ export type CarouselSlide = {
   cardLeftBody: string;
   cardRightTitle: string;
   cardRightBody: string;
+  stepThirdTitle?: string;
+  stepThirdBody?: string;
+  bullets?: string[];
   footer: string;
 };
 
 export const CAROUSEL_THEME_PRESETS: Record<
   CarouselTemplateId,
-  Omit<CarouselBrandConfig, "brandName" | "websiteUrl" | "categoryKicker" | "logoDataUrl" | "aspect"> & {
+  Omit<
+    CarouselBrandConfig,
+    "brandName" | "websiteUrl" | "categoryKicker" | "logoDataUrl" | "aspect"
+  > & {
     name: string;
+    layoutBadge: string;
     description: string;
   }
 > = {
   "saas-comparison": {
     template: "saas-comparison",
-    name: "SaaS UI Comparison (Electric Blue & Lime)",
-    description: "Modeled on Do It With AI Tools LinkedIn cards: electric blue canvas, lime-highlighted headline words, and connected macOS window cards.",
+    name: "SaaS Split UI Windows",
+    layoutBadge: "2 Overlapping macOS Windows + Curved Arrow",
+    description:
+      "Diagonal electric canvas with orbital arcs and two connected macOS-style UI mockup windows.",
     bgColor: "#1D4ED8",
     bgSecondaryColor: "#1E3A8A",
     accentColor: "#D9F99D",
@@ -1549,38 +1694,46 @@ export const CAROUSEL_THEME_PRESETS: Record<
   },
   "before-after": {
     template: "before-after",
-    name: "Before vs. After Flow (Midnight Navy & Cyan)",
-    description: "Deep midnight navy canvas with glowing rings, BEFORE -> AFTER workflow comparison boxes, and bordered CTA card.",
+    name: "Before vs. After Transformation",
+    layoutBadge: "Stacked Old Way vs. New System Flow",
+    description:
+      "Radial spotlight canvas with full-width stacked BEFORE (Problem) → AFTER (Solution) cards and transformation badge.",
     bgColor: "#061026",
     bgSecondaryColor: "#0F244A",
     accentColor: "#38BDF8",
     textColor: "#FFFFFF",
     cardBgColor: "#1E293B",
   },
-  "executive-editorial": {
-    template: "executive-editorial",
-    name: "Executive Editorial (Plum & Coral)",
-    description: "High-contrast editorial plum background with warm coral highlights, oversized slide numbers, and structured insight cards.",
-    bgColor: "#291B26",
-    bgSecondaryColor: "#3B2336",
-    accentColor: "#FB923C",
-    textColor: "#FFFFFF",
-    cardBgColor: "#1E131C",
-  },
   "founder-playbook": {
     template: "founder-playbook",
-    name: "Founder Playbook (Crisp Light & Cobalt)",
-    description: "Clean light studio canvas with deep navy typography, royal cobalt highlights, and elevated white comparison cards.",
+    name: "3-Step Vertical Roadmap",
+    layoutBadge: "Connected 3-Node Vertical Timeline Spine",
+    description:
+      "Crisp light studio canvas with a vertical numbered roadmap spine connecting Context → Action → Impact.",
     bgColor: "#F8FAFC",
     bgSecondaryColor: "#EFF6FF",
     accentColor: "#2563EB",
     textColor: "#0F172A",
     cardBgColor: "#FFFFFF",
   },
+  "executive-editorial": {
+    template: "executive-editorial",
+    name: "Magazine Editorial & Giant Number",
+    layoutBadge: "220px Watermark Number + Pull-Quote + 2 Pillars",
+    description:
+      "Framed magazine layout with oversized watermark numbers, a vertical-bar editorial quote card, and a 2-column pillar strip.",
+    bgColor: "#291B26",
+    bgSecondaryColor: "#3B2336",
+    accentColor: "#FB923C",
+    textColor: "#FFFFFF",
+    cardBgColor: "#1E131C",
+  },
   "cyber-dark": {
     template: "cyber-dark",
-    name: "Minimalist Dark Mode (Carbon & Emerald)",
-    description: "Sleek developer/marketer dark mode with neon emerald highlights and glass-bordered workflow cards.",
+    name: "Asymmetric Bento Checklist",
+    layoutBadge: "3-Cell Bento Grid + Checkmarked Action Rules",
+    description:
+      "Carbon dark mesh with neon emerald accents and a 3-cell asymmetric Bento grid for scannable operator checklists.",
     bgColor: "#090D16",
     bgSecondaryColor: "#111827",
     accentColor: "#34D399",
@@ -1589,8 +1742,10 @@ export const CAROUSEL_THEME_PRESETS: Record<
   },
   "blueprint-grid": {
     template: "blueprint-grid",
-    name: "Framework Blueprint (Indigo & Amber)",
-    description: "Architectural grid lines with bold amber highlight phrases and side-by-side pillar cards.",
+    name: "Architectural Hub & Flow Diagram",
+    layoutBadge: "Blueprint Grid + 3-Node Horizontal System Flow",
+    description:
+      "Technical coordinate grid with ruler ticks and a 3-node Input → Core Engine → Output architecture diagram.",
     bgColor: "#1E1B4B",
     bgSecondaryColor: "#312E81",
     accentColor: "#FBBF24",
@@ -1598,6 +1753,34 @@ export const CAROUSEL_THEME_PRESETS: Record<
     cardBgColor: "#0F172A",
   },
 };
+
+/**
+ * Automatically selects the best-fitting visual template based on the article's
+ * topic, structure, and content style so every article gets a tailored layout.
+ */
+export function recommendCarouselTemplate(article: Article): CarouselTemplateId {
+  const combined = `${article.title} ${article.blocks
+    .slice(0, 8)
+    .map((b) => b.text)
+    .join(" ")}`.toLowerCase();
+
+  if (/\b(?:vs|versus|before|after|mistake|fix|wrong|instead of|compare)\b/.test(combined)) {
+    return "before-after";
+  }
+  if (/\b(?:schema|technical|architecture|crawl|index|robots|sitemap|redirect|canonical|vitals)\b/.test(combined)) {
+    return "blueprint-grid";
+  }
+  if (/\b(?:checklist|audit|verify|prompt|prompts|template|toolkit|score|density)\b/.test(combined)) {
+    return "cyber-dark";
+  }
+  if (/\b(?:step|how to|workflow|roadmap|process|guide|outline|brief)\b/.test(combined)) {
+    return "founder-playbook";
+  }
+  if (/\b(?:strategy|executive|editorial|brand|leadership|authority|pr|outreach)\b/.test(combined)) {
+    return "executive-editorial";
+  }
+  return "saas-comparison";
+}
 
 function pickHighlightWords(headline: string): string {
   const words = headline.trim().split(/\s+/);
@@ -1612,6 +1795,7 @@ export function buildLinkedinCarousel(
   const err = validate(article);
   if (err) throw Error(err);
 
+  const cleanTopic = cleanTopicTitle(article.title);
   const sections = groupArticleSections(article);
   const allSents = sections
     .flatMap((s) => s.paragraphs.flatMap((p) => splitSentences(p)))
@@ -1619,38 +1803,50 @@ export function buildLinkedinCarousel(
 
   const slides: CarouselSlide[] = [];
 
-  // Slide 1: High-Impact Cover Slide (modeled on image_ad573d.png)
-  const coverHeadline = article.title.slice(0, 95);
+  // Slide 1: Dedicated Introduction / Cover Slide
+  const coverHeadline = cleanTopic.slice(0, 90);
   const firstInsight =
     allSents[0] ||
     "Understand the complete workflow before rewriting or scaling output.";
   const secondInsight =
     allSents[1] ||
     "Connect strategy, execution, and measurement into one repeatable system.";
+  const coverPreviewBullets = sections
+    .slice(0, 3)
+    .map((sec, i) => `0${i + 1}. ${cleanTopicTitle(sec.heading).slice(0, 58)}`);
+  while (coverPreviewBullets.length < 3) {
+    coverPreviewBullets.push(
+      `0${coverPreviewBullets.length + 1}. Actionable implementation checklist`,
+    );
+  }
 
   slides.push({
     number: 1,
     kind: "cover",
-    kicker: "PRACTICAL PLAYBOOK",
+    kicker: "COMPLETE PRACTICAL PLAYBOOK",
     headline: coverHeadline,
     highlightPhrase: pickHighlightWords(coverHeadline),
     body: firstInsight.slice(0, 155),
-    cardLeftTitle: "COMMON ASSUMPTION",
+    cardLeftTitle: "COMMON BOTTLENECK",
     cardLeftBody: firstInsight.slice(0, 95),
-    cardRightTitle: "WHAT ACTUALLY WORKS",
+    cardRightTitle: "THE SYSTEM FIX",
     cardRightBody: secondInsight.slice(0, 95),
-    footer: "Understand the system before scaling output.",
+    stepThirdTitle: "CORE OUTCOME",
+    stepThirdBody: coverPreviewBullets[0] || "Repeatable quality at scale.",
+    bullets: coverPreviewBullets,
+    footer: "Swipe through for the step-by-step breakdown →",
   });
 
-  // Middle Slides: Topic-by-Topic Insight & Comparison Slides
+  // Middle Slides: Topic-by-Topic Insight & Explanation Slides
   const targetMiddle = Math.max(4, Math.min(maxSlides - 2, 10));
   for (let i = 0; i < targetMiddle && i < sections.length; i++) {
     const sec = sections[i];
     const sents = sec.paragraphs.flatMap((p) => splitSentences(p));
+    const cleanHead = cleanTopicTitle(sec.heading);
     const head =
-      sec.heading && sec.heading !== article.title
-        ? sec.heading
-        : `Core Pillar ${i + 1}: ${pickHighlightWords(sents[0] || article.title)}`;
+      cleanHead && cleanHead.toLowerCase() !== cleanTopic.toLowerCase()
+        ? cleanHead
+        : `Pillar ${i + 1}: ${pickHighlightWords(sents[0] || cleanTopic)}`;
     const mainBody =
       sents[0] ||
       sec.bullets[0] ||
@@ -1664,19 +1860,32 @@ export function buildLinkedinCarousel(
       sents[2] ||
       sents[0] ||
       `Connected workflow with measurable quality checks.`;
+    const thirdText =
+      sec.bullets[2] ||
+      sents[3] ||
+      `Verify accuracy and reader comprehension before publishing.`;
 
     slides.push({
       number: slides.length + 1,
       kind: i % 2 === 1 ? "comparison" : "point",
-      kicker: `STEP 0${i + 1} / KEY INSIGHT`,
-      headline: head.slice(0, 88),
-      highlightPhrase: pickHighlightWords(head.slice(0, 88)),
-      body: mainBody.slice(0, 175),
-      cardLeftTitle: i % 2 === 1 ? "BEFORE / WITHOUT SYSTEM" : "KEY OBSERVATION",
+      kicker: `STEP 0${i + 1} · KEY TOPIC`,
+      headline: head.slice(0, 86),
+      highlightPhrase: pickHighlightWords(head.slice(0, 86)),
+      body: mainBody.slice(0, 165),
+      cardLeftTitle:
+        i % 2 === 1 ? "WITHOUT THIS STEP" : "01 · CORE PRINCIPLE",
       cardLeftBody: leftText.slice(0, 105),
-      cardRightTitle: i % 2 === 1 ? "AFTER / WITH SYSTEM" : "ACTIONABLE RULE",
+      cardRightTitle:
+        i % 2 === 1 ? "WITH THIS SYSTEM" : "02 · OPERATOR ACTION",
       cardRightBody: rightText.slice(0, 105),
-      footer: `Review step ${i + 1} before moving to the next stage.`,
+      stepThirdTitle: "03 · QUALITY CHECK",
+      stepThirdBody: thirdText.slice(0, 105),
+      bullets: [
+        leftText.slice(0, 85),
+        rightText.slice(0, 85),
+        thirdText.slice(0, 85),
+      ],
+      footer: `Key takeaway ${i + 1}: apply this step before scaling.`,
     });
   }
 
@@ -1684,34 +1893,59 @@ export function buildLinkedinCarousel(
   while (slides.length < Math.min(6, maxSlides - 1) && allSents[slides.length]) {
     const s = allSents[slides.length];
     const hl = s.split(/\s+/).slice(0, 7).join(" ");
+    const nextS = allSents[slides.length + 1] || firstInsight;
     slides.push({
       number: slides.length + 1,
       kind: "point",
-      kicker: `KEY TAKEAWAY 0${slides.length}`,
+      kicker: `KEY INSIGHT 0${slides.length}`,
       headline: hl,
       highlightPhrase: pickHighlightWords(hl),
-      body: s.slice(0, 175),
-      cardLeftTitle: "CHECKPOINT",
+      body: s.slice(0, 165),
+      cardLeftTitle: "01 · OBSERVATION",
       cardLeftBody: s.slice(0, 95),
-      cardRightTitle: "NEXT ACTION",
-      cardRightBody: (allSents[slides.length + 1] || firstInsight).slice(0, 95),
+      cardRightTitle: "02 · ACTION RULE",
+      cardRightBody: nextS.slice(0, 95),
+      stepThirdTitle: "03 · RESULT",
+      stepThirdBody: secondInsight.slice(0, 95),
+      bullets: [s.slice(0, 85), nextS.slice(0, 85), secondInsight.slice(0, 85)],
       footer: "Keep every step grounded in your source evidence.",
     });
   }
 
-  // Final Slide: Actionable Summary & CTA (modeled on image_ad547a.png bottom CTA box)
+  // Final Slide: Dedicated Closing Recap & Call-to-Action (CTA) Slide
+  const ctaRecapBullets = sections
+    .slice(0, 3)
+    .map((sec) => {
+      const b =
+        sec.bullets[0] ||
+        splitSentences(sec.paragraphs[0] || "")[0] ||
+        sec.heading;
+      return b.replace(/^\s*(?:[•▪▸◦–—-]|\d+\.)\s*/, "").slice(0, 78);
+    });
+  while (ctaRecapBullets.length < 3) {
+    ctaRecapBullets.push(firstInsight.slice(0, 78));
+  }
+
+  const cleanDomain =
+    article.brand?.domain ||
+    (article.source ? article.source.replace(/^https?:\/\/(www\.)?/i, "").split("/")[0] : "") ||
+    "doitwithai.tools";
+
   slides.push({
     number: slides.length + 1,
     kind: "cta",
-    kicker: "NEXT STEP / FULL GUIDE",
-    headline: "Apply this workflow to your next project.",
-    highlightPhrase: "your next project.",
-    body: `Read the complete guide "${article.title.slice(0, 80)}" for the full checklist and examples.`,
-    cardLeftTitle: "KEY PRINCIPLE",
-    cardLeftBody: firstInsight.slice(0, 95),
-    cardRightTitle: "FULL BREAKDOWN",
-    cardRightBody: article.source || "doitwithai.tools/tools",
-    footer: article.source || "Visit doitwithai.tools for more free tools",
+    kicker: "FINAL SUMMARY & NEXT STEP",
+    headline: `Put ${cleanTopic.slice(0, 52)} into practice today.`,
+    highlightPhrase: "into practice today.",
+    body: `Save this checklist for your next review—and read the complete guide for all prompts, examples, and templates.`,
+    cardLeftTitle: "QUICK RECAP",
+    cardLeftBody: ctaRecapBullets[0] || firstInsight.slice(0, 95),
+    cardRightTitle: "READ FULL GUIDE AT",
+    cardRightBody: article.source || `https://${cleanDomain}`,
+    stepThirdTitle: "SHARE & SAVE",
+    stepThirdBody: "Repost to help your team and bookmark this carousel.",
+    bullets: ctaRecapBullets,
+    footer: article.source || `Visit ${cleanDomain} for the full guide`,
   });
 
   return slides;
@@ -1755,7 +1989,15 @@ function wrapPdfLines(text: string, maxChars: number): string[] {
 
 function hexToPdfRgb(hex: string): string {
   const clean = hex.replace("#", "").trim();
-  const num = parseInt(clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean, 16);
+  const num = parseInt(
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : clean,
+    16,
+  );
   if (Number.isNaN(num)) return "0.11 0.30 0.85";
   const r = ((num >> 16) & 255) / 255;
   const g = ((num >> 8) & 255) / 255;
@@ -1797,9 +2039,11 @@ export function carouselPdf(
     }
   } else if (themeOrConfig) {
     if (themeOrConfig.bgColor) bgRgb = hexToPdfRgb(themeOrConfig.bgColor);
-    if (themeOrConfig.accentColor) accentRgb = hexToPdfRgb(themeOrConfig.accentColor);
+    if (themeOrConfig.accentColor)
+      accentRgb = hexToPdfRgb(themeOrConfig.accentColor);
     if (themeOrConfig.textColor) textRgb = hexToPdfRgb(themeOrConfig.textColor);
-    if (themeOrConfig.cardBgColor) cardRgb = hexToPdfRgb(themeOrConfig.cardBgColor);
+    if (themeOrConfig.cardBgColor)
+      cardRgb = hexToPdfRgb(themeOrConfig.cardBgColor);
     if (themeOrConfig.brandName) brandName = themeOrConfig.brandName;
     if (themeOrConfig.websiteUrl) websiteUrl = themeOrConfig.websiteUrl;
   }
@@ -1827,9 +2071,7 @@ export function carouselPdf(
     const rightLines = wrapPdfLines(slide.cardRightBody || "", 24).slice(0, 3);
 
     const cmds: string[] = [
-      // Background fill
       `${bgRgb} rg 0 0 ${width} ${height} re f`,
-      // Top brand badge & kicker
       `${accentRgb} rg 40 ${height - 46} 10 10 re f`,
       `BT /F1 11 Tf ${textRgb} rg 58 ${height - 45} Td (${pdfEscape(brandName.slice(0, 32))}) Tj ET`,
       `BT /F1 10 Tf ${accentRgb} rg 40 ${height - 76} Td (${pdfEscape(slide.kicker || `SLIDE 0${idx + 1}`)}) Tj ET`,
@@ -1852,7 +2094,6 @@ export function carouselPdf(
       y -= 20;
     }
 
-    // Visual Diagram / Comparison Cards in the middle of the slide
     const cardTop = Math.max(210, y - 16);
     const cardH = 118;
     const cardW = 215;
@@ -1867,7 +2108,6 @@ export function carouselPdf(
       );
     });
 
-    // Arrow between cards
     cmds.push(
       `BT /F1 16 Tf ${accentRgb} rg 262 ${cardTop - 64} Td (->) Tj ET`,
     );
@@ -1883,7 +2123,6 @@ export function carouselPdf(
       );
     });
 
-    // Footer takeaway, website domain, and slide counter (01 / 08)
     cmds.push(
       `BT /F1 12 Tf ${textRgb} rg 40 68 Td (${pdfEscape(slide.footer.slice(0, 58))}) Tj ET`,
       `BT /F2 11 Tf ${accentRgb} rg 40 36 Td (${pdfEscape(websiteUrl.slice(0, 42))}) Tj ET`,
@@ -1957,13 +2196,11 @@ export function buildRasterCarouselPdf(
     pageObjIds.push(3 + i * 3 + 2);
   }
 
-  // Object 1: Pages root
   offsets.push(byteOffset);
   pushStr(
     `${pagesObjId} 0 obj\n<< /Type /Pages /Kids [${pageObjIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${jpegPages.length} >>\nendobj\n`,
   );
 
-  // Object 2: Catalog
   offsets.push(byteOffset);
   pushStr(
     `${catalogObjId} 0 obj\n<< /Type /Catalog /Pages ${pagesObjId} 0 R >>\nendobj\n`,
@@ -1975,7 +2212,6 @@ export function buildRasterCarouselPdf(
     const contentObjId = 3 + i * 3 + 1;
     const pageObjId = 3 + i * 3 + 2;
 
-    // Image XObject
     offsets.push(byteOffset);
     pushStr(
       `${imgObjId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.bytes.length} >>\nstream\n`,
@@ -1983,14 +2219,12 @@ export function buildRasterCarouselPdf(
     pushBytes(img.bytes);
     pushStr(`\nendstream\nendobj\n`);
 
-    // Content stream drawing the image full-bleed
     const streamCmd = `q\n${pageWidthPt} 0 0 ${pageHeightPt} 0 0 cm\n/Im0 Do\nQ\n`;
     offsets.push(byteOffset);
     pushStr(
       `${contentObjId} 0 obj\n<< /Length ${streamCmd.length} >>\nstream\n${streamCmd}endstream\nendobj\n`,
     );
 
-    // Page object
     offsets.push(byteOffset);
     pushStr(
       `${pageObjId} 0 obj\n<< /Type /Page /Parent ${pagesObjId} 0 R /MediaBox [0 0 ${pageWidthPt} ${pageHeightPt}] /Resources << /XObject << /Im0 ${imgObjId} 0 R >> >> /Contents ${contentObjId} 0 R >>\nendobj\n`,
@@ -2044,6 +2278,7 @@ export function buildPodcastScript(
   const err = validate(article);
   if (err) throw Error(err);
 
+  const cleanTopic = cleanTopicTitle(article.title);
   const grouped = groupArticleSections(article);
   const allSents = grouped
     .flatMap((g) => g.paragraphs.flatMap((p) => splitSentences(p)))
@@ -2072,12 +2307,12 @@ export function buildPodcastScript(
 
   const leadPremise =
     allSents[0] ||
-    `How do we turn ${article.title} into a practical, repeatable system?`;
+    `How do we turn ${cleanTopic} into a practical, repeatable system?`;
 
   pushSeg(
     format === "cohost" ? "Host A" : "Host",
     "Cold Open & Episode Hook",
-    `Welcome back to the show! Today we are diving into a topic that trips up a lot of teams: "${article.title}"${article.byline ? `, drawing on the research and guide by ${article.byline}` : ""}. ${leadPremise}`,
+    `Welcome back to the show! Today we are diving into a topic that trips up a lot of teams: ${cleanTopic}${article.byline ? `, drawing on the research and guide by ${article.byline}` : ""}. ${leadPremise}`,
     "[Cold open — theme music fades under after 5s]",
   );
 
@@ -2093,16 +2328,17 @@ export function buildPodcastScript(
   for (let i = 0; i < Math.min(grouped.length, 14); i++) {
     const sec = grouped[i];
     const sents = sec.paragraphs.flatMap((p) => splitSentences(p));
+    const secClean = cleanTopicTitle(sec.heading);
     const topicName =
-      sec.heading && sec.heading !== article.title
-        ? sec.heading
+      secClean && secClean.toLowerCase() !== cleanTopic.toLowerCase()
+        ? secClean
         : `Part ${i + 1} · Core Breakdown`;
 
     if (format === "cohost") {
       const questionPrompt =
         i === 0
-          ? `Let's start with "${topicName}". What is the biggest shift we need to understand here?`
-          : `That brings us to "${topicName}". How does this piece fit into the bigger workflow?`;
+          ? `Let's start with ${topicName}. What is the biggest shift we need to understand here?`
+          : `That brings us to ${topicName}. How does this piece fit into the bigger workflow?`;
       pushSeg(
         "Host A",
         topicName,
@@ -2113,7 +2349,11 @@ export function buildPodcastScript(
       const explanationParts = [
         ...sents.slice(1, 3),
         ...sec.bullets.slice(0, 3).map((b, bIdx) =>
-          bIdx === 0 ? `First, ${b}` : bIdx === 1 ? `Second, ${b}` : `And third, ${b}`,
+          bIdx === 0
+            ? `First, ${b}`
+            : bIdx === 1
+              ? `Second, ${b}`
+              : `And third, ${b}`,
         ),
       ].filter(Boolean);
 
@@ -2122,7 +2362,9 @@ export function buildPodcastScript(
           "Host B",
           `${topicName} · Deep Dive`,
           explanationParts.join(" "),
-          sec.quotes.length ? "[Emphasize source evidence]" : "[Conversational breakdown]",
+          sec.quotes.length
+            ? "[Emphasize source evidence]"
+            : "[Conversational breakdown]",
         );
       }
     } else {
@@ -2131,32 +2373,27 @@ export function buildPodcastScript(
         ...sents.slice(0, 3),
         ...sec.bullets.slice(0, 3),
       ].filter(Boolean);
-      pushSeg(
-        "Host",
-        topicName,
-        soloParts.join(" "),
-        "[Chapter marker]",
-      );
+      pushSeg("Host", topicName, soloParts.join(" "), "[Chapter marker]");
     }
   }
 
   pushSeg(
     format === "cohost" ? "Host B" : "Host",
     "Listener Action Item",
-    `If you are listening to this and wondering where to start today, pick just one stage of "${article.title}"—audit your current workflow, remove the bottleneck, and connect the result back to your performance data.`,
+    `If you are listening to this and wondering where to start today, pick just one stage of ${cleanTopic}—audit your current workflow, remove the bottleneck, and connect the result back to your performance data.`,
     "[Actionable takeaway beat]",
   );
 
   pushSeg(
     format === "cohost" ? "Host A" : "Host",
     "Outro & Show Notes CTA",
-    `That wraps up today's episode on "${article.title}". ${article.source ? `We have linked the full written guide in the show notes at ${article.source} so you can grab the complete checklist.` : "Check the show notes for the complete written guide and checklist."} Thanks for listening, and we will catch you in the next episode!`,
+    `That wraps up today's episode on ${cleanTopic}. ${article.source ? `We have linked the full written guide in the show notes at ${article.source} so you can grab the complete checklist.` : "Check the show notes for the complete written guide and checklist."} Thanks for listening, and we will catch you in the next episode!`,
     "[Outro music swells]",
   );
 
   const showNotes = grouped
     .slice(0, 6)
-    .map((g, idx) => `• Part ${idx + 1}: ${g.heading}`);
+    .map((g, idx) => `• Part ${idx + 1}: ${cleanTopicTitle(g.heading)}`);
   const totalWords = segments.reduce((n, s) => n + countWords(s.dialogue), 0);
   const totalSeconds = segments.reduce((n, s) => n + s.seconds, 0);
 
@@ -2200,8 +2437,10 @@ export function podcastScriptDocx(
     docxParagraph("Broadcast Script", "Heading2"),
     ...draft.segments.map(
       (s, i) =>
-        docxParagraph(`${i + 1}. ${s.topic} (${s.seconds}s) ${s.cue}`, "Heading2") +
-        docxParagraph(s.dialogue, "Normal", `${s.speaker}: `),
+        docxParagraph(
+          `${i + 1}. ${s.topic} (${s.seconds}s) ${s.cue}`,
+          "Heading2",
+        ) + docxParagraph(s.dialogue, "Normal", `${s.speaker}: `),
     ),
   ].join("");
   return buildMinimalDocx(

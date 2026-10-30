@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fromText } from "../../features/article-conversion/model";
+import { extractArticle } from "../../features/article-conversion/extract";
 import {
   articleToEpub,
   articleToMarkdown,
@@ -11,11 +12,14 @@ import {
   buildSocialPosts,
   buildVideoScript,
   carouselPdf,
+  cleanTopicTitle,
+  ensureStructuredSocialText,
   newsletterDocx,
   newsletterHtml,
   newsletterTxt,
   podcastScriptDocx,
   podcastScriptTxt,
+  recommendCarouselTemplate,
   socialPostsCsv,
   socialPostsTxt,
   videoScriptDocx,
@@ -47,6 +51,28 @@ function sampleArticle() {
   return a;
 }
 
+test("cleanTopicTitle strips SEO pipe and dash suffixes for natural spoken and social prose", () => {
+  assert.equal(
+    cleanTopicTitle("ChatGPT readability editing | Prompts and examples"),
+    "ChatGPT readability editing",
+  );
+  assert.equal(
+    cleanTopicTitle("AI Schema Markup — Do It With AI Tools"),
+    "AI Schema Markup",
+  );
+});
+
+test("ensureStructuredSocialText expands squashed single-line paragraphs into structured multi-line posts", () => {
+  const squashed =
+    "Chasing a generic readability score often destroys technical precision. You draft a guide and watch it strip out key terms. • Define your reader and task first. • Request a diagnosis before rewriting. • Compare original and revised versions line-by-line. For a deeper dive, read our full article: https://doitwithai.tools/ai-seo/ai-readability-tools #ChatGPT #Readability #SEO";
+  const structured = ensureStructuredSocialText(squashed, "LinkedIn");
+  assert(structured.includes("\n• Define your reader"));
+  assert(structured.includes("\n• Request a diagnosis"));
+  assert(structured.includes("\n• Compare original"));
+  assert(structured.includes("\n\n🌐 For a deeper dive"));
+  assert(structured.includes("\n\n#ChatGPT #Readability #SEO"));
+});
+
 test("Blog to Video Script generates sentence-by-sentence visual beats, timing, TXT, and valid DOCX ZIP", () => {
   const a = sampleArticle();
   const yt = buildVideoScript(a, "youtube", 140, 0);
@@ -68,7 +94,7 @@ test("Blog to Video Script generates sentence-by-sentence visual beats, timing, 
   assert.equal(docx[1], 0x4b);
 });
 
-test("Blog to Social Posts generates 5 platforms with 3 distinct post ideas each and RFC-4180 CSV/TXT exports", () => {
+test("Blog to Social Posts generates 5 platforms with 3 structured emoji-enriched post ideas each and RFC-4180 CSV/TXT exports", () => {
   const a = sampleArticle();
   const posts = buildSocialPosts(a, "takeaways", true);
   assert.equal(posts.length, 5);
@@ -77,6 +103,8 @@ test("Blog to Social Posts generates 5 platforms with 3 distinct post ideas each
     ["LinkedIn", "X / Twitter Thread", "Facebook", "Instagram", "Threads"],
   );
   assert(posts.every((p) => p.ideas && p.ideas.length === 3));
+  assert(posts[0].content.includes("\n• "));
+  assert(posts[0].content.includes("🌐"));
   const csv = socialPostsCsv(a, posts);
   assert(csv.startsWith("Platform,Variation,Characters,Post Copy,Source URL"));
   assert(csv.includes("LinkedIn"));
@@ -124,19 +152,41 @@ test("Blog to Newsletter generates 5 subject lines, Why It Matters, checklist, H
   assert.equal(docx[1], 0x4b);
 });
 
-test("Blog to LinkedIn Carousel builds cover, comparison, and CTA slides and exports both vector and raster multi-page PDFs", () => {
-  const a = sampleArticle();
-  const slides = buildLinkedinCarousel(a, 8);
+test("Blog to LinkedIn Carousel recommends template, extracts brand metadata, and builds Cover, Middle, and CTA slides", () => {
+  const html = `<html><head><meta property="og:site_name" content="Do It With AI Tools"><meta name="theme-color" content="#1D4ED8"></head><body><header><img src="/logoForHeader.png" alt="Brand Logo"></header><article><h1>Before vs After Readability Editing</h1><p>Long technical articles require careful editing so you do not strip out key domain terminology when simplifying sentences for readers.</p><h2>Step 1: Define the reader task</h2><p>Set a clear brief before prompting AI.</p></article></body></html>`;
+  const extracted = extractArticle(
+    html,
+    "https://doitwithai.tools/ai-seo/ai-readability-tools",
+  );
+  assert.equal(extracted.brand?.siteName, "Do It With AI Tools");
+  assert.equal(extracted.brand?.domain, "doitwithai.tools");
+  assert.equal(extracted.brand?.themeColor, "#1D4ED8");
+  assert.equal(
+    extracted.brand?.logoUrl,
+    "https://doitwithai.tools/logoForHeader.png",
+  );
+  assert.equal(recommendCarouselTemplate(extracted), "before-after");
+
+  const slides = buildLinkedinCarousel(extracted, 8);
   assert(slides.length >= 5);
   assert.equal(slides[0].kind, "cover");
+  assert(slides[0].bullets && slides[0].bullets.length >= 3);
   assert.equal(slides[slides.length - 1].kind, "cta");
+  assert(slides[slides.length - 1].bullets && slides[slides.length - 1].bullets!.length >= 3);
+
   const pdf = carouselPdf(slides, "coral", "portrait");
   const text = new TextDecoder().decode(pdf);
   assert(text.startsWith("%PDF-1.4"));
   assert(text.includes(`/Count ${slides.length}`));
 
   const rasterPdf = buildRasterCarouselPdf(
-    [{ bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]), width: 1080, height: 1350 }],
+    [
+      {
+        bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xd9]),
+        width: 1080,
+        height: 1350,
+      },
+    ],
     540,
     675,
   );

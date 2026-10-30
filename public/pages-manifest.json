@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-10-29T19:05:36.429Z",
+  "generated": "2026-10-30T07:49:40.785Z",
   "static_pages": [
     {
       "url": "/",
@@ -399,6 +399,30 @@
       "type": "static"
     },
     {
+      "url": "/tools/anchor-text-analyzer",
+      "title": "Anchor Text Analyzer & Ratio Calculator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/disavow-file-generator",
+      "title": "Google Disavow File Generator & Validator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/link-placement-quality-checker",
+      "title": "Guest Post & Link Placement Quality Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/journalist-pitch-builder",
+      "title": "HARO & Journalist Pitch Response Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -417,5 +441,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 69
+  "total_pages": 73
 }

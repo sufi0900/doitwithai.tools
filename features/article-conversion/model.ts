@@ -9,6 +9,12 @@ export type Block = {
   alt?: string;
   included?: boolean;
 };
+export type ArticleBrandMeta = {
+  siteName?: string;
+  domain?: string;
+  logoUrl?: string;
+  themeColor?: string;
+};
 export type Article = {
   title: string;
   byline: string;
@@ -18,6 +24,7 @@ export type Article = {
   links: { label: string; url: string }[];
   warnings: string[];
   method: string;
+  brand?: ArticleBrandMeta;
 };
 export type Settings = {
   size: "a4" | "letter";
@@ -118,7 +125,7 @@ export function fromText(text: string, source = ""): Article {
     warnings: [
       "Plain text retains paragraphs and # headings. Original images, links, tables, and metadata cannot be recovered.",
     ],
-    method: "Pasted text",
+    method: "Plain text",
   };
 }
-export const exampleHtml = `<html><head><title>A calmer reading workflow</title><meta name="author" content="Example editorial team"><meta property="article:published_time" content="2026-10-01"></head><body><nav>Example navigation</nav><article><h1>A calmer reading workflow</h1><p>This fictional example shows how an article becomes a clean reading copy. Review headings, paragraphs, links, and tables before exporting. Compare the preview with the original whenever you import your own content.</p><h2>Save what matters</h2><p>Start with content you have permission to save. Keep the source context and remove unrelated sections. A readable copy needs enough explanation to remain understandable after the surrounding website has been removed.</p><ul><li>Check the title and source details.</li><li>Remove unrelated recommendations.</li><li>Choose a comfortable paper size.</li></ul><h2>Choose a layout</h2><table><tr><th>Purpose</th><th>Review step</th></tr><tr><td>Offline reading</td><td>Check paragraphs and headings</td></tr><tr><td>Printing</td><td>Choose A4 or Letter</td></tr></table><p>Read about <a href="https://developer.mozilla.org/en-US/docs/Web/HTML">HTML structure</a> when preparing your own reading copy. This is a fictional teaching example, not a research finding.</p><blockquote>Keep enough context for the reading copy to remain useful.</blockquote></article><footer>Example footer</footer></body></html>`;
+export const exampleHtml = `<nav>Example navigation</nav><article><h1>A calmer reading workflow</h1><p class="byline">By <meta name="author" content="Example editorial team"><time datetime="2026-10-01">October 1, 2026</time></p><p>Long technical articles are easier to review when headings, lists, tables, and references stay together in one clean document. Read the <a href="https://developer.mozilla.org/en-US/docs/Web/HTML">HTML guide</a> before changing templates.</p><h2>What stays in the export</h2><ul><li>Section headings and paragraph order</li><li>Numbered references for public links</li></ul><blockquote>Keep the reader focused on the argument, not the page chrome.</blockquote><table><tr><th>Element</th><th>Handling</th></tr><tr><td>Tables</td><td>Kept as structured rows</td></tr></table></article>`;

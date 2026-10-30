@@ -25,11 +25,13 @@ import {
   carouselPdf,
   CAROUSEL_THEME_PRESETS,
   countWords,
+  ensureStructuredSocialText,
   newsletterDocx,
   newsletterHtml,
   newsletterTxt,
   podcastScriptDocx,
   podcastScriptTxt,
+  recommendCarouselTemplate,
   socialPostsCsv,
   socialPostsTxt,
   videoScriptDocx,
@@ -66,16 +68,17 @@ function drawRoundedRect(
   h: number,
   r: number,
 ) {
+  const radius = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
 }
 
@@ -85,7 +88,7 @@ function wrapCanvasText(
   maxWidth: number,
   maxLines = 4,
 ): string[] {
-  const words = text.replace(/\s+/g, " ").trim().split(" ");
+  const words = (text || "").replace(/\s+/g, " ").trim().split(" ");
   const lines: string[] = [];
   let line = "";
   for (const w of words) {
@@ -104,8 +107,212 @@ function wrapCanvasText(
 }
 
 /**
- * Studio-grade HTML5 Canvas renderer modeled directly on the user's LinkedIn &
- * Instagram carousel screenshots (image_ad573d.png & image_ad547a.png).
+ * Miniature SVG layout preview inside each Template Selector Card so the user
+ * immediately sees the unique structural architecture of each template.
+ */
+function TemplateLayoutThumbnail({
+  template,
+  bgColor,
+  accentColor,
+  cardBgColor,
+  textColor,
+}: {
+  template: CarouselTemplateId;
+  bgColor: string;
+  accentColor: string;
+  cardBgColor: string;
+  textColor: string;
+}) {
+  return (
+    <div
+      className="relative mb-2.5 h-24 w-full overflow-hidden rounded-lg border border-slate-300/60 p-2.5 shadow-inner dark:border-slate-700"
+      style={{ backgroundColor: bgColor, color: textColor }}
+      aria-hidden="true"
+    >
+      {/* Top mini brand bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-sm"
+            style={{ backgroundColor: accentColor }}
+          />
+          <span
+            className="inline-block h-1.5 w-12 rounded opacity-80"
+            style={{ backgroundColor: textColor }}
+          />
+        </div>
+        <span
+          className="inline-block h-1.5 w-6 rounded"
+          style={{ backgroundColor: accentColor }}
+        />
+      </div>
+      {/* Mini headline bar */}
+      <div className="mt-2 space-y-1">
+        <div
+          className="h-2 w-3/4 rounded"
+          style={{ backgroundColor: textColor }}
+        />
+        <div
+          className="h-2 w-1/2 rounded"
+          style={{ backgroundColor: accentColor }}
+        />
+      </div>
+
+      {/* Distinct structural diagram preview per template */}
+      {template === "saas-comparison" && (
+        <div className="relative mt-2.5 h-10 w-full">
+          <div className="absolute left-0 top-0 h-7 w-[48%] rounded border border-white/40 bg-white p-1 shadow">
+            <div className="flex gap-0.5">
+              <span className="h-1 w-1 rounded-full bg-red-400" />
+              <span className="h-1 w-1 rounded-full bg-amber-400" />
+              <span className="h-1 w-1 rounded-full bg-emerald-400" />
+            </div>
+            <div className="mt-1 h-1.5 w-4/5 rounded bg-slate-700" />
+          </div>
+          <div
+            className="absolute bottom-0 right-0 h-7 w-[48%] rounded border p-1 shadow"
+            style={{
+              backgroundColor: cardBgColor,
+              borderColor: accentColor,
+            }}
+          >
+            <div
+              className="h-1.5 w-3/4 rounded"
+              style={{ backgroundColor: accentColor }}
+            />
+            <div className="mt-1 h-1 w-full rounded bg-white/70" />
+          </div>
+        </div>
+      )}
+
+      {template === "before-after" && (
+        <div className="mt-2 space-y-1">
+          <div
+            className="flex items-center justify-between rounded border border-white/20 px-1.5 py-1"
+            style={{ backgroundColor: cardBgColor }}
+          >
+            <span className="text-[8px] font-black text-amber-400">BEFORE</span>
+            <span className="h-1.5 w-2/3 rounded bg-white/60" />
+          </div>
+          <div
+            className="flex items-center justify-between rounded border px-1.5 py-1"
+            style={{
+              backgroundColor: cardBgColor,
+              borderColor: accentColor,
+            }}
+          >
+            <span
+              className="text-[8px] font-black"
+              style={{ color: accentColor }}
+            >
+              AFTER ✓
+            </span>
+            <span className="h-1.5 w-2/3 rounded bg-white/90" />
+          </div>
+        </div>
+      )}
+
+      {template === "founder-playbook" && (
+        <div className="mt-2 flex items-center gap-1.5">
+          <div className="flex flex-col items-center gap-1">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: accentColor }}
+            />
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: accentColor }}
+            />
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: accentColor }}
+            />
+          </div>
+          <div className="flex-1 space-y-1">
+            <div className="h-2.5 w-full rounded border border-slate-300 bg-white" />
+            <div className="h-2.5 w-full rounded border border-slate-300 bg-white" />
+            <div className="h-2.5 w-full rounded border border-slate-300 bg-white" />
+          </div>
+        </div>
+      )}
+
+      {template === "executive-editorial" && (
+        <div className="relative mt-2 flex items-center justify-between gap-2">
+          <div
+            className="flex-1 rounded border-l-4 p-1.5"
+            style={{
+              backgroundColor: cardBgColor,
+              borderLeftColor: accentColor,
+            }}
+          >
+            <div className="h-1.5 w-4/5 rounded bg-white/80" />
+            <div className="mt-1 h-1.5 w-3/5 rounded bg-white/50" />
+          </div>
+          <span
+            className="text-2xl font-black opacity-25"
+            style={{ color: accentColor }}
+          >
+            01
+          </span>
+        </div>
+      )}
+
+      {template === "cyber-dark" && (
+        <div className="mt-2 grid grid-cols-2 gap-1">
+          <div
+            className="col-span-2 h-3.5 rounded border px-1.5 py-0.5"
+            style={{
+              backgroundColor: cardBgColor,
+              borderColor: accentColor,
+            }}
+          />
+          <div
+            className="h-4 rounded border border-white/15"
+            style={{ backgroundColor: cardBgColor }}
+          />
+          <div
+            className="h-4 rounded border border-white/15"
+            style={{ backgroundColor: cardBgColor }}
+          />
+        </div>
+      )}
+
+      {template === "blueprint-grid" && (
+        <div className="mt-2.5 flex items-center justify-between gap-1">
+          <div
+            className="h-6 flex-1 rounded border border-white/30 p-1"
+            style={{ backgroundColor: cardBgColor }}
+          />
+          <span className="text-[10px] font-bold" style={{ color: accentColor }}>
+            →
+          </span>
+          <div
+            className="h-6 flex-1 rounded border-2 p-1"
+            style={{
+              backgroundColor: cardBgColor,
+              borderColor: accentColor,
+            }}
+          />
+          <span className="text-[10px] font-bold" style={{ color: accentColor }}>
+            →
+          </span>
+          <div
+            className="h-6 flex-1 rounded border border-white/30 p-1"
+            style={{ backgroundColor: cardBgColor }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Studio-grade HTML5 Canvas renderer with:
+ * - 6 genuinely distinct architectural templates (unique backgrounds + unique diagrams)
+ * - 3 distinct slide archetypes:
+ *   1. Slide 1 (`cover`): Hero Introduction Slide with "What You'll Learn" preview box & Swipe button
+ *   2. Middle Slides (`point` / `comparison`): Step Progress + Template-Specific Visual Diagram
+ *   3. Final Slide (`cta`): Quick Implementation Recap Checklist + High-Contrast Website CTA Banner
  */
 function renderSlideCanvas(
   slide: CarouselSlide,
@@ -120,7 +327,18 @@ function renderSlideCanvas(
   canvas.height = height;
   const ctx = canvas.getContext("2d")!;
 
-  // 1. Rich Gradient Background + Decorative Geometric Arcs
+  const isLightTheme =
+    config.bgColor.toLowerCase() === "#f8fafc" ||
+    config.bgColor.toLowerCase() === "#ffffff" ||
+    config.textColor.toLowerCase() === "#0f172a";
+  const cardTextPrimary =
+    config.cardBgColor.toLowerCase() === "#ffffff" ? "#0F172A" : "#FFFFFF";
+  const cardTextMuted =
+    config.cardBgColor.toLowerCase() === "#ffffff" ? "#475569" : "#CBD5E1";
+
+  // ==========================================================================
+  // 1. TEMPLATE-SPECIFIC BACKGROUND GEOMETRY & TEXTURE
+  // ==========================================================================
   const grad = ctx.createLinearGradient(0, 0, width, height);
   grad.addColorStop(0, config.bgColor);
   grad.addColorStop(1, config.bgSecondaryColor || config.bgColor);
@@ -128,24 +346,96 @@ function renderSlideCanvas(
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
-  ctx.strokeStyle = config.accentColor;
-  ctx.globalAlpha = 0.12;
-  ctx.lineWidth = 3;
-  for (let r = 220; r <= 560; r += 85) {
-    ctx.beginPath();
-    ctx.arc(width - 120, 180, r, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-  if (config.template === "blueprint-grid") {
-    ctx.lineWidth = 1;
+  if (config.template === "saas-comparison") {
+    // Concentric orbital rings in top-right + soft bottom-left wave
+    ctx.strokeStyle = config.accentColor;
+    ctx.globalAlpha = 0.14;
+    ctx.lineWidth = 3;
+    for (let r = 180; r <= 540; r += 90) {
+      ctx.beginPath();
+      ctx.arc(width - 90, 160, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  } else if (config.template === "before-after") {
+    // Dot-matrix grid + glowing radial spotlight
+    ctx.fillStyle = config.accentColor;
+    ctx.globalAlpha = 0.1;
+    for (let dx = 60; dx < width; dx += 54) {
+      for (let dy = 60; dy < height; dy += 54) {
+        ctx.beginPath();
+        ctx.arc(dx, dy, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  } else if (config.template === "founder-playbook") {
+    // Crisp architectural diagonal ribbon in top-right + soft accent bar on left edge
+    ctx.fillStyle = config.accentColor;
     ctx.globalAlpha = 0.08;
-    for (let gx = 0; gx < width; gx += 72) {
+    ctx.beginPath();
+    ctx.moveTo(width - 420, 0);
+    ctx.lineTo(width, 0);
+    ctx.lineTo(width, 420);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalAlpha = 0.85;
+    ctx.fillRect(0, 0, 14, height);
+  } else if (config.template === "executive-editorial") {
+    // Magazine inset border frame + Giant Watermarked Slide Number
+    ctx.strokeStyle = config.accentColor;
+    ctx.globalAlpha = 0.28;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(36, 36, width - 72, height - 72);
+
+    ctx.fillStyle = config.accentColor;
+    ctx.globalAlpha = 0.1;
+    ctx.font = "900 250px Georgia, serif";
+    const numStr = String(slide.number).padStart(2, "0");
+    const nw = ctx.measureText(numStr).width;
+    ctx.fillText(numStr, width - nw - 68, 290);
+  } else if (config.template === "cyber-dark") {
+    // HUD corner brackets + subtle carbon mesh
+    ctx.strokeStyle = config.accentColor;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = 4;
+    const bLen = 48;
+    const m = 42;
+    // Top-left bracket
+    ctx.beginPath();
+    ctx.moveTo(m, m + bLen);
+    ctx.lineTo(m, m);
+    ctx.lineTo(m + bLen, m);
+    ctx.stroke();
+    // Top-right bracket
+    ctx.beginPath();
+    ctx.moveTo(width - m - bLen, m);
+    ctx.lineTo(width - m, m);
+    ctx.lineTo(width - m, m + bLen);
+    ctx.stroke();
+    // Bottom-left bracket
+    ctx.beginPath();
+    ctx.moveTo(m, height - m - bLen);
+    ctx.lineTo(m, height - m);
+    ctx.lineTo(m + bLen, height - m);
+    ctx.stroke();
+    // Bottom-right bracket
+    ctx.beginPath();
+    ctx.moveTo(width - m - bLen, height - m);
+    ctx.lineTo(width - m, height - m);
+    ctx.lineTo(width - m, height - m - bLen);
+    ctx.stroke();
+  } else if (config.template === "blueprint-grid") {
+    // Technical coordinate grid + ruler ticks
+    ctx.strokeStyle = config.accentColor;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.1;
+    for (let gx = 0; gx < width; gx += 60) {
       ctx.beginPath();
       ctx.moveTo(gx, 0);
       ctx.lineTo(gx, height);
       ctx.stroke();
     }
-    for (let gy = 0; gy < height; gy += 72) {
+    for (let gy = 0; gy < height; gy += 60) {
       ctx.beginPath();
       ctx.moveTo(0, gy);
       ctx.lineTo(width, gy);
@@ -154,42 +444,348 @@ function renderSlideCanvas(
   }
   ctx.restore();
 
-  // 2. Top Brand Header (Custom Uploaded Logo OR Geometric AI Badge + Brand Name)
+  // ==========================================================================
+  // 2. TOP BRAND HEADER + PROGRESS INDICATOR
+  // ==========================================================================
   const padX = 76;
-  let headerY = 74;
+  const headerY = 72;
   if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
-    const targetH = 56;
-    const targetW = Math.min(180, (logoImg.naturalWidth / logoImg.naturalHeight) * targetH);
+    const targetH = 54;
+    const targetW = Math.min(
+      180,
+      (logoImg.naturalWidth / logoImg.naturalHeight) * targetH,
+    );
     ctx.drawImage(logoImg, padX, headerY, targetW, targetH);
     ctx.fillStyle = config.textColor;
-    ctx.font = "bold 28px system-ui, -apple-system, sans-serif";
-    ctx.fillText(config.brandName, padX + targetW + 18, headerY + 38);
+    ctx.font = "800 27px system-ui, -apple-system, sans-serif";
+    ctx.fillText(config.brandName, padX + targetW + 16, headerY + 36);
   } else {
-    // Built-in geometric circuit/AI brand badge (like Do It With AI Tools logo)
     ctx.save();
-    drawRoundedRect(ctx, padX, headerY, 54, 54, 14);
+    drawRoundedRect(ctx, padX, headerY, 52, 52, 14);
     ctx.fillStyle = config.accentColor;
     ctx.fill();
-    ctx.fillStyle = config.bgColor;
-    ctx.font = "900 24px system-ui, sans-serif";
-    ctx.fillText("AI", padX + 13, headerY + 36);
+    ctx.fillStyle = isLightTheme ? "#FFFFFF" : config.bgColor;
+    ctx.font = "900 23px system-ui, sans-serif";
+    const initials =
+      (config.brandName || "AI")
+        .split(/\s+/)
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase() || "AI";
+    ctx.fillText(initials, padX + 13, headerY + 35);
     ctx.restore();
 
     ctx.fillStyle = config.textColor;
-    ctx.font = "800 28px system-ui, -apple-system, sans-serif";
-    ctx.fillText(config.brandName || "Do It With AI Tools", padX + 70, headerY + 36);
+    ctx.font = "800 27px system-ui, -apple-system, sans-serif";
+    ctx.fillText(
+      config.brandName || "Do It With AI Tools",
+      padX + 68,
+      headerY + 35,
+    );
   }
 
-  // Category Kicker Pill
-  const kickerText = (slide.kicker || config.categoryKicker || `SLIDE 0${slide.number}`).toUpperCase();
+  // Top-right slide role badge or progress bar
+  const roleLabel =
+    slide.kind === "cover"
+      ? "COVER PLAYBOOK"
+      : slide.kind === "cta"
+        ? "FINAL CHECKLIST"
+        : `STEP ${String(slide.number - 1).padStart(2, "0")} OF ${String(Math.max(1, totalSlides - 2)).padStart(2, "0")}`;
+  ctx.save();
+  ctx.font = "800 18px system-ui, sans-serif";
+  const rlW = ctx.measureText(roleLabel).width + 36;
+  drawRoundedRect(ctx, width - padX - rlW, headerY + 8, rlW, 38, 19);
+  ctx.fillStyle = isLightTheme ? "rgba(37,99,235,0.12)" : "rgba(255,255,255,0.12)";
+  ctx.fill();
+  ctx.fillStyle = config.accentColor;
+  ctx.fillText(roleLabel, width - padX - rlW + 18, headerY + 33);
+  ctx.restore();
+
+  // ==========================================================================
+  // 3. ARCHETYPE A: FIRST SLIDE (`cover` — HERO INTRODUCTION SLIDE)
+  // ==========================================================================
+  if (slide.kind === "cover") {
+    // Kicker pill
+    const kicker = (slide.kicker || config.categoryKicker || "PRACTICAL PLAYBOOK").toUpperCase();
+    ctx.save();
+    ctx.font = "800 21px system-ui, sans-serif";
+    const kw = ctx.measureText(kicker).width + 36;
+    drawRoundedRect(ctx, padX, headerY + 86, kw, 42, 12);
+    ctx.fillStyle = config.accentColor;
+    ctx.fill();
+    ctx.fillStyle = isLightTheme ? "#FFFFFF" : "#0F172A";
+    ctx.fillText(kicker, padX + 18, headerY + 114);
+    ctx.restore();
+
+    // Giant Hero Headline (64px)
+    ctx.font = "900 64px system-ui, -apple-system, sans-serif";
+    const headLines = wrapCanvasText(ctx, slide.headline, width - padX * 2, 4);
+    let y = headerY + 206;
+    const hlLower = (slide.highlightPhrase || "").toLowerCase().trim();
+
+    headLines.forEach((line, idx) => {
+      const isHighlighted =
+        (hlLower && line.toLowerCase().includes(hlLower)) ||
+        (!hlLower && idx === headLines.length - 1 && headLines.length > 1);
+      ctx.fillStyle = isHighlighted ? config.accentColor : config.textColor;
+      ctx.fillText(line, padX, y);
+      y += 76;
+    });
+
+    // Lead Hook Subtitle
+    y += 8;
+    ctx.font = "500 32px system-ui, sans-serif";
+    ctx.fillStyle = config.textColor;
+    ctx.globalAlpha = 0.9;
+    const bodyLines = wrapCanvasText(ctx, slide.body, width - padX * 2, 3);
+    for (const bl of bodyLines) {
+      ctx.fillText(bl, padX, y);
+      y += 45;
+    }
+    ctx.globalAlpha = 1;
+
+    // Cover Preview Card: "WHAT YOU WILL LEARN IN THIS CAROUSEL"
+    const boxTop = Math.max(y + 32, config.aspect === "portrait" ? 660 : 530);
+    const boxH = config.aspect === "portrait" ? 430 : 320;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.28)";
+    ctx.shadowBlur = 28;
+    ctx.shadowOffsetY = 12;
+    drawRoundedRect(ctx, padX, boxTop, width - padX * 2, boxH, 28);
+    ctx.fillStyle = config.cardBgColor;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = config.accentColor;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = config.accentColor;
+    ctx.font = "800 22px system-ui, sans-serif";
+    ctx.fillText(
+      "INSIDE THIS STEP-BY-STEP BREAKDOWN:",
+      padX + 38,
+      boxTop + 52,
+    );
+
+    const previewItems =
+      slide.bullets && slide.bullets.length >= 2
+        ? slide.bullets.slice(0, 3)
+        : [
+            `01. ${slide.cardLeftBody.slice(0, 68)}`,
+            `02. ${slide.cardRightBody.slice(0, 68)}`,
+            `03. ${slide.stepThirdBody || "Complete implementation checklist"}`,
+          ];
+
+    const rowGap = config.aspect === "portrait" ? 110 : 78;
+    previewItems.forEach((item, idx) => {
+      const rowY = boxTop + 104 + idx * rowGap;
+      ctx.save();
+      drawRoundedRect(ctx, padX + 38, rowY - 32, 46, 46, 12);
+      ctx.fillStyle = config.accentColor;
+      ctx.fill();
+      ctx.fillStyle = isLightTheme ? "#FFFFFF" : "#0F172A";
+      ctx.font = "900 22px system-ui, sans-serif";
+      ctx.fillText(`0${idx + 1}`, padX + 48, rowY - 1);
+      ctx.restore();
+
+      ctx.fillStyle = cardTextPrimary;
+      ctx.font = "700 27px system-ui, sans-serif";
+      const cleanItem = item.replace(/^0?\d+\.\s*/, "");
+      const lines = wrapCanvasText(ctx, cleanItem, width - padX * 2 - 120, 2);
+      lines.forEach((l, lIdx) => {
+        ctx.fillText(l, padX + 102, rowY - 4 + lIdx * 34);
+      });
+    });
+
+    // Cover Footer + "SWIPE TO EXPLORE ->" Pill Button
+    const footerY = height - 76;
+    ctx.fillStyle = config.accentColor;
+    ctx.font = "800 25px system-ui, sans-serif";
+    ctx.fillText(config.websiteUrl || "doitwithai.tools", padX, footerY);
+
+    const swipeText = "SWIPE TO EXPLORE →";
+    ctx.font = "900 23px system-ui, sans-serif";
+    const swW = ctx.measureText(swipeText).width + 48;
+    ctx.save();
+    drawRoundedRect(ctx, width - padX - swW, footerY - 38, swW, 54, 27);
+    ctx.fillStyle = config.accentColor;
+    ctx.fill();
+    ctx.fillStyle = isLightTheme ? "#FFFFFF" : "#0F172A";
+    ctx.fillText(swipeText, width - padX - swW + 24, footerY - 3);
+    ctx.restore();
+
+    return canvas;
+  }
+
+  // ==========================================================================
+  // 4. ARCHETYPE B: LAST SLIDE (`cta` — DEDICATED SUMMARY & CTA SLIDE)
+  // ==========================================================================
+  if (slide.kind === "cta") {
+    ctx.font = "800 21px system-ui, sans-serif";
+    ctx.fillStyle = config.accentColor;
+    ctx.fillText(
+      (slide.kicker || "FINAL SUMMARY & NEXT STEP").toUpperCase(),
+      padX,
+      headerY + 96,
+    );
+
+    ctx.font = "900 56px system-ui, -apple-system, sans-serif";
+    const headLines = wrapCanvasText(ctx, slide.headline, width - padX * 2, 3);
+    let y = headerY + 168;
+    const hlLower = (slide.highlightPhrase || "").toLowerCase().trim();
+    headLines.forEach((line, idx) => {
+      const isHighlighted =
+        (hlLower && line.toLowerCase().includes(hlLower)) ||
+        idx === headLines.length - 1;
+      ctx.fillStyle = isHighlighted ? config.accentColor : config.textColor;
+      ctx.fillText(line, padX, y);
+      y += 66;
+    });
+
+    y += 6;
+    ctx.font = "500 29px system-ui, sans-serif";
+    ctx.fillStyle = config.textColor;
+    ctx.globalAlpha = 0.9;
+    const bodyLines = wrapCanvasText(ctx, slide.body, width - padX * 2, 2);
+    for (const bl of bodyLines) {
+      ctx.fillText(bl, padX, y);
+      y += 42;
+    }
+    ctx.globalAlpha = 1;
+
+    // 1. Implementation Recap Checklist Box
+    const checklistTop = Math.max(y + 20, config.aspect === "portrait" ? 500 : 430);
+    const checklistH = config.aspect === "portrait" ? 390 : 270;
+    ctx.save();
+    drawRoundedRect(ctx, padX, checklistTop, width - padX * 2, checklistH, 24);
+    ctx.fillStyle = config.cardBgColor;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = config.accentColor;
+    ctx.font = "800 21px system-ui, sans-serif";
+    ctx.fillText(
+      "KEY IMPLEMENTATION CHECKLIST:",
+      padX + 34,
+      checklistTop + 46,
+    );
+
+    const recapItems =
+      slide.bullets && slide.bullets.length >= 2
+        ? slide.bullets.slice(0, 3)
+        : [
+            slide.cardLeftBody,
+            slide.stepThirdBody || "Review every section for accuracy and tone.",
+            "Connect your workflow to measurable audience outcomes.",
+          ];
+
+    const itemSpacing = config.aspect === "portrait" ? 102 : 68;
+    recapItems.forEach((item, idx) => {
+      const iy = checklistTop + 98 + idx * itemSpacing;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(padX + 52, iy - 10, 18, 0, Math.PI * 2);
+      ctx.fillStyle = config.accentColor;
+      ctx.fill();
+      ctx.fillStyle = isLightTheme ? "#FFFFFF" : "#0F172A";
+      ctx.font = "900 20px system-ui, sans-serif";
+      ctx.fillText("✓", padX + 44, iy - 3);
+      ctx.restore();
+
+      ctx.fillStyle = cardTextPrimary;
+      ctx.font = "600 25px system-ui, sans-serif";
+      const lines = wrapCanvasText(
+        ctx,
+        item,
+        width - padX * 2 - 108,
+        config.aspect === "portrait" ? 2 : 1,
+      );
+      lines.forEach((l, lIdx) => {
+        ctx.fillText(l, padX + 86, iy - 2 + lIdx * 32);
+      });
+    });
+
+    // 2. Giant Highlighted Call-To-Action Banner Box at Bottom
+    const ctaBoxTop = checklistTop + checklistH + 28;
+    const ctaBoxH = config.aspect === "portrait" ? 230 : 185;
+    ctx.save();
+    drawRoundedRect(ctx, padX, ctaBoxTop, width - padX * 2, ctaBoxH, 26);
+    ctx.fillStyle = config.accentColor;
+    ctx.fill();
+    ctx.restore();
+
+    const ctaFg = isLightTheme ? "#FFFFFF" : "#0F172A";
+    ctx.fillStyle = ctaFg;
+    ctx.font = "900 22px system-ui, sans-serif";
+    ctx.fillText(
+      "READ THE COMPLETE GUIDE & TOOLS AT:",
+      padX + 36,
+      ctaBoxTop + 48,
+    );
+
+    // Website pill inside CTA box
+    ctx.save();
+    drawRoundedRect(
+      ctx,
+      padX + 36,
+      ctaBoxTop + 68,
+      width - padX * 2 - 72,
+      74,
+      18,
+    );
+    ctx.fillStyle = "#0F172A";
+    ctx.fill();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "800 29px system-ui, sans-serif";
+    const urlDisplay = (
+      slide.cardRightBody ||
+      config.websiteUrl ||
+      "doitwithai.tools"
+    )
+      .replace(/^https?:\/\//i, "")
+      .slice(0, 44);
+    ctx.fillText(`🌐  ${urlDisplay}`, padX + 60, ctaBoxTop + 116);
+    ctx.restore();
+
+    if (config.aspect === "portrait") {
+      ctx.fillStyle = ctaFg;
+      ctx.font = "800 21px system-ui, sans-serif";
+      ctx.fillText(
+        "↻ Repost to help your network   ·   ♥ Save for later   ·   + Follow",
+        padX + 36,
+        ctaBoxTop + 190,
+      );
+    }
+
+    // Bottom counter
+    const counterStr = `${String(slide.number).padStart(2, "0")} / ${String(totalSlides).padStart(2, "0")}`;
+    ctx.fillStyle = config.textColor;
+    ctx.font = "800 24px system-ui, sans-serif";
+    const cw = ctx.measureText(counterStr).width;
+    ctx.fillText(counterStr, width - padX - cw, height - 44);
+
+    return canvas;
+  }
+
+  // ==========================================================================
+  // 5. ARCHETYPE C: MIDDLE SLIDES (`point` / `comparison` — 6 UNIQUE LAYOUTS)
+  // ==========================================================================
+  const kickerText = (
+    slide.kicker ||
+    config.categoryKicker ||
+    `STEP 0${slide.number - 1}`
+  ).toUpperCase();
   ctx.font = "800 21px system-ui, -apple-system, sans-serif";
   ctx.fillStyle = config.accentColor;
-  ctx.fillText(kickerText, padX, headerY + 98);
+  ctx.fillText(kickerText, padX, headerY + 96);
 
-  // 3. Giant Headline with Highlighted Phrase in Accent Color (like image_ad573d.png)
-  ctx.font = "900 58px system-ui, -apple-system, sans-serif";
-  const headLines = wrapCanvasText(ctx, slide.headline, width - padX * 2, 4);
-  let y = headerY + 174;
+  ctx.font = "900 54px system-ui, -apple-system, sans-serif";
+  const headLines = wrapCanvasText(ctx, slide.headline, width - padX * 2, 3);
+  let y = headerY + 166;
   const hlLower = (slide.highlightPhrase || "").toLowerCase().trim();
 
   headLines.forEach((line, idx) => {
@@ -198,28 +794,28 @@ function renderSlideCanvas(
       (!hlLower && idx === headLines.length - 1 && headLines.length > 1);
     ctx.fillStyle = isHighlightedLine ? config.accentColor : config.textColor;
     ctx.fillText(line, padX, y);
-    y += 70;
+    y += 64;
   });
 
-  // 4. Subtitle / Lead Copy
-  y += 10;
-  ctx.font = "500 31px system-ui, -apple-system, sans-serif";
+  y += 8;
+  ctx.font = "500 29px system-ui, -apple-system, sans-serif";
   ctx.fillStyle = config.textColor;
   ctx.globalAlpha = 0.9;
   const bodyLines = wrapCanvasText(ctx, slide.body, width - padX * 2, 3);
   for (const bl of bodyLines) {
     ctx.fillText(bl, padX, y);
-    y += 44;
+    y += 42;
   }
   ctx.globalAlpha = 1;
 
-  // 5. Center Visual Diagram / Connected UI Mockup Cards (modeled on image_ad573d.png & image_ad547a.png)
-  const cardAreaTop = Math.max(y + 28, config.aspect === "portrait" ? 640 : 530);
-  const cardAreaHeight = config.aspect === "portrait" ? 440 : 320;
+  const cardAreaTop = Math.max(y + 24, config.aspect === "portrait" ? 590 : 490);
+  const cardAreaHeight = config.aspect === "portrait" ? 510 : 380;
 
   if (config.template === "before-after") {
-    // Stacked BEFORE -> AFTER flow boxes with glowing border (like image_ad547a.png)
-    const boxH = Math.floor((cardAreaHeight - 36) / 2);
+    // ------------------------------------------------------------------------
+    // TEMPLATE 2: Stacked BEFORE -> Transformation Badge -> AFTER Cards
+    // ------------------------------------------------------------------------
+    const boxH = Math.floor((cardAreaHeight - 48) / 2);
     const drawFlowBox = (
       topY: number,
       badge: string,
@@ -229,47 +825,365 @@ function renderSlideCanvas(
       ctx.save();
       drawRoundedRect(ctx, padX, topY, width - padX * 2, boxH, 24);
       ctx.fillStyle = config.cardBgColor;
-      ctx.globalAlpha = isAfter ? 0.96 : 0.78;
+      ctx.globalAlpha = isAfter ? 0.98 : 0.82;
       ctx.fill();
       ctx.lineWidth = isAfter ? 4 : 2;
-      ctx.strokeStyle = isAfter ? config.accentColor : "rgba(255,255,255,0.25)";
+      ctx.strokeStyle = isAfter ? config.accentColor : "rgba(255,255,255,0.22)";
       ctx.stroke();
       ctx.restore();
 
       ctx.fillStyle = isAfter ? config.accentColor : "#F59E0B";
-      ctx.font = "800 22px system-ui, sans-serif";
-      ctx.fillText(badge.toUpperCase(), padX + 32, topY + 46);
+      ctx.font = "900 21px system-ui, sans-serif";
+      ctx.fillText(
+        isAfter ? `✓  ${badge.toUpperCase()}` : `✕  ${badge.toUpperCase()}`,
+        padX + 32,
+        topY + 44,
+      );
 
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "600 28px system-ui, sans-serif";
-      const lines = wrapCanvasText(ctx, content, width - padX * 2 - 64, 2);
+      ctx.fillStyle = cardTextPrimary;
+      ctx.font = "600 27px system-ui, sans-serif";
+      const lines = wrapCanvasText(ctx, content, width - padX * 2 - 64, 3);
       lines.forEach((l, lIdx) => {
-        ctx.fillText(l, padX + 32, topY + 92 + lIdx * 38);
+        ctx.fillText(l, padX + 32, topY + 88 + lIdx * 36);
       });
     };
 
     drawFlowBox(
       cardAreaTop,
-      slide.cardLeftTitle || "BEFORE / WITHOUT SYSTEM",
+      slide.cardLeftTitle || "OLD WAY / WITHOUT SYSTEM",
       slide.cardLeftBody,
       false,
     );
     drawFlowBox(
-      cardAreaTop + boxH + 32,
-      slide.cardRightTitle || "AFTER / CONNECTED SYSTEM",
+      cardAreaTop + boxH + 44,
+      slide.cardRightTitle || "NEW SYSTEM / ACTIONABLE FIX",
       slide.cardRightBody,
       true,
     );
+
+    // Center circular arrow connector badge
+    const midY = cardAreaTop + boxH + 22;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(width / 2, midY, 26, 0, Math.PI * 2);
+    ctx.fillStyle = config.accentColor;
+    ctx.fill();
+    ctx.fillStyle = "#0F172A";
+    ctx.font = "900 26px system-ui, sans-serif";
+    ctx.fillText("↓", width / 2 - 8, midY + 9);
+    ctx.restore();
+  } else if (config.template === "founder-playbook") {
+    // ------------------------------------------------------------------------
+    // TEMPLATE 3: 3-Node Vertical Connected Roadmap / Timeline Spine
+    // ------------------------------------------------------------------------
+    const steps = [
+      {
+        title: slide.cardLeftTitle || "01 · CORE PRINCIPLE",
+        body: slide.cardLeftBody,
+      },
+      {
+        title: slide.cardRightTitle || "02 · OPERATOR ACTION",
+        body: slide.cardRightBody,
+      },
+      {
+        title: slide.stepThirdTitle || "03 · QUALITY VERIFICATION",
+        body:
+          slide.stepThirdBody ||
+          slide.footer ||
+          "Verify accuracy and measure impact before scaling.",
+      },
+    ];
+    const stepH = Math.floor((cardAreaHeight - 36) / 3);
+    const spineX = padX + 32;
+
+    // Vertical connecting spine line
+    ctx.save();
+    ctx.strokeStyle = config.accentColor;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(spineX, cardAreaTop + 36);
+    ctx.lineTo(spineX, cardAreaTop + cardAreaHeight - 36);
+    ctx.stroke();
+    ctx.restore();
+
+    steps.forEach((st, sIdx) => {
+      const topY = cardAreaTop + sIdx * (stepH + 18);
+      const nodeY = topY + stepH / 2;
+
+      // Numbered circle node on spine
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(spineX, nodeY, 26, 0, Math.PI * 2);
+      ctx.fillStyle = config.accentColor;
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "900 20px system-ui, sans-serif";
+      ctx.fillText(`0${sIdx + 1}`, spineX - 12, nodeY + 7);
+      ctx.restore();
+
+      // Step card to the right of the spine
+      const cardX = padX + 82;
+      const cardW = width - padX * 2 - 82;
+      ctx.save();
+      ctx.shadowColor = "rgba(15, 23, 42, 0.08)";
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetY = 6;
+      drawRoundedRect(ctx, cardX, topY, cardW, stepH, 20);
+      ctx.fillStyle = config.cardBgColor;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = sIdx === 1 ? config.accentColor : "rgba(148,163,184,0.35)";
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = config.accentColor;
+      ctx.font = "800 18px system-ui, sans-serif";
+      ctx.fillText(st.title.toUpperCase(), cardX + 26, topY + 36);
+
+      ctx.fillStyle = cardTextPrimary;
+      ctx.font = "600 24px system-ui, sans-serif";
+      const lines = wrapCanvasText(ctx, st.body, cardW - 52, 2);
+      lines.forEach((l, lIdx) => {
+        ctx.fillText(l, cardX + 26, topY + 72 + lIdx * 30);
+      });
+    });
+  } else if (config.template === "executive-editorial") {
+    // ------------------------------------------------------------------------
+    // TEMPLATE 4: Magazine Pull-Quote Box + 2-Column Bottom Pillar Strip
+    // ------------------------------------------------------------------------
+    const quoteH = Math.floor(cardAreaHeight * 0.52);
+    ctx.save();
+    drawRoundedRect(ctx, padX, cardAreaTop, width - padX * 2, quoteH, 22);
+    ctx.fillStyle = config.cardBgColor;
+    ctx.fill();
+    // Thick left editorial accent bar
+    drawRoundedRect(ctx, padX, cardAreaTop, 16, quoteH, 8);
+    ctx.fillStyle = config.accentColor;
+    ctx.fill();
+    ctx.restore();
+
+    ctx.fillStyle = config.accentColor;
+    ctx.font = "900 72px Georgia, serif";
+    ctx.fillText("“", padX + 36, cardAreaTop + 74);
+
+    ctx.fillStyle = cardTextPrimary;
+    ctx.font = "italic 600 29px Georgia, serif";
+    const qLines = wrapCanvasText(
+      ctx,
+      slide.cardRightBody || slide.body,
+      width - padX * 2 - 110,
+      3,
+    );
+    qLines.forEach((ql, qIdx) => {
+      ctx.fillText(ql, padX + 86, cardAreaTop + 68 + qIdx * 40);
+    });
+
+    // Bottom 2-column pillar strip
+    const stripTop = cardAreaTop + quoteH + 24;
+    const stripH = cardAreaHeight - quoteH - 24;
+    const colW = Math.floor((width - padX * 2 - 24) / 2);
+
+    [
+      {
+        label: slide.cardLeftTitle || "KEY OBSERVATION",
+        text: slide.cardLeftBody,
+        x: padX,
+      },
+      {
+        label: slide.cardRightTitle || "OPERATOR RULE",
+        text: slide.stepThirdBody || slide.cardRightBody,
+        x: padX + colW + 24,
+      },
+    ].forEach((col) => {
+      ctx.save();
+      drawRoundedRect(ctx, col.x, stripTop, colW, stripH, 20);
+      ctx.fillStyle = config.cardBgColor;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = config.accentColor;
+      ctx.font = "800 18px system-ui, sans-serif";
+      ctx.fillText(col.label.toUpperCase(), col.x + 26, stripTop + 40);
+
+      ctx.fillStyle = cardTextPrimary;
+      ctx.font = "600 24px system-ui, sans-serif";
+      const lines = wrapCanvasText(ctx, col.text, colW - 52, 3);
+      lines.forEach((l, lIdx) => {
+        ctx.fillText(l, col.x + 26, stripTop + 78 + lIdx * 32);
+      });
+    });
+  } else if (config.template === "cyber-dark") {
+    // ------------------------------------------------------------------------
+    // TEMPLATE 5: 3-Cell Asymmetric Bento Grid with Neon Checkmarks
+    // ------------------------------------------------------------------------
+    const topCellH = Math.floor(cardAreaHeight * 0.44);
+    const botCellH = cardAreaHeight - topCellH - 24;
+    const halfW = Math.floor((width - padX * 2 - 24) / 2);
+
+    // Top Wide Bento Cell
+    ctx.save();
+    drawRoundedRect(ctx, padX, cardAreaTop, width - padX * 2, topCellH, 24);
+    ctx.fillStyle = config.cardBgColor;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = config.accentColor;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = config.accentColor;
+    ctx.font = "900 19px system-ui, sans-serif";
+    ctx.fillText(
+      `⚡  ${(slide.cardLeftTitle || "PRIMARY SYSTEM RULE").toUpperCase()}`,
+      padX + 30,
+      cardAreaTop + 44,
+    );
+
+    ctx.fillStyle = cardTextPrimary;
+    ctx.font = "700 27px system-ui, sans-serif";
+    const topLines = wrapCanvasText(
+      ctx,
+      slide.cardLeftBody,
+      width - padX * 2 - 60,
+      2,
+    );
+    topLines.forEach((tl, tIdx) => {
+      ctx.fillText(tl, padX + 30, cardAreaTop + 88 + tIdx * 36);
+    });
+
+    // Bottom Left & Bottom Right Bento Cells
+    [
+      {
+        title: slide.cardRightTitle || "ACTION STEP A",
+        body: slide.cardRightBody,
+        x: padX,
+      },
+      {
+        title: slide.stepThirdTitle || "ACTION STEP B",
+        body:
+          slide.stepThirdBody ||
+          "Verify output against your target reader task.",
+        x: padX + halfW + 24,
+      },
+    ].forEach((cell) => {
+      const cy = cardAreaTop + topCellH + 24;
+      ctx.save();
+      drawRoundedRect(ctx, cell.x, cy, halfW, botCellH, 24);
+      ctx.fillStyle = config.cardBgColor;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(255,255,255,0.16)";
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = config.accentColor;
+      ctx.font = "800 18px system-ui, sans-serif";
+      ctx.fillText(`✓  ${cell.title.toUpperCase()}`, cell.x + 26, cy + 42);
+
+      ctx.fillStyle = cardTextPrimary;
+      ctx.font = "600 24px system-ui, sans-serif";
+      const lines = wrapCanvasText(ctx, cell.body, halfW - 52, 3);
+      lines.forEach((l, lIdx) => {
+        ctx.fillText(l, cell.x + 26, cy + 82 + lIdx * 32);
+      });
+    });
+  } else if (config.template === "blueprint-grid") {
+    // ------------------------------------------------------------------------
+    // TEMPLATE 6: 3-Node Horizontal Blueprint Architecture Diagram
+    // ------------------------------------------------------------------------
+    const nodeW = Math.floor((width - padX * 2 - 56) / 3);
+    const nodeH = Math.floor(cardAreaHeight * 0.68);
+    const nodes = [
+      {
+        tag: "[01 · INPUT]",
+        title: slide.cardLeftTitle || "SOURCE SIGNAL",
+        body: slide.cardLeftBody,
+        active: false,
+      },
+      {
+        tag: "[02 · ENGINE]",
+        title: slide.cardRightTitle || "CORE PROCESS",
+        body: slide.cardRightBody,
+        active: true,
+      },
+      {
+        tag: "[03 · OUTPUT]",
+        title: slide.stepThirdTitle || "VERIFIED RESULT",
+        body:
+          slide.stepThirdBody || "Repeatable system ready for team execution.",
+        active: false,
+      },
+    ];
+
+    nodes.forEach((nd, nIdx) => {
+      const nx = padX + nIdx * (nodeW + 28);
+      ctx.save();
+      drawRoundedRect(ctx, nx, cardAreaTop, nodeW, nodeH, 20);
+      ctx.fillStyle = config.cardBgColor;
+      ctx.fill();
+      ctx.lineWidth = nd.active ? 4 : 2;
+      ctx.strokeStyle = nd.active
+        ? config.accentColor
+        : "rgba(255,255,255,0.28)";
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = config.accentColor;
+      ctx.font = "800 16px monospace";
+      ctx.fillText(nd.tag, nx + 20, cardAreaTop + 38);
+
+      ctx.fillStyle = cardTextPrimary;
+      ctx.font = "800 21px system-ui, sans-serif";
+      ctx.fillText(nd.title.slice(0, 18).toUpperCase(), nx + 20, cardAreaTop + 70);
+
+      ctx.fillStyle = cardTextMuted;
+      ctx.font = "600 22px system-ui, sans-serif";
+      const lines = wrapCanvasText(ctx, nd.body, nodeW - 40, 4);
+      lines.forEach((l, lIdx) => {
+        ctx.fillText(l, nx + 20, cardAreaTop + 112 + lIdx * 31);
+      });
+
+      if (nIdx < 2) {
+        const arrowX = nx + nodeW + 6;
+        const arrowY = cardAreaTop + nodeH / 2;
+        ctx.fillStyle = config.accentColor;
+        ctx.font = "900 24px system-ui, sans-serif";
+        ctx.fillText("→", arrowX, arrowY + 8);
+      }
+    });
+
+    // Bottom technical specification bar
+    const specTop = cardAreaTop + nodeH + 22;
+    const specH = cardAreaHeight - nodeH - 22;
+    ctx.save();
+    drawRoundedRect(ctx, padX, specTop, width - padX * 2, specH, 16);
+    ctx.fillStyle = "rgba(15, 23, 42, 0.78)";
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = config.accentColor;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = config.accentColor;
+    ctx.font = "700 20px monospace";
+    ctx.fillText(
+      `SPEC // ${slide.footer.slice(0, 56)}`,
+      padX + 26,
+      specTop + specH / 2 + 7,
+    );
   } else {
-    // Two Overlapping / Connected macOS-style UI Cards + Curved Arrow (like image_ad573d.png)
+    // ------------------------------------------------------------------------
+    // TEMPLATE 1 (`saas-comparison`): Overlapping macOS UI Windows + Curved Arrow
+    // ------------------------------------------------------------------------
     const cardW = 470;
-    const cardH = config.aspect === "portrait" ? 250 : 210;
+    const cardH = config.aspect === "portrait" ? 250 : 205;
     const leftX = padX;
     const leftY = cardAreaTop;
     const rightX = width - padX - cardW;
-    const rightY = cardAreaTop + (config.aspect === "portrait" ? 150 : 90);
+    const rightY = cardAreaTop + (config.aspect === "portrait" ? 155 : 95);
 
-    // Left / Upper Card (Light elevated window)
     ctx.save();
     ctx.shadowColor = "rgba(0, 0, 0, 0.28)";
     ctx.shadowBlur = 28;
@@ -279,7 +1193,6 @@ function renderSlideCanvas(
     ctx.fill();
     ctx.restore();
 
-    // macOS window dots on Left Card
     const dotColors = ["#EF4444", "#F59E0B", "#10B981"];
     dotColors.forEach((dc, dIdx) => {
       ctx.beginPath();
@@ -303,7 +1216,6 @@ function renderSlideCanvas(
       ctx.fillText(ll, leftX + 28, leftY + 114 + lIdx * 36);
     });
 
-    // Right / Lower Card (Dark glass window with accent border)
     ctx.save();
     ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
     ctx.shadowBlur = 32;
@@ -331,14 +1243,13 @@ function renderSlideCanvas(
       rightY + 72,
     );
 
-    ctx.fillStyle = "#FFFFFF";
+    ctx.fillStyle = cardTextPrimary;
     ctx.font = "700 26px system-ui, sans-serif";
     const rightLines = wrapCanvasText(ctx, slide.cardRightBody, cardW - 56, 3);
     rightLines.forEach((rl, rIdx) => {
       ctx.fillText(rl, rightX + 28, rightY + 114 + rIdx * 36);
     });
 
-    // Glowing Curved Connector Arrow between Left Card and Right Card
     ctx.save();
     ctx.strokeStyle = config.accentColor;
     ctx.lineWidth = 7;
@@ -352,7 +1263,6 @@ function renderSlideCanvas(
     ctx.quadraticCurveTo(startX + 20, endY, endX, endY);
     ctx.stroke();
 
-    // Arrowhead
     ctx.beginPath();
     ctx.moveTo(endX - 18, endY - 14);
     ctx.lineTo(endX + 2, endY);
@@ -361,21 +1271,23 @@ function renderSlideCanvas(
     ctx.restore();
   }
 
-  // 6. Bottom Footer Bar: Actionable Takeaway + Domain + Slide Counter (01 / 08)
-  const footerY = height - 125;
+  // ==========================================================================
+  // 6. BOTTOM FOOTER BAR (Takeaway + Website Domain + Slide Counter)
+  // ==========================================================================
+  const footerY = height - 115;
   ctx.fillStyle = config.textColor;
-  ctx.font = "800 30px system-ui, -apple-system, sans-serif";
+  ctx.font = "800 28px system-ui, -apple-system, sans-serif";
   ctx.fillText(slide.footer.slice(0, 56), padX, footerY);
 
   ctx.fillStyle = config.accentColor;
-  ctx.font = "700 25px system-ui, -apple-system, sans-serif";
-  ctx.fillText(config.websiteUrl || "doitwithai.tools", padX, height - 62);
+  ctx.font = "700 24px system-ui, -apple-system, sans-serif";
+  ctx.fillText(config.websiteUrl || "doitwithai.tools", padX, height - 56);
 
   const counterStr = `${String(slide.number).padStart(2, "0")} / ${String(totalSlides).padStart(2, "0")}`;
   ctx.fillStyle = config.textColor;
-  ctx.font = "800 25px system-ui, -apple-system, sans-serif";
+  ctx.font = "800 24px system-ui, -apple-system, sans-serif";
   const cw = ctx.measureText(counterStr).width;
-  ctx.fillText(counterStr, width - padX - cw, height - 62);
+  ctx.fillText(counterStr, width - padX - cw, height - 56);
 
   return canvas;
 }
@@ -422,14 +1334,20 @@ export default function RepurposePanel({
     "executive" | "founder" | "checklist"
   >("executive");
 
-  // Grand LinkedIn Carousel Studio options
-  const [carouselConfig, setCarouselConfig] = useState<CarouselBrandConfig>({
-    ...CAROUSEL_THEME_PRESETS["saas-comparison"],
-    brandName: "Do It With AI Tools",
-    websiteUrl: "doitwithai.tools",
-    categoryKicker: "AI & SEO PLAYBOOK",
-    aspect: "portrait",
+  // Grand LinkedIn Carousel Studio options (Auto-matched to article on load!)
+  const recommendedTemplate = recommendCarouselTemplate(article);
+  const [carouselConfig, setCarouselConfig] = useState<CarouselBrandConfig>(() => {
+    const preset = CAROUSEL_THEME_PRESETS[recommendedTemplate];
+    return {
+      ...preset,
+      bgColor: article.brand?.themeColor || preset.bgColor,
+      brandName: article.brand?.siteName || "Do It With AI Tools",
+      websiteUrl: article.brand?.domain || "doitwithai.tools",
+      categoryKicker: "PRACTICAL PLAYBOOK",
+      aspect: "portrait",
+    };
   });
+  const [keepCustomColors, setKeepCustomColors] = useState(false);
   const [carouselCount, setCarouselCount] = useState(8);
   const [slidePreviewUrls, setSlidePreviewUrls] = useState<string[]>([]);
   const logoImageRef = useRef<HTMLImageElement | null>(null);
@@ -465,7 +1383,11 @@ export default function RepurposePanel({
       if (typeof document === "undefined" || !slides.length) return;
       const previewUrls: string[] = [];
       const pngEntries: Record<string, Uint8Array> = {};
-      const jpegPages: Array<{ bytes: Uint8Array; width: number; height: number }> = [];
+      const jpegPages: Array<{
+        bytes: Uint8Array;
+        width: number;
+        height: number;
+      }> = [];
 
       slides.forEach((s, i) => {
         const numbered = { ...s, number: i + 1 };
@@ -533,6 +1455,64 @@ export default function RepurposePanel({
     [baseName],
   );
 
+  // Automatically load the website's logo & brand theme when article changes in LinkedIn Carousel mode
+  useEffect(() => {
+    if (format !== "linkedin-carousel" || typeof window === "undefined") return;
+    const bestTpl = recommendCarouselTemplate(article);
+    const preset = CAROUSEL_THEME_PRESETS[bestTpl];
+    const nextCfg: CarouselBrandConfig = {
+      ...preset,
+      bgColor: article.brand?.themeColor || preset.bgColor,
+      brandName: article.brand?.siteName || "Do It With AI Tools",
+      websiteUrl:
+        article.brand?.domain ||
+        (article.source
+          ? article.source.replace(/^https?:\/\/(www\.)?/i, "").split("/")[0]
+          : "doitwithai.tools"),
+      categoryKicker: "PRACTICAL PLAYBOOK",
+      aspect: carouselConfig.aspect,
+    };
+    setCarouselConfig(nextCfg);
+
+    const candidateLogo = article.brand?.logoUrl || "";
+    if (!candidateLogo || /doitwithai\.tools/i.test(candidateLogo)) {
+      const localImg = new Image();
+      localImg.crossOrigin = "anonymous";
+      localImg.onload = () => {
+        logoImageRef.current = localImg;
+        const withLogo = { ...nextCfg, logoDataUrl: "/logoForHeader.png" };
+        setCarouselConfig(withLogo);
+        const slides = buildLinkedinCarousel(article, carouselCount);
+        setCarouselSlides(slides);
+        updateCarouselPreviewsAndAssets(slides, withLogo);
+      };
+      localImg.src = "/logoForHeader.png";
+    } else {
+      fetch("/api/ai-tools/article-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: candidateLogo }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (d?.data) {
+            const img = new Image();
+            img.onload = () => {
+              logoImageRef.current = img;
+              const withLogo = { ...nextCfg, logoDataUrl: d.data };
+              setCarouselConfig(withLogo);
+              const slides = buildLinkedinCarousel(article, carouselCount);
+              setCarouselSlides(slides);
+              updateCarouselPreviewsAndAssets(slides, withLogo);
+            };
+            img.src = d.data;
+          }
+        })
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [article, format]);
+
   const rebuildNonCarouselDownloads = useCallback(
     (
       nextVideo = videoDraft,
@@ -546,7 +1526,9 @@ export default function RepurposePanel({
       if (format === "video-script" && nextVideo) {
         const txt = videoScriptTxt(article, nextVideo);
         const docx = videoScriptDocx(article, nextVideo);
-        const voiceoverOnly = nextVideo.scenes.map((s) => s.narration).join("\n\n");
+        const voiceoverOnly = nextVideo.scenes
+          .map((s) => s.narration)
+          .join("\n\n");
         nextAssets.push(
           {
             label: "Download Storyboard DOCX (.docx)",
@@ -680,79 +1662,102 @@ export default function RepurposePanel({
         return nextAssets;
       });
     },
-    [article, baseName, epubLang, epubTheme, format, markdownText, newsletterDraft, podcastDraft, socialDraft, videoDraft],
+    [
+      article,
+      baseName,
+      epubLang,
+      epubTheme,
+      format,
+      markdownText,
+      newsletterDraft,
+      podcastDraft,
+      socialDraft,
+      videoDraft,
+    ],
   );
 
   const generateAll = useCallback(
-    async (withAiEnhance = true) => {
+    async (withAiEnhance = false) => {
       const err = validate(article);
       setError(err);
       if (err) return;
 
       try {
-        if (format === "video-script") {
-          const local = buildVideoScript(
-            article,
-            videoMode,
-            videoWpm,
-            videoHook,
-            videoCta,
-          );
-          setVideoDraft(local);
-          rebuildNonCarouselDownloads(local, null, "", null, null);
-          setMessage(
-            "Video script and sentence-by-sentence visual storyboard ready! Download your DOCX or TXT above.",
-          );
-        } else if (format === "social-posts") {
-          const local = buildSocialPosts(article, socialAngle, socialIncludeLink);
-          setSocialDraft(local);
-          rebuildNonCarouselDownloads(null, local, "", null, null);
-          setMessage(
-            "15 social media post ideas across 5 platforms are ready! Switch ideas or download the CSV/TXT pack above.",
-          );
-        } else if (format === "markdown") {
-          const md = articleToMarkdown(article, {
-            includeFrontmatter: mdFrontmatter,
-            includeReferences: mdReferences,
-          });
-          setMarkdownText(md);
-          rebuildNonCarouselDownloads(null, null, md, null, null);
-          setMessage("Markdown file ready! Download your .md or .txt file above.");
-        } else if (format === "epub") {
-          rebuildNonCarouselDownloads(null, null, "", null, null);
-          setMessage("EPUB 3 e-book ready! Download your .epub file above.");
-        } else if (format === "newsletter") {
-          const local = buildNewsletter(article, newsletterStyle);
-          setNewsletterDraft(local);
-          rebuildNonCarouselDownloads(null, null, "", local, null);
-          setMessage(
-            "Newsletter edition ready! Choose from 5 subject lines and download HTML, DOCX, or TXT above.",
-          );
-        } else if (format === "linkedin-carousel") {
-          const localSlides = buildLinkedinCarousel(article, carouselCount);
-          setCarouselSlides(localSlides);
-          updateCarouselPreviewsAndAssets(localSlides, carouselConfig);
-          setMessage(
-            "LinkedIn Carousel Studio ready! Customize templates, brand colors, or upload your logo, then download the PDF or PNG slides.",
-          );
-        } else if (format === "podcast-script") {
-          const local = buildPodcastScript(article, podcastMode, podcastWpm);
-          setPodcastDraft(local);
-          rebuildNonCarouselDownloads(null, null, "", null, local);
-          setMessage(
-            "Broadcast podcast script and show notes ready! Download DOCX or TXT above.",
-          );
+        if (!withAiEnhance) {
+          if (format === "video-script") {
+            const local = buildVideoScript(
+              article,
+              videoMode,
+              videoWpm,
+              videoHook,
+              videoCta,
+            );
+            setVideoDraft(local);
+            rebuildNonCarouselDownloads(local, null, "", null, null);
+            setMessage(
+              "Video script and sentence-by-sentence visual storyboard ready! Download your DOCX or TXT above.",
+            );
+          } else if (format === "social-posts") {
+            const local = buildSocialPosts(
+              article,
+              socialAngle,
+              socialIncludeLink,
+            );
+            setSocialDraft(local);
+            rebuildNonCarouselDownloads(null, local, "", null, null);
+            setMessage(
+              "15 structured social media post ideas across 5 platforms are ready! Switch ideas or download the CSV/TXT pack above.",
+            );
+          } else if (format === "markdown") {
+            const md = articleToMarkdown(article, {
+              includeFrontmatter: mdFrontmatter,
+              includeReferences: mdReferences,
+            });
+            setMarkdownText(md);
+            rebuildNonCarouselDownloads(null, null, md, null, null);
+            setMessage("Markdown file ready! Download your .md or .txt file above.");
+          } else if (format === "epub") {
+            rebuildNonCarouselDownloads(null, null, "", null, null);
+            setMessage("EPUB 3 e-book ready! Download your .epub file above.");
+          } else if (format === "newsletter") {
+            const local = buildNewsletter(article, newsletterStyle);
+            setNewsletterDraft(local);
+            rebuildNonCarouselDownloads(null, null, "", local, null);
+            setMessage(
+              "Newsletter edition ready! Choose from 5 subject lines and download HTML, DOCX, or TXT above.",
+            );
+          } else if (format === "linkedin-carousel") {
+            const localSlides = buildLinkedinCarousel(article, carouselCount);
+            setCarouselSlides(localSlides);
+            updateCarouselPreviewsAndAssets(localSlides, carouselConfig);
+            setMessage(
+              "LinkedIn Carousel Studio ready! Switch between 6 distinct layout templates, customize colors or logo, and download your PDF or PNG slides.",
+            );
+          } else if (format === "podcast-script") {
+            const local = buildPodcastScript(article, podcastMode, podcastWpm);
+            setPodcastDraft(local);
+            rebuildNonCarouselDownloads(null, null, "", null, local);
+            setMessage(
+              "Broadcast podcast script and show notes ready! Download DOCX or TXT above.",
+            );
+          }
+          setRevision((n) => n + 1);
+          return;
         }
 
-        // Optional background AI enhancement via /api/ai-tools/article-repurpose
+        // Explicit user-triggered AI Polish via /api/ai-tools/article-repurpose
         if (
-          withAiEnhance &&
-          ["video-script", "social-posts", "newsletter", "linkedin-carousel", "podcast-script"].includes(
-            format,
-          ) &&
+          [
+            "video-script",
+            "social-posts",
+            "newsletter",
+            "linkedin-carousel",
+            "podcast-script",
+          ].includes(format) &&
           typeof window !== "undefined"
         ) {
           setAiBusy(true);
+          setMessage("Polishing with AI synthesis…");
           try {
             const articleText = article.blocks
               .map((b) => (b.kind === "heading" ? `## ${b.text}` : b.text))
@@ -780,58 +1785,116 @@ export default function RepurposePanel({
             if (res.ok) {
               const data = await res.json();
               if (data?.result) {
-                if (format === "video-script" && Array.isArray(data.result.scenes)) {
-                  const aiScenes = data.result.scenes.map((sc: any, sIdx: number) => {
-                    const beats = (sc.beats || []).map((b: any, bIdx: number) => {
-                      const words = countWords(b.spokenSentence || "");
+                if (
+                  format === "video-script" &&
+                  Array.isArray(data.result.scenes)
+                ) {
+                  const localFallback = buildVideoScript(
+                    article,
+                    videoMode,
+                    videoWpm,
+                    videoHook,
+                    videoCta,
+                  );
+                  const aiScenes = data.result.scenes.map(
+                    (sc: any, sIdx: number) => {
+                      const beats = (sc.beats || []).map(
+                        (b: any, bIdx: number) => {
+                          const words = countWords(b.spokenSentence || "");
+                          return {
+                            id: `ai-beat-${sIdx + 1}-${bIdx + 1}`,
+                            spokenSentence: b.spokenSentence,
+                            visualType: b.visualType || "B-ROLL VIDEO",
+                            visualDirection: b.visualDirection,
+                            onScreenText: b.onScreenText,
+                            seconds: Math.max(
+                              2,
+                              Math.ceil((words / videoWpm) * 60),
+                            ),
+                          };
+                        },
+                      );
+                      const narration = beats
+                        .map((b: any) => b.spokenSentence)
+                        .join(" ");
+                      const seconds = beats.reduce(
+                        (n: number, b: any) => n + b.seconds,
+                        0,
+                      );
                       return {
-                        id: `ai-beat-${sIdx + 1}-${bIdx + 1}`,
-                        spokenSentence: b.spokenSentence,
-                        visualType: b.visualType || "B-ROLL VIDEO",
-                        visualDirection: b.visualDirection,
-                        onScreenText: b.onScreenText,
-                        seconds: Math.max(2, Math.ceil((words / videoWpm) * 60)),
+                        id: `ai-scene-${sIdx + 1}`,
+                        title: sc.title,
+                        narration,
+                        visual: beats
+                          .map(
+                            (b: any) => `[${b.visualType}] ${b.visualDirection}`,
+                          )
+                          .join(" | "),
+                        onScreenText: beats[0]?.onScreenText || sc.title,
+                        seconds,
+                        beats,
                       };
-                    });
-                    const narration = beats.map((b: any) => b.spokenSentence).join(" ");
-                    const seconds = beats.reduce((n: number, b: any) => n + b.seconds, 0);
-                    return {
-                      id: `ai-scene-${sIdx + 1}`,
-                      title: sc.title,
-                      narration,
-                      visual: beats.map((b: any) => `[${b.visualType}] ${b.visualDirection}`).join(" | "),
-                      onScreenText: beats[0]?.onScreenText || sc.title,
-                      seconds,
-                      beats,
-                    };
-                  });
+                    },
+                  );
+                  // Preserve full-article coverage if AI returned fewer scenes than local sections
+                  const mergedScenes =
+                    videoMode === "youtube" &&
+                    aiScenes.length < localFallback.scenes.length
+                      ? [
+                          ...aiScenes,
+                          ...localFallback.scenes.slice(aiScenes.length),
+                        ]
+                      : aiScenes;
+
                   const enhanced: VideoScriptDraft = {
                     mode: videoMode,
                     wpm: videoWpm,
                     hookIndex: videoHook,
                     cta: videoCta,
-                    scenes: aiScenes,
-                    totalWords: aiScenes.reduce((n: number, s: any) => n + countWords(s.narration), 0),
-                    totalSeconds: aiScenes.reduce((n: number, s: any) => n + s.seconds, 0),
+                    scenes: mergedScenes,
+                    totalWords: mergedScenes.reduce(
+                      (n: number, s: any) => n + countWords(s.narration),
+                      0,
+                    ),
+                    totalSeconds: mergedScenes.reduce(
+                      (n: number, s: any) => n + s.seconds,
+                      0,
+                    ),
                   };
                   setVideoDraft(enhanced);
                   rebuildNonCarouselDownloads(enhanced, null, "", null, null);
-                } else if (format === "social-posts" && Array.isArray(data.result.posts)) {
-                  const enhanced: SocialPost[] = data.result.posts.map((p: any, idx: number) => ({
-                    id: `ai-social-${idx}`,
-                    platform: p.platform,
-                    angle: socialAngle,
-                    content: p.ideas?.[0]?.content || "",
-                    charLimit: p.platform === "Threads" ? 500 : 3000,
-                    ideas: (p.ideas || []).map((idObj: any, iIdx: number) => ({
-                      id: `ai-idea-${idx}-${iIdx}`,
-                      label: idObj.label,
-                      content: idObj.content,
-                    })),
-                  }));
+                } else if (
+                  format === "social-posts" &&
+                  Array.isArray(data.result.posts)
+                ) {
+                  const enhanced: SocialPost[] = data.result.posts.map(
+                    (p: any, idx: number) => {
+                      const ideas = (p.ideas || []).map(
+                        (idObj: any, iIdx: number) => ({
+                          id: `ai-idea-${idx}-${iIdx}`,
+                          label: idObj.label,
+                          content: ensureStructuredSocialText(
+                            idObj.content || "",
+                            p.platform,
+                          ),
+                        }),
+                      );
+                      return {
+                        id: `ai-social-${idx}`,
+                        platform: p.platform,
+                        angle: socialAngle,
+                        content: ideas[0]?.content || "",
+                        charLimit: p.platform === "Threads" ? 500 : 3000,
+                        ideas,
+                      };
+                    },
+                  );
                   setSocialDraft(enhanced);
                   rebuildNonCarouselDownloads(null, enhanced, "", null, null);
-                } else if (format === "newsletter" && data.result.subjectOptions) {
+                } else if (
+                  format === "newsletter" &&
+                  data.result.subjectOptions
+                ) {
                   const enhanced: NewsletterDraft = {
                     style: newsletterStyle,
                     subjectOptions: data.result.subjectOptions,
@@ -843,16 +1906,27 @@ export default function RepurposePanel({
                     takeaways: data.result.takeaways,
                     sections: data.result.sections,
                     checklist: data.result.checklist,
-                    ctaLabel: "Read the full article on our website →",
+                    ctaLabel: "🌐 Read the full article on our website →",
                     ctaUrl: article.source || "https://doitwithai.tools",
                   };
                   setNewsletterDraft(enhanced);
                   rebuildNonCarouselDownloads(null, null, "", enhanced, null);
-                } else if (format === "linkedin-carousel" && Array.isArray(data.result.slides)) {
+                } else if (
+                  format === "linkedin-carousel" &&
+                  Array.isArray(data.result.slides)
+                ) {
+                  const total = data.result.slides.length;
                   const enhanced: CarouselSlide[] = data.result.slides.map(
                     (s: any, idx: number) => ({
                       number: idx + 1,
-                      kind: s.kind || "point",
+                      kind:
+                        idx === 0
+                          ? "cover"
+                          : idx === total - 1
+                            ? "cta"
+                            : s.kind === "comparison"
+                              ? "comparison"
+                              : "point",
                       kicker: s.kicker || `SLIDE 0${idx + 1}`,
                       headline: s.headline,
                       highlightPhrase: s.highlightPhrase,
@@ -861,40 +1935,59 @@ export default function RepurposePanel({
                       cardLeftBody: s.cardLeftBody,
                       cardRightTitle: s.cardRightTitle,
                       cardRightBody: s.cardRightBody,
+                      stepThirdTitle: s.stepThirdTitle,
+                      stepThirdBody: s.stepThirdBody,
+                      bullets: s.bullets,
                       footer: s.footer,
                     }),
                   );
                   setCarouselSlides(enhanced);
                   updateCarouselPreviewsAndAssets(enhanced, carouselConfig);
-                } else if (format === "podcast-script" && Array.isArray(data.result.segments)) {
-                  const segs = data.result.segments.map((s: any, idx: number) => ({
-                    id: `ai-pod-${idx + 1}`,
-                    speaker: s.speaker,
-                    topic: s.topic,
-                    dialogue: s.dialogue,
-                    cue: s.cue,
-                    seconds: Math.max(4, Math.ceil((countWords(s.dialogue) / podcastWpm) * 60)),
-                  }));
+                } else if (
+                  format === "podcast-script" &&
+                  Array.isArray(data.result.segments)
+                ) {
+                  const segs = data.result.segments.map(
+                    (s: any, idx: number) => ({
+                      id: `ai-pod-${idx + 1}`,
+                      speaker: s.speaker,
+                      topic: s.topic,
+                      dialogue: s.dialogue,
+                      cue: s.cue,
+                      seconds: Math.max(
+                        4,
+                        Math.ceil((countWords(s.dialogue) / podcastWpm) * 60),
+                      ),
+                    }),
+                  );
                   const enhanced: PodcastScriptDraft = {
                     format: podcastMode,
                     wpm: podcastWpm,
                     showNotes: data.result.showNotes || [],
                     segments: segs,
-                    totalWords: segs.reduce((n: number, s: any) => n + countWords(s.dialogue), 0),
-                    totalSeconds: segs.reduce((n: number, s: any) => n + s.seconds, 0),
+                    totalWords: segs.reduce(
+                      (n: number, s: any) => n + countWords(s.dialogue),
+                      0,
+                    ),
+                    totalSeconds: segs.reduce(
+                      (n: number, s: any) => n + s.seconds,
+                      0,
+                    ),
                   };
                   setPodcastDraft(enhanced);
                   rebuildNonCarouselDownloads(null, null, "", null, enhanced);
                 }
+                setMessage("AI synthesis complete! Your downloads are updated.");
+              } else {
+                setMessage("Your structured draft is ready above.");
               }
             }
           } catch {
-            // Keep rich local synthesis if offline
+            setMessage("Your structured draft is ready above.");
           } finally {
             setAiBusy(false);
           }
         }
-        setRevision((n) => n + 1);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Conversion failed.");
       }
@@ -920,12 +2013,12 @@ export default function RepurposePanel({
     ],
   );
 
-  // Auto-generate immediately when article is imported (2-Step Direct Flow!)
+  // Auto-generate immediately when article is imported (Single-Pass, Zero Background Blink!)
   const hasAutoRunRef = useRef(-1);
   useEffect(() => {
     if (hasAutoRunRef.current !== autoRunSignal) {
       hasAutoRunRef.current = autoRunSignal;
-      generateAll(true);
+      generateAll(false);
     }
   }, [autoRunSignal, generateAll]);
 
@@ -964,7 +2057,7 @@ export default function RepurposePanel({
 
   return (
     <div className="space-y-6">
-      {/* STEP 2 TOP DOWNLOAD & INTERACTIVE STUDIO PANEL (Ready immediately after Step 1!) */}
+      {/* STEP 2 TOP DOWNLOAD & INTERACTIVE STUDIO PANEL */}
       {assets.length > 0 && (
         <section
           ref={doneRef}
@@ -976,7 +2069,6 @@ export default function RepurposePanel({
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
                 Step 2 · Ready to download &amp; customize
-                {aiBusy ? " · Refining with deep synthesis…" : ""}
               </p>
               <h2
                 id="repurpose-result-title"
@@ -1001,12 +2093,18 @@ export default function RepurposePanel({
           </div>
 
           {message && (
-            <p role="status" className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
+            <p
+              role="status"
+              className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200"
+            >
               {message}
             </p>
           )}
           {error && (
-            <p role="alert" className="mt-4 text-sm font-bold text-red-700 dark:text-red-300">
+            <p
+              role="alert"
+              className="mt-4 text-sm font-bold text-red-700 dark:text-red-300"
+            >
               {error}
             </p>
           )}
@@ -1018,7 +2116,10 @@ export default function RepurposePanel({
             <div className="mt-6 space-y-5">
               <div className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 sm:grid-cols-4">
                 <div>
-                  <label htmlFor="video-mode" className="mb-1 block text-xs font-bold">
+                  <label
+                    htmlFor="video-mode"
+                    className="mb-1 block text-xs font-bold"
+                  >
                     Video Format
                   </label>
                   <select
@@ -1039,12 +2140,19 @@ export default function RepurposePanel({
                       rebuildNonCarouselDownloads(d, null, "", null, null);
                     }}
                   >
-                    <option value="youtube">YouTube Full Deep-Dive (All Sections)</option>
-                    <option value="shorts">Shorts / Reels / TikTok (60–90s)</option>
+                    <option value="youtube">
+                      YouTube Full Deep-Dive (All Sections)
+                    </option>
+                    <option value="shorts">
+                      Shorts / Reels / TikTok (60–90s)
+                    </option>
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="video-wpm" className="mb-1 block text-xs font-bold">
+                  <label
+                    htmlFor="video-wpm"
+                    className="mb-1 block text-xs font-bold"
+                  >
                     Speaking Pace
                   </label>
                   <select
@@ -1052,7 +2160,10 @@ export default function RepurposePanel({
                     className={field}
                     value={videoWpm}
                     onChange={(e) => {
-                      const nextWpm = Number(e.target.value) as 120 | 140 | 160;
+                      const nextWpm = Number(e.target.value) as
+                        | 120
+                        | 140
+                        | 160;
                       setVideoWpm(nextWpm);
                       const d = buildVideoScript(
                         article,
@@ -1071,7 +2182,10 @@ export default function RepurposePanel({
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="video-hook" className="mb-1 block text-xs font-bold">
+                  <label
+                    htmlFor="video-hook"
+                    className="mb-1 block text-xs font-bold"
+                  >
                     Opening Hook Angle
                   </label>
                   <select
@@ -1117,8 +2231,12 @@ export default function RepurposePanel({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-bold">
                   {videoDraft.scenes.length} Scenes ·{" "}
-                  {videoDraft.scenes.reduce((n, s) => n + (s.beats?.length || 1), 0)}{" "}
-                  Sentence-by-Sentence Visual Beats · {videoDraft.totalWords} words (~
+                  {videoDraft.scenes.reduce(
+                    (n, s) => n + (s.beats?.length || 1),
+                    0,
+                  )}{" "}
+                  Sentence-by-Sentence Visual Beats · {videoDraft.totalWords}{" "}
+                  words (~
                   {Math.floor(videoDraft.totalSeconds / 60)}m{" "}
                   {videoDraft.totalSeconds % 60}s)
                 </p>
@@ -1158,7 +2276,8 @@ export default function RepurposePanel({
                           {scene.title}
                         </h3>
                         <span className="rounded-lg bg-orange-100 px-3 py-1 text-xs font-bold text-[#9A3412] dark:bg-orange-950/60 dark:text-orange-200">
-                          ~{scene.seconds}s · {scene.beats?.length || 1} sentence beats
+                          ~{scene.seconds}s · {scene.beats?.length || 1} sentence
+                          beats
                         </span>
                       </div>
 
@@ -1171,7 +2290,8 @@ export default function RepurposePanel({
                             <div>
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                                  Spoken Sentence {sIdx + 1}.{bIdx + 1} (~{beat.seconds}s)
+                                  Spoken Sentence {sIdx + 1}.{bIdx + 1} (~
+                                  {beat.seconds}s)
                                 </span>
                               </div>
                               <textarea
@@ -1184,7 +2304,10 @@ export default function RepurposePanel({
                                       if (i !== sIdx) return sc;
                                       const nextBeats = sc.beats.map((b, j) =>
                                         j === bIdx
-                                          ? { ...b, spokenSentence: e.target.value }
+                                          ? {
+                                              ...b,
+                                              spokenSentence: e.target.value,
+                                            }
                                           : b,
                                       );
                                       return {
@@ -1196,7 +2319,10 @@ export default function RepurposePanel({
                                       };
                                     },
                                   );
-                                  const next = { ...videoDraft, scenes: nextScenes };
+                                  const next = {
+                                    ...videoDraft,
+                                    scenes: nextScenes,
+                                  };
                                   setVideoDraft(next);
                                   rebuildNonCarouselDownloads(
                                     next,
@@ -1219,7 +2345,8 @@ export default function RepurposePanel({
                                 </p>
                               </div>
                               <p className="mt-2 border-t border-blue-200/60 pt-2 text-xs font-semibold text-[#3452d1] dark:border-blue-900/50 dark:text-blue-300">
-                                On-Screen Text: &ldquo;{beat.onScreenText}&rdquo;
+                                On-Screen Text: &ldquo;{beat.onScreenText}
+                                &rdquo;
                               </p>
                             </div>
                           </div>
@@ -1258,7 +2385,13 @@ export default function RepurposePanel({
                         socialIncludeLink,
                       );
                       setSocialDraft(nextPosts);
-                      rebuildNonCarouselDownloads(null, nextPosts, "", null, null);
+                      rebuildNonCarouselDownloads(
+                        null,
+                        nextPosts,
+                        "",
+                        null,
+                        null,
+                      );
                     }}
                   >
                     <option value="takeaways">
@@ -1285,10 +2418,16 @@ export default function RepurposePanel({
                         e.target.checked,
                       );
                       setSocialDraft(nextPosts);
-                      rebuildNonCarouselDownloads(null, nextPosts, "", null, null);
+                      rebuildNonCarouselDownloads(
+                        null,
+                        nextPosts,
+                        "",
+                        null,
+                        null,
+                      );
                     }}
                   />
-                  <span>Include article CTA link</span>
+                  <span>Include article CTA link (🌐)</span>
                 </label>
               </div>
 
@@ -1333,7 +2472,13 @@ export default function RepurposePanel({
                                 }));
                                 const next = socialDraft.map((p, pIndex) =>
                                   pIndex === idx
-                                    ? { ...p, content: idea.content }
+                                    ? {
+                                        ...p,
+                                        content: ensureStructuredSocialText(
+                                          idea.content,
+                                          p.platform,
+                                        ),
+                                      }
                                     : p,
                                 );
                                 setSocialDraft(next);
@@ -1353,15 +2498,21 @@ export default function RepurposePanel({
                       )}
 
                       <textarea
-                        rows={10}
-                        className={`${field} mt-3 font-sans text-sm leading-6`}
+                        rows={11}
+                        className={`${field} mt-3 whitespace-pre-wrap font-sans text-sm leading-6`}
                         value={post.content}
                         onChange={(e) => {
                           const next = socialDraft.map((p, i) =>
                             i === idx ? { ...p, content: e.target.value } : p,
                           );
                           setSocialDraft(next);
-                          rebuildNonCarouselDownloads(null, next, "", null, null);
+                          rebuildNonCarouselDownloads(
+                            null,
+                            next,
+                            "",
+                            null,
+                            null,
+                          );
                         }}
                       />
                       <p className="mt-2 text-xs font-semibold text-slate-500">
@@ -1449,7 +2600,10 @@ export default function RepurposePanel({
           {format === "epub" && (
             <div className="mt-6 grid gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 sm:grid-cols-2">
               <div>
-                <label htmlFor="epub-theme" className="mb-1 block text-xs font-bold">
+                <label
+                  htmlFor="epub-theme"
+                  className="mb-1 block text-xs font-bold"
+                >
                   E-Reader Typography
                 </label>
                 <select
@@ -1467,7 +2621,10 @@ export default function RepurposePanel({
                 </select>
               </div>
               <div>
-                <label htmlFor="epub-lang" className="mb-1 block text-xs font-bold">
+                <label
+                  htmlFor="epub-lang"
+                  className="mb-1 block text-xs font-bold"
+                >
                   Language Metadata Tag
                 </label>
                 <select
@@ -1552,7 +2709,13 @@ export default function RepurposePanel({
                             selectedSubject: sub,
                           };
                           setNewsletterDraft(next);
-                          rebuildNonCarouselDownloads(null, null, "", next, null);
+                          rebuildNonCarouselDownloads(
+                            null,
+                            null,
+                            "",
+                            next,
+                            null,
+                          );
                         }}
                       >
                         {sub}
@@ -1620,58 +2783,107 @@ export default function RepurposePanel({
           {/* ============================================================== */}
           {format === "linkedin-carousel" && carouselSlides && (
             <div className="mt-6 space-y-6">
-              {/* Template Picker + Brand Color & Logo Studio */}
+              {/* Template Picker + Visual Layout Thumbnails + Brand Identity */}
               <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-                <h3 className="text-base font-extrabold">
-                  1. Choose a Carousel Design Template
-                </h3>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {Object.values(CAROUSEL_THEME_PRESETS).map((preset) => (
-                    <button
-                      key={preset.template}
-                      type="button"
-                      className={`flex flex-col items-start rounded-xl border-2 p-3.5 text-left transition ${
-                        carouselConfig.template === preset.template
-                          ? "border-[#3452d1] bg-blue-50/50 dark:border-[#5271ff] dark:bg-blue-950/30"
-                          : "border-slate-200 hover:border-slate-300 dark:border-slate-700"
-                      }`}
-                      onClick={() => {
-                        const nextCfg: CarouselBrandConfig = {
-                          ...carouselConfig,
-                          template: preset.template,
-                          bgColor: preset.bgColor,
-                          bgSecondaryColor: preset.bgSecondaryColor,
-                          accentColor: preset.accentColor,
-                          textColor: preset.textColor,
-                          cardBgColor: preset.cardBgColor,
-                        };
-                        setCarouselConfig(nextCfg);
-                        updateCarouselPreviewsAndAssets(
-                          carouselSlides,
-                          nextCfg,
-                        );
-                      }}
-                    >
-                      <div className="flex w-full items-center justify-between gap-2">
-                        <span className="text-xs font-extrabold">
-                          {preset.name}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-extrabold">
+                      1. Choose a Carousel Layout Template (6 Distinct Visual Structures)
+                    </h3>
+                    <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                      Each template changes the background architecture, middle diagram structure, cover layout, and closing CTA slide.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-bold">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-[#5271ff]"
+                      checked={keepCustomColors}
+                      onChange={(e) => setKeepCustomColors(e.target.checked)}
+                    />
+                    <span>Keep my current colors when switching template</span>
+                  </label>
+                </div>
+
+                <div className="mt-4 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                  {Object.values(CAROUSEL_THEME_PRESETS).map((preset) => {
+                    const isRecommended =
+                      preset.template === recommendedTemplate;
+                    const isSelected =
+                      carouselConfig.template === preset.template;
+                    return (
+                      <button
+                        key={preset.template}
+                        type="button"
+                        className={`flex flex-col items-start rounded-xl border-2 p-3.5 text-left transition ${
+                          isSelected
+                            ? "border-[#3452d1] bg-blue-50/50 ring-2 ring-[#3452d1]/20 dark:border-[#5271ff] dark:bg-blue-950/30"
+                            : "border-slate-200 hover:border-slate-300 dark:border-slate-700"
+                        }`}
+                        onClick={() => {
+                          const nextCfg: CarouselBrandConfig = keepCustomColors
+                            ? {
+                                ...carouselConfig,
+                                template: preset.template,
+                              }
+                            : {
+                                ...carouselConfig,
+                                template: preset.template,
+                                bgColor: preset.bgColor,
+                                bgSecondaryColor: preset.bgSecondaryColor,
+                                accentColor: preset.accentColor,
+                                textColor: preset.textColor,
+                                cardBgColor: preset.cardBgColor,
+                              };
+                          setCarouselConfig(nextCfg);
+                          updateCarouselPreviewsAndAssets(
+                            carouselSlides,
+                            nextCfg,
+                          );
+                        }}
+                      >
+                        <TemplateLayoutThumbnail
+                          template={preset.template}
+                          bgColor={
+                            keepCustomColors && isSelected
+                              ? carouselConfig.bgColor
+                              : preset.bgColor
+                          }
+                          accentColor={
+                            keepCustomColors && isSelected
+                              ? carouselConfig.accentColor
+                              : preset.accentColor
+                          }
+                          cardBgColor={
+                            keepCustomColors && isSelected
+                              ? carouselConfig.cardBgColor
+                              : preset.cardBgColor
+                          }
+                          textColor={
+                            keepCustomColors && isSelected
+                              ? carouselConfig.textColor
+                              : preset.textColor
+                          }
+                        />
+                        <div className="flex w-full items-center justify-between gap-2">
+                          <span className="text-xs font-extrabold">
+                            {preset.name}
+                          </span>
+                          {isRecommended && (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                              Auto-Matched
+                            </span>
+                          )}
+                        </div>
+                        <span className="mt-1 inline-block rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                          {preset.layoutBadge}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <span
-                            className="h-4 w-4 rounded-full border border-slate-300"
-                            style={{ backgroundColor: preset.bgColor }}
-                          />
-                          <span
-                            className="h-4 w-4 rounded-full border border-slate-300"
-                            style={{ backgroundColor: preset.accentColor }}
-                          />
-                        </span>
-                      </div>
-                      <p className="mt-1.5 text-[11px] leading-5 text-slate-600 dark:text-slate-300">
-                        {preset.description}
-                      </p>
-                    </button>
-                  ))}
+                        <p className="mt-1.5 text-[11px] leading-5 text-slate-600 dark:text-slate-300">
+                          {preset.description}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <h3 className="mt-6 text-base font-extrabold">
@@ -1720,17 +2932,23 @@ export default function RepurposePanel({
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-bold">
-                      Upload Brand Logo (PNG/JPG/SVG)
+                      Brand Logo (Auto-Detected or Upload)
                     </label>
                     <div className="flex items-center gap-2">
-                      <label className={`${button} w-full cursor-pointer text-xs`}>
+                      <label
+                        className={`${button} w-full cursor-pointer text-xs`}
+                      >
                         <ImageIcon size={15} aria-hidden />
-                        {carouselConfig.logoDataUrl ? "Change Logo" : "Upload Logo"}
+                        {carouselConfig.logoDataUrl
+                          ? "Change Logo"
+                          : "Upload Logo"}
                         <input
                           type="file"
                           accept="image/*"
                           className="sr-only"
-                          onChange={(e) => handleLogoUpload(e.target.files?.[0])}
+                          onChange={(e) =>
+                            handleLogoUpload(e.target.files?.[0])
+                          }
                         />
                       </label>
                       {carouselConfig.logoDataUrl && (
@@ -1756,7 +2974,10 @@ export default function RepurposePanel({
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="carousel-aspect" className="mb-1 block text-xs font-bold">
+                    <label
+                      htmlFor="carousel-aspect"
+                      className="mb-1 block text-xs font-bold"
+                    >
                       Slide Dimensions
                     </label>
                     <select
@@ -1775,7 +2996,9 @@ export default function RepurposePanel({
                         );
                       }}
                     >
-                      <option value="portrait">Portrait 4:5 (1080 × 1350)</option>
+                      <option value="portrait">
+                        Portrait 4:5 (1080 × 1350)
+                      </option>
                       <option value="square">Square 1:1 (1080 × 1080)</option>
                     </select>
                   </div>
@@ -1793,9 +3016,11 @@ export default function RepurposePanel({
                         className="h-10 w-12 cursor-pointer rounded border border-slate-300"
                         value={carouselConfig.bgColor}
                         onChange={(e) => {
+                          setKeepCustomColors(true);
                           const nextCfg = {
                             ...carouselConfig,
                             bgColor: e.target.value,
+                            bgSecondaryColor: e.target.value,
                           };
                           setCarouselConfig(nextCfg);
                           updateCarouselPreviewsAndAssets(
@@ -1808,6 +3033,7 @@ export default function RepurposePanel({
                         className={`${field} py-2 font-mono text-xs`}
                         value={carouselConfig.bgColor}
                         onChange={(e) => {
+                          setKeepCustomColors(true);
                           const nextCfg = {
                             ...carouselConfig,
                             bgColor: e.target.value,
@@ -1831,6 +3057,7 @@ export default function RepurposePanel({
                         className="h-10 w-12 cursor-pointer rounded border border-slate-300"
                         value={carouselConfig.accentColor}
                         onChange={(e) => {
+                          setKeepCustomColors(true);
                           const nextCfg = {
                             ...carouselConfig,
                             accentColor: e.target.value,
@@ -1846,6 +3073,7 @@ export default function RepurposePanel({
                         className={`${field} py-2 font-mono text-xs`}
                         value={carouselConfig.accentColor}
                         onChange={(e) => {
+                          setKeepCustomColors(true);
                           const nextCfg = {
                             ...carouselConfig,
                             accentColor: e.target.value,
@@ -1869,6 +3097,7 @@ export default function RepurposePanel({
                         className="h-10 w-12 cursor-pointer rounded border border-slate-300"
                         value={carouselConfig.cardBgColor}
                         onChange={(e) => {
+                          setKeepCustomColors(true);
                           const nextCfg = {
                             ...carouselConfig,
                             cardBgColor: e.target.value,
@@ -1884,6 +3113,7 @@ export default function RepurposePanel({
                         className={`${field} py-2 font-mono text-xs`}
                         value={carouselConfig.cardBgColor}
                         onChange={(e) => {
+                          setKeepCustomColors(true);
                           const nextCfg = {
                             ...carouselConfig,
                             cardBgColor: e.target.value,
@@ -1898,7 +3128,10 @@ export default function RepurposePanel({
                     </div>
                   </div>
                   <div>
-                    <label htmlFor="carousel-count" className="mb-1 block text-xs font-bold">
+                    <label
+                      htmlFor="carousel-count"
+                      className="mb-1 block text-xs font-bold"
+                    >
                       Number of Slides
                     </label>
                     <select
@@ -1927,34 +3160,42 @@ export default function RepurposePanel({
               {/* Live Visual Slide Gallery + Per-Slide Editor */}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-lg font-extrabold">
-                  3. Live Slide Previews &amp; Per-Slide Editor ({carouselSlides.length} Slides)
+                  3. Live Slide Previews &amp; Per-Slide Editor (
+                  {carouselSlides.length} Slides: Cover +{" "}
+                  {Math.max(0, carouselSlides.length - 2)} Topic Slides + Closing
+                  CTA)
                 </h3>
                 <button
                   type="button"
                   className={button}
                   onClick={() => {
-                    const nextSlides: CarouselSlide[] = [
-                      ...carouselSlides,
-                      {
-                        number: carouselSlides.length + 1,
-                        kind: "point",
-                        kicker: `SLIDE 0${carouselSlides.length + 1}`,
-                        headline: "New carousel insight slide",
-                        highlightPhrase: "insight slide",
-                        body: "Edit this slide text and comparison diagram cards below.",
-                        cardLeftTitle: "BEFORE",
-                        cardLeftBody: "Previous approach or common mistake.",
-                        cardRightTitle: "AFTER",
-                        cardRightBody: "Improved workflow or actionable fix.",
-                        footer: carouselConfig.websiteUrl,
-                      },
-                    ];
-                    setCarouselSlides(nextSlides);
-                    updateCarouselPreviewsAndAssets(nextSlides, carouselConfig);
+                    const insertIdx = Math.max(1, carouselSlides.length - 1);
+                    const newSlide: CarouselSlide = {
+                      number: insertIdx + 1,
+                      kind: "point",
+                      kicker: `STEP 0${insertIdx} · KEY INSIGHT`,
+                      headline: "New carousel insight slide",
+                      highlightPhrase: "insight slide",
+                      body: "Edit this slide text and diagram boxes below.",
+                      cardLeftTitle: "01 · OBSERVATION",
+                      cardLeftBody: "Previous approach or common bottleneck.",
+                      cardRightTitle: "02 · ACTION RULE",
+                      cardRightBody: "Improved workflow or actionable fix.",
+                      stepThirdTitle: "03 · IMPACT",
+                      stepThirdBody: "Verified quality and audience clarity.",
+                      footer: carouselConfig.websiteUrl,
+                    };
+                    const raw = [
+                      ...carouselSlides.slice(0, insertIdx),
+                      newSlide,
+                      ...carouselSlides.slice(insertIdx),
+                    ].map((s, i) => ({ ...s, number: i + 1 }));
+                    setCarouselSlides(raw);
+                    updateCarouselPreviewsAndAssets(raw, carouselConfig);
                   }}
                 >
                   <Plus size={16} aria-hidden />
-                  Add Slide
+                  Add Topic Slide
                 </button>
               </div>
 
@@ -1966,8 +3207,12 @@ export default function RepurposePanel({
                   >
                     <div className="mb-3 flex items-center justify-between gap-2">
                       <span className="text-xs font-extrabold uppercase text-[#9A3412] dark:text-[#FDBA74]">
-                        Slide {String(idx + 1).padStart(2, "0")} of{" "}
-                        {String(carouselSlides.length).padStart(2, "0")}
+                        Slide {String(idx + 1).padStart(2, "0")} ·{" "}
+                        {slide.kind === "cover"
+                          ? "Intro Cover Slide"
+                          : slide.kind === "cta"
+                            ? "Closing CTA Slide"
+                            : "Topic Breakdown Slide"}
                       </span>
                       <div className="flex items-center gap-2">
                         {slidePreviewUrls[idx] && (
@@ -2016,9 +3261,74 @@ export default function RepurposePanel({
                     {/* Editable Fields for This Slide */}
                     <details className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                       <summary className="cursor-pointer text-xs font-bold">
-                        Edit Slide {idx + 1} Text &amp; Diagram Boxes
+                        Edit Slide {idx + 1} Content &amp; Layout Role
                       </summary>
                       <div className="mt-3 space-y-2.5">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-bold">
+                              Slide Role
+                            </label>
+                            <select
+                              className={`${field} py-1.5 text-xs font-bold`}
+                              value={slide.kind}
+                              onChange={(e) => {
+                                const next = carouselSlides.map((s, i) =>
+                                  i === idx
+                                    ? {
+                                        ...s,
+                                        kind: e.target.value as
+                                          | "cover"
+                                          | "point"
+                                          | "comparison"
+                                          | "cta",
+                                      }
+                                    : s,
+                                );
+                                setCarouselSlides(next);
+                                updateCarouselPreviewsAndAssets(
+                                  next,
+                                  carouselConfig,
+                                );
+                              }}
+                            >
+                              <option value="cover">
+                                Cover / Intro Slide
+                              </option>
+                              <option value="point">
+                                Topic Explanation Slide
+                              </option>
+                              <option value="comparison">
+                                Comparison Slide
+                              </option>
+                              <option value="cta">
+                                Closing Summary &amp; CTA Slide
+                              </option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold">
+                              Top Kicker Label
+                            </label>
+                            <input
+                              className={`${field} py-1.5 text-xs`}
+                              value={slide.kicker}
+                              onChange={(e) => {
+                                const next = carouselSlides.map((s, i) =>
+                                  i === idx
+                                    ? { ...s, kicker: e.target.value }
+                                    : s,
+                                );
+                                setCarouselSlides(next);
+                                updateCarouselPreviewsAndAssets(
+                                  next,
+                                  carouselConfig,
+                                );
+                              }}
+                            />
+                          </div>
+                        </div>
+
                         <div>
                           <label className="block text-[11px] font-bold">
                             Headline
@@ -2028,7 +3338,9 @@ export default function RepurposePanel({
                             value={slide.headline}
                             onChange={(e) => {
                               const next = carouselSlides.map((s, i) =>
-                                i === idx ? { ...s, headline: e.target.value } : s,
+                                i === idx
+                                  ? { ...s, headline: e.target.value }
+                                  : s,
                               );
                               setCarouselSlides(next);
                               updateCarouselPreviewsAndAssets(
@@ -2082,7 +3394,7 @@ export default function RepurposePanel({
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="block text-[11px] font-bold">
-                              Box 1 Title (e.g. BEFORE)
+                              Card 1 Title
                             </label>
                             <input
                               className={`${field} py-1.5 text-xs`}
@@ -2120,7 +3432,7 @@ export default function RepurposePanel({
                           </div>
                           <div>
                             <label className="block text-[11px] font-bold">
-                              Box 2 Title (e.g. AFTER)
+                              Card 2 / CTA URL
                             </label>
                             <input
                               className={`${field} py-1.5 text-xs`}
@@ -2191,7 +3503,10 @@ export default function RepurposePanel({
             <div className="mt-6 space-y-5">
               <div className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900 sm:grid-cols-3">
                 <div>
-                  <label htmlFor="podcast-mode" className="mb-1 block text-xs font-bold">
+                  <label
+                    htmlFor="podcast-mode"
+                    className="mb-1 block text-xs font-bold"
+                  >
                     Show Format
                   </label>
                   <select
@@ -2213,7 +3528,10 @@ export default function RepurposePanel({
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="podcast-wpm" className="mb-1 block text-xs font-bold">
+                  <label
+                    htmlFor="podcast-wpm"
+                    className="mb-1 block text-xs font-bold"
+                  >
                     Speaking Pace
                   </label>
                   <select
@@ -2223,7 +3541,11 @@ export default function RepurposePanel({
                     onChange={(e) => {
                       const nextW = Number(e.target.value) as 130 | 150 | 170;
                       setPodcastWpm(nextW);
-                      const d = buildPodcastScript(article, podcastMode, nextW);
+                      const d = buildPodcastScript(
+                        article,
+                        podcastMode,
+                        nextW,
+                      );
                       setPodcastDraft(d);
                       rebuildNonCarouselDownloads(null, null, "", null, d);
                     }}
@@ -2269,7 +3591,13 @@ export default function RepurposePanel({
                         );
                         const next = { ...podcastDraft, segments: nextSegs };
                         setPodcastDraft(next);
-                        rebuildNonCarouselDownloads(null, null, "", null, next);
+                        rebuildNonCarouselDownloads(
+                          null,
+                          null,
+                          "",
+                          null,
+                          next,
+                        );
                       }}
                     />
                   </div>
@@ -2282,15 +3610,34 @@ export default function RepurposePanel({
             <p className="text-xs text-slate-600 dark:text-slate-300">
               All edits above automatically update your download buttons.
             </p>
-            <button
-              type="button"
-              className={button}
-              disabled={aiBusy}
-              onClick={() => generateAll(true)}
-            >
-              <RefreshCw size={15} aria-hidden />
-              {aiBusy ? "Synthesizing…" : "Regenerate from article"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "video-script",
+                "social-posts",
+                "newsletter",
+                "linkedin-carousel",
+                "podcast-script",
+              ].includes(format) && (
+                <button
+                  type="button"
+                  className={button}
+                  disabled={aiBusy}
+                  onClick={() => generateAll(true)}
+                >
+                  <Sparkles size={15} aria-hidden />
+                  {aiBusy ? "AI Polishing…" : "AI Polish with Gemini / Groq"}
+                </button>
+              )}
+              <button
+                type="button"
+                className={button}
+                disabled={aiBusy}
+                onClick={() => generateAll(false)}
+              >
+                <RefreshCw size={15} aria-hidden />
+                Reset to Default Draft
+              </button>
+            </div>
           </div>
         </section>
       )}

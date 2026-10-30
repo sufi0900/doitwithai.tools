@@ -1229,7 +1229,10 @@
         "internal-link-opportunity-finder",
         "competitor-backlink-gap-analyzer",
         "unlinked-brand-mention-checker",
-        "broken-link-opportunity-finder"
+        "broken-link-opportunity-finder",
+        "anchor-text-analyzer",
+        "disavow-file-generator",
+        "link-placement-quality-checker"
       ],
       "topics": [
         "off-page"
@@ -1329,7 +1332,9 @@
       "relatedToolSlugs": [
         "backlink-verification-tool",
         "unlinked-brand-mention-checker",
-        "outreach-email-builder"
+        "outreach-email-builder",
+        "link-placement-quality-checker",
+        "anchor-text-analyzer"
       ],
       "topics": [
         "off-page"
@@ -1363,7 +1368,9 @@
       ],
       "relatedToolSlugs": [
         "broken-link-opportunity-finder",
-        "unlinked-brand-mention-checker"
+        "unlinked-brand-mention-checker",
+        "journalist-pitch-builder",
+        "link-placement-quality-checker"
       ],
       "topics": [
         "off-page"
@@ -1392,7 +1399,9 @@
       "relatedGuides": [],
       "relatedToolSlugs": [
         "outreach-email-builder",
-        "backlink-verification-tool"
+        "backlink-verification-tool",
+        "journalist-pitch-builder",
+        "unlinked-brand-mention-checker"
       ],
       "topics": [
         "off-page"
@@ -1696,6 +1705,148 @@
       ],
       "topics": [
         "conversion",
+        "writing"
+      ]
+    },
+    {
+      "id": "anchor-text-analyzer",
+      "slug": "anchor-text-analyzer",
+      "name": "Anchor Text Analyzer & Ratio Calculator",
+      "description": "Classify backlink and webpage anchors across 8 semantic categories, audit exact-match over-optimization against page-type benchmarks, and export CSV or DOCX reports.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "anchor text analyzer",
+        "anchor text checker",
+        "anchor text ratio",
+        "over-optimization audit",
+        "off-page SEO"
+      ],
+      "kind": "Audit & diversify",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 49,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "backlink-verification-tool",
+        "disavow-file-generator",
+        "link-placement-quality-checker",
+        "competitor-backlink-gap-analyzer"
+      ],
+      "topics": [
+        "off-page"
+      ]
+    },
+    {
+      "id": "disavow-file-generator",
+      "slug": "disavow-file-generator",
+      "name": "Google Disavow File Generator & Validator",
+      "description": "Convert toxic backlink URLs or audit CSVs into a strict Google Search Console disavow.txt file. Normalize domain: rules, merge existing files, and prevent self-disavows.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "disavow file generator",
+        "disavow.txt generator",
+        "toxic backlinks",
+        "Google Search Console disavow",
+        "off-page SEO"
+      ],
+      "kind": "Validate & clean",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 50,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "anchor-text-analyzer",
+        "backlink-verification-tool",
+        "link-placement-quality-checker",
+        "external-link-source-review"
+      ],
+      "topics": [
+        "off-page"
+      ]
+    },
+    {
+      "id": "link-placement-quality-checker",
+      "slug": "link-placement-quality-checker",
+      "name": "Guest Post & Link Placement Quality Checker",
+      "description": "Vet candidate publisher pages across 10 real technical and editorial signals: indexability, canonical alignment, outbound link density, dofollow ratio, and PBN footprints.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "guest post checker",
+        "link quality checker",
+        "link prospect vetting",
+        "outbound link density",
+        "off-page SEO"
+      ],
+      "kind": "Vet prospects",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 51,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "broken-link-opportunity-finder",
+        "outreach-email-builder",
+        "anchor-text-analyzer",
+        "backlink-verification-tool"
+      ],
+      "topics": [
+        "off-page"
+      ]
+    },
+    {
+      "id": "journalist-pitch-builder",
+      "slug": "journalist-pitch-builder",
+      "name": "HARO & Journalist Pitch Response Builder",
+      "description": "Draft quote-ready responses for HARO, Connectively, Qwoted, Featured, and journalist queries with 3 editorial soundbite angles, scannability checks, and DOCX or TXT downloads.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "HARO pitch generator",
+        "journalist pitch builder",
+        "digital PR outreach",
+        "Connectively pitch",
+        "off-page SEO"
+      ],
+      "kind": "Draft media pitch",
+      "status": "live",
+      "addedAt": "2026-10-30",
+      "featuredOrder": 52,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand how SEO and AI search work together"
+        }
+      ],
+      "relatedToolSlugs": [
+        "digital-pr-linkable-asset-planner",
+        "outreach-email-builder",
+        "unlinked-brand-mention-checker",
+        "backlink-verification-tool"
+      ],
+      "topics": [
+        "off-page",
         "writing"
       ]
     }
