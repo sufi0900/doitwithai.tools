@@ -130,7 +130,7 @@ export function buildTocOutputs(params: {
   const isHtml = /<h[1-6][\s>]/i.test(params.inputContent);
   let updatedArticleHtml = "";
   if (isHtml) {
-    const $ = load(params.inputContent, null, false);
+    const $ = load(params.inputContent);
     let cursor = 0;
     $("h2,h3,h4").each((_, el) => {
       const matched = params.items[cursor];
@@ -139,7 +139,7 @@ export function buildTocOutputs(params: {
         $(el).attr("id", matched.slug);
       }
     });
-    updatedArticleHtml = `${tocHtml}\n\n${$.html()}`;
+    updatedArticleHtml = `${tocHtml}\n\n${$("body").html() || $.html()}`;
   } else {
     let cursor = 0;
     const converted = params.inputContent

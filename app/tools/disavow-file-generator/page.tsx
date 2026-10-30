@@ -283,7 +283,7 @@ export default function DisavowFileGeneratorPage() {
       </section>
 
       <ToolResources slug="disavow-file-generator" />
-      <ToolFaq faqs={faqs} />
+      <ToolFaq title="Google disavow file generator questions" faqs={faqs} />
     </div>
   );
 }

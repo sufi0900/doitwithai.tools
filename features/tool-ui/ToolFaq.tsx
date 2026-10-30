@@ -1,9 +1,9 @@
 import { ChevronDown, MessageCircleQuestion } from "lucide-react";
 export default function ToolFaq({
-  title,
+  title = "Frequently asked questions",
   faqs,
 }: {
-  title: string;
+  title?: string;
   faqs: { question: string; answer: string }[];
 }) {
   return (

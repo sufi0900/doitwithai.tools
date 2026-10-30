@@ -258,7 +258,7 @@ export default function GscCtrOptimizerPage() {
       </section>
 
       <ToolResources slug="gsc-ctr-optimizer" />
-      <ToolFaq faqs={faqs} />
+      <ToolFaq title="GSC CTR benchmark & click-recovery questions" faqs={faqs} />
     </div>
   );
 }

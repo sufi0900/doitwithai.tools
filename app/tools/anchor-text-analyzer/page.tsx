@@ -289,7 +289,7 @@ export default function AnchorTextAnalyzerPage() {
       </section>
 
       <ToolResources slug="anchor-text-analyzer" />
-      <ToolFaq faqs={faqs} />
+      <ToolFaq title="Anchor text analyzer questions" faqs={faqs} />
     </div>
   );
 }
