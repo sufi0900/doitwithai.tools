@@ -364,7 +364,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const finalUrl = page.finalUrl || input.url;
+    const finalUrl = page.url || input.url;
     const domain = new URL(finalUrl).hostname.replace(/^www\./i, "");
     const { document } = parseHTML(page.html);
 
