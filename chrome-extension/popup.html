@@ -8,7 +8,7 @@
   </head>
   <body>
     <div class="app-shell">
-      <!-- LEFT SIDEBAR NAVIGATION (Ahrefs-Inspired Dark 2-Pane Architecture) -->
+      <!-- LEFT SIDEBAR NAVIGATION (Ahrefs & SEO Pro Inspired 2-Pane Architecture) -->
       <aside class="sidebar" aria-label="Extension sections">
         <div class="brand-header">
           <a
@@ -18,7 +18,13 @@
             class="brand-logo-link"
             title="Open DoItWithAI.tools"
           >
-            <span class="brand-badge">AI</span>
+            <span class="brand-logo-wrap">
+              <img
+                src="icons/brand-logo.png"
+                alt="DoItWithAI Logo"
+                class="brand-logo-img"
+              />
+            </span>
             <div class="brand-text">
               <span class="brand-title">DoItWithAI</span>
               <span class="brand-sub">SEO · Content · Social</span>
@@ -33,6 +39,15 @@
               aria-label="Switch theme"
             >
               ☀
+            </button>
+            <button
+              type="button"
+              id="btn-splitview"
+              class="icon-btn"
+              title="Auto-Fit Split Screen (Adjust Browser Page + Full Extension Side-by-Side)"
+              aria-label="Auto-fit split screen"
+            >
+              ⇔
             </button>
             <button
               type="button"
@@ -76,7 +91,7 @@
           <div class="nav-group-label">Pillar 2 · Content Studio</div>
           <button type="button" class="nav-item" data-tab="convert">
             <span>Convert Page &amp; MP3</span>
-            <span class="nav-badge badge-accent">8</span>
+            <span class="nav-badge badge-accent">12</span>
           </button>
 
           <div class="nav-group-label">Pillar 3 · Social Studio</div>
@@ -105,7 +120,7 @@
               rel="noopener noreferrer"
               class="footer-cta-link"
             >
-              Open All 63 Web Tools ↗
+              Open All 78 Web Tools ↗
             </a>
           </div>
         </div>
@@ -119,6 +134,14 @@
             Inspecting active tab…
           </div>
           <div class="topbar-btns">
+            <button
+              type="button"
+              id="btn-expand-split-inline"
+              class="btn-secondary btn-xs sidepanel-only-btn"
+              title="Auto-adjust browser tab width and open full 2-pane split view"
+            >
+              ⇔ Auto-Fit Split View
+            </button>
             <button type="button" id="btn-rescan" class="btn-secondary btn-xs">
               ↻ Rescan Page
             </button>
@@ -198,7 +221,7 @@
                 <span class="status-pill" id="desc-char-badge">0 chars</span>
               </div>
               <div class="field-value">
-                <p id="ov-desc">—</p>
+                <p id="ov-desc" class="body-value-text">—</p>
                 <div class="progress-bar">
                   <div class="progress-fill" id="bar-desc"></div>
                 </div>
@@ -221,7 +244,7 @@
                 <span class="status-pill" id="robots-badge">—</span>
               </div>
               <div class="field-value">
-                <code id="ov-robots">index, follow</code>
+                <code id="ov-robots" class="inline-code-pill">index, follow</code>
               </div>
             </div>
           </div>
@@ -355,7 +378,7 @@
           </div>
         </section>
 
-        <!-- TAB 4: STRUCTURED DATA & SCHEMA (Like SEO Pro + Ahrefs) -->
+        <!-- TAB 4: STRUCTURED DATA & SCHEMA (Brand Blue Styling) -->
         <section class="tab-pane" id="tab-schema">
           <div class="pane-header">
             <h2>Structured Data (JSON-LD) &amp; AI Citation Readiness</h2>
@@ -451,66 +474,140 @@
           <div id="images-list-container" class="media-list"></div>
         </section>
 
-        <!-- TAB 7: PILLAR 2 — 1-CLICK CONTENT CONVERTER & AUDIO PLAYER -->
+        <!-- TAB 7: PILLAR 2 — 1-CLICK CONTENT CONVERTER & AUDIO STUDIO -->
         <section class="tab-pane" id="tab-convert">
           <div class="pane-header">
             <h2>1-Click Page Converter (PDF, Word, Markdown &amp; MP3 Audio)</h2>
-            <span class="badge-pill">Zero Bot-Block · Uses Live Tab DOM</span>
+            <span class="status-pill">Zero Bot-Block · Live DOM</span>
           </div>
 
-          <!-- Built-in Natural Read-Aloud Audio Bar -->
-          <div class="info-card audio-player-card">
-            <div class="flex-between">
-              <div>
-                <span class="micro-label">LISTEN TO THIS ARTICLE RIGHT NOW</span>
-                <strong id="conv-article-title" class="block-val">Extracted Article Ready</strong>
+          <!-- Upgraded Interactive Natural Read-Aloud & Neural MP3 Studio Card -->
+          <div class="info-card audio-studio-card">
+            <div class="audio-studio-top">
+              <div class="audio-studio-brand">
+                <div class="audio-wave-badge" id="audio-wave-indicator" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                  </svg>
+                </div>
+                <div class="audio-studio-meta">
+                  <div class="audio-kicker-row">
+                    <span class="audio-kicker-pill">ARTICLE VOICE READER &amp; MP3 STUDIO</span>
+                    <span class="audio-duration-label" id="conv-audio-meta">~4 min listen</span>
+                  </div>
+                  <strong id="conv-article-title" class="audio-article-title">Extracted Article Ready</strong>
+                </div>
               </div>
-              <div class="audio-controls">
-                <select id="tts-rate" class="select-xs" aria-label="Playback speed">
-                  <option value="1">1.0x Speed</option>
-                  <option value="1.15">1.15x Speed</option>
-                  <option value="1.3">1.3x Speed</option>
-                </select>
-                <button type="button" id="btn-tts-play" class="btn-primary btn-xs">
-                  ▶ Listen Aloud
+            </div>
+
+            <div class="audio-studio-controls">
+              <div class="audio-left-actions">
+                <button type="button" id="btn-tts-play" class="btn-audio-play">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>Listen Aloud Now</span>
                 </button>
                 <button type="button" id="btn-tts-stop" class="btn-secondary btn-xs">
                   ■ Stop
                 </button>
+                <select id="tts-rate" class="select-xs" aria-label="Playback speed">
+                  <option value="1">1.0x Normal Speed</option>
+                  <option value="1.15">1.15x Fast Speed</option>
+                  <option value="1.3">1.3x Rapid Speed</option>
+                </select>
               </div>
+              <a
+                id="btn-open-mp3-studio"
+                href="https://doitwithai.tools/tools/article-to-mp3"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-mp3-studio-link"
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+                <span>Download MP3 in Studio ↗</span>
+              </a>
             </div>
           </div>
 
-          <!-- Instant Local File Exports (No Server Needed!) -->
+          <!-- Instant Local File Exports (With Custom Color-Coded SVG Icons) -->
           <div class="info-card">
-            <h3 class="section-subtitle">Instant 1-Click Local Downloads (From Current Tab)</h3>
-            <div class="action-grid">
-              <button type="button" id="btn-dl-markdown" class="action-tile">
-                <span class="tile-icon">M↓</span>
-                <div>
-                  <strong>Download Markdown (.md)</strong>
+            <div class="section-header-row">
+              <h3 class="section-subtitle" style="margin-bottom:0">Instant 1-Click Local Downloads (From Current Tab)</h3>
+              <span class="text-muted">Works offline · No server needed</span>
+            </div>
+            <div class="action-grid" style="margin-top:10px">
+              <button type="button" id="btn-dl-markdown" class="action-tile tile-indigo">
+                <span class="tile-icon icon-indigo" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <path d="M9 15v-4l2 2 2-2v4"></path>
+                    <path d="M16 13v2"></path>
+                  </svg>
+                </span>
+                <div class="tile-body">
+                  <div class="tile-title-row">
+                    <strong>Download Markdown</strong>
+                    <span class="format-tag tag-indigo">.MD</span>
+                  </div>
                   <span>Clean headings, lists, tables &amp; YAML frontmatter</span>
                 </div>
               </button>
-              <button type="button" id="btn-dl-doc" class="action-tile">
-                <span class="tile-icon">W</span>
-                <div>
-                  <strong>Download Word (.doc)</strong>
-                  <span>Editable Microsoft Word reading copy</span>
+
+              <button type="button" id="btn-dl-doc" class="action-tile tile-blue">
+                <span class="tile-icon icon-blue" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <line x1="10" y1="9" x2="8" y2="9"></line>
+                  </svg>
+                </span>
+                <div class="tile-body">
+                  <div class="tile-title-row">
+                    <strong>Download Word Copy</strong>
+                    <span class="format-tag tag-blue">.DOC</span>
+                  </div>
+                  <span>Editable Microsoft Word &amp; Google Docs copy</span>
                 </div>
               </button>
-              <button type="button" id="btn-dl-txt" class="action-tile">
-                <span class="tile-icon">TXT</span>
-                <div>
-                  <strong>Download Clean Text (.txt)</strong>
-                  <span>Distraction-free article transcript</span>
+
+              <button type="button" id="btn-dl-txt" class="action-tile tile-emerald">
+                <span class="tile-icon icon-emerald" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 6h16M4 12h16M4 18h11"></path>
+                  </svg>
+                </span>
+                <div class="tile-body">
+                  <div class="tile-title-row">
+                    <strong>Download Clean Text</strong>
+                    <span class="format-tag tag-emerald">.TXT</span>
+                  </div>
+                  <span>Distraction-free plain text article transcript</span>
                 </div>
               </button>
-              <button type="button" id="btn-print-pdf" class="action-tile">
-                <span class="tile-icon">PDF</span>
-                <div>
-                  <strong>Save Clean Reader PDF</strong>
-                  <span>Formatted print-ready article view</span>
+
+              <button type="button" id="btn-print-pdf" class="action-tile tile-rose">
+                <span class="tile-icon icon-rose" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                  </svg>
+                </span>
+                <div class="tile-body">
+                  <div class="tile-title-row">
+                    <strong>Save Clean Reader PDF</strong>
+                    <span class="format-tag tag-rose">.PDF</span>
+                  </div>
+                  <span>Formatted print-ready reader PDF view</span>
                 </div>
               </button>
             </div>
@@ -518,8 +615,11 @@
 
           <!-- Deep-Link Handoffs to Full DoItWithAI Conversion Studios -->
           <div class="info-card">
-            <h3 class="section-subtitle">Open Current URL in DoItWithAI Conversion Studios</h3>
-            <div class="studio-links-grid" id="conversion-studio-links"></div>
+            <div class="section-header-row">
+              <h3 class="section-subtitle" style="margin-bottom:0">Open Current URL in DoItWithAI Cloud Studios</h3>
+              <span class="text-muted">Pre-fills this page URL automatically</span>
+            </div>
+            <div class="studio-links-grid" id="conversion-studio-links" style="margin-top:10px"></div>
           </div>
         </section>
 
@@ -538,7 +638,7 @@
             </a>
           </div>
 
-          <!-- Visual Facebook/LinkedIn & X Previews (Like SEO Pro image_05c045 + Ahrefs image_05bca9) -->
+          <!-- Visual Facebook/LinkedIn & X Previews -->
           <div class="social-previews-grid">
             <div class="social-preview-card">
               <span class="micro-label">FACEBOOK / LINKEDIN (OPEN GRAPH)</span>

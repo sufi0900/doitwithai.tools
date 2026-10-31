@@ -71,23 +71,23 @@ const TOPIC_METADATA: Record<
   social: {
     shortName: "Social Media",
     description:
-      "Preview Open Graph and X/Twitter cards, validate social image dimensions, and craft share-ready metadata.",
+      "Preview Open Graph and X/Twitter cards, format social posts, optimize YouTube titles, and build UTM campaign links.",
     badgeColor:
       "border-pink-500/25 bg-pink-500/10 text-pink-700 dark:border-pink-400/30 dark:bg-pink-500/[0.15] dark:text-pink-300",
   },
   "off-page": {
     shortName: "Off-Page SEO",
     description:
-      "Verify known backlinks, review link evidence, and compare manual checks before planning outreach.",
+      "Verify known backlinks, audit anchor text ratios, generate disavow files, and build outreach campaigns.",
     badgeColor:
       "border-amber-500/25 bg-amber-500/10 text-amber-600 dark:border-amber-400/30 dark:bg-amber-500/[0.15] dark:text-amber-300",
   },
   "local-seo": {
     shortName: "Local SEO",
     description:
-      "Local business schema, location page planning, and regional search optimization.",
+      "Optimize Google Business Profiles, generate Google review links & QR posters, build LocalBusiness schema, and audit NAP citations.",
     badgeColor:
-      "border-teal-500/25 bg-teal-500/10 text-teal-600 dark:border-teal-400/30 dark:bg-teal-500/[0.15] dark:text-teal-300",
+      "border-teal-500/25 bg-teal-500/10 text-teal-700 dark:border-teal-400/30 dark:bg-teal-500/[0.15] dark:text-teal-300",
   },
 };
 
@@ -107,7 +107,9 @@ const TOPIC_COLORS: Record<
   "ai-search": { accent: "#0e7490", darkAccent: "#67e8f9", rgb: "6,182,212" },
   "off-page": { accent: "#92400e", darkAccent: "#fcd34d", rgb: "217,119,6" },
   social: { accent: "#be185d", darkAccent: "#f9a8d4", rgb: "236,72,153" },
+  "local-seo": { accent: "#0d9488", darkAccent: "#5eead4", rgb: "13,148,136" },
 };
+
 export function topicStyle(meta: TopicMeta): CSSProperties {
   return {
     "--topic-accent": meta.accent,

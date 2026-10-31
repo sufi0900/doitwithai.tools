@@ -1892,7 +1892,7 @@
       "id": "featured-snippet-optimizer",
       "slug": "featured-snippet-optimizer",
       "name": "Featured Snippet & AI Overview Passage Optimizer",
-      "description": "Audit H2/H3 answer passages and generate 45–58 word Position Zero definitions, ordered step lists, and comparison tables for Featured Snippets and AI Overviews.",
+      "description": "Audit H2/H3 answer passages and generate 45\u201358 word Position Zero definitions, ordered step lists, and comparison tables for Featured Snippets and AI Overviews.",
       "categories": [
         "ai-seo",
         "content-writing"
@@ -2080,7 +2080,7 @@
       "id": "table-of-contents-generator",
       "slug": "table-of-contents-generator",
       "name": "SEO Table of Contents & Jump-Link Generator",
-      "description": "Generate a semantic HTML or Markdown Table of Contents from H2–H4 headings, automatically inject unique id attributes into your article, and export Jump-Link JSON-LD.",
+      "description": "Generate a semantic HTML or Markdown Table of Contents from H2\u2013H4 headings, automatically inject unique id attributes into your article, and export Jump-Link JSON-LD.",
       "categories": [
         "ai-seo",
         "content-writing"
@@ -2151,6 +2151,544 @@
         "writing",
         "ai-search"
       ]
+    },
+    {
+      "id": "google-review-link-generator",
+      "slug": "google-review-link-generator",
+      "name": "Google Review Link & QR Poster Generator",
+      "description": "Generate a direct 1-click Google Review link from your Place ID, download a vector QR code and printable counter poster, and copy SMS, WhatsApp, and email review requests.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "Local SEO",
+        "Google Business Profile",
+        "Google reviews",
+        "QR code generator"
+      ],
+      "kind": "Generator & print studio",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 14,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "google-business-profile-auditor",
+        "google-review-response-generator",
+        "local-business-schema-generator",
+        "nap-consistency-checker"
+      ],
+      "topics": [
+        "local-seo",
+        "on-page"
+      ]
+    },
+    {
+      "id": "local-business-schema-generator",
+      "slug": "local-business-schema-generator",
+      "name": "LocalBusiness Schema Markup Generator",
+      "description": "Build validated LocalBusiness JSON-LD across 35+ industry subtypes with GeoCoordinates, OpeningHoursSpecification, areaServed cities, and sameAs citation links.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "Local SEO",
+        "LocalBusiness schema",
+        "JSON-LD",
+        "structured data"
+      ],
+      "kind": "Generator & validator",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "structured-data-validator",
+        "schema-markup-generator",
+        "google-business-profile-auditor",
+        "nap-consistency-checker"
+      ],
+      "topics": [
+        "local-seo",
+        "technical"
+      ]
+    },
+    {
+      "id": "google-business-profile-auditor",
+      "slug": "google-business-profile-auditor",
+      "name": "Google Business Profile (GBP) Auditor & Optimizer",
+      "description": "Audit your Google Business Profile across 10 Local Pack ranking factors and generate an optimized 750-character description, pre-seeded Q&As, and weekly GBP posts.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "Local SEO",
+        "Google Business Profile",
+        "GBP audit",
+        "Google Maps SEO"
+      ],
+      "kind": "Audit & AI optimizer",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 15,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "google-review-link-generator",
+        "local-business-schema-generator",
+        "nap-consistency-checker",
+        "google-review-response-generator"
+      ],
+      "topics": [
+        "local-seo",
+        "on-page",
+        "writing"
+      ]
+    },
+    {
+      "id": "nap-consistency-checker",
+      "slug": "nap-consistency-checker",
+      "name": "NAP Consistency & Local Citation Formatter",
+      "description": "Compare your Business Name, Address, and Phone (NAP) across local directories, normalize USPS abbreviations, and export a Master Citation Tracker CSV.",
+      "categories": [
+        "ai-seo"
+      ],
+      "tags": [
+        "Local SEO",
+        "NAP consistency",
+        "local citations",
+        "USPS formatter"
+      ],
+      "kind": "Auditor & CSV exporter",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "local-business-schema-generator",
+        "google-business-profile-auditor",
+        "local-seo-service-page-planner"
+      ],
+      "topics": [
+        "local-seo",
+        "off-page"
+      ]
+    },
+    {
+      "id": "google-review-response-generator",
+      "slug": "google-review-response-generator",
+      "name": "Google Review Response & Crisis Reply Generator",
+      "description": "Draft warm, local-keyword-optimized owner responses for 5-star reviews and calm, privacy-safe de-escalation replies for 1-star reviews.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "Local SEO",
+        "review response",
+        "reputation management",
+        "Google reviews"
+      ],
+      "kind": "AI writer & templates",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "google-review-link-generator",
+        "google-business-profile-auditor",
+        "outreach-email-builder"
+      ],
+      "topics": [
+        "local-seo",
+        "writing"
+      ]
+    },
+    {
+      "id": "local-seo-service-page-planner",
+      "slug": "local-seo-service-page-planner",
+      "name": "Local SEO Service-Area & City Page Planner",
+      "description": "Plan a non-spammy City \u00d7 Service landing page matrix, generate localized H1s, meta titles, and H2 outlines, and prevent doorway-page penalties.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "Local SEO",
+        "service area pages",
+        "city landing pages",
+        "topical map"
+      ],
+      "kind": "Matrix planner & brief builder",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "topical-map-generator",
+        "keyword-clustering-tool",
+        "google-business-profile-auditor",
+        "local-business-schema-generator"
+      ],
+      "topics": [
+        "local-seo",
+        "keywords",
+        "on-page",
+        "writing"
+      ]
+    },
+    {
+      "id": "linkedin-post-formatter",
+      "slug": "linkedin-post-formatter",
+      "name": "LinkedIn Post Formatter & Fold Previewer",
+      "description": "Format LinkedIn posts with Unicode bold, italic, and monospace text, preview the exact mobile and desktop \"...see more\" cutoff line, and score your opening hook.",
+      "categories": [
+        "content-writing",
+        "ai-seo"
+      ],
+      "tags": [
+        "Social media",
+        "LinkedIn formatter",
+        "Unicode text",
+        "LinkedIn hook"
+      ],
+      "kind": "Formatter & feed simulator",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 16,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "blog-to-linkedin-carousel",
+        "blog-to-social-posts",
+        "social-thread-generator",
+        "og-twitter-preview-generator"
+      ],
+      "topics": [
+        "social",
+        "writing"
+      ]
+    },
+    {
+      "id": "youtube-title-thumbnail-optimizer",
+      "slug": "youtube-title-thumbnail-optimizer",
+      "name": "YouTube Title, Hook & Thumbnail Optimizer",
+      "description": "Score YouTube video titles against the 58-character mobile cutoff, pair titles with 2\u20134 word thumbnail text overlays, and preview your video card in YouTube feeds.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "Social media",
+        "YouTube SEO",
+        "YouTube title generator",
+        "thumbnail text"
+      ],
+      "kind": "CTR scorer & AI generator",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 17,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/meta-title",
+          "title": "Write useful page titles"
+        }
+      ],
+      "relatedToolSlugs": [
+        "blog-to-video-script",
+        "short-form-video-script-generator",
+        "meta-title-generator",
+        "gsc-ctr-optimizer"
+      ],
+      "topics": [
+        "social",
+        "on-page",
+        "writing"
+      ]
+    },
+    {
+      "id": "short-form-video-script-generator",
+      "slug": "short-form-video-script-generator",
+      "name": "Short-Form Video Hook & Script Builder",
+      "description": "Generate high-retention 30s, 45s, and 60s vertical video scripts for YouTube Shorts, Instagram Reels, and TikTok with 3-second scroll-stopper hooks and B-roll cues.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "Social media",
+        "YouTube Shorts",
+        "Instagram Reels",
+        "TikTok script"
+      ],
+      "kind": "AI script & hook studio",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "blog-to-video-script",
+        "youtube-title-thumbnail-optimizer",
+        "blog-to-social-posts",
+        "social-thread-generator"
+      ],
+      "topics": [
+        "social",
+        "conversion",
+        "writing"
+      ]
+    },
+    {
+      "id": "utm-link-builder",
+      "slug": "utm-link-builder",
+      "name": "UTM Campaign Link Builder & GA4 Validator",
+      "description": "Build lowercase-normalized UTM tracking URLs, verify Google Analytics 4 (GA4) default channel grouping rules, export a 6-channel campaign CSV, and download a vector QR code.",
+      "categories": [
+        "ai-seo",
+        "productivity"
+      ],
+      "tags": [
+        "Social media",
+        "UTM builder",
+        "GA4 attribution",
+        "QR code"
+      ],
+      "kind": "Link builder & validator",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "google-business-profile-auditor",
+        "google-review-link-generator",
+        "og-twitter-preview-generator",
+        "slug-generator"
+      ],
+      "topics": [
+        "social",
+        "technical",
+        "local-seo"
+      ]
+    },
+    {
+      "id": "social-thread-generator",
+      "slug": "social-thread-generator",
+      "name": "X (Twitter) & Threads Viral Thread Splitter",
+      "description": "Split long-form articles and notes into numbered 280-character X (Twitter) or 500-character Threads posts with 3 viral hook options and automatic recap CTAs.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "Social media",
+        "Twitter thread generator",
+        "Threads splitter",
+        "content repurposing"
+      ],
+      "kind": "Thread splitter & AI studio",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "blog-to-social-posts",
+        "linkedin-post-formatter",
+        "blog-to-linkedin-carousel",
+        "short-form-video-script-generator"
+      ],
+      "topics": [
+        "social",
+        "conversion",
+        "writing"
+      ]
+    },
+    {
+      "id": "video-transcript-to-blog",
+      "slug": "video-transcript-to-blog",
+      "name": "YouTube Transcript to SEO Blog Post Converter",
+      "description": "Convert raw YouTube video transcripts and timestamped notes into a structured SEO blog article with H2 chapters, Featured Snippet summary, and FAQ schema.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "Content conversion",
+        "YouTube to blog",
+        "video transcript",
+        "content repurposing"
+      ],
+      "kind": "Converter & AI editor",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 18,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "blog-to-video-script",
+        "youtube-title-thumbnail-optimizer",
+        "article-to-markdown",
+        "table-of-contents-generator"
+      ],
+      "topics": [
+        "conversion",
+        "writing",
+        "on-page"
+      ]
+    },
+    {
+      "id": "article-to-html-cheatsheet",
+      "slug": "article-to-html-cheatsheet",
+      "name": "Article to HTML Infographic & Summary Cheatsheet",
+      "description": "Distill any long-form article or URL into a standalone, print-ready 1-page visual HTML cheatsheet with KPI metric cards, step-by-step boxes, and Do's & Don'ts.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "Content conversion",
+        "HTML cheatsheet",
+        "infographic summary",
+        "linkable asset"
+      ],
+      "kind": "Visual summary & HTML exporter",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "article-to-pdf",
+        "blog-to-linkedin-carousel",
+        "digital-pr-linkable-asset-planner",
+        "article-to-markdown"
+      ],
+      "topics": [
+        "conversion",
+        "writing"
+      ]
+    },
+    {
+      "id": "comparison-page-generator",
+      "slug": "comparison-page-generator",
+      "name": "\"X vs. Y\" Comparison Page & Matrix Builder",
+      "description": "Build high-converting \"X vs. Y\" comparison articles with a 50-word Featured Snippet verdict, side-by-side HTML/Markdown feature matrix, buyer bullets, and ItemList JSON-LD.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "On-page SEO",
+        "comparison page",
+        "feature matrix",
+        "AI search citations"
+      ],
+      "kind": "Matrix & schema builder",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 19,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "featured-snippet-optimizer",
+        "ai-brand-visibility-prompt-generator",
+        "semantic-entity-gap-analyzer",
+        "schema-markup-generator"
+      ],
+      "topics": [
+        "on-page",
+        "writing",
+        "ai-search"
+      ]
+    },
+    {
+      "id": "ai-brand-visibility-prompt-generator",
+      "slug": "ai-brand-visibility-prompt-generator",
+      "name": "Brand AI Search Visibility & GEO Prompt Matrix",
+      "description": "Generate a 12-prompt Generative Engine Optimization (GEO) test matrix across 4 buyer stages to audit your brand's Share of Voice in ChatGPT, Perplexity, Gemini, and AI Overviews.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "AI search",
+        "GEO",
+        "LLM visibility",
+        "Share of Voice"
+      ],
+      "kind": "GEO matrix & Share of Voice scorer",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 20,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "llms-txt-generator",
+        "ai-citation-readiness-checker",
+        "entity-sameas-finder",
+        "comparison-page-generator"
+      ],
+      "topics": [
+        "ai-search",
+        "keywords",
+        "on-page"
+      ]
     }
   ],
   "topics": [
@@ -2185,6 +2723,10 @@
     {
       "id": "conversion",
       "name": "Content conversion"
+    },
+    {
+      "id": "local-seo",
+      "name": "Local SEO"
     }
   ]
 }

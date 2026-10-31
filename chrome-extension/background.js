@@ -33,7 +33,51 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         );
       return true;
     }
-    sendResponse({ ok: false, error: "Side Panel API not supported in this browser version." });
+    sendResponse({
+      ok: false,
+      error: "Side Panel API not supported in this browser version.",
+    });
+    return true;
+  }
+
+  // Auto-Fit Split View: Resizes the active browser window and docks the extension right beside it at an optimal readable width
+  if (message.type === "OPEN_SPLIT_VIEW") {
+    const targetWinId = message.windowId;
+    const targetTabId = message.tabId || "";
+    const screenW = Number(message.screenWidth) || 1440;
+    const screenH = Number(message.screenHeight) || 900;
+    const extWidth = Math.min(760, Math.max(520, Math.round(screenW * 0.42)));
+    const browserWidth = Math.max(640, screenW - extWidth);
+
+    if (chrome.windows && targetWinId) {
+      chrome.windows.update(
+        targetWinId,
+        {
+          state: "normal",
+          left: 0,
+          top: 0,
+          width: browserWidth,
+          height: screenH,
+        },
+        () => {
+          chrome.windows.create(
+            {
+              url: chrome.runtime.getURL(
+                `popup.html?mode=split&tabId=${encodeURIComponent(String(targetTabId))}`,
+              ),
+              type: "popup",
+              left: browserWidth,
+              top: 0,
+              width: extWidth,
+              height: screenH,
+            },
+            () => sendResponse({ ok: true }),
+          );
+        },
+      );
+      return true;
+    }
+    sendResponse({ ok: false, error: "Window split API unavailable." });
     return true;
   }
 

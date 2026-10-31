@@ -1,19 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Do It With AI: SEO Inspector, Content Converter & Social Studio",
+  "name": "Do It With AI — SEO Inspector, Content Converter & Social Studio",
   "short_name": "DoItWithAI Studio",
-  "version": "1.0.0",
-  "description": "All-in-one On-Page & Technical SEO Toolbar, E-E-A-T & Information Gain Scorer, 1-Click Article Converter (PDF/Word/MD/MP3), and 15-Post Social Studio.",
-  "homepage_url": "https://doitwithai.tools/chrome-extension",
+  "version": "1.1.0",
+  "description": "All-in-one On-Page/Technical SEO Toolbar, E-E-A-T & Information Gain Scorer, 1-Click Article-to-PDF/Word/MD/MP3 Converter & 15-Post Social Studio.",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
-    "sidePanel"
+    "sidePanel",
+    "tabs"
   ],
   "action": {
+    "default_title": "Open Do It With AI Studio (SEO · Content · Social)",
     "default_popup": "popup.html",
-    "default_title": "Do It With AI — SEO, Content & Social Studio",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -22,7 +22,7 @@
     }
   },
   "side_panel": {
-    "default_path": "popup.html"
+    "default_path": "popup.html?mode=sidepanel"
   },
   "background": {
     "service_worker": "background.js"

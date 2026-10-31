@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CheckCircle2, Download, Layers, Sparkles } from "lucide-react";
 import ChromeExtensionShowcaseClient from "@/features/chrome-extension/ChromeExtensionShowcaseClient";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
-import {
-  ToolHeroBackground,
-  toolHeroHeading,
-  toolHeroSurface,
-} from "@/features/tool-ui/ToolHero";
 
 const pageUrl = "https://doitwithai.tools/chrome-extension";
 const title =
@@ -47,12 +40,14 @@ const faqs = [
       "Yes. All local DOM inspections, E-E-A-T and Information Gain scores, TOC HTML generation, link/image CSV exports, Markdown/Word downloads, and 15 social post templates run 100% free in your browser with no paid subscription required.",
   },
   {
-    question: "Can I dock the extension to Chrome's Side Panel so it stays open while I browse?",
+    question:
+      "Can I dock the extension to Chrome's Side Panel or open a side-by-side Split View?",
     answer:
-      "Yes. Built on Manifest V3, the extension includes a 1-click 'Dock to Side Panel' button (◧) in the top-right header so you can keep it open alongside WordPress, Webflow, Google Docs, or any competitor article.",
+      "Yes. Built on Manifest V3, the extension includes both a 'Dock to Side Panel' button (◧) that automatically adapts its layout to narrow side panels AND an 'Auto-Fit Split Screen' button (⇔) that resizes your active browser page and docks the full 2-pane extension right beside it.",
   },
   {
-    question: "Does it work on websites that block server-side crawlers (like Cloudflare pages)?",
+    question:
+      "Does it work on websites that block server-side crawlers (like Cloudflare pages)?",
     answer:
       "Yes! Because the extension inspects the live rendered DOM directly inside your active browser tab, it works on any page you can view in Chrome—even pages behind bot protection or login screens.",
   },
@@ -105,132 +100,7 @@ export default function ChromeExtensionPage() {
         }}
       />
 
-      {/* High-Impact Hero Section */}
-      <header
-        className={`relative overflow-hidden ${toolHeroSurface} text-white`}
-      >
-        <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-          <nav
-            aria-label="Breadcrumb"
-            className="mb-7 flex flex-wrap gap-2 text-xs text-slate-300"
-          >
-            <Link href="/">Home</Link>
-            <span>/</span>
-            <Link href="/tools">Tools</Link>
-            <span>/</span>
-            <span aria-current="page">Chrome Extension</span>
-          </nav>
-
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.28fr)_minmax(0,0.92fr)]">
-            <div>
-              <p className="inline-flex items-center gap-2 rounded-full border border-[#b4c3ff]/30 bg-white/5 px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                <Sparkles size={13} />
-                Manifest V3 Browser Extension · Popup + Side Panel
-              </p>
-              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                All 63 SEO, Content &amp; Social Tools{" "}
-                <span className={toolHeroHeading}>
-                  Inside Your Browser Toolbar
-                </span>
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Audit On-Page &amp; Technical SEO, measure E-E-A-T and
-                Information Gain with animated gauges, convert any live webpage
-                into PDF/Word/Markdown/MP3 audio, and generate 15 social media
-                posts in a single click.
-              </p>
-
-              <div className="mt-7 flex flex-wrap items-center gap-3.5">
-                <a
-                  href="/downloads/doitwithai-chrome-extension.zip"
-                  download="doitwithai-chrome-extension.zip"
-                  className="inline-flex items-center gap-2.5 rounded-xl bg-[#5271ff] px-6 py-3.5 text-sm font-extrabold text-white shadow-lg transition hover:bg-[#3b5bdb]"
-                >
-                  <Download size={18} />
-                  Download Free Chrome Extension (.ZIP)
-                </a>
-                <Link
-                  href="/tools"
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-5 py-3.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20"
-                >
-                  <Layers size={17} />
-                  Explore All 63 Web Tools
-                </Link>
-              </div>
-
-              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5">
-                  <CheckCircle2 size={14} className="text-emerald-400" />
-                  100% Free · Zero Subscription
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5">
-                  <CheckCircle2 size={14} className="text-emerald-400" />
-                  Works on Chrome, Brave &amp; Edge
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5">
-                  <CheckCircle2 size={14} className="text-emerald-400" />
-                  Bypasses Crawler Blocks via Live DOM
-                </span>
-              </div>
-            </div>
-
-            {/* Right-Side Executive Summary Card */}
-            <div className="rounded-2xl border border-[#7c96ff]/40 bg-gradient-to-br from-[#13203B]/95 via-[#0F182D]/95 to-[#172544]/95 p-6 shadow-2xl ring-1 ring-white/10">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3.5">
-                <div>
-                  <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#b4c3ff]">
-                    3-in-1 Browser Studio
-                  </p>
-                  <p className="mt-0.5 text-sm font-black text-white">
-                    What You Get in Every Tab
-                  </p>
-                </div>
-                <span className="rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3 py-1 text-xs font-extrabold text-emerald-300">
-                  Manifest V3
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-3 text-xs">
-                <div className="rounded-xl border border-blue-400/30 bg-blue-500/10 p-3">
-                  <strong className="text-blue-200">
-                    1. On-Page, Technical &amp; Off-Page SEO Toolbar
-                  </strong>
-                  <p className="mt-1 text-slate-300">
-                    Rendered vs. Raw Canonical, Robots, H1–H6 tree, JSON-LD
-                    Schema, Dofollow/Nofollow highlighter, E-E-A-T &amp; Info
-                    Gain gauges.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3">
-                  <strong className="text-emerald-200">
-                    2. Instant Article Converter &amp; Audio Reader
-                  </strong>
-                  <p className="mt-1 text-slate-300">
-                    Convert the active tab into Markdown, Word, PDF, or listen
-                    aloud—plus 1-click handoff to Video Script, EPUB &amp;
-                    Newsletter studios.
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-indigo-400/30 bg-indigo-500/15 p-3">
-                  <strong className="text-indigo-200">
-                    3. Social Cards &amp; 15-Post Campaign Studio
-                  </strong>
-                  <p className="mt-1 text-slate-300">
-                    Preview Facebook/LinkedIn OG &amp; X cards, generate 15
-                    ready-to-post social updates, and launch the LinkedIn
-                    Carousel Builder.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Interactive Live Simulator & Feature Showcase */}
+      {/* Merlin-Inspired Animated Hero + Live Interactive Extension Simulator */}
       <ChromeExtensionShowcaseClient />
 
       {/* Head-to-Head Comparison Table */}
@@ -297,7 +167,7 @@ export default function ChromeExtensionPage() {
                   "Static OG preview only",
                 ],
                 [
-                  "Dockable Chrome Side Panel Mode (Stays Open While Editing)",
+                  "Responsive Chrome Side Panel + 1-Click Auto-Fit Split View",
                   "✅ Included Free",
                   "Overlay bar",
                   "Popup only",

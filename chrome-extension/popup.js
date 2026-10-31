@@ -1,4 +1,4 @@
-// Do It With AI Tools — Chrome Extension Inspector, Converter & Social Studio (Manifest V3)
+// Do It With AI Tools — Chrome Extension Inspector, Converter & Social Studio (Manifest V3 v1.1.0)
 (function () {
   "use strict";
 
@@ -353,7 +353,6 @@
   }
 
   function computeScores(data) {
-    // 1. E-E-A-T Score (0-100)
     let eeat = 32;
     if (data.hasAuthorSignal) eeat += 18;
     if (data.publishedDate || data.modifiedDate) eeat += 14;
@@ -362,14 +361,12 @@
     if (data.links.some((l) => l.isExternal && l.rel === "dofollow")) eeat += 12;
     eeat = Math.min(98, eeat);
 
-    // 2. Information Gain Score (0-100)
     let infoGain = 28;
     infoGain += Math.min(28, (data.quantitativeMatches?.length || 0) * 7);
     infoGain += Math.min(24, (data.firstHandMatches?.length || 0) * 10);
     infoGain += Math.min(20, Math.floor((data.headings?.length || 0) * 2.5));
     infoGain = Math.min(97, infoGain);
 
-    // 3. Guest Post / Link Placement Quality Score (0-100)
     let vetting = 50;
     const isIndexable = !/noindex/i.test(data.robotsMeta);
     if (isIndexable) vetting += 20;
@@ -390,7 +387,8 @@
     if (!ring || !val || !lbl) return;
 
     const circumference = 207;
-    const offset = circumference - (Math.max(0, Math.min(100, score)) / 100) * circumference;
+    const offset =
+      circumference - (Math.max(0, Math.min(100, score)) / 100) * circumference;
     ring.style.strokeDashoffset = String(offset);
     const color =
       score >= 74 ? "#10b981" : score >= 48 ? "#f59e0b" : "#f43f5e";
@@ -475,19 +473,19 @@
     const h1Count = data.headings.filter((h) => h.level === 1).length;
     const contentBadge = document.getElementById("badge-content");
     contentBadge.textContent = String(data.headings.length);
-    if (h1Count !== 1) contentBadge.classList.add("badge-warn");
+    contentBadge.classList.toggle("badge-warn", h1Count !== 1);
 
     const idxBadge = document.getElementById("badge-indexability");
     const isNoindex = /noindex/i.test(data.robotsMeta);
     idxBadge.textContent = isNoindex ? "NOINDEX" : "INDEX";
-    if (isNoindex) idxBadge.classList.add("badge-warn");
+    idxBadge.classList.toggle("badge-warn", isNoindex);
 
     document.getElementById("badge-schema").textContent = String(data.schemas.length);
     document.getElementById("badge-links").textContent = String(data.links.length);
 
     const imgBadge = document.getElementById("badge-images");
     imgBadge.textContent = String(data.images.length);
-    if (missingAltCount > 0) imgBadge.classList.add("badge-warn");
+    imgBadge.classList.toggle("badge-warn", missingAltCount > 0);
 
     // TAB 1: Overview & Gauges
     setGauge("ring-eeat", "val-eeat", "label-eeat", scores.eeat);
@@ -547,8 +545,9 @@
       data.publishedDate || "Not specified";
     document.getElementById("cnt-modified").textContent =
       data.modifiedDate || "Not specified";
+    const estMinutes = Math.max(1, Math.ceil(data.wordCount / 220));
     document.getElementById("cnt-words").textContent =
-      `${data.wordCount.toLocaleString()} words (~${Math.max(1, Math.ceil(data.wordCount / 220))} min read)`;
+      `${data.wordCount.toLocaleString()} words (~${estMinutes} min read)`;
     const snippetReadyCount = data.paragraphs.filter((p) => {
       const wc = p.split(/\s+/).length;
       return wc >= 40 && wc <= 60;
@@ -568,7 +567,7 @@
         const row = document.createElement("div");
         row.className = "heading-node";
         row.style.paddingLeft = `${Math.max(0, h.level - 1) * 14 + 6}px`;
-        row.innerHTML = `<span class="h-tag">H${h.level}</span><span>${h.text}</span>`;
+        row.innerHTML = `<span class="h-tag h-level-${h.level}">H${h.level}</span><span>${h.text}</span>`;
         treeEl.appendChild(row);
       });
     }
@@ -611,7 +610,7 @@
         .join("");
     }
 
-    // TAB 4: Schema
+    // TAB 4: Schema (DoItWithAI Brand Blue Accordion)
     const schemaBox = document.getElementById("schema-cards-container");
     schemaBox.innerHTML = "";
     if (!data.schemas.length) {
@@ -621,7 +620,7 @@
         const details = document.createElement("details");
         details.className = "schema-card";
         if (idx === 0) details.open = true;
-        details.innerHTML = `<summary><span>${sc.type}</span><span>▾</span></summary><pre>${JSON.stringify(
+        details.innerHTML = `<summary><span>${sc.type} Schema Entity</span><span>▾</span></summary><pre>${JSON.stringify(
           sc.raw,
           null,
           2,
@@ -646,9 +645,17 @@
     // TAB 6: Images
     renderImagesList();
 
-    // TAB 7: Convert Page
+    // TAB 7: Convert Page & Audio Studio
     document.getElementById("conv-article-title").textContent =
       data.title || "Current Article";
+    const audioMetaEl = document.getElementById("conv-audio-meta");
+    if (audioMetaEl) {
+      audioMetaEl.textContent = `${data.wordCount.toLocaleString()} words · ~${estMinutes} min audio`;
+    }
+    const mp3StudioLink = document.getElementById("btn-open-mp3-studio");
+    if (mp3StudioLink) {
+      mp3StudioLink.href = `https://doitwithai.tools/tools/article-to-mp3?url=${encodeURIComponent(data.url || "")}`;
+    }
     renderStudioLinks(data.url);
 
     // TAB 8: Social Previews & 15 Posts
@@ -718,11 +725,11 @@
       const badgeClass = l.rel === "dofollow" ? "" : "warn";
       row.innerHTML = `
         <div style="min-width:0;flex:1">
-          <div style="font-weight:700;word-break:break-word">${l.anchor}</div>
+          <div class="item-title">${l.anchor}</div>
           <a href="${l.href}" target="_blank" rel="noopener noreferrer" class="mono-link">${l.href}</a>
         </div>
-        <div style="display:flex;gap:4px;flex-shrink:0">
-          <span class="status-pill">${l.anchorType}</span>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <span class="status-pill neutral">${l.anchorType}</span>
           <span class="status-pill ${badgeClass}">${l.rel.toUpperCase()}</span>
         </div>
       `;
@@ -750,40 +757,100 @@
       row.innerHTML = `
         <img src="${img.src}" alt="" class="media-thumb" />
         <div style="min-width:0;flex:1">
-          <div style="font-weight:700">${
+          <div class="item-title">${
             img.alt
               ? img.alt
-              : '<span style="color:#fb7185">⚠ Missing Alt Text</span>'
+              : '<span class="status-pill bad">⚠ Missing Alt Text</span>'
           }</div>
           <a href="${img.src}" target="_blank" rel="noopener noreferrer" class="mono-link">${img.src}</a>
-          <div class="text-muted">${img.width} × ${img.height}px</div>
+          <div class="text-muted" style="margin-top:2px">${img.width} × ${img.height}px</div>
         </div>
       `;
       box.appendChild(row);
     });
   }
 
+  // Custom Color-Coded SVG Studio Cards for Pillar 2 (Convert Page & MP3)
   function renderStudioLinks(pageUrl) {
     const enc = encodeURIComponent(pageUrl || "");
     const studios = [
-      ["CAR", "LinkedIn Carousel Studio", "blog-to-linkedin-carousel"],
-      ["VID", "Blog to Video Script", "blog-to-video-script"],
-      ["SOC", "15 Social Posts Studio", "blog-to-social-posts"],
-      ["NWS", "Email Newsletter Studio", "blog-to-newsletter"],
-      ["MP3", "Neural MP3 Audio Studio", "article-to-mp3"],
-      ["POD", "Podcast Script Studio", "article-to-podcast-script"],
-      ["GAP", "Semantic Entity Gap", "semantic-entity-gap-analyzer"],
-      ["GAIN", "Information Gain Scorer", "information-gain-auditor"],
+      {
+        name: "LinkedIn Carousel Studio",
+        desc: "Turn headings into swipeable PDF/PNG slides",
+        slug: "blog-to-linkedin-carousel",
+        tone: "icon-blue",
+        tag: "SLIDES",
+        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="16" rx="2"></rect><path d="M21 6v12a2 2 0 0 1-2 2"></path><line x1="7" y1="9" x2="13" y2="9"></line><line x1="7" y1="13" x2="11" y2="13"></line></svg>`,
+      },
+      {
+        name: "Blog to Video Script",
+        desc: "YouTube & Reels script with visual B-roll cues",
+        slug: "blog-to-video-script",
+        tone: "icon-indigo",
+        tag: "VIDEO",
+        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="15" height="16" rx="2"></rect><polygon points="17 9 22 6 22 18 17 15 17 9"></polygon></svg>`,
+      },
+      {
+        name: "15 Social Posts Studio",
+        desc: "LinkedIn, X, Instagram, FB & Threads campaign",
+        slug: "blog-to-social-posts",
+        tone: "icon-cyan",
+        tag: "15 POSTS",
+        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>`,
+      },
+      {
+        name: "Email Newsletter Studio",
+        desc: "3 subject lines, preview text & email edition",
+        slug: "blog-to-newsletter",
+        tone: "icon-amber",
+        tag: "EMAIL",
+        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
+      },
+      {
+        name: "Neural MP3 Audio Studio",
+        desc: "Downloadable neural voiceover MP3 audio file",
+        slug: "article-to-mp3",
+        tone: "icon-emerald",
+        tag: "MP3",
+        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`,
+      },
+      {
+        name: "Podcast Script Studio",
+        desc: "2-Host conversational podcast episode script",
+        slug: "article-to-podcast-script",
+        tone: "icon-rose",
+        tag: "PODCAST",
+        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`,
+      },
+      {
+        name: "Article to EPUB eBook",
+        desc: "Chapterized EPUB 3.0 file for Kindle & Apple Books",
+        slug: "article-to-epub",
+        tone: "icon-indigo",
+        tag: "EPUB",
+        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`,
+      },
+      {
+        name: "HTML Cheatsheet Studio",
+        desc: "1-page visual executive summary & cheatsheet",
+        slug: "article-to-html-cheatsheet",
+        tone: "icon-blue",
+        tag: "HTML",
+        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>`,
+      },
     ];
     const container = document.getElementById("conversion-studio-links");
     container.innerHTML = studios
       .map(
-        ([icon, name, slug]) => `
-        <a href="https://doitwithai.tools/tools/${slug}?url=${enc}" target="_blank" rel="noopener noreferrer" class="action-tile">
-          <span class="tile-icon">${icon}</span>
-          <div>
-            <strong>${name} ↗</strong>
-            <span>Open with this URL pre-Targeted</span>
+        (s) => `
+        <a href="https://doitwithai.tools/tools/${s.slug}?url=${enc}" target="_blank" rel="noopener noreferrer" class="action-tile">
+          <span class="tile-icon ${s.tone}" aria-hidden="true">${s.svg}</span>
+          <div class="tile-body">
+            <div class="tile-title-row">
+              <strong>${s.name} ↗</strong>
+              <span class="format-tag tag-blue">${s.tag}</span>
+            </div>
+            <span>${s.desc}</span>
           </div>
         </a>
       `,
@@ -842,6 +909,35 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function resolveTargetTab(callback) {
+    const params = new URLSearchParams(window.location.search);
+    const explicitTabId = Number(params.get("tabId") || 0);
+    if (explicitTabId && chrome.tabs && chrome.tabs.get) {
+      chrome.tabs.get(explicitTabId, (tab) => {
+        if (!chrome.runtime.lastError && tab && /^https?:/i.test(tab.url || "")) {
+          callback(tab);
+          return;
+        }
+        queryNormalWindowTab(callback);
+      });
+      return;
+    }
+    queryNormalWindowTab(callback);
+  }
+
+  function queryNormalWindowTab(callback) {
+    chrome.tabs.query({ active: true, windowType: "normal" }, (tabs) => {
+      const valid = (tabs || []).find((t) => t.id && /^https?:/i.test(t.url || ""));
+      if (valid) {
+        callback(valid);
+        return;
+      }
+      chrome.tabs.query({ active: true, currentWindow: true }, (curTabs) => {
+        callback((curTabs && curTabs[0]) || null);
+      });
+    });
+  }
+
   function scanActiveTab() {
     if (
       typeof chrome === "undefined" ||
@@ -852,8 +948,7 @@
       return;
     }
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs && tabs[0];
+    resolveTargetTab((tab) => {
       if (!tab || !tab.id || !tab.url || !/^https?:/i.test(tab.url)) {
         renderAll(DEMO_PAGE_DATA);
         return;
@@ -886,8 +981,7 @@
       showToast("Live page overlay is active when running on a webpage tab.");
       return;
     }
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs && tabs[0];
+    resolveTargetTab((tab) => {
       if (!tab || !tab.id || !/^https?:/i.test(tab.url || "")) return;
       chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -906,8 +1000,8 @@
             `;
           } else if (overlayMode === "headings") {
             style.textContent = `
-              h1, h2, h3, h4, h5, h6 { position: relative !important; outline: 1px dashed #5271ff !important; }
-              h1::before { content: "H1"; background:#5271ff; color:#fff; font-size:10px; font-weight:800; padding:2px 5px; margin-right:6px; border-radius:4px; }
+              h1, h2, h3, h4, h5, h6 { position: relative !important; outline: 1px dashed #3b63fb !important; }
+              h1::before { content: "H1"; background:#3b63fb; color:#fff; font-size:10px; font-weight:800; padding:2px 5px; margin-right:6px; border-radius:4px; }
               h2::before { content: "H2"; background:#0ea5e9; color:#fff; font-size:10px; font-weight:800; padding:2px 5px; margin-right:6px; border-radius:4px; }
               h3::before { content: "H3"; background:#10b981; color:#fff; font-size:10px; font-weight:800; padding:2px 5px; margin-right:6px; border-radius:4px; }
             `;
@@ -918,7 +1012,42 @@
     });
   }
 
+  function triggerAutoFitSplitView() {
+    if (typeof chrome !== "undefined" && chrome.windows && chrome.runtime) {
+      resolveTargetTab((tab) => {
+        const winId = (tab && tab.windowId) || undefined;
+        const tabId = (tab && tab.id) || "";
+        const sendSplit = (resolvedWinId) => {
+          chrome.runtime.sendMessage(
+            {
+              type: "OPEN_SPLIT_VIEW",
+              windowId: resolvedWinId,
+              tabId,
+              screenWidth: window.screen?.availWidth || 1440,
+              screenHeight: window.screen?.availHeight || 900,
+            },
+            () => window.close(),
+          );
+        };
+        if (winId) {
+          sendSplit(winId);
+        } else {
+          chrome.windows.getCurrent((win) => sendSplit(win.id));
+        }
+      });
+    } else {
+      showToast("Split-screen auto-fit is available inside Google Chrome.");
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
+    const search = window.location.search;
+    if (search.includes("mode=sidepanel")) {
+      document.documentElement.setAttribute("data-view", "sidepanel");
+    } else if (search.includes("mode=split")) {
+      document.documentElement.setAttribute("data-view", "split");
+    }
+
     // Sidebar tab navigation
     document.querySelectorAll("#main-nav .nav-item").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -934,7 +1063,7 @@
       });
     });
 
-    // Theme toggle
+    // Theme toggle (Dark / Light with high-contrast tokens)
     document.getElementById("btn-theme-toggle")?.addEventListener("click", () => {
       const html = document.documentElement;
       const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
@@ -954,6 +1083,14 @@
         showToast("Side Panel docking is ready inside Google Chrome.");
       }
     });
+
+    // Auto-Fit Split View (Adjusts browser page + extension side-by-side)
+    document
+      .getElementById("btn-splitview")
+      ?.addEventListener("click", triggerAutoFitSplitView);
+    document
+      .getElementById("btn-expand-split-inline")
+      ?.addEventListener("click", triggerAutoFitSplitView);
 
     // Rescan & Export Report
     document.getElementById("btn-rescan")?.addEventListener("click", () => {
@@ -1096,9 +1233,10 @@
       window.speechSynthesis.cancel();
       const text = `${currentPageData.title}. ${currentPageData.paragraphs.slice(0, 12).join(" ")}`;
       const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = Number(document.getElementById("tts-rate")?.value || 1);
+      const rate = parseFloat(document.getElementById("tts-rate")?.value || "1");
+      utter.rate = Number.isFinite(rate) ? rate : 1;
       window.speechSynthesis.speak(utter);
-      showToast("Playing article audio narration…");
+      showToast("Reading article aloud…");
     });
 
     document.getElementById("btn-tts-stop")?.addEventListener("click", () => {
@@ -1108,42 +1246,36 @@
       }
     });
 
-    // Social platform & angle selectors
-    document
-      .querySelectorAll("#social-platform-pills .filter-pill")
-      .forEach((btn) => {
-        btn.addEventListener("click", () => {
-          document
-            .querySelectorAll("#social-platform-pills .filter-pill")
-            .forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          activeSocialPlatform = btn.getAttribute("data-platform") || "LinkedIn";
-          updateSocialPostTextarea();
-        });
+    // Social platform & angle switches
+    document.querySelectorAll("#social-platform-pills .filter-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document
+          .querySelectorAll("#social-platform-pills .filter-pill")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeSocialPlatform = btn.getAttribute("data-platform") || "LinkedIn";
+        updateSocialPostTextarea();
       });
+    });
 
-    document
-      .querySelectorAll("#social-angle-pills .filter-pill")
-      .forEach((btn) => {
-        btn.addEventListener("click", () => {
-          document
-            .querySelectorAll("#social-angle-pills .filter-pill")
-            .forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          activeSocialAngle = Number(btn.getAttribute("data-angle") || 0);
-          updateSocialPostTextarea();
-        });
+    document.querySelectorAll("#social-angle-pills .filter-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document
+          .querySelectorAll("#social-angle-pills .filter-pill")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeSocialAngle = Number(btn.getAttribute("data-angle") || "0");
+        updateSocialPostTextarea();
       });
+    });
 
-    document
-      .getElementById("btn-copy-social-post")
-      ?.addEventListener("click", async () => {
-        const val = document.getElementById("social-post-output")?.value || "";
-        await navigator.clipboard.writeText(val);
-        showToast(`Copied ${activeSocialPlatform} post to clipboard!`);
-      });
+    document.getElementById("btn-copy-social-post")?.addEventListener("click", async () => {
+      const val = document.getElementById("social-post-output")?.value || "";
+      await navigator.clipboard.writeText(val);
+      showToast(`Copied ${activeSocialPlatform} post to clipboard!`);
+    });
 
-    // Live page overlays
+    // Live page overlay toggles
     document
       .getElementById("toggle-highlight-links")
       ?.addEventListener("change", (e) => {
