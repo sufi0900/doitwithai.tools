@@ -1,0 +1,18 @@
+.surface :global(.tiptap) { min-height: 500px; padding: 1.75rem 2rem 4rem; outline: none; overflow-wrap: anywhere; font-size: 18px; line-height: 1.9; }
+.surface :global(.tiptap p) { margin: 0 0 1.1em; }
+.surface :global(.tiptap h1) { font-size: 1.9em; }
+.surface :global(.tiptap h2) { font-size: 1.5em; }
+.surface :global(.tiptap h3) { font-size: 1.25em; }
+.surface :global(.tiptap h1), .surface :global(.tiptap h2), .surface :global(.tiptap h3), .surface :global(.tiptap h4), .surface :global(.tiptap h5), .surface :global(.tiptap h6) { margin: 1.3em 0 .6em; font-weight: 800; line-height: 1.4; }
+.surface :global(.tiptap ul) { list-style: disc; }
+.surface :global(.tiptap ol) { list-style: decimal; }
+.surface :global(.tiptap ul), .surface :global(.tiptap ol) { margin: .8em 0 1.2em; padding-left: 1.65em; }
+.surface :global(.tiptap li) { padding-left: .25em; margin: .35em 0; }
+.surface :global(.tiptap li p) { margin: .3em 0; }
+.surface :global(.tiptap blockquote) { margin: 1.2em 0; padding: .5em 1.2em; border-left: 4px solid #5271ff; background: rgb(82 113 255 / .07); }
+.surface :global(.tiptap a) { color: #5271ff; text-decoration: underline; }
+.surface :global(.tiptap pre) { padding: 1em; margin: 1em 0; border-radius: .75em; background: rgb(100 116 139 / .12); white-space: pre-wrap; font-size: .85em; }
+.surface :global(.tiptap code) { background: rgb(100 116 139 / .12); border-radius: .2em; padding: .1em .2em; }
+.surface :global(.tiptap hr) { border-top: 1px solid #94a3b8; margin: 1.5em 0; }
+.surface :global(.tiptap [data-issue]) { cursor: text; }
+@media (max-width: 640px) { .surface :global(.tiptap) { min-height: 380px; padding: 1rem 1rem 2rem; font-size: 16px; } }

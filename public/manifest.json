@@ -1,0 +1,22 @@
+{
+  "name": "DoItWithAI.Tools",
+  "short_name": "AI Tools",
+  "description": "Explore AI tools, articles, and free resources for productivity and creativity.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/icons/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  
+  ]
+}

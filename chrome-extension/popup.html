@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Do It With AI v2.0 — SEO, Keywords, Audience, Convert &amp; Social Studio</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- LEFT SIDEBAR NAVIGATION (Ahrefs & SEO Pro Inspired 2-Pane Architecture) -->
+      <aside class="sidebar" aria-label="Extension sections">
+        <div class="brand-header">
+          <a
+            href="https://doitwithai.tools"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="brand-logo-link"
+            title="Open DoItWithAI.tools"
+          >
+            <span class="brand-logo-wrap">
+              <img
+                src="icons/brand-logo.png"
+                alt="DoItWithAI Logo"
+                class="brand-logo-img"
+              />
+            </span>
+            <div class="brand-text">
+              <span class="brand-title">DoItWithAI</span>
+              <span class="brand-sub">v2.0 · 85 AI &amp; SEO Tools</span>
+            </div>
+          </a>
+          <div class="header-actions">
+            <button
+              type="button"
+              id="btn-theme-toggle"
+              class="icon-btn"
+              title="Switch Dark / Light Theme"
+              aria-label="Switch theme"
+            >
+              ☀
+            </button>
+            <button
+              type="button"
+              id="btn-splitview"
+              class="icon-btn"
+              title="Auto-Fit Split Screen (Adjust Browser Page + Full Extension Side-by-Side)"
+              aria-label="Auto-fit split screen"
+            >
+              ⇔
+            </button>
+            <button
+              type="button"
+              id="btn-sidepanel"
+              class="icon-btn"
+              title="Dock to Chrome Side Panel"
+              aria-label="Pin to Side Panel"
+            >
+              ◧
+            </button>
+          </div>
+        </div>
+
+        <div class="nav-group-label">Pillar 1 · SEO &amp; Competitor Spy</div>
+        <nav class="nav-list" id="main-nav">
+          <button type="button" class="nav-item active" data-tab="overview">
+            <span>Overview &amp; Scores</span>
+            <span class="nav-badge badge-ok" id="badge-overview">200</span>
+          </button>
+          <button type="button" class="nav-item" data-tab="keywords">
+            <span>Keywords &amp; Sub-Topics</span>
+            <span class="nav-badge badge-accent" id="badge-keywords">NEW</span>
+          </button>
+          <button type="button" class="nav-item" data-tab="audience">
+            <span>Target Audience</span>
+            <span class="nav-badge badge-accent" id="badge-audience">AI</span>
+          </button>
+          <button type="button" class="nav-item" data-tab="content">
+            <span>Content &amp; Headings</span>
+            <span class="nav-badge" id="badge-content">0</span>
+          </button>
+          <button type="button" class="nav-item" data-tab="indexability">
+            <span>Indexability &amp; Tech</span>
+            <span class="nav-badge" id="badge-indexability">OK</span>
+          </button>
+          <button type="button" class="nav-item" data-tab="schema">
+            <span>Structured Data</span>
+            <span class="nav-badge" id="badge-schema">0</span>
+          </button>
+          <button type="button" class="nav-item" data-tab="links">
+            <span>Links &amp; Off-Page</span>
+            <span class="nav-badge" id="badge-links">0</span>
+          </button>
+          <button type="button" class="nav-item" data-tab="images">
+            <span>Images &amp; Bulk .ZIP</span>
+            <span class="nav-badge" id="badge-images">0</span>
+          </button>
+
+          <div class="nav-group-label">Pillar 2 · Content &amp; Video</div>
+          <button type="button" class="nav-item" data-tab="convert">
+            <span>Convert Page &amp; MP3</span>
+            <span class="nav-badge badge-accent">14</span>
+          </button>
+
+          <div class="nav-group-label">Pillar 3 · Social Studio</div>
+          <button type="button" class="nav-item" data-tab="social">
+            <span>Social Cards &amp; Posts</span>
+            <span class="nav-badge badge-accent" id="badge-social">18</span>
+          </button>
+        </nav>
+
+        <!-- Bottom Live Page Overlay Toggles & Quick Links (Like Ahrefs Toolbar) -->
+        <div class="sidebar-footer">
+          <label class="toggle-row">
+            <span>Highlight Nofollow</span>
+            <input type="checkbox" id="toggle-highlight-links" />
+            <span class="toggle-switch"></span>
+          </label>
+          <label class="toggle-row">
+            <span>Heading Badges (H1–H6)</span>
+            <input type="checkbox" id="toggle-highlight-headings" />
+            <span class="toggle-switch"></span>
+          </label>
+          <div class="footer-links">
+            <a
+              href="https://doitwithai.tools/tools"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="footer-cta-link"
+            >
+              Open All 85 Web Tools ↗
+            </a>
+          </div>
+        </div>
+      </aside>
+
+      <!-- RIGHT MAIN INSPECTOR & STUDIO WORKSPACE -->
+      <main class="workspace">
+        <!-- Top Status Bar -->
+        <header class="workspace-topbar">
+          <div class="url-pill" id="active-url-display" title="Inspected Page URL">
+            Inspecting active tab…
+          </div>
+          <div class="topbar-btns">
+            <button
+              type="button"
+              id="btn-expand-split-inline"
+              class="btn-secondary btn-xs sidepanel-only-btn"
+              title="Auto-adjust browser tab width and open full 2-pane split view"
+            >
+              ⇔ Auto-Fit Split View
+            </button>
+            <button type="button" id="btn-rescan" class="btn-secondary btn-xs">
+              ↻ Rescan Page
+            </button>
+            <button type="button" id="btn-export-report" class="btn-primary btn-xs">
+              ↓ Export Audit (.MD)
+            </button>
+          </div>
+        </header>
+
+        <div id="status-toast" class="status-toast hidden" role="status"></div>
+
+        <!-- TAB 1: OVERVIEW & ORIGINALITY / E-E-A-T SCORES -->
+        <section class="tab-pane active" id="tab-overview">
+          <div class="pane-header">
+            <h2>Overview, Meta Signals &amp; Originality Scores</h2>
+            <a
+              id="ov-deep-audit-link"
+              href="https://doitwithai.tools/tools/on-page-ai-seo-analyzer"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="deep-link"
+            >
+              Deep Audit in Web Studio ↗
+            </a>
+          </div>
+
+          <!-- Circular Scorecards Row -->
+          <div class="score-cards-grid">
+            <div class="score-card">
+              <div class="circle-gauge" id="gauge-eeat" data-score="0">
+                <svg viewBox="0 0 80 80">
+                  <circle class="bg" cx="40" cy="40" r="33"></circle>
+                  <circle class="fg" id="ring-eeat" cx="40" cy="40" r="33"></circle>
+                </svg>
+                <span class="gauge-val" id="val-eeat">--</span>
+              </div>
+              <div class="score-meta">
+                <span class="score-kicker">E-E-A-T Trust Score</span>
+                <strong id="label-eeat">Scanning…</strong>
+                <span class="score-sub" id="sub-eeat">Author, citations &amp; trust signals</span>
+              </div>
+            </div>
+
+            <div class="score-card">
+              <div class="circle-gauge" id="gauge-infogain" data-score="0">
+                <svg viewBox="0 0 80 80">
+                  <circle class="bg" cx="40" cy="40" r="33"></circle>
+                  <circle class="fg" id="ring-infogain" cx="40" cy="40" r="33"></circle>
+                </svg>
+                <span class="gauge-val" id="val-infogain">--</span>
+              </div>
+              <div class="score-meta">
+                <span class="score-kicker">Information Gain</span>
+                <strong id="label-infogain">Scanning…</strong>
+                <span class="score-sub" id="sub-infogain">Entities, metrics &amp; first-hand proof</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Title & Meta Description Inspector -->
+          <div class="info-card">
+            <div class="field-row">
+              <div class="field-label">
+                <span>TITLE TAG</span>
+                <span class="status-pill" id="title-char-badge">0 chars</span>
+              </div>
+              <div class="field-value">
+                <p id="ov-title" class="strong-text">—</p>
+                <div class="progress-bar">
+                  <div class="progress-fill" id="bar-title"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-label">
+                <span>META DESCRIPTION</span>
+                <span class="status-pill" id="desc-char-badge">0 chars</span>
+              </div>
+              <div class="field-value">
+                <p id="ov-desc" class="body-value-text">—</p>
+                <div class="progress-bar">
+                  <div class="progress-fill" id="bar-desc"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-label">
+                <span>FOCUS KEYWORD</span>
+                <span class="status-pill neutral" id="ov-focus-intent">Informational</span>
+              </div>
+              <div class="field-value">
+                <p id="ov-focus-kw" class="strong-text">—</p>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-label">
+                <span>CANONICAL URL</span>
+                <span class="status-pill" id="canonical-badge">—</span>
+              </div>
+              <div class="field-value">
+                <a id="ov-canonical" href="#" target="_blank" rel="noopener noreferrer" class="mono-link">—</a>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-label">
+                <span>META ROBOTS</span>
+                <span class="status-pill" id="robots-badge">—</span>
+              </div>
+              <div class="field-value">
+                <code id="ov-robots" class="inline-code-pill">index, follow</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Heading & Asset Quick Strip -->
+          <div class="kpi-strip">
+            <div class="kpi-cell"><span>WORDS</span><strong id="kpi-words">0</strong></div>
+            <div class="kpi-cell"><span>H1</span><strong id="kpi-h1">0</strong></div>
+            <div class="kpi-cell"><span>H2</span><strong id="kpi-h2">0</strong></div>
+            <div class="kpi-cell"><span>H3</span><strong id="kpi-h3">0</strong></div>
+            <div class="kpi-cell"><span>H4–H6</span><strong id="kpi-h4">0</strong></div>
+            <div class="kpi-cell"><span>LINKS</span><strong id="kpi-links">0</strong></div>
+            <div class="kpi-cell"><span>IMAGES</span><strong id="kpi-images">0</strong></div>
+          </div>
+        </section>
+
+        <!-- NEW TAB: KEYWORDS, COMPETITOR FOCUS & SUB-TOPIC SLICER -->
+        <section class="tab-pane" id="tab-keywords">
+          <div class="pane-header">
+            <h2>Competitor Focus Keywords, N-Grams &amp; Sub-Topics</h2>
+            <div class="btn-group">
+              <button type="button" id="btn-copy-keywords" class="btn-secondary btn-xs">
+                Copy All Keywords
+              </button>
+              <button type="button" id="btn-export-keywords" class="btn-primary btn-xs">
+                ↓ Export Keywords (.CSV)
+              </button>
+            </div>
+          </div>
+
+          <div class="info-card compact-grid">
+            <div>
+              <span class="micro-label">PRIMARY FOCUS KEYWORD</span>
+              <strong id="kw-primary-phrase" class="block-val">—</strong>
+            </div>
+            <div>
+              <span class="micro-label">SEARCH INTENT</span>
+              <strong id="kw-search-intent" class="block-val">Informational</strong>
+            </div>
+            <div>
+              <span class="micro-label">ON-PAGE PLACEMENT</span>
+              <strong id="kw-placement-score" class="block-val">— / 5 Zones</strong>
+            </div>
+            <div>
+              <span class="micro-label">DETECTED SUB-TOPICS</span>
+              <strong id="kw-subtopics-count" class="block-val">0 H2 Sections</strong>
+            </div>
+          </div>
+
+          <!-- Placement Checklist Bar -->
+          <div class="info-card">
+            <span class="micro-label">PRIMARY KEYWORD PLACEMENT AUDIT (COMPETITOR SPY)</span>
+            <div id="kw-placement-pills" class="pill-group" style="margin-top:8px"></div>
+          </div>
+
+          <!-- N-Gram Filter & Keyword Density Table -->
+          <div class="filter-bar">
+            <div class="pill-group" id="kw-ngram-pills">
+              <button type="button" class="filter-pill active" data-ngram="all">All Top Keywords</button>
+              <button type="button" class="filter-pill" data-ngram="2">2-Word Phrases</button>
+              <button type="button" class="filter-pill" data-ngram="3">3-Word Long-Tail</button>
+              <button type="button" class="filter-pill" data-ngram="1">Single Terms</button>
+            </div>
+          </div>
+
+          <div id="keywords-table-container" class="table-scroll"></div>
+
+          <!-- Multi-Topic H2 Slicer -->
+          <div class="info-card">
+            <div class="flex-between">
+              <div>
+                <span class="micro-label">ARTICLE MULTI-TOPIC BREAKDOWN (H2 SUB-TOPICS)</span>
+                <h3 class="section-subtitle" style="margin:2px 0 0">Click any sub-topic to repurpose just that section</h3>
+              </div>
+            </div>
+            <div id="kw-subtopics-list" class="table-scroll" style="margin-top:8px"></div>
+          </div>
+        </section>
+
+        <!-- NEW TAB: TARGET AUDIENCE, PERSONA & BUYER STAGE -->
+        <section class="tab-pane" id="tab-audience">
+          <div class="pane-header">
+            <h2>Target Audience Persona, Funnel Stage &amp; Content Gaps</h2>
+            <a
+              id="aud-open-brief-link"
+              href="https://doitwithai.tools/tools/seo-content-brief-generator"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="deep-link"
+            >
+              Open Content Brief Studio ↗
+            </a>
+          </div>
+
+          <div class="info-card compact-grid">
+            <div>
+              <span class="micro-label">PRIMARY READER PERSONA</span>
+              <strong id="aud-persona" class="block-val">—</strong>
+            </div>
+            <div>
+              <span class="micro-label">BUYER JOURNEY STAGE</span>
+              <strong id="aud-funnel-stage" class="block-val">—</strong>
+            </div>
+            <div>
+              <span class="micro-label">READING GRADE LEVEL</span>
+              <strong id="aud-reading-level" class="block-val">—</strong>
+            </div>
+            <div>
+              <span class="micro-label">CONTENT TONE</span>
+              <strong id="aud-tone" class="block-val">—</strong>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h3 class="section-subtitle">▾ Who This Page Is Written For (Detected Audience Signals)</h3>
+            <p id="aud-summary-text" class="body-value-text" style="margin-bottom:10px">—</p>
+            <div id="aud-signals-list" class="pill-group"></div>
+          </div>
+
+          <div class="info-card">
+            <h3 class="section-subtitle">▾ Reader Pain Points &amp; Questions Addressed</h3>
+            <div id="aud-painpoints-list" class="heading-tree"></div>
+          </div>
+
+          <div class="info-card">
+            <h3 class="section-subtitle">▾ Content Gaps: How to Beat This Competitor Page</h3>
+            <div id="aud-gaps-list" class="heading-tree"></div>
+          </div>
+        </section>
+
+        <!-- TAB: CONTENT, HEADINGS TREE & INSTANT TOC GENERATOR -->
+        <section class="tab-pane" id="tab-content">
+          <div class="pane-header">
+            <h2>Content Dates, Heading Hierarchy &amp; Jump-Link TOC</h2>
+            <div class="btn-group">
+              <button type="button" id="btn-copy-headings" class="btn-secondary btn-xs">
+                Copy Headings
+              </button>
+              <button type="button" id="btn-build-toc" class="btn-primary btn-xs">
+                Generate HTML TOC
+              </button>
+            </div>
+          </div>
+
+          <div class="info-card compact-grid">
+            <div>
+              <span class="micro-label">PUBLISHED DATE</span>
+              <strong id="cnt-published" class="block-val">Not detected</strong>
+            </div>
+            <div>
+              <span class="micro-label">MODIFIED DATE</span>
+              <strong id="cnt-modified" class="block-val">Not detected</strong>
+            </div>
+            <div>
+              <span class="micro-label">WORD COUNT</span>
+              <strong id="cnt-words" class="block-val">0 words</strong>
+            </div>
+            <div>
+              <span class="micro-label">SNIPPET PASSAGES</span>
+              <strong id="cnt-snippets" class="block-val">0 ready</strong>
+            </div>
+          </div>
+
+          <!-- Instant Generated Table of Contents Drawer -->
+          <div id="toc-generator-box" class="info-card hidden">
+            <div class="flex-between">
+              <strong>Generated Crawl-Safe &lt;nav&gt; Table of Contents HTML</strong>
+              <button type="button" id="btn-copy-toc-html" class="btn-primary btn-xs">
+                Copy TOC HTML
+              </button>
+            </div>
+            <pre id="toc-html-output" class="code-box"></pre>
+          </div>
+
+          <div class="info-card">
+            <div class="flex-between">
+              <span class="micro-label">HEADING HIERARCHY TREE (<span id="heading-total-count">0</span>)</span>
+              <span class="text-muted">Click any heading to scroll to it on page</span>
+            </div>
+            <div id="headings-tree-list" class="heading-tree"></div>
+          </div>
+        </section>
+
+        <!-- TAB: INDEXABILITY & TECHNICAL SIGNALS -->
+        <section class="tab-pane" id="tab-indexability">
+          <div class="pane-header">
+            <h2>Indexability, Rendered vs. Raw DOM &amp; Sitemaps</h2>
+            <a
+              href="https://doitwithai.tools/tools/robots-txt-generator"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="deep-link"
+            >
+              Robots &amp; llms.txt Studio ↗
+            </a>
+          </div>
+
+          <div class="info-card">
+            <h3 class="section-subtitle">▾ Canonical URL (Rendered DOM vs. Raw HTML)</h3>
+            <div class="kv-table">
+              <div class="kv-row">
+                <span class="kv-key">In Rendered DOM</span>
+                <span class="kv-val" id="idx-can-rendered">—</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-key">In Raw HTML Source</span>
+                <span class="kv-val" id="idx-can-raw">—</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-key">DOM vs. Raw Parity</span>
+                <span class="kv-val" id="idx-can-status">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h3 class="section-subtitle">▾ Robots &amp; Crawl Directives</h3>
+            <div class="kv-table">
+              <div class="kv-row">
+                <span class="kv-key">Robots Meta Tag</span>
+                <span class="kv-val" id="idx-meta-robots">—</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-key">Googlebot Tag</span>
+                <span class="kv-val" id="idx-googlebot">—</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-key">Robots.txt URL</span>
+                <span class="kv-val"><a id="idx-robots-url" href="#" target="_blank" rel="noopener noreferrer" class="mono-link">—</a></span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-key">XML Sitemap</span>
+                <span class="kv-val"><a id="idx-sitemap-url" href="#" target="_blank" rel="noopener noreferrer" class="mono-link">—</a></span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-key">llms.txt (AI Search)</span>
+                <span class="kv-val"><a id="idx-llms-url" href="#" target="_blank" rel="noopener noreferrer" class="mono-link">—</a></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h3 class="section-subtitle">▾ International Hreflang Annotations</h3>
+            <div id="idx-hreflang-list" class="mono-list"></div>
+          </div>
+        </section>
+
+        <!-- TAB: STRUCTURED DATA & SCHEMA -->
+        <section class="tab-pane" id="tab-schema">
+          <div class="pane-header">
+            <h2>Structured Data (JSON-LD) &amp; AI Citation Readiness</h2>
+            <a
+              href="https://doitwithai.tools/tools/structured-data-validator"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="deep-link"
+            >
+              Open Schema Validator ↗
+            </a>
+          </div>
+          <div id="schema-cards-container" class="schema-list"></div>
+        </section>
+
+        <!-- TAB: LINKS, ANCHOR TEXT RATIO & OFF-PAGE PROSPECT VETTING -->
+        <section class="tab-pane" id="tab-links">
+          <div class="pane-header">
+            <h2>Links, Anchor Ratios &amp; Guest Post Quality Vetting</h2>
+            <div class="btn-group">
+              <button type="button" id="btn-export-links" class="btn-secondary btn-xs">
+                ↓ Export Links (.CSV)
+              </button>
+            </div>
+          </div>
+
+          <div class="info-card compact-grid">
+            <div>
+              <span class="micro-label">PUBLISHER VETTING</span>
+              <strong id="lnk-vetting-score" class="block-val">— / 100</strong>
+            </div>
+            <div>
+              <span class="micro-label">DOFOLLOW LINKS</span>
+              <strong id="lnk-dofollow-count" class="block-val">0</strong>
+            </div>
+            <div>
+              <span class="micro-label">NOFOLLOW / UGC</span>
+              <strong id="lnk-nofollow-count" class="block-val">0</strong>
+            </div>
+            <div>
+              <span class="micro-label">GENERIC ANCHORS</span>
+              <strong id="lnk-generic-count" class="block-val">0</strong>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <div class="pill-group" id="link-filter-pills">
+              <button type="button" class="filter-pill active" data-filter="all">All</button>
+              <button type="button" class="filter-pill" data-filter="dofollow">Dofollow</button>
+              <button type="button" class="filter-pill" data-filter="nofollow">Nofollow</button>
+              <button type="button" class="filter-pill" data-filter="external">External</button>
+              <button type="button" class="filter-pill" data-filter="internal">Internal</button>
+            </div>
+            <input
+              type="search"
+              id="link-search-input"
+              class="search-input"
+              placeholder="Search anchor or URL…"
+            />
+          </div>
+
+          <div id="links-table-container" class="table-scroll"></div>
+        </section>
+
+        <!-- TAB: IMAGES, ALT TEXT AUDITOR & 1-CLICK BULK .ZIP DOWNLOADER -->
+        <section class="tab-pane" id="tab-images">
+          <div class="pane-header">
+            <h2>Images, Alt Text &amp; 1-Click Bulk .ZIP Downloader</h2>
+            <div class="btn-group">
+              <button type="button" id="btn-export-images" class="btn-secondary btn-xs">
+                ↓ Export CSV
+              </button>
+              <a
+                id="btn-open-bulk-zip-studio"
+                href="https://doitwithai.tools/tools/webpage-image-extractor"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-primary btn-xs"
+              >
+                📦 Download All as .ZIP ↗
+              </a>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <div class="pill-group" id="img-filter-pills">
+              <button type="button" class="filter-pill active" data-filter="all">All Images</button>
+              <button type="button" class="filter-pill" data-filter="missing">Missing Alt</button>
+              <button type="button" class="filter-pill" data-filter="valid">Has Alt Text</button>
+            </div>
+            <a
+              href="https://doitwithai.tools/tools/image-alt-text-generator"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="deep-link"
+            >
+              AI Alt Text Generator ↗
+            </a>
+          </div>
+
+          <div id="images-list-container" class="media-list"></div>
+        </section>
+
+        <!-- TAB: PILLAR 2 — 1-CLICK CONTENT CONVERTER, YOUTUBE TRANSCRIPT & AUDIO STUDIO -->
+        <section class="tab-pane" id="tab-convert">
+          <div class="pane-header">
+            <h2>1-Click Page Converter (PDF, Word, Markdown, ZIP &amp; MP3)</h2>
+            <span class="status-pill">Zero Bot-Block · Live DOM</span>
+          </div>
+
+          <!-- Live YouTube Video Detected Banner (Appears automatically on YouTube / Shorts tabs) -->
+          <div id="youtube-detected-banner" class="info-card hidden" style="border-color: rgba(239, 68, 68, 0.5); background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(30, 41, 59, 0.9))">
+            <div class="flex-between" style="flex-wrap:wrap;gap:10px">
+              <div>
+                <span class="status-pill bad" style="margin-bottom:4px">▶ YOUTUBE VIDEO DETECTED</span>
+                <strong class="block-val" id="yt-banner-title">YouTube Video Ready for Extraction</strong>
+              </div>
+              <div class="btn-group" style="flex-wrap:wrap">
+                <a id="yt-btn-transcript" href="https://doitwithai.tools/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="btn-primary btn-xs">
+                  📝 Transcript &amp; .SRT ↗
+                </a>
+                <a id="yt-btn-thumbnails" href="https://doitwithai.tools/tools/social-media-video-thumbnail-grabber" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-xs">
+                  🖼️ 4K Thumbnails (.ZIP) ↗
+                </a>
+                <a id="yt-btn-blog" href="https://doitwithai.tools/tools/video-transcript-to-blog" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-xs">
+                  ✍️ Video to SEO Blog ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Natural Read-Aloud & Neural MP3 Studio Card -->
+          <div class="info-card audio-studio-card">
+            <div class="audio-studio-top">
+              <div class="audio-studio-brand">
+                <div class="audio-wave-badge" id="audio-wave-indicator" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                  </svg>
+                </div>
+                <div class="audio-studio-meta">
+                  <div class="audio-kicker-row">
+                    <span class="audio-kicker-pill">ARTICLE VOICE READER &amp; MP3 STUDIO</span>
+                    <span class="audio-duration-label" id="conv-audio-meta">~4 min listen</span>
+                  </div>
+                  <strong id="conv-article-title" class="audio-article-title">Extracted Article Ready</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="audio-studio-controls">
+              <div class="audio-left-actions">
+                <button type="button" id="btn-tts-play" class="btn-audio-play">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>Listen Aloud Now</span>
+                </button>
+                <button type="button" id="btn-tts-stop" class="btn-secondary btn-xs">
+                  ■ Stop
+                </button>
+                <select id="tts-rate" class="select-xs" aria-label="Playback speed">
+                  <option value="1">1.0x Normal Speed</option>
+                  <option value="1.15">1.15x Fast Speed</option>
+                  <option value="1.3">1.3x Rapid Speed</option>
+                </select>
+              </div>
+              <a
+                id="btn-open-mp3-studio"
+                href="https://doitwithai.tools/tools/article-to-mp3"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-mp3-studio-link"
+              >
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9 18V5l12-2v13"></path>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+                <span>Download MP3 in Studio ↗</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Instant Local File Exports (With Realistic Multi-Color SVG Badges) -->
+          <div class="info-card">
+            <div class="section-header-row">
+              <h3 class="section-subtitle" style="margin-bottom:0">Instant 1-Click Local Downloads (From Current Tab)</h3>
+              <span class="text-muted">Works offline · No server needed</span>
+            </div>
+            <div class="action-grid" style="margin-top:10px">
+              <button type="button" id="btn-dl-markdown" class="action-tile tile-indigo">
+                <span class="tile-icon icon-indigo" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+                    <rect x="3" y="5" width="26" height="22" rx="5" fill="#4F46E5" />
+                    <path d="M7.5 20V12H10L12.5 15.5L15 12H17.5V20H15.2V15.3L12.5 18.8L9.8 15.3V20H7.5Z" fill="#FFFFFF" />
+                    <path d="M21.5 12V16.5H19.5L22.5 20L25.5 16.5H23.5V12H21.5Z" fill="#A5B4FC" />
+                  </svg>
+                </span>
+                <div class="tile-body">
+                  <div class="tile-title-row">
+                    <strong>Download Markdown</strong>
+                    <span class="format-tag tag-indigo">.MD</span>
+                  </div>
+                  <span>Clean headings, lists, tables &amp; YAML frontmatter</span>
+                </div>
+              </button>
+
+              <button type="button" id="btn-dl-doc" class="action-tile tile-blue">
+                <span class="tile-icon icon-blue" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+                    <rect x="4" y="3" width="24" height="26" rx="5" fill="#2563EB" />
+                    <path d="M9 11L11.2 21H13.5L15.5 14L17.5 21H19.8L22 11H19.7L18.4 17.6L16.5 11H14.5L12.6 17.6L11.3 11H9Z" fill="#FFFFFF" />
+                  </svg>
+                </span>
+                <div class="tile-body">
+                  <div class="tile-title-row">
+                    <strong>Download Word Copy</strong>
+                    <span class="format-tag tag-blue">.DOC</span>
+                  </div>
+                  <span>Editable Microsoft Word &amp; Google Docs copy</span>
+                </div>
+              </button>
+
+              <button type="button" id="btn-dl-txt" class="action-tile tile-emerald">
+                <span class="tile-icon icon-emerald" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+                    <rect x="4" y="3" width="24" height="26" rx="5" fill="#059669" />
+                    <rect x="9" y="9" width="14" height="2.4" rx="1.2" fill="#FFFFFF" />
+                    <rect x="9" y="14.5" width="14" height="2.4" rx="1.2" fill="#A7F3D0" />
+                    <rect x="9" y="20" width="9.5" height="2.4" rx="1.2" fill="#FFFFFF" />
+                  </svg>
+                </span>
+                <div class="tile-body">
+                  <div class="tile-title-row">
+                    <strong>Download Clean Text</strong>
+                    <span class="format-tag tag-emerald">.TXT</span>
+                  </div>
+                  <span>Distraction-free plain text article transcript</span>
+                </div>
+              </button>
+
+              <button type="button" id="btn-print-pdf" class="action-tile tile-rose">
+                <span class="tile-icon icon-rose" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+                    <rect x="4" y="3" width="24" height="26" rx="5" fill="#E11D48" />
+                    <path d="M9 10H23V13H9V10ZM9 15.5H20V18H9V15.5ZM9 20.5H16V23H9V20.5Z" fill="#FFFFFF" />
+                  </svg>
+                </span>
+                <div class="tile-body">
+                  <div class="tile-title-row">
+                    <strong>Save Clean Reader PDF</strong>
+                    <span class="format-tag tag-rose">.PDF</span>
+                  </div>
+                  <span>Formatted print-ready reader PDF view</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Deep-Link Handoffs to Full DoItWithAI Conversion Studios -->
+          <div class="info-card">
+            <div class="section-header-row">
+              <h3 class="section-subtitle" style="margin-bottom:0">Open Current URL in DoItWithAI Cloud Studios</h3>
+              <span class="text-muted">Pre-fills this page URL automatically</span>
+            </div>
+            <div class="studio-links-grid" id="conversion-studio-links" style="margin-top:10px"></div>
+          </div>
+        </section>
+
+        <!-- TAB: PILLAR 3 — SOCIAL MEDIA CARDS & 18 SOCIAL MEDIA POSTS GENERATOR -->
+        <section class="tab-pane" id="tab-social">
+          <div class="pane-header">
+            <h2>Social Cards, 6-Platform Posts &amp; LinkedIn Comments</h2>
+            <div class="btn-group">
+              <a
+                id="btn-open-li-comment-studio"
+                href="https://doitwithai.tools/tools/linkedin-comment-generator"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-secondary btn-xs"
+              >
+                💬 LinkedIn Comment Studio ↗
+              </a>
+              <a
+                id="btn-open-carousel-studio"
+                href="https://doitwithai.tools/tools/blog-to-linkedin-carousel"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-primary btn-xs"
+              >
+                LinkedIn Carousel Studio ↗
+              </a>
+            </div>
+          </div>
+
+          <!-- Visual Facebook/LinkedIn & X Previews -->
+          <div class="social-previews-grid">
+            <div class="social-preview-card">
+              <span class="micro-label">FACEBOOK / LINKEDIN (OPEN GRAPH)</span>
+              <div class="social-img-box" id="og-img-box">
+                <img id="og-img-preview" alt="Open Graph preview" class="hidden" />
+                <span id="og-img-fallback" class="img-fallback">No og:image tag detected</span>
+              </div>
+              <div class="social-card-body">
+                <span class="social-domain" id="og-domain">example.com</span>
+                <strong class="social-title" id="og-title">—</strong>
+                <p class="social-desc" id="og-desc">—</p>
+              </div>
+            </div>
+
+            <div class="social-preview-card">
+              <span class="micro-label">X (TWITTER) CARD PREVIEW</span>
+              <div class="social-img-box" id="tw-img-box">
+                <img id="tw-img-preview" alt="Twitter card preview" class="hidden" />
+                <span id="tw-img-fallback" class="img-fallback">No twitter:image tag detected</span>
+              </div>
+              <div class="social-card-body">
+                <span class="social-domain" id="tw-card-type">summary_large_image</span>
+                <strong class="social-title" id="tw-title">—</strong>
+                <p class="social-desc" id="tw-desc">—</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Instant In-Extension 6-Platform Social Post Generator -->
+          <div class="info-card">
+            <div class="flex-between" style="flex-wrap:wrap;gap:8px">
+              <div>
+                <span class="micro-label">INSTANT 6-PLATFORM SOCIAL CAMPAIGN GENERATOR</span>
+                <h3 class="section-subtitle" style="margin:2px 0 0">Ready-to-Post Copy for This Page</h3>
+              </div>
+              <div class="pill-group" id="social-platform-pills">
+                <button type="button" class="filter-pill active" data-platform="LinkedIn">LinkedIn</button>
+                <button type="button" class="filter-pill" data-platform="X">X / Twitter</button>
+                <button type="button" class="filter-pill" data-platform="Instagram">Instagram</button>
+                <button type="button" class="filter-pill" data-platform="Facebook">Facebook</button>
+                <button type="button" class="filter-pill" data-platform="TikTok">TikTok Script</button>
+                <button type="button" class="filter-pill" data-platform="Threads">Threads</button>
+              </div>
+            </div>
+
+            <div class="pill-group" id="social-angle-pills" style="margin-top:8px">
+              <button type="button" class="filter-pill active" data-angle="0">Idea 1 · Key Takeaways</button>
+              <button type="button" class="filter-pill" data-angle="1">Idea 2 · Contrarian Hook</button>
+              <button type="button" class="filter-pill" data-angle="2">Idea 3 · Step-by-Step Playbook</button>
+            </div>
+
+            <textarea id="social-post-output" class="social-textarea" rows="7"></textarea>
+            <div class="flex-between" style="margin-top:8px;flex-wrap:wrap;gap:8px">
+              <span id="social-char-counter" class="text-muted">0 characters</span>
+              <div class="btn-group">
+                <button type="button" id="btn-share-social-direct" class="btn-secondary btn-xs">
+                  ↗ Open Platform Composer
+                </button>
+                <button type="button" id="btn-copy-social-post" class="btn-primary btn-xs">
+                  Copy Social Post
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

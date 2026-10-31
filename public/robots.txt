@@ -1,0 +1,39 @@
+# Search and AI-search access
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+User-agent: GPTBot
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+User-agent: Claude-SearchBot
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /private/
+
+Sitemap: https://doitwithai.tools/sitemap.xml
+Sitemap: https://doitwithai.tools/image-sitemap.xml
