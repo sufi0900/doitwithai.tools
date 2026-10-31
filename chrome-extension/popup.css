@@ -423,7 +423,7 @@ html[data-theme="light"] .brand-logo-wrap {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
-  margin: 10px 6px 4px;
+  margin: 7px 6px 3px;
 }
 
 .nav-list {
@@ -437,7 +437,7 @@ html[data-theme="light"] .brand-logo-wrap {
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-secondary);
-  padding: 7px 9px;
+  padding: 5.5px 9px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
@@ -1411,12 +1411,21 @@ html[data-theme="dark"] .btn-secondary:hover {
 }
 
 .tile-icon {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0;
+  margin-top: 0 !important;
+  line-height: 1 !important;
+}
+
+.tile-icon svg {
+  display: block;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
 }
 
@@ -1506,7 +1515,7 @@ html[data-theme="light"] .icon-cyan {
   line-height: 1.3;
 }
 
-.action-tile span {
+.tile-body > span {
   display: block;
   font-size: 11.5px;
   font-weight: 500;

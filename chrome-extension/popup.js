@@ -1,12 +1,27 @@
-// Do It With AI Tools — Chrome Extension Inspector, Converter & Social Studio (Manifest V3 v1.1.0)
+// Do It With AI Tools — Chrome Extension Inspector, Keyword & Audience Spy, Converter & Social Studio (Manifest V3 v2.0.0)
 (function () {
   "use strict";
 
   let currentPageData = null;
   let activeLinkFilter = "all";
   let activeImgFilter = "all";
+  let activeNgramFilter = "all";
   let activeSocialPlatform = "LinkedIn";
   let activeSocialAngle = 0;
+
+  const STOP_WORDS = new Set([
+    "the", "and", "for", "that", "this", "with", "from", "your", "have", "more",
+    "are", "was", "were", "will", "can", "into", "about", "what", "when", "where",
+    "which", "their", "there", "been", "they", "them", "then", "than", "some",
+    "such", "only", "other", "also", "over", "after", "before", "most", "many",
+    "each", "very", "just", "like", "make", "made", "using", "used", "does",
+    "how", "why", "who", "you", "our", "out", "all", "any", "not", "but", "his",
+    "her", "its", "has", "had", "would", "could", "should", "these", "those",
+    "between", "through", "during", "without", "within", "along", "following",
+    "across", "behind", "beyond", "plus", "except", "but", "up", "down", "in",
+    "on", "at", "to", "of", "by", "as", "is", "it", "or", "be", "an", "a", "if",
+    "we", "my", "so", "do", "no", "yes", "one", "two", "three", "need", "help"
+  ]);
 
   // Fallback demo snapshot when opened on chrome:// or restricted browser pages
   const DEMO_PAGE_DATA = {
@@ -34,7 +49,8 @@
     paragraphs: [
       "Start with audience needs, discover relevant phrases, review search intent, and decide whether a topic deserves a dedicated page.",
       "In our test of 100 SEO prompt workflows across 45 content sites, grouping keywords by search intent reduced cannibalization by 38.4%.",
-      "Use these structured prompts alongside Google Search Console data to uncover high-converting long-tail queries.",
+      "Use these structured keyword research prompts alongside Google Search Console data to uncover high-converting long-tail queries for YouTube and local SEO.",
+      "B2B marketers, SEO strategists, and content creators can copy these keyword clustering prompts to speed up topical map planning and competitor gap analysis.",
     ],
     links: [
       { href: "https://doitwithai.tools/", anchor: "Home", rel: "dofollow", isExternal: false, anchorType: "Branded" },
@@ -185,7 +201,7 @@
     )
       .map((p) => clean(p.textContent))
       .filter((t) => t.length >= 45)
-      .slice(0, 40);
+      .slice(0, 45);
 
     const links = Array.from(document.querySelectorAll("a[href]"))
       .map((a) => {
@@ -352,6 +368,272 @@
     };
   }
 
+  // =========================================================================
+  // COMPETITOR KEYWORD, N-GRAM & SUB-TOPIC SPY ENGINE
+  // =========================================================================
+  function analyzeKeywordsAndTopics(data) {
+    const titleLower = (data.title || "").toLowerCase();
+    const h1Text = data.headings
+      .filter((h) => h.level === 1)
+      .map((h) => h.text)
+      .join(" ")
+      .toLowerCase();
+    const h2Text = data.headings
+      .filter((h) => h.level === 2)
+      .map((h) => h.text)
+      .join(" ")
+      .toLowerCase();
+    const descLower = (data.description || "").toLowerCase();
+    const firstParaLower = (data.paragraphs[0] || "").toLowerCase();
+    let urlSlug = "";
+    try {
+      urlSlug = new URL(data.url).pathname.toLowerCase().replace(/[^a-z0-9]+/g, " ");
+    } catch {}
+
+    const fullCorpus = [
+      data.title,
+      data.title,
+      h1Text,
+      h2Text,
+      data.description,
+      ...(data.paragraphs || []),
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    const rawTokens = (fullCorpus.match(/[a-z0-9]{3,}/g) || []).filter(
+      (w) => !STOP_WORDS.has(w) && !/^\d+$/.test(w),
+    );
+    const totalTokens = Math.max(1, rawTokens.length);
+
+    const unigrams = new Map();
+    const bigrams = new Map();
+    const trigrams = new Map();
+
+    for (let i = 0; i < rawTokens.length; i++) {
+      const w1 = rawTokens[i];
+      unigrams.set(w1, (unigrams.get(w1) || 0) + 1);
+      if (i + 1 < rawTokens.length) {
+        const b = `${w1} ${rawTokens[i + 1]}`;
+        bigrams.set(b, (bigrams.get(b) || 0) + 1);
+      }
+      if (i + 2 < rawTokens.length) {
+        const t = `${w1} ${rawTokens[i + 1]} ${rawTokens[i + 2]}`;
+        trigrams.set(t, (trigrams.get(t) || 0) + 1);
+      }
+    }
+
+    function scoreKeywordCandidate(phrase, count, ngramSize) {
+      const inTitle = titleLower.includes(phrase);
+      const inH1 = h1Text.includes(phrase);
+      const inH2 = h2Text.includes(phrase);
+      const inDesc = descLower.includes(phrase);
+      const inSlug = urlSlug.includes(phrase);
+      const inIntro = firstParaLower.includes(phrase);
+
+      let weight = count * (ngramSize === 2 ? 2.4 : ngramSize === 3 ? 2.8 : 1.0);
+      if (inTitle) weight += 12;
+      if (inH1) weight += 10;
+      if (inSlug) weight += 8;
+      if (inH2) weight += 6;
+      if (inDesc) weight += 5;
+      if (inIntro) weight += 4;
+
+      const zones = [];
+      if (inTitle) zones.push("Title");
+      if (inH1) zones.push("H1");
+      if (inH2) zones.push("H2");
+      if (inDesc) zones.push("Meta");
+      if (inSlug) zones.push("URL");
+
+      const density = ((count * ngramSize) / Math.max(100, data.wordCount || totalTokens)) * 100;
+      return {
+        phrase,
+        count,
+        ngramSize,
+        weight,
+        density: Math.min(9.9, density).toFixed(2),
+        zones,
+      };
+    }
+
+    const allCandidates = [];
+    bigrams.forEach((cnt, phrase) => {
+      if (cnt >= 2 || titleLower.includes(phrase)) {
+        allCandidates.push(scoreKeywordCandidate(phrase, cnt, 2));
+      }
+    });
+    trigrams.forEach((cnt, phrase) => {
+      if (cnt >= 2 || titleLower.includes(phrase)) {
+        allCandidates.push(scoreKeywordCandidate(phrase, cnt, 3));
+      }
+    });
+    unigrams.forEach((cnt, phrase) => {
+      if (cnt >= 2) {
+        allCandidates.push(scoreKeywordCandidate(phrase, cnt, 1));
+      }
+    });
+
+    allCandidates.sort((a, b) => b.weight - a.weight || b.count - a.count);
+
+    // Pick Primary Focus Keyword (prefer 2- or 3-word phrase present in Title or H1)
+    const primaryObj =
+      allCandidates.find((c) => c.ngramSize >= 2 && (c.zones.includes("Title") || c.zones.includes("H1"))) ||
+      allCandidates.find((c) => c.ngramSize >= 2) ||
+      allCandidates[0] || {
+        phrase: (data.title || "content strategy").split("|")[0].trim().toLowerCase(),
+        count: 1,
+        ngramSize: 2,
+        zones: ["Title"],
+        density: "1.20",
+      };
+
+    const primaryPhrase = primaryObj.phrase;
+    const placementChecks = [
+      { label: "In <title> Tag", passed: titleLower.includes(primaryPhrase) },
+      { label: "In H1 Heading", passed: h1Text.includes(primaryPhrase) },
+      { label: "In URL Slug", passed: urlSlug.includes(primaryPhrase) },
+      { label: "In Meta Description", passed: descLower.includes(primaryPhrase) },
+      { label: "In First Paragraph", passed: firstParaLower.includes(primaryPhrase) },
+    ];
+
+    // Classify Search Intent
+    let searchIntent = "Informational (Guide / How-To)";
+    if (/\b(best|top|vs|comparison|review|alternatives|pricing|benchmark)\b/i.test(data.title + " " + h1Text)) {
+      searchIntent = "Commercial Investigation";
+    } else if (/\b(buy|tool|generator|calculator|checker|download|free|studio|template)\b/i.test(data.title + " " + h1Text)) {
+      searchIntent = "Transactional / Interactive Tool";
+    }
+
+    // Build H2 Sub-Topics list
+    const h2Headings = data.headings.filter((h) => h.level === 2);
+    const subTopics = h2Headings.map((h, i) => ({
+      index: i + 1,
+      title: h.text,
+      summary: data.paragraphs[i] || data.description || "Section breakdown ready for social or blog repurposing.",
+    }));
+
+    return {
+      primaryPhrase,
+      searchIntent,
+      placementChecks,
+      passedZonesCount: placementChecks.filter((c) => c.passed).length,
+      keywords: allCandidates.slice(0, 24),
+      subTopics,
+    };
+  }
+
+  // =========================================================================
+  // TARGET AUDIENCE PERSONA, FUNNEL STAGE & CONTENT GAP ANALYZER
+  // =========================================================================
+  function analyzeTargetAudience(data, kwAnalysis) {
+    const combined = `${data.title} ${data.description} ${(data.paragraphs || []).join(" ")}`.toLowerCase();
+
+    let persona = "Digital Marketers & Content Creators";
+    const signals = [];
+
+    if (/\b(seo|serp|backlink|keyword|canonical|schema|crawl|indexing|gsc|search console)\b/.test(combined)) {
+      persona = "SEO Strategists & Content Marketing Teams";
+      signals.push("Technical & On-Page SEO Terminology");
+      signals.push("Search Ranking & Organic Traffic Focus");
+    } else if (/\b(api|javascript|typescript|react|python|sdk|github|deploy|docker|code|developer)\b/.test(combined)) {
+      persona = "Software Developers & Technical Engineers";
+      signals.push("Code & Engineering Implementation Focus");
+      signals.push("Developer Documentation Structure");
+    } else if (/\b(saas|b2b|founder|pipeline|lead|enterprise|roi|revenue|crm|outreach)\b/.test(combined)) {
+      persona = "B2B Founders, Growth Leads & Executives";
+      signals.push("ROI & Pipeline Conversion Vocabulary");
+      signals.push("B2B Decision-Maker Framing");
+    } else if (/\b(local|google business|maps|reviews|clinic|plumber|agency|near me|nap)\b/.test(combined)) {
+      persona = "Local Business Owners & Agency Operators";
+      signals.push("Local Search & Map Pack Signals");
+    } else {
+      signals.push("Practical Step-by-Step Action Orientation");
+    }
+
+    if (data.schemas.length > 0) {
+      signals.push(`Structured Data (${data.schemas.map((s) => s.type).slice(0, 2).join(", ")})`);
+    }
+    if (data.wordCount > 1500) {
+      signals.push("Long-Form Deep-Dive Reader Profile");
+    } else {
+      signals.push("Fast-Scanning Action-Taker Profile");
+    }
+
+    // Funnel stage
+    let funnelStage = "TOFU · Awareness & Education";
+    if (kwAnalysis.searchIntent.includes("Commercial")) {
+      funnelStage = "MOFU · Evaluation & Comparison";
+    } else if (kwAnalysis.searchIntent.includes("Transactional")) {
+      funnelStage = "BOFU · Solution & Tool Adoption";
+    }
+
+    // Reading level & tone
+    const sentences = (data.paragraphs || [])
+      .join(" ")
+      .split(/[.!?]+/)
+      .filter((s) => s.trim().length > 8);
+    const totalWordsInParas = (data.paragraphs || [])
+      .join(" ")
+      .split(/\s+/)
+      .filter(Boolean).length;
+    const avgWordsPerSentence = sentences.length
+      ? Math.round(totalWordsInParas / sentences.length)
+      : 16;
+
+    const readingLevel =
+      avgWordsPerSentence <= 14
+        ? "Grade 7–8 (Easy & Scannable)"
+        : avgWordsPerSentence <= 20
+          ? "Grade 9–11 (Professional Standard)"
+          : "Grade 12+ (Academic / Technical)";
+
+    let tone = "Instructional & Actionable";
+    if ((data.quantitativeMatches?.length || 0) >= 2) {
+      tone = "Data-Driven & Analytical";
+    } else if (/\b(you|your|let's|we)\b/.test(combined)) {
+      tone = "Conversational & Peer-to-Peer";
+    }
+
+    // Pain points addressed (derived from H2/H3 headings)
+    const painPoints = data.headings
+      .filter((h) => h.level === 2 || h.level === 3)
+      .slice(0, 5)
+      .map((h) => `Solves reader question around: "${h.text}"`);
+    if (!painPoints.length) {
+      painPoints.push(`Addresses core topic: "${data.title}"`);
+    }
+
+    // Content gaps to beat this competitor page
+    const gaps = [];
+    if (!data.schemas.some((s) => /FAQPage/i.test(s.type))) {
+      gaps.push("Missing FAQPage JSON-LD Schema — add 4–5 structured Q&As to win rich results & AI citations.");
+    }
+    if ((data.quantitativeMatches?.length || 0) < 3) {
+      gaps.push("Low original data density — include 3+ benchmark stats, percentages, or first-hand test metrics.");
+    }
+    if (data.images.filter((i) => i.alt).length < 3) {
+      gaps.push("Limited descriptive visual assets — add comparison tables, diagrams, or downloadable templates with keyword Alt Text.");
+    }
+    if (data.wordCount < 1200) {
+      gaps.push(`Page is only ${data.wordCount} words — expand sub-topic depth to 1,500+ words with a jump-link Table of Contents.`);
+    }
+    if (!gaps.length) {
+      gaps.push("Outperform this page by adding an interactive calculator, downloadable checklist PDF, or embedded YouTube video summary.");
+    }
+
+    return {
+      persona,
+      funnelStage,
+      readingLevel,
+      tone,
+      summaryText: `This page is engineered for ${persona} in the "${funnelStage}" stage, using a ${tone.toLowerCase()} style (~${avgWordsPerSentence} words/sentence) focused on "${kwAnalysis.primaryPhrase}".`,
+      signals,
+      painPoints,
+      gaps,
+    };
+  }
+
   function computeScores(data) {
     let eeat = 32;
     if (data.hasAuthorSignal) eeat += 18;
@@ -442,6 +724,10 @@
       data.description ||
       "Here is a structured breakdown you can apply immediately.";
 
+    if (platform === "TikTok") {
+      return `[0:00 - 0:03 HOOK]\n🎙️ Stop scrolling if you care about "${title}"—here is the 30-second cheat sheet.\n🎥 (Point at green-screen headline behind you)\n\n[0:03 - 0:20 CORE BREAKDOWN]\n${bullets}\n\n[0:20 - 0:30 CTA]\n🎙️ Save this video for your next sprint & check the full guide at ${data.domain}!\n\nCaption: ${title} — Full breakdown in 30 seconds! #LearnOnTikTok #ContentStrategy #SEO`;
+    }
+
     if (platform === "X" || platform === "Threads") {
       if (angleIdx === 0) {
         return `Most teams overcomplicate "${title}".\n\nHere is the streamlined checklist that actually moves the needle:\n\n${bullets}\n\nFull breakdown 👇\n🌐 ${url}`;
@@ -464,6 +750,10 @@
   function renderAll(data) {
     currentPageData = data;
     const scores = computeScores(data);
+    const kwAnalysis = analyzeKeywordsAndTopics(data);
+    const audAnalysis = analyzeTargetAudience(data, kwAnalysis);
+    currentPageData._kwAnalysis = kwAnalysis;
+    currentPageData._audAnalysis = audAnalysis;
 
     // Top URL pill
     document.getElementById("active-url-display").textContent = data.url;
@@ -472,20 +762,31 @@
     const missingAltCount = data.images.filter((i) => !i.alt).length;
     const h1Count = data.headings.filter((h) => h.level === 1).length;
     const contentBadge = document.getElementById("badge-content");
-    contentBadge.textContent = String(data.headings.length);
-    contentBadge.classList.toggle("badge-warn", h1Count !== 1);
+    if (contentBadge) {
+      contentBadge.textContent = String(data.headings.length);
+      contentBadge.classList.toggle("badge-warn", h1Count !== 1);
+    }
+
+    const kwBadge = document.getElementById("badge-keywords");
+    if (kwBadge) {
+      kwBadge.textContent = String(kwAnalysis.keywords.length);
+    }
 
     const idxBadge = document.getElementById("badge-indexability");
     const isNoindex = /noindex/i.test(data.robotsMeta);
-    idxBadge.textContent = isNoindex ? "NOINDEX" : "INDEX";
-    idxBadge.classList.toggle("badge-warn", isNoindex);
+    if (idxBadge) {
+      idxBadge.textContent = isNoindex ? "NOINDEX" : "INDEX";
+      idxBadge.classList.toggle("badge-warn", isNoindex);
+    }
 
     document.getElementById("badge-schema").textContent = String(data.schemas.length);
     document.getElementById("badge-links").textContent = String(data.links.length);
 
     const imgBadge = document.getElementById("badge-images");
-    imgBadge.textContent = String(data.images.length);
-    imgBadge.classList.toggle("badge-warn", missingAltCount > 0);
+    if (imgBadge) {
+      imgBadge.textContent = String(data.images.length);
+      imgBadge.classList.toggle("badge-warn", missingAltCount > 0);
+    }
 
     // TAB 1: Overview & Gauges
     setGauge("ring-eeat", "val-eeat", "label-eeat", scores.eeat);
@@ -505,6 +806,15 @@
     dBadge.textContent = `${dLen} chars`;
     dBadge.className = `status-pill ${dLen >= 110 && dLen <= 165 ? "" : "warn"}`;
     document.getElementById("bar-desc").style.width = `${Math.min(100, Math.round((dLen / 160) * 100))}%`;
+
+    const focusKwEl = document.getElementById("ov-focus-kw");
+    if (focusKwEl) {
+      focusKwEl.textContent = `"${kwAnalysis.primaryPhrase}" (${kwAnalysis.passedZonesCount}/5 on-page zones)`;
+    }
+    const focusIntentEl = document.getElementById("ov-focus-intent");
+    if (focusIntentEl) {
+      focusIntentEl.textContent = kwAnalysis.searchIntent.split(" ")[0];
+    }
 
     const canEl = document.getElementById("ov-canonical");
     canEl.textContent = data.canonicalRendered || "Missing canonical tag";
@@ -540,7 +850,51 @@
     document.getElementById("kpi-links").textContent = String(data.links.length);
     document.getElementById("kpi-images").textContent = String(data.images.length);
 
-    // TAB 2: Content & Headings
+    // NEW TAB: KEYWORDS & SUB-TOPICS
+    document.getElementById("kw-primary-phrase").textContent = kwAnalysis.primaryPhrase;
+    document.getElementById("kw-search-intent").textContent = kwAnalysis.searchIntent;
+    document.getElementById("kw-placement-score").textContent = `${kwAnalysis.passedZonesCount} / 5 Zones`;
+    document.getElementById("kw-subtopics-count").textContent = `${kwAnalysis.subTopics.length} H2 Sections`;
+
+    const placementBox = document.getElementById("kw-placement-pills");
+    if (placementBox) {
+      placementBox.innerHTML = kwAnalysis.placementChecks
+        .map(
+          (chk) =>
+            `<span class="status-pill ${chk.passed ? "" : "warn"}">${chk.passed ? "✓" : "✗"} ${chk.label}</span>`,
+        )
+        .join("");
+    }
+    renderKeywordsTable();
+    renderSubTopicsList();
+
+    // NEW TAB: TARGET AUDIENCE & PERSONA
+    document.getElementById("aud-persona").textContent = audAnalysis.persona;
+    document.getElementById("aud-funnel-stage").textContent = audAnalysis.funnelStage;
+    document.getElementById("aud-reading-level").textContent = audAnalysis.readingLevel;
+    document.getElementById("aud-tone").textContent = audAnalysis.tone;
+    document.getElementById("aud-summary-text").textContent = audAnalysis.summaryText;
+
+    const sigBox = document.getElementById("aud-signals-list");
+    if (sigBox) {
+      sigBox.innerHTML = audAnalysis.signals
+        .map((s) => `<span class="status-pill neutral">✓ ${s}</span>`)
+        .join("");
+    }
+    const painBox = document.getElementById("aud-painpoints-list");
+    if (painBox) {
+      painBox.innerHTML = audAnalysis.painPoints
+        .map((p) => `<div class="heading-node"><span class="h-tag h-level-2">Q</span><span>${p}</span></div>`)
+        .join("");
+    }
+    const gapBox = document.getElementById("aud-gaps-list");
+    if (gapBox) {
+      gapBox.innerHTML = audAnalysis.gaps
+        .map((g) => `<div class="heading-node"><span class="h-tag h-level-3">GAP</span><span>${g}</span></div>`)
+        .join("");
+    }
+
+    // TAB: Content & Headings
     document.getElementById("cnt-published").textContent =
       data.publishedDate || "Not specified";
     document.getElementById("cnt-modified").textContent =
@@ -572,7 +926,7 @@
       });
     }
 
-    // TAB 3: Indexability
+    // TAB: Indexability
     document.getElementById("idx-can-rendered").textContent =
       data.canonicalRendered || "Missing";
     document.getElementById("idx-can-raw").textContent =
@@ -610,7 +964,7 @@
         .join("");
     }
 
-    // TAB 4: Schema (DoItWithAI Brand Blue Accordion)
+    // TAB: Schema
     const schemaBox = document.getElementById("schema-cards-container");
     schemaBox.innerHTML = "";
     if (!data.schemas.length) {
@@ -629,7 +983,7 @@
       });
     }
 
-    // TAB 5: Links & Vetting
+    // TAB: Links & Vetting
     document.getElementById("lnk-vetting-score").textContent = `${scores.vetting} / 100`;
     document.getElementById("lnk-dofollow-count").textContent = String(
       data.links.filter((l) => l.rel === "dofollow").length,
@@ -642,10 +996,27 @@
     );
     renderLinksList();
 
-    // TAB 6: Images
+    // TAB: Images & Bulk .ZIP Studio Link
+    const bulkZipBtn = document.getElementById("btn-open-bulk-zip-studio");
+    if (bulkZipBtn) {
+      bulkZipBtn.href = `https://doitwithai.tools/tools/webpage-image-extractor?url=${encodeURIComponent(data.url || "")}`;
+    }
     renderImagesList();
 
-    // TAB 7: Convert Page & Audio Studio
+    // TAB: Convert Page, YouTube Detection & Audio Studio
+    const isYtPage = /(?:youtube\.com\/(?:watch|shorts)|youtu\.be\/)/i.test(data.url || "");
+    const ytBanner = document.getElementById("youtube-detected-banner");
+    if (ytBanner) {
+      ytBanner.classList.toggle("hidden", !isYtPage);
+      if (isYtPage) {
+        const encYt = encodeURIComponent(data.url || "");
+        document.getElementById("yt-banner-title").textContent = data.title || "YouTube Video";
+        document.getElementById("yt-btn-transcript").href = `https://doitwithai.tools/tools/youtube-transcript-generator?url=${encYt}`;
+        document.getElementById("yt-btn-thumbnails").href = `https://doitwithai.tools/tools/social-media-video-thumbnail-grabber?url=${encYt}`;
+        document.getElementById("yt-btn-blog").href = `https://doitwithai.tools/tools/video-transcript-to-blog?url=${encYt}`;
+      }
+    }
+
     document.getElementById("conv-article-title").textContent =
       data.title || "Current Article";
     const audioMetaEl = document.getElementById("conv-audio-meta");
@@ -658,7 +1029,12 @@
     }
     renderStudioLinks(data.url);
 
-    // TAB 8: Social Previews & 15 Posts
+    // TAB: Social Previews & 6-Platform Posts
+    const liCommentBtn = document.getElementById("btn-open-li-comment-studio");
+    if (liCommentBtn) {
+      liCommentBtn.href = `https://doitwithai.tools/tools/linkedin-comment-generator?text=${encodeURIComponent((data.title + "\n\n" + (data.paragraphs[0] || data.description || "")).slice(0, 900))}`;
+    }
+
     document.getElementById("og-domain").textContent = data.domain;
     document.getElementById("og-title").textContent = data.og.title || data.title;
     document.getElementById("og-desc").textContent =
@@ -692,6 +1068,70 @@
     }
 
     updateSocialPostTextarea();
+  }
+
+  function renderKeywordsTable() {
+    if (!currentPageData || !currentPageData._kwAnalysis) return;
+    const all = currentPageData._kwAnalysis.keywords;
+    const filtered = all.filter((k) => {
+      if (activeNgramFilter === "all") return true;
+      return String(k.ngramSize) === activeNgramFilter;
+    });
+
+    const box = document.getElementById("keywords-table-container");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!filtered.length) {
+      box.innerHTML = `<p class="text-muted">No keywords match this N-gram filter.</p>`;
+      return;
+    }
+
+    filtered.slice(0, 15).forEach((item) => {
+      const row = document.createElement("div");
+      row.className = "item-row";
+      const zoneBadges = item.zones.length
+        ? item.zones.map((z) => `<span class="status-pill">${z}</span>`).join("")
+        : `<span class="status-pill neutral">Body</span>`;
+      row.innerHTML = `
+        <div style="min-width:0;flex:1">
+          <div class="item-title">${item.phrase}</div>
+          <div class="text-muted">${item.count} occurrences · ${item.density}% density</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;flex-shrink:0">
+          ${zoneBadges}
+        </div>
+      `;
+      box.appendChild(row);
+    });
+  }
+
+  function renderSubTopicsList() {
+    if (!currentPageData || !currentPageData._kwAnalysis) return;
+    const subs = currentPageData._kwAnalysis.subTopics;
+    const box = document.getElementById("kw-subtopics-list");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!subs.length) {
+      box.innerHTML = `<p class="text-muted">Single-topic page (no H2 sub-sections detected).</p>`;
+      return;
+    }
+    const encUrl = encodeURIComponent(currentPageData.url || "");
+    subs.forEach((st) => {
+      const row = document.createElement("div");
+      row.className = "item-row";
+      row.innerHTML = `
+        <div style="min-width:0;flex:1">
+          <div class="item-title">Topic ${st.index}: ${st.title}</div>
+          <div class="text-muted">${st.summary.slice(0, 105)}...</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-shrink:0">
+          <a href="https://doitwithai.tools/tools/social-thread-generator?url=${encUrl}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-xs">
+            Repurpose ↗
+          </a>
+        </div>
+      `;
+      box.appendChild(row);
+    });
   }
 
   function renderLinksList() {
@@ -770,76 +1210,77 @@
     });
   }
 
-  // Custom Color-Coded SVG Studio Cards for Pillar 2 (Convert Page & MP3)
+  // Realistic Colorful Brand SVG Studio Cards for Pillar 2 (Convert Page & Cloud Studios)
   function renderStudioLinks(pageUrl) {
     const enc = encodeURIComponent(pageUrl || "");
     const studios = [
       {
-        name: "LinkedIn Carousel Studio",
-        desc: "Turn headings into swipeable PDF/PNG slides",
-        slug: "blog-to-linkedin-carousel",
-        tone: "icon-blue",
-        tag: "SLIDES",
-        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="16" rx="2"></rect><path d="M21 6v12a2 2 0 0 1-2 2"></path><line x1="7" y1="9" x2="13" y2="9"></line><line x1="7" y1="13" x2="11" y2="13"></line></svg>`,
-      },
-      {
-        name: "Blog to Video Script",
-        desc: "YouTube & Reels script with visual B-roll cues",
-        slug: "blog-to-video-script",
-        tone: "icon-indigo",
-        tag: "VIDEO",
-        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="15" height="16" rx="2"></rect><polygon points="17 9 22 6 22 18 17 15 17 9"></polygon></svg>`,
-      },
-      {
-        name: "15 Social Posts Studio",
-        desc: "LinkedIn, X, Instagram, FB & Threads campaign",
-        slug: "blog-to-social-posts",
-        tone: "icon-cyan",
-        tag: "15 POSTS",
-        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>`,
-      },
-      {
-        name: "Email Newsletter Studio",
-        desc: "3 subject lines, preview text & email edition",
-        slug: "blog-to-newsletter",
-        tone: "icon-amber",
-        tag: "EMAIL",
-        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>`,
-      },
-      {
-        name: "Neural MP3 Audio Studio",
-        desc: "Downloadable neural voiceover MP3 audio file",
-        slug: "article-to-mp3",
-        tone: "icon-emerald",
-        tag: "MP3",
-        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>`,
-      },
-      {
-        name: "Podcast Script Studio",
-        desc: "2-Host conversational podcast episode script",
-        slug: "article-to-podcast-script",
+        name: "YouTube Transcript & .SRT",
+        desc: "Extract timestamps, chapters, summary & .SRT subtitles",
+        slug: "youtube-transcript-generator",
         tone: "icon-rose",
-        tag: "PODCAST",
-        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`,
+        tag: "YOUTUBE",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="2" y="6" width="28" height="20" rx="6" fill="#FF0000"/><path d="M13 11.5L21 16L13 20.5V11.5Z" fill="#FFFFFF"/></svg>`,
       },
       {
-        name: "Article to EPUB eBook",
-        desc: "Chapterized EPUB 3.0 file for Kindle & Apple Books",
-        slug: "article-to-epub",
-        tone: "icon-indigo",
-        tag: "EPUB",
-        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`,
+        name: "Bulk Image .ZIP Downloader",
+        desc: "Extract & bundle all page images into a 1-click .ZIP",
+        slug: "webpage-image-extractor",
+        tone: "icon-emerald",
+        tag: "BULK .ZIP",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="5" width="26" height="22" rx="5" fill="#059669"/><circle cx="11" cy="12" r="2.5" fill="#A7F3D0"/><path d="M6 23L12.5 16.5L17 21L21 17L26 23H6Z" fill="#FFFFFF"/></svg>`,
+      },
+      {
+        name: "LinkedIn Post & Visual Card",
+        desc: "Unicode formatter, fold preview & 1080p visual card",
+        slug: "linkedin-post-formatter",
+        tone: "icon-blue",
+        tag: "LINKEDIN",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" fill="#0A66C2"/><circle cx="10.5" cy="10.5" r="2.1" fill="#FFFFFF"/><rect x="8.8" y="14" width="3.4" height="10" rx="1" fill="#FFFFFF"/><path d="M14.8 14H18V15.4C18.7 14.4 19.9 13.8 21.4 13.8C23.9 13.8 25.2 15.4 25.2 18.2V24H21.8V18.8C21.8 17.4 21.2 16.6 20 16.6C18.8 16.6 18.2 17.5 18.2 18.8V24H14.8V14Z" fill="#FFFFFF"/></svg>`,
+      },
+      {
+        name: "Instagram Caption & Carousel",
+        desc: "5-slide carousel copy, SEO alt text & 1080p cover",
+        slug: "instagram-caption-generator",
+        tone: "icon-rose",
+        tag: "INSTAGRAM",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="3" width="26" height="26" rx="7" fill="#E1306C"/><rect x="7.5" y="7.5" width="17" height="17" rx="4.8" stroke="#FFFFFF" stroke-width="2.2"/><circle cx="16" cy="16" r="3.8" stroke="#FFFFFF" stroke-width="2.2"/><circle cx="21.3" cy="10.7" r="1.3" fill="#FFFFFF"/></svg>`,
+      },
+      {
+        name: "Facebook Post & Visual Card",
+        desc: "Zero-click posts, first-comment link & graphic card",
+        slug: "facebook-post-generator",
+        tone: "icon-blue",
+        tag: "FACEBOOK",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="3" width="26" height="26" rx="13" fill="#1877F2"/><path d="M18.4 29V18.8H21.8L22.3 14.8H18.4V12.3C18.4 11.1 18.8 10.3 20.4 10.3H22.5V6.7C22.1 6.6 20.9 6.5 19.4 6.5C16.3 6.5 14.2 8.4 14.2 11.9V14.8H10.8V18.8H14.2V29H18.4Z" fill="#FFFFFF"/></svg>`,
+      },
+      {
+        name: "TikTok Script & SEO Studio",
+        desc: "3-second visual hooks, teleprompter beats & SEO tags",
+        slug: "tiktok-script-caption-generator",
+        tone: "icon-cyan",
+        tag: "TIKTOK",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="3" width="26" height="26" rx="7" fill="#0F172A"/><path d="M19.5 8.5C20.2 10.5 21.7 11.8 23.8 12.1V15.1C22.2 15.1 20.8 14.6 19.6 13.7V19.6C19.6 22.7 17.1 25.1 14 25.1C10.9 25.1 8.5 22.7 8.5 19.6C8.5 16.5 10.9 14.1 14 14.1C14.4 14.1 14.8 14.1 15.1 14.2V17.4C14.8 17.3 14.4 17.2 14 17.2C12.7 17.2 11.6 18.3 11.6 19.6C11.6 20.9 12.7 22 14 22C15.3 22 16.5 20.9 16.5 19.6V8.5H19.5Z" fill="#25F4EE"/></svg>`,
+      },
+      {
+        name: "4K Video Thumbnail Grabber",
+        desc: "Download maxres 4K covers & storyboard frames (.ZIP)",
+        slug: "social-media-video-thumbnail-grabber",
+        tone: "icon-amber",
+        tag: "4K COVERS",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="5" width="26" height="22" rx="5" fill="#D97706"/><polygon points="13,11 21,16 13,21" fill="#FFFFFF"/></svg>`,
       },
       {
         name: "HTML Cheatsheet Studio",
-        desc: "1-page visual executive summary & cheatsheet",
+        desc: "1-page visual executive summary & printable cheatsheet",
         slug: "article-to-html-cheatsheet",
-        tone: "icon-blue",
+        tone: "icon-indigo",
         tag: "HTML",
-        svg: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>`,
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="4" y="4" width="24" height="24" rx="5" fill="#4F46E5"/><rect x="8" y="8" width="16" height="4" rx="1.5" fill="#FFFFFF"/><rect x="8" y="14" width="7" height="10" rx="1.5" fill="#A5B4FC"/><rect x="17" y="14" width="7" height="10" rx="1.5" fill="#FFFFFF"/></svg>`,
       },
     ];
     const container = document.getElementById("conversion-studio-links");
+    if (!container) return;
     container.innerHTML = studios
       .map(
         (s) => `
@@ -866,9 +1307,11 @@
       activeSocialAngle,
     );
     const area = document.getElementById("social-post-output");
-    area.value = text;
-    document.getElementById("social-char-counter").textContent =
-      `${text.length} characters · ${activeSocialPlatform}`;
+    if (area) area.value = text;
+    const counter = document.getElementById("social-char-counter");
+    if (counter) {
+      counter.textContent = `${text.length} characters · ${activeSocialPlatform}`;
+    }
   }
 
   function buildArticleMarkdown(data) {
@@ -877,6 +1320,8 @@
       `title: "${(data.title || "").replace(/"/g, '\\"')}"`,
       `source: "${data.url}"`,
       `date: "${data.publishedDate || new Date().toISOString().slice(0, 10)}"`,
+      `focus_keyword: "${data._kwAnalysis?.primaryPhrase || ""}"`,
+      `target_audience: "${data._audAnalysis?.persona || ""}"`,
       "---",
       "",
       `# ${data.title}`,
@@ -1063,7 +1508,7 @@
       });
     });
 
-    // Theme toggle (Dark / Light with high-contrast tokens)
+    // Theme toggle
     document.getElementById("btn-theme-toggle")?.addEventListener("click", () => {
       const html = document.documentElement;
       const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
@@ -1084,7 +1529,7 @@
       }
     });
 
-    // Auto-Fit Split View (Adjusts browser page + extension side-by-side)
+    // Auto-Fit Split View
     document
       .getElementById("btn-splitview")
       ?.addEventListener("click", triggerAutoFitSplitView);
@@ -1103,6 +1548,40 @@
       const md = buildArticleMarkdown(currentPageData);
       triggerDownload(md, "seo-content-audit-report.md", "text/markdown;charset=utf-8");
       showToast("Downloaded full Markdown audit report.");
+    });
+
+    // Keyword N-Gram filter pills, Copy & CSV Export
+    document.querySelectorAll("#kw-ngram-pills .filter-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document
+          .querySelectorAll("#kw-ngram-pills .filter-pill")
+          .forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeNgramFilter = btn.getAttribute("data-ngram") || "all";
+        renderKeywordsTable();
+      });
+    });
+
+    document.getElementById("btn-copy-keywords")?.addEventListener("click", async () => {
+      if (!currentPageData?._kwAnalysis) return;
+      const list = currentPageData._kwAnalysis.keywords
+        .map((k) => `${k.phrase} (${k.count}x · ${k.density}%)`)
+        .join("\n");
+      await navigator.clipboard.writeText(list);
+      showToast("Copied top focus keywords to clipboard!");
+    });
+
+    document.getElementById("btn-export-keywords")?.addEventListener("click", () => {
+      if (!currentPageData?._kwAnalysis) return;
+      const rows = [
+        '"Keyword Phrase","N-Gram Words","Occurrences","Density %","Placement Zones"',
+        ...currentPageData._kwAnalysis.keywords.map(
+          (k) =>
+            `"${k.phrase.replace(/"/g, '""')}","${k.ngramSize}","${k.count}","${k.density}%","${k.zones.join(" | ") || "Body"}"`,
+        ),
+      ].join("\r\n");
+      triggerDownload(rows, "competitor-keywords-audit.csv", "text/csv;charset=utf-8");
+      showToast("Exported competitor keywords (.CSV)!");
     });
 
     // Copy Headings & Build TOC
@@ -1273,6 +1752,20 @@
       const val = document.getElementById("social-post-output")?.value || "";
       await navigator.clipboard.writeText(val);
       showToast(`Copied ${activeSocialPlatform} post to clipboard!`);
+    });
+
+    document.getElementById("btn-share-social-direct")?.addEventListener("click", async () => {
+      const val = document.getElementById("social-post-output")?.value || "";
+      await navigator.clipboard.writeText(val);
+      const enc = encodeURIComponent(val.slice(0, 1200));
+      let shareUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${enc}`;
+      if (activeSocialPlatform === "X") {
+        shareUrl = `https://twitter.com/intent/tweet?text=${enc}`;
+      } else if (activeSocialPlatform === "Facebook") {
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?quote=${enc}`;
+      }
+      window.open(shareUrl, "_blank", "noopener,noreferrer");
+      showToast(`Copied ${activeSocialPlatform} text & opened composer!`);
     });
 
     // Live page overlay toggles

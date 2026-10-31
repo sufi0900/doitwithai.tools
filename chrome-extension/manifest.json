@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Do It With AI — SEO Inspector, Content Converter & Social Studio",
-  "short_name": "DoItWithAI Studio",
-  "version": "1.1.0",
-  "description": "All-in-one On-Page/Technical SEO Toolbar, E-E-A-T & Information Gain Scorer, 1-Click Article-to-PDF/Word/MD/MP3 Converter & 15-Post Social Studio.",
+  "name": "Do It With AI — SEO Inspector, Keyword & Audience Spy, Content Converter & Social Studio",
+  "short_name": "DoItWithAI v2.0",
+  "version": "2.0.0",
+  "description": "All-in-one On-Page SEO Toolbar, Competitor Keyword & N-Gram Spy, Target Audience Analyzer, Bulk Image ZIP & YouTube Transcript/Social Studio (85 Tools).",
   "permissions": [
     "activeTab",
     "scripting",
@@ -12,7 +12,7 @@
     "tabs"
   ],
   "action": {
-    "default_title": "Open Do It With AI Studio (SEO · Content · Social)",
+    "default_title": "Open Do It With AI v2.0 (SEO · Keywords · Audience · Convert · Social)",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

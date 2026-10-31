@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Do It With AI — SEO, Content &amp; Social Studio</title>
+    <title>Do It With AI v2.0 — SEO, Keywords, Audience, Convert &amp; Social Studio</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -27,7 +27,7 @@
             </span>
             <div class="brand-text">
               <span class="brand-title">DoItWithAI</span>
-              <span class="brand-sub">SEO · Content · Social</span>
+              <span class="brand-sub">v2.0 · 85 AI &amp; SEO Tools</span>
             </div>
           </a>
           <div class="header-actions">
@@ -61,11 +61,19 @@
           </div>
         </div>
 
-        <div class="nav-group-label">Pillar 1 · SEO Inspector</div>
+        <div class="nav-group-label">Pillar 1 · SEO &amp; Competitor Spy</div>
         <nav class="nav-list" id="main-nav">
           <button type="button" class="nav-item active" data-tab="overview">
             <span>Overview &amp; Scores</span>
             <span class="nav-badge badge-ok" id="badge-overview">200</span>
+          </button>
+          <button type="button" class="nav-item" data-tab="keywords">
+            <span>Keywords &amp; Sub-Topics</span>
+            <span class="nav-badge badge-accent" id="badge-keywords">NEW</span>
+          </button>
+          <button type="button" class="nav-item" data-tab="audience">
+            <span>Target Audience</span>
+            <span class="nav-badge badge-accent" id="badge-audience">AI</span>
           </button>
           <button type="button" class="nav-item" data-tab="content">
             <span>Content &amp; Headings</span>
@@ -84,20 +92,20 @@
             <span class="nav-badge" id="badge-links">0</span>
           </button>
           <button type="button" class="nav-item" data-tab="images">
-            <span>Images &amp; Alt Text</span>
+            <span>Images &amp; Bulk .ZIP</span>
             <span class="nav-badge" id="badge-images">0</span>
           </button>
 
-          <div class="nav-group-label">Pillar 2 · Content Studio</div>
+          <div class="nav-group-label">Pillar 2 · Content &amp; Video</div>
           <button type="button" class="nav-item" data-tab="convert">
             <span>Convert Page &amp; MP3</span>
-            <span class="nav-badge badge-accent">12</span>
+            <span class="nav-badge badge-accent">14</span>
           </button>
 
           <div class="nav-group-label">Pillar 3 · Social Studio</div>
           <button type="button" class="nav-item" data-tab="social">
-            <span>Social Cards &amp; 15 Posts</span>
-            <span class="nav-badge badge-accent" id="badge-social">15</span>
+            <span>Social Cards &amp; Posts</span>
+            <span class="nav-badge badge-accent" id="badge-social">18</span>
           </button>
         </nav>
 
@@ -120,7 +128,7 @@
               rel="noopener noreferrer"
               class="footer-cta-link"
             >
-              Open All 78 Web Tools ↗
+              Open All 85 Web Tools ↗
             </a>
           </div>
         </div>
@@ -158,6 +166,7 @@
           <div class="pane-header">
             <h2>Overview, Meta Signals &amp; Originality Scores</h2>
             <a
+              id="ov-deep-audit-link"
               href="https://doitwithai.tools/tools/on-page-ai-seo-analyzer"
               target="_blank"
               rel="noopener noreferrer"
@@ -167,7 +176,7 @@
             </a>
           </div>
 
-          <!-- Circular Scorecards Row (Our Unique Differentiator!) -->
+          <!-- Circular Scorecards Row -->
           <div class="score-cards-grid">
             <div class="score-card">
               <div class="circle-gauge" id="gauge-eeat" data-score="0">
@@ -200,7 +209,7 @@
             </div>
           </div>
 
-          <!-- Title & Meta Description Inspector (Like MarketingSyrup SEO Pro + Ahrefs) -->
+          <!-- Title & Meta Description Inspector -->
           <div class="info-card">
             <div class="field-row">
               <div class="field-label">
@@ -230,6 +239,16 @@
 
             <div class="field-row">
               <div class="field-label">
+                <span>FOCUS KEYWORD</span>
+                <span class="status-pill neutral" id="ov-focus-intent">Informational</span>
+              </div>
+              <div class="field-value">
+                <p id="ov-focus-kw" class="strong-text">—</p>
+              </div>
+            </div>
+
+            <div class="field-row">
+              <div class="field-label">
                 <span>CANONICAL URL</span>
                 <span class="status-pill" id="canonical-badge">—</span>
               </div>
@@ -249,7 +268,7 @@
             </div>
           </div>
 
-          <!-- Heading & Asset Quick Strip (Like SEO Pro bottom strip) -->
+          <!-- Heading & Asset Quick Strip -->
           <div class="kpi-strip">
             <div class="kpi-cell"><span>WORDS</span><strong id="kpi-words">0</strong></div>
             <div class="kpi-cell"><span>H1</span><strong id="kpi-h1">0</strong></div>
@@ -261,7 +280,121 @@
           </div>
         </section>
 
-        <!-- TAB 2: CONTENT, HEADINGS TREE & INSTANT TOC GENERATOR -->
+        <!-- NEW TAB: KEYWORDS, COMPETITOR FOCUS & SUB-TOPIC SLICER -->
+        <section class="tab-pane" id="tab-keywords">
+          <div class="pane-header">
+            <h2>Competitor Focus Keywords, N-Grams &amp; Sub-Topics</h2>
+            <div class="btn-group">
+              <button type="button" id="btn-copy-keywords" class="btn-secondary btn-xs">
+                Copy All Keywords
+              </button>
+              <button type="button" id="btn-export-keywords" class="btn-primary btn-xs">
+                ↓ Export Keywords (.CSV)
+              </button>
+            </div>
+          </div>
+
+          <div class="info-card compact-grid">
+            <div>
+              <span class="micro-label">PRIMARY FOCUS KEYWORD</span>
+              <strong id="kw-primary-phrase" class="block-val">—</strong>
+            </div>
+            <div>
+              <span class="micro-label">SEARCH INTENT</span>
+              <strong id="kw-search-intent" class="block-val">Informational</strong>
+            </div>
+            <div>
+              <span class="micro-label">ON-PAGE PLACEMENT</span>
+              <strong id="kw-placement-score" class="block-val">— / 5 Zones</strong>
+            </div>
+            <div>
+              <span class="micro-label">DETECTED SUB-TOPICS</span>
+              <strong id="kw-subtopics-count" class="block-val">0 H2 Sections</strong>
+            </div>
+          </div>
+
+          <!-- Placement Checklist Bar -->
+          <div class="info-card">
+            <span class="micro-label">PRIMARY KEYWORD PLACEMENT AUDIT (COMPETITOR SPY)</span>
+            <div id="kw-placement-pills" class="pill-group" style="margin-top:8px"></div>
+          </div>
+
+          <!-- N-Gram Filter & Keyword Density Table -->
+          <div class="filter-bar">
+            <div class="pill-group" id="kw-ngram-pills">
+              <button type="button" class="filter-pill active" data-ngram="all">All Top Keywords</button>
+              <button type="button" class="filter-pill" data-ngram="2">2-Word Phrases</button>
+              <button type="button" class="filter-pill" data-ngram="3">3-Word Long-Tail</button>
+              <button type="button" class="filter-pill" data-ngram="1">Single Terms</button>
+            </div>
+          </div>
+
+          <div id="keywords-table-container" class="table-scroll"></div>
+
+          <!-- Multi-Topic H2 Slicer -->
+          <div class="info-card">
+            <div class="flex-between">
+              <div>
+                <span class="micro-label">ARTICLE MULTI-TOPIC BREAKDOWN (H2 SUB-TOPICS)</span>
+                <h3 class="section-subtitle" style="margin:2px 0 0">Click any sub-topic to repurpose just that section</h3>
+              </div>
+            </div>
+            <div id="kw-subtopics-list" class="table-scroll" style="margin-top:8px"></div>
+          </div>
+        </section>
+
+        <!-- NEW TAB: TARGET AUDIENCE, PERSONA & BUYER STAGE -->
+        <section class="tab-pane" id="tab-audience">
+          <div class="pane-header">
+            <h2>Target Audience Persona, Funnel Stage &amp; Content Gaps</h2>
+            <a
+              id="aud-open-brief-link"
+              href="https://doitwithai.tools/tools/seo-content-brief-generator"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="deep-link"
+            >
+              Open Content Brief Studio ↗
+            </a>
+          </div>
+
+          <div class="info-card compact-grid">
+            <div>
+              <span class="micro-label">PRIMARY READER PERSONA</span>
+              <strong id="aud-persona" class="block-val">—</strong>
+            </div>
+            <div>
+              <span class="micro-label">BUYER JOURNEY STAGE</span>
+              <strong id="aud-funnel-stage" class="block-val">—</strong>
+            </div>
+            <div>
+              <span class="micro-label">READING GRADE LEVEL</span>
+              <strong id="aud-reading-level" class="block-val">—</strong>
+            </div>
+            <div>
+              <span class="micro-label">CONTENT TONE</span>
+              <strong id="aud-tone" class="block-val">—</strong>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h3 class="section-subtitle">▾ Who This Page Is Written For (Detected Audience Signals)</h3>
+            <p id="aud-summary-text" class="body-value-text" style="margin-bottom:10px">—</p>
+            <div id="aud-signals-list" class="pill-group"></div>
+          </div>
+
+          <div class="info-card">
+            <h3 class="section-subtitle">▾ Reader Pain Points &amp; Questions Addressed</h3>
+            <div id="aud-painpoints-list" class="heading-tree"></div>
+          </div>
+
+          <div class="info-card">
+            <h3 class="section-subtitle">▾ Content Gaps: How to Beat This Competitor Page</h3>
+            <div id="aud-gaps-list" class="heading-tree"></div>
+          </div>
+        </section>
+
+        <!-- TAB: CONTENT, HEADINGS TREE & INSTANT TOC GENERATOR -->
         <section class="tab-pane" id="tab-content">
           <div class="pane-header">
             <h2>Content Dates, Heading Hierarchy &amp; Jump-Link TOC</h2>
@@ -314,7 +447,7 @@
           </div>
         </section>
 
-        <!-- TAB 3: INDEXABILITY & TECHNICAL SIGNALS (Like Ahrefs Indexability Tab) -->
+        <!-- TAB: INDEXABILITY & TECHNICAL SIGNALS -->
         <section class="tab-pane" id="tab-indexability">
           <div class="pane-header">
             <h2>Indexability, Rendered vs. Raw DOM &amp; Sitemaps</h2>
@@ -378,7 +511,7 @@
           </div>
         </section>
 
-        <!-- TAB 4: STRUCTURED DATA & SCHEMA (Brand Blue Styling) -->
+        <!-- TAB: STRUCTURED DATA & SCHEMA -->
         <section class="tab-pane" id="tab-schema">
           <div class="pane-header">
             <h2>Structured Data (JSON-LD) &amp; AI Citation Readiness</h2>
@@ -394,7 +527,7 @@
           <div id="schema-cards-container" class="schema-list"></div>
         </section>
 
-        <!-- TAB 5: LINKS, ANCHOR TEXT RATIO & OFF-PAGE PROSPECT VETTING -->
+        <!-- TAB: LINKS, ANCHOR TEXT RATIO & OFF-PAGE PROSPECT VETTING -->
         <section class="tab-pane" id="tab-links">
           <div class="pane-header">
             <h2>Links, Anchor Ratios &amp; Guest Post Quality Vetting</h2>
@@ -405,7 +538,6 @@
             </div>
           </div>
 
-          <!-- Off-Page Guest Post Vetting Scorecard -->
           <div class="info-card compact-grid">
             <div>
               <span class="micro-label">PUBLISHER VETTING</span>
@@ -444,21 +576,22 @@
           <div id="links-table-container" class="table-scroll"></div>
         </section>
 
-        <!-- TAB 6: IMAGES & ALT TEXT AUDITOR -->
+        <!-- TAB: IMAGES, ALT TEXT AUDITOR & 1-CLICK BULK .ZIP DOWNLOADER -->
         <section class="tab-pane" id="tab-images">
           <div class="pane-header">
-            <h2>Images, Dimensions &amp; Missing Alt Text Auditor</h2>
+            <h2>Images, Alt Text &amp; 1-Click Bulk .ZIP Downloader</h2>
             <div class="btn-group">
               <button type="button" id="btn-export-images" class="btn-secondary btn-xs">
-                ↓ Export Images (.CSV)
+                ↓ Export CSV
               </button>
               <a
-                href="https://doitwithai.tools/tools/image-alt-text-generator"
+                id="btn-open-bulk-zip-studio"
+                href="https://doitwithai.tools/tools/webpage-image-extractor"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="btn-primary btn-xs"
               >
-                AI Alt Text Studio ↗
+                📦 Download All as .ZIP ↗
               </a>
             </div>
           </div>
@@ -469,19 +602,48 @@
               <button type="button" class="filter-pill" data-filter="missing">Missing Alt</button>
               <button type="button" class="filter-pill" data-filter="valid">Has Alt Text</button>
             </div>
+            <a
+              href="https://doitwithai.tools/tools/image-alt-text-generator"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="deep-link"
+            >
+              AI Alt Text Generator ↗
+            </a>
           </div>
 
           <div id="images-list-container" class="media-list"></div>
         </section>
 
-        <!-- TAB 7: PILLAR 2 — 1-CLICK CONTENT CONVERTER & AUDIO STUDIO -->
+        <!-- TAB: PILLAR 2 — 1-CLICK CONTENT CONVERTER, YOUTUBE TRANSCRIPT & AUDIO STUDIO -->
         <section class="tab-pane" id="tab-convert">
           <div class="pane-header">
-            <h2>1-Click Page Converter (PDF, Word, Markdown &amp; MP3 Audio)</h2>
+            <h2>1-Click Page Converter (PDF, Word, Markdown, ZIP &amp; MP3)</h2>
             <span class="status-pill">Zero Bot-Block · Live DOM</span>
           </div>
 
-          <!-- Upgraded Interactive Natural Read-Aloud & Neural MP3 Studio Card -->
+          <!-- Live YouTube Video Detected Banner (Appears automatically on YouTube / Shorts tabs) -->
+          <div id="youtube-detected-banner" class="info-card hidden" style="border-color: rgba(239, 68, 68, 0.5); background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(30, 41, 59, 0.9))">
+            <div class="flex-between" style="flex-wrap:wrap;gap:10px">
+              <div>
+                <span class="status-pill bad" style="margin-bottom:4px">▶ YOUTUBE VIDEO DETECTED</span>
+                <strong class="block-val" id="yt-banner-title">YouTube Video Ready for Extraction</strong>
+              </div>
+              <div class="btn-group" style="flex-wrap:wrap">
+                <a id="yt-btn-transcript" href="https://doitwithai.tools/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="btn-primary btn-xs">
+                  📝 Transcript &amp; .SRT ↗
+                </a>
+                <a id="yt-btn-thumbnails" href="https://doitwithai.tools/tools/social-media-video-thumbnail-grabber" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-xs">
+                  🖼️ 4K Thumbnails (.ZIP) ↗
+                </a>
+                <a id="yt-btn-blog" href="https://doitwithai.tools/tools/video-transcript-to-blog" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-xs">
+                  ✍️ Video to SEO Blog ↗
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Natural Read-Aloud & Neural MP3 Studio Card -->
           <div class="info-card audio-studio-card">
             <div class="audio-studio-top">
               <div class="audio-studio-brand">
@@ -535,7 +697,7 @@
             </div>
           </div>
 
-          <!-- Instant Local File Exports (With Custom Color-Coded SVG Icons) -->
+          <!-- Instant Local File Exports (With Realistic Multi-Color SVG Badges) -->
           <div class="info-card">
             <div class="section-header-row">
               <h3 class="section-subtitle" style="margin-bottom:0">Instant 1-Click Local Downloads (From Current Tab)</h3>
@@ -544,11 +706,10 @@
             <div class="action-grid" style="margin-top:10px">
               <button type="button" id="btn-dl-markdown" class="action-tile tile-indigo">
                 <span class="tile-icon icon-indigo" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <path d="M9 15v-4l2 2 2-2v4"></path>
-                    <path d="M16 13v2"></path>
+                  <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+                    <rect x="3" y="5" width="26" height="22" rx="5" fill="#4F46E5" />
+                    <path d="M7.5 20V12H10L12.5 15.5L15 12H17.5V20H15.2V15.3L12.5 18.8L9.8 15.3V20H7.5Z" fill="#FFFFFF" />
+                    <path d="M21.5 12V16.5H19.5L22.5 20L25.5 16.5H23.5V12H21.5Z" fill="#A5B4FC" />
                   </svg>
                 </span>
                 <div class="tile-body">
@@ -562,12 +723,9 @@
 
               <button type="button" id="btn-dl-doc" class="action-tile tile-blue">
                 <span class="tile-icon icon-blue" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <line x1="10" y1="9" x2="8" y2="9"></line>
+                  <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+                    <rect x="4" y="3" width="24" height="26" rx="5" fill="#2563EB" />
+                    <path d="M9 11L11.2 21H13.5L15.5 14L17.5 21H19.8L22 11H19.7L18.4 17.6L16.5 11H14.5L12.6 17.6L11.3 11H9Z" fill="#FFFFFF" />
                   </svg>
                 </span>
                 <div class="tile-body">
@@ -581,8 +739,11 @@
 
               <button type="button" id="btn-dl-txt" class="action-tile tile-emerald">
                 <span class="tile-icon icon-emerald" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 6h16M4 12h16M4 18h11"></path>
+                  <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+                    <rect x="4" y="3" width="24" height="26" rx="5" fill="#059669" />
+                    <rect x="9" y="9" width="14" height="2.4" rx="1.2" fill="#FFFFFF" />
+                    <rect x="9" y="14.5" width="14" height="2.4" rx="1.2" fill="#A7F3D0" />
+                    <rect x="9" y="20" width="9.5" height="2.4" rx="1.2" fill="#FFFFFF" />
                   </svg>
                 </span>
                 <div class="tile-body">
@@ -596,10 +757,9 @@
 
               <button type="button" id="btn-print-pdf" class="action-tile tile-rose">
                 <span class="tile-icon icon-rose" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                    <rect x="6" y="14" width="12" height="8"></rect>
+                  <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+                    <rect x="4" y="3" width="24" height="26" rx="5" fill="#E11D48" />
+                    <path d="M9 10H23V13H9V10ZM9 15.5H20V18H9V15.5ZM9 20.5H16V23H9V20.5Z" fill="#FFFFFF" />
                   </svg>
                 </span>
                 <div class="tile-body">
@@ -623,19 +783,30 @@
           </div>
         </section>
 
-        <!-- TAB 8: PILLAR 3 — SOCIAL MEDIA CARDS & 15 SOCIAL POSTS GENERATOR -->
+        <!-- TAB: PILLAR 3 — SOCIAL MEDIA CARDS & 18 SOCIAL MEDIA POSTS GENERATOR -->
         <section class="tab-pane" id="tab-social">
           <div class="pane-header">
-            <h2>Social Cards Preview &amp; Instant 15 Social Media Posts</h2>
-            <a
-              id="btn-open-carousel-studio"
-              href="https://doitwithai.tools/tools/blog-to-linkedin-carousel"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn-primary btn-xs"
-            >
-              Launch LinkedIn Carousel Studio ↗
-            </a>
+            <h2>Social Cards, 6-Platform Posts &amp; LinkedIn Comments</h2>
+            <div class="btn-group">
+              <a
+                id="btn-open-li-comment-studio"
+                href="https://doitwithai.tools/tools/linkedin-comment-generator"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-secondary btn-xs"
+              >
+                💬 LinkedIn Comment Studio ↗
+              </a>
+              <a
+                id="btn-open-carousel-studio"
+                href="https://doitwithai.tools/tools/blog-to-linkedin-carousel"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-primary btn-xs"
+              >
+                LinkedIn Carousel Studio ↗
+              </a>
+            </div>
           </div>
 
           <!-- Visual Facebook/LinkedIn & X Previews -->
@@ -667,11 +838,11 @@
             </div>
           </div>
 
-          <!-- Instant In-Extension 5-Platform Social Post Generator -->
+          <!-- Instant In-Extension 6-Platform Social Post Generator -->
           <div class="info-card">
-            <div class="flex-between">
+            <div class="flex-between" style="flex-wrap:wrap;gap:8px">
               <div>
-                <span class="micro-label">INSTANT SOCIAL CAMPAIGN GENERATOR</span>
+                <span class="micro-label">INSTANT 6-PLATFORM SOCIAL CAMPAIGN GENERATOR</span>
                 <h3 class="section-subtitle" style="margin:2px 0 0">Ready-to-Post Copy for This Page</h3>
               </div>
               <div class="pill-group" id="social-platform-pills">
@@ -679,6 +850,7 @@
                 <button type="button" class="filter-pill" data-platform="X">X / Twitter</button>
                 <button type="button" class="filter-pill" data-platform="Instagram">Instagram</button>
                 <button type="button" class="filter-pill" data-platform="Facebook">Facebook</button>
+                <button type="button" class="filter-pill" data-platform="TikTok">TikTok Script</button>
                 <button type="button" class="filter-pill" data-platform="Threads">Threads</button>
               </div>
             </div>
@@ -690,11 +862,16 @@
             </div>
 
             <textarea id="social-post-output" class="social-textarea" rows="7"></textarea>
-            <div class="flex-between" style="margin-top:8px">
+            <div class="flex-between" style="margin-top:8px;flex-wrap:wrap;gap:8px">
               <span id="social-char-counter" class="text-muted">0 characters</span>
-              <button type="button" id="btn-copy-social-post" class="btn-primary btn-xs">
-                Copy Social Post
-              </button>
+              <div class="btn-group">
+                <button type="button" id="btn-share-social-direct" class="btn-secondary btn-xs">
+                  ↗ Open Platform Composer
+                </button>
+                <button type="button" id="btn-copy-social-post" class="btn-primary btn-xs">
+                  Copy Social Post
+                </button>
+              </div>
             </div>
           </div>
         </section>

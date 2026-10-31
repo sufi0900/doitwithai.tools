@@ -2689,6 +2689,263 @@
         "keywords",
         "on-page"
       ]
+    },
+    {
+      "id": "youtube-transcript-generator",
+      "slug": "youtube-transcript-generator",
+      "name": "YouTube Transcript, Chapters & AI Summary Studio",
+      "description": "Extract timestamped transcripts and chapters from any YouTube video or Short, generate an AI executive summary, and download .TXT, .SRT subtitles, or Markdown notes.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "YouTube transcript",
+        "SRT subtitles",
+        "video chapters",
+        "AI video summary"
+      ],
+      "kind": "Transcript & chapter extractor",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 21,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "video-transcript-to-blog",
+        "youtube-title-thumbnail-optimizer",
+        "blog-to-video-script",
+        "short-form-video-script-generator"
+      ],
+      "topics": [
+        "conversion",
+        "social",
+        "writing"
+      ]
+    },
+    {
+      "id": "webpage-image-extractor",
+      "slug": "webpage-image-extractor",
+      "name": "Webpage Image Extractor & Bulk .ZIP Downloader",
+      "description": "Extract all images, Open Graph banners, and logos from any webpage URL, inspect dimensions and alt text, and download all images as a single .ZIP archive.",
+      "categories": [
+        "content-conversion",
+        "ai-seo"
+      ],
+      "tags": [
+        "image extractor",
+        "bulk image downloader",
+        "OG image grabber",
+        "alt text audit"
+      ],
+      "kind": "Media extractor & ZIP bundler",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 22,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "image-alt-text-generator",
+        "og-twitter-preview-generator",
+        "on-page-ai-seo-analyzer",
+        "article-to-pdf"
+      ],
+      "topics": [
+        "conversion",
+        "on-page",
+        "technical"
+      ]
+    },
+    {
+      "id": "linkedin-comment-generator",
+      "slug": "linkedin-comment-generator",
+      "name": "LinkedIn Comment & Engagement Generator",
+      "description": "Generate 5 high-visibility LinkedIn comments from any post or article URL\u2014including authority frameworks, 90/10 contrarian nuance, and smart follow-up questions.",
+      "categories": [
+        "content-writing",
+        "ai-seo"
+      ],
+      "tags": [
+        "LinkedIn comments",
+        "B2B networking",
+        "social engagement",
+        "LinkedIn growth"
+      ],
+      "kind": "AI social studio",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 21,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "linkedin-post-formatter",
+        "social-thread-generator",
+        "facebook-post-generator",
+        "instagram-caption-generator"
+      ],
+      "topics": [
+        "social",
+        "writing"
+      ]
+    },
+    {
+      "id": "facebook-post-generator",
+      "slug": "facebook-post-generator",
+      "name": "Facebook Post & Visual Card Studio",
+      "description": "Turn any article URL or topic into 3 zero-click Facebook posts, a First-Comment Link snippet (to protect organic reach), and a downloadable 1080p visual card.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "Facebook post generator",
+        "visual card studio",
+        "zero-click social",
+        "content repurposing"
+      ],
+      "kind": "AI social & visual studio",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 22,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "instagram-caption-generator",
+        "linkedin-post-formatter",
+        "social-thread-generator",
+        "og-twitter-preview-generator"
+      ],
+      "topics": [
+        "social",
+        "conversion",
+        "writing"
+      ]
+    },
+    {
+      "id": "instagram-caption-generator",
+      "slug": "instagram-caption-generator",
+      "name": "Instagram Caption & Carousel Slide Studio",
+      "description": "Repurpose any blog URL or idea into save-worthy Instagram captions, a 5-slide carousel blueprint, tiered hashtags, SEO alt text, and a 1080x1080 cover graphic.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "Instagram captions",
+        "Instagram carousel",
+        "Instagram SEO",
+        "visual cover generator"
+      ],
+      "kind": "AI social & visual studio",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 23,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "facebook-post-generator",
+        "tiktok-script-caption-generator",
+        "short-form-video-script-generator",
+        "image-alt-text-generator"
+      ],
+      "topics": [
+        "social",
+        "conversion",
+        "writing"
+      ]
+    },
+    {
+      "id": "tiktok-script-caption-generator",
+      "slug": "tiktok-script-caption-generator",
+      "name": "TikTok Script, Hook & Search SEO Studio",
+      "description": "Transform any article URL, YouTube video, or topic into a timestamped 15s/30s/60s TikTok script with 3-second visual hooks, on-screen text overlays, and TikTok Search SEO captions.",
+      "categories": [
+        "content-conversion",
+        "content-writing"
+      ],
+      "tags": [
+        "TikTok script",
+        "TikTok SEO",
+        "short-form video",
+        "3-second hooks"
+      ],
+      "kind": "AI video & social studio",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 24,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "short-form-video-script-generator",
+        "instagram-caption-generator",
+        "youtube-transcript-generator",
+        "social-media-video-thumbnail-grabber"
+      ],
+      "topics": [
+        "social",
+        "conversion",
+        "writing"
+      ]
+    },
+    {
+      "id": "social-media-video-thumbnail-grabber",
+      "slug": "social-media-video-thumbnail-grabber",
+      "name": "YouTube, Shorts & Social Video 4K Thumbnail Grabber",
+      "description": "Download 1080p/4K YouTube & Shorts thumbnails (maxresdefault), 3 in-video storyboard frames, and social OpenGraph covers individually or bundled in a 1-click .ZIP file.",
+      "categories": [
+        "content-conversion",
+        "ai-seo"
+      ],
+      "tags": [
+        "YouTube thumbnail downloader",
+        "4K video cover",
+        "storyboard frames",
+        "bulk ZIP download"
+      ],
+      "kind": "Media extractor & ZIP studio",
+      "status": "live",
+      "addedAt": "2026-10-31",
+      "featuredOrder": 25,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "youtube-title-thumbnail-optimizer",
+        "youtube-transcript-generator",
+        "webpage-image-extractor",
+        "video-transcript-to-blog"
+      ],
+      "topics": [
+        "social",
+        "conversion"
+      ]
     }
   ],
   "topics": [

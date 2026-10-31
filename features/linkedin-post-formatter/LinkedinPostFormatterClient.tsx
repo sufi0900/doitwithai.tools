@@ -11,6 +11,10 @@ import {
   Sparkles,
   Type,
 } from "lucide-react";
+import UrlArticleExtractorBar, {
+  type ExtractedImageAsset,
+} from "@/features/tool-ui/UrlArticleExtractorBar";
+import { SocialVisualCardBuilder } from "@/features/tool-ui/SocialVisualCardBuilder";
 import {
   analyzeLinkedinPost,
   applyUnicodeStyle,
@@ -26,6 +30,9 @@ export default function LinkedinPostFormatterClient() {
     "mobile",
   );
   const [expandedInPreview, setExpandedInPreview] = useState(false);
+  const [extractedImages, setExtractedImages] = useState<ExtractedImageAsset[]>(
+    [],
+  );
   const [toast, setToast] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -43,7 +50,6 @@ export default function LinkedinPostFormatterClient() {
     const end = el.selectionEnd;
 
     if (start === end) {
-      // Format the first line if no text is selected
       const lines = postText.split("\n");
       lines[0] = applyUnicodeStyle(lines[0], style);
       setPostText(lines.join("\n"));
@@ -80,13 +86,18 @@ export default function LinkedinPostFormatterClient() {
       ? analysis.mobileIsTruncated
       : analysis.desktopIsTruncated;
 
+  const firstLines = postText
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
   return (
     <section
       aria-label="LinkedIn Post Formatter and Fold Previewer Workspace"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
+      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       {/* Template Preset Bar */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-[#111827]">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-[#111827]">
         <div>
           <span className="text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
             Proven Viral LinkedIn Post Frameworks
@@ -114,10 +125,30 @@ export default function LinkedinPostFormatterClient() {
         </div>
       </div>
 
+      <UrlArticleExtractorBar
+        label="Fetch Any Article URL to Auto-Draft a Formatted LinkedIn Post (+ Extract Images)"
+        placeholder="Paste any article URL to extract a bold Unicode hook, sub-topics & images..."
+        onExtracted={(data) => {
+          const boldHook = applyUnicodeStyle(data.title, "boldSans");
+          const bullets = data.keyTakeaways
+            .slice(0, 4)
+            .map((k) => `✅ ${k}`)
+            .join("\n");
+          const lead = data.paragraphs[0] || data.description || "";
+          setPostText(
+            `${boldHook}\n\n${lead}\n\nKey takeaways from our breakdown:\n${bullets}\n\nWhich of these steps is your #1 focus right now? 👇\n\n🌐 Full guide: ${data.url}\n\n#SEO #ContentStrategy #DigitalMarketing`,
+          );
+          if (data.images?.length) {
+            setExtractedImages(data.images);
+          }
+          notify(`Drafted formatted LinkedIn post from "${data.title}"!`);
+        }}
+      />
+
       {toast && (
         <div
           role="status"
-          className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
         >
           <CheckCircle2 size={15} />
           <span>{toast}</span>
@@ -138,7 +169,6 @@ export default function LinkedinPostFormatterClient() {
               </span>
             </div>
 
-            {/* Unicode Formatting Toolbar */}
             <div className="mt-3 flex flex-wrap items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900">
               {(
                 [
@@ -210,7 +240,6 @@ export default function LinkedinPostFormatterClient() {
             </div>
           </div>
 
-          {/* Hook & Readability Audit Checklist */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex items-center justify-between">
               <h3 className="flex items-center gap-2 text-base font-extrabold">
@@ -301,7 +330,6 @@ export default function LinkedinPostFormatterClient() {
               trigger).
             </p>
 
-            {/* Simulated LinkedIn Feed Card */}
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-md dark:border-slate-700 dark:bg-[#1B2234]">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3452d1] to-sky-400 text-sm font-black text-white">
@@ -353,7 +381,6 @@ export default function LinkedinPostFormatterClient() {
               </div>
             </div>
 
-            {/* Above-the-Fold Diagnostic Box */}
             <div className="mt-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3.5 text-xs">
               <strong className="block font-extrabold text-indigo-900 dark:text-indigo-200">
                 Above-the-Fold Verdict ({previewDevice.toUpperCase()}):
@@ -365,6 +392,16 @@ export default function LinkedinPostFormatterClient() {
           </div>
         </div>
       </div>
+
+      {/* Companion Visual Card & Direct Publisher */}
+      <SocialVisualCardBuilder
+        platformLabel="LinkedIn Post"
+        defaultHeadline={firstLines[0] || "Key LinkedIn Insight"}
+        defaultBody={firstLines.slice(1, 3).join(" ") || postText.slice(0, 180)}
+        defaultSublabel="LINKEDIN PLAYBOOK"
+        postTextToShare={postText}
+        extractedImages={extractedImages}
+      />
     </section>
   );
 }

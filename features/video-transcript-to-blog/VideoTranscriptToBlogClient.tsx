@@ -9,6 +9,7 @@ import {
   Film,
   Sparkles,
 } from "lucide-react";
+import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import {
   buildDeterministicBlogFromTranscript,
   DEFAULT_VIDEO_TO_BLOG_INPUT,
@@ -84,6 +85,37 @@ export default function VideoTranscriptToBlogClient() {
       aria-label="YouTube Transcript to SEO Blog Post Converter Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+            <UrlArticleExtractorBar
+        label="1-Click YouTube Video or Article URL Auto-Extractor (Fetches Transcript Automatically)"
+        placeholder="Paste YouTube Video URL (https://www.youtube.com/watch?v=...) or Article URL..."
+        onExtracted={(data) => {
+          setAiArticle(null);
+          setInput((prev) => ({
+            ...prev,
+            videoTitle: data.title || prev.videoTitle,
+            videoUrl: data.url || prev.videoUrl,
+            targetKeyword: data.focusKeyword || prev.targetKeyword,
+            speakerOrChannelName: data.author || prev.speakerOrChannelName,
+            rawTranscript:
+              data.rawTranscriptWithTimestamps ||
+              data.cleanText ||
+              prev.rawTranscript,
+          }));
+          notify(`Auto-extracted transcript & metadata from "${data.title}"!`);
+        }}
+        onSelectSubTopic={(sub, data) => {
+          setAiArticle(null);
+          setInput((prev) => ({
+            ...prev,
+            videoTitle: sub.title,
+            videoUrl: data.url || prev.videoUrl,
+            targetKeyword: sub.title.toLowerCase().slice(0, 45),
+            rawTranscript: sub.content,
+          }));
+          notify(`Focused blog converter on sub-topic: "${sub.title}"!`);
+        }}
+      />
+
       {toast && (
         <div
           role="status"

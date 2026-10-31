@@ -8,6 +8,10 @@ import {
   MessageSquare,
   Sparkles,
 } from "lucide-react";
+import UrlArticleExtractorBar, {
+  type ExtractedImageAsset,
+} from "@/features/tool-ui/UrlArticleExtractorBar";
+import { SocialVisualCardBuilder } from "@/features/tool-ui/SocialVisualCardBuilder";
 import {
   buildDeterministicThread,
   DEFAULT_THREAD_INPUT,
@@ -22,6 +26,9 @@ export default function SocialThreadGeneratorClient() {
   );
   const [aiThread, setAiThread] = useState<ThreadGeneratorResult | null>(null);
   const [activeHookIndex, setActiveHookIndex] = useState(0);
+  const [extractedImages, setExtractedImages] = useState<ExtractedImageAsset[]>(
+    [],
+  );
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -99,12 +106,40 @@ export default function SocialThreadGeneratorClient() {
   return (
     <section
       aria-label="X and Threads Viral Thread Splitter Workspace"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
+      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
+      <UrlArticleExtractorBar
+        label="Fetch Article URL & Auto-Split Multiple Sub-Topics Into Threads (+ Extract Images)"
+        placeholder="Paste any blog post or article URL to extract sub-topics, images & generate threads..."
+        onExtracted={(data) => {
+          setAiThread(null);
+          setInput((prev) => ({
+            ...prev,
+            topicOrHeadline: data.title || prev.topicOrHeadline,
+            sourceContent: data.cleanText || prev.sourceContent,
+            ctaUrl: data.url || prev.ctaUrl,
+          }));
+          if (data.images?.length) {
+            setExtractedImages(data.images);
+          }
+          notify(`Extracted ${data.subTopics.length} sub-topics from "${data.title}"!`);
+        }}
+        onSelectSubTopic={(sub, data) => {
+          setAiThread(null);
+          setInput((prev) => ({
+            ...prev,
+            topicOrHeadline: sub.title,
+            sourceContent: sub.content,
+            ctaUrl: data.url || prev.ctaUrl,
+          }));
+          notify(`Switched thread generator to sub-topic: "${sub.title}"!`);
+        }}
+      />
+
       {toast && (
         <div
           role="status"
-          className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
         >
           <CheckCircle2 size={15} />
           <span>{toast}</span>
@@ -226,7 +261,6 @@ export default function SocialThreadGeneratorClient() {
             </div>
           </div>
 
-          {/* Post #1 Hook Angle Switcher */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <h3 className="text-base font-extrabold">
               2. Switch Post #1 Viral Hook Angle
@@ -338,6 +372,15 @@ export default function SocialThreadGeneratorClient() {
           ))}
         </div>
       </div>
+
+      <SocialVisualCardBuilder
+        platformLabel={`${input.platform} Thread Cover`}
+        defaultHeadline={input.topicOrHeadline}
+        defaultBody={displayedPosts[1]?.text || displayedPosts[0]?.text || ""}
+        defaultSublabel="THREAD BREAKDOWN"
+        postTextToShare={displayedPosts[0]?.text || ""}
+        extractedImages={extractedImages}
+      />
     </section>
   );
 }

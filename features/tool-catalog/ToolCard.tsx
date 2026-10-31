@@ -30,6 +30,10 @@ import {
   type CatalogTool,
 } from "./catalog";
 import { getTopicMeta, topicStyle } from "./discovery";
+import {
+  detectPlatformBrandBySlug,
+  PlatformBrandIcon,
+} from "../tool-ui/PlatformBrandIcon";
 
 const icons: Record<string, typeof Sparkles> = {
   "outreach-email-builder": Mail,
@@ -88,6 +92,7 @@ export default function ToolCard({
   list?: boolean;
 }) {
   const Icon = icons[tool.slug] || Sparkles;
+  const brandType = detectPlatformBrandBySlug(tool.slug);
   const Heading = headingLevel === 3 ? "h3" : "h2";
   const primaryTopic = tool.topics?.[0] ? getTopicMeta(tool.topics[0]) : null;
 
@@ -106,7 +111,11 @@ export default function ToolCard({
             data-topic-icon
             className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/20 bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 text-[#4A6CF7] dark:from-[#5271FF]/25 dark:to-[#4361EE]/10 dark:text-[#93B4FF]"
           >
-            <Icon size={22} />
+            {brandType ? (
+              <PlatformBrandIcon brand={brandType} size={28} />
+            ) : (
+              <Icon size={22} />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -184,7 +193,11 @@ export default function ToolCard({
           data-topic-icon
           className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/[0.15] bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 text-[#4A6CF7] transition group-hover:scale-105 dark:border-[#5271FF]/30 dark:from-[#5271FF]/25 dark:to-[#4361EE]/10 dark:text-[#93B4FF]"
         >
-          <Icon aria-hidden className="h-6 w-6" />
+          {brandType ? (
+            <PlatformBrandIcon brand={brandType} size={28} />
+          ) : (
+            <Icon aria-hidden className="h-6 w-6" />
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           {primaryTopic && (

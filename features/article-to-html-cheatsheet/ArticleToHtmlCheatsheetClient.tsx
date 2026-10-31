@@ -10,6 +10,7 @@ import {
   Sparkles,
   XCircle,
 } from "lucide-react";
+import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import {
   buildDeterministicCheatsheet,
   DEFAULT_CHEATSHEET_INPUT,
@@ -98,6 +99,21 @@ export default function ArticleToHtmlCheatsheetClient() {
       aria-label="Article to HTML Infographic and Summary Cheatsheet Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+            <UrlArticleExtractorBar
+        label="Fetch Any Article URL to Distill Into a 1-Page Visual Cheatsheet"
+        placeholder="Paste any article URL to extract steps, headings & KPI takeaways..."
+        onExtracted={(data) => {
+          setAiSheet(null);
+          setInput((prev) => ({
+            ...prev,
+            title: data.title || prev.title,
+            sourceUrl: data.url || prev.sourceUrl,
+            sourceContent: data.keyTakeaways.map((k, i) => `${i + 1}. ${k}`).join("\n") || data.cleanText.slice(0, 2000),
+          }));
+          notify(`Extracted cheatsheet takeaways from "${data.title}"!`);
+        }}
+      />
+
       {toast && (
         <div
           role="status"

@@ -1,4 +1,3 @@
-export const runtime = "edge";
 import { ImageResponse } from "next/og";
 export const alt =
   "AI prompts for SEO and content writing from Do It With AI Tools";

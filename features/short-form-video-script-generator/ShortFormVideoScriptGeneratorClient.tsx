@@ -9,6 +9,7 @@ import {
   Film,
   Sparkles,
 } from "lucide-react";
+import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import {
   buildDeterministicShortScript,
   DEFAULT_SHORT_SCRIPT_INPUT,
@@ -103,6 +104,29 @@ export default function ShortFormVideoScriptGeneratorClient() {
       aria-label="Short-Form Video Hook and Script Builder Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+            <UrlArticleExtractorBar
+        label="Fetch Any Article or YouTube URL to Auto-Build a Vertical Video Script"
+        placeholder="Paste an article or YouTube URL to extract a Short/Reels topic & takeaway..."
+        onExtracted={(data) => {
+          setAiPack(null);
+          setInput((prev) => ({
+            ...prev,
+            topic: data.title || prev.topic,
+            coreTakeawayOrProof: (data.keyTakeaways.slice(0, 2).join(". ") || data.paragraphs[0] || prev.coreTakeawayOrProof).slice(0, 320),
+          }));
+          notify(`Loaded video script brief from "${data.title}"!`);
+        }}
+        onSelectSubTopic={(sub) => {
+          setAiPack(null);
+          setInput((prev) => ({
+            ...prev,
+            topic: sub.title,
+            coreTakeawayOrProof: sub.summary,
+          }));
+          notify(`Focused Short script on sub-topic: "${sub.title}"!`);
+        }}
+      />
+
       {toast && (
         <div
           role="status"
