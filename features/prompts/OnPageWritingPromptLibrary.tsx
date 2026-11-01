@@ -6,44 +6,12 @@ import categories from "./onpage-writing-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import { onpageWritingPromoGuides } from "./OnPageWritingPromoGuides";
 
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold transition hover:border-[#5271FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271FF] dark:border-slate-600";
 const field =
   "mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-base leading-7 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5271FF] dark:border-slate-600 dark:bg-slate-950 dark:text-white";
-
-export const onpageWritingPromoGuides: Record<string, KeywordGuide> = {
-  onpageAnalyzer: {
-    href: "/tools/on-page-ai-seo-analyzer",
-    image: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
-    alt: "On-Page AI SEO, Heading Structure, and E-E-A-T Originality Analyzer.",
-    label: "AUDIT YOUR DRAFT BEFORE PUBLISHING",
-    title: "Score your page for E-E-A-T, Information Gain & heading structure",
-    description:
-      "Paste your draft or live URL into our On-Page AI SEO Analyzer to inspect H1–H6 hierarchy, 45-word snippet passages, internal link anchors, and originality signals.",
-    action: "Open On-Page AI SEO Analyzer",
-  },
-  headingsAndReadability: {
-    href: "/tools/readability-checker",
-    image: "/prompts/metadata-prompts-hero-v2.webp",
-    alt: "Readability Checker and Heading Structure Studio.",
-    label: "PLAIN-ENGLISH CLARITY & FLOW",
-    title: "Test sentence length, passive voice & Grade 8 readability",
-    description:
-      "Check your revised paragraphs in our Readability Checker and Heading Structure Analyzer so busy readers can scan and act on your advice effortlessly.",
-    action: "Open Readability & Flow Studio",
-  },
-  visualInfographicUpgrade: {
-    href: "/tools/blog-to-infographic-generator",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
-    alt: "Blog to Visual Infographic and HTML Cheatsheet Studio.",
-    label: "BREAK UP WALLS OF TEXT",
-    title: "Turn your H2 outline or comparison table into a visual infographic",
-    description:
-      "Embed an 8-node visual infographic, 2×2 matrix diagram, or 1-page HTML executive cheatsheet at the top of your article to boost reader dwell time and earn backlinks.",
-    action: "Open Blog to Infographic Studio",
-  },
-};
 
 export default function OnPageWritingPromptLibrary() {
   const [values, setValues] = useState<Record<string, string>>({});

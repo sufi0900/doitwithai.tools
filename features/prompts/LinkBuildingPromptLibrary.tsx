@@ -6,44 +6,12 @@ import categories from "./link-building-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import { linkBuildingPromoGuides } from "./LinkBuildingPromoGuides";
 
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold transition hover:border-[#5271FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271FF] dark:border-slate-600";
 const field =
   "mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-base leading-7 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5271FF] dark:border-slate-600 dark:bg-slate-950 dark:text-white";
-
-export const linkBuildingPromoGuides: Record<string, KeywordGuide> = {
-  digitalPrPlanner: {
-    href: "/tools/digital-pr-linkable-asset-planner",
-    image: "/prompts/link-building-digital-pr-prompts-hero.webp",
-    alt: "Digital PR Linkable Asset Planner and Journalist Pitch Workbench.",
-    label: "PLAN CITABLE DATA STUDIES & PR HOOKS",
-    title: "Design linkable benchmark studies, calculators & press angles",
-    description:
-      "Use our Digital PR & Linkable Asset Planner to structure original data studies, methodology notes, and regional press hooks that journalists cite.",
-    action: "Open Digital PR Asset Planner",
-  },
-  journalistAndOutreach: {
-    href: "/tools/journalist-pitch-builder",
-    image: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
-    alt: "HARO Journalist Pitch Response Builder and Outreach Email Studio.",
-    label: "150-WORD JOURNALIST QUOTES & OUTREACH",
-    title: "Draft quotable HARO / Qwoted responses & 95-word outreach emails",
-    description:
-      "Structure 3-part journalist source quotes and personalized, zero-fluff outreach emails in our Journalist Pitch and Outreach Email studios.",
-    action: "Open Journalist Pitch Studio",
-  },
-  visualChartPr: {
-    href: "/tools/data-to-chart-visual-card-maker",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
-    alt: "AI Data Chart Maker and Blog to Visual Infographic Studio for Digital PR.",
-    label: "VISUAL PR & EMBEDDABLE CHART CARDS",
-    title: "Turn your study numbers into embeddable SVG/PNG chart cards",
-    description:
-      "Give journalists and industry bloggers high-contrast chart cards and 8-node visual infographics they can embed with an attribution link to your study.",
-    action: "Open Data to Chart Studio",
-  },
-};
 
 export default function LinkBuildingPromptLibrary() {
   const [values, setValues] = useState<Record<string, string>>({});

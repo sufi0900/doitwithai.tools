@@ -1,9 +1,8 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import LocalSeoPromptLibrary, {
-  localSeoPromoGuides,
-} from "./LocalSeoPromptLibrary";
+import LocalSeoPromptLibrary from "./LocalSeoPromptLibrary";
+import { localSeoPromoGuides } from "./LocalSeoPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";

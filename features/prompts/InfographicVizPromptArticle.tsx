@@ -1,9 +1,8 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import InfographicVizPromptLibrary, {
-  infographicVizPromoGuides,
-} from "./InfographicVizPromptLibrary";
+import InfographicVizPromptLibrary from "./InfographicVizPromptLibrary";
+import { infographicVizPromoGuides } from "./InfographicVizPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";

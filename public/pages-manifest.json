@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-11-01T15:31:44.857Z",
+  "generated": "2026-10-30T09:48:40.022Z",
   "static_pages": [
     {
       "url": "/",
@@ -471,168 +471,6 @@
       "type": "static"
     },
     {
-      "url": "/tools/google-review-link-generator",
-      "title": "Google Review Link & QR Poster Generator",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/local-business-schema-generator",
-      "title": "LocalBusiness Schema Markup Generator",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/google-business-profile-auditor",
-      "title": "Google Business Profile (GBP) Auditor & Optimizer",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/nap-consistency-checker",
-      "title": "NAP Consistency & Local Citation Formatter",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/google-review-response-generator",
-      "title": "Google Review Response & Crisis Reply Generator",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/local-seo-service-page-planner",
-      "title": "Local SEO Service-Area & City Page Planner",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/linkedin-post-formatter",
-      "title": "LinkedIn Post Formatter & Fold Previewer",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/youtube-title-thumbnail-optimizer",
-      "title": "YouTube Title, Hook & Thumbnail Optimizer",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/short-form-video-script-generator",
-      "title": "Short-Form Video Hook & Script Builder",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/utm-link-builder",
-      "title": "UTM Campaign Link Builder & GA4 Validator",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/social-thread-generator",
-      "title": "X (Twitter) & Threads Viral Thread Splitter",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/video-transcript-to-blog",
-      "title": "YouTube Transcript to SEO Blog Post Converter",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/article-to-html-cheatsheet",
-      "title": "Article to HTML Infographic & Summary Cheatsheet",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/comparison-page-generator",
-      "title": "\"X vs. Y\" Comparison Page & Matrix Builder",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/ai-brand-visibility-prompt-generator",
-      "title": "Brand AI Search Visibility & GEO Prompt Matrix",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/youtube-transcript-generator",
-      "title": "YouTube Transcript, Chapters & AI Summary Studio",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/webpage-image-extractor",
-      "title": "Webpage Image Extractor & Bulk .ZIP Downloader",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/linkedin-comment-generator",
-      "title": "LinkedIn Comment & Engagement Generator",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/facebook-post-generator",
-      "title": "Facebook Post & Visual Card Studio",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/instagram-caption-generator",
-      "title": "Instagram Caption & Carousel Slide Studio",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/tiktok-script-caption-generator",
-      "title": "TikTok Script, Hook & Search SEO Studio",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/social-media-video-thumbnail-grabber",
-      "title": "YouTube, Shorts & Social Video 4K Thumbnail Grabber",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/blog-to-infographic-generator",
-      "title": "AI Blog & Idea to Visual Infographic Studio",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/data-to-chart-visual-card-maker",
-      "title": "AI Data & Stat to Visual Chart Card Maker",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/framework-matrix-diagram-builder",
-      "title": "AI 2x2 Matrix, SWOT, Flywheel & Strategy Diagram Builder",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/pinterest-pin-visual-generator",
-      "title": "AI Blog to Pinterest Tall Pin Visual Studio (1000x1500)",
-      "priority": "high",
-      "type": "static"
-    },
-    {
-      "url": "/tools/quote-stat-testimonial-card-studio",
-      "title": "AI Quote, Founder Memo & Testimonial Visual Card Studio",
-      "priority": "high",
-      "type": "static"
-    },
-    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -651,5 +489,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 108
+  "total_pages": 81
 }

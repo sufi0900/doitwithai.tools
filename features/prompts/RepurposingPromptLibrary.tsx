@@ -6,44 +6,12 @@ import categories from "./repurposing-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import { repurposingPromoGuides } from "./RepurposingPromoGuides";
 
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold transition hover:border-[#5271FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271FF] dark:border-slate-600";
 const field =
   "mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-base leading-7 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5271FF] dark:border-slate-600 dark:bg-slate-950 dark:text-white";
-
-export const repurposingPromoGuides: Record<string, KeywordGuide> = {
-  infographicStudio: {
-    href: "/tools/blog-to-infographic-generator",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
-    alt: "Interactive AI Blog & Idea to Visual Infographic Studio with 8 built-in templates.",
-    label: "TURN TEXT INTO VISUAL ASSETS",
-    title: "Convert any blog post or prompt output into an editable infographic",
-    description:
-      "Paste your article URL or prompt output into our 8-template Visual Infographic Studio to export high-resolution PNG posters, vector SVGs, and SEO backlink embed code.",
-    action: "Open Blog to Infographic Studio",
-  },
-  linkedinAndCarousels: {
-    href: "/tools/linkedin-post-formatter",
-    image: "/prompts/keyword-research-prompts-hero-v2.webp",
-    alt: "LinkedIn Post Formatter, Fold Previewer, and Connected Visual Card Studio.",
-    label: "WIN THE FIRST 3 LINES ON LINKEDIN",
-    title: "Preview your 140-character '...see more' fold and attach a 1080p card",
-    description:
-      "Style hooks with Unicode bold/italic text, test mobile vs. desktop truncation lines, and download your post + visual card package in one click.",
-    action: "Open LinkedIn Post & Visual Studio",
-  },
-  pinterestAndCharts: {
-    href: "/tools/pinterest-pin-visual-generator",
-    image: "/prompts/search-intent-prompts-hero.webp",
-    alt: "Pinterest 1000x1500 Tall Pin and Data Chart Visual Studios.",
-    label: "EVERGREEN VISUAL SEARCH TRAFFIC",
-    title: "Design 1000×1500 Tall Pinterest Pins and 1080p KPI Chart Cards",
-    description:
-      "Turn your repurposed checklist steps and article statistics into 2:3 vertical Pinterest Pins and 4-card KPI Bento dashboards.",
-    action: "Open Pinterest Tall Pin Studio",
-  },
-};
 
 export default function RepurposingPromptLibrary() {
   const [values, setValues] = useState<Record<string, string>>({});

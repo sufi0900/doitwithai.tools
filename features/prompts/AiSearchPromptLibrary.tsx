@@ -6,44 +6,12 @@ import categories from "./ai-search-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import { aiSearchPromoGuides } from "./AiSearchPromoGuides";
 
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold transition hover:border-[#5271FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271FF] dark:border-slate-600";
 const field =
   "mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-base leading-7 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5271FF] dark:border-slate-600 dark:bg-slate-950 dark:text-white";
-
-export const aiSearchPromoGuides: Record<string, KeywordGuide> = {
-  citationOptimizer: {
-    href: "/tools/ai-citation-readiness-checker",
-    image: "/prompts/ai-search-aeo-geo-prompts-hero.webp",
-    alt: "AI Citation, Featured Snippet, and Answer Passage Optimizer.",
-    label: "OPTIMIZE FOR AI CITATIONS & SNIPPETS",
-    title: "Format 50-word self-contained answer passages & comparison tables",
-    description:
-      "Test your opening paragraphs and H2 answer blocks in our AI Citation & Snippet Optimizer to remove pronoun ambiguity and structure extractable definitions.",
-    action: "Open AI Citation & Snippet Studio",
-  },
-  llmsTxtAndBrandVisibility: {
-    href: "/tools/llms-txt-generator",
-    image: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
-    alt: "LLMs.txt Generator and AI Brand Visibility Prompt Studio.",
-    label: "LLMS.TXT & AI CRAWLER READINESS",
-    title: "Generate a clean /llms.txt index & test your AI brand visibility",
-    description:
-      "Build a structured `/llms.txt` documentation map for AI retrieval bots and generate non-leading buyer prompts to audit how assistants describe your brand.",
-    action: "Open LLMs.txt Generator",
-  },
-  dataChartsAndMatrices: {
-    href: "/tools/data-to-chart-visual-card-maker",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
-    alt: "AI Data Chart Maker and 2x2 Strategy Matrix Studio.",
-    label: "GEO BENCHMARK CHARTS & 2×2 MATRICES",
-    title: "Turn your benchmark stats & trade-offs into visual chart cards",
-    description:
-      "Pair your GEO statistics and comparison tables with high-resolution SVG/PNG chart cards and 2×2 trade-off matrices that earn human backlinks and AI citations.",
-    action: "Open Data to Chart Studio",
-  },
-};
 
 export default function AiSearchPromptLibrary() {
   const [values, setValues] = useState<Record<string, string>>({});

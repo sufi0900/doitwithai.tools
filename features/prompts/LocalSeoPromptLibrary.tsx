@@ -6,44 +6,12 @@ import categories from "./local-seo-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import { localSeoPromoGuides } from "./LocalSeoPromoGuides";
 
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold transition hover:border-[#5271FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271FF] dark:border-slate-600";
 const field =
   "mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-base leading-7 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5271FF] dark:border-slate-600 dark:bg-slate-950 dark:text-white";
-
-export const localSeoPromoGuides: Record<string, KeywordGuide> = {
-  gbpAuditor: {
-    href: "/tools/google-business-profile-auditor",
-    image: "/prompts/local-seo-gbp-prompts-hero.webp",
-    alt: "Google Business Profile Completeness Auditor and Local Pack Workbench.",
-    label: "AUDIT YOUR GOOGLE BUSINESS PROFILE",
-    title: "Score your GBP categories, 750c description, services & Q&As",
-    description:
-      "Run your profile details through our Google Business Profile Completeness Auditor to spot missing secondary categories, truncated descriptions, and conversion gaps.",
-    action: "Open GBP Completeness Auditor",
-  },
-  servicePageAndReviews: {
-    href: "/tools/local-seo-service-page-planner",
-    image: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
-    alt: "Local SEO Service and City Landing Page Planner.",
-    label: "ANTI-DOORWAY CITY & SERVICE PAGES",
-    title: "Architect unique city & service pages that convert local callers",
-    description:
-      "Plan service-in-city landing pages with genuine neighborhood proof, pricing transparency, and review widgets in our Local SEO Service Page Planner.",
-    action: "Open Local Service Page Planner",
-  },
-  reviewAndSchema: {
-    href: "/tools/local-business-schema-generator",
-    image: "/prompts/keyword-research-prompts-hero-v2.webp",
-    alt: "LocalBusiness JSON-LD Schema and Review Response Studio.",
-    label: "LOCALBUSINESS JSON-LD & REVIEW LINKS",
-    title: "Generate valid LocalBusiness JSON-LD schema & review QR links",
-    description:
-      "Create copy-paste LocalBusiness JSON-LD with GeoCoordinates and OpeningHoursSpecification, or reply to customer reviews in our Local SEO studios.",
-    action: "Open LocalBusiness Schema Studio",
-  },
-};
 
 export default function LocalSeoPromptLibrary() {
   const [values, setValues] = useState<Record<string, string>>({});

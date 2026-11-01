@@ -1,9 +1,8 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import TopicClusterPromptLibrary, {
-  topicClusterPromoGuides,
-} from "./TopicClusterPromptLibrary";
+import TopicClusterPromptLibrary from "./TopicClusterPromptLibrary";
+import { topicClusterPromoGuides } from "./TopicClusterPromoGuides";
 import KeywordGuideCard from "./KeywordGuideCard";
 
 const body = "mt-4 text-lg leading-9 text-slate-600 dark:text-slate-300";

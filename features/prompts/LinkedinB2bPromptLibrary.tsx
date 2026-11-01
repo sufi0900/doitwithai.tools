@@ -6,44 +6,12 @@ import categories from "./linkedin-b2b-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import { linkedinB2bPromoGuides } from "./LinkedinB2bPromoGuides";
 
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold transition hover:border-[#5271FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271FF] dark:border-slate-600";
 const field =
   "mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-base leading-7 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5271FF] dark:border-slate-600 dark:bg-slate-950 dark:text-white";
-
-export const linkedinB2bPromoGuides: Record<string, KeywordGuide> = {
-  postFormatter: {
-    href: "/tools/linkedin-post-formatter",
-    image: "/prompts/linkedin-personal-branding-b2b-prompts-hero.webp",
-    alt: "LinkedIn Post Formatter, 140-Character Mobile Fold Previewer, and B2B Workbench.",
-    label: "PREVIEW YOUR 140C MOBILE FOLD",
-    title: "Test your LinkedIn hook before the '...see more' cutoff",
-    description:
-      "Paste your draft into our LinkedIn Post Formatter & Fold Previewer to verify mobile truncation, clean spacing, and hook clarity before publishing.",
-    action: "Open LinkedIn Fold Previewer",
-  },
-  carouselStudio: {
-    href: "/tools/blog-to-linkedin-carousel",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
-    alt: "Blog to LinkedIn PDF Document Carousel Studio.",
-    label: "1080×1350 PDF CAROUSEL STUDIO",
-    title: "Turn your outline into a swipeable 5-to-10 slide PDF carousel",
-    description:
-      "Generate slide-by-slide headlines, concise bullets, and visual cheat-sheet slides in our Blog to LinkedIn Carousel Studio.",
-    action: "Open LinkedIn Carousel Studio",
-  },
-  quoteAndMatrixCards: {
-    href: "/tools/quote-stat-testimonial-card-studio",
-    image: "/prompts/infographic-data-visualization-prompts-hero.webp",
-    alt: "Founder Memo, Quote, Testimonial, and 2x2 Matrix Visual Studio.",
-    label: "FOUNDER MEMOS & 2×2 STRATEGY CARDS",
-    title: "Pair your post with a Founder Memo, Stat Callout or 2×2 Matrix",
-    description:
-      "Design high-contrast Apple-Notes founder memos, customer testimonial cards, and 2×2 strategy diagrams in our visual studios.",
-    action: "Open Quote & Founder Memo Studio",
-  },
-};
 
 export default function LinkedinB2bPromptLibrary() {
   const [values, setValues] = useState<Record<string, string>>({});

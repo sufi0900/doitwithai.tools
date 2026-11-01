@@ -6,44 +6,12 @@ import categories from "./topic-cluster-categories.json";
 import { fillPreview } from "./catalog";
 import { chatGPTLink } from "./meta-workflow";
 import KeywordGuideCard, { type KeywordGuide } from "./KeywordGuideCard";
+import { topicClusterPromoGuides } from "./TopicClusterPromoGuides";
 
 const button =
   "inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold transition hover:border-[#5271FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5271FF] dark:border-slate-600";
 const field =
   "mt-2 w-full min-w-0 rounded-xl border border-slate-300 bg-white p-3 text-base leading-7 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5271FF] dark:border-slate-600 dark:bg-slate-950 dark:text-white";
-
-export const topicClusterPromoGuides: Record<string, KeywordGuide> = {
-  topicalMapStudio: {
-    href: "/tools/topical-map-generator",
-    image: "/prompts/topic-clustering-topical-authority-prompts-hero.webp",
-    alt: "AI Topical Map Generator, Pillar-Spoke Architect, and Internal Link Matrix.",
-    label: "ARCHITECT YOUR PILLAR & SPOKE SILO",
-    title: "Generate a 3-tier Topical Map with Pillar Hubs & supporting spokes",
-    description:
-      "Enter your core domain in our AI Topical Map Generator to map Pillar Hubs, sub-pillars, supporting spokes, and commercial tool bridges.",
-    action: "Open AI Topical Map Studio",
-  },
-  clusteringAndCannibalization: {
-    href: "/tools/keyword-clustering-tool",
-    image: "/prompts/keyword-research-prompts-hero-v2.webp",
-    alt: "Keyword Clustering Tool and Cannibalization Auditor.",
-    label: "1 INTENT = 1 CANONICAL URL",
-    title: "Cluster raw keyword lists & resolve keyword cannibalization",
-    description:
-      "Group close keyword variations onto single canonical URLs in our Keyword Clustering Studio and audit overlapping pages in our Cannibalization Finder.",
-    action: "Open Keyword Clustering Studio",
-  },
-  internalLinksAndVisualMap: {
-    href: "/tools/internal-link-opportunity-finder",
-    image: "/prompts/infographic-data-visualization-prompts-hero.webp",
-    alt: "Internal Link Opportunity Finder and Hub & Spoke Diagram Builder.",
-    label: "HUB & SPOKE INTERNAL LINK MATRIX",
-    title: "Map bidirectional Hub-to-Spoke internal links & visual diagrams",
-    description:
-      "Generate natural internal anchor text variations in our Internal Link Finder and visualize your cluster in our Hub & Spoke Diagram Studio.",
-    action: "Open Internal Link Studio",
-  },
-};
 
 export default function TopicClusterPromptLibrary() {
   const [values, setValues] = useState<Record<string, string>>({});
