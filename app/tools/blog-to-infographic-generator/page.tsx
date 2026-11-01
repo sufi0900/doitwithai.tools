@@ -13,9 +13,9 @@ import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/blog-to-infographic-generator";
 const title =
-  "Free AI Blog to Infographic Generator — 8 Editable Visual Templates";
+  "Free AI Blog & Idea to Infographic Generator — 26 Vector Templates";
 const description =
-  "Convert any blog URL, article sub-topic, or content idea into a high-resolution visual infographic with 8 built-in editable templates, 6 color themes, PNG/SVG/PDF export, and SEO backlink embed code.";
+  "Turn any blog post URL, article excerpt, or random topic idea into a realistic vector infographic across 26 editable templates (S-Curve Roadmaps, 3D Pyramids, Timelines, Side-Image Splits, Donut Charts & Mind-Maps) with hover PNG, SVG, and PDF download.";
 
 export const metadata: Metadata = {
   title,
@@ -38,19 +38,19 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
-    question: "How does the AI Blog to Infographic Generator work?",
+    question: "How does the AI Blog & Idea to Infographic Generator work?",
     answer:
-      "Paste any blog URL, YouTube video link, or bulleted outline. Our extractor slices the article into 4 to 8 concise visual cards and renders them inside an interactive HTML5 canvas where you can switch between 8 professional infographic templates and edit any text live.",
+      "You can either paste a blog/article URL to extract key points and images in 1 click, or enter any random topic idea. Our AI synthesizes 6 research-backed visual nodes with benchmarks and icons, auto-selects the best matching layout from 26 vector templates, and renders a live poster you can download on hover as PNG, SVG, or PDF.",
   },
   {
-    question: "Which infographic templates are built into the studio?",
+    question: "What types of infographic templates are included in the 26 layouts?",
     answer:
-      "You can switch with 1 click between: (1) Step-by-Step Roadmap, (2) A vs. B Comparison, (3) KPI & Stat Bento Grid, (4) Vertical Timeline, (5) Do's & Don'ts Split, (6) Pyramid / Funnel Hierarchy, (7) Saveable Checklist, and (8) Pillar & Spoke Grid.",
+      "The studio includes 26 templates across 8 visual categories: S-Curve Winding Roadmaps, 3D Isometric Pyramids, 3D Conversion Funnels, Central Spine Timelines, Horizontal 16:9 Process & Milestone Boards, Left/Right Side-Image Magazine Splits, Radial Donut Ring Dashboards, Bento Grids, Head-to-Head VS Battles, 2×2 Matrices, and Radial Hub-and-Spoke Mind-Maps.",
   },
   {
-    question: "Can I use the generated infographics to earn SEO backlinks?",
+    question: "How do I download the infographic as PNG, SVG, or PDF?",
     answer:
-      "Yes! Click the 'SEO Backlink Embed Code' button to generate a ready-to-copy HTML <figure> snippet that credits your original article URL with a dofollow link whenever another website embeds your infographic.",
+      "Simply hover your cursor over the live infographic poster preview. A floating download bar appears at the top of the infographic with 1-click buttons for 2x Retina PNG, Pure Editable Vector SVG, Print-Ready PDF, and Copy Image to Clipboard.",
   },
 ];
 
@@ -63,7 +63,7 @@ export default function BlogToInfographicGeneratorPage() {
     "@graph": [
       {
         "@type": "WebApplication",
-        name: "AI Blog to Infographic Generator & Visual Template Studio",
+        name: "AI Blog & Idea to Infographic Studio (26 Vector Templates)",
         url: pageUrl,
         description,
         applicationCategory: "DesignApplication",
@@ -122,10 +122,10 @@ export default function BlogToInfographicGeneratorPage() {
                   slugOrText="blog-to-infographic-generator"
                   size={18}
                 />
-                <span>Visual Infographic Studio · 8 Editable Templates</span>
+                <span>Visual Infographic Studio · 26 Vector Templates</span>
               </div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                Content Conversion · Visual Linkable Assets &amp; Social Posters
+                Content Conversion · Pure Vector Infographics &amp; Hover Export
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 AI Blog &amp; Idea to{" "}
@@ -134,22 +134,23 @@ export default function BlogToInfographicGeneratorPage() {
                 </span>
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Turn any blog post URL, H2 sub-topic, or content idea into a
-                publication-ready infographic using 8 editable templates—and
-                export high-res PNG, Vector SVG, PDF, and SEO backlink embed
-                code.
+                Enter any topic idea or paste an article URL to generate a
+                vector infographic across 26 templates—including S-Curve
+                Roadmaps, 3D Pyramids, Side-Image Splits, Radial Donut Charts,
+                and 16:9 Horizontal Boards—with instant hover download for PNG,
+                SVG, and PDF.
               </p>
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
               <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
-                8 Built-In Editable Infographic Layouts
+                26 Vector Infographic Layouts Across 8 Categories
               </p>
               <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
-                <li>1. Step-by-Step Roadmap &amp; Vertical Timeline</li>
-                <li>2. Side-by-Side A vs. B Comparison &amp; Do&apos;s/Don&apos;ts</li>
-                <li>3. KPI &amp; Stat Bento Grid + Pyramid Funnel</li>
-                <li>4. Instant PNG, Vector SVG, PDF &amp; SEO Embed HTML</li>
+                <li>1. S-Curve Roadmaps, 3D Staircases &amp; 360° Flywheels</li>
+                <li>2. 3D Layered Pyramids, Conversion Funnels &amp; Icebergs</li>
+                <li>3. Left/Right Side-Image Splits &amp; 16:9 Horizontal Boards</li>
+                <li>4. Hover Over Poster for Instant PNG, Vector SVG &amp; PDF</li>
               </ul>
             </div>
           </div>
@@ -162,30 +163,31 @@ export default function BlogToInfographicGeneratorPage() {
         className={`${section} border-t border-slate-200 dark:border-slate-800`}
       >
         <h2 className="text-3xl font-extrabold">
-          Turn written articles into high-retention visual infographics
+          Turn written articles and raw ideas into realistic vector infographics
         </h2>
         <p className={prose}>
-          Embedding a custom infographic at the top of a blog post increases
-          reader dwell time, earns Pinterest and LinkedIn shares, and gives
-          other bloggers a visual asset to embed with a backlink to your site.
+          Embedding a custom vector infographic at the top of a blog post
+          increases reader dwell time, earns Pinterest and LinkedIn shares, and
+          gives other bloggers a visual asset to embed with an attribution
+          backlink to your site.
         </p>
 
         <div className="mt-8 grid gap-5 md:grid-cols-3">
           {[
             [
               Layers,
-              "8 Editable Visual Templates",
-              "Switch between roadmaps, comparisons, bento stat grids, timelines, pyramids, and checklists in one click.",
+              "26 Realistic Vector Templates",
+              "Switch between S-curve roadmaps, 3D pyramids, funnels, side-image splits, radial donut gauges, mind-maps, and horizontal 16:9 boards.",
             ],
             [
               Sparkles,
-              "Live Inline Node Editor",
-              "Edit every card's badge, headline, explanation, metric pill, and brand footer with real-time canvas preview.",
+              "1-Click Idea & URL Synthesis",
+              "Type a short idea or paste a blog URL—our engine synthesizes benchmark metrics, selects topic-matched icons, and renders immediately.",
             ],
             [
               Code2,
-              "SEO Backlink Embed Generator",
-              "Copy a ready-made HTML <figure> snippet so other publishers attribute your domain when sharing your visual.",
+              "Hover PNG, SVG & PDF Export",
+              "Hover over the infographic canvas to download a 2x Retina PNG, pure editable SVG, print-ready PDF, or SEO backlink embed snippet.",
             ],
           ].map(([Icon, heading, body]) => {
             const I = Icon as typeof Layers;

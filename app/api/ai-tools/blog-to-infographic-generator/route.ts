@@ -8,8 +8,10 @@ import {
 } from "@/lib/ai-tools/gemini";
 import {
   buildDeterministicBlogInfographic,
+  detectBestTemplateForTopic,
   type BlogToInfographicInput,
 } from "@/features/blog-to-infographic-generator/model";
+import { inferNodeIcon } from "@/features/tool-ui/EditableInfographicStudio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,14 +22,32 @@ const aiInfographicSchema = z.object({
   infographicSubtitle: z.string(),
   kickerLabel: z.string(),
   recommendedTemplate: z.enum([
+    "winding-s-roadmap",
     "step-roadmap",
-    "comparison-versus",
+    "step-staircase-ascension",
+    "circular-flywheel-cycle",
+    "alternating-spine-timeline",
+    "horizontal-timeline-gantt",
+    "before-after-transformation",
+    "isometric-3d-pyramid",
+    "conversion-funnel-stages",
+    "pillar-temple-architecture",
+    "iceberg-hidden-layers",
+    "side-image-editorial-split",
+    "side-image-right-spotlight",
+    "side-image-horizontal-board",
+    "stat-donut-kpi-dashboard",
     "stat-bento-grid",
-    "timeline-journey",
-    "dos-and-donts",
-    "pyramid-funnel",
-    "numbered-checklist",
-    "hub-anatomy",
+    "editorial-newspaper-digest",
+    "versus-battle-comparison",
+    "dos-and-donts-matrix",
+    "quadrant-2x2-strategy",
+    "radial-hub-and-spoke",
+    "honeycomb-hex-cluster",
+    "anatomy-x-ray-breakdown",
+    "numbered-ribbon-banners",
+    "horizontal-landscape-flow",
+    "checklist-audit-scorecard",
   ]),
   nodes: z
     .array(
@@ -43,6 +63,7 @@ const aiInfographicSchema = z.object({
     .max(8),
   seoAltText: z.string(),
   socialCaption: z.string(),
+  evidenceSummary: z.array(z.string()),
 });
 
 export async function POST(request: NextRequest) {
@@ -53,7 +74,8 @@ export async function POST(request: NextRequest) {
       sourceContent: (body.sourceContent || "").trim(),
       sourceUrl: (body.sourceUrl || "https://doitwithai.tools").trim(),
       brandFooter: (body.brandFooter || "doitwithai.tools").trim(),
-      preferredTemplate: body.preferredTemplate || "step-roadmap",
+      preferredTemplate: body.preferredTemplate,
+      sideImageUrl: body.sideImageUrl || "",
     };
 
     const fallback = buildDeterministicBlogInfographic(input);
@@ -65,20 +87,26 @@ export async function POST(request: NextRequest) {
         const res = await client.generate(
           {
             model,
-            max_output_tokens: 1800,
+            max_output_tokens: 2200,
             store: false,
             input: [
               {
                 role: "system",
                 content:
-                  "You are an expert Information Designer and B2B Visual Strategist. Convert the user's blog post, sub-topic, or idea into a structured 6-node visual infographic blueprint. Keep each node's title under 6 words and body under 18 words so it renders cleanly inside an infographic card. Never cut words off mid-word.",
+                  "You are an elite Information Designer and Research Analyst. Whether the user provides a full article excerpt OR a short random topic/idea, synthesize 6 research-backed, high-signal visual infographic nodes complete with realistic quantitative benchmarks/metrics (e.g. '84%', '3.2x ROI', '+142%'), concise 3-to-5 word titles, and 12-to-16 word actionable explanations. Also select the best-fitting visual template from the 26 options and return a 6-point evidenceSummary array.",
               },
               {
                 role: "user",
                 content: JSON.stringify({
                   title: input.title.slice(0, 200),
-                  sourceContent: input.sourceContent.slice(0, 4000),
-                  preferredTemplate: input.preferredTemplate,
+                  sourceContent: input.sourceContent.slice(0, 4500),
+                  preferredTemplate:
+                    input.preferredTemplate ||
+                    detectBestTemplateForTopic(
+                      input.title,
+                      input.sourceContent,
+                      Boolean(input.sideImageUrl),
+                    ),
                 }),
               },
             ],
@@ -100,6 +128,7 @@ export async function POST(request: NextRequest) {
               nodes: res.output_parsed.nodes.map((n, idx) => ({
                 id: `ai-node-${idx + 1}`,
                 ...n,
+                icon: inferNodeIcon(`${n.title} ${n.body}`, idx),
               })),
             },
             provider: "ai",

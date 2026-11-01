@@ -1,28 +1,6 @@
 import Link from "next/link";
 import { ToolActions } from "../tools-workspace/ToolActions";
-import {
-  ClipboardList,
-  Mail,
-  Bot,
-  FileCode2,
-  ListChecks,
-  TextSearch,
-  MessageCircleQuestion,
-  AlignLeft,
-  ArrowRight,
-  BookOpen,
-  Braces,
-  Heading1,
-  Link2,
-  ListTree,
-  Network,
-  GitBranch,
-  ScanText,
-  ScanEye,
-  Search,
-  Sparkles,
-  Type,
-} from "lucide-react";
+import { ArrowRight, BookOpen, Sparkles } from "lucide-react";
 import {
   categories,
   toolPath,
@@ -30,53 +8,7 @@ import {
   type CatalogTool,
 } from "./catalog";
 import { getTopicMeta, topicStyle } from "./discovery";
-import {
-  detectPlatformBrandBySlug,
-  PlatformBrandIcon,
-} from "../tool-ui/PlatformBrandIcon";
-
-const icons: Record<string, typeof Sparkles> = {
-  "outreach-email-builder": Mail,
-  "article-to-pdf": FileCode2,
-  "article-to-word": FileCode2,
-  "digital-pr-linkable-asset-planner": ClipboardList,
-  "backlink-verification-tool": Link2,
-  "broken-link-opportunity-finder": Link2,
-  "unlinked-brand-mention-checker": TextSearch,
-  "competitor-backlink-gap-analyzer": Network,
-  "on-page-ai-seo-analyzer": ScanText,
-  "keyword-research-tool": Search,
-  "structured-data-validator": Braces,
-  "serp-rich-result-preview-generator": Search,
-  "entity-sameas-finder": Network,
-  "heading-structure-analyzer": ListTree,
-  "gsc-striking-distance-finder": Search,
-  "indexnow-key-generator": Link2,
-  "keyword-cannibalization-finder": Network,
-  "sitemap-xml-generator": FileCode2,
-  "redirect-rule-generator": GitBranch,
-  "og-twitter-preview-generator": ScanEye,
-  "hreflang-generator": Link2,
-  "core-web-vitals-checker": ListChecks,
-  "robots-txt-generator": Bot,
-  "llms-txt-generator": FileCode2,
-  "ai-citation-readiness-checker": ListChecks,
-  "keyword-density-checker": TextSearch,
-  "ai-faq-generator": MessageCircleQuestion,
-  "seo-content-brief-generator": ClipboardList,
-  "meta-title-generator": Type,
-  "slug-generator": Link2,
-  "schema-markup-generator": Braces,
-  "meta-description-generator": AlignLeft,
-  "h1-heading-generator": Heading1,
-  "article-outline-generator": ListTree,
-  "readability-checker": ScanText,
-  "image-alt-text-generator": ScanEye,
-  "keyword-clustering-tool": Network,
-  "topical-map-generator": GitBranch,
-  "internal-link-opportunity-finder": Link2,
-  "search-intent-checker": Search,
-};
+import { PlatformBrandIcon } from "../tool-ui/PlatformBrandIcon";
 
 export default function ToolCard({
   tool,
@@ -91,8 +23,6 @@ export default function ToolCard({
   workspace?: boolean;
   list?: boolean;
 }) {
-  const Icon = icons[tool.slug] || Sparkles;
-  const brandType = detectPlatformBrandBySlug(tool.slug);
   const Heading = headingLevel === 3 ? "h3" : "h2";
   const primaryTopic = tool.topics?.[0] ? getTopicMeta(tool.topics[0]) : null;
 
@@ -109,13 +39,9 @@ export default function ToolCard({
         <div className="flex min-w-0 flex-1 items-start gap-4">
           <div
             data-topic-icon
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/20 bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 text-[#4A6CF7] dark:from-[#5271FF]/25 dark:to-[#4361EE]/10 dark:text-[#93B4FF]"
+            className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/20 bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 shadow-xs transition group-hover:scale-105 dark:from-[#5271FF]/25 dark:to-[#4361EE]/10"
           >
-            {brandType ? (
-              <PlatformBrandIcon brand={brandType} size={28} />
-            ) : (
-              <Icon size={22} />
-            )}
+            <PlatformBrandIcon slug={tool.slug} size={36} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
@@ -191,13 +117,9 @@ export default function ToolCard({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div
           data-topic-icon
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/[0.15] bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 text-[#4A6CF7] transition group-hover:scale-105 dark:border-[#5271FF]/30 dark:from-[#5271FF]/25 dark:to-[#4361EE]/10 dark:text-[#93B4FF]"
+          className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-[#5271FF]/[0.18] bg-gradient-to-br from-[#5271FF]/[0.15] to-[#4361EE]/5 shadow-xs transition group-hover:scale-105 dark:border-[#5271FF]/30 dark:from-[#5271FF]/25 dark:to-[#4361EE]/10"
         >
-          {brandType ? (
-            <PlatformBrandIcon brand={brandType} size={28} />
-          ) : (
-            <Icon aria-hidden className="h-6 w-6" />
-          )}
+          <PlatformBrandIcon slug={tool.slug} size={36} />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           {primaryTopic && (
@@ -246,7 +168,6 @@ export default function ToolCard({
         </div>
       )}
 
-      {/* Primary Open Tool Link — kept as direct child of <article> above relatedGuides for smoke-test compatibility */}
       <Link
         data-open-tool
         prefetch={false}
