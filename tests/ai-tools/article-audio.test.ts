@@ -8,6 +8,9 @@ import {
   splitText,
   wave,
   narrate,
+  prepareSpokenText,
+  detectCalloutBlockIds,
+  VOICES,
   SAMPLE_RATE,
   MAX_SECONDS,
 } from "../../features/read-aloud/audio";
@@ -24,6 +27,16 @@ test("narration keeps selected readable text in source order and omits unsupport
     cells: [["table"]],
   });
   a.blocks.push({ id: "ref", kind: "paragraph", text: "[99]" });
+  a.blocks.push({
+    id: "clutter",
+    kind: "paragraph",
+    text: "Leia também: AEO vs GEO vs LLMO",
+  });
+  a.blocks.push({
+    id: "source-caption",
+    kind: "paragraph",
+    text: "Source",
+  });
   assert.deepEqual(
     segments(a, ["b2"]).map((b) => b.text),
     ["Heading", "A source sentence."],
@@ -36,7 +49,28 @@ test("narration rejects empty selection, too much text and unsupported settings"
   s[0].text = "Hello";
   assert.match(inputError(s, "other", 160), /voice/);
   assert.match(inputError(s, "gmw/en", 99), /120/);
-  assert.equal(inputError(s, "gmw/en-US", 200), "");
+  for (const voiceKey of Object.keys(VOICES)) {
+    assert.equal(inputError(s, voiceKey, 200), "");
+  }
+});
+test("prepareSpokenText normalizes acronyms, arrows, bullets, and terminal punctuation for clear speech", () => {
+  assert.equal(
+    prepareSpokenText("• AEO vs. GEO and FAQs"),
+    "A. E. O. versus G. E. O. and F. A. Q. s.",
+  );
+  assert.equal(
+    prepareSpokenText("Plan → Create → Publish"),
+    "Plan, then Create, then Publish.",
+  );
+  assert.equal(prepareSpokenText("Key Takeaways"), "Key Takeaways.");
+});
+test("detectCalloutBlockIds identifies Key Takeaways heading and following bullet items", () => {
+  const a = fromText(
+    "# Key Takeaways\n\n• Point one\n\n• Point two\n\nFirst real paragraph.",
+  );
+  a.blocks[1].kind = "list";
+  a.blocks[2].kind = "list";
+  assert.deepEqual(detectCalloutBlockIds(a), ["b0", "b1", "b2"]);
 });
 test("synthesis chunks bound unbroken words and preserve Unicode pairs", () => {
   const text = "x".repeat(999) + "😀" + "y".repeat(2500);
@@ -71,11 +105,13 @@ class SpeechWorker {
   static samples = [0.1, 0.1, -0.2, -0.2];
   static last: SpeechWorker;
   static fail = false;
+  static calls: any[] = [];
   onmessage: ((e: { data: any }) => void) | null = null;
   onerror: (() => void) | null = null;
   terminated = false;
   constructor() {
     SpeechWorker.last = this;
+    SpeechWorker.calls = [];
     queueMicrotask(() =>
       SpeechWorker.fail
         ? this.onerror?.()
@@ -83,6 +119,7 @@ class SpeechWorker {
     );
   }
   postMessage(message: any) {
+    SpeechWorker.calls.push(message);
     if (message.method === "synthesize")
       queueMicrotask(() => {
         this.onmessage?.({
@@ -114,6 +151,41 @@ test("speech integration interprets duplicated samples and records chapter timin
     assert.equal(r.seconds, 2 / SAMPLE_RATE);
     assert.equal(r.chapters[0].end, r.seconds);
     assert.equal(SpeechWorker.last.terminated, true);
+    assert(
+      SpeechWorker.calls.some(
+        (c) => c.method === "set_voice" && c.args[0] === "gmw/en+m1",
+      ),
+    );
+    assert(
+      SpeechWorker.calls.some(
+        (c) => c.method === "set_pitch" && c.args[0] === 38,
+      ),
+    );
+  } finally {
+    globalThis.Worker = original;
+  }
+});
+test("multi-section narration inserts natural silence pauses between sections and re-applies voice variant", async () => {
+  const original = globalThis.Worker;
+  globalThis.Worker = SpeechWorker as any;
+  try {
+    const twoItems = [
+      { id: "s1", text: "First section", label: "Section 1" },
+      { id: "s2", text: "Second section", label: "Section 2" },
+    ];
+    const r = await narrate(
+      twoItems,
+      "gmw/en-US",
+      160,
+      new AbortController().signal,
+      () => {},
+    );
+    const voiceCalls = SpeechWorker.calls.filter(
+      (c) => c.method === "set_voice",
+    );
+    assert.equal(voiceCalls.length, 2);
+    assert.equal(voiceCalls[0].args[0], "gmw/en-US+f3");
+    assert(r.seconds > 4 / SAMPLE_RATE);
   } finally {
     globalThis.Worker = original;
   }
