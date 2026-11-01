@@ -25,6 +25,7 @@ export type {
 type UrlArticleExtractorBarProps = {
   label?: string;
   placeholder?: string;
+  buttonLabel?: string;
   allowSubTopicSelection?: boolean;
   onExtracted: (data: UniversalExtractResponse) => void;
   onSelectSubTopic?: (
@@ -34,8 +35,9 @@ type UrlArticleExtractorBarProps = {
 };
 
 export function UrlArticleExtractorBar({
-  label = "Auto-Fetch Content from Any Article or YouTube URL (Or Paste Text Manually Below)",
+  label = "1-Click Auto-Extract & Generate from Any Article or YouTube URL",
   placeholder = "https://doitwithai.tools/ai-seo/what-is-ai-seo or YouTube video URL…",
+  buttonLabel = "Extract & Generate (1-Click)",
   allowSubTopicSelection = true,
   onExtracted,
   onSelectSubTopic,
@@ -50,6 +52,7 @@ export function UrlArticleExtractorBar({
   function applySubTopicChoice(
     idx: number,
     data: UniversalExtractResponse,
+    isInitialAutoSelect = false,
   ) {
     setActiveTopicIdx(idx);
     if (idx === -1 || !data.subTopics[idx]) {
@@ -57,30 +60,24 @@ export function UrlArticleExtractorBar({
       return;
     }
     const chosen = data.subTopics[idx];
-    if (onSelectSubTopic) {
-      // First pass full data (so extracted images/URL are stored), then focus on chosen sub-topic
-      onExtracted({
-        ...data,
-        title: chosen.title,
-        cleanText: chosen.content,
-        paragraphs: chosen.content.split("\n\n").filter(Boolean),
-        keyTakeaways: [
-          chosen.summary,
-          ...data.keyTakeaways.filter((k) => k !== chosen.title).slice(0, 4),
-        ],
-      });
+    const focusedPayload: UniversalExtractResponse = {
+      ...data,
+      title: chosen.title,
+      cleanText: chosen.content,
+      paragraphs: chosen.content.split("\n\n").filter(Boolean),
+      keyTakeaways: [
+        chosen.summary,
+        ...data.keyTakeaways.filter((k) => k !== chosen.title).slice(0, 4),
+      ],
+    };
+
+    if (isInitialAutoSelect) {
+      // Single-call 1-click flow on initial URL fetch: pass focused Topic #1 directly to onExtracted
+      onExtracted(focusedPayload);
+    } else if (onSelectSubTopic) {
       onSelectSubTopic(chosen, data);
     } else {
-      onExtracted({
-        ...data,
-        title: chosen.title,
-        cleanText: chosen.content,
-        paragraphs: chosen.content.split("\n\n").filter(Boolean),
-        keyTakeaways: [
-          chosen.summary,
-          ...data.keyTakeaways.filter((k) => k !== chosen.title).slice(0, 4),
-        ],
-      });
+      onExtracted(focusedPayload);
     }
   }
 
@@ -110,9 +107,9 @@ export function UrlArticleExtractorBar({
         return;
       }
       setExtractedData(data);
-      // Select Topic 1 (index 0) by default when multiple sub-topics exist so posts/scripts aren't overloaded with the full article!
-      if (allowSubTopicSelection && data.subTopics && data.subTopics.length > 1) {
-        applySubTopicChoice(0, data);
+      // Automatically select Topic #1 and trigger generation in 1 single click!
+      if (allowSubTopicSelection && data.subTopics && data.subTopics.length > 0) {
+        applySubTopicChoice(0, data, true);
       } else {
         setActiveTopicIdx(-1);
         onExtracted(data);
@@ -130,9 +127,8 @@ export function UrlArticleExtractorBar({
     <>
       <ToolRunOverlay
         active={loading}
-        title="Extracting Article Content, Sub-Topics & Visuals"
-        description="Scanning headings, key takeaways, captions, and article images from your URL…"
-        hint="Topic 1 will be selected automatically so your draft stays focused and concise."
+        title="Extracting Article & Generating Output in 1 Click..."
+        description="Scanning headings, key takeaways, and article images—Topic #1 is auto-selected so your output renders immediately."
       />
 
       <div className="mb-6 rounded-2xl border border-[#3452d1]/30 bg-gradient-to-r from-[#3452d1]/5 via-indigo-500/5 to-cyan-500/5 p-4 sm:p-5 shadow-xs dark:border-[#5271ff]/35 dark:bg-[#111827]">
@@ -144,8 +140,9 @@ export function UrlArticleExtractorBar({
           {extractedData && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 size={13} />
-              Extracted {extractedData.subTopics.length} topics &amp;{" "}
-              {extractedData.images.length} images from {extractedData.domain}
+              Topic #{activeTopicIdx === -1 ? "All" : activeTopicIdx + 1} Active ·{" "}
+              {extractedData.subTopics.length} angles &amp;{" "}
+              {extractedData.images.length} images extracted
             </span>
           )}
         </div>
@@ -170,10 +167,10 @@ export function UrlArticleExtractorBar({
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-sm transition hover:bg-[#2842b5] disabled:opacity-60"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#ff6b35] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
           >
             <Sparkles size={15} />
-            {loading ? "Extracting Article…" : "Fetch & Auto-Fill from URL"}
+            {loading ? "Extracting & Generating…" : buttonLabel}
           </button>
         </form>
 
@@ -184,73 +181,51 @@ export function UrlArticleExtractorBar({
           </div>
         )}
 
-        {/* Prominent Interactive Sub-Topic Buttons (Defaults to Topic 1!) */}
+        {/* Compact 1-Click Sub-Topic Switcher (Topic 1 already auto-applied!) */}
         {allowSubTopicSelection &&
           extractedData &&
           extractedData.subTopics.length > 1 && (
-            <div className="mt-4 rounded-xl border border-[#3452d1]/25 bg-white/90 p-3.5 shadow-xs dark:border-slate-700 dark:bg-slate-900/90">
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+            <div className="mt-3.5 rounded-xl border border-[#3452d1]/25 bg-white/90 p-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900/90">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
-                  <Layers size={15} className="text-[#3452d1] dark:text-[#9aabff]" />
-                  Choose Which Sub-Topic to Use (Topic 1 Selected by Default):
-                </span>
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                  Click any topic button below to switch your post or script focus
+                  <Layers size={14} className="text-[#ff6b35]" />
+                  Topic #1 Auto-Generated Below — Click Any Other Sub-Topic to Switch Angles:
                 </span>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-wrap gap-2">
                 {extractedData.subTopics.map((st, idx) => {
                   const isSelected = activeTopicIdx === idx;
                   return (
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => applySubTopicChoice(idx, extractedData)}
-                      className={`group flex items-start gap-2.5 rounded-xl border p-2.5 text-left transition ${
+                      onClick={() => applySubTopicChoice(idx, extractedData, false)}
+                      className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-extrabold transition ${
                         isSelected
-                          ? "border-[#3452d1] bg-[#3452d1] text-white shadow-sm ring-2 ring-[#3452d1]/25"
-                          : "border-slate-200 bg-slate-50/80 text-slate-800 hover:border-[#3452d1] hover:bg-white dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
+                          ? "border-[#3452d1] bg-[#3452d1] text-white shadow-xs"
+                          : "border-slate-200 bg-slate-50 text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                       }`}
                     >
-                      <span
-                        className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[11px] font-extrabold ${
-                          isSelected
-                            ? "bg-white text-[#3452d1]"
-                            : "bg-[#3452d1]/15 text-[#3452d1] dark:bg-[#5271ff]/25 dark:text-[#9aabff]"
-                        }`}
-                      >
-                        {isSelected ? <Check size={12} /> : idx + 1}
+                      {isSelected && <Check size={12} />}
+                      <span>
+                        #{idx + 1}: {st.title.slice(0, 42)}
                       </span>
-                      <div className="min-w-0 flex-1">
-                        <span className="block text-xs font-extrabold leading-snug line-clamp-1">
-                          Topic {idx + 1}: {st.title}
-                        </span>
-                        <span
-                          className={`mt-0.5 block text-[11px] line-clamp-1 ${
-                            isSelected
-                              ? "text-blue-100"
-                              : "text-slate-500 dark:text-slate-400"
-                          }`}
-                        >
-                          {st.summary}
-                        </span>
-                      </div>
                     </button>
                   );
                 })}
 
                 <button
                   type="button"
-                  onClick={() => applySubTopicChoice(-1, extractedData)}
-                  className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-extrabold transition ${
+                  onClick={() => applySubTopicChoice(-1, extractedData, false)}
+                  className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-extrabold transition ${
                     activeTopicIdx === -1
-                      ? "border-[#3452d1] bg-[#3452d1] text-white shadow-sm"
+                      ? "border-[#3452d1] bg-[#3452d1] text-white shadow-xs"
                       : "border-dashed border-slate-300 bg-white text-slate-700 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                   }`}
                 >
-                  {activeTopicIdx === -1 && <Check size={13} />}
-                  Use Full Article ({extractedData.subTopics.length} Topics Combined)
+                  {activeTopicIdx === -1 && <Check size={12} />}
+                  <span>Full Article Overview</span>
                 </button>
               </div>
             </div>

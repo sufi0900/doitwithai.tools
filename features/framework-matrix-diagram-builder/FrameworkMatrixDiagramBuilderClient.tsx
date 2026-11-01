@@ -5,12 +5,24 @@ import {
   CheckCircle2,
   Copy,
   Download,
+  FileCode2,
   GitBranch,
-  PackageCheck,
+  Palette,
+  Printer,
   Sparkles,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
+import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
+import {
+  copyCanvasImageToClipboard,
+  downloadCanvasAsEmbeddedSvg,
+  downloadCanvasAsPng,
+  printCanvasAsPdfPoster,
+  resolveVisualTheme,
+  SHARED_VISUAL_THEMES,
+  type SharedVisualThemeId,
+} from "@/features/tool-ui/visualCardExport";
 import {
   buildDeterministicFrameworkDiagram,
   DEFAULT_FRAMEWORK_DIAGRAM_INPUT,
@@ -38,12 +50,12 @@ const DIAGRAM_TEMPLATES: {
   {
     id: "circular-flywheel",
     label: "3. Circular Growth Flywheel",
-    desc: "Central core engine surrounded by connected compounding stages",
+    desc: "Central core engine surrounded by compounding stages",
   },
   {
     id: "three-pillar-house",
     label: "4. 3-Pillar Architecture",
-    desc: "Overarching roof goal supported by 3 strategic pillars & foundation",
+    desc: "Roof goal supported by 3 strategic pillars & foundation",
   },
   {
     id: "hub-and-spoke",
@@ -54,6 +66,36 @@ const DIAGRAM_TEMPLATES: {
     id: "horizontal-workflow",
     label: "6. Process Workflow Chain",
     desc: "Step-by-step connected pipeline with directional arrows",
+  },
+  {
+    id: "layered-pyramid",
+    label: "7. 3D Layered Pyramid",
+    desc: "Tiered hierarchy from foundation base to apex goal",
+  },
+  {
+    id: "iceberg-model",
+    label: "8. Surface vs. Depth Iceberg",
+    desc: "Waterline split contrasting visible tactics vs. deep systems",
+  },
+  {
+    id: "venn-overlap-3",
+    label: "9. 3-Circle Venn Synergy",
+    desc: "Overlapping strategic circles converging on core sweet spot",
+  },
+  {
+    id: "staircase-maturity",
+    label: "10. Ascending Maturity Steps",
+    desc: "Rising diagonal maturity stages from Level 1 to Level 4",
+  },
+  {
+    id: "honeycomb-cluster",
+    label: "11. Hexagonal Ecosystem Grid",
+    desc: "Interlocking geometric cells for modular frameworks",
+  },
+  {
+    id: "bow-tie-funnel",
+    label: "12. Acquisition & Expansion Funnel",
+    desc: "Balanced strategic funnel from acquisition to compounding LTV",
   },
 ];
 
@@ -100,9 +142,14 @@ export default function FrameworkMatrixDiagramBuilderClient() {
   const [nodes, setNodes] = useState<DiagramNodeItem[]>(() =>
     buildDeterministicFrameworkDiagram(DEFAULT_FRAMEWORK_DIAGRAM_INPUT).nodes,
   );
-  const [theme, setTheme] = useState<"dark-slate" | "clean-light" | "violet">(
-    "dark-slate",
-  );
+  const [themeId, setThemeId] =
+    useState<SharedVisualThemeId>("cyber-violet");
+  const [customColors, setCustomColors] = useState({
+    bgStart: "#130924",
+    cardBg: "#241042",
+    accent: "#E879F9",
+    textMain: "#FFFFFF",
+  });
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -114,6 +161,10 @@ export default function FrameworkMatrixDiagramBuilderClient() {
     [input],
   );
   const pack = aiPack || deterministicPack;
+  const theme = useMemo(
+    () => resolveVisualTheme(themeId, customColors),
+    [themeId, customColors],
+  );
 
   useEffect(() => {
     setNodes(pack.nodes);
@@ -121,10 +172,13 @@ export default function FrameworkMatrixDiagramBuilderClient() {
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2600);
+    setTimeout(() => setToast(""), 2800);
   }
 
-  async function handleGenerateAiDiagram() {
+  async function handleGenerateAiDiagram(
+    overrideInput?: FrameworkDiagramInput,
+  ) {
+    const activeInput = overrideInput || input;
     setLoading(true);
     try {
       const res = await fetch(
@@ -132,18 +186,18 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(input),
+          body: JSON.stringify(activeInput),
         },
       );
       const data = await res.json();
       if (data?.pack) {
         setAiPack(data.pack);
         setNodes(data.pack.nodes);
-        notify("Generated AI Strategic Framework Diagram!");
+        notify("Generated AI Strategic Framework Diagram in 1 click!");
       }
       focusToolSection(resultsRef.current);
     } catch {
-      notify("Updated strategic framework diagram.");
+      notify("Rendered strategic framework diagram.");
       focusToolSection(resultsRef.current);
     } finally {
       setLoading(false);
@@ -171,27 +225,9 @@ export default function FrameworkMatrixDiagramBuilderClient() {
     canvas.width = W;
     canvas.height = H;
 
-    const isLight = theme === "clean-light";
-    const bgStart =
-      theme === "clean-light"
-        ? "#F8FAFC"
-        : theme === "violet"
-          ? "#170F2E"
-          : "#0B1120";
-    const bgEnd =
-      theme === "clean-light"
-        ? "#E2E8F0"
-        : theme === "violet"
-          ? "#2E1065"
-          : "#1E293B";
-    const textMain = isLight ? "#0F172A" : "#FFFFFF";
-    const textMuted = isLight ? "#475569" : "#CBD5E1";
-    const cardBg = isLight ? "#FFFFFF" : "rgba(30, 41, 59, 0.88)";
-    const cardBorder = isLight ? "#CBD5E1" : "rgba(148, 163, 184, 0.28)";
-
     const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, bgStart);
-    grad.addColorStop(1, bgEnd);
+    grad.addColorStop(0, theme.bgStart);
+    grad.addColorStop(1, theme.bgEnd);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
@@ -199,17 +235,17 @@ export default function FrameworkMatrixDiagramBuilderClient() {
     let curY = 58;
 
     // Kicker Badge
-    ctx.fillStyle = "#7C3AED";
+    ctx.fillStyle = theme.accent;
     ctx.beginPath();
-    ctx.roundRect(padX, curY, 340, 40, 20);
+    ctx.roundRect(padX, curY, 360, 42, 21);
     ctx.fill();
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "800 18px system-ui, -apple-system, sans-serif";
-    ctx.fillText("STRATEGIC FRAMEWORK & MENTAL MODEL", padX + 20, curY + 26);
+    ctx.fillText("STRATEGIC FRAMEWORK & MENTAL MODEL", padX + 20, curY + 27);
     curY += 60;
 
     // Title
-    ctx.fillStyle = textMain;
+    ctx.fillStyle = theme.textMain;
     ctx.font = "900 42px system-ui, -apple-system, sans-serif";
     const tLines = wrapDiagramText(ctx, input.diagramTitle, W - padX * 2, 2);
     for (const l of tLines) {
@@ -218,7 +254,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
     }
 
     // Subtitle
-    ctx.fillStyle = textMuted;
+    ctx.fillStyle = theme.textMuted;
     ctx.font = "500 22px system-ui, -apple-system, sans-serif";
     const sLines = wrapDiagramText(ctx, input.diagramSubtitle, W - padX * 2, 2);
     for (const l of sLines) {
@@ -234,7 +270,8 @@ export default function FrameworkMatrixDiagramBuilderClient() {
 
     if (
       input.template === "matrix-2x2" ||
-      input.template === "swot-4-quadrant"
+      input.template === "swot-4-quadrant" ||
+      input.template === "honeycomb-cluster"
     ) {
       const quadNodes = activeNodes.slice(0, 4);
       const axisPad = 48;
@@ -246,8 +283,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       const qW = Math.floor((gridW - gap) / 2);
       const qH = Math.floor((gridH - gap) / 2);
 
-      // Draw Central Crosshair Axis Lines
-      ctx.strokeStyle = isLight ? "#94A3B8" : "rgba(148,163,184,0.45)";
+      ctx.strokeStyle = "rgba(148,163,184,0.45)";
       ctx.lineWidth = 3;
       ctx.setLineDash([8, 8]);
       ctx.beginPath();
@@ -258,14 +294,12 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // X-Axis Label at Bottom
-      ctx.fillStyle = textMuted;
+      ctx.fillStyle = theme.textMuted;
       ctx.font = "800 18px system-ui, -apple-system, sans-serif";
       const xLbl = input.xAxisLabel.slice(0, 65);
       const xW = ctx.measureText(xLbl).width;
       ctx.fillText(xLbl, gridLeft + (gridW - xW) / 2, bodyBottom - 8);
 
-      // Y-Axis Label Rotated on Left
       ctx.save();
       ctx.translate(padX + 18, gridTop + gridH / 2);
       ctx.rotate(-Math.PI / 2);
@@ -279,17 +313,25 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         const row = Math.floor(idx / 2);
         const x = gridLeft + col * (qW + gap);
         const y = gridTop + row * (qH + gap);
-        const accent = QUADRANT_ACCENTS[idx % QUADRANT_ACCENTS.length];
+        const accent =
+          idx === 0
+            ? theme.accent
+            : QUADRANT_ACCENTS[idx % QUADRANT_ACCENTS.length];
 
-        ctx.fillStyle = cardBg;
+        ctx.fillStyle = theme.cardBg;
         ctx.strokeStyle = accent;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.roundRect(x, y, qW, qH, 24);
+        ctx.roundRect(
+          x,
+          y,
+          qW,
+          qH,
+          input.template === "honeycomb-cluster" ? 42 : 24,
+        );
         ctx.fill();
         ctx.stroke();
 
-        // Tag Pill
         ctx.fillStyle = accent;
         ctx.beginPath();
         ctx.roundRect(x + 26, y + 24, 230, 38, 12);
@@ -298,8 +340,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         ctx.font = "900 17px system-ui, -apple-system, sans-serif";
         ctx.fillText(node.tag.slice(0, 22), x + 42, y + 49);
 
-        // Node Title
-        ctx.fillStyle = textMain;
+        ctx.fillStyle = theme.textMain;
         ctx.font = "800 28px system-ui, -apple-system, sans-serif";
         const ntLines = wrapDiagramText(ctx, node.title, qW - 52, 2);
         let ty = y + 102;
@@ -308,8 +349,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
           ty += 34;
         }
 
-        // Node Detail
-        ctx.fillStyle = textMuted;
+        ctx.fillStyle = theme.textMuted;
         ctx.font = "500 21px system-ui, -apple-system, sans-serif";
         const ndLines = wrapDiagramText(ctx, node.detail, qW - 52, 5);
         ty += 8;
@@ -322,9 +362,9 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       });
     } else if (
       input.template === "circular-flywheel" ||
-      input.template === "hub-and-spoke"
+      input.template === "hub-and-spoke" ||
+      input.template === "venn-overlap-3"
     ) {
-      // Central Core Hub + Orbiting Spoke Cards
       const cx = W / 2;
       const cy = bodyTop + availH / 2;
       const radiusX = 355;
@@ -332,8 +372,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       const cardW = 310;
       const cardH = 155;
 
-      // Connecting Spoke Lines & Orbit Ring
-      ctx.strokeStyle = isLight ? "#CBD5E1" : "rgba(124, 58, 237, 0.45)";
+      ctx.strokeStyle = theme.accent;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.ellipse(cx, cy, radiusX, radiusY, 0, 0, Math.PI * 2);
@@ -353,8 +392,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         ctx.stroke();
       });
 
-      // Center Core Circle
-      ctx.fillStyle = "#7C3AED";
+      ctx.fillStyle = theme.accent;
       ctx.beginPath();
       ctx.arc(cx, cy, 118, 0, Math.PI * 2);
       ctx.fill();
@@ -377,7 +415,6 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         coreY += 28;
       }
 
-      // Draw Orbiting Cards
       activeNodes.forEach((node, idx) => {
         const angle =
           -Math.PI / 2 + (idx * (Math.PI * 2)) / activeNodes.length;
@@ -385,7 +422,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         const ny = cy + Math.sin(angle) * radiusY - cardH / 2;
         const accent = QUADRANT_ACCENTS[idx % QUADRANT_ACCENTS.length];
 
-        ctx.fillStyle = cardBg;
+        ctx.fillStyle = theme.cardBg;
         ctx.strokeStyle = accent;
         ctx.lineWidth = 2.5;
         ctx.beginPath();
@@ -397,12 +434,12 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         ctx.font = "900 15px system-ui, -apple-system, sans-serif";
         ctx.fillText(node.tag.slice(0, 20), nx + 18, ny + 28);
 
-        ctx.fillStyle = textMain;
+        ctx.fillStyle = theme.textMain;
         ctx.font = "800 21px system-ui, -apple-system, sans-serif";
         const tL = wrapDiagramText(ctx, node.title, cardW - 36, 1);
         ctx.fillText(tL[0] || node.title, nx + 18, ny + 56);
 
-        ctx.fillStyle = textMuted;
+        ctx.fillStyle = theme.textMuted;
         ctx.font = "500 17px system-ui, -apple-system, sans-serif";
         const dL = wrapDiagramText(ctx, node.detail, cardW - 36, 3);
         let dy = ny + 84;
@@ -414,229 +451,195 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         }
       });
     } else if (input.template === "three-pillar-house") {
-      // Roof Banner + 3 Vertical Pillars + Foundation Bar
       const totalW = W - padX * 2;
       const roofH = 110;
       const foundH = 110;
       const pillarTop = bodyTop + roofH + 22;
       const pillarH = availH - roofH - foundH - 44;
+      const gap = 22;
+      const pW = Math.floor((totalW - gap * 2) / 3);
 
-      // Roof Goal
-      ctx.fillStyle = "#7C3AED";
+      // Roof Banner
+      ctx.fillStyle = theme.accent;
       ctx.beginPath();
       ctx.roundRect(padX, bodyTop, totalW, roofH, 22);
       ctx.fill();
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "900 20px system-ui, -apple-system, sans-serif";
-      ctx.fillText("NORTH STAR ROOF GOAL / THESIS", padX + 28, bodyTop + 40);
-      ctx.font = "800 28px system-ui, -apple-system, sans-serif";
+      ctx.font = "900 30px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        (input.centerOrCoreThesis || input.diagramTitle).slice(0, 52),
-        padX + 28,
-        bodyTop + 80,
+        `OVERARCHING GOAL: ${input.centerOrCoreThesis.slice(0, 42)}`,
+        padX + 36,
+        bodyTop + 66,
       );
 
-      // 3 Vertical Pillars
-      const gap = 22;
-      const pW = Math.floor((totalW - gap * 2) / 3);
       activeNodes.slice(0, 3).forEach((node, idx) => {
         const x = padX + idx * (pW + gap);
-        const accent = QUADRANT_ACCENTS[idx];
-
-        ctx.fillStyle = cardBg;
-        ctx.strokeStyle = accent;
+        const col = QUADRANT_ACCENTS[idx % QUADRANT_ACCENTS.length];
+        ctx.fillStyle = theme.cardBg;
+        ctx.strokeStyle = col;
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.roundRect(x, pillarTop, pW, pillarH, 22);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = accent;
-        ctx.beginPath();
-        ctx.roundRect(x + 22, pillarTop + 24, 150, 36, 10);
-        ctx.fill();
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "900 16px system-ui, -apple-system, sans-serif";
-        ctx.fillText(`PILLAR 0${idx + 1}`, x + 42, pillarTop + 48);
+        ctx.fillStyle = col;
+        ctx.font = "900 18px system-ui, -apple-system, sans-serif";
+        ctx.fillText(node.tag, x + 24, pillarTop + 42);
 
-        ctx.fillStyle = textMain;
+        ctx.fillStyle = theme.textMain;
         ctx.font = "800 26px system-ui, -apple-system, sans-serif";
-        const tl = wrapDiagramText(ctx, node.title, pW - 44, 3);
-        let ty = pillarTop + 98;
-        for (const l of tl) {
-          ctx.fillText(l, x + 22, ty);
+        const tL = wrapDiagramText(ctx, node.title, pW - 48, 2);
+        let ty = pillarTop + 84;
+        for (const l of tL) {
+          ctx.fillText(l, x + 24, ty);
           ty += 32;
         }
 
-        ctx.fillStyle = textMuted;
+        ctx.fillStyle = theme.textMuted;
         ctx.font = "500 20px system-ui, -apple-system, sans-serif";
-        const dl = wrapDiagramText(ctx, node.detail, pW - 44, 7);
+        const dL = wrapDiagramText(ctx, node.detail, pW - 48, 7);
         ty += 12;
-        for (const l of dl) {
-          if (ty < pillarTop + pillarH - 20) {
-            ctx.fillText(l, x + 22, ty);
-            ty += 28;
-          }
+        for (const l of dL) {
+          ctx.fillText(l, x + 24, ty);
+          ty += 28;
         }
       });
 
       // Foundation Bar
-      const foundNode = activeNodes[3] || activeNodes[0];
-      const foundY = pillarTop + pillarH + 22;
-      ctx.fillStyle = cardBg;
-      ctx.strokeStyle = "#FF6B35";
+      const fNode = activeNodes[3] || activeNodes[0];
+      const fTop = pillarTop + pillarH + 22;
+      ctx.fillStyle = theme.cardBg;
+      ctx.strokeStyle = theme.accent;
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.roundRect(padX, foundY, totalW, foundH, 22);
+      ctx.roundRect(padX, fTop, totalW, foundH, 22);
       ctx.fill();
       ctx.stroke();
-
-      ctx.fillStyle = "#FF6B35";
-      ctx.font = "900 18px system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = theme.textMain;
+      ctx.font = "800 24px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        `FOUNDATION LAYER · ${(foundNode?.title || "Core Infrastructure").toUpperCase()}`,
-        padX + 28,
-        foundY + 40,
-      );
-      ctx.fillStyle = textMain;
-      ctx.font = "500 21px system-ui, -apple-system, sans-serif";
-      ctx.fillText(
-        (foundNode?.detail || "").slice(0, 82),
-        padX + 28,
-        foundY + 78,
+        `FOUNDATION: ${fNode.title} — ${fNode.detail.slice(0, 58)}`,
+        padX + 32,
+        fTop + 64,
       );
     } else {
-      // Horizontal / Zigzag Process Workflow Chain
-      const cols = 2;
-      const rows = Math.ceil(activeNodes.length / cols);
-      const gap = 28;
-      const cardW = Math.floor((W - padX * 2 - gap) / cols);
-      const cardH = Math.floor((availH - gap * (rows - 1)) / rows);
+      // Layered Pyramid, Iceberg, Staircase, Bow-Tie, or Process Workflow Chain
+      const count = activeNodes.length;
+      const rowGap = 16;
+      const rowH = Math.floor((availH - rowGap * (count - 1)) / count);
+      const maxW = W - padX * 2;
 
       activeNodes.forEach((node, idx) => {
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
-        const x = padX + col * (cardW + gap);
-        const y = bodyTop + row * (cardH + gap);
-        const accent = QUADRANT_ACCENTS[idx % QUADRANT_ACCENTS.length];
+        const y = bodyTop + idx * (rowH + rowGap);
+        let barW = maxW;
+        let x = padX;
+        if (input.template === "layered-pyramid") {
+          barW = Math.floor(maxW * (0.52 + (0.48 * idx) / Math.max(1, count - 1)));
+          x = Math.floor((W - barW) / 2);
+        } else if (input.template === "staircase-maturity") {
+          barW = Math.floor(maxW * 0.76);
+          x = padX + Math.floor(((maxW - barW) * idx) / Math.max(1, count - 1));
+        }
+        const col =
+          idx === 0
+            ? theme.accent
+            : QUADRANT_ACCENTS[idx % QUADRANT_ACCENTS.length];
 
-        ctx.fillStyle = cardBg;
-        ctx.strokeStyle = accent;
-        ctx.lineWidth = 3;
+        ctx.fillStyle = theme.cardBg;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.roundRect(x, y, cardW, cardH, 22);
+        ctx.roundRect(x, y, barW, rowH, 20);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = accent;
-        ctx.font = "900 20px system-ui, -apple-system, sans-serif";
-        ctx.fillText(`STEP 0${idx + 1} →`, x + 26, y + 42);
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.roundRect(x + 22, y + 20, 185, 38, 12);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 16px system-ui, -apple-system, sans-serif";
+        ctx.fillText(node.tag.slice(0, 18), x + 36, y + 45);
 
-        ctx.fillStyle = textMain;
-        ctx.font = "800 26px system-ui, -apple-system, sans-serif";
-        const tl = wrapDiagramText(ctx, node.title, cardW - 52, 2);
-        let ty = y + 80;
-        for (const l of tl) {
-          ctx.fillText(l, x + 26, ty);
-          ty += 32;
-        }
+        ctx.fillStyle = theme.textMain;
+        ctx.font = "800 25px system-ui, -apple-system, sans-serif";
+        ctx.fillText(node.title.slice(0, 42), x + 226, y + 46);
 
-        ctx.fillStyle = textMuted;
-        ctx.font = "500 20px system-ui, -apple-system, sans-serif";
-        const dl = wrapDiagramText(ctx, node.detail, cardW - 52, 3);
-        ty += 8;
-        for (const l of dl) {
-          if (ty < y + cardH - 16) {
-            ctx.fillText(l, x + 26, ty);
-            ty += 26;
+        ctx.fillStyle = theme.textMuted;
+        ctx.font = "500 19px system-ui, -apple-system, sans-serif";
+        const dLines = wrapDiagramText(ctx, node.detail, barW - 48, 2);
+        let dy = y + 82;
+        for (const l of dLines) {
+          if (dy < y + rowH - 10) {
+            ctx.fillText(l, x + 24, dy);
+            dy += 24;
           }
         }
       });
     }
 
     // Footer Bar
-    ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
-    ctx.fillRect(0, H - 76, W, 76);
+    ctx.fillStyle = "rgba(15, 23, 42, 0.74)";
+    ctx.fillRect(0, H - 72, W, 72);
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "800 22px system-ui, -apple-system, sans-serif";
-    ctx.fillText(input.brandFooter || "doitwithai.tools", padX, H - 30);
-
-    ctx.fillStyle = "#A855F7";
-    ctx.font = "800 20px system-ui, -apple-system, sans-serif";
-    ctx.fillText("Framework & Matrix Studio · 1200×1200 HD", W - padX - 390, H - 30);
+    ctx.fillText(input.brandFooter || "doitwithai.tools", padX, H - 28);
+    ctx.fillStyle = theme.accent;
+    ctx.font = "700 19px system-ui, -apple-system, sans-serif";
+    ctx.fillText("Save & Share Strategic Framework ★", W - padX - 315, H - 28);
   }, [input, nodes, theme]);
-
-  function downloadDiagramPng() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const a = document.createElement("a");
-    a.download = `framework-diagram-${input.template}.png`;
-    a.href = canvas.toDataURL("image/png");
-    a.click();
-    notify("Downloaded 1200×1200 Strategic Diagram (.PNG)!");
-  }
-
-  function downloadDiagramAndCaptionPackage() {
-    downloadDiagramPng();
-    navigator.clipboard.writeText(pack.socialPostText);
-    const blob = new Blob([pack.socialPostText], {
-      type: "text/plain;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "framework-diagram-caption.txt";
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notify("Downloaded Diagram PNG + Caption TXT (and copied caption)!");
-  }
 
   return (
     <section
-      aria-label="2x2 Strategy Matrix, SWOT, Flywheel and Diagram Studio"
+      aria-label="2x2 Strategy Matrix and Framework Diagram Studio"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       <ToolRunOverlay
         active={loading}
-        title="Mapping Content Into Strategic Framework Diagram..."
-        description="Structuring quadrants, flywheel stages, and architecture pillars onto a 1200×1200 visual board."
+        title="Synthesizing Strategic Framework & Rendering Diagram..."
+        description="Mapping your content into 12 executive diagram layouts with hover PNG, SVG, and PDF export."
       />
 
+      {/* 1-CLICK ARTICLE URL EXTRACTION */}
       <UrlArticleExtractorBar
-        label="Option 1: Fetch Any Article or Strategy Guide URL to Auto-Build a 2×2 Matrix, SWOT, or Flywheel"
-        placeholder="Paste an article URL to extract sub-topics & map them into a visual diagram..."
+        label="Option 1: Paste Any Article URL to Auto-Build a 2×2 Matrix, SWOT, or Flywheel Diagram in 1 Click"
+        placeholder="Paste a blog or strategy URL to extract pillars & render a diagram..."
+        buttonLabel="Extract & Build Diagram (1-Click)"
         onExtracted={(data) => {
           setAiPack(null);
           const cleanTitle = (data.title || input.diagramTitle)
             .replace(/\s*\|\s*[^|]+$/g, "")
             .trim();
-          const lines =
-            data.subTopics?.length >= 3
-              ? data.subTopics
-                  .slice(0, 6)
-                  .map((s) => `${s.title}: ${s.summary}`)
-                  .join("\n")
-              : (data.keyTakeaways || []).join("\n") || input.sourceNotes;
-          setInput((prev) => ({
-            ...prev,
+          let domain = "doitwithai.tools";
+          try {
+            domain = new URL(data.url).hostname.replace(/^www\./, "");
+          } catch {}
+          const nextInput: FrameworkDiagramInput = {
+            ...input,
             diagramTitle: cleanTitle,
-            diagramSubtitle: data.description || prev.diagramSubtitle,
-            centerOrCoreThesis: cleanTitle.slice(0, 38),
-            sourceNotes: lines,
-          }));
-          notify(`Mapped "${cleanTitle}" into framework diagram!`);
-          focusToolSection(resultsRef.current);
+            diagramSubtitle: data.description || input.diagramSubtitle,
+            centerOrCoreThesis: data.focusKeyword || cleanTitle.slice(0, 36),
+            sourceNotes:
+              (data.keyTakeaways || []).join("\n") ||
+              data.cleanText.slice(0, 1200) ||
+              input.sourceNotes,
+            brandFooter: domain,
+          };
+          setInput(nextInput);
+          void handleGenerateAiDiagram(nextInput);
         }}
         onSelectSubTopic={(sub) => {
           setAiPack(null);
-          setInput((prev) => ({
-            ...prev,
+          const nextInput: FrameworkDiagramInput = {
+            ...input,
             diagramTitle: sub.title,
-            centerOrCoreThesis: sub.title.slice(0, 38),
+            diagramSubtitle: sub.summary,
+            centerOrCoreThesis: sub.title.slice(0, 36),
             sourceNotes: sub.content,
-          }));
-          notify(`Focused diagram on sub-topic: "${sub.title}"!`);
-          focusToolSection(resultsRef.current);
+          };
+          setInput(nextInput);
+          void handleGenerateAiDiagram(nextInput);
         }}
       />
 
@@ -653,42 +656,34 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       <div
         ref={resultsRef}
         tabIndex={-1}
-        className="rounded-2xl border-2 border-purple-500/25 bg-white p-5 shadow-xs dark:border-purple-500/35 dark:bg-[#111827] sm:p-6 space-y-6 focus:outline-none"
+        className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-5 focus:outline-none"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
-          <div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-              <GitBranch size={14} />6 Built-In Editable Strategy &amp;
-              Diagram Templates
-            </span>
-            <h2 className="text-lg font-black text-slate-900 dark:text-white">
-              2×2 Matrix, SWOT, Flywheel &amp; Architecture Diagram Studio
-            </h2>
+          <div className="flex items-center gap-3">
+            <PlatformBrandIcon brand="matrix-diagram" size={36} />
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                <GitBranch size={14} /> 12 Framework &amp; Matrix Templates · 10 Themes + Custom Pickers
+              </span>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                Strategic Framework &amp; Diagram Studio (Hover Over Diagram to Download)
+              </h2>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handleGenerateAiDiagram}
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-purple-700"
-            >
-              <Sparkles size={14} />
-              AI Generate Framework
-            </button>
-            <button
-              type="button"
-              onClick={downloadDiagramAndCaptionPackage}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#e85d2a]"
-            >
-              <PackageCheck size={15} />
-              Download Diagram + Caption Package
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => void handleGenerateAiDiagram()}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#e85d2a]"
+          >
+            <Sparkles size={14} />
+            {loading ? "Building Diagram…" : "Generate AI Diagram (1-Click)"}
+          </button>
         </div>
 
-        {/* 6 Diagram Template Buttons */}
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {/* 12 Diagram Template Selector Grid */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {DIAGRAM_TEMPLATES.map((tpl) => (
             <button
               key={tpl.id}
@@ -696,66 +691,112 @@ export default function FrameworkMatrixDiagramBuilderClient() {
               onClick={() =>
                 setInput((prev) => ({ ...prev, template: tpl.id }))
               }
-              className={`rounded-xl border p-3 text-left transition ${
+              className={`rounded-xl border p-2.5 text-left transition ${
                 input.template === tpl.id
-                  ? "border-purple-600 bg-purple-600/10 dark:border-purple-400 dark:bg-purple-500/20"
-                  : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60"
+                  ? "border-[#ff6b35] bg-[#ff6b35]/10 ring-1 ring-[#ff6b35]"
+                  : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
               }`}
             >
-              <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+              <strong className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">
                 {tpl.label}
               </strong>
-              <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="mt-0.5 line-clamp-1 block text-[10px] text-slate-500 dark:text-slate-400">
                 {tpl.desc}
               </span>
             </button>
           ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] items-start">
-          {/* LEFT: DIAGRAM HEADERS, AXES & QUADRANT/NODE EDITOR */}
-          <div className="space-y-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                    Visual Color Theme
-                  </label>
-                  <select
-                    value={theme}
-                    onChange={(e) =>
-                      setTheme(
-                        e.target.value as
-                          | "dark-slate"
-                          | "clean-light"
-                          | "violet",
-                      )
-                    }
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
-                  >
-                    <option value="dark-slate">Executive Dark Slate</option>
-                    <option value="clean-light">Editorial Clean Light</option>
-                    <option value="violet">SaaS Deep Violet</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                    Central Hub / Roof Thesis
-                  </label>
-                  <input
-                    type="text"
-                    value={input.centerOrCoreThesis}
-                    onChange={(e) =>
-                      setInput((prev) => ({
-                        ...prev,
-                        centerOrCoreThesis: e.target.value,
-                      }))
-                    }
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
-                  />
-                </div>
-              </div>
+        {/* 10 Color Themes + Custom Brand Color Pickers */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-200">
+              Designer Color Theme (10 Presets + Custom)
+            </label>
+            <select
+              value={themeId}
+              onChange={(e) =>
+                setThemeId(e.target.value as SharedVisualThemeId)
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
+            >
+              {Object.values(SHARED_VISUAL_THEMES).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+              <option value="custom-brand">
+                🎨 Custom Brand Colors (Use Pickers →)
+              </option>
+            </select>
+          </div>
 
+          <div>
+            <label className="mb-1 flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-200">
+              <Palette size={13} className="text-[#ff6b35]" /> Live Custom Color Pickers
+            </label>
+            <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+              <label className="flex items-center gap-1 text-[11px] font-bold">
+                <input
+                  type="color"
+                  value={theme.bgStart}
+                  onChange={(e) => {
+                    setThemeId("custom-brand");
+                    setCustomColors((p) => ({ ...p, bgStart: e.target.value }));
+                  }}
+                  className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                />
+                BG
+              </label>
+              <label className="flex items-center gap-1 text-[11px] font-bold">
+                <input
+                  type="color"
+                  value={
+                    theme.cardBg.startsWith("#") ? theme.cardBg : "#241042"
+                  }
+                  onChange={(e) => {
+                    setThemeId("custom-brand");
+                    setCustomColors((p) => ({ ...p, cardBg: e.target.value }));
+                  }}
+                  className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                />
+                Card
+              </label>
+              <label className="flex items-center gap-1 text-[11px] font-bold">
+                <input
+                  type="color"
+                  value={theme.accent}
+                  onChange={(e) => {
+                    setThemeId("custom-brand");
+                    setCustomColors((p) => ({ ...p, accent: e.target.value }));
+                  }}
+                  className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                />
+                Accent
+              </label>
+              <label className="flex items-center gap-1 text-[11px] font-bold">
+                <input
+                  type="color"
+                  value={theme.textMain}
+                  onChange={(e) => {
+                    setThemeId("custom-brand");
+                    setCustomColors((p) => ({
+                      ...p,
+                      textMain: e.target.value,
+                    }));
+                  }}
+                  className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                />
+                Text
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* 2-COLUMN WORKSPACE: LEFT = QUADRANT / NODE EDITOR, RIGHT = HOVERABLE DIAGRAM CANVAS */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] items-start">
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
                   Diagram Headline
@@ -769,56 +810,54 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                       diagramTitle: e.target.value,
                     }))
                   }
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
                 />
               </div>
 
-              {input.template === "matrix-2x2" && (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500">
-                      X-Axis Label (Bottom)
-                    </label>
-                    <input
-                      type="text"
-                      value={input.xAxisLabel}
-                      onChange={(e) =>
-                        setInput((prev) => ({
-                          ...prev,
-                          xAxisLabel: e.target.value,
-                        }))
-                      }
-                      className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-950"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-500">
-                      Y-Axis Label (Left)
-                    </label>
-                    <input
-                      type="text"
-                      value={input.yAxisLabel}
-                      onChange={(e) =>
-                        setInput((prev) => ({
-                          ...prev,
-                          yAxisLabel: e.target.value,
-                        }))
-                      }
-                      className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-950"
-                    />
-                  </div>
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    Central Core Thesis / Goal
+                  </label>
+                  <input
+                    type="text"
+                    value={input.centerOrCoreThesis}
+                    onChange={(e) =>
+                      setInput((prev) => ({
+                        ...prev,
+                        centerOrCoreThesis: e.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                  />
                 </div>
-              )}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    Brand Footer
+                  </label>
+                  <input
+                    type="text"
+                    value={input.brandFooter}
+                    onChange={(e) =>
+                      setInput((prev) => ({
+                        ...prev,
+                        brandFooter: e.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-2.5 dark:border-slate-800 dark:bg-slate-900/60 max-h-[450px] overflow-y-auto">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-2.5 dark:border-slate-800 dark:bg-slate-900/60 max-h-[450px] overflow-y-auto">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                Edit Quadrants / Flywheel Stages ({nodes.length})
+                Edit Quadrants / Stages ({nodes.length})
               </h3>
               {nodes.map((node, i) => (
                 <div
                   key={node.id}
-                  className="rounded-lg border border-slate-200 bg-white p-3 space-y-2 dark:border-slate-800 dark:bg-slate-950"
+                  className="rounded-xl border border-slate-200 bg-white p-3 space-y-2 dark:border-slate-800 dark:bg-slate-950"
                 >
                   <div className="grid gap-2 sm:grid-cols-3">
                     <div>
@@ -857,36 +896,92 @@ export default function FrameworkMatrixDiagramBuilderClient() {
             </div>
           </div>
 
-          {/* RIGHT: LIVE 1200x1200 DIAGRAM CANVAS */}
+          {/* RIGHT: HOVERABLE 1200x1200 DIAGRAM CANVAS WITH PNG / SVG / PDF OVERLAY */}
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
+            <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2.5 shadow-xl dark:border-slate-700">
+              {/* FLOATING HOVER DOWNLOAD BAR */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+                <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/20 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-md">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadCanvasAsPng(
+                        canvasRef.current,
+                        `framework-diagram-${input.template}.png`,
+                        () => notify("Downloaded 1200×1200 Diagram (.PNG)!"),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#ff6b35] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#e85d2a]"
+                  >
+                    <Download size={13} />
+                    Download PNG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadCanvasAsEmbeddedSvg(
+                        canvasRef.current,
+                        input.diagramTitle,
+                        `framework-diagram-${input.template}.svg`,
+                        () => notify("Downloaded Diagram (.SVG)!"),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#3452d1] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#2842b5]"
+                  >
+                    <FileCode2 size={13} />
+                    SVG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      printCanvasAsPdfPoster(
+                        canvasRef.current,
+                        input.diagramTitle,
+                        () => notify("Opened PDF Export Dialog!"),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-emerald-500"
+                  >
+                    <Printer size={13} />
+                    PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyCanvasImageToClipboard(canvasRef.current, () =>
+                        notify("Copied Diagram Image to Clipboard!"),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-2 text-xs font-bold text-white hover:bg-white/20"
+                  >
+                    <Copy size={12} />
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md backdrop-blur-xs transition-opacity sm:inline-flex sm:group-hover:opacity-0">
+                <Download size={12} className="text-[#ff6b35]" />
+                <span>Hover to Download (PNG · SVG · PDF)</span>
+              </div>
+
               <canvas
                 ref={canvasRef}
                 className="mx-auto block aspect-square w-full h-auto rounded-xl"
               />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={downloadDiagramPng}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-slate-800 dark:bg-slate-800"
-              >
-                <Download size={14} />
-                Download 1200×1200 Diagram (.PNG)
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(pack.socialPostText);
-                  notify("Copied Framework Post Caption!");
-                }}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                <Copy size={14} />
-                Copy Framework Caption
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await navigator.clipboard.writeText(pack.socialPostText);
+                notify("Copied Strategic Framework Social Caption!");
+              }}
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            >
+              <Copy size={14} />
+              Copy Companion Framework Social Caption
+            </button>
           </div>
         </div>
       </div>

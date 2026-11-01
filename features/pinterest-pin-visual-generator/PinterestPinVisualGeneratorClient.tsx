@@ -5,15 +5,31 @@ import {
   CheckCircle2,
   Copy,
   Download,
+  FileCode2,
+  FileText,
   Image as ImageIcon,
   Layers,
   PackageCheck,
+  Palette,
   Sparkles,
 } from "lucide-react";
 import UrlArticleExtractorBar, {
   type ExtractedImageAsset,
 } from "@/features/tool-ui/UrlArticleExtractorBar";
-import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, {
+  focusToolSection,
+} from "@/features/tool-ui/ToolRunOverlay";
+import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
+import {
+  copyCanvasImageToClipboard,
+  downloadCanvasAsEmbeddedSvg,
+  downloadCanvasAsPng,
+  printCanvasAsPdfPoster,
+  resolveStudioTheme,
+  STUDIO_COLOR_THEMES,
+  type CustomStudioColorOverrides,
+  type StudioColorThemeId,
+} from "@/features/tool-ui/visualCardExport";
 import {
   buildDeterministicPinterestVisualPack,
   DEFAULT_PINTEREST_VISUAL_INPUT,
@@ -30,32 +46,62 @@ const PIN_TEMPLATES: {
   {
     id: "listicle-number-pin",
     label: "1. Giant Number Listicle Pin",
-    desc: "High-click number badge + bold hook + 4 step preview rows",
+    desc: "Oversized number badge + bold hook + numbered cards",
   },
   {
     id: "step-mini-infographic",
-    label: "2. Step-by-Step Mini Infographic",
-    desc: "Vertical 5-step roadmap designed for maximum Pinterest Saves",
+    label: "2. Step-by-Step Roadmap Pin",
+    desc: "Vertical connected timeline spine built for Pinterest Saves",
   },
   {
     id: "editorial-cover-pin",
     label: "3. Editorial Magazine Cover",
-    desc: "Bold magazine typography + extracted article photo backdrop",
+    desc: "Magazine cover typography + extracted article photo frame",
   },
   {
     id: "saveable-checklist-pin",
     label: "4. Save-Worthy Checklist Card",
-    desc: "Clean checkmarks on high-contrast paper card + domain pill",
+    desc: "High-contrast paper clipboard card + checkmark rows",
   },
   {
     id: "split-photo-headline",
-    label: "5. Split Photo + Typography Pin",
-    desc: "Top image frame + center ribbon badge + bold lower title",
+    label: "5. Split Photo + Ribbon Pin",
+    desc: "Top image frame + center ribbon badge + lower takeaways",
   },
   {
     id: "comparison-pin",
     label: "6. Mistake vs. Solution Pin",
-    desc: "Contrasts 'Stop Doing This' vs. 'Do This Instead' steps",
+    desc: "Contrasts 'Stop Doing This' vs. 'Do This Instead' columns",
+  },
+  {
+    id: "pyramid-hierarchy-pin",
+    label: "7. 5-Tier Pyramid Hierarchy",
+    desc: "Stacked pyramid levels from foundation to mastery",
+  },
+  {
+    id: "stat-donut-pin",
+    label: "8. Big Stat Ring + Takeaways",
+    desc: "Hero KPI radial progress ring + 4 supporting proof rows",
+  },
+  {
+    id: "ribbon-banner-pin",
+    label: "9. 3D Ribbon Chevrons Pin",
+    desc: "Dimensional ribbon banners with alternating color badges",
+  },
+  {
+    id: "before-after-pin",
+    label: "10. Before vs. After Pin",
+    desc: "Top 'Old Bottleneck' block vs. Bottom 'New Blueprint' block",
+  },
+  {
+    id: "bento-grid-pin",
+    label: "11. 2×3 Bento Cheat Sheet Pin",
+    desc: "Modern modular Bento grid cards on a 2:3 vertical canvas",
+  },
+  {
+    id: "quote-tip-poster-pin",
+    label: "12. Authority Quote & Tip Poster",
+    desc: "Oversized editorial pull-quote + 3 golden rules below",
   },
 ];
 
@@ -91,9 +137,11 @@ export default function PinterestPinVisualGeneratorClient() {
   );
   const [aiPack, setAiPack] = useState<PinterestVisualPack | null>(null);
   const [activeVarIdx, setActiveVarIdx] = useState(0);
-  const [pinPalette, setPinPalette] = useState<
-    "pinterest-crimson" | "navy-orange" | "warm-editorial" | "emerald-gold"
-  >("pinterest-crimson");
+  const [themeId, setThemeId] =
+    useState<StudioColorThemeId>("crimson-pinterest");
+  const [customColors, setCustomColors] = useState<CustomStudioColorOverrides>(
+    {},
+  );
   const [extractedImages, setExtractedImages] = useState<ExtractedImageAsset[]>(
     [],
   );
@@ -107,13 +155,17 @@ export default function PinterestPinVisualGeneratorClient() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
+  const activeTheme = useMemo(
+    () => resolveStudioTheme(themeId, customColors),
+    [themeId, customColors],
+  );
+
   const fallbackPack = useMemo(
     () => buildDeterministicPinterestVisualPack(input),
     [input],
   );
   const pack = aiPack || fallbackPack;
-  const activePin =
-    pack.pinVariations[activeVarIdx] || pack.pinVariations[0];
+  const activePin = pack.pinVariations[activeVarIdx] || pack.pinVariations[0];
 
   const [customBadge, setCustomBadge] = useState(activePin.pinBadge);
   const [customHeadline, setCustomHeadline] = useState(
@@ -146,13 +198,14 @@ export default function PinterestPinVisualGeneratorClient() {
     setTimeout(() => setToast(""), 2600);
   }
 
-  async function handleGenerateAiPins() {
+  async function runGenerateAiPins(overrideInput?: PinterestVisualInput) {
+    const payload = overrideInput || input;
     setLoading(true);
     try {
       const res = await fetch("/api/ai-tools/pinterest-pin-visual-generator", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data?.pack) {
@@ -180,59 +233,37 @@ export default function PinterestPinVisualGeneratorClient() {
     canvas.width = W;
     canvas.height = H;
 
-    const themeColors = {
-      "pinterest-crimson": {
-        bg1: "#18060C",
-        bg2: "#3B0A18",
-        accent: "#E60023",
-        card: "rgba(255,255,255,0.95)",
-        cardText: "#0F172A",
-        textMain: "#FFFFFF",
-      },
-      "navy-orange": {
-        bg1: "#0B1120",
-        bg2: "#1E293B",
-        accent: "#FF6B35",
-        card: "rgba(30,41,59,0.92)",
-        cardText: "#FFFFFF",
-        textMain: "#FFFFFF",
-      },
-      "warm-editorial": {
-        bg1: "#FFFBEB",
-        bg2: "#FEF3C7",
-        accent: "#D97706",
-        card: "#FFFFFF",
-        cardText: "#1C1917",
-        textMain: "#1C1917",
-      },
-      "emerald-gold": {
-        bg1: "#042F2E",
-        bg2: "#0F172A",
-        accent: "#10B981",
-        card: "rgba(15,23,42,0.9)",
-        cardText: "#F8FAFC",
-        textMain: "#FFFFFF",
-      },
-    }[pinPalette];
-
     const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, themeColors.bg1);
-    grad.addColorStop(1, themeColors.bg2);
+    grad.addColorStop(0, activeTheme.bgStart);
+    grad.addColorStop(1, activeTheme.bgEnd);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    const padX = 64;
+    // Subtle decorative background glow
+    const glow = ctx.createRadialGradient(
+      W * 0.82,
+      H * 0.14,
+      20,
+      W * 0.82,
+      H * 0.14,
+      420,
+    );
+    glow.addColorStop(0, `${activeTheme.accent}33`);
+    glow.addColorStop(1, "transparent");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
 
-    // Optional Photo Header for Editorial or Split Photo Templates
-    if (
+    const padX = 64;
+    const hasTopPhoto =
       loadedPhotoEl &&
       (input.template === "editorial-cover-pin" ||
-        input.template === "split-photo-headline")
-    ) {
-      const imgH = 540;
+        input.template === "split-photo-headline");
+
+    if (hasTopPhoto && loadedPhotoEl) {
+      const imgH = 480;
       ctx.save();
       ctx.beginPath();
-      ctx.roundRect(padX, 56, W - padX * 2, imgH, 32);
+      ctx.roundRect(padX, 52, W - padX * 2, imgH, 32);
       ctx.clip();
       const scale = Math.max(
         (W - padX * 2) / loadedPhotoEl.width,
@@ -243,116 +274,412 @@ export default function PinterestPinVisualGeneratorClient() {
       ctx.drawImage(
         loadedPhotoEl,
         padX + (W - padX * 2 - dw) / 2,
-        56 + (imgH - dh) / 2,
+        52 + (imgH - dh) / 2,
         dw,
         dh,
       );
       ctx.restore();
     }
 
-    let curY =
-      loadedPhotoEl &&
-      (input.template === "editorial-cover-pin" ||
-        input.template === "split-photo-headline")
-        ? 630
-        : 76;
+    let curY = hasTopPhoto ? 560 : 68;
 
     // Top Badge Pill
-    ctx.fillStyle = themeColors.accent;
+    ctx.fillStyle = activeTheme.accent;
     ctx.beginPath();
-    ctx.roundRect(padX, curY, 340, 52, 26);
+    ctx.roundRect(padX, curY, 360, 50, 25);
     ctx.fill();
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "900 22px system-ui, -apple-system, sans-serif";
+    ctx.font = "900 21px system-ui, -apple-system, sans-serif";
     ctx.fillText(
-      (customBadge || "MUST-SAVE GUIDE").toUpperCase().slice(0, 22),
-      padX + 26,
-      curY + 34,
+      (customBadge || "MUST-SAVE GUIDE").toUpperCase().slice(0, 24),
+      padX + 24,
+      curY + 33,
     );
-    curY += 76;
+
+    if (input.template === "listicle-number-pin") {
+      // Giant listicle number badge on top-right
+      ctx.fillStyle = activeTheme.accentSecondary;
+      ctx.beginPath();
+      ctx.arc(W - padX - 66, curY + 58, 66, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "900 58px system-ui, -apple-system, sans-serif";
+      const numMatch =
+        customHeadline.match(/\d+/)?.[0] || String(pack.bulletSteps.length);
+      ctx.textAlign = "center";
+      ctx.fillText(numMatch, W - padX - 66, curY + 78);
+      ctx.textAlign = "left";
+    }
+
+    curY += 72;
 
     // Big Pin Headline Overlay
-    ctx.fillStyle = themeColors.textMain;
-    ctx.font = "900 56px system-ui, -apple-system, sans-serif";
-    const hLines = wrapPinText(ctx, customHeadline, W - padX * 2, 3);
+    ctx.fillStyle = activeTheme.textMain;
+    ctx.font = "900 52px system-ui, -apple-system, sans-serif";
+    const headlineMaxW =
+      input.template === "listicle-number-pin"
+        ? W - padX * 2 - 150
+        : W - padX * 2;
+    const hLines = wrapPinText(ctx, customHeadline, headlineMaxW, 3);
     for (const l of hLines) {
-      ctx.fillText(l, padX, curY + 52);
-      curY += 68;
+      ctx.fillText(l, padX, curY + 48);
+      curY += 62;
     }
 
     // Subtext
-    curY += 10;
-    ctx.fillStyle =
-      pinPalette === "warm-editorial" ? "#57534E" : "rgba(255,255,255,0.82)";
-    ctx.font = "600 28px system-ui, -apple-system, sans-serif";
+    curY += 8;
+    ctx.fillStyle = activeTheme.textSub;
+    ctx.font = "600 26px system-ui, -apple-system, sans-serif";
     const subLines = wrapPinText(ctx, customSubtext, W - padX * 2, 2);
     for (const l of subLines) {
-      ctx.fillText(l, padX, curY + 28);
-      curY += 38;
+      ctx.fillText(l, padX, curY + 26);
+      curY += 36;
     }
-    curY += 28;
+    curY += 24;
 
-    // Steps / Checklist Container in Lower Half of Tall Pin
-    const footerH = 96;
+    const footerH = 92;
     const availH = H - footerH - curY - 24;
     const steps = pack.bulletSteps.slice(0, 5);
-    const stepCount = Math.max(1, steps.length);
-    const rowGap = 16;
-    const rowH = Math.min(
-      132,
-      Math.max(84, Math.floor((availH - rowGap * (stepCount - 1)) / stepCount)),
-    );
+    const palette = [
+      activeTheme.accent,
+      activeTheme.accentSecondary,
+      activeTheme.accentTertiary,
+      "#10B981",
+      "#F59E0B",
+    ];
 
-    steps.forEach((stepText, idx) => {
-      const y = curY + idx * (rowH + rowGap);
-      ctx.fillStyle = themeColors.card;
-      ctx.strokeStyle = themeColors.accent;
-      ctx.lineWidth = 2.5;
+    if (input.template === "pyramid-hierarchy-pin") {
+      // 5-Tier Pyramid Hierarchy
+      const count = Math.max(3, steps.length);
+      const gap = 14;
+      const tierH = Math.floor((availH - gap * (count - 1)) / count);
+      steps.forEach((stepText, idx) => {
+        const ratio = 0.52 + ((idx + 1) / count) * 0.48;
+        const w = Math.floor((W - padX * 2) * ratio);
+        const x = Math.floor((W - w) / 2);
+        const y = curY + idx * (tierH + gap);
+        const col = palette[idx % palette.length];
+
+        ctx.fillStyle = activeTheme.cardBg;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, tierH, 20);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = col;
+        ctx.font = "900 20px system-ui, -apple-system, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`LEVEL 0${idx + 1}`, W / 2, y + 32);
+
+        ctx.fillStyle = activeTheme.textMain;
+        ctx.font = "800 23px system-ui, -apple-system, sans-serif";
+        const sLines = wrapPinText(ctx, stepText, w - 48, 2);
+        let sy = y + 64;
+        for (const l of sLines) {
+          ctx.fillText(l, W / 2, sy);
+          sy += 28;
+        }
+      });
+      ctx.textAlign = "left";
+    } else if (input.template === "comparison-pin" || input.template === "before-after-pin") {
+      // 2-Column or Top/Bottom Mistake vs Solution
+      const colW = Math.floor((W - padX * 2 - 24) / 2);
+      const colH = availH;
+
+      // Left Column: Common Mistakes
+      ctx.fillStyle = "rgba(244, 63, 94, 0.14)";
+      ctx.strokeStyle = "#F43F5E";
+      ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.roundRect(padX, y, W - padX * 2, rowH, 22);
+      ctx.roundRect(padX, curY, colW, colH, 24);
       ctx.fill();
       ctx.stroke();
 
-      // Number / Check Badge inside Row
-      ctx.fillStyle = themeColors.accent;
-      ctx.beginPath();
-      ctx.roundRect(padX + 22, y + (rowH - 52) / 2, 56, 52, 14);
-      ctx.fill();
-      ctx.fillStyle = "#FFFFFF";
+      ctx.fillStyle = "#F43F5E";
       ctx.font = "900 24px system-ui, -apple-system, sans-serif";
-      ctx.fillText(
-        input.template === "saveable-checklist-pin" ? "✓" : `0${idx + 1}`,
-        padX + (input.template === "saveable-checklist-pin" ? 40 : 35),
-        y + rowH / 2 + 9,
+      ctx.fillText("✗ STOP DOING THIS", padX + 24, curY + 46);
+
+      // Right Column: Proven System
+      const rightX = padX + colW + 24;
+      ctx.fillStyle = "rgba(16, 185, 129, 0.14)";
+      ctx.strokeStyle = "#10B981";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(rightX, curY, colW, colH, 24);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#10B981";
+      ctx.font = "900 24px system-ui, -apple-system, sans-serif";
+      ctx.fillText("✓ DO THIS INSTEAD", rightX + 24, curY + 46);
+
+      const itemGap = Math.floor((colH - 80) / Math.max(1, steps.length));
+      steps.forEach((stepText, idx) => {
+        const iy = curY + 86 + idx * itemGap;
+        ctx.fillStyle = activeTheme.textSub;
+        ctx.font = "700 21px system-ui, -apple-system, sans-serif";
+        const mLines = wrapPinText(
+          ctx,
+          `Skipping step #${idx + 1} and relying on guesswork`,
+          colW - 48,
+          2,
+        );
+        mLines.forEach((l, li) =>
+          ctx.fillText(l, padX + 24, iy + li * 26),
+        );
+
+        ctx.fillStyle = activeTheme.textMain;
+        ctx.font = "800 22px system-ui, -apple-system, sans-serif";
+        const sLines = wrapPinText(ctx, stepText, colW - 48, 3);
+        sLines.forEach((l, li) =>
+          ctx.fillText(l, rightX + 24, iy + li * 26),
+        );
+      });
+    } else if (input.template === "bento-grid-pin") {
+      // 2x3 Bento Grid Cheat Sheet
+      const cols = 2;
+      const rows = Math.ceil(Math.max(4, steps.length) / cols);
+      const gap = 18;
+      const cardW = Math.floor((W - padX * 2 - gap) / cols);
+      const cardH = Math.floor((availH - gap * (rows - 1)) / rows);
+
+      steps.forEach((stepText, idx) => {
+        const r = Math.floor(idx / cols);
+        const c = idx % cols;
+        const isLastFull = idx === steps.length - 1 && steps.length % 2 === 1;
+        const w = isLastFull ? W - padX * 2 : cardW;
+        const x = padX + c * (cardW + gap);
+        const y = curY + r * (cardH + gap);
+        const col = palette[idx % palette.length];
+
+        ctx.fillStyle = activeTheme.cardBg;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, cardH, 24);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.roundRect(x + 22, y + 20, 96, 36, 12);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 18px system-ui, -apple-system, sans-serif";
+        ctx.fillText(`TIP #0${idx + 1}`, x + 36, y + 44);
+
+        ctx.fillStyle = activeTheme.textMain;
+        ctx.font = "800 24px system-ui, -apple-system, sans-serif";
+        const sLines = wrapPinText(ctx, stepText, w - 44, 4);
+        let sy = y + 92;
+        for (const l of sLines) {
+          ctx.fillText(l, x + 22, sy);
+          sy += 31;
+        }
+      });
+    } else if (input.template === "stat-donut-pin") {
+      // Hero Stat Donut Ring + 4 Takeaway Cards
+      const ringBoxH = 230;
+      ctx.fillStyle = activeTheme.cardBg;
+      ctx.strokeStyle = activeTheme.accent;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(padX, curY, W - padX * 2, ringBoxH, 26);
+      ctx.fill();
+      ctx.stroke();
+
+      const cx = padX + 125;
+      const cy = curY + ringBoxH / 2;
+      ctx.strokeStyle = "rgba(148,163,184,0.22)";
+      ctx.lineWidth = 18;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 74, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = activeTheme.accent;
+      ctx.lineWidth = 18;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 74, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.88);
+      ctx.stroke();
+
+      ctx.fillStyle = activeTheme.textMain;
+      ctx.font = "900 34px system-ui, -apple-system, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("3.4x", cx, cy + 12);
+      ctx.textAlign = "left";
+
+      ctx.fillStyle = activeTheme.accent;
+      ctx.font = "900 22px system-ui, -apple-system, sans-serif";
+      ctx.fillText("PROVEN GROWTH BENCHMARK", padX + 235, curY + 76);
+
+      ctx.fillStyle = activeTheme.textMain;
+      ctx.font = "700 26px system-ui, -apple-system, sans-serif";
+      const bLines = wrapPinText(
+        ctx,
+        steps[0] || "Consistent 2:3 visual pins compound evergreen search clicks.",
+        W - padX * 2 - 260,
+        3,
+      );
+      bLines.forEach((l, li) =>
+        ctx.fillText(l, padX + 235, curY + 118 + li * 32),
       );
 
-      ctx.fillStyle = themeColors.cardText;
-      ctx.font = "800 26px system-ui, -apple-system, sans-serif";
-      const sLines = wrapPinText(ctx, stepText, W - padX * 2 - 116, 2);
-      let sy =
-        sLines.length === 1 ? y + rowH / 2 + 9 : y + rowH / 2 - 8;
-      for (const l of sLines) {
-        ctx.fillText(l, padX + 98, sy);
-        sy += 32;
+      const listTop = curY + ringBoxH + 20;
+      const remH = H - footerH - listTop - 20;
+      const subSteps = steps.slice(1, 5);
+      const rH = Math.floor((remH - 14 * (subSteps.length - 1)) / Math.max(1, subSteps.length));
+      subSteps.forEach((st, idx) => {
+        const y = listTop + idx * (rH + 14);
+        ctx.fillStyle = activeTheme.cardBg;
+        ctx.strokeStyle = activeTheme.cardBorder;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(padX, y, W - padX * 2, rH, 18);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = palette[idx % palette.length];
+        ctx.font = "900 24px system-ui, -apple-system, sans-serif";
+        ctx.fillText(`0${idx + 1}`, padX + 26, y + rH / 2 + 8);
+
+        ctx.fillStyle = activeTheme.textMain;
+        ctx.font = "800 24px system-ui, -apple-system, sans-serif";
+        const lines = wrapPinText(ctx, st, W - padX * 2 - 110, 2);
+        lines.forEach((l, li) =>
+          ctx.fillText(
+            l,
+            padX + 82,
+            y + rH / 2 + (lines.length === 1 ? 8 : -8 + li * 28),
+          ),
+        );
+      });
+    } else if (input.template === "quote-tip-poster-pin") {
+      // Authority Quote & Golden Rule Poster
+      const quoteBoxH = Math.floor(availH * 0.46);
+      ctx.fillStyle = activeTheme.cardBg;
+      ctx.strokeStyle = activeTheme.accent;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(padX, curY, W - padX * 2, quoteBoxH, 28);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = activeTheme.accent;
+      ctx.font = "900 96px Georgia, serif";
+      ctx.fillText("“", padX + 28, curY + 92);
+
+      ctx.fillStyle = activeTheme.textMain;
+      ctx.font = "800 32px Georgia, serif";
+      const qLines = wrapPinText(
+        ctx,
+        steps[0] || customSubtext,
+        W - padX * 2 - 80,
+        4,
+      );
+      qLines.forEach((l, li) =>
+        ctx.fillText(l, padX + 44, curY + 120 + li * 42),
+      );
+
+      const lowerTop = curY + quoteBoxH + 22;
+      const lowerH = H - footerH - lowerTop - 22;
+      const rules = steps.slice(1, 4);
+      const rH = Math.floor((lowerH - 14 * (rules.length - 1)) / Math.max(1, rules.length));
+      rules.forEach((st, idx) => {
+        const y = lowerTop + idx * (rH + 14);
+        ctx.fillStyle = activeTheme.cardBg;
+        ctx.beginPath();
+        ctx.roundRect(padX, y, W - padX * 2, rH, 18);
+        ctx.fill();
+        ctx.fillStyle = activeTheme.accentSecondary;
+        ctx.font = "900 22px system-ui, -apple-system, sans-serif";
+        ctx.fillText(`★ RULE #${idx + 1}`, padX + 24, y + 36);
+        ctx.fillStyle = activeTheme.textMain;
+        ctx.font = "700 24px system-ui, -apple-system, sans-serif";
+        const lines = wrapPinText(ctx, st, W - padX * 2 - 48, 2);
+        lines.forEach((l, li) => ctx.fillText(l, padX + 24, y + 70 + li * 28));
+      });
+    } else {
+      // Standard & Step Roadmap / Checklist / Ribbon Templates
+      const stepCount = Math.max(1, steps.length);
+      const rowGap = 16;
+      const rowH = Math.min(
+        136,
+        Math.max(82, Math.floor((availH - rowGap * (stepCount - 1)) / stepCount)),
+      );
+
+      if (input.template === "step-mini-infographic") {
+        // Draw vertical timeline spine connecting all step badges
+        ctx.strokeStyle = activeTheme.accent;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(padX + 50, curY + 30);
+        ctx.lineTo(padX + 50, curY + (stepCount - 1) * (rowH + rowGap) + rowH - 30);
+        ctx.stroke();
       }
-    });
+
+      steps.forEach((stepText, idx) => {
+        const y = curY + idx * (rowH + rowGap);
+        const col =
+          input.template === "ribbon-banner-pin"
+            ? palette[idx % palette.length]
+            : activeTheme.accent;
+
+        ctx.fillStyle = activeTheme.cardBg;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.roundRect(padX, y, W - padX * 2, rowH, 22);
+        ctx.fill();
+        ctx.stroke();
+
+        if (input.template === "ribbon-banner-pin") {
+          ctx.fillStyle = col;
+          ctx.fillRect(padX, y, 16, rowH);
+        }
+
+        // Number / Check Badge inside Row
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.roundRect(padX + 24, y + (rowH - 52) / 2, 56, 52, 14);
+        ctx.fill();
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "900 24px system-ui, -apple-system, sans-serif";
+        ctx.fillText(
+          input.template === "saveable-checklist-pin" ? "✓" : `0${idx + 1}`,
+          padX + (input.template === "saveable-checklist-pin" ? 41 : 36),
+          y + rowH / 2 + 9,
+        );
+
+        ctx.fillStyle = activeTheme.textMain;
+        ctx.font = "800 26px system-ui, -apple-system, sans-serif";
+        const sLines = wrapPinText(ctx, stepText, W - padX * 2 - 120, 2);
+        let sy = sLines.length === 1 ? y + rowH / 2 + 9 : y + rowH / 2 - 8;
+        for (const l of sLines) {
+          ctx.fillText(l, padX + 100, sy);
+          sy += 32;
+        }
+      });
+    }
 
     // Bottom Domain Banner
-    ctx.fillStyle = themeColors.accent;
+    ctx.fillStyle = activeTheme.accent;
     ctx.fillRect(0, H - footerH, W, footerH);
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "900 28px system-ui, -apple-system, sans-serif";
+    ctx.font = "900 26px system-ui, -apple-system, sans-serif";
     ctx.fillText(
       `🌐 ${(input.destinationDomain || "doitwithai.tools").toUpperCase()}`,
       padX,
-      H - 36,
+      H - 35,
     );
-    ctx.font = "800 24px system-ui, -apple-system, sans-serif";
-    ctx.fillText("SAVE THIS PIN FOR LATER ★", W - padX - 340, H - 38);
+    ctx.font = "800 22px system-ui, -apple-system, sans-serif";
+    ctx.fillText("SAVE THIS PIN FOR LATER ★", W - padX - 320, H - 36);
   }, [
     input.template,
     input.destinationDomain,
-    pinPalette,
+    activeTheme,
     customBadge,
     customHeadline,
     customSubtext,
@@ -361,12 +688,10 @@ export default function PinterestPinVisualGeneratorClient() {
   ]);
 
   function downloadTallPinPng() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const a = document.createElement("a");
-    a.download = `pinterest-pin-1000x1500-${activeVarIdx + 1}.png`;
-    a.href = canvas.toDataURL("image/png");
-    a.click();
+    downloadCanvasAsPng(
+      canvasRef.current,
+      `pinterest-pin-1000x1500-${activeVarIdx + 1}.png`,
+    );
     notify("Downloaded 1000×1500 Tall Pinterest Pin (.PNG)!");
   }
 
@@ -409,31 +734,32 @@ export default function PinterestPinVisualGeneratorClient() {
           try {
             domain = new URL(data.url).hostname.replace(/^www\./, "");
           } catch {}
-          setInput((prev) => ({
-            ...prev,
+          const nextInput: PinterestVisualInput = {
+            ...input,
             topicOrHeadline: cleanTitle,
-            targetKeyword: data.focusKeyword || prev.targetKeyword,
+            targetKeyword: data.focusKeyword || input.targetKeyword,
             destinationDomain: domain,
             sourceStepsOrNotes:
               (data.keyTakeaways || []).join("\n") ||
               data.subTopics?.map((s) => s.title).join("\n") ||
-              prev.sourceStepsOrNotes,
-          }));
+              input.sourceStepsOrNotes,
+          };
+          setInput(nextInput);
           if (data.images?.length) {
             setExtractedImages(data.images);
+            setSelectedPhotoUrl(data.images[0].src);
           }
-          notify(`Loaded Pinterest Pin brief from "${cleanTitle}"!`);
-          focusToolSection(resultsRef.current);
+          void runGenerateAiPins(nextInput);
         }}
         onSelectSubTopic={(sub) => {
           setAiPack(null);
-          setInput((prev) => ({
-            ...prev,
+          const nextInput: PinterestVisualInput = {
+            ...input,
             topicOrHeadline: sub.title,
             sourceStepsOrNotes: sub.content,
-          }));
-          notify(`Focused Pinterest Pin on sub-topic: "${sub.title}"!`);
-          focusToolSection(resultsRef.current);
+          };
+          setInput(nextInput);
+          void runGenerateAiPins(nextInput);
         }}
       />
 
@@ -453,20 +779,27 @@ export default function PinterestPinVisualGeneratorClient() {
         className="rounded-2xl border-2 border-[#E60023]/25 bg-white p-5 shadow-xs dark:border-[#E60023]/35 dark:bg-[#111827] sm:p-6 space-y-6 focus:outline-none"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
-          <div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#E60023]">
-              <Layers size={14} />6 Editable 2:3 Tall Pin Templates (1000×1500
-              HD)
-            </span>
-            <h2 className="text-lg font-black text-slate-900 dark:text-white">
-              Pinterest Tall Pin Visual Designer &amp; Search SEO Studio
-            </h2>
+          <div className="flex items-center gap-3">
+            <PlatformBrandIcon
+              platform="pinterest"
+              slug="pinterest-pin-visual-generator"
+              size={42}
+            />
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#E60023]">
+                <Layers size={14} />
+                12 Editable 2:3 Tall Pin Templates (1000×1500 HD)
+              </span>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                Pinterest Tall Pin Visual Designer &amp; Search SEO Studio
+              </h2>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={handleGenerateAiPins}
+              onClick={() => void runGenerateAiPins()}
               disabled={loading}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#E60023] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#c8001e]"
             >
@@ -484,8 +817,8 @@ export default function PinterestPinVisualGeneratorClient() {
           </div>
         </div>
 
-        {/* 6 Template Selector */}
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {/* 12 Template Selector */}
+        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {PIN_TEMPLATES.map((tpl) => (
             <button
               key={tpl.id}
@@ -493,7 +826,7 @@ export default function PinterestPinVisualGeneratorClient() {
               onClick={() =>
                 setInput((prev) => ({ ...prev, template: tpl.id }))
               }
-              className={`rounded-xl border p-3 text-left transition ${
+              className={`rounded-xl border p-2.5 text-left transition ${
                 input.template === tpl.id
                   ? "border-[#E60023] bg-[#E60023]/10 dark:border-[#E60023] dark:bg-[#E60023]/20"
                   : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60"
@@ -509,7 +842,114 @@ export default function PinterestPinVisualGeneratorClient() {
           ))}
         </div>
 
-        {/* 1-Click Extracted Article Photo Picker (If article images were extracted) */}
+        {/* 10 Color Themes + Custom Brand Color Pickers */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+              <Palette size={14} className="text-[#E60023]" />
+              10 Pin Color Palettes &amp; Live Custom Brand Color Pickers
+            </span>
+            {Object.keys(customColors).length > 0 && (
+              <button
+                type="button"
+                onClick={() => setCustomColors({})}
+                className="text-[11px] font-bold text-[#E60023] hover:underline"
+              >
+                Reset Custom Colors
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {STUDIO_COLOR_THEMES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => {
+                  setThemeId(t.id);
+                  setCustomColors({});
+                }}
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-extrabold transition ${
+                  themeId === t.id && Object.keys(customColors).length === 0
+                    ? "border-[#E60023] bg-[#E60023] text-white shadow-xs"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                }`}
+              >
+                <span
+                  className="h-3 w-3 rounded-full border border-white/40"
+                  style={{ background: t.accent }}
+                />
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+              <input
+                type="color"
+                value={activeTheme.bgStart}
+                onChange={(e) =>
+                  setCustomColors((prev) => ({
+                    ...prev,
+                    bgStart: e.target.value,
+                    bgEnd: e.target.value,
+                  }))
+                }
+                className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+              />
+              <span>Pin BG</span>
+            </label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+              <input
+                type="color"
+                value={
+                  activeTheme.cardBg.startsWith("#")
+                    ? activeTheme.cardBg
+                    : "#1e293b"
+                }
+                onChange={(e) =>
+                  setCustomColors((prev) => ({
+                    ...prev,
+                    cardBg: e.target.value,
+                  }))
+                }
+                className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+              />
+              <span>Card Surface</span>
+            </label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+              <input
+                type="color"
+                value={activeTheme.accent}
+                onChange={(e) =>
+                  setCustomColors((prev) => ({
+                    ...prev,
+                    accent: e.target.value,
+                  }))
+                }
+                className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+              />
+              <span>Accent Badge</span>
+            </label>
+            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+              <input
+                type="color"
+                value={activeTheme.textMain}
+                onChange={(e) =>
+                  setCustomColors((prev) => ({
+                    ...prev,
+                    textMain: e.target.value,
+                  }))
+                }
+                className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+              />
+              <span>Text Color</span>
+            </label>
+          </div>
+        </div>
+
+        {/* 1-Click Extracted Article Photo Picker */}
         {extractedImages.length > 0 && (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900">
             <div className="mb-2 flex items-center justify-between">
@@ -582,43 +1022,28 @@ export default function PinterestPinVisualGeneratorClient() {
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                    Pin Color Theme
-                  </label>
-                  <select
-                    value={pinPalette}
-                    onChange={(e) =>
-                      setPinPalette(
-                        e.target.value as
-                          | "pinterest-crimson"
-                          | "navy-orange"
-                          | "warm-editorial"
-                          | "emerald-gold",
-                      )
-                    }
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
-                  >
-                    <option value="pinterest-crimson">
-                      Pinterest Crimson &amp; White
-                    </option>
-                    <option value="navy-orange">
-                      Navy &amp; High-Contrast Orange
-                    </option>
-                    <option value="warm-editorial">
-                      Warm Cream &amp; Editorial Amber
-                    </option>
-                    <option value="emerald-gold">
-                      Deep Emerald Authority
-                    </option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
                     Top Badge Overlay
                   </label>
                   <input
                     type="text"
                     value={customBadge}
                     onChange={(e) => setCustomBadge(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    Destination Domain Footer
+                  </label>
+                  <input
+                    type="text"
+                    value={input.destinationDomain}
+                    onChange={(e) =>
+                      setInput((prev) => ({
+                        ...prev,
+                        destinationDomain: e.target.value,
+                      }))
+                    }
                     className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
                   />
                 </div>
@@ -710,23 +1135,110 @@ export default function PinterestPinVisualGeneratorClient() {
             </div>
           </div>
 
-          {/* RIGHT: LIVE 1000x1500 (2:3) TALL PINTEREST PIN CANVAS */}
+          {/* RIGHT: LIVE 1000x1500 (2:3) TALL PINTEREST PIN CANVAS WITH HOVER EXPORT BAR */}
           <div className="space-y-3">
-            <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
+            <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
+              {/* Floating Hover Download Bar */}
+              <div className="pointer-events-none absolute inset-x-4 top-4 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/15 bg-slate-950/90 px-3.5 py-2.5 opacity-0 shadow-2xl backdrop-blur-md transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
+                  1000×1500 Tall Pin Export
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={downloadTallPinPng}
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#E60023] px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#c8001e]"
+                  >
+                    <Download size={12} /> PNG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      downloadCanvasAsEmbeddedSvg(
+                        canvasRef.current,
+                        `pinterest-pin-1000x1500-${activeVarIdx + 1}.svg`,
+                      );
+                      notify("Downloaded Scalable Vector Pin (.SVG)!");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-white/25"
+                  >
+                    <FileCode2 size={12} /> SVG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      printCanvasAsPdfPoster(
+                        canvasRef.current,
+                        activePin.pinTitle,
+                        activePin.seoDescription,
+                      );
+                      notify("Opened Print-Ready PDF Poster View!");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-white/25"
+                  >
+                    <FileText size={12} /> PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const ok = await copyCanvasImageToClipboard(
+                        canvasRef.current,
+                      );
+                      notify(
+                        ok
+                          ? "Copied 1000×1500 Pin Image to Clipboard!"
+                          : "Use PNG Download on this browser.",
+                      );
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-emerald-500"
+                  >
+                    <Copy size={12} /> Copy
+                  </button>
+                </div>
+              </div>
+
               <canvas
                 ref={canvasRef}
                 className="mx-auto block h-auto max-h-[680px] w-full object-contain rounded-xl"
               />
             </div>
 
-            <button
-              type="button"
-              onClick={downloadTallPinPng}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#E60023] px-4 py-3 text-xs font-extrabold text-white shadow-sm hover:bg-[#c8001e]"
-            >
-              <Download size={15} />
-              Download 1000×1500 Tall Pin (.PNG)
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={downloadTallPinPng}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#E60023] px-4 py-3 text-xs font-extrabold text-white shadow-sm hover:bg-[#c8001e]"
+              >
+                <Download size={15} />
+                Download 1000×1500 Tall Pin (.PNG)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  downloadCanvasAsEmbeddedSvg(
+                    canvasRef.current,
+                    `pinterest-pin-1000x1500-${activeVarIdx + 1}.svg`,
+                  );
+                  notify("Downloaded Scalable Vector Pin (.SVG)!");
+                }}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              >
+                <FileCode2 size={14} /> SVG
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  printCanvasAsPdfPoster(
+                    canvasRef.current,
+                    activePin.pinTitle,
+                    activePin.seoDescription,
+                  );
+                }}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              >
+                <FileText size={14} /> PDF
+              </button>
+            </div>
           </div>
         </div>
       </div>

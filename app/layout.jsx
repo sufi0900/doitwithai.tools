@@ -148,6 +148,16 @@ export default function RootLayout({ children }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="google-adsense-account"
+          content="ca-pub-1402360917878288"
+        />
+        {/* Google AdSense Verification & Auto Ads Script (Server-Rendered in <head> for Googlebot/Mediapartners-Google detection) */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1402360917878288"
+          crossOrigin="anonymous"
+        ></script>
         <link
           rel="icon"
           href="/favicon.ico?v=20260917"

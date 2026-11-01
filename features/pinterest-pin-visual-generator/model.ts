@@ -4,7 +4,13 @@ export type PinterestVisualTemplateId =
   | "step-mini-infographic"
   | "saveable-checklist-pin"
   | "split-photo-headline"
-  | "comparison-pin";
+  | "comparison-pin"
+  | "pyramid-hierarchy-pin"
+  | "stat-donut-pin"
+  | "ribbon-banner-pin"
+  | "before-after-pin"
+  | "bento-grid-pin"
+  | "quote-tip-poster-pin";
 
 export interface PinterestPinVariation {
   pinTitle: string;
@@ -80,7 +86,8 @@ export function buildDeterministicPinterestVisualPack(
     {
       pinTitle: `How to Master ${kw}: ${cleanTopic}`,
       pinHeadlineOverlay: `The Ultimate ${kw} Checklist`,
-      pinSubtextOverlay: bulletSteps[0] || "Actionable framework you can use today",
+      pinSubtextOverlay:
+        bulletSteps[0] || "Actionable framework you can use today",
       pinBadge: "FREE CHEAT SHEET",
       seoDescription: `Want faster results with ${kw}? Here is the exact step-by-step blueprint covering ${cleanTopic.toLowerCase()}. Bookmark this visual cheat sheet for your next sprint!`,
       altText: `Pinterest cheat sheet graphic for ${kw} showing step-by-step takeaways.`,

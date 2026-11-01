@@ -7,11 +7,16 @@ import {
   Copy,
   Download,
   FileText,
-  Film,
   Sparkles,
 } from "lucide-react";
-import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
-import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
+import UrlArticleExtractorBar, {
+  type ExtractedImageAsset,
+} from "@/features/tool-ui/UrlArticleExtractorBar";
+import { SocialVisualCardBuilder } from "@/features/tool-ui/SocialVisualCardBuilder";
+import ToolRunOverlay, {
+  focusToolSection,
+} from "@/features/tool-ui/ToolRunOverlay";
+import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import {
   buildDeterministicShortScript,
   DEFAULT_SHORT_SCRIPT_INPUT,
@@ -26,6 +31,9 @@ export default function ShortFormVideoScriptGeneratorClient() {
     DEFAULT_SHORT_SCRIPT_INPUT,
   );
   const [aiPack, setAiPack] = useState<ShortFormScriptPack | null>(null);
+  const [extractedImages, setExtractedImages] = useState<ExtractedImageAsset[]>(
+    [],
+  );
   const [loadingAi, setLoadingAi] = useState(false);
   const [scriptViewMode, setScriptViewMode] = useState<"teleprompter" | "beats">(
     "teleprompter",
@@ -57,7 +65,8 @@ export default function ShortFormVideoScriptGeneratorClient() {
     setInput((prev) => ({ ...prev, [key]: val }));
   }
 
-  async function handleGenerateAiScript() {
+  async function runGenerateAiScript(overrideInput?: ShortFormScriptInput) {
+    const payload = overrideInput || input;
     setLoadingAi(true);
     try {
       const res = await fetch(
@@ -65,13 +74,13 @@ export default function ShortFormVideoScriptGeneratorClient() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(input),
+          body: JSON.stringify(payload),
         },
       );
       const data = await res.json();
       if (data?.scriptPack) {
         setAiPack(data.scriptPack);
-        notify(`Generated AI ${input.platform} retention script!`);
+        notify(`Generated AI ${payload.platform} retention script!`);
       }
       focusToolSection(resultsRef.current);
     } catch {
@@ -119,7 +128,7 @@ export default function ShortFormVideoScriptGeneratorClient() {
   return (
     <section
       aria-label="Short-Form Video Hook and Script Builder Workspace"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
+      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       <ToolRunOverlay
         active={loadingAi}
@@ -136,35 +145,38 @@ export default function ShortFormVideoScriptGeneratorClient() {
             .replace(/\s*\|\s*[^|]+$/g, "")
             .trim();
           const firstValidSub = data.subTopics?.[0];
-          setInput((prev) => ({
-            ...prev,
-            topic: firstValidSub?.title || cleanTitle || prev.topic,
+          const nextInput: ShortFormScriptInput = {
+            ...input,
+            topic: firstValidSub?.title || cleanTitle || input.topic,
             coreTakeawayOrProof: (
               firstValidSub?.summary ||
               data.keyTakeaways.slice(0, 2).join(" ") ||
               data.paragraphs[0] ||
-              prev.coreTakeawayOrProof
+              input.coreTakeawayOrProof
             ).slice(0, 320),
-          }));
-          notify(`Loaded video script brief from "${cleanTitle}"!`);
-          focusToolSection(resultsRef.current);
+          };
+          setInput(nextInput);
+          if (data.images?.length) {
+            setExtractedImages(data.images);
+          }
+          void runGenerateAiScript(nextInput);
         }}
         onSelectSubTopic={(sub) => {
           setAiPack(null);
-          setInput((prev) => ({
-            ...prev,
+          const nextInput: ShortFormScriptInput = {
+            ...input,
             topic: sub.title,
             coreTakeawayOrProof: sub.summary,
-          }));
-          notify(`Focused Short script on sub-topic: "${sub.title}"!`);
-          focusToolSection(resultsRef.current);
+          };
+          setInput(nextInput);
+          void runGenerateAiScript(nextInput);
         }}
       />
 
       {toast && (
         <div
           role="status"
-          className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
         >
           <CheckCircle2 size={15} />
           <span>{toast}</span>
@@ -176,13 +188,19 @@ export default function ShortFormVideoScriptGeneratorClient() {
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 text-lg font-extrabold">
-                <Film size={19} className="text-[#5271ff]" />
-                1. Vertical Video Brief
-              </h2>
+              <div className="flex items-center gap-2.5">
+                <PlatformBrandIcon
+                  platform="youtube"
+                  slug="short-form-video-script-generator"
+                  size={38}
+                />
+                <h2 className="text-lg font-extrabold">
+                  1. Vertical Video Brief
+                </h2>
+              </div>
               <button
                 type="button"
-                onClick={handleGenerateAiScript}
+                onClick={() => void runGenerateAiScript()}
                 disabled={loadingAi}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
               >
@@ -455,6 +473,16 @@ export default function ShortFormVideoScriptGeneratorClient() {
           </div>
         </div>
       </div>
+
+      {/* Companion Cover / Green-Screen Visual Card Studio */}
+      <SocialVisualCardBuilder
+        platformLabel={`${input.platform} Cover Card`}
+        defaultHeadline={input.topic}
+        defaultBody={input.coreTakeawayOrProof}
+        defaultSublabel={`${input.platform.toUpperCase()} BREAKDOWN`}
+        postTextToShare={pack.captionWithHashtags}
+        extractedImages={extractedImages}
+      />
     </section>
   );
 }

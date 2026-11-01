@@ -1,8 +1,14 @@
 export type ChartVisualTemplateId =
   | "horizontal-bars"
+  | "vertical-column-bars"
   | "kpi-bento-4"
-  | "before-after-lift"
   | "donut-breakdown"
+  | "radial-gauge-rings"
+  | "lollipop-benchmark"
+  | "before-after-lift"
+  | "dual-versus-bars"
+  | "waterfall-roi-bridge"
+  | "funnel-conversion-bars"
   | "benchmark-scorecard"
   | "stat-quote-spotlight";
 

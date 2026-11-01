@@ -1,16 +1,18 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, {
+  focusToolSection,
+} from "@/features/tool-ui/ToolRunOverlay";
 import {
   CheckCircle2,
   Copy,
   Download,
   FileText,
-  Film,
   Sparkles,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
+import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import {
   buildDeterministicBlogFromTranscript,
   DEFAULT_VIDEO_TO_BLOG_INPUT,
@@ -49,13 +51,14 @@ export default function VideoTranscriptToBlogClient() {
     setInput((prev) => ({ ...prev, [key]: val }));
   }
 
-  async function handleGenerateAiBlog() {
+  async function runGenerateAiBlog(overrideInput?: VideoToBlogInput) {
+    const payload = overrideInput || input;
     setLoadingAi(true);
     try {
       const res = await fetch("/api/ai-tools/video-transcript-to-blog", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data?.article) {
@@ -86,44 +89,50 @@ export default function VideoTranscriptToBlogClient() {
   return (
     <section
       aria-label="YouTube Transcript to SEO Blog Post Converter Workspace"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
+      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
-            <UrlArticleExtractorBar
-        label="1-Click YouTube Video or Article URL Auto-Extractor (Fetches Transcript Automatically)"
+      <UrlArticleExtractorBar
+        label="1-Click YouTube Video or Article URL Auto-Extractor (Fetches Full Transcript & Converts to Blog)"
         placeholder="Paste YouTube Video URL (https://www.youtube.com/watch?v=...) or Article URL..."
         onExtracted={(data) => {
           setAiArticle(null);
-          setInput((prev) => ({
-            ...prev,
-            videoTitle: data.title || prev.videoTitle,
-            videoUrl: data.url || prev.videoUrl,
-            targetKeyword: data.focusKeyword || prev.targetKeyword,
-            speakerOrChannelName: data.author || prev.speakerOrChannelName,
+          const nextInput: VideoToBlogInput = {
+            ...input,
+            videoTitle: data.title || input.videoTitle,
+            videoUrl: data.url || input.videoUrl,
+            targetKeyword: data.focusKeyword || input.targetKeyword,
+            speakerOrChannelName: data.author || input.speakerOrChannelName,
             rawTranscript:
               data.rawTranscriptWithTimestamps ||
               data.cleanText ||
-              prev.rawTranscript,
-          }));
-          notify(`Auto-extracted transcript & metadata from "${data.title}"!`);
+              input.rawTranscript,
+          };
+          setInput(nextInput);
+          void runGenerateAiBlog(nextInput);
         }}
         onSelectSubTopic={(sub, data) => {
           setAiArticle(null);
-          setInput((prev) => ({
-            ...prev,
+          const nextInput: VideoToBlogInput = {
+            ...input,
             videoTitle: sub.title,
-            videoUrl: data.url || prev.videoUrl,
+            videoUrl: data.url || input.videoUrl,
             targetKeyword: sub.title.toLowerCase().slice(0, 45),
             rawTranscript: sub.content,
-          }));
-          notify(`Focused blog converter on sub-topic: "${sub.title}"!`);
+          };
+          setInput(nextInput);
+          void runGenerateAiBlog(nextInput);
         }}
       />
 
-      <ToolRunOverlay active={loadingAi} title="Polishing Transcript Into SEO Blog Article" description="Structuring H2 chapters, Featured Snippet definition block, and FAQPage schema…" />
+      <ToolRunOverlay
+        active={loadingAi}
+        title="Polishing Transcript Into SEO Blog Article..."
+        description="Structuring H2 chapters, Featured Snippet definition block, and FAQPage schema…"
+      />
       {toast && (
         <div
           role="status"
-          className="mb-5 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
         >
           <CheckCircle2 size={15} />
           <span>{toast}</span>
@@ -135,13 +144,19 @@ export default function VideoTranscriptToBlogClient() {
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 text-lg font-extrabold">
-                <Film size={19} className="text-[#5271ff]" />
-                1. Video Transcript &amp; Target Keyword
-              </h2>
+              <div className="flex items-center gap-2.5">
+                <PlatformBrandIcon
+                  platform="youtube"
+                  slug="video-transcript-to-blog"
+                  size={38}
+                />
+                <h2 className="text-lg font-extrabold">
+                  1. Video Transcript &amp; Target Keyword
+                </h2>
+              </div>
               <button
                 type="button"
-                onClick={handleGenerateAiBlog}
+                onClick={() => void runGenerateAiBlog()}
                 disabled={loadingAi}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
               >
@@ -215,7 +230,11 @@ export default function VideoTranscriptToBlogClient() {
         </div>
 
         {/* RIGHT COLUMN: STRUCTURED SEO ARTICLE OUTPUT */}
-        <div className="space-y-6">
+        <div
+          ref={resultsRef}
+          tabIndex={-1}
+          className="space-y-6 focus:outline-none"
+        >
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3.5 dark:border-slate-800">
               <div className="flex gap-1.5">

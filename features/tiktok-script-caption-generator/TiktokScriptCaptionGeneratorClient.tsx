@@ -8,9 +8,11 @@ import {
 } from "../tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "../tool-ui/SocialVisualCardBuilder";
 import ToolRunOverlay, { focusToolSection } from "../tool-ui/ToolRunOverlay";
-import type {
-  TiktokScriptOutput,
-  TiktokVideoStyle,
+import PlatformBrandIcon from "../tool-ui/PlatformBrandIcon";
+import {
+  DEFAULT_TIKTOK_SCRIPT_OUTPUT,
+  type TiktokScriptOutput,
+  type TiktokVideoStyle,
 } from "./model";
 
 export function TiktokScriptCaptionGeneratorClient() {
@@ -32,25 +34,19 @@ export function TiktokScriptCaptionGeneratorClient() {
   >("teleprompter");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<TiktokScriptOutput | null>(null);
+  const [result, setResult] = useState<TiktokScriptOutput>(
+    DEFAULT_TIKTOK_SCRIPT_OUTPUT,
+  );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
-  function handleUrlExtracted(payload: UniversalExtractResponse) {
-    setTopicOrContent(
-      payload.cleanText || payload.description || payload.title,
-    );
-    if (payload.focusKeyword) {
-      setNiche(payload.focusKeyword);
-    }
-    if (payload.images?.length) {
-      setExtractedImages(payload.images);
-    }
-    setError(null);
-  }
-
-  async function handleGenerate() {
-    if (!topicOrContent.trim()) {
+  async function runGenerate(overrides?: {
+    topicOrContent?: string;
+    niche?: string;
+  }) {
+    const activeTopic = (overrides?.topicOrContent ?? topicOrContent).trim();
+    const activeNiche = overrides?.niche ?? niche;
+    if (!activeTopic) {
       setError(
         "Please enter a topic or extract content from an article/video URL first.",
       );
@@ -65,8 +61,8 @@ export function TiktokScriptCaptionGeneratorClient() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            topicOrContent,
-            niche,
+            topicOrContent: activeTopic,
+            niche: activeNiche,
             videoStyle,
             durationSeconds,
           }),
@@ -87,6 +83,21 @@ export function TiktokScriptCaptionGeneratorClient() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleUrlExtracted(payload: UniversalExtractResponse) {
+    const firstSub = payload.subTopics?.[0];
+    const nextTopic = firstSub
+      ? `${firstSub.title}\n\n${firstSub.content}`
+      : payload.cleanText || payload.description || payload.title;
+    const nextNiche = payload.focusKeyword || firstSub?.title.slice(0, 45) || niche;
+    setTopicOrContent(nextTopic);
+    setNiche(nextNiche);
+    if (payload.images?.length) {
+      setExtractedImages(payload.images);
+    }
+    setError(null);
+    void runGenerate({ topicOrContent: nextTopic, niche: nextNiche });
   }
 
   function handleCopy(text: string, key: string) {
@@ -110,18 +121,33 @@ export function TiktokScriptCaptionGeneratorClient() {
       <UrlArticleExtractorBar
         onExtracted={handleUrlExtracted}
         onSelectSubTopic={(sub) => {
-          setTopicOrContent(`${sub.title}\n\n${sub.content}`);
-          setNiche(sub.title.slice(0, 45));
+          const nextTopic = `${sub.title}\n\n${sub.content}`;
+          const nextNiche = sub.title.slice(0, 45);
+          setTopicOrContent(nextTopic);
+          setNiche(nextNiche);
+          void runGenerate({ topicOrContent: nextTopic, niche: nextNiche });
         }}
         label="Option 1: Turn Any Article or YouTube Video URL into a TikTok Script (with Sub-Topic Selector)"
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)] items-start">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] items-start">
         <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              TikTok Script, Hook &amp; Search SEO Studio
-            </h2>
+            <div className="flex items-center gap-2.5">
+              <PlatformBrandIcon
+                platform="tiktok"
+                slug="tiktok-script-caption-generator"
+                size={38}
+              />
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  TikTok Script, Hook &amp; Search SEO Studio
+                </h2>
+                <span className="text-[11px] font-semibold text-slate-500">
+                  Connected Teleprompter + Green-Screen Card
+                </span>
+              </div>
+            </div>
             <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-xs font-bold text-white">
               TikTok SEO Indexed
             </span>
@@ -202,7 +228,7 @@ export function TiktokScriptCaptionGeneratorClient() {
 
           <button
             type="button"
-            onClick={handleGenerate}
+            onClick={() => void runGenerate()}
             disabled={loading}
             className="w-full rounded-xl bg-[#ff6b35] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
           >
@@ -217,179 +243,167 @@ export function TiktokScriptCaptionGeneratorClient() {
           tabIndex={-1}
           className="space-y-5 focus:outline-none"
         >
-          {!result ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center dark:border-slate-700 dark:bg-[#111827]">
-              <p className="text-sm font-bold text-slate-800 dark:text-white">
-                Generate Connected Teleprompter Scripts, 3-Second Hooks &amp; Search SEO Captions
-              </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Includes continuous spoken voiceover prose, visual camera directions, on-screen text overlays indexed by TikTok Search, and green-screen background graphics.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 dark:border-slate-800 dark:bg-[#111827]">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  3 Scroll-Stopping First-3-Second Hooks
-                </h3>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {result.scrollStoppingHooks.map((h, i) => (
-                    <div
-                      key={i}
-                      className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 space-y-1.5 dark:border-slate-800 dark:bg-slate-900"
-                    >
-                      <span className="rounded-md bg-[#ff6b35]/10 px-2 py-0.5 text-[10px] font-bold uppercase text-[#ff6b35]">
-                        {h.style}
-                      </span>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">
-                        &ldquo;{h.verbalHook}&rdquo;
-                      </p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        <strong>Action:</strong> {h.visualAction}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3.5 dark:border-slate-800 dark:bg-[#111827]">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Connected Teleprompter Script ({durationSeconds}s)
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleCopy(connectedTeleprompterVoiceover, "full-script")
-                    }
-                    className="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
-                  >
-                    {copiedKey === "full-script"
-                      ? "Copied Voiceover!"
-                      : "Copy Voiceover Script"}
-                  </button>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 dark:border-slate-800 dark:bg-slate-900">
-                  <button
-                    type="button"
-                    onClick={() => setScriptViewMode("teleprompter")}
-                    className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition ${
-                      scriptViewMode === "teleprompter"
-                        ? "bg-slate-900 text-white dark:bg-[#5271ff]"
-                        : "text-slate-700 dark:text-slate-300"
-                    }`}
-                  >
-                    📜 Continuous Voiceover Script
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setScriptViewMode("beats")}
-                    className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition ${
-                      scriptViewMode === "beats"
-                        ? "bg-slate-900 text-white dark:bg-[#5271ff]"
-                        : "text-slate-700 dark:text-slate-300"
-                    }`}
-                  >
-                    🎬 Beat-by-Beat Visual Cues
-                  </button>
-                </div>
-
-                {scriptViewMode === "teleprompter" ? (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-4 whitespace-pre-wrap text-sm sm:text-base font-medium leading-7 text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                    {connectedTeleprompterVoiceover}
-                  </div>
-                ) : (
-                  <div className="space-y-2.5">
-                    {result.scriptBeats.map((beat, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5 space-y-1.5 dark:border-slate-800 dark:bg-slate-900"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="rounded-md bg-slate-900 px-2.5 py-0.5 text-[11px] font-bold text-white">
-                            {beat.timeRange} — {beat.beatLabel}
-                          </span>
-                          <span className="rounded-md bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold text-[#ff6b35]">
-                            On-Screen Text: &ldquo;{beat.onScreenText}&rdquo;
-                          </span>
-                        </div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">
-                          🎙️ {beat.spokenAudio}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          🎥 Visual Cue: {beat.visualDirection}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 dark:border-slate-800 dark:bg-[#111827]">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                      TikTok Search Engine Optimization (SEO) Caption
-                    </span>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Caption + Hashtags + Spoken Search Keywords
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleCopy(
-                        `${result.tiktokSeoCaption}\n\n${result.hashtags.join(" ")}`,
-                        "seo-caption",
-                      )
-                    }
-                    className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                  >
-                    {copiedKey === "seo-caption"
-                      ? "Copied Caption!"
-                      : "Copy TikTok Caption"}
-                  </button>
-                </div>
-
-                <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 text-xs sm:text-sm text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-                  {result.tiktokSeoCaption}
-                  <div className="mt-2 font-semibold text-[#ff6b35]">
-                    {result.hashtags.join(" ")}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[11px] font-bold text-slate-500 mr-1">
-                    Target TikTok Search Bar Queries:
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 dark:border-slate-800 dark:bg-[#111827]">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              3 Scroll-Stopping First-3-Second Hooks
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {result.scrollStoppingHooks.map((h, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 space-y-1.5 dark:border-slate-800 dark:bg-slate-900"
+                >
+                  <span className="rounded-md bg-[#ff6b35]/10 px-2 py-0.5 text-[10px] font-bold uppercase text-[#ff6b35]">
+                    {h.style}
                   </span>
-                  {result.searchKeywords.map((kw, i) => (
-                    <span
-                      key={i}
-                      className="rounded-full bg-emerald-50 border border-emerald-200/70 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800"
-                    >
-                      🔍 {kw}
-                    </span>
-                  ))}
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">
+                    &ldquo;{h.verbalHook}&rdquo;
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <strong>Action:</strong> {h.visualAction}
+                  </p>
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
 
-              <SocialVisualCardBuilder
-                platformLabel="TikTok Green-Screen Card"
-                defaultHeadline={
-                  result.thumbnailCoverText ||
-                  result.scriptBeats[0]?.onScreenText ||
-                  ""
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3.5 dark:border-slate-800 dark:bg-[#111827]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Connected Teleprompter Script ({durationSeconds}s)
+              </h3>
+              <button
+                type="button"
+                onClick={() =>
+                  handleCopy(connectedTeleprompterVoiceover, "full-script")
                 }
-                defaultBody={result.scriptBeats[1]?.spokenAudio || ""}
-                defaultSublabel="TIKTOK BREAKDOWN"
-                postTextToShare={`${result.tiktokSeoCaption}\n\n${result.hashtags.join(" ")}`}
-                extractedImages={extractedImages}
-              />
-            </>
-          )}
+                className="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
+              >
+                {copiedKey === "full-script"
+                  ? "Copied Voiceover!"
+                  : "Copy Voiceover Script"}
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 dark:border-slate-800 dark:bg-slate-900">
+              <button
+                type="button"
+                onClick={() => setScriptViewMode("teleprompter")}
+                className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition ${
+                  scriptViewMode === "teleprompter"
+                    ? "bg-slate-900 text-white dark:bg-[#5271ff]"
+                    : "text-slate-700 dark:text-slate-300"
+                }`}
+              >
+                📜 Continuous Voiceover Script
+              </button>
+              <button
+                type="button"
+                onClick={() => setScriptViewMode("beats")}
+                className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-extrabold transition ${
+                  scriptViewMode === "beats"
+                    ? "bg-slate-900 text-white dark:bg-[#5271ff]"
+                    : "text-slate-700 dark:text-slate-300"
+                }`}
+              >
+                🎬 Beat-by-Beat Visual Cues
+              </button>
+            </div>
+
+            {scriptViewMode === "teleprompter" ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-4 whitespace-pre-wrap text-sm sm:text-base font-medium leading-7 text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                {connectedTeleprompterVoiceover}
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {result.scriptBeats.map((beat, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5 space-y-1.5 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="rounded-md bg-slate-900 px-2.5 py-0.5 text-[11px] font-bold text-white">
+                        {beat.timeRange} — {beat.beatLabel}
+                      </span>
+                      <span className="rounded-md bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold text-[#ff6b35]">
+                        On-Screen Text: &ldquo;{beat.onScreenText}&rdquo;
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">
+                      🎙️ {beat.spokenAudio}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      🎥 Visual Cue: {beat.visualDirection}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3 dark:border-slate-800 dark:bg-[#111827]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                  TikTok Search Engine Optimization (SEO) Caption
+                </span>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Caption + Hashtags + Spoken Search Keywords
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  handleCopy(
+                    `${result.tiktokSeoCaption}\n\n${result.hashtags.join(" ")}`,
+                    "seo-caption",
+                  )
+                }
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                {copiedKey === "seo-caption"
+                  ? "Copied Caption!"
+                  : "Copy TikTok Caption"}
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 text-xs sm:text-sm text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+              {result.tiktokSeoCaption}
+              <div className="mt-2 font-semibold text-[#ff6b35]">
+                {result.hashtags.join(" ")}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-bold text-slate-500 mr-1">
+                Target TikTok Search Bar Queries:
+              </span>
+              {result.searchKeywords.map((kw, i) => (
+                <span
+                  key={i}
+                  className="rounded-full bg-emerald-50 border border-emerald-200/70 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800"
+                >
+                  🔍 {kw}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Full-Width Green-Screen Visual Card & Live Preview */}
+      <SocialVisualCardBuilder
+        platformLabel="TikTok Green-Screen Card"
+        defaultHeadline={
+          result.thumbnailCoverText ||
+          result.scriptBeats[0]?.onScreenText ||
+          ""
+        }
+        defaultBody={result.scriptBeats[1]?.spokenAudio || ""}
+        defaultSublabel="TIKTOK BREAKDOWN"
+        postTextToShare={`${result.tiktokSeoCaption}\n\n${result.hashtags.join(" ")}`}
+        extractedImages={extractedImages}
+      />
     </section>
   );
 }

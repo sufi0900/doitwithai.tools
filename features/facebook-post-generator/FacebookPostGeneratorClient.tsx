@@ -8,9 +8,11 @@ import {
 } from "../tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "../tool-ui/SocialVisualCardBuilder";
 import ToolRunOverlay, { focusToolSection } from "../tool-ui/ToolRunOverlay";
-import type {
-  FacebookPostFormat,
-  FacebookPostOutput,
+import PlatformBrandIcon from "../tool-ui/PlatformBrandIcon";
+import {
+  DEFAULT_FACEBOOK_POST_OUTPUT,
+  type FacebookPostFormat,
+  type FacebookPostOutput,
 } from "./model";
 
 export function FacebookPostGeneratorClient() {
@@ -22,7 +24,9 @@ export function FacebookPostGeneratorClient() {
   );
   const [postFormat, setPostFormat] =
     useState<FacebookPostFormat>("story-engagement");
-  const [destinationUrl, setDestinationUrl] = useState("");
+  const [destinationUrl, setDestinationUrl] = useState(
+    "https://doitwithai.tools",
+  );
   const [brandTone, setBrandTone] = useState(
     "Conversational, Warm & High-Value",
   );
@@ -32,25 +36,19 @@ export function FacebookPostGeneratorClient() {
   const [selectedVariationIdx, setSelectedVariationIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<FacebookPostOutput | null>(null);
+  const [result, setResult] = useState<FacebookPostOutput>(
+    DEFAULT_FACEBOOK_POST_OUTPUT,
+  );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
-  function handleUrlExtracted(payload: UniversalExtractResponse) {
-    setTopicOrContent(
-      payload.cleanText || payload.description || payload.title,
-    );
-    if (payload.url) {
-      setDestinationUrl(payload.url);
-    }
-    if (payload.images?.length) {
-      setExtractedImages(payload.images);
-    }
-    setError(null);
-  }
-
-  async function handleGenerate() {
-    if (!topicOrContent.trim()) {
+  async function runGenerate(overrides?: {
+    topicOrContent?: string;
+    destinationUrl?: string;
+  }) {
+    const activeTopic = (overrides?.topicOrContent ?? topicOrContent).trim();
+    const activeUrl = overrides?.destinationUrl ?? destinationUrl;
+    if (!activeTopic) {
       setError(
         "Please enter a topic or extract content from an article URL first.",
       );
@@ -63,10 +61,10 @@ export function FacebookPostGeneratorClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          topicOrContent,
+          topicOrContent: activeTopic,
           targetAudience,
           postFormat,
-          destinationUrl,
+          destinationUrl: activeUrl,
           brandTone,
         }),
       });
@@ -86,6 +84,25 @@ export function FacebookPostGeneratorClient() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleUrlExtracted(payload: UniversalExtractResponse) {
+    const firstSub = payload.subTopics?.[0];
+    const nextTopic = firstSub
+      ? `${firstSub.title}\n\n${firstSub.content}`
+      : payload.cleanText || payload.description || payload.title;
+    setTopicOrContent(nextTopic);
+    if (payload.url) {
+      setDestinationUrl(payload.url);
+    }
+    if (payload.images?.length) {
+      setExtractedImages(payload.images);
+    }
+    setError(null);
+    void runGenerate({
+      topicOrContent: nextTopic,
+      destinationUrl: payload.url || destinationUrl,
+    });
   }
 
   function handleCopy(text: string, key: string) {
@@ -108,20 +125,37 @@ export function FacebookPostGeneratorClient() {
       <UrlArticleExtractorBar
         onExtracted={handleUrlExtracted}
         onSelectSubTopic={(sub, data) => {
-          setTopicOrContent(`${sub.title}\n\n${sub.content}`);
+          const nextTopic = `${sub.title}\n\n${sub.content}`;
+          setTopicOrContent(nextTopic);
           if (data.url) setDestinationUrl(data.url);
+          void runGenerate({
+            topicOrContent: nextTopic,
+            destinationUrl: data.url || destinationUrl,
+          });
         }}
         label="Option 1: Fetch Content, Sub-Topics & Images from Any Article or YouTube URL"
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)] items-start">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] items-start">
         <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              Facebook Post &amp; First-Comment Studio
-            </h2>
+            <div className="flex items-center gap-2.5">
+              <PlatformBrandIcon
+                platform="facebook"
+                slug="facebook-post-generator"
+                size={38}
+              />
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  Facebook Post &amp; First-Comment Studio
+                </h2>
+                <span className="text-[11px] font-semibold text-slate-500">
+                  3 Zero-Click Variations + 1080p Visual Card
+                </span>
+              </div>
+            </div>
             <span className="rounded-full bg-[#1877F2]/10 px-2.5 py-0.5 text-xs font-bold text-[#1877F2]">
-              Zero-Click + Visual Card
+              Zero-Click + Visual
             </span>
           </div>
 
@@ -211,7 +245,7 @@ export function FacebookPostGeneratorClient() {
 
           <button
             type="button"
-            onClick={handleGenerate}
+            onClick={() => void runGenerate()}
             disabled={loading}
             className="w-full rounded-xl bg-[#ff6b35] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
           >
@@ -226,122 +260,106 @@ export function FacebookPostGeneratorClient() {
           tabIndex={-1}
           className="space-y-5 focus:outline-none"
         >
-          {!result ? (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center dark:border-slate-700 dark:bg-[#111827]">
-              <p className="text-sm font-bold text-slate-800 dark:text-white">
-                Generate High-Reach Facebook Posts + Companion Graphic Cards
-              </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Includes 3 post variations, a dedicated{" "}
-                <strong>First-Comment Link Box</strong> (so Facebook
-                doesn&apos;t throttle your reach), and an interactive 1080p
-                image generator.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {result.variations.map((v, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setSelectedVariationIdx(idx)}
-                    className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${
-                      selectedVariationIdx === idx
-                        ? "bg-slate-900 text-white shadow-xs dark:bg-[#5271ff]"
-                        : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                    }`}
-                  >
-                    Variation #{idx + 1}: {v.styleName}
-                  </button>
-                ))}
+          <div className="flex flex-wrap gap-2">
+            {result.variations.map((v, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setSelectedVariationIdx(idx)}
+                className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${
+                  selectedVariationIdx === idx
+                    ? "bg-slate-900 text-white shadow-xs dark:bg-[#5271ff]"
+                    : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                }`}
+              >
+                Variation #{idx + 1}: {v.styleName}
+              </button>
+            ))}
+          </div>
+
+          {activeVariation && (
+            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#1877F2]">
+                    Main Facebook Feed Post
+                  </span>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    {activeVariation.styleName}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleCopy(activeVariation.fullPostText, "main-post")
+                  }
+                  className="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
+                >
+                  {copiedKey === "main-post"
+                    ? "Copied Post!"
+                    : "Copy Main Post"}
+                </button>
               </div>
 
-              {activeVariation && (
-                <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#1877F2]">
-                        Main Facebook Feed Post
-                      </span>
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                        {activeVariation.styleName}
-                      </h3>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleCopy(activeVariation.fullPostText, "main-post")
-                      }
-                      className="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
-                    >
-                      {copiedKey === "main-post"
-                        ? "Copied Post!"
-                        : "Copy Main Post"}
-                    </button>
-                  </div>
+              <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+                {activeVariation.fullPostText}
+              </div>
 
-                  <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-                    {activeVariation.fullPostText}
-                  </div>
-
-                  <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 p-3.5 flex flex-wrap items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
-                        First Comment Link (Protects Organic Feed Reach)
-                      </span>
-                      <p className="mt-0.5 text-xs font-medium text-amber-950 break-all">
-                        {activeVariation.firstCommentText}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleCopy(
-                          activeVariation.firstCommentText,
-                          "first-comment",
-                        )
-                      }
-                      className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100"
-                    >
-                      {copiedKey === "first-comment"
-                        ? "Copied!"
-                        : "Copy First Comment"}
-                    </button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {activeVariation.hashtags.map((tag, i) => (
-                      <span
-                        key={i}
-                        className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+              <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 p-3.5 flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
+                    First Comment Link (Protects Organic Feed Reach)
+                  </span>
+                  <p className="mt-0.5 text-xs font-medium text-amber-950 break-all">
+                    {activeVariation.firstCommentText}
+                  </p>
                 </div>
-              )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleCopy(
+                      activeVariation.firstCommentText,
+                      "first-comment",
+                    )
+                  }
+                  className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100"
+                >
+                  {copiedKey === "first-comment"
+                    ? "Copied!"
+                    : "Copy First Comment"}
+                </button>
+              </div>
 
-              {activeVariation && (
-                <SocialVisualCardBuilder
-                  platformLabel="Facebook Post"
-                  defaultHeadline={
-                    activeVariation.visualHeadline || activeVariation.hookLine
-                  }
-                  defaultBody={
-                    activeVariation.visualSubtext ||
-                    activeVariation.engagementQuestion
-                  }
-                  defaultSublabel="FACEBOOK INSIGHT"
-                  postTextToShare={activeVariation.fullPostText}
-                  extractedImages={extractedImages}
-                />
-              )}
-            </>
+              <div className="flex flex-wrap gap-1.5">
+                {activeVariation.hashtags.map((tag, i) => (
+                  <span
+                    key={i}
+                    className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Full-Width Interactive Visual Card & Live Feed Preview */}
+      {activeVariation && (
+        <SocialVisualCardBuilder
+          platformLabel="Facebook Post"
+          defaultHeadline={
+            activeVariation.visualHeadline || activeVariation.hookLine
+          }
+          defaultBody={
+            activeVariation.visualSubtext || activeVariation.engagementQuestion
+          }
+          defaultSublabel="FACEBOOK INSIGHT"
+          postTextToShare={activeVariation.fullPostText}
+          extractedImages={extractedImages}
+        />
+      )}
     </section>
   );
 }

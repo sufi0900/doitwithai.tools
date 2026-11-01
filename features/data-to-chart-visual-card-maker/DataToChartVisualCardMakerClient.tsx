@@ -6,13 +6,25 @@ import {
   CheckCircle2,
   Copy,
   Download,
-  PackageCheck,
+  FileCode2,
+  Palette,
   Plus,
+  Printer,
   Sparkles,
   Trash2,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
+import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
+import {
+  copyCanvasImageToClipboard,
+  downloadCanvasAsEmbeddedSvg,
+  downloadCanvasAsPng,
+  printCanvasAsPdfPoster,
+  resolveVisualTheme,
+  SHARED_VISUAL_THEMES,
+  type SharedVisualThemeId,
+} from "@/features/tool-ui/visualCardExport";
 import {
   buildDeterministicDataChart,
   DEFAULT_DATA_TO_CHART_INPUT,
@@ -33,28 +45,58 @@ const CHART_TEMPLATES: {
     desc: "Ranked progress bars with bold percentage/multiplier pills",
   },
   {
+    id: "vertical-column-bars",
+    label: "2. Vertical Column Chart",
+    desc: "Classic vertical bar columns with top value callouts",
+  },
+  {
     id: "kpi-bento-4",
-    label: "2. 4-Card KPI Bento Dashboard",
+    label: "3. 4-Card KPI Bento Grid",
     desc: "Executive 2×2 metric dashboard with supporting notes",
   },
   {
-    id: "before-after-lift",
-    label: "3. Before vs. After Lift Card",
-    desc: "Contrasts baseline vs. optimized KPI lift side by side",
-  },
-  {
     id: "donut-breakdown",
-    label: "4. Donut Ring + Legend Card",
+    label: "4. Donut Ring + Legend",
     desc: "Multi-color proportional ring chart with labeled legend",
   },
   {
+    id: "radial-gauge-rings",
+    label: "5. 4-Ring Radial Gauges",
+    desc: "Individual circular progress rings for 4 key metrics",
+  },
+  {
+    id: "lollipop-benchmark",
+    label: "6. Lollipop Dot-Stem Chart",
+    desc: "Sleek horizontal stems with glowing circular value nodes",
+  },
+  {
+    id: "before-after-lift",
+    label: "7. Hero Before/After Lift",
+    desc: "Oversized hero metric paired with supporting proof rows",
+  },
+  {
+    id: "dual-versus-bars",
+    label: "8. Head-to-Head Versus Bars",
+    desc: "Compares baseline vs. top-performing benchmark bars",
+  },
+  {
+    id: "waterfall-roi-bridge",
+    label: "9. Stepped ROI Growth Bridge",
+    desc: "Ascending stepped blocks showing cumulative impact",
+  },
+  {
+    id: "funnel-conversion-bars",
+    label: "10. Tapering Funnel Chart",
+    desc: "Centered tapering funnel bars from top to bottom",
+  },
+  {
     id: "benchmark-scorecard",
-    label: "5. Benchmark Scorecard Table",
+    label: "11. Executive Data Table",
     desc: "Structured comparison rows with score badges & verdict",
   },
   {
     id: "stat-quote-spotlight",
-    label: "6. Hero Stat + Insight Spotlight",
+    label: "12. Stat + Insight Spotlight",
     desc: "Giant headline number paired with 3 supporting proof points",
   },
 ];
@@ -102,9 +144,14 @@ export default function DataToChartVisualCardMakerClient() {
   const [points, setPoints] = useState<ChartDataPoint[]>(() =>
     buildDeterministicDataChart(DEFAULT_DATA_TO_CHART_INPUT).points,
   );
-  const [theme, setTheme] = useState<"dark-navy" | "clean-light" | "emerald">(
-    "dark-navy",
-  );
+  const [themeId, setThemeId] =
+    useState<SharedVisualThemeId>("midnight-orange");
+  const [customColors, setCustomColors] = useState({
+    bgStart: "#0B1120",
+    cardBg: "#1E293B",
+    accent: "#FF6B35",
+    textMain: "#FFFFFF",
+  });
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -116,6 +163,10 @@ export default function DataToChartVisualCardMakerClient() {
     [input],
   );
   const pack = aiPack || deterministicPack;
+  const theme = useMemo(
+    () => resolveVisualTheme(themeId, customColors),
+    [themeId, customColors],
+  );
 
   useEffect(() => {
     setPoints(pack.points);
@@ -123,10 +174,11 @@ export default function DataToChartVisualCardMakerClient() {
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2600);
+    setTimeout(() => setToast(""), 2800);
   }
 
-  async function handleGenerateAiChart() {
+  async function handleGenerateAiChart(overrideInput?: DataToChartInput) {
+    const activeInput = overrideInput || input;
     setLoading(true);
     try {
       const res = await fetch(
@@ -134,18 +186,18 @@ export default function DataToChartVisualCardMakerClient() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(input),
+          body: JSON.stringify(activeInput),
         },
       );
       const data = await res.json();
       if (data?.pack) {
         setAiPack(data.pack);
         setPoints(data.pack.points);
-        notify("Extracted quantitative metrics & built chart card!");
+        notify("Extracted quantitative metrics & rendered chart in 1 click!");
       }
       focusToolSection(resultsRef.current);
     } catch {
-      notify("Updated data chart visual card.");
+      notify("Rendered data chart visual card.");
       focusToolSection(resultsRef.current);
     } finally {
       setLoading(false);
@@ -164,7 +216,7 @@ export default function DataToChartVisualCardMakerClient() {
 
   function addPoint() {
     if (points.length >= 6) {
-      notify("Maximum 6 data bars/cards per chart for clean readability.");
+      notify("Maximum 6 data bars/cards per chart for crisp readability.");
       return;
     }
     const idx = points.length + 1;
@@ -196,45 +248,36 @@ export default function DataToChartVisualCardMakerClient() {
     canvas.width = W;
     canvas.height = H;
 
-    const isLight = theme === "clean-light";
-    const bgStart =
-      theme === "clean-light"
-        ? "#F8FAFC"
-        : theme === "emerald"
-          ? "#042F2E"
-          : "#0B1120";
-    const bgEnd =
-      theme === "clean-light"
-        ? "#E2E8F0"
-        : theme === "emerald"
-          ? "#0F172A"
-          : "#1E293B";
-    const textMain = isLight ? "#0F172A" : "#FFFFFF";
-    const textMuted = isLight ? "#475569" : "#CBD5E1";
-    const cardBg = isLight ? "#FFFFFF" : "rgba(30, 41, 59, 0.86)";
-    const cardBorder = isLight ? "#CBD5E1" : "rgba(148, 163, 184, 0.25)";
-
     const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, bgStart);
-    grad.addColorStop(1, bgEnd);
+    grad.addColorStop(0, theme.bgStart);
+    grad.addColorStop(1, theme.bgEnd);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
+    // Subtle decorative glow orb
+    ctx.save();
+    ctx.fillStyle = theme.accent;
+    ctx.globalAlpha = 0.1;
+    ctx.beginPath();
+    ctx.arc(W - 110, 110, 200, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
     const padX = 68;
-    let curY = 62;
+    let curY = 58;
 
     // Kicker Badge
-    ctx.fillStyle = "#FF6B35";
+    ctx.fillStyle = theme.accent;
     ctx.beginPath();
-    ctx.roundRect(padX, curY, 310, 40, 20);
+    ctx.roundRect(padX, curY, 320, 42, 21);
     ctx.fill();
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "800 18px system-ui, -apple-system, sans-serif";
-    ctx.fillText(pack.kickerBadge.slice(0, 28), padX + 20, curY + 26);
+    ctx.fillText(pack.kickerBadge.slice(0, 28), padX + 22, curY + 27);
     curY += 62;
 
     // Title
-    ctx.fillStyle = textMain;
+    ctx.fillStyle = theme.textMain;
     ctx.font = "900 40px system-ui, -apple-system, sans-serif";
     const tLines = wrapChartText(ctx, input.chartTitle, W - padX * 2, 2);
     for (const l of tLines) {
@@ -243,7 +286,7 @@ export default function DataToChartVisualCardMakerClient() {
     }
 
     // Subtitle
-    ctx.fillStyle = textMuted;
+    ctx.fillStyle = theme.textMuted;
     ctx.font = "500 22px system-ui, -apple-system, sans-serif";
     const sLines = wrapChartText(ctx, input.chartSubtitle, W - padX * 2, 2);
     for (const l of sLines) {
@@ -257,7 +300,10 @@ export default function DataToChartVisualCardMakerClient() {
     const availH = bodyBottom - bodyTop;
     const activePts = points.slice(0, 6);
 
-    if (input.template === "kpi-bento-4") {
+    if (
+      input.template === "kpi-bento-4" ||
+      input.template === "radial-gauge-rings"
+    ) {
       const bentoPts = activePts.slice(0, 4);
       const gap = 22;
       const cardW = Math.floor((W - padX * 2 - gap) / 2);
@@ -268,39 +314,93 @@ export default function DataToChartVisualCardMakerClient() {
         const row = Math.floor(idx / 2);
         const x = padX + col * (cardW + gap);
         const y = bodyTop + row * (cardH + gap);
+        const barCol = idx === 0 ? theme.accent : BAR_COLORS[idx % BAR_COLORS.length];
 
-        ctx.fillStyle = cardBg;
-        ctx.strokeStyle = cardBorder;
+        ctx.fillStyle = theme.cardBg;
+        ctx.strokeStyle = barCol;
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.roundRect(x, y, cardW, cardH, 26);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = BAR_COLORS[idx % BAR_COLORS.length];
-        ctx.font = "900 68px system-ui, -apple-system, sans-serif";
-        ctx.fillText(pt.displayValue, x + 32, y + 96);
+        if (input.template === "radial-gauge-rings") {
+          const r = 46;
+          const cx = x + 74;
+          const cy = y + 76;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(148,163,184,0.22)";
+          ctx.lineWidth = 12;
+          ctx.stroke();
 
-        ctx.fillStyle = textMain;
-        ctx.font = "800 26px system-ui, -apple-system, sans-serif";
+          ctx.beginPath();
+          ctx.arc(
+            cx,
+            cy,
+            r,
+            -Math.PI / 2,
+            -Math.PI / 2 + (Math.PI * 2 * Math.min(100, pt.valueNumber)) / 100,
+          );
+          ctx.strokeStyle = barCol;
+          ctx.lineWidth = 12;
+          ctx.stroke();
+
+          ctx.fillStyle = theme.textMain;
+          ctx.font = "900 22px system-ui, -apple-system, sans-serif";
+          ctx.fillText(pt.displayValue.slice(0, 6), cx - 24, cy + 8);
+        } else {
+          ctx.fillStyle = barCol;
+          ctx.font = "900 66px system-ui, -apple-system, sans-serif";
+          ctx.fillText(pt.displayValue, x + 32, y + 94);
+        }
+
+        ctx.fillStyle = theme.textMain;
+        ctx.font = "800 25px system-ui, -apple-system, sans-serif";
         const lblLines = wrapChartText(ctx, pt.label, cardW - 64, 2);
-        let ly = y + 146;
+        let ly = y + 150;
         for (const l of lblLines) {
           ctx.fillText(l, x + 32, ly);
-          ly += 32;
+          ly += 30;
         }
 
-        ctx.fillStyle = textMuted;
-        ctx.font = "500 20px system-ui, -apple-system, sans-serif";
+        ctx.fillStyle = theme.textMuted;
+        ctx.font = "500 19px system-ui, -apple-system, sans-serif";
         const nLines = wrapChartText(ctx, pt.note, cardW - 64, 2);
-        ly += 8;
+        ly += 6;
         for (const l of nLines) {
           ctx.fillText(l, x + 32, ly);
-          ly += 26;
+          ly += 25;
         }
       });
+    } else if (input.template === "vertical-column-bars") {
+      const cols = activePts.length;
+      const chartLeft = padX + 20;
+      const chartW = W - padX * 2 - 40;
+      const colGap = 26;
+      const colW = Math.floor((chartW - colGap * (cols - 1)) / cols);
+      const maxBarH = availH - 110;
+
+      activePts.forEach((pt, i) => {
+        const x = chartLeft + i * (colW + colGap);
+        const barH = Math.max(44, Math.floor((maxBarH * pt.valueNumber) / 100));
+        const y = bodyBottom - 58 - barH;
+        const barCol = i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
+
+        ctx.fillStyle = barCol;
+        ctx.beginPath();
+        ctx.roundRect(x, y, colW, barH, [18, 18, 6, 6]);
+        ctx.fill();
+
+        ctx.fillStyle = theme.textMain;
+        ctx.font = "900 24px system-ui, -apple-system, sans-serif";
+        ctx.fillText(pt.displayValue, x + 8, y - 14);
+
+        ctx.fillStyle = theme.textMuted;
+        ctx.font = "700 17px system-ui, -apple-system, sans-serif";
+        ctx.fillText(pt.label.slice(0, 12), x + 4, bodyBottom - 24);
+      });
     } else if (input.template === "donut-breakdown") {
-      // Donut Ring on Left + Legend on Right
       const cx = padX + 210;
       const cy = bodyTop + availH / 2;
       const radius = 165;
@@ -315,40 +415,39 @@ export default function DataToChartVisualCardMakerClient() {
           (Math.max(1, pt.valueNumber) / total) * (Math.PI * 2);
         ctx.beginPath();
         ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle);
-        ctx.strokeStyle = BAR_COLORS[i % BAR_COLORS.length];
+        ctx.strokeStyle = i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
         ctx.lineWidth = 54;
         ctx.stroke();
         startAngle += sliceAngle;
       });
 
-      // Center Donut Label
-      ctx.fillStyle = textMain;
+      ctx.fillStyle = theme.textMain;
       ctx.font = "900 48px system-ui, -apple-system, sans-serif";
       const topVal = activePts[0]?.displayValue || "100%";
       const tw = ctx.measureText(topVal).width;
       ctx.fillText(topVal, cx - tw / 2, cy + 14);
 
-      // Legend Cards on Right
       const legX = padX + 450;
       const legW = W - padX - legX;
       const rowH = Math.min(100, Math.floor(availH / activePts.length) - 10);
 
       activePts.forEach((pt, i) => {
         const y = bodyTop + i * (rowH + 10);
-        ctx.fillStyle = cardBg;
-        ctx.strokeStyle = cardBorder;
+        const col = i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
+        ctx.fillStyle = theme.cardBg;
+        ctx.strokeStyle = col;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.roundRect(legX, y, legW, rowH, 16);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = BAR_COLORS[i % BAR_COLORS.length];
+        ctx.fillStyle = col;
         ctx.beginPath();
         ctx.arc(legX + 26, y + rowH / 2, 11, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = textMain;
+        ctx.fillStyle = theme.textMain;
         ctx.font = "800 22px system-ui, -apple-system, sans-serif";
         ctx.fillText(
           `${pt.label.slice(0, 24)} — ${pt.displayValue}`,
@@ -356,7 +455,7 @@ export default function DataToChartVisualCardMakerClient() {
           y + rowH / 2 - 4,
         );
 
-        ctx.fillStyle = textMuted;
+        ctx.fillStyle = theme.textMuted;
         ctx.font = "500 17px system-ui, -apple-system, sans-serif";
         ctx.fillText(pt.note.slice(0, 42), legX + 50, y + rowH / 2 + 22);
       });
@@ -364,23 +463,22 @@ export default function DataToChartVisualCardMakerClient() {
       input.template === "before-after-lift" ||
       input.template === "stat-quote-spotlight"
     ) {
-      // Hero Spotlight Card + Supporting Bars
       const heroH = 210;
-      ctx.fillStyle = cardBg;
-      ctx.strokeStyle = "#FF6B35";
+      ctx.fillStyle = theme.cardBg;
+      ctx.strokeStyle = theme.accent;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.roundRect(padX, bodyTop, W - padX * 2, heroH, 26);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = "#FF6B35";
+      ctx.fillStyle = theme.accent;
       ctx.font = "900 84px system-ui, -apple-system, sans-serif";
       const heroVal = activePts[0]?.displayValue || "+142%";
       ctx.fillText(heroVal, padX + 36, bodyTop + 118);
 
       const valW = ctx.measureText(heroVal).width;
-      ctx.fillStyle = textMain;
+      ctx.fillStyle = theme.textMain;
       ctx.font = "800 30px system-ui, -apple-system, sans-serif";
       ctx.fillText(
         (activePts[0]?.label || "Primary Benchmark Lift").slice(0, 34),
@@ -388,7 +486,7 @@ export default function DataToChartVisualCardMakerClient() {
         bodyTop + 88,
       );
 
-      ctx.fillStyle = textMuted;
+      ctx.fillStyle = theme.textMuted;
       ctx.font = "500 22px system-ui, -apple-system, sans-serif";
       ctx.fillText(
         (activePts[0]?.note || "").slice(0, 52),
@@ -396,174 +494,162 @@ export default function DataToChartVisualCardMakerClient() {
         bodyTop + 128,
       );
 
-      // Remaining points below
       const rest = activePts.slice(1, 5);
       const restTop = bodyTop + heroH + 24;
-      const rowH = Math.floor((availH - heroH - 24) / Math.max(1, rest.length)) - 12;
+      const rowH =
+        Math.floor((availH - heroH - 24) / Math.max(1, rest.length)) - 12;
 
       rest.forEach((pt, idx) => {
         const y = restTop + idx * (rowH + 12);
-        ctx.fillStyle = cardBg;
-        ctx.strokeStyle = cardBorder;
+        const col = BAR_COLORS[(idx + 1) % BAR_COLORS.length];
+        ctx.fillStyle = theme.cardBg;
+        ctx.strokeStyle = col;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.roundRect(padX, y, W - padX * 2, rowH, 18);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = BAR_COLORS[(idx + 1) % BAR_COLORS.length];
+        ctx.fillStyle = col;
         ctx.font = "900 34px system-ui, -apple-system, sans-serif";
         ctx.fillText(pt.displayValue, padX + 28, y + rowH / 2 + 12);
 
-        ctx.fillStyle = textMain;
+        ctx.fillStyle = theme.textMain;
         ctx.font = "800 24px system-ui, -apple-system, sans-serif";
         ctx.fillText(pt.label.slice(0, 38), padX + 170, y + rowH / 2 - 4);
 
-        ctx.fillStyle = textMuted;
-        ctx.font = "500 19px system-ui, -apple-system, sans-serif";
+        ctx.fillStyle = theme.textMuted;
+        ctx.font = "500 18px system-ui, -apple-system, sans-serif";
         ctx.fillText(pt.note.slice(0, 58), padX + 170, y + rowH / 2 + 24);
       });
     } else {
-      // Horizontal Ranking Bars or Benchmark Scorecard
-      const rowGap = 16;
-      const rowH = Math.max(
-        96,
+      // Horizontal Ranking Bars, Lollipop, Funnel, Waterfall, Dual Versus, or Scorecard
+      const rowGap = 14;
+      const rowH = Math.min(
+        118,
         Math.floor((availH - rowGap * (activePts.length - 1)) / activePts.length),
       );
 
-      activePts.forEach((pt, idx) => {
-        const y = bodyTop + idx * (rowH + rowGap);
-        const cardW = W - padX * 2;
+      activePts.forEach((pt, i) => {
+        const y = bodyTop + i * (rowH + rowGap);
+        const barCol = i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
+        const cardW =
+          input.template === "funnel-conversion-bars"
+            ? Math.floor((W - padX * 2) * (1 - i * 0.08))
+            : W - padX * 2;
+        const cardX =
+          input.template === "funnel-conversion-bars"
+            ? Math.floor((W - cardW) / 2)
+            : padX;
 
-        ctx.fillStyle = cardBg;
-        ctx.strokeStyle = cardBorder;
+        ctx.fillStyle = theme.cardBg;
+        ctx.strokeStyle = barCol;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(padX, y, cardW, rowH, 20);
+        ctx.roundRect(cardX, y, cardW, rowH, 20);
         ctx.fill();
         ctx.stroke();
 
-        // Label + Display Value Row
-        ctx.fillStyle = textMain;
-        ctx.font = "800 24px system-ui, -apple-system, sans-serif";
+        ctx.fillStyle = theme.textMain;
+        ctx.font = "800 23px system-ui, -apple-system, sans-serif";
         ctx.fillText(
-          `${idx + 1}. ${pt.label.slice(0, 44)}`,
-          padX + 26,
-          y + 38,
+          `${i + 1}. ${pt.label.slice(0, 36)}`,
+          cardX + 26,
+          y + 36,
         );
 
-        const color = BAR_COLORS[idx % BAR_COLORS.length];
-        ctx.fillStyle = color;
-        ctx.font = "900 28px system-ui, -apple-system, sans-serif";
-        const dvWidth = ctx.measureText(pt.displayValue).width;
-        ctx.fillText(pt.displayValue, padX + cardW - dvWidth - 26, y + 40);
+        ctx.fillStyle = barCol;
+        ctx.font = "900 26px system-ui, -apple-system, sans-serif";
+        const vw = ctx.measureText(pt.displayValue).width;
+        ctx.fillText(pt.displayValue, cardX + cardW - 26 - vw, y + 38);
 
-        // Progress Bar Track
-        const barX = padX + 26;
-        const barY = y + 54;
+        // Progress Bar or Lollipop Stem
         const barMaxW = cardW - 52;
-        ctx.fillStyle = isLight ? "#E2E8F0" : "rgba(255,255,255,0.1)";
-        ctx.beginPath();
-        ctx.roundRect(barX, barY, barMaxW, 18, 9);
-        ctx.fill();
-
         const fillW = Math.max(
-          36,
-          Math.round((barMaxW * Math.min(100, pt.valueNumber)) / 100),
+          42,
+          Math.floor((barMaxW * Math.min(100, pt.valueNumber)) / 100),
         );
-        ctx.fillStyle = color;
+        ctx.fillStyle = "rgba(148, 163, 184, 0.18)";
         ctx.beginPath();
-        ctx.roundRect(barX, barY, fillW, 18, 9);
+        ctx.roundRect(cardX + 26, y + 52, barMaxW, 16, 8);
         ctx.fill();
 
-        if (rowH >= 104) {
-          ctx.fillStyle = textMuted;
-          ctx.font = "500 17px system-ui, -apple-system, sans-serif";
-          ctx.fillText(pt.note.slice(0, 75), barX, y + 92);
+        ctx.fillStyle = barCol;
+        ctx.beginPath();
+        ctx.roundRect(cardX + 26, y + 52, fillW, 16, 8);
+        ctx.fill();
+
+        if (input.template === "lollipop-benchmark") {
+          ctx.beginPath();
+          ctx.arc(cardX + 26 + fillW, y + 60, 13, 0, Math.PI * 2);
+          ctx.fill();
         }
+
+        ctx.fillStyle = theme.textMuted;
+        ctx.font = "500 17px system-ui, -apple-system, sans-serif";
+        ctx.fillText(pt.note.slice(0, 68), cardX + 26, y + 94);
       });
     }
 
-    // Footer Bar
-    ctx.fillStyle = "rgba(15, 23, 42, 0.65)";
-    ctx.fillRect(0, H - 76, W, 76);
+    // Footer Attribution Bar
+    ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
+    ctx.fillRect(0, H - 72, W, 72);
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "800 22px system-ui, -apple-system, sans-serif";
-    ctx.fillText(input.brandFooter || "doitwithai.tools", padX, H - 30);
-
-    ctx.fillStyle = "#FF6B35";
-    ctx.font = "800 20px system-ui, -apple-system, sans-serif";
-    ctx.fillText("Data Visual Studio · 1080×1080 HD", W - padX - 330, H - 30);
-  }, [input, pack, points, theme]);
-
-  function downloadChartPng() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const a = document.createElement("a");
-    a.download = `data-chart-${input.template}.png`;
-    a.href = canvas.toDataURL("image/png");
-    a.click();
-    notify("Downloaded 1080×1080 Data Chart Card (.PNG)!");
-  }
-
-  function downloadChartAndCaptionPackage() {
-    downloadChartPng();
-    navigator.clipboard.writeText(pack.socialPostText);
-    const blob = new Blob([pack.socialPostText], {
-      type: "text/plain;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "data-chart-caption.txt";
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notify("Downloaded Chart PNG + Caption TXT (and copied caption)!");
-  }
+    ctx.fillText(input.brandFooter || "doitwithai.tools", padX, H - 28);
+    ctx.fillStyle = theme.accent;
+    ctx.font = "700 19px system-ui, -apple-system, sans-serif";
+    ctx.fillText("Save & Share Benchmark Data ★", W - padX - 285, H - 28);
+  }, [input, pack.kickerBadge, points, theme]);
 
   return (
     <section
-      aria-label="Data and Statistics to Visual Chart Card Studio"
+      aria-label="Data to Visual Chart Card Maker Studio"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       <ToolRunOverlay
         active={loading}
-        title="Extracting Statistics & Plotting Visual Chart Card..."
-        description="Turning numbers, percentages, and benchmarks into a high-contrast 1080×1080 chart graphic."
+        title="Extracting Metrics & Rendering Visual Data Chart..."
+        description="Building high-contrast chart cards across 12 templates with hover PNG, SVG, and PDF export."
       />
 
+      {/* 1-CLICK ARTICLE URL EXTRACTION */}
       <UrlArticleExtractorBar
-        label="Option 1: Fetch Any Article or Report URL to Auto-Extract Stats & Build a Chart Card"
-        placeholder="Paste an article URL to extract numbers, benchmarks & percentages..."
+        label="Option 1: Paste Any Article URL to Extract Statistics & Build a Visual Chart in 1 Click"
+        placeholder="Paste a blog or report URL to extract numbers & render a chart..."
+        buttonLabel="Extract Stats & Render Chart (1-Click)"
         onExtracted={(data) => {
           setAiPack(null);
           const cleanTitle = (data.title || input.chartTitle)
             .replace(/\s*\|\s*[^|]+$/g, "")
             .trim();
-          const statLines = (data.paragraphs || [])
-            .filter((p) => /\d+%|\d+x|\$\d/i.test(p))
-            .slice(0, 5);
-          setInput((prev) => ({
-            ...prev,
+          let domain = "doitwithai.tools";
+          try {
+            domain = new URL(data.url).hostname.replace(/^www\./, "");
+          } catch {}
+          const nextInput: DataToChartInput = {
+            ...input,
             chartTitle: cleanTitle,
-            chartSubtitle: data.description || prev.chartSubtitle,
+            chartSubtitle: data.description || input.chartSubtitle,
             rawSourceText:
-              statLines.length >= 2
-                ? statLines.join("\n")
-                : (data.keyTakeaways || []).join("\n") || prev.rawSourceText,
-          }));
-          notify(`Extracted benchmark metrics from "${cleanTitle}"!`);
-          focusToolSection(resultsRef.current);
+              (data.keyTakeaways || []).join("\n") ||
+              data.cleanText.slice(0, 1200) ||
+              input.rawSourceText,
+            brandFooter: domain,
+          };
+          setInput(nextInput);
+          void handleGenerateAiChart(nextInput);
         }}
-        onSelectSubTopic={(sub) => {
+        onSelectSubTopic={(sub, data) => {
           setAiPack(null);
-          setInput((prev) => ({
-            ...prev,
+          const nextInput: DataToChartInput = {
+            ...input,
             chartTitle: sub.title,
+            chartSubtitle: sub.summary,
             rawSourceText: sub.content,
-          }));
-          notify(`Focused data chart on sub-topic: "${sub.title}"!`);
-          focusToolSection(resultsRef.current);
+          };
+          setInput(nextInput);
+          void handleGenerateAiChart(nextInput);
         }}
       />
 
@@ -580,42 +666,34 @@ export default function DataToChartVisualCardMakerClient() {
       <div
         ref={resultsRef}
         tabIndex={-1}
-        className="rounded-2xl border-2 border-[#3452d1]/25 bg-white p-5 shadow-xs dark:border-[#5271ff]/30 dark:bg-[#111827] sm:p-6 space-y-6 focus:outline-none"
+        className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-5 focus:outline-none"
       >
-        {/* TEMPLATE BAR */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
-          <div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
-              <BarChart3 size={14} />6 Built-In Editable Data &amp; Chart
-              Templates
-            </span>
-            <h2 className="text-lg font-black text-slate-900 dark:text-white">
-              Stat, Benchmark &amp; KPI Chart Card Studio
-            </h2>
+          <div className="flex items-center gap-3">
+            <PlatformBrandIcon brand="data-chart" size={36} />
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
+                <BarChart3 size={14} /> 12 Visual Chart Templates · 10 Themes + Custom Pickers
+              </span>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white">
+                Interactive Data-to-Chart Studio (Hover Over Chart to Download)
+              </h2>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={handleGenerateAiChart}
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5]"
-            >
-              <Sparkles size={14} />
-              AI Extract Stats from Text
-            </button>
-            <button
-              type="button"
-              onClick={downloadChartAndCaptionPackage}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#e85d2a]"
-            >
-              <PackageCheck size={15} />
-              Download Chart + Caption Package
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => void handleGenerateAiChart()}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#e85d2a]"
+          >
+            <Sparkles size={14} />
+            {loading ? "Building Chart…" : "Generate AI Chart Card (1-Click)"}
+          </button>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {/* 12 Chart Template Selector Grid */}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {CHART_TEMPLATES.map((tpl) => (
             <button
               key={tpl.id}
@@ -623,66 +701,112 @@ export default function DataToChartVisualCardMakerClient() {
               onClick={() =>
                 setInput((prev) => ({ ...prev, template: tpl.id }))
               }
-              className={`rounded-xl border p-3 text-left transition ${
+              className={`rounded-xl border p-2.5 text-left transition ${
                 input.template === tpl.id
-                  ? "border-[#3452d1] bg-[#3452d1]/10 dark:border-[#5271ff] dark:bg-[#5271ff]/20"
-                  : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60"
+                  ? "border-[#ff6b35] bg-[#ff6b35]/10 ring-1 ring-[#ff6b35]"
+                  : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
               }`}
             >
-              <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+              <strong className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">
                 {tpl.label}
               </strong>
-              <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="mt-0.5 line-clamp-1 block text-[10px] text-slate-500 dark:text-slate-400">
                 {tpl.desc}
               </span>
             </button>
           ))}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] items-start">
-          {/* LEFT: CHART TITLE, RAW STATS & DATA POINTS EDITOR */}
-          <div className="space-y-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                    Color Theme
-                  </label>
-                  <select
-                    value={theme}
-                    onChange={(e) =>
-                      setTheme(
-                        e.target.value as
-                          | "dark-navy"
-                          | "clean-light"
-                          | "emerald",
-                      )
-                    }
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
-                  >
-                    <option value="dark-navy">Executive Dark Navy</option>
-                    <option value="clean-light">Editorial Clean Light</option>
-                    <option value="emerald">Emerald Growth Theme</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                    Source / Brand Footer
-                  </label>
-                  <input
-                    type="text"
-                    value={input.brandFooter}
-                    onChange={(e) =>
-                      setInput((prev) => ({
-                        ...prev,
-                        brandFooter: e.target.value,
-                      }))
-                    }
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
-                  />
-                </div>
-              </div>
+        {/* 10 Color Themes + Custom Brand Color Pickers */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-200">
+              Designer Color Theme (10 Presets + Custom)
+            </label>
+            <select
+              value={themeId}
+              onChange={(e) =>
+                setThemeId(e.target.value as SharedVisualThemeId)
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
+            >
+              {Object.values(SHARED_VISUAL_THEMES).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+              <option value="custom-brand">
+                🎨 Custom Brand Colors (Use Pickers →)
+              </option>
+            </select>
+          </div>
 
+          <div>
+            <label className="mb-1 flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-200">
+              <Palette size={13} className="text-[#ff6b35]" /> Live Custom Color Pickers
+            </label>
+            <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+              <label className="flex items-center gap-1 text-[11px] font-bold">
+                <input
+                  type="color"
+                  value={theme.bgStart}
+                  onChange={(e) => {
+                    setThemeId("custom-brand");
+                    setCustomColors((p) => ({ ...p, bgStart: e.target.value }));
+                  }}
+                  className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                />
+                BG
+              </label>
+              <label className="flex items-center gap-1 text-[11px] font-bold">
+                <input
+                  type="color"
+                  value={
+                    theme.cardBg.startsWith("#") ? theme.cardBg : "#1E293B"
+                  }
+                  onChange={(e) => {
+                    setThemeId("custom-brand");
+                    setCustomColors((p) => ({ ...p, cardBg: e.target.value }));
+                  }}
+                  className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                />
+                Card
+              </label>
+              <label className="flex items-center gap-1 text-[11px] font-bold">
+                <input
+                  type="color"
+                  value={theme.accent}
+                  onChange={(e) => {
+                    setThemeId("custom-brand");
+                    setCustomColors((p) => ({ ...p, accent: e.target.value }));
+                  }}
+                  className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                />
+                Accent
+              </label>
+              <label className="flex items-center gap-1 text-[11px] font-bold">
+                <input
+                  type="color"
+                  value={theme.textMain}
+                  onChange={(e) => {
+                    setThemeId("custom-brand");
+                    setCustomColors((p) => ({
+                      ...p,
+                      textMain: e.target.value,
+                    }));
+                  }}
+                  className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                />
+                Text
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* 2-COLUMN WORKSPACE: LEFT = DATA POINTS EDITOR, RIGHT = HOVERABLE CHART CANVAS */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] items-start">
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
                   Chart Headline
@@ -696,33 +820,50 @@ export default function DataToChartVisualCardMakerClient() {
                       chartTitle: e.target.value,
                     }))
                   }
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                  Paste Raw Paragraph with Numbers or CSV Lines (Optional AI Input)
-                </label>
-                <textarea
-                  rows={3}
-                  value={input.rawSourceText}
-                  onChange={(e) =>
-                    setInput((prev) => ({
-                      ...prev,
-                      rawSourceText: e.target.value,
-                    }))
-                  }
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs dark:border-slate-700 dark:bg-slate-950"
-                />
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    value={input.chartSubtitle}
+                    onChange={(e) =>
+                      setInput((prev) => ({
+                        ...prev,
+                        chartSubtitle: e.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    Brand Footer
+                  </label>
+                  <input
+                    type="text"
+                    value={input.brandFooter}
+                    onChange={(e) =>
+                      setInput((prev) => ({
+                        ...prev,
+                        brandFooter: e.target.value,
+                      }))
+                    }
+                    className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* INDIVIDUAL DATA BARS / KPI EDITOR */}
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
-                  Edit Plotted Data Points ({points.length} / 6)
+                  Edit Data Bars / Metrics ({points.length} / 6)
                 </h3>
                 <button
                   type="button"
@@ -737,7 +878,7 @@ export default function DataToChartVisualCardMakerClient() {
                 {points.map((pt, i) => (
                   <div
                     key={pt.id}
-                    className="rounded-lg border border-slate-200 bg-white p-3 space-y-2 dark:border-slate-800 dark:bg-slate-950"
+                    className="rounded-xl border border-slate-200 bg-white p-3 space-y-2 dark:border-slate-800 dark:bg-slate-950"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
@@ -799,9 +940,75 @@ export default function DataToChartVisualCardMakerClient() {
             </div>
           </div>
 
-          {/* RIGHT: LIVE 1080x1080 CHART CANVAS + CAPTION */}
+          {/* RIGHT: HOVERABLE 1080x1080 CHART CANVAS WITH PNG / SVG / PDF OVERLAY */}
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
+            <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2.5 shadow-xl dark:border-slate-700">
+              {/* FLOATING HOVER DOWNLOAD BAR */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+                <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/20 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-md">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadCanvasAsPng(
+                        canvasRef.current,
+                        `data-chart-${input.template}.png`,
+                        () => notify("Downloaded High-Res Chart (.PNG)!"),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#ff6b35] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#e85d2a]"
+                  >
+                    <Download size={13} />
+                    Download PNG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadCanvasAsEmbeddedSvg(
+                        canvasRef.current,
+                        input.chartTitle,
+                        `data-chart-${input.template}.svg`,
+                        () => notify("Downloaded Chart (.SVG)!"),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#3452d1] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#2842b5]"
+                  >
+                    <FileCode2 size={13} />
+                    SVG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      printCanvasAsPdfPoster(
+                        canvasRef.current,
+                        input.chartTitle,
+                        () => notify("Opened PDF Export Dialog!"),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-emerald-500"
+                  >
+                    <Printer size={13} />
+                    PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyCanvasImageToClipboard(canvasRef.current, () =>
+                        notify("Copied Chart Image to Clipboard!"),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-2 text-xs font-bold text-white hover:bg-white/20"
+                  >
+                    <Copy size={12} />
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div className="pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md backdrop-blur-xs transition-opacity sm:inline-flex sm:group-hover:opacity-0">
+                <Download size={12} className="text-[#ff6b35]" />
+                <span>Hover to Download (PNG · SVG · PDF)</span>
+              </div>
+
               <canvas
                 ref={canvasRef}
                 className="mx-auto block aspect-square w-full h-auto rounded-xl"
@@ -811,22 +1018,14 @@ export default function DataToChartVisualCardMakerClient() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={downloadChartPng}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-slate-800 dark:bg-slate-800"
-              >
-                <Download size={14} />
-                Download 1080×1080 Chart (.PNG)
-              </button>
-              <button
-                type="button"
                 onClick={async () => {
                   await navigator.clipboard.writeText(pack.socialPostText);
                   notify("Copied Data Summary Social Caption!");
                 }}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               >
                 <Copy size={14} />
-                Copy Data Caption
+                Copy Companion Data Social Caption
               </button>
             </div>
           </div>

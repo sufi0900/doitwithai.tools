@@ -4,7 +4,13 @@ export type QuoteVisualTemplateId =
   | "founder-memo-note"
   | "testimonial-5-star"
   | "myth-vs-reality"
-  | "executive-pull-quote";
+  | "executive-pull-quote"
+  | "oversized-kpi-stat"
+  | "before-after-proof"
+  | "podcast-clip-quote"
+  | "glassmorphic-saas-card"
+  | "boardroom-white-frame"
+  | "checklist-takeaway-card";
 
 export interface QuoteCardItem {
   id: string;

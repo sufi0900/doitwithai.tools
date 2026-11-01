@@ -4,7 +4,13 @@ export type DiagramTemplateId =
   | "circular-flywheel"
   | "three-pillar-house"
   | "hub-and-spoke"
-  | "horizontal-workflow";
+  | "horizontal-workflow"
+  | "layered-pyramid"
+  | "iceberg-model"
+  | "venn-overlap-3"
+  | "staircase-maturity"
+  | "honeycomb-cluster"
+  | "bow-tie-funnel";
 
 export interface DiagramNodeItem {
   id: string;
@@ -110,6 +116,54 @@ export function buildDeterministicFrameworkDiagram(
       "STEP 04",
       "STEP 05",
       "STEP 06",
+    ],
+    "layered-pyramid": [
+      "TIER 1 · APEX",
+      "TIER 2 · STRATEGY",
+      "TIER 3 · SYSTEMS",
+      "TIER 4 · FOUNDATION",
+      "TIER 5",
+      "TIER 6",
+    ],
+    "iceberg-model": [
+      "VISIBLE · SURFACE",
+      "HIDDEN · ARCHITECTURE",
+      "HIDDEN · DATA PROOF",
+      "DEEP · AUTHORITY",
+      "LAYER 5",
+      "LAYER 6",
+    ],
+    "venn-overlap-3": [
+      "CIRCLE 1 · INTENT",
+      "CIRCLE 2 · PROOF",
+      "CIRCLE 3 · DISTRIBUTION",
+      "SWEET SPOT",
+      "NODE 5",
+      "NODE 6",
+    ],
+    "staircase-maturity": [
+      "LEVEL 1 · BASELINE",
+      "LEVEL 2 · SYSTEMIZED",
+      "LEVEL 3 · AUTOMATED",
+      "LEVEL 4 · COMPOUNDING",
+      "LEVEL 5",
+      "LEVEL 6",
+    ],
+    "honeycomb-cluster": [
+      "CELL 01",
+      "CELL 02",
+      "CELL 03",
+      "CELL 04",
+      "CELL 05",
+      "CELL 06",
+    ],
+    "bow-tie-funnel": [
+      "AWARENESS",
+      "ACTIVATION",
+      "CONVERSION",
+      "EXPANSION",
+      "ADVOCACY",
+      "RETENTION",
     ],
   };
 

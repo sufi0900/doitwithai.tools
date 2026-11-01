@@ -5,14 +5,16 @@ import {
   CheckCircle2,
   Copy,
   Download,
-  MessageSquare,
   Sparkles,
 } from "lucide-react";
 import UrlArticleExtractorBar, {
   type ExtractedImageAsset,
 } from "@/features/tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "@/features/tool-ui/SocialVisualCardBuilder";
-import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, {
+  focusToolSection,
+} from "@/features/tool-ui/ToolRunOverlay";
+import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import {
   buildDeterministicThread,
   DEFAULT_THREAD_INPUT,
@@ -53,18 +55,19 @@ export default function SocialThreadGeneratorClient() {
     setInput((prev) => ({ ...prev, [key]: val }));
   }
 
-  async function handleGenerateAiThread() {
+  async function runGenerateAiThread(overrideInput?: ThreadGeneratorInput) {
+    const payload = overrideInput || input;
     setLoadingAi(true);
     try {
       const res = await fetch("/api/ai-tools/social-thread-generator", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data?.thread) {
         setAiThread(data.thread);
-        notify(`Generated AI ${input.platform} thread!`);
+        notify(`Generated AI ${payload.platform} thread!`);
       }
       focusToolSection(resultsRef.current);
     } catch {
@@ -124,28 +127,30 @@ export default function SocialThreadGeneratorClient() {
         onExtracted={(data) => {
           setAiThread(null);
           const firstSub = data.subTopics?.[0];
-          setInput((prev) => ({
-            ...prev,
-            topicOrHeadline: firstSub?.title || data.title || prev.topicOrHeadline,
-            sourceContent: firstSub?.content || data.cleanText || prev.sourceContent,
-            ctaUrl: data.url || prev.ctaUrl,
-          }));
+          const nextInput: ThreadGeneratorInput = {
+            ...input,
+            topicOrHeadline:
+              firstSub?.title || data.title || input.topicOrHeadline,
+            sourceContent:
+              firstSub?.content || data.cleanText || input.sourceContent,
+            ctaUrl: data.url || input.ctaUrl,
+          };
+          setInput(nextInput);
           if (data.images?.length) {
             setExtractedImages(data.images);
           }
-          notify(`Extracted ${data.subTopics.length} sub-topics from "${data.title}"!`);
-          focusToolSection(resultsRef.current);
+          void runGenerateAiThread(nextInput);
         }}
         onSelectSubTopic={(sub, data) => {
           setAiThread(null);
-          setInput((prev) => ({
-            ...prev,
+          const nextInput: ThreadGeneratorInput = {
+            ...input,
             topicOrHeadline: sub.title,
             sourceContent: sub.content,
-            ctaUrl: data.url || prev.ctaUrl,
-          }));
-          notify(`Switched thread generator to sub-topic: "${sub.title}"!`);
-          focusToolSection(resultsRef.current);
+            ctaUrl: data.url || input.ctaUrl,
+          };
+          setInput(nextInput);
+          void runGenerateAiThread(nextInput);
         }}
       />
 
@@ -164,13 +169,19 @@ export default function SocialThreadGeneratorClient() {
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="flex items-center gap-2 text-lg font-extrabold">
-                <MessageSquare size={19} className="text-[#5271ff]" />
-                1. Thread Source Notes &amp; Platform Rules
-              </h2>
+              <div className="flex items-center gap-2.5">
+                <PlatformBrandIcon
+                  platform="x"
+                  slug="social-thread-generator"
+                  size={38}
+                />
+                <h2 className="text-lg font-extrabold">
+                  1. Thread Source Notes &amp; Platform Rules
+                </h2>
+              </div>
               <button
                 type="button"
-                onClick={handleGenerateAiThread}
+                onClick={() => void runGenerateAiThread()}
                 disabled={loadingAi}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
               >
@@ -325,7 +336,9 @@ export default function SocialThreadGeneratorClient() {
               <button
                 type="button"
                 onClick={async () => {
-                  const all = displayedPosts.map((p) => p.text).join("\n\n---\n\n");
+                  const all = displayedPosts
+                    .map((p) => p.text)
+                    .join("\n\n---\n\n");
                   await navigator.clipboard.writeText(all);
                   notify("Copied entire thread to clipboard!");
                 }}
