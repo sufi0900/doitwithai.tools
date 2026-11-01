@@ -7,6 +7,7 @@ export type PlatformBrandType =
   | "instagram"
   | "tiktok"
   | "x-threads"
+  | "x"
   | "pinterest"
   | "google-local"
   | "image-zip"
@@ -45,6 +46,7 @@ export function detectPlatformBrandBySlug(
   if (
     s.includes("social-thread") ||
     s.includes("twitter") ||
+    s === "x" ||
     s === "og-twitter-preview-generator"
   ) {
     return "x-threads";
@@ -145,16 +147,27 @@ export function PlatformBrandIcon({
   slug,
   slugOrText,
   brand,
+  platform,
   size = 32,
+  className,
 }: {
   slug?: string;
   slugOrText?: string;
-  brand?: PlatformBrandType;
+  brand?: PlatformBrandType | string;
+  platform?: PlatformBrandType | string;
   size?: number;
+  className?: string;
 }) {
   const key = slug || slugOrText || "";
+  const rawBrand = brand || platform;
+  const normalizedBrand: PlatformBrandType | null =
+    rawBrand === "x"
+      ? "x-threads"
+      : (rawBrand as PlatformBrandType | undefined) || null;
   const resolved =
-    brand || (key ? detectPlatformBrandBySlug(key) : "onpage-writer");
+    (key ? detectPlatformBrandBySlug(key) : null) ||
+    normalizedBrand ||
+    "onpage-writer";
   if (!resolved) return null;
 
   // Common 3D SVG defs (inner top highlight + soft 3D base shadow)
@@ -167,6 +180,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -217,6 +231,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -260,6 +275,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -294,6 +310,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -338,6 +355,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <rect x="4" y="6" width="28" height="27" rx="8.5" fill="#020617" />
@@ -370,13 +388,14 @@ export function PlatformBrandIcon({
     );
   }
 
-  if (resolved === "x-threads") {
+  if (resolved === "x-threads" || resolved === "x") {
     return (
       <svg
         width={size}
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <rect x="4" y="6" width="28" height="27" rx="8" fill="#020617" />
@@ -406,6 +425,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <circle cx="18" cy="19.5" r="14" fill="#881337" />
@@ -433,6 +453,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <rect x="4" y="6" width="28" height="27" rx="8" fill="#064E3B" />
@@ -471,6 +492,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -508,6 +530,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -545,6 +568,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -580,6 +604,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -616,6 +641,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <rect x="4" y="6" width="28" height="27" rx="8" fill="#020617" />
@@ -645,6 +671,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -682,6 +709,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -719,6 +747,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -758,6 +787,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -797,6 +827,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -835,6 +866,7 @@ export function PlatformBrandIcon({
         height={size}
         viewBox="0 0 36 36"
         fill="none"
+        className={className}
         aria-hidden="true"
       >
         <defs>
@@ -869,6 +901,7 @@ export function PlatformBrandIcon({
       height={size}
       viewBox="0 0 36 36"
       fill="none"
+      className={className}
       aria-hidden="true"
     >
       <defs>
