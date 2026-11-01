@@ -189,6 +189,12 @@ export default function RootLayout({ children }) {
           src="https://www.googletagmanager.com/gtag/js?id=G-SHX78424XN"
           strategy="afterInteractive"
         />
+        {/* Google AdSense */}
+<script
+  async
+  src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1402360917878288"
+  crossOrigin="anonymous"
+/>
 
         <Script id="ga4-init" strategy="afterInteractive">
           {`
