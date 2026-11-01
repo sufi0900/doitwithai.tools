@@ -329,11 +329,12 @@ html[data-view="split"] .workspace {
 
 .brand-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 2px 10px;
+  padding: 4px 2px 10px;
   border-bottom: 1px solid var(--border);
-  gap: 6px;
+  gap: 6px 8px;
 }
 
 .brand-logo-link {
@@ -382,10 +383,13 @@ html[data-theme="light"] .brand-logo-wrap {
 
 .brand-sub {
   display: block;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-muted);
   font-weight: 700;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 112px;
   margin-top: 1px;
 }
 
@@ -586,9 +590,10 @@ html[data-theme="light"] .brand-logo-wrap {
 
 .workspace-topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px 10px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-sidebar);
@@ -695,9 +700,10 @@ html[data-theme="dark"] .btn-secondary:hover {
 
 .pane-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px 10px;
   flex-shrink: 0;
 }
 

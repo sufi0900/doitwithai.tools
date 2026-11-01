@@ -1,15 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   Clock,
   Copy,
   Download,
+  FileText,
   Film,
   Sparkles,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
+import {
+  focusToolSection,
+  ToolRunOverlay,
+} from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicShortScript,
   DEFAULT_SHORT_SCRIPT_INPUT,
@@ -25,13 +30,22 @@ export default function ShortFormVideoScriptGeneratorClient() {
   );
   const [aiPack, setAiPack] = useState<ShortFormScriptPack | null>(null);
   const [loadingAi, setLoadingAi] = useState(false);
+  const [scriptViewMode, setScriptViewMode] = useState<"teleprompter" | "beats">(
+    "teleprompter",
+  );
   const [toast, setToast] = useState("");
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   const fallbackPack = useMemo(
     () => buildDeterministicShortScript(input),
     [input],
   );
   const pack = aiPack || fallbackPack;
+
+  const cleanConnectedScript = useMemo(() => {
+    if (pack.connectedVoiceoverScript) return pack.connectedVoiceoverScript;
+    return pack.segments.map((s) => s.spokenLine.trim()).join("\n\n");
+  }, [pack]);
 
   function notify(msg: string) {
     setToast(msg);
@@ -62,28 +76,34 @@ export default function ShortFormVideoScriptGeneratorClient() {
         setAiPack(data.scriptPack);
         notify(`Generated AI ${input.platform} retention script!`);
       }
+      focusToolSection(resultsRef.current);
     } catch {
       notify("Updated vertical video script.");
+      focusToolSection(resultsRef.current);
     } finally {
       setLoadingAi(false);
     }
   }
 
   function downloadMarkdownScript() {
+    const cleanTitle = input.topic.replace(/\s*\|\s*[^|]+$/g, "").trim();
     const md = [
-      `# ${input.platform} Script (${input.durationSeconds}s): ${input.topic}`,
+      `# ${input.platform} Script (${input.durationSeconds}s) — ${cleanTitle}`,
       `- **Spoken Word Count:** ${pack.totalSpokenWords} words (~${pack.estimatedSecondsAt150Wpm}s at 150 WPM)`,
+      "",
+      "## Full Connected Teleprompter Voiceover Script",
+      cleanConnectedScript,
       "",
       "## 3 Opening Hook Variations (0:00 – 0:03)",
       ...pack.hookVariations.map(
         (h) =>
-          `- **${h.angle}:** "${h.spokenHook}" *(On-Screen: ${h.onScreenHook})*`,
+          `- **${h.angle}:** "${h.spokenHook}" *(On-Screen Text: ${h.onScreenHook})*`,
       ),
       "",
-      "## Beat-by-Beat Retention Script",
+      "## Beat-by-Beat Director Timeline & B-Roll Cues",
       ...pack.segments.map(
         (s) =>
-          `### [${s.timeRange}] ${s.beatLabel}\n- **Spoken Audio:** "${s.spokenLine}"\n- **On-Screen Text:** \`${s.onScreenTextCaption}\`\n- **Visual / B-Roll Cue:** ${s.visualBRollCue}\n`,
+          `### [${s.timeRange}] ${s.beatLabel}\n- **Spoken Audio:** "${s.spokenLine}"\n- **On-Screen Text:** ${s.onScreenTextCaption}\n- **Visual / B-Roll Cue:** ${s.visualBRollCue}\n`,
       ),
       "## Post Caption & Hashtags",
       pack.captionWithHashtags,
@@ -104,17 +124,33 @@ export default function ShortFormVideoScriptGeneratorClient() {
       aria-label="Short-Form Video Hook and Script Builder Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
-            <UrlArticleExtractorBar
+      <ToolRunOverlay
+        open={loadingAi}
+        title={`Writing ${input.durationSeconds}s ${input.platform} Script...`}
+        subtitle="Crafting a continuous teleprompter voiceover script, 3 scroll-stopping hooks, and B-roll cues."
+      />
+
+      <UrlArticleExtractorBar
         label="Fetch Any Article or YouTube URL to Auto-Build a Vertical Video Script"
         placeholder="Paste an article or YouTube URL to extract a Short/Reels topic & takeaway..."
         onExtracted={(data) => {
           setAiPack(null);
+          const cleanTitle = (data.title || prevTopicFallback(input.topic))
+            .replace(/\s*\|\s*[^|]+$/g, "")
+            .trim();
+          const firstValidSub = data.subTopics?.[0];
           setInput((prev) => ({
             ...prev,
-            topic: data.title || prev.topic,
-            coreTakeawayOrProof: (data.keyTakeaways.slice(0, 2).join(". ") || data.paragraphs[0] || prev.coreTakeawayOrProof).slice(0, 320),
+            topic: firstValidSub?.title || cleanTitle || prev.topic,
+            coreTakeawayOrProof: (
+              firstValidSub?.summary ||
+              data.keyTakeaways.slice(0, 2).join(" ") ||
+              data.paragraphs[0] ||
+              prev.coreTakeawayOrProof
+            ).slice(0, 320),
           }));
-          notify(`Loaded video script brief from "${data.title}"!`);
+          notify(`Loaded video script brief from "${cleanTitle}"!`);
+          focusToolSection(resultsRef.current);
         }}
         onSelectSubTopic={(sub) => {
           setAiPack(null);
@@ -124,6 +160,7 @@ export default function ShortFormVideoScriptGeneratorClient() {
             coreTakeawayOrProof: sub.summary,
           }));
           notify(`Focused Short script on sub-topic: "${sub.title}"!`);
+          focusToolSection(resultsRef.current);
         }}
       />
 
@@ -137,7 +174,7 @@ export default function ShortFormVideoScriptGeneratorClient() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
         {/* LEFT COLUMN: VIDEO BRIEF & 3 OPENING HOOK VARIATIONS */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
@@ -283,8 +320,12 @@ export default function ShortFormVideoScriptGeneratorClient() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: BEAT-BY-BEAT RETENTION TIMELINE */}
-        <div className="space-y-6">
+        {/* RIGHT COLUMN: CONNECTED VOICEOVER SCRIPT & BEAT-BY-BEAT TIMELINE */}
+        <div
+          ref={resultsRef}
+          tabIndex={-1}
+          className="space-y-6 focus:outline-none"
+        >
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3.5 dark:border-slate-800">
               <div>
@@ -294,24 +335,21 @@ export default function ShortFormVideoScriptGeneratorClient() {
                   {pack.estimatedSecondsAt150Wpm}s at 150 WPM
                 </span>
                 <h3 className="mt-0.5 text-lg font-black">
-                  Beat-by-Beat Retention &amp; Pattern Interrupt Script
+                  Connected Teleprompter Script &amp; Director Timeline
                 </h3>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={async () => {
-                    const spokenOnly = pack.segments
-                      .map((s) => s.spokenLine)
-                      .join("\n\n");
-                    await navigator.clipboard.writeText(spokenOnly);
-                    notify("Copied teleprompter spoken script!");
+                    await navigator.clipboard.writeText(cleanConnectedScript);
+                    notify("Copied connected teleprompter script!");
                   }}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2842b5]"
                 >
                   <Copy size={13} />
-                  Copy Teleprompter Text
+                  Copy Voiceover Script
                 </button>
                 <button
                   type="button"
@@ -323,36 +361,79 @@ export default function ShortFormVideoScriptGeneratorClient() {
               </div>
             </div>
 
-            <div className="mt-4 space-y-3.5">
-              {pack.segments.map((seg, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/60"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <strong className="text-sm font-black text-slate-900 dark:text-white">
-                      {seg.beatLabel}
-                    </strong>
-                    <span className="rounded-full bg-[#3452d1] px-2.5 py-0.5 font-mono text-[11px] font-extrabold text-white">
-                      {seg.timeRange}
-                    </span>
-                  </div>
-
-                  <p className="mt-2.5 rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold leading-6 text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                    &ldquo;{seg.spokenLine}&rdquo;
-                  </p>
-
-                  <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                    <span className="rounded bg-amber-400 px-2 py-0.5 font-mono font-black text-slate-950">
-                      TEXT OVERLAY: {seg.onScreenTextCaption}
-                    </span>
-                    <span className="text-slate-600 dark:text-slate-300">
-                      🎥 <strong>B-Roll / Cut:</strong> {seg.visualBRollCue}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            {/* View Toggle: Continuous Teleprompter vs Beat-by-Beat Director Cards */}
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 dark:border-slate-800 dark:bg-slate-900">
+              <button
+                type="button"
+                onClick={() => setScriptViewMode("teleprompter")}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-extrabold transition ${
+                  scriptViewMode === "teleprompter"
+                    ? "bg-[#3452d1] text-white shadow-xs"
+                    : "text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                📜 Full Connected Voiceover Script (Teleprompter View)
+              </button>
+              <button
+                type="button"
+                onClick={() => setScriptViewMode("beats")}
+                className={`flex-1 rounded-lg px-3 py-2 text-xs font-extrabold transition ${
+                  scriptViewMode === "beats"
+                    ? "bg-[#3452d1] text-white shadow-xs"
+                    : "text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                🎬 Beat-by-Beat Director &amp; B-Roll View
+              </button>
             </div>
+
+            {scriptViewMode === "teleprompter" ? (
+              <div className="mt-4 rounded-2xl border-2 border-[#3452d1]/25 bg-slate-50/90 p-5 dark:border-[#5271ff]/30 dark:bg-slate-950">
+                <div className="mb-3 flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
+                    <FileText size={14} />
+                    Continuous Spoken Voiceover (Read Top-to-Bottom)
+                  </span>
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Clean prose · Zero mid-word cuts · Ready to record
+                  </span>
+                </div>
+                <div className="whitespace-pre-wrap font-sans text-base font-medium leading-8 text-slate-900 dark:text-slate-100">
+                  {cleanConnectedScript}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3.5">
+                {pack.segments.map((seg, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/60"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <strong className="text-sm font-black text-slate-900 dark:text-white">
+                        {seg.beatLabel}
+                      </strong>
+                      <span className="rounded-full bg-[#3452d1] px-2.5 py-0.5 font-mono text-[11px] font-extrabold text-white">
+                        {seg.timeRange}
+                      </span>
+                    </div>
+
+                    <p className="mt-2.5 rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold leading-6 text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+                      &ldquo;{seg.spokenLine}&rdquo;
+                    </p>
+
+                    <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                      <span className="rounded bg-amber-400 px-2 py-0.5 font-mono font-black text-slate-950">
+                        TEXT OVERLAY: {seg.onScreenTextCaption}
+                      </span>
+                      <span className="text-slate-600 dark:text-slate-300">
+                        🎥 <strong>B-Roll / Cut:</strong> {seg.visualBRollCue}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827]">
@@ -379,4 +460,8 @@ export default function ShortFormVideoScriptGeneratorClient() {
       </div>
     </section>
   );
+}
+
+function prevTopicFallback(topic: string) {
+  return topic || "Vertical Video Breakdown";
 }

@@ -12,6 +12,7 @@ import {
   KeyRound,
   LayoutGrid,
   Link2,
+  MapPin,
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
@@ -27,6 +28,7 @@ import { ToolActions } from "./ToolActions";
 import { useWorkspace, type WorkspaceView } from "./WorkspaceProvider";
 import "./workspace.css";
 import { RecentUrlSettings } from "../tool-ui/recent-urls/RecentUrlsProvider";
+import { detectPlatformBrandBySlug, PlatformBrandIcon } from "../tool-ui/PlatformBrandIcon";
 
 const TOPIC_ICONS: Record<string, typeof Search> = {
   conversion: ArrowRightLeft,
@@ -37,6 +39,7 @@ const TOPIC_ICONS: Record<string, typeof Search> = {
   keywords: KeyRound,
   "ai-search": Sparkles,
   social: Share2,
+  "local-seo": MapPin,
 };
 const VIEWS = [
   { id: "all", label: "All", icon: LayoutGrid },
@@ -204,9 +207,7 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
             Icon = TOPIC_ICONS[topic.id] || Sparkles;
           const items = tools.filter(
             (tool) =>
-              tool.topics.includes(topic.id) &&
-              (tool.id !== "on-page-ai-seo-analyzer" ||
-                topic.id === "on-page") &&
+              tool.topics[0] === topic.id &&
               (!trimmedQuery ||
                 [tool.name, ...tool.tags].some((text) =>
                   text.toLowerCase().includes(trimmedQuery),
@@ -258,7 +259,11 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
                       onClick={() => setDrawerOpen(false)}
                       className={`workspace-nav-link ${tool.id === "on-page-ai-seo-analyzer" ? "workspace-flagship-link" : ""}`}
                     >
-                      <span className="workspace-tool-dot" aria-hidden="true" />
+                      {detectPlatformBrandBySlug(tool.slug) ? (
+                        <span className="shrink-0 inline-flex items-center"><PlatformBrandIcon slug={tool.slug} size={15} /></span>
+                      ) : (
+                        <span className="workspace-tool-dot" aria-hidden="true" />
+                      )}
                       <span className="min-w-0 flex-1">{tool.name}</span>
                       {workspace.saved.includes(tool.id) && (
                         <Bookmark

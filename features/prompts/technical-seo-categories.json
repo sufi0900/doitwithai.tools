@@ -1,0 +1,74 @@
+[
+  {
+    "id": "crawl-sitemaps",
+    "name": "Crawlability, robots.txt directives & XML sitemap architecture",
+    "intro": "Audit and write clean robots.txt rules, AI crawler governance directives, segmented XML sitemaps, and IndexNow ping workflows without blocking critical CSS/JS rendering assets.",
+    "tool": "robots-txt-generator",
+    "toolName": "Robots.txt Generator & AI Crawler Checker",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 1\u201310"
+  },
+  {
+    "id": "indexing-canonicals",
+    "name": "Google Search Console indexing triage & canonical consolidation",
+    "intro": "Diagnose 'Crawled - currently not indexed', 'Discovered - currently not indexed', soft 404s, and conflicting rel=canonical tags using real URL inspection evidence.",
+    "tool": "on-page-ai-seo-analyzer",
+    "toolName": "On-Page AI SEO & Technical Inspector",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 11\u201320"
+  },
+  {
+    "id": "redirects-migrations",
+    "name": "Redirect chains, 404/410 status codes & site migration checklists",
+    "intro": "Flatten multi-hop 301 redirect chains, decide between 301, 404, and 410 status codes, generate server redirect rules, and execute zero-drop domain or URL migrations.",
+    "tool": "redirect-rule-generator",
+    "toolName": "Redirect Rule Generator (Nginx, Apache, Vercel, Cloudflare)",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 21\u201330"
+  },
+  {
+    "id": "schema-jsonld",
+    "name": "JSON-LD Schema markup (@graph, Article, FAQPage, Product & Organization)",
+    "intro": "Author and debug valid Schema.org JSON-LD markup connected via persistent @id nodes that match visible HTML content and Google Rich Result eligibility rules.",
+    "tool": "schema-markup-generator",
+    "toolName": "JSON-LD Schema Markup Generator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 31\u201340"
+  },
+  {
+    "id": "cwv-performance",
+    "name": "Core Web Vitals (LCP, INP, CLS), asset loading & rendering speed",
+    "intro": "Turn PageSpeed Insights, CrUX, and Chrome DevTools traces into concrete fixes for Largest Contentful Paint (LCP), Interaction to Next Paint (INP), and Cumulative Layout Shift (CLS).",
+    "tool": "core-web-vitals-checker",
+    "toolName": "Core Web Vitals Diagnostics Studio",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 41\u201350"
+  },
+  {
+    "id": "architecture-links",
+    "name": "Site architecture, internal link depth, orphan pages & cannibalization",
+    "intro": "Reduce click depth to money pages, rescue orphaned URLs, audit internal anchor text distribution, and resolve keyword cannibalization across competing URLs.",
+    "tool": "internal-link-anchor-auditor",
+    "toolName": "Internal Link Anchor & Cannibalization Auditor",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 51\u201359"
+  },
+  {
+    "id": "international-faceted",
+    "name": "International SEO (hreflang), pagination & faceted URL parameters",
+    "intro": "Build bidirectional hreflang XML/HTML maps with x-default fallbacks, control faceted e-commerce filter bloat, and structure crawlable pagination.",
+    "tool": "hreflang-generator",
+    "toolName": "Hreflang Tag & XML Map Generator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 60\u201368"
+  },
+  {
+    "id": "js-seo-roadmaps",
+    "name": "JavaScript SEO parity, log file analysis & engineering sprint tickets",
+    "intro": "Compare raw server HTML against hydrated DOM output, interpret Googlebot server log hits, and write reproduction-ready Jira/Linear tickets for developers.",
+    "tool": "structured-data-validator",
+    "toolName": "Structured Data & Technical Validator",
+    "showToolLink": true,
+    "rangeLabel": "Prompts 69\u201376"
+  }
+]

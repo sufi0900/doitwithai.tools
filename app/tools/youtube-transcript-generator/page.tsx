@@ -9,6 +9,7 @@ import {
   toolHeroHeading,
   toolHeroSurface,
 } from "@/features/tool-ui/ToolHero";
+import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl = "https://doitwithai.tools/tools/youtube-transcript-generator";
 const title =
@@ -121,6 +122,10 @@ export default function YoutubeTranscriptGeneratorPage() {
 
           <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
+                <PlatformBrandIcon slugOrText="youtube-transcript-generator" size=18 />
+                <span>Official Platform Studio</span>
+              </div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
                 Video &amp; Content Studio · Transcripts, .SRT &amp; AI Chapters
               </p>

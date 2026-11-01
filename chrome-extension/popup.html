@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Do It With AI v2.0 — SEO, Keywords, Audience, Convert &amp; Social Studio</title>
+    <title>Do It With AI v2.2 — SEO, Keywords, Audience, Convert &amp; Social Studio</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -27,7 +27,7 @@
             </span>
             <div class="brand-text">
               <span class="brand-title">DoItWithAI</span>
-              <span class="brand-sub">v2.0 · 85 AI &amp; SEO Tools</span>
+              <span class="brand-sub">v2.2 · 90 AI &amp; SEO Tools</span>
             </div>
           </a>
           <div class="header-actions">
@@ -63,6 +63,11 @@
 
         <div class="nav-group-label">Pillar 1 · SEO &amp; Competitor Spy</div>
         <nav class="nav-list" id="main-nav">
+          <button type="button" class="nav-item hidden" data-tab="youtube" id="nav-item-youtube">
+            <span>▶ YouTube Video Studio</span>
+            <span class="nav-badge badge-warn" id="badge-youtube">LIVE</span>
+          </button>
+
           <button type="button" class="nav-item active" data-tab="overview">
             <span>Overview &amp; Scores</span>
             <span class="nav-badge badge-ok" id="badge-overview">200</span>
@@ -128,7 +133,7 @@
               rel="noopener noreferrer"
               class="footer-cta-link"
             >
-              Open All 85 Web Tools ↗
+              Open All 90 Web Tools ↗
             </a>
           </div>
         </div>
@@ -160,6 +165,65 @@
         </header>
 
         <div id="status-toast" class="status-toast hidden" role="status"></div>
+
+                <!-- TAB 0: AUTO YOUTUBE VIDEO STUDIO (Transcript, Summary, Insights, FAQs & Comments) -->
+        <section class="tab-pane" id="tab-youtube">
+          <div class="pane-header">
+            <h2>▶ YouTube Video Studio (Transcript, Summary, Insights &amp; Comments)</h2>
+            <div class="btn-group">
+              <button type="button" id="btn-yt-copy-current" class="btn-secondary btn-xs">
+                Copy Active View
+              </button>
+              <a
+                id="btn-yt-open-web-studio"
+                href="https://doitwithai.tools/tools/youtube-transcript-generator"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-primary btn-xs"
+              >
+                Open Full YouTube Studio ↗
+              </a>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="flex-between" style="flex-wrap:wrap;gap:8px">
+              <div>
+                <span class="micro-label" id="yt-studio-channel">YOUTUBE VIDEO DETECTED</span>
+                <strong class="block-val" id="yt-studio-title">Loading YouTube video details…</strong>
+              </div>
+              <div class="pill-group" id="yt-studio-subtabs">
+                <button type="button" class="filter-pill active" data-yt-sub="transcript">📝 Transcript</button>
+                <button type="button" class="filter-pill" data-yt-sub="summary">✨ Summary</button>
+                <button type="button" class="filter-pill" data-yt-sub="insights">💡 Key Insights</button>
+                <button type="button" class="filter-pill" data-yt-sub="faqs">❓ Video FAQs</button>
+                <button type="button" class="filter-pill" data-yt-sub="comments">💬 Comments</button>
+              </div>
+            </div>
+
+            <div id="yt-studio-content-box" class="table-scroll" style="margin-top:10px;max-height:310px">
+              <p class="text-muted">Open any YouTube watch or Shorts video tab to view its live timestamped transcript, executive summary, key insights, FAQs, and viewer comments.</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <span class="micro-label">1-CLICK REPURPOSE THIS YOUTUBE VIDEO</span>
+            <div class="btn-group" style="margin-top:8px;flex-wrap:wrap">
+              <a id="yt-quick-srt" href="https://doitwithai.tools/tools/youtube-transcript-generator" target="_blank" rel="noopener noreferrer" class="btn-primary btn-xs">
+                📥 Download .SRT &amp; .TXT ↗
+              </a>
+              <a id="yt-quick-blog" href="https://doitwithai.tools/tools/video-transcript-to-blog" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-xs">
+                ✍️ Convert Video to SEO Blog ↗
+              </a>
+              <a id="yt-quick-short" href="https://doitwithai.tools/tools/short-form-video-script-generator" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-xs">
+                🎬 Create Shorts / Reels Script ↗
+              </a>
+              <a id="yt-quick-thumb" href="https://doitwithai.tools/tools/social-media-video-thumbnail-grabber" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-xs">
+                🖼️ 4K Thumbnails (.ZIP) ↗
+              </a>
+            </div>
+          </div>
+        </section>
 
         <!-- TAB 1: OVERVIEW & ORIGINALITY / E-E-A-T SCORES -->
         <section class="tab-pane active" id="tab-overview">
@@ -859,6 +923,13 @@
               <button type="button" class="filter-pill active" data-angle="0">Idea 1 · Key Takeaways</button>
               <button type="button" class="filter-pill" data-angle="1">Idea 2 · Contrarian Hook</button>
               <button type="button" class="filter-pill" data-angle="2">Idea 3 · Step-by-Step Playbook</button>
+            </div>
+
+                        <div class="pill-group" id="social-polisher-pills" style="margin-top:8px">
+              <span class="micro-label" style="align-self:center;margin-right:4px">✨ AI POST POLISHER:</span>
+              <button type="button" class="filter-pill" data-polish-action="hook">⚡ Rewrite Opening Hook</button>
+              <button type="button" class="filter-pill" data-polish-action="bullets">✅ Format as Scannable Bullets</button>
+              <button type="button" class="filter-pill" data-polish-action="expand">🚀 Expand Raw Idea → Full Post</button>
             </div>
 
             <textarea id="social-post-output" class="social-textarea" rows="7"></textarea>

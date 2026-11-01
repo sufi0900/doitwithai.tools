@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   Copy,
@@ -12,6 +12,10 @@ import UrlArticleExtractorBar, {
   type ExtractedImageAsset,
 } from "@/features/tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "@/features/tool-ui/SocialVisualCardBuilder";
+import {
+  focusToolSection,
+  ToolRunOverlay,
+} from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicThread,
   DEFAULT_THREAD_INPUT,
@@ -31,6 +35,7 @@ export default function SocialThreadGeneratorClient() {
   );
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState("");
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   const deterministicThread = useMemo(
     () => buildDeterministicThread(input),
@@ -64,8 +69,10 @@ export default function SocialThreadGeneratorClient() {
         setAiThread(data.thread);
         notify(`Generated AI ${input.platform} thread!`);
       }
+      focusToolSection(resultsRef.current);
     } catch {
       notify("Updated social thread posts.");
+      focusToolSection(resultsRef.current);
     } finally {
       setLoadingAi(false);
     }
@@ -108,21 +115,29 @@ export default function SocialThreadGeneratorClient() {
       aria-label="X and Threads Viral Thread Splitter Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
+      <ToolRunOverlay
+        open={loadingAi}
+        title={`Splitting Into ${input.platform} Thread...`}
+        subtitle="Building numbered posts, 3 viral opening hook variations, and character-safe splits."
+      />
+
       <UrlArticleExtractorBar
         label="Fetch Article URL & Auto-Split Multiple Sub-Topics Into Threads (+ Extract Images)"
         placeholder="Paste any blog post or article URL to extract sub-topics, images & generate threads..."
         onExtracted={(data) => {
           setAiThread(null);
+          const firstSub = data.subTopics?.[0];
           setInput((prev) => ({
             ...prev,
-            topicOrHeadline: data.title || prev.topicOrHeadline,
-            sourceContent: data.cleanText || prev.sourceContent,
+            topicOrHeadline: firstSub?.title || data.title || prev.topicOrHeadline,
+            sourceContent: firstSub?.content || data.cleanText || prev.sourceContent,
             ctaUrl: data.url || prev.ctaUrl,
           }));
           if (data.images?.length) {
             setExtractedImages(data.images);
           }
           notify(`Extracted ${data.subTopics.length} sub-topics from "${data.title}"!`);
+          focusToolSection(resultsRef.current);
         }}
         onSelectSubTopic={(sub, data) => {
           setAiThread(null);
@@ -133,6 +148,7 @@ export default function SocialThreadGeneratorClient() {
             ctaUrl: data.url || prev.ctaUrl,
           }));
           notify(`Switched thread generator to sub-topic: "${sub.title}"!`);
+          focusToolSection(resultsRef.current);
         }}
       />
 
@@ -293,7 +309,11 @@ export default function SocialThreadGeneratorClient() {
         </div>
 
         {/* RIGHT COLUMN: NUMBERED MULTI-POST THREAD CARDS */}
-        <div className="space-y-4">
+        <div
+          ref={resultsRef}
+          tabIndex={-1}
+          className="space-y-4 focus:outline-none"
+        >
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-[#111827]">
             <div>
               <span className="text-xs font-extrabold uppercase tracking-wider text-[#5271ff]">

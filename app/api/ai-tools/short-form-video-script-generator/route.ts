@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
           {
             role: "system",
             content:
-              "You are a Viral Short-Form Video Producer for YouTube Shorts, Instagram Reels, and TikTok. Build a high-retention vertical video script paced at ~150 spoken words per minute with: (1) 3 interchangeable 0–3s hook variations (Contrarian Stop-Hook, Proof / Number Hook, Mistake Callout), (2) 5 timed retention beats with Pattern Interrupt B-roll cues every 7–10 seconds and punchy 3–5 word on-screen text captions, and (3) a ready-to-paste social caption with 5 hashtags.",
+              "You are a Viral Short-Form Video Producer for YouTube Shorts, Instagram Reels, and TikTok. Build a high-retention vertical video script paced at ~150 spoken words per minute with: (1) 3 interchangeable 0–3s hook variations (Contrarian Stop-Hook, Proof / Number Hook, Mistake Callout), (2) 5 timed retention beats with Pattern Interrupt B-roll cues every 7–10 seconds and punchy 3–5 word on-screen text captions (never cut off words mid-word and never include raw pipe characters '|'), and (3) a ready-to-paste social caption with 5 hashtags.",
           },
           {
             role: "user",
@@ -124,12 +124,16 @@ export async function POST(request: NextRequest) {
       .split(/\s+/)
       .filter(Boolean).length;
     const estimatedSecondsAt150Wpm = Math.round((totalSpokenWords / 150) * 60);
+    const connectedVoiceoverScript = res.output_parsed.segments
+      .map((s) => s.spokenLine.trim())
+      .join("\n\n");
 
     return NextResponse.json({
       scriptPack: {
         ...res.output_parsed,
         totalSpokenWords,
         estimatedSecondsAt150Wpm,
+        connectedVoiceoverScript,
       },
       provider: "ai",
     });

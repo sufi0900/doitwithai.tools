@@ -9,9 +9,15 @@ export type PlatformBrandType =
   | "x-threads"
   | "pinterest"
   | "google-local"
-  | "image-zip";
+  | "image-zip"
+  | "infographic"
+  | "data-chart"
+  | "matrix-diagram"
+  | "quote-card";
 
-export function detectPlatformBrandBySlug(slug: string): PlatformBrandType | null {
+export function detectPlatformBrandBySlug(
+  slug: string,
+): PlatformBrandType | null {
   switch (slug) {
     case "youtube-transcript-generator":
     case "youtube-title-thumbnail-optimizer":
@@ -32,6 +38,7 @@ export function detectPlatformBrandBySlug(slug: string): PlatformBrandType | nul
     case "og-twitter-preview-generator":
       return "x-threads";
     case "pinterest-pin-seo-generator":
+    case "pinterest-pin-visual-generator":
       return "pinterest";
     case "google-review-link-generator":
     case "local-business-schema-generator":
@@ -42,6 +49,15 @@ export function detectPlatformBrandBySlug(slug: string): PlatformBrandType | nul
       return "google-local";
     case "webpage-image-extractor":
       return "image-zip";
+    case "blog-to-infographic-generator":
+    case "article-to-html-cheatsheet":
+      return "infographic";
+    case "data-to-chart-visual-card-maker":
+      return "data-chart";
+    case "framework-matrix-diagram-builder":
+      return "matrix-diagram";
+    case "quote-stat-testimonial-card-studio":
+      return "quote-card";
     default:
       return null;
   }
@@ -49,14 +65,17 @@ export function detectPlatformBrandBySlug(slug: string): PlatformBrandType | nul
 
 export function PlatformBrandIcon({
   slug,
+  slugOrText,
   brand,
   size = 26,
 }: {
   slug?: string;
+  slugOrText?: string;
   brand?: PlatformBrandType;
   size?: number;
 }) {
-  const resolved = brand || (slug ? detectPlatformBrandBySlug(slug) : null);
+  const key = slug || slugOrText || "";
+  const resolved = brand || (key ? detectPlatformBrandBySlug(key) : null);
   if (!resolved) return null;
 
   if (resolved === "youtube") {
@@ -122,7 +141,14 @@ export function PlatformBrandIcon({
         aria-hidden="true"
       >
         <defs>
-          <linearGradient id="igGrad" x1="3" y1="29" x2="29" y2="3" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id="igGrad"
+            x1="3"
+            y1="29"
+            x2="29"
+            y2="3"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop offset="0%" stopColor="#FD5949" />
             <stop offset="45%" stopColor="#D6249F" />
             <stop offset="100%" stopColor="#285AEB" />
@@ -234,6 +260,78 @@ export function PlatformBrandIcon({
     );
   }
 
+  if (resolved === "infographic") {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+      >
+        <rect x="4" y="3" width="24" height="26" rx="5" fill="#FF6B35" />
+        <rect x="8" y="7" width="16" height="3.5" rx="1.5" fill="#FFFFFF" />
+        <circle cx="10.5" cy="15" r="2.2" fill="#FFFFFF" />
+        <rect x="14.5" y="13.5" width="9.5" height="3" rx="1.2" fill="#FFE4D6" />
+        <circle cx="10.5" cy="21.5" r="2.2" fill="#FFFFFF" />
+        <rect x="14.5" y="20" width="9.5" height="3" rx="1.2" fill="#FFE4D6" />
+      </svg>
+    );
+  }
+
+  if (resolved === "data-chart") {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+      >
+        <rect x="3" y="4" width="26" height="24" rx="6" fill="#3452D1" />
+        <rect x="8" y="16" width="3.5" height="8" rx="1.2" fill="#9AABFF" />
+        <rect x="14.2" y="11" width="3.5" height="13" rx="1.2" fill="#FFFFFF" />
+        <rect x="20.5" y="8" width="3.5" height="16" rx="1.2" fill="#10B981" />
+      </svg>
+    );
+  }
+
+  if (resolved === "matrix-diagram") {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+      >
+        <rect x="3" y="3" width="26" height="26" rx="6" fill="#7C3AED" />
+        <rect x="7" y="7" width="8" height="8" rx="2" fill="#FFFFFF" />
+        <rect x="17" y="7" width="8" height="8" rx="2" fill="#DDD6FE" />
+        <rect x="7" y="17" width="8" height="8" rx="2" fill="#DDD6FE" />
+        <rect x="17" y="17" width="8" height="8" rx="2" fill="#10B981" />
+      </svg>
+    );
+  }
+
+  if (resolved === "quote-card") {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+      >
+        <rect x="3" y="4" width="26" height="24" rx="6" fill="#0F172A" />
+        <path
+          d="M10 15C10 12.2 11.8 10.4 14.5 10V12.2C13 12.5 12.4 13.4 12.4 14.6H14.5V19H10V15ZM17.5 15C17.5 12.2 19.3 10.4 22 10V12.2C20.5 12.5 19.9 13.4 19.9 14.6H22V19H17.5V15Z"
+          fill="#FF6B35"
+        />
+      </svg>
+    );
+  }
+
   return (
     <svg
       width={size}
@@ -244,10 +342,7 @@ export function PlatformBrandIcon({
     >
       <rect x="3" y="5" width="26" height="22" rx="5" fill="#059669" />
       <circle cx="11" cy="12" r="2.5" fill="#A7F3D0" />
-      <path
-        d="M6 23L12.5 16.5L17 21L21 17L26 23H6Z"
-        fill="#FFFFFF"
-      />
+      <path d="M6 23L12.5 16.5L17 21L21 17L26 23H6Z" fill="#FFFFFF" />
     </svg>
   );
 }

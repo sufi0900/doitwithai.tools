@@ -14,12 +14,6 @@ const menuData: Menu[] = [
     newTab: false,
   },
   {
-    id: 105,
-    title: "Extension",
-    path: "/chrome-extension",
-    newTab: false,
-  },
-  {
     id: 2,
     title: "SEO Hub",
     path: "/ai-seo",
@@ -101,6 +95,12 @@ const menuData: Menu[] = [
         path: "/navigation",
         newTab: false,
       },
+      // {
+      //   id: 48,
+      //   title: "Error Page",
+      //   path: "/error",
+      //   newTab: false,
+      // },
     ],
   },
 ];

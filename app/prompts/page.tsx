@@ -15,9 +15,10 @@ import {
 import styles from "@/features/prompts/prompts.module.css";
 
 const origin = "https://doitwithai.tools";
-const title = "AI Prompts for SEO & Content Writing | Do It With AI Tools";
+const title =
+  "960+ AI & ChatGPT Prompts for SEO, Content, Video & Infographics | Do It With AI Tools";
 const description =
-  "Explore practical ChatGPT prompt guides for meta titles, descriptions, and search intent. Customize your brief, copy prompts, and review worked examples.";
+  "Explore 13 interactive ChatGPT & AI prompt libraries (967+ copyable prompts) for keyword research, topic clustering, on-page SEO, technical SEO, local GBP, AI search (AEO/GEO), link building, YouTube scripts, LinkedIn B2B, and infographics.";
 export const metadata: Metadata = {
   metadataBase: new URL(origin),
   title,
@@ -30,21 +31,25 @@ export const metadata: Metadata = {
 const steps = [
   {
     icon: Compass,
-    title: "Start with the task",
-    text: "Choose a prompt for drafting, comparing, or refining your meta title and description.",
+    title: "Choose your exact workflow",
+    text: "Pick a dedicated prompt library—from 100 Keyword Research or 94 Topic Clustering prompts to 91 AI Search (AEO/GEO), 79 Local SEO, or 77 Infographic prompts.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Add your context",
-    text: "Replace the input fields with your topic, audience, and source material. Specific inputs make the task clearer.",
+    title: "Customize the shared brief once",
+    text: "Fill in your topic, audience, and verified proof at the top of any guide to pre-fill every prompt on the page automatically.",
   },
   {
     icon: Layers3,
-    title: "Review before you publish",
-    text: "Use the checklist, check the facts, and compare the result with your original goal.",
+    title: "Pair with our 90 interactive studios",
+    text: "Copy your customized prompt into ChatGPT or click straight into the companion SEO, Content, or Visual Infographic studio on every card.",
   },
 ];
 export default function PromptsPage() {
+  const totalPromptCount = publishedPrompts.reduce(
+    (sum, p) => sum + (promptDetails[p.id]?.promptCount || 1),
+    0,
+  );
   const schema = {
     "@context": "https://schema.org",
     "@graph": [
@@ -64,7 +69,7 @@ export default function PromptsPage() {
       {
         "@type": "ItemList",
         "@id": `${origin}/prompts#guides`,
-        name: "Published SEO prompt guides",
+        name: "Published SEO, content, video, and infographic prompt guides",
         numberOfItems: publishedPrompts.length,
         itemListElement: publishedPrompts.map((prompt, index) => ({
           "@type": "ListItem",
@@ -104,29 +109,31 @@ export default function PromptsPage() {
         <header className={styles.hero}>
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>
-              <span /> THE PROMPT WORKBENCH
+              <span /> THE PROMPT WORKBENCH · {totalPromptCount} COPYABLE PROMPTS
             </p>
             <h1>
-              AI prompts for SEO
+              AI prompts for SEO,
               <br />
-              <span>and content writing.</span>
+              <span>content &amp; visuals.</span>
             </h1>
             <p className={styles.lead}>
-              AI prompts for SEO and content writing, organized around the work
-              you actually need to do.
+              Explore {publishedPrompts.length} interactive prompt libraries (
+              {totalPromptCount} copy-paste prompts) built for SEO, AEO/GEO,
+              local businesses, video scripts, LinkedIn B2B, and visual
+              infographics.
             </p>
             <div className={styles.heroActions}>
               <a href="#prompt-library" className={styles.primary}>
-                Explore the workflows <ArrowUpRight size={18} />
+                Explore all {publishedPrompts.length} prompt guides{" "}
+                <ArrowUpRight size={18} />
               </a>
               <Link href="/tools" className={styles.textLink}>
-                Looking for a tool? <ArrowUpRight size={16} />
+                Browse all 90 studio tools <ArrowUpRight size={16} />
               </Link>
             </div>
             <p className={styles.heroNote}>
-              {publishedPrompts.length} published{" "}
-              {publishedPrompts.length === 1 ? "guide" : "guides"} · Customize,
-              copy, and review
+              {publishedPrompts.length} published guides · {totalPromptCount}{" "}
+              customizable prompts · Paired with 90 interactive tools
             </p>
           </div>
           <div
@@ -134,32 +141,32 @@ export default function PromptsPage() {
             aria-label="A prompt workflow starts with context and ends with a reviewed result"
           >
             <div className={styles.visualTop}>
-              <span>YOUR NEXT GOOD ANSWER</span>
+              <span>YOUR INTERACTIVE WORKBENCH</span>
               <span aria-hidden="true">↗</span>
             </div>
             <div className={styles.visualLine}>
               <span>01</span>
               <div>
-                <small>THE TASK</small>
-                <strong>Make the goal clear.</strong>
+                <small>SHARED BRIEF</small>
+                <strong>Enter your context once at the top.</strong>
               </div>
             </div>
             <div className={styles.visualLine}>
               <span>02</span>
               <div>
-                <small>THE CONTEXT</small>
-                <strong>Bring your own details.</strong>
+                <small>TASK SPECIFICITY</small>
+                <strong>Pick from {totalPromptCount} specialized prompts.</strong>
               </div>
             </div>
             <div className={styles.visualResult}>
               <span aria-hidden="true">✦</span>
               <div>
-                <small>THE RESULT</small>
-                <strong>A starting point you can shape.</strong>
+                <small>COMPANION STUDIO</small>
+                <strong>Run directly in our 90 SEO &amp; visual tools.</strong>
               </div>
             </div>
             <div className={styles.visualBottom}>
-              <span>Context → Prompt → Human review</span>
+              <span>Context → Prompt → Companion Studio → Human review</span>
               <span aria-hidden="true">● ● ●</span>
             </div>
           </div>
@@ -197,55 +204,62 @@ export default function PromptsPage() {
             <h2>Build a workflow, not a pile of outputs.</h2>
             <p>
               Use prompts to explore ideas, structure a draft, or review a
-              passage. Use dedicated tools to inspect the details.
+              passage. Use our 90 dedicated tools to inspect pages, validate
+              schema, and export visual infographics.
             </p>
             <p>
-              For SEO work, that can mean checking heading order, previewing a
-              search snippet, or reviewing a page’s on-page signals.
+              Every prompt card includes a 1-click button to open the matching
+              SEO, Content Conversion, or Visual Infographic studio.
             </p>
             <div className={styles.relatedLinks}>
               <Link href="/tools/on-page-ai-seo-analyzer">
-                Review a page <ArrowUpRight size={16} />
+                Audit a page <ArrowUpRight size={16} />
+              </Link>
+              <Link href="/tools/blog-to-infographic-generator">
+                Blog to Infographic Studio <ArrowUpRight size={16} />
               </Link>
               <Link href="/tools">
-                Explore all tools <ArrowUpRight size={16} />
-              </Link>
-              <Link href="/ai-seo">
-                Learn SEO with AI <ArrowUpRight size={16} />
+                Explore all 90 tools <ArrowUpRight size={16} />
               </Link>
             </div>
           </div>
           <div className={styles.faq}>
-            <h2>A few useful answers</h2>
+            <h2>Prompt library FAQs</h2>
             <details>
               <summary>Which prompt guides are available?</summary>
               <p>
-                Start with our complete meta title and meta description guide.
-                It includes nine customizable ChatGPT prompts, a worked example,
-                and a review checklist.
+                We publish 13 interactive prompt libraries covering Keyword
+                Research (100), Topic Clustering (94), YouTube &amp; Shorts
+                Scripts (93), AI Search / AEO / GEO (91), Link Building &amp;
+                Digital PR (88), Content Repurposing (87), On-Page SEO &amp;
+                E-E-A-T (84), LinkedIn B2B Branding (83), Local SEO &amp; GBP
+                (79), Infographics &amp; Data Visualization (77), Technical SEO
+                &amp; Schema (76), Meta Titles (9), and Search Intent (6).
               </p>
             </details>
             <details>
-              <summary>How do I use a sample prompt?</summary>
+              <summary>How does the shared brief customizer work?</summary>
               <p>
-                Open a workflow page, fill in the context fields, then copy the
-                prompt into your preferred AI assistant. Review the result
-                yourself.
+                Each prompt guide includes a shared brief at the top of the
+                page. Fill in your topic, audience, and evidence once to
+                automatically update every prompt on that page, then copy or
+                open any prompt directly in ChatGPT.
               </p>
             </details>
             <details>
               <summary>Can a prompt guarantee better rankings?</summary>
               <p>
-                No. Prompts can support research, writing, and editing. Rankings
-                depend on many factors, and generated claims still need
-                checking.
+                No. Prompts accelerate outlining, auditing, schema generation,
+                and editing, but rankings depend on real first-hand evidence,
+                technical health, and human editorial review.
               </p>
             </details>
             <details>
-              <summary>Do I need to sign in?</summary>
+              <summary>Are all 967+ prompts free to customize and download?</summary>
               <p>
-                No sign-in is needed to browse the guides or customize and copy
-                their prompts.
+                Yes. Every guide is 100% free to browse, customize in your
+                browser, copy, or download as a complete `.TXT` swipe file with
+                no sign-in required.
               </p>
             </details>
           </div>

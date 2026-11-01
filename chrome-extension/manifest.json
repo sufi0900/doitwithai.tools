@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Do It With AI — SEO Inspector, Keyword & Audience Spy, Content Converter & Social Studio",
-  "short_name": "DoItWithAI v2.0",
-  "version": "2.0.0",
-  "description": "All-in-one On-Page SEO Toolbar, Competitor Keyword & N-Gram Spy, Target Audience Analyzer, Bulk Image ZIP & YouTube Transcript/Social Studio (85 Tools).",
+  "name": "Do It With AI v2.2 \u2014 SEO Inspector, Infographic & Visual Studio, YouTube Assistant & Social Polisher",
+  "short_name": "DoItWithAI v2.2",
+  "version": "2.2.0",
+  "description": "All-in-one On-Page SEO Toolbar, Blog-to-Infographic & Visual Card Studios, Merlin-Style YouTube Transcript/Summary Widget & 90 Web Tools.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -12,7 +12,7 @@
     "tabs"
   ],
   "action": {
-    "default_title": "Open Do It With AI v2.0 (SEO · Keywords · Audience · Convert · Social)",
+    "default_title": "Open Do It With AI v2.1 (YouTube Studio \u00b7 SEO \u00b7 Keywords \u00b7 Convert \u00b7 Social)",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -27,6 +27,22 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.linkedin.com/*",
+        "*://*.twitter.com/*",
+        "*://*.x.com/*",
+        "*://*.facebook.com/*",
+        "*://*.instagram.com/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

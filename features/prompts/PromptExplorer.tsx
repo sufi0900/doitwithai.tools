@@ -39,7 +39,9 @@ export default function PromptExplorer() {
           <p className={styles.eyebrow}>FIND YOUR NEXT WORKFLOW</p>
           <h2 id="library-heading">The prompt library</h2>
         </div>
-        <span className={styles.previewPill}>Practical prompt guides</span>
+        <span className={styles.previewPill}>
+          {publishedPrompts.length} interactive prompt libraries
+        </span>
       </div>
       <div className={styles.libraryLayout}>
         <aside className={styles.sidebar} aria-label="Prompt categories">
@@ -76,7 +78,7 @@ export default function PromptExplorer() {
               yours.
             </p>
             <Link href="/tools">
-              Pair it with a tool <ArrowUpRight size={14} />
+              Pair it with a studio tool <ArrowUpRight size={14} />
             </Link>
           </div>
         </aside>
@@ -94,7 +96,7 @@ export default function PromptExplorer() {
               onChange={(e) => {
                 setQuery(e.target.value);
               }}
-              placeholder="Search meta titles, descriptions, or page types…"
+              placeholder="Search keyword research, topic clustering, local SEO, AEO/GEO, infographics, scripts, LinkedIn, or schema…"
             />
             {query ? (
               <button onClick={() => setQuery("")} aria-label="Clear search">
@@ -105,12 +107,13 @@ export default function PromptExplorer() {
           <div className={styles.resultsMeta}>
             <h3>{categoryName}</h3>
             <p aria-live="polite">
-              {results.length} {results.length === 1 ? "workflow" : "workflows"}
+              {results.length} {results.length === 1 ? "guide" : "guides"}
             </p>
           </div>
           <p className={styles.previewNotice}>
-            Open a guide to customize its prompts, copy them, and review your
-            results with a practical checklist.
+            Open any guide to customize its shared brief once, copy individual
+            prompts, download the `.TXT` pack, or launch its companion studio
+            tool.
           </p>
           <div className={styles.cardGrid}>
             {results.map((prompt) => {
@@ -171,7 +174,11 @@ export default function PromptExplorer() {
                             ?.name
                         }
                       </span>
-                      <span className={styles.sampleLabel}>FIELD GUIDE</span>
+                      <span className={styles.sampleLabel}>
+                        {detail.promptCount
+                          ? `${detail.promptCount} PROMPTS`
+                          : "FIELD GUIDE"}
+                      </span>
                     </div>
                     <h4>
                       <Link href={promptPath(prompt.id)}>{prompt.title}</Link>
@@ -181,23 +188,24 @@ export default function PromptExplorer() {
                       {detail.promptCount
                         ? `${detail.promptCount} copyable prompts · `
                         : ""}
-                      Article guide
+                      Interactive workbench
                     </p>
                     <div className={styles.outcome}>
                       <span>WHAT YOU’LL WORK TOWARD</span>
                       <p>{prompt.outcome}</p>
                     </div>
                     <div className={styles.tags}>
-                      {prompt.tags.slice(0, 3).map((tag) => (
+                      {prompt.tags.slice(0, 4).map((tag) => (
                         <span key={tag}>{tag}</span>
                       ))}
                     </div>
                     <Link
                       className={styles.cardAction}
                       href={promptPath(prompt.id)}
-                      aria-label={`Read the guide: ${prompt.title}`}
+                      aria-label={`Open prompt guide: ${prompt.title}`}
                     >
-                      Read the guide <ArrowRight size={17} aria-hidden="true" />
+                      Open {detail.promptCount ? `${detail.promptCount}-prompt ` : ""}guide{" "}
+                      <ArrowRight size={17} aria-hidden="true" />
                     </Link>
                   </div>
                 </article>

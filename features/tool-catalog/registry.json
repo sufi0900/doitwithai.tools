@@ -33,8 +33,7 @@
       "name": "On-page AI SEO Analyzer",
       "description": "Audit your page in one workspace. Inspect evidence, improve selected text, review draft changes, and export a practical action plan.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "on-page SEO",
@@ -70,10 +69,7 @@
         "external-link-source-review"
       ],
       "topics": [
-        "on-page",
-        "technical",
-        "ai-search",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -106,8 +102,7 @@
         "serp-rich-result-preview-generator"
       ],
       "topics": [
-        "technical",
-        "on-page"
+        "technical"
       ]
     },
     {
@@ -116,8 +111,7 @@
       "name": "Content Evidence Review",
       "description": "Flag claims, inspect nearby source candidates, record editorial decisions, and export a practical evidence review.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "claims",
@@ -143,8 +137,7 @@
         "external-link-source-review"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -153,8 +146,7 @@
       "name": "External Link and Source Review",
       "description": "Inspect outbound links, anchor wording, source context, and relationship attributes. Save editorial decisions and export a source review.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "external links",
@@ -180,8 +172,7 @@
         "backlink-verification-tool"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -190,8 +181,7 @@
       "name": "Target Audience Research Tool",
       "description": "Create working buyer personas, explore reader needs, and plan content and channel experiments from an idea or website brief.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "target audience",
@@ -219,8 +209,7 @@
         "keyword-research-tool"
       ],
       "topics": [
-        "keywords",
-        "writing"
+        "keywords"
       ]
     },
     {
@@ -229,8 +218,7 @@
       "name": "Meta Title Generator",
       "description": "Compare AI-assisted title ideas with pixel checks and a search-result preview.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "title tags",
@@ -256,8 +244,7 @@
         "h1-heading-generator"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -266,7 +253,6 @@
       "name": "Slug Generator",
       "description": "Create short, readable URL slugs that reflect your page's subject and intent.",
       "categories": [
-        "ai-seo",
         "content-writing"
       ],
       "tags": [
@@ -336,8 +322,7 @@
       "name": "Meta Description Generator",
       "description": "Draft and compare page-specific meta descriptions with character checks and an illustrative preview.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "snippets",
@@ -359,8 +344,7 @@
         "h1-heading-generator"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -369,8 +353,7 @@
       "name": "H1 Heading Generator",
       "description": "Create and compare clear main headings based on the content your page actually offers.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "headings",
@@ -391,8 +374,7 @@
         "meta-description-generator"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -401,7 +383,6 @@
       "name": "Article Outline Generator",
       "description": "Shape an article plan with heading alternatives, section goals, evidence prompts, and editable H2/H3 structure.",
       "categories": [
-        "ai-seo",
         "content-writing"
       ],
       "tags": [
@@ -444,7 +425,6 @@
       "name": "Readability Checker and Improver",
       "description": "Check readability with live highlights, an estimated grade, and one-click fixes. Compare optional AI revisions for selected text.",
       "categories": [
-        "ai-seo",
         "content-writing"
       ],
       "tags": [
@@ -480,8 +460,7 @@
       "name": "Image Alt Text Generator",
       "description": "Draft image alternatives from uploads or descriptions, consider page purpose, and review editable wording before publishing.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "images",
@@ -504,8 +483,7 @@
         "meta-description-generator"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -514,8 +492,7 @@
       "name": "Keyword Clustering Tool",
       "description": "Group supplied keywords by reader task or topic, refine memberships, and export an editable content plan.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "keywords",
@@ -543,8 +520,7 @@
         "keyword-research-tool"
       ],
       "topics": [
-        "keywords",
-        "writing"
+        "keywords"
       ]
     },
     {
@@ -553,8 +529,7 @@
       "name": "AI Topical Map Generator",
       "description": "Explore an editable topic hierarchy from a seed or brief, plan pillars and supporting tasks, and keep keyword metrics clearly unverified.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "topical maps",
@@ -582,8 +557,7 @@
         "search-intent-checker"
       ],
       "topics": [
-        "keywords",
-        "writing"
+        "keywords"
       ]
     },
     {
@@ -592,8 +566,7 @@
       "name": "Internal Link Opportunity Finder",
       "description": "Discover relevant website pages and review exact anchor placements, explanations, and bounded page coverage.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "internal links",
@@ -616,8 +589,7 @@
         "topical-map-generator"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -626,8 +598,7 @@
       "name": "Search Intent Checker",
       "description": "Check keyword intent with clear labels, reader tasks, and suggested page formats. Review supporting cues and save your results.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "search intent",
@@ -664,8 +635,7 @@
         "keyword-research-tool"
       ],
       "topics": [
-        "keywords",
-        "writing"
+        "keywords"
       ]
     },
     {
@@ -674,7 +644,6 @@
       "name": "SEO Content Brief Generator",
       "description": "Create an editable writer handoff with reader goals, section instructions, research gaps, and suggested internal links.",
       "categories": [
-        "ai-seo",
         "content-writing"
       ],
       "tags": [
@@ -715,7 +684,6 @@
       "name": "AI FAQ Generator",
       "description": "Draft FAQs from your text, inspect matched source quotes, identify research gaps, and export only reviewed answers.",
       "categories": [
-        "ai-seo",
         "content-writing"
       ],
       "tags": [
@@ -753,8 +721,7 @@
       "name": "Keyword Density and Repetition Checker",
       "description": "Inspect keyword frequency, target phrase coverage, page-field placement, and body distribution. Highlight matches and export your reports.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "keyword density",
@@ -784,8 +751,7 @@
         "seo-content-brief-generator"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -850,8 +816,7 @@
       "name": "AI Citation Readiness Checker",
       "description": "Review crawler access, article structure, claims, authorship, and markup in one dashboard. Locate highlighted passages and record evidence decisions.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "AI search",
@@ -882,9 +847,7 @@
         "keyword-density-checker"
       ],
       "topics": [
-        "ai-search",
-        "writing",
-        "on-page"
+        "ai-search"
       ]
     },
     {
@@ -1013,7 +976,7 @@
       "name": "OG & Twitter Card Preview Generator",
       "description": "Preview social cards, review image dimensions, and prepare sharing tags.",
       "categories": [
-        "ai-seo"
+        "content-writing"
       ],
       "tags": [
         "technical SEO"
@@ -1085,8 +1048,7 @@
       "name": "SERP & Rich Result Preview",
       "description": "Preview search snippets and inspect supported structured data before publishing.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "SERP",
@@ -1104,8 +1066,7 @@
         "schema-markup-generator"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -1114,8 +1075,7 @@
       "name": "Entity & sameAs Finder",
       "description": "Find Wikidata entities, verify profile links, and build sameAs structured data.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "entities",
@@ -1131,8 +1091,7 @@
         "ai-citation-readiness-checker"
       ],
       "topics": [
-        "ai-search",
-        "writing"
+        "ai-search"
       ]
     },
     {
@@ -1141,8 +1100,7 @@
       "name": "Heading Structure Analyzer",
       "description": "Check a webpage URL, HTML, or Markdown for heading hierarchy, skipped levels, duplicates, and target phrase placement.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "headings",
@@ -1159,8 +1117,7 @@
         "readability-checker"
       ],
       "topics": [
-        "on-page",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -1169,8 +1126,7 @@
       "name": "Keyword Research Tool",
       "description": "Discover keyword ideas, inferred intent, questions, and proposed page groups. Import your own metrics and export a practical shortlist.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "keyword research",
@@ -1195,8 +1151,7 @@
         "target-audience-research-tool"
       ],
       "topics": [
-        "keywords",
-        "writing"
+        "keywords"
       ]
     },
     {
@@ -1346,8 +1301,7 @@
       "name": "Personalized Outreach Email Builder",
       "description": "Build editable outreach drafts from page-specific facts and reader benefits. Choose a purpose, refine subjects, and download TXT or DOCX.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "outreach email",
@@ -1382,8 +1336,7 @@
       "name": "Digital PR and Linkable Asset Planner",
       "description": "Plan a linkable asset with an editable campaign brief, evidence workflow, and action checklist. Download DOCX, Markdown, or CSV.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "digital PR",
@@ -1470,8 +1423,7 @@
       "name": "Article to MP3 & Read Aloud",
       "description": "Turn a public article or pasted text into synthetic English narration. Review the text, listen by section, and download real MP3 or WAV audio.",
       "categories": [
-        "content-conversion",
-        "content-writing"
+        "content-conversion"
       ],
       "tags": [
         "article to MP3",
@@ -1491,8 +1443,7 @@
         "readability-checker"
       ],
       "topics": [
-        "conversion",
-        "writing"
+        "conversion"
       ]
     },
     {
@@ -1501,8 +1452,7 @@
       "name": "Blog to Video Script",
       "description": "Adapt a public article or pasted text into a structured video script with spoken narration, visual cues, and DOCX or TXT downloads.",
       "categories": [
-        "content-conversion",
-        "content-writing"
+        "content-conversion"
       ],
       "tags": [
         "blog to video script",
@@ -1522,8 +1472,7 @@
         "blog-to-social-posts"
       ],
       "topics": [
-        "conversion",
-        "writing"
+        "conversion"
       ]
     },
     {
@@ -1532,8 +1481,7 @@
       "name": "Blog to Social Posts",
       "description": "Turn an article URL or pasted text into channel-specific LinkedIn posts, X threads, Facebook updates, and Instagram captions with CSV and TXT downloads.",
       "categories": [
-        "content-conversion",
-        "content-writing"
+        "content-conversion"
       ],
       "tags": [
         "blog to social posts",
@@ -1553,8 +1501,7 @@
         "blog-to-video-script"
       ],
       "topics": [
-        "conversion",
-        "social"
+        "conversion"
       ]
     },
     {
@@ -1621,8 +1568,7 @@
       "name": "Blog to Newsletter",
       "description": "Adapt an article into an editable email newsletter with subject-line options, preview text, key takeaways, and HTML, TXT, or DOCX downloads.",
       "categories": [
-        "content-conversion",
-        "content-writing"
+        "content-conversion"
       ],
       "tags": [
         "blog to newsletter",
@@ -1642,8 +1588,7 @@
         "outreach-email-builder"
       ],
       "topics": [
-        "conversion",
-        "writing"
+        "conversion"
       ]
     },
     {
@@ -1652,8 +1597,7 @@
       "name": "Blog to LinkedIn Carousel",
       "description": "Turn article takeaways into a swipeable LinkedIn carousel with customizable themes, multi-page PDF deck download, and slide PNG images.",
       "categories": [
-        "content-conversion",
-        "content-writing"
+        "content-conversion"
       ],
       "tags": [
         "blog to LinkedIn carousel",
@@ -1673,8 +1617,7 @@
         "blog-to-video-script"
       ],
       "topics": [
-        "conversion",
-        "social"
+        "conversion"
       ]
     },
     {
@@ -1683,8 +1626,7 @@
       "name": "Article to Podcast Script",
       "description": "Turn a reviewed article into an editable solo or two-host podcast script with intro hooks, segment transitions, and DOCX or TXT downloads.",
       "categories": [
-        "content-conversion",
-        "content-writing"
+        "content-conversion"
       ],
       "tags": [
         "article to podcast script",
@@ -1704,8 +1646,7 @@
         "article-outline-generator"
       ],
       "topics": [
-        "conversion",
-        "writing"
+        "conversion"
       ]
     },
     {
@@ -1819,8 +1760,7 @@
       "name": "HARO & Journalist Pitch Response Builder",
       "description": "Draft quote-ready responses for HARO, Connectively, Qwoted, Featured, and journalist queries with 3 editorial soundbite angles, scannability checks, and DOCX or TXT downloads.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "HARO pitch generator",
@@ -1846,8 +1786,7 @@
         "backlink-verification-tool"
       ],
       "topics": [
-        "off-page",
-        "writing"
+        "off-page"
       ]
     },
     {
@@ -1856,8 +1795,7 @@
       "name": "E-E-A-T & Helpful Content Trust Auditor",
       "description": "Audit any webpage or HTML draft across 20 observable Experience, Expertise, Authoritativeness, and Trustworthiness signals with Standard and YMYL modes.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "E-E-A-T checker",
@@ -1883,9 +1821,7 @@
         "information-gain-auditor"
       ],
       "topics": [
-        "on-page",
-        "writing",
-        "ai-search"
+        "on-page"
       ]
     },
     {
@@ -1894,8 +1830,7 @@
       "name": "Featured Snippet & AI Overview Passage Optimizer",
       "description": "Audit H2/H3 answer passages and generate 45\u201358 word Position Zero definitions, ordered step lists, and comparison tables for Featured Snippets and AI Overviews.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "featured snippet optimizer",
@@ -1921,9 +1856,7 @@
         "semantic-entity-gap-analyzer"
       ],
       "topics": [
-        "on-page",
-        "ai-search",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -1932,8 +1865,7 @@
       "name": "Semantic Entity & Competitor Content Gap Analyzer",
       "description": "Compare your page or draft against top-ranking competitor URLs to extract missing named entities, domain phrases, and H2/H3 subtopics with CSV and DOCX briefs.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "semantic SEO analyzer",
@@ -1959,9 +1891,7 @@
         "on-page-ai-seo-analyzer"
       ],
       "topics": [
-        "on-page",
-        "writing",
-        "keywords"
+        "on-page"
       ]
     },
     {
@@ -1970,8 +1900,7 @@
       "name": "Content Decay & GSC Refresh Priority Analyzer",
       "description": "Analyze Google Search Console period comparisons to separate true ranking content decay from AI Overview CTR compression and seasonality. Export CSV and DOCX refresh plans.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "content decay checker",
@@ -1997,9 +1926,7 @@
         "semantic-entity-gap-analyzer"
       ],
       "topics": [
-        "on-page",
-        "keywords",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -2008,8 +1935,7 @@
       "name": "GSC CTR Benchmark & Snippet Click-Loss Calculator",
       "description": "Compare your Google Search Console CTR against organic position curves, calculate lost monthly clicks, and generate high-CTR title and meta description rewrites.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "GSC CTR calculator",
@@ -2035,9 +1961,7 @@
         "gsc-striking-distance-finder"
       ],
       "topics": [
-        "on-page",
-        "keywords",
-        "writing"
+        "on-page"
       ]
     },
     {
@@ -2072,8 +1996,7 @@
         "heading-structure-analyzer"
       ],
       "topics": [
-        "on-page",
-        "technical"
+        "on-page"
       ]
     },
     {
@@ -2082,8 +2005,7 @@
       "name": "SEO Table of Contents & Jump-Link Generator",
       "description": "Generate a semantic HTML or Markdown Table of Contents from H2\u2013H4 headings, automatically inject unique id attributes into your article, and export Jump-Link JSON-LD.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "table of contents generator",
@@ -2109,9 +2031,7 @@
         "schema-markup-generator"
       ],
       "topics": [
-        "on-page",
-        "writing",
-        "technical"
+        "on-page"
       ]
     },
     {
@@ -2120,8 +2040,7 @@
       "name": "Information Gain & Originality Scorer",
       "description": "Measure how much net-new information your article adds beyond competing SERP pages across 6 concrete dimensions: unique entities, quantitative metrics, and testing proof.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "information gain SEO",
@@ -2147,9 +2066,7 @@
         "content-evidence-review"
       ],
       "topics": [
-        "on-page",
-        "writing",
-        "ai-search"
+        "on-page"
       ]
     },
     {
@@ -2158,8 +2075,7 @@
       "name": "Google Review Link & QR Poster Generator",
       "description": "Generate a direct 1-click Google Review link from your Place ID, download a vector QR code and printable counter poster, and copy SMS, WhatsApp, and email review requests.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "Local SEO",
@@ -2184,8 +2100,7 @@
         "nap-consistency-checker"
       ],
       "topics": [
-        "local-seo",
-        "on-page"
+        "local-seo"
       ]
     },
     {
@@ -2218,8 +2133,7 @@
         "nap-consistency-checker"
       ],
       "topics": [
-        "local-seo",
-        "technical"
+        "local-seo"
       ]
     },
     {
@@ -2228,8 +2142,7 @@
       "name": "Google Business Profile (GBP) Auditor & Optimizer",
       "description": "Audit your Google Business Profile across 10 Local Pack ranking factors and generate an optimized 750-character description, pre-seeded Q&As, and weekly GBP posts.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "Local SEO",
@@ -2254,9 +2167,7 @@
         "google-review-response-generator"
       ],
       "topics": [
-        "local-seo",
-        "on-page",
-        "writing"
+        "local-seo"
       ]
     },
     {
@@ -2288,8 +2199,7 @@
         "local-seo-service-page-planner"
       ],
       "topics": [
-        "local-seo",
-        "off-page"
+        "local-seo"
       ]
     },
     {
@@ -2298,8 +2208,7 @@
       "name": "Google Review Response & Crisis Reply Generator",
       "description": "Draft warm, local-keyword-optimized owner responses for 5-star reviews and calm, privacy-safe de-escalation replies for 1-star reviews.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "Local SEO",
@@ -2322,8 +2231,7 @@
         "outreach-email-builder"
       ],
       "topics": [
-        "local-seo",
-        "writing"
+        "local-seo"
       ]
     },
     {
@@ -2332,8 +2240,7 @@
       "name": "Local SEO Service-Area & City Page Planner",
       "description": "Plan a non-spammy City \u00d7 Service landing page matrix, generate localized H1s, meta titles, and H2 outlines, and prevent doorway-page penalties.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "Local SEO",
@@ -2357,10 +2264,7 @@
         "local-business-schema-generator"
       ],
       "topics": [
-        "local-seo",
-        "keywords",
-        "on-page",
-        "writing"
+        "local-seo"
       ]
     },
     {
@@ -2369,8 +2273,7 @@
       "name": "LinkedIn Post Formatter & Fold Previewer",
       "description": "Format LinkedIn posts with Unicode bold, italic, and monospace text, preview the exact mobile and desktop \"...see more\" cutoff line, and score your opening hook.",
       "categories": [
-        "content-writing",
-        "ai-seo"
+        "content-writing"
       ],
       "tags": [
         "Social media",
@@ -2395,8 +2298,7 @@
         "og-twitter-preview-generator"
       ],
       "topics": [
-        "social",
-        "writing"
+        "social"
       ]
     },
     {
@@ -2405,7 +2307,6 @@
       "name": "YouTube Title, Hook & Thumbnail Optimizer",
       "description": "Score YouTube video titles against the 58-character mobile cutoff, pair titles with 2\u20134 word thumbnail text overlays, and preview your video card in YouTube feeds.",
       "categories": [
-        "ai-seo",
         "content-writing"
       ],
       "tags": [
@@ -2431,9 +2332,7 @@
         "gsc-ctr-optimizer"
       ],
       "topics": [
-        "social",
-        "on-page",
-        "writing"
+        "social"
       ]
     },
     {
@@ -2442,7 +2341,6 @@
       "name": "Short-Form Video Hook & Script Builder",
       "description": "Generate high-retention 30s, 45s, and 60s vertical video scripts for YouTube Shorts, Instagram Reels, and TikTok with 3-second scroll-stopper hooks and B-roll cues.",
       "categories": [
-        "content-conversion",
         "content-writing"
       ],
       "tags": [
@@ -2467,9 +2365,7 @@
         "social-thread-generator"
       ],
       "topics": [
-        "social",
-        "conversion",
-        "writing"
+        "social"
       ]
     },
     {
@@ -2478,8 +2374,7 @@
       "name": "UTM Campaign Link Builder & GA4 Validator",
       "description": "Build lowercase-normalized UTM tracking URLs, verify Google Analytics 4 (GA4) default channel grouping rules, export a 6-channel campaign CSV, and download a vector QR code.",
       "categories": [
-        "ai-seo",
-        "productivity"
+        "content-writing"
       ],
       "tags": [
         "Social media",
@@ -2503,9 +2398,7 @@
         "slug-generator"
       ],
       "topics": [
-        "social",
-        "technical",
-        "local-seo"
+        "social"
       ]
     },
     {
@@ -2514,7 +2407,6 @@
       "name": "X (Twitter) & Threads Viral Thread Splitter",
       "description": "Split long-form articles and notes into numbered 280-character X (Twitter) or 500-character Threads posts with 3 viral hook options and automatic recap CTAs.",
       "categories": [
-        "content-conversion",
         "content-writing"
       ],
       "tags": [
@@ -2539,9 +2431,7 @@
         "short-form-video-script-generator"
       ],
       "topics": [
-        "social",
-        "conversion",
-        "writing"
+        "social"
       ]
     },
     {
@@ -2550,8 +2440,7 @@
       "name": "YouTube Transcript to SEO Blog Post Converter",
       "description": "Convert raw YouTube video transcripts and timestamped notes into a structured SEO blog article with H2 chapters, Featured Snippet summary, and FAQ schema.",
       "categories": [
-        "content-conversion",
-        "content-writing"
+        "content-conversion"
       ],
       "tags": [
         "Content conversion",
@@ -2576,9 +2465,7 @@
         "table-of-contents-generator"
       ],
       "topics": [
-        "conversion",
-        "writing",
-        "on-page"
+        "conversion"
       ]
     },
     {
@@ -2587,8 +2474,7 @@
       "name": "Article to HTML Infographic & Summary Cheatsheet",
       "description": "Distill any long-form article or URL into a standalone, print-ready 1-page visual HTML cheatsheet with KPI metric cards, step-by-step boxes, and Do's & Don'ts.",
       "categories": [
-        "content-conversion",
-        "content-writing"
+        "content-conversion"
       ],
       "tags": [
         "Content conversion",
@@ -2612,8 +2498,7 @@
         "article-to-markdown"
       ],
       "topics": [
-        "conversion",
-        "writing"
+        "conversion"
       ]
     },
     {
@@ -2622,8 +2507,7 @@
       "name": "\"X vs. Y\" Comparison Page & Matrix Builder",
       "description": "Build high-converting \"X vs. Y\" comparison articles with a 50-word Featured Snippet verdict, side-by-side HTML/Markdown feature matrix, buyer bullets, and ItemList JSON-LD.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "On-page SEO",
@@ -2648,9 +2532,7 @@
         "schema-markup-generator"
       ],
       "topics": [
-        "on-page",
-        "writing",
-        "ai-search"
+        "on-page"
       ]
     },
     {
@@ -2659,8 +2541,7 @@
       "name": "Brand AI Search Visibility & GEO Prompt Matrix",
       "description": "Generate a 12-prompt Generative Engine Optimization (GEO) test matrix across 4 buyer stages to audit your brand's Share of Voice in ChatGPT, Perplexity, Gemini, and AI Overviews.",
       "categories": [
-        "ai-seo",
-        "content-writing"
+        "ai-seo"
       ],
       "tags": [
         "AI search",
@@ -2685,9 +2566,7 @@
         "comparison-page-generator"
       ],
       "topics": [
-        "ai-search",
-        "keywords",
-        "on-page"
+        "ai-search"
       ]
     },
     {
@@ -2696,8 +2575,7 @@
       "name": "YouTube Transcript, Chapters & AI Summary Studio",
       "description": "Extract timestamped transcripts and chapters from any YouTube video or Short, generate an AI executive summary, and download .TXT, .SRT subtitles, or Markdown notes.",
       "categories": [
-        "content-conversion",
-        "content-writing"
+        "content-conversion"
       ],
       "tags": [
         "YouTube transcript",
@@ -2722,9 +2600,7 @@
         "short-form-video-script-generator"
       ],
       "topics": [
-        "conversion",
-        "social",
-        "writing"
+        "conversion"
       ]
     },
     {
@@ -2733,8 +2609,7 @@
       "name": "Webpage Image Extractor & Bulk .ZIP Downloader",
       "description": "Extract all images, Open Graph banners, and logos from any webpage URL, inspect dimensions and alt text, and download all images as a single .ZIP archive.",
       "categories": [
-        "content-conversion",
-        "ai-seo"
+        "content-conversion"
       ],
       "tags": [
         "image extractor",
@@ -2759,9 +2634,7 @@
         "article-to-pdf"
       ],
       "topics": [
-        "conversion",
-        "on-page",
-        "technical"
+        "conversion"
       ]
     },
     {
@@ -2770,8 +2643,7 @@
       "name": "LinkedIn Comment & Engagement Generator",
       "description": "Generate 5 high-visibility LinkedIn comments from any post or article URL\u2014including authority frameworks, 90/10 contrarian nuance, and smart follow-up questions.",
       "categories": [
-        "content-writing",
-        "ai-seo"
+        "content-writing"
       ],
       "tags": [
         "LinkedIn comments",
@@ -2796,8 +2668,7 @@
         "instagram-caption-generator"
       ],
       "topics": [
-        "social",
-        "writing"
+        "social"
       ]
     },
     {
@@ -2806,7 +2677,6 @@
       "name": "Facebook Post & Visual Card Studio",
       "description": "Turn any article URL or topic into 3 zero-click Facebook posts, a First-Comment Link snippet (to protect organic reach), and a downloadable 1080p visual card.",
       "categories": [
-        "content-conversion",
         "content-writing"
       ],
       "tags": [
@@ -2832,9 +2702,7 @@
         "og-twitter-preview-generator"
       ],
       "topics": [
-        "social",
-        "conversion",
-        "writing"
+        "social"
       ]
     },
     {
@@ -2843,7 +2711,6 @@
       "name": "Instagram Caption & Carousel Slide Studio",
       "description": "Repurpose any blog URL or idea into save-worthy Instagram captions, a 5-slide carousel blueprint, tiered hashtags, SEO alt text, and a 1080x1080 cover graphic.",
       "categories": [
-        "content-conversion",
         "content-writing"
       ],
       "tags": [
@@ -2869,9 +2736,7 @@
         "image-alt-text-generator"
       ],
       "topics": [
-        "social",
-        "conversion",
-        "writing"
+        "social"
       ]
     },
     {
@@ -2880,7 +2745,6 @@
       "name": "TikTok Script, Hook & Search SEO Studio",
       "description": "Transform any article URL, YouTube video, or topic into a timestamped 15s/30s/60s TikTok script with 3-second visual hooks, on-screen text overlays, and TikTok Search SEO captions.",
       "categories": [
-        "content-conversion",
         "content-writing"
       ],
       "tags": [
@@ -2906,9 +2770,7 @@
         "social-media-video-thumbnail-grabber"
       ],
       "topics": [
-        "social",
-        "conversion",
-        "writing"
+        "social"
       ]
     },
     {
@@ -2917,8 +2779,7 @@
       "name": "YouTube, Shorts & Social Video 4K Thumbnail Grabber",
       "description": "Download 1080p/4K YouTube & Shorts thumbnails (maxresdefault), 3 in-video storyboard frames, and social OpenGraph covers individually or bundled in a 1-click .ZIP file.",
       "categories": [
-        "content-conversion",
-        "ai-seo"
+        "content-writing"
       ],
       "tags": [
         "YouTube thumbnail downloader",
@@ -2943,8 +2804,178 @@
         "video-transcript-to-blog"
       ],
       "topics": [
-        "social",
+        "social"
+      ]
+    },
+    {
+      "id": "blog-to-infographic-generator",
+      "slug": "blog-to-infographic-generator",
+      "name": "AI Blog & Idea to Visual Infographic Studio",
+      "description": "Convert any blog URL, sub-topic, or content idea into a high-resolution visual infographic with 8 built-in editable templates, 6 color themes, PNG/SVG/PDF export, and SEO backlink embed code.",
+      "categories": [
+        "content-conversion"
+      ],
+      "tags": [
+        "blog to infographic",
+        "AI infographic generator",
+        "visual templates",
+        "linkable asset",
+        "content repurposing"
+      ],
+      "kind": "Infographic template studio",
+      "status": "live",
+      "addedAt": "2026-11-01",
+      "featuredOrder": 19,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "article-to-html-cheatsheet",
+        "blog-to-linkedin-carousel",
+        "data-to-chart-visual-card-maker",
+        "digital-pr-linkable-asset-planner"
+      ],
+      "topics": [
         "conversion"
+      ]
+    },
+    {
+      "id": "data-to-chart-visual-card-maker",
+      "slug": "data-to-chart-visual-card-maker",
+      "name": "AI Data & Stat to Visual Chart Card Maker",
+      "description": "Turn article statistics, benchmark numbers, or CSV rows into 1080x1080 ranking bar charts, donut rings, and 4-card KPI bento dashboards with 6 editable templates.",
+      "categories": [
+        "content-conversion"
+      ],
+      "tags": [
+        "data to chart",
+        "KPI bento card",
+        "stat visual generator",
+        "benchmark chart maker"
+      ],
+      "kind": "Data chart & KPI visual studio",
+      "status": "live",
+      "addedAt": "2026-11-01",
+      "featuredOrder": 20,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "blog-to-infographic-generator",
+        "article-to-html-cheatsheet",
+        "linkedin-post-formatter",
+        "blog-to-linkedin-carousel"
+      ],
+      "topics": [
+        "conversion"
+      ]
+    },
+    {
+      "id": "framework-matrix-diagram-builder",
+      "slug": "framework-matrix-diagram-builder",
+      "name": "AI 2x2 Matrix, SWOT, Flywheel & Strategy Diagram Builder",
+      "description": "Transform any blog URL, strategy brief, or idea into an editable 2x2 prioritization matrix, SWOT analysis board, circular growth flywheel, 3-pillar architecture, or hub-and-spoke diagram.",
+      "categories": [
+        "content-conversion"
+      ],
+      "tags": [
+        "2x2 matrix generator",
+        "SWOT diagram builder",
+        "growth flywheel visual",
+        "mental model studio"
+      ],
+      "kind": "Mental model & diagram studio",
+      "status": "live",
+      "addedAt": "2026-11-01",
+      "featuredOrder": 21,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "blog-to-infographic-generator",
+        "data-to-chart-visual-card-maker",
+        "article-to-html-cheatsheet",
+        "blog-to-linkedin-carousel"
+      ],
+      "topics": [
+        "conversion"
+      ]
+    },
+    {
+      "id": "pinterest-pin-visual-generator",
+      "slug": "pinterest-pin-visual-generator",
+      "name": "AI Blog to Pinterest Tall Pin Visual Studio (1000x1500)",
+      "description": "Convert any blog post URL or topic into downloadable 1000x1500 (2:3) vertical Pinterest Pin graphics with 6 editable templates, extracted article photos, and Pinterest SEO copy.",
+      "categories": [
+        "content-writing"
+      ],
+      "tags": [
+        "Pinterest Pin generator",
+        "1000x1500 tall pin",
+        "blog to Pinterest visual",
+        "Pinterest SEO studio"
+      ],
+      "kind": "2:3 Tall Pin & SEO studio",
+      "status": "live",
+      "addedAt": "2026-11-01",
+      "featuredOrder": 22,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "pinterest-pin-seo-generator",
+        "blog-to-infographic-generator",
+        "instagram-caption-generator",
+        "webpage-image-extractor"
+      ],
+      "topics": [
+        "social"
+      ]
+    },
+    {
+      "id": "quote-stat-testimonial-card-studio",
+      "slug": "quote-stat-testimonial-card-studio",
+      "name": "AI Quote, Founder Memo & Testimonial Visual Card Studio",
+      "description": "Extract the sharpest quotes from any article URL or paste customer reviews to design 1080x1080 verified social post cards, highlighter quotes, founder memos, and 5-star testimonial graphics.",
+      "categories": [
+        "content-writing"
+      ],
+      "tags": [
+        "quote card generator",
+        "tweet screenshot maker",
+        "testimonial card studio",
+        "founder memo graphic"
+      ],
+      "kind": "Quote & testimonial visual studio",
+      "status": "live",
+      "addedAt": "2026-11-01",
+      "featuredOrder": 23,
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "linkedin-post-formatter",
+        "instagram-caption-generator",
+        "blog-to-infographic-generator",
+        "social-thread-generator"
+      ],
+      "topics": [
+        "social"
       ]
     }
   ],

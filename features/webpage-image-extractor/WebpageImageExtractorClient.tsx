@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   CheckCircle2,
   Copy,
@@ -30,6 +31,7 @@ export default function WebpageImageExtractorClient() {
   const [loadingExtract, setLoadingExtract] = useState(false);
   const [loadingZip, setLoadingZip] = useState(false);
   const [toast, setToast] = useState("");
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   function notify(msg: string) {
     setToast(msg);
@@ -77,6 +79,7 @@ export default function WebpageImageExtractorClient() {
         });
         setSelectedIds(nextSel);
         notify(`Extracted ${mapped.length} images from ${data.domain}!`);
+        setTimeout(() => focusToolSection(resultsRef.current), 120);
       } else {
         notify(
           data?.error?.message ||
@@ -135,6 +138,7 @@ export default function WebpageImageExtractorClient() {
       aria-label="Webpage Image Extractor and Bulk ZIP Downloader Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay active={loadingExtract || loadingZip} title={loadingZip ? "Packaging Images into .ZIP Archive" : "Scanning Webpage DOM for Images"} description={loadingZip ? "Fetching binary image files and generating 00-images-manifest.csv…" : "Discovering <img> tags, Open Graph covers, and lazy-loaded media assets…"} />
       {toast && (
         <div
           role="status"
@@ -249,7 +253,7 @@ export default function WebpageImageExtractorClient() {
       </div>
 
       {/* Image Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div ref={resultsRef} tabIndex={-1} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 focus:outline-none">
         {filteredImages.map((img) => {
           const checked = Boolean(selectedIds[img.id]);
           return (

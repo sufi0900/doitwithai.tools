@@ -11,6 +11,7 @@ import {
   XCircle,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
+import ToolRunOverlay from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicCheatsheet,
   DEFAULT_CHEATSHEET_INPUT,
@@ -114,6 +115,7 @@ export default function ArticleToHtmlCheatsheetClient() {
         }}
       />
 
+      <ToolRunOverlay active={loadingAi} title="Distilling Article Into 1-Page Visual Cheatsheet" description="Synthesizing executive takeaways, action checklist, and printable HTML layout…" />
       {toast && (
         <div
           role="status"

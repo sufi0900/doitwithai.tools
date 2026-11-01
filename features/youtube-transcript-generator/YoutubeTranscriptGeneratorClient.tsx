@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -13,6 +13,7 @@ import {
   Search,
   Sparkles,
 } from "lucide-react";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildYoutubeTranscriptPack,
   DEFAULT_YT_SEGMENTS,
@@ -23,11 +24,11 @@ import {
 
 export default function YoutubeTranscriptGeneratorClient() {
   const [videoUrl, setVideoUrl] = useState(DEFAULT_YT_TRANSCRIPT_URL);
-  const [videoId, setVideoId] = useState("exampleSEO2026");
+  const [videoId, setVideoId] = useState("2qkB9vL4xtE");
   const [title, setTitle] = useState(
-    "Complete On-Page, Technical & Local SEO Workflow (2026 Guide)",
+    "Create and Deploy Website Using AI for Free: ChatGPT + Netlify Tutorial",
   );
-  const [channelName, setChannelName] = useState("Do It With AI Studio");
+  const [channelName, setChannelName] = useState("Do It With AI Tools");
   const [segments, setSegments] =
     useState<TranscriptSegment[]>(DEFAULT_YT_SEGMENTS);
   const [aiPack, setAiPack] = useState<YoutubeTranscriptPack | null>(null);
@@ -36,6 +37,7 @@ export default function YoutubeTranscriptGeneratorClient() {
   const [loadingFetch, setLoadingFetch] = useState(false);
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState("");
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const basePack = useMemo(
     () =>
@@ -66,16 +68,16 @@ export default function YoutubeTranscriptGeneratorClient() {
     setTimeout(() => setToast(""), 2600);
   }
 
-  async function handleFetchYoutubeVideo(e?: React.FormEvent) {
-    if (e) e.preventDefault();
-    if (!videoUrl.trim()) return;
+  async function fetchVideoByUrl(targetUrl: string) {
+    const trimmed = targetUrl.trim();
+    if (!trimmed) return;
     setLoadingFetch(true);
     setAiPack(null);
     try {
       const res = await fetch("/api/ai-tools/universal-extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: videoUrl.trim() }),
+        body: JSON.stringify({ url: trimmed }),
       });
       const data = await res.json();
       if (data && !data.error) {
@@ -93,7 +95,8 @@ export default function YoutubeTranscriptGeneratorClient() {
             })),
           );
         }
-        notify(`Extracted transcript & chapters for "${data.title}"!`);
+        notify(`Extracted ${data.transcriptSegments?.length || data.paragraphs?.length || 0} transcript segments for "${data.title}"!`);
+        setTimeout(() => focusToolSection(resultsRef.current), 120);
       } else {
         notify(
           data?.error?.message ||
@@ -105,6 +108,21 @@ export default function YoutubeTranscriptGeneratorClient() {
     } finally {
       setLoadingFetch(false);
     }
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const paramUrl = params.get("url");
+    if (paramUrl && paramUrl.trim()) {
+      setVideoUrl(paramUrl.trim());
+      fetchVideoByUrl(paramUrl.trim());
+    }
+  }, []);
+
+  async function handleFetchYoutubeVideo(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    await fetchVideoByUrl(videoUrl);
   }
 
   async function handleGenerateAiSummary() {
@@ -125,6 +143,7 @@ export default function YoutubeTranscriptGeneratorClient() {
       if (data?.pack) {
         setAiPack(data.pack);
         notify("Generated AI Executive Summary, Chapters & Key Takeaways!");
+        setTimeout(() => focusToolSection(resultsRef.current), 120);
       }
     } catch {
       notify("Updated video summary & chapters.");
@@ -148,6 +167,20 @@ export default function YoutubeTranscriptGeneratorClient() {
       aria-label="YouTube Transcript, Chapters and AI Summary Generator Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingFetch || loadingAi}
+        title={
+          loadingFetch
+            ? "Extracting YouTube Video Transcript & Auto-Captions"
+            : "Generating AI Executive Summary & Timestamped Chapters"
+        }
+        description={
+          loadingFetch
+            ? "Connecting to YouTube player captions (including EN - auto & manual tracks) and building timestamped segments…"
+            : "Synthesizing spoken audio into key takeaways and copy-ready YouTube description chapters…"
+        }
+      />
+
       {toast && (
         <div
           role="status"
@@ -164,23 +197,22 @@ export default function YoutubeTranscriptGeneratorClient() {
         className="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/15 text-rose-600 dark:text-rose-400">
-              <Play size={16} className="fill-current" />
+          <div className="flex items-center gap-2.5">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#FF0000] text-white shadow-xs">
+              <Play size={17} className="fill-current ml-0.5" />
             </span>
             <div>
               <h2 className="text-base font-extrabold">
                 Paste Any YouTube Video or Shorts URL
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Automatically extracts timestamped captions, video chapters,
-                word count, and AI key takeaways.
+                Supports manual subtitles and auto-generated (<code>EN - auto</code>) YouTube captions.
               </p>
             </div>
           </div>
 
           <Link
-            href="/tools/video-transcript-to-blog"
+            href={`/tools/video-transcript-to-blog?url=${encodeURIComponent(videoUrl)}`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-[#3452d1]/30 bg-[#3452d1]/10 px-3.5 py-2 text-xs font-extrabold text-[#3452d1] hover:bg-[#3452d1] hover:text-white dark:text-[#9aabff]"
           >
             <FileText size={14} />
@@ -193,13 +225,13 @@ export default function YoutubeTranscriptGeneratorClient() {
             type="text"
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
-            className="w-full min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-mono text-xs dark:border-slate-700 dark:bg-slate-900"
+            placeholder="https://www.youtube.com/watch?v=2qkB9vL4xtE or https://youtu.be/..."
+            className="w-full min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-mono text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-900"
           />
           <button
             type="submit"
             disabled={loadingFetch}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
           >
             <Play size={14} />
             {loadingFetch ? "Fetching Captions…" : "Fetch Transcript & Chapters"}
@@ -208,7 +240,7 @@ export default function YoutubeTranscriptGeneratorClient() {
             type="button"
             onClick={handleGenerateAiSummary}
             disabled={loadingAi}
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-xs font-extrabold text-slate-800 hover:border-[#5271ff] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-4 py-2.5 text-xs sm:text-sm font-extrabold text-slate-800 hover:border-[#5271ff] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             <Sparkles size={14} className="text-[#5271ff]" />
             {loadingAi ? "Summarizing…" : "AI Summary & Chapters"}
@@ -216,7 +248,11 @@ export default function YoutubeTranscriptGeneratorClient() {
         </div>
       </form>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+      <div
+        ref={resultsRef}
+        tabIndex={-1}
+        className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] focus:outline-none"
+      >
         {/* LEFT COLUMN: INTERACTIVE TIMESTAMPED TRANSCRIPT VIEWER */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
@@ -228,6 +264,7 @@ export default function YoutubeTranscriptGeneratorClient() {
                   {pack.estimatedReadingMinutes} min read)
                 </span>
                 <h3 className="mt-0.5 text-lg font-black">{pack.title}</h3>
+                <p className="text-xs text-slate-500">Channel: {pack.channelName}</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -307,7 +344,7 @@ export default function YoutubeTranscriptGeneratorClient() {
             </div>
 
             {/* Transcript Segments List */}
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 max-h-[540px] overflow-y-auto space-y-2 pr-1">
               {filteredSegments.map((seg, idx) => (
                 <div
                   key={idx}

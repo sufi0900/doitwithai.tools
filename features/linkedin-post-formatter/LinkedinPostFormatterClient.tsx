@@ -53,7 +53,9 @@ export default function LinkedinPostFormatterClient() {
       const lines = postText.split("\n");
       lines[0] = applyUnicodeStyle(lines[0], style);
       setPostText(lines.join("\n"));
-      notify("Formatted opening hook line! (Highlight any words to style selection)");
+      notify(
+        "Formatted opening hook line! (Highlight any words to style selection)",
+      );
       return;
     }
 
@@ -129,7 +131,10 @@ export default function LinkedinPostFormatterClient() {
         label="Fetch Any Article URL to Auto-Draft a Formatted LinkedIn Post (+ Extract Images)"
         placeholder="Paste any article URL to extract a bold Unicode hook, sub-topics & images..."
         onExtracted={(data) => {
-          const boldHook = applyUnicodeStyle(data.title, "boldSans");
+          const cleanTitle = (data.title || "")
+            .replace(/\s*\|\s*[^|]+$/g, "")
+            .trim();
+          const boldHook = applyUnicodeStyle(cleanTitle, "boldSans");
           const bullets = data.keyTakeaways
             .slice(0, 4)
             .map((k) => `✅ ${k}`)
@@ -141,7 +146,14 @@ export default function LinkedinPostFormatterClient() {
           if (data.images?.length) {
             setExtractedImages(data.images);
           }
-          notify(`Drafted formatted LinkedIn post from "${data.title}"!`);
+          notify(`Drafted formatted LinkedIn post from "${cleanTitle}"!`);
+        }}
+        onSelectSubTopic={(sub, data) => {
+          const boldHook = applyUnicodeStyle(sub.title, "boldSans");
+          setPostText(
+            `${boldHook}\n\n${sub.content}\n\nWhat is your experience with this step? 👇\n\n🌐 Full guide: ${data.url}\n\n#LinkedInTips #ContentMarketing #Growth`,
+          );
+          notify(`Switched LinkedIn post to sub-topic: "${sub.title}"!`);
         }}
       />
 
@@ -155,8 +167,9 @@ export default function LinkedinPostFormatterClient() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-        {/* LEFT COLUMN: UNICODE EDITOR & TOOLBAR */}
+      {/* UNIFIED 2-COLUMN DASHBOARD: LEFT = TEXT EDITOR + FOLD SIMULATOR, RIGHT = CONNECTED VISUAL CARD & PACKAGE DOWNLOADER */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] items-start">
+        {/* LEFT COLUMN: UNICODE EDITOR + "...SEE MORE" FOLD SIMULATOR + SCORECARD */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -208,7 +221,7 @@ export default function LinkedinPostFormatterClient() {
 
             <textarea
               ref={textareaRef}
-              rows={13}
+              rows={12}
               value={postText}
               onChange={(e) => setPostText(e.target.value)}
               placeholder="Write or paste your LinkedIn post here..."
@@ -240,55 +253,12 @@ export default function LinkedinPostFormatterClient() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
-            <div className="flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-base font-extrabold">
-                <Sparkles size={17} className="text-[#5271ff]" />
-                2. LinkedIn Algorithm &amp; Hook Scorecard
-              </h3>
-              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
-                Hook Score: {analysis.hookScore}/100
-              </span>
-            </div>
-
-            <div className="mt-4 space-y-2.5">
-              {analysis.checks.map((chk) => (
-                <div
-                  key={chk.label}
-                  className="flex items-start gap-2.5 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-900/60"
-                >
-                  {chk.passed ? (
-                    <CheckCircle2
-                      size={16}
-                      className="mt-0.5 shrink-0 text-emerald-500"
-                    />
-                  ) : (
-                    <AlertTriangle
-                      size={16}
-                      className="mt-0.5 shrink-0 text-amber-500"
-                    />
-                  )}
-                  <div>
-                    <strong className="block font-bold text-slate-900 dark:text-white">
-                      {chk.label}
-                    </strong>
-                    <span className="text-slate-600 dark:text-slate-300">
-                      {chk.detail}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: LIVE LINKEDIN "...SEE MORE" FOLD PREVIEWER */}
-        <div className="space-y-6">
+          {/* "...SEE MORE" FOLD SIMULATOR */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="flex items-center gap-2 text-base font-extrabold">
                 <Eye size={18} className="text-[#5271ff]" />
-                Live &ldquo;…see more&rdquo; Fold Truncation Simulator
+                2. &ldquo;…see more&rdquo; Fold Truncation Check
               </h3>
               <div className="flex gap-1.5">
                 <button
@@ -324,31 +294,11 @@ export default function LinkedinPostFormatterClient() {
               </div>
             </div>
 
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Previewing exact text visible in the LinkedIn feed before a reader
-              clicks <strong>&ldquo;…see more&rdquo;</strong> (Dwell Time
-              trigger).
-            </p>
-
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-md dark:border-slate-700 dark:bg-[#1B2234]">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3452d1] to-sky-400 text-sm font-black text-white">
-                  SM
-                </div>
-                <div>
-                  <strong className="block text-sm font-extrabold text-slate-900 dark:text-white">
-                    Sufian Mustafa · 1st
-                  </strong>
-                  <span className="block text-xs text-slate-500 dark:text-slate-400">
-                    Founder @ Do It With AI Tools · SEO &amp; Growth Workflows
-                  </span>
-                  <span className="block text-[11px] text-slate-400">
-                    1h · 🌐
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-3.5 whitespace-pre-wrap break-words font-sans text-sm leading-6 text-slate-900 dark:text-slate-100">
+            <div className="mt-3 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3.5 text-xs">
+              <strong className="block font-extrabold text-indigo-900 dark:text-indigo-200">
+                Visible Before &ldquo;…see more&rdquo; ({previewDevice.toUpperCase()}):
+              </strong>
+              <p className="mt-1 whitespace-pre-wrap font-sans text-xs font-semibold text-slate-800 dark:text-slate-100">
                 {expandedInPreview || !isTruncated ? (
                   postText
                 ) : (
@@ -357,51 +307,70 @@ export default function LinkedinPostFormatterClient() {
                     <button
                       type="button"
                       onClick={() => setExpandedInPreview(true)}
-                      className="ml-1 font-bold text-slate-500 hover:text-[#3452d1] hover:underline dark:text-slate-400"
+                      className="ml-1 font-bold text-[#3452d1] hover:underline dark:text-[#9aabff]"
                     >
                       …see more
                     </button>
                   </>
                 )}
-              </div>
-
-              {expandedInPreview && isTruncated && (
-                <button
-                  type="button"
-                  onClick={() => setExpandedInPreview(false)}
-                  className="mt-2 text-xs font-bold text-[#3452d1] hover:underline dark:text-[#9aabff]"
-                >
-                  Collapse back to &ldquo;…see more&rdquo; fold view
-                </button>
-              )}
-
-              <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-3 text-xs font-semibold text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                <span>👍 ❤️ 💡 148</span>
-                <span>42 comments · 19 reposts</span>
-              </div>
+              </p>
             </div>
 
-            <div className="mt-4 rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-3.5 text-xs">
-              <strong className="block font-extrabold text-indigo-900 dark:text-indigo-200">
-                Above-the-Fold Verdict ({previewDevice.toUpperCase()}):
-              </strong>
-              <p className="mt-1 font-mono text-[11px] text-slate-700 dark:text-slate-200">
-                &ldquo;{aboveFoldText}&rdquo;
-              </p>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                <Sparkles size={15} className="text-[#5271ff]" />
+                LinkedIn Algorithm Hook Score
+              </span>
+              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
+                {analysis.hookScore}/100
+              </span>
+            </div>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {analysis.checks.map((chk) => (
+                <div
+                  key={chk.label}
+                  className="flex items-start gap-2 rounded-xl border border-slate-200/80 bg-slate-50/70 p-2.5 text-[11px] dark:border-slate-800 dark:bg-slate-900/60"
+                >
+                  {chk.passed ? (
+                    <CheckCircle2
+                      size={14}
+                      className="mt-0.5 shrink-0 text-emerald-500"
+                    />
+                  ) : (
+                    <AlertTriangle
+                      size={14}
+                      className="mt-0.5 shrink-0 text-amber-500"
+                    />
+                  )}
+                  <div>
+                    <strong className="block font-bold text-slate-900 dark:text-white">
+                      {chk.label}
+                    </strong>
+                    <span className="text-slate-600 dark:text-slate-300">
+                      {chk.detail}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Companion Visual Card & Direct Publisher */}
-      <SocialVisualCardBuilder
-        platformLabel="LinkedIn Post"
-        defaultHeadline={firstLines[0] || "Key LinkedIn Insight"}
-        defaultBody={firstLines.slice(1, 3).join(" ") || postText.slice(0, 180)}
-        defaultSublabel="LINKEDIN PLAYBOOK"
-        postTextToShare={postText}
-        extractedImages={extractedImages}
-      />
+        {/* RIGHT COLUMN: CONNECTED POST + IMAGE PREVIEW & PACKAGE STUDIO */}
+        <div>
+          <SocialVisualCardBuilder
+            platformLabel="LinkedIn Post"
+            defaultHeadline={firstLines[0] || "Key LinkedIn Insight"}
+            defaultBody={
+              firstLines.slice(1, 3).join(" ") || postText.slice(0, 180)
+            }
+            defaultSublabel="LINKEDIN PLAYBOOK"
+            postTextToShare={postText}
+            extractedImages={extractedImages}
+          />
+        </div>
+      </div>
     </section>
   );
 }

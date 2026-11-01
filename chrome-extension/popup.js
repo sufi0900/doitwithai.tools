@@ -8,6 +8,9 @@
   let activeNgramFilter = "all";
   let activeSocialPlatform = "LinkedIn";
   let activeSocialAngle = 0;
+  let activeYtSubTab = "transcript";
+  let currentYoutubePack = null;
+  let hasAutoSwitchedYoutube = false;
 
   const STOP_WORDS = new Set([
     "the", "and", "for", "that", "this", "with", "from", "your", "have", "more",
@@ -341,7 +344,19 @@
       bodyText.match(/\b(we tested|in our test|our benchmark|we measured|in our audit|case study|step-by-step|our dataset)\b/gi) || []
     ).slice(0, 10);
 
+    
+    let youtubeComments = [];
+    if (/youtube\.com/i.test(domain)) {
+      const cNodes = Array.from(document.querySelectorAll("ytd-comment-thread-renderer #content-text")).slice(0, 12);
+      const aNodes = Array.from(document.querySelectorAll("ytd-comment-thread-renderer #author-text")).slice(0, 12);
+      youtubeComments = cNodes.map((n, idx) => ({
+        author: clean(aNodes[idx]?.textContent || "Viewer #" + (idx + 1)),
+        text: clean(n.textContent || ""),
+      }));
+    }
+
     return {
+      youtubeComments,
       url,
       domain,
       title,
@@ -747,6 +762,165 @@
     return `🚀 Step-by-Step Implementation Playbook: ${title}\n\nSave this checklist for your next audit:\n\n${bullets}\n\n${data.paragraphs[1] || ""}\n\n🌐 Explore the complete guide: ${url}\n\n#MarketingStrategy #OnPageSEO #GrowthMarketing`;
   }
 
+  
+  function buildFallbackYoutubePack(data) {
+    const cleanTitle = (data.title || "YouTube Video").replace(/\s*-\s*YouTube$/i, "").trim();
+    const paras = (data.paragraphs && data.paragraphs.length) ? data.paragraphs : [data.description || cleanTitle];
+    const segments = paras.map((p, idx) => {
+      const sec = idx * 22;
+      const m = Math.floor(sec / 60);
+      const r = sec % 60;
+      return {
+        startSeconds: sec,
+        timestamp: `${m}:${r < 10 ? "0" : ""}${r}`,
+        text: p,
+      };
+    });
+    return {
+      title: cleanTitle,
+      channelName: "YouTube Creator",
+      url: data.url,
+      segments,
+      summaryBullets: paras.slice(0, 4),
+      insights: [
+        `Primary Video Topic: ${cleanTitle}`,
+        paras[0] || "Step-by-step video walkthrough ready for repurposing.",
+        paras[1] || "Includes timestamped sections and actionable takeaways.",
+      ],
+      faqs: [
+        { q: `What is "${cleanTitle}" about?`, a: paras[0] || cleanTitle },
+        { q: "How do I turn this video into a blog post or Shorts script?", a: "Use the 1-Click buttons below to open this video URL directly inside the DoItWithAI Video-to-Blog or Shorts Script Studio." },
+      ],
+      comments: data.youtubeComments || [],
+    };
+  }
+
+  function renderYoutubeStudioContent() {
+    const box = document.getElementById("yt-studio-content-box");
+    if (!box) return;
+    const pack = currentYoutubePack || (currentPageData ? buildFallbackYoutubePack(currentPageData) : null);
+    if (!pack) return;
+
+    const titleEl = document.getElementById("yt-studio-title");
+    if (titleEl) titleEl.textContent = pack.title || "YouTube Video";
+    const chanEl = document.getElementById("yt-studio-channel");
+    if (chanEl) chanEl.textContent = `▶ YOUTUBE STUDIO · ${(pack.channelName || "ACTIVE VIDEO").toUpperCase()}`;
+
+    if (activeYtSubTab === "transcript") {
+      box.innerHTML = (pack.segments || [])
+        .map(
+          (s) => `
+          <div class="item-row">
+            <div style="min-width:0;flex:1">
+              <span class="status-pill" style="margin-right:6px;font-family:monospace">${s.timestamp}</span>
+              <span style="color:var(--text-main);font-weight:500">${s.text}</span>
+            </div>
+          </div>
+        `
+        )
+        .join("");
+    } else if (activeYtSubTab === "summary") {
+      box.innerHTML = (pack.summaryBullets || [])
+        .map(
+          (b, i) => `
+          <div class="item-row">
+            <div style="min-width:0;flex:1">
+              <strong style="color:var(--link-color)">Takeaway #${i + 1}:</strong> ${b}
+            </div>
+          </div>
+        `
+        )
+        .join("");
+    } else if (activeYtSubTab === "insights") {
+      box.innerHTML = (pack.insights || [])
+        .map(
+          (ins) => `
+          <div class="item-row">
+            <div style="min-width:0;flex:1">💡 ${ins}</div>
+          </div>
+        `
+        )
+        .join("");
+    } else if (activeYtSubTab === "faqs") {
+      box.innerHTML = (pack.faqs || [])
+        .map(
+          (f) => `
+          <div class="item-row">
+            <div style="min-width:0;flex:1">
+              <div class="item-title">Q: ${f.q}</div>
+              <div class="text-muted" style="margin-top:3px">A: ${f.a}</div>
+            </div>
+          </div>
+        `
+        )
+        .join("");
+    } else if (activeYtSubTab === "comments") {
+      const comms = pack.comments || [];
+      if (!comms.length) {
+        box.innerHTML = `<p class="text-muted">Scroll slightly down on the YouTube page so comments load, then click "↻ Rescan Page" above to inspect viewer comments.</p>`;
+      } else {
+        box.innerHTML = comms
+          .map(
+            (c) => `
+            <div class="item-row">
+              <div style="min-width:0;flex:1">
+                <div class="item-title">${c.author}</div>
+                <div class="text-muted">${c.text}</div>
+              </div>
+            </div>
+          `
+          )
+          .join("");
+      }
+    }
+  }
+
+  function polishSocialTextareaContent(action) {
+    const area = document.getElementById("social-post-output");
+    if (!area) return;
+    const raw = (area.value || "").trim();
+    const url = currentPageData?.url || "https://doitwithai.tools";
+    const title = currentPageData?.title || "Growth & SEO Playbook";
+    const lines = raw.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    const firstLine = lines[0] || title;
+
+    if (action === "hook") {
+      area.value = `🔥 Stop scrolling if you care about ${title.replace(/\s*\|\s*[^|]+$/g, "")}:
+
+Most teams waste hours on the wrong steps. Here is what actually moves the needle:
+
+${lines.slice(1).join("\n\n") || raw}`;
+    } else if (action === "bullets") {
+      const sentences = raw.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter((s) => s.length > 10);
+      const bullets = sentences.slice(0, 5).map((s) => `✅ ${s.replace(/^[•✅📌🚀💡]\s*/, "")}`).join("\n");
+      area.value = `📌 ${title.replace(/\s*\|\s*[^|]+$/g, "")}
+
+${bullets}
+
+Which of these steps is your #1 priority right now? 👇
+
+🌐 ${url}`;
+    } else if (action === "expand") {
+      area.value = `🚀 ${firstLine}
+
+Here is the step-by-step breakdown you can apply today:
+
+1️⃣ Audit the core bottleneck first instead of guessing
+2️⃣ Focus on high-retention hooks and scannable takeaways
+3️⃣ Repurpose every guide into multi-platform social assets
+
+${raw}
+
+Save this post for your next content sprint! 👇
+🌐 ${url}`;
+    }
+    const counter = document.getElementById("social-char-counter");
+    if (counter) {
+      counter.textContent = `${area.value.length} characters · ${activeSocialPlatform} (Polished)`;
+    }
+    showToast("Polished social post draft!");
+  }
+
   function renderAll(data) {
     currentPageData = data;
     const scores = computeScores(data);
@@ -1004,7 +1178,46 @@
     renderImagesList();
 
     // TAB: Convert Page, YouTube Detection & Audio Studio
-    const isYtPage = /(?:youtube\.com\/(?:watch|shorts)|youtu\.be\/)/i.test(data.url || "");
+        const isYtPage = /(?:youtube\.com\/(?:watch|shorts)|youtu\.be\/)/i.test(data.url || "");
+    const ytNavBtn = document.getElementById("nav-item-youtube");
+    if (ytNavBtn) {
+      ytNavBtn.classList.toggle("hidden", !isYtPage);
+    }
+    if (isYtPage) {
+      const encYtUrl = encodeURIComponent(data.url || "");
+      const setHref = (id, path) => {
+        const el = document.getElementById(id);
+        if (el) el.href = `https://doitwithai.tools/tools/${path}?url=${encYtUrl}`;
+      };
+      setHref("btn-yt-open-web-studio", "youtube-transcript-generator");
+      setHref("yt-quick-srt", "youtube-transcript-generator");
+      setHref("yt-quick-blog", "video-transcript-to-blog");
+      setHref("yt-quick-short", "short-form-video-script-generator");
+      setHref("yt-quick-thumb", "social-media-video-thumbnail-grabber");
+
+      currentYoutubePack = buildFallbackYoutubePack(data);
+      renderYoutubeStudioContent();
+
+      if (!hasAutoSwitchedYoutube) {
+        hasAutoSwitchedYoutube = true;
+        document.querySelectorAll("#main-nav .nav-item").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
+        ytNavBtn?.classList.add("active");
+        document.getElementById("tab-youtube")?.classList.add("active");
+      }
+
+      resolveTargetTab((tab) => {
+        if (tab && tab.id && chrome.tabs && chrome.tabs.sendMessage) {
+          chrome.tabs.sendMessage(tab.id, { type: "GET_YOUTUBE_VIDEO_PACK" }, (resp) => {
+            if (!chrome.runtime.lastError && resp && resp.ok && resp.pack) {
+              currentYoutubePack = resp.pack;
+              renderYoutubeStudioContent();
+            }
+          });
+        }
+      });
+    }
+
     const ytBanner = document.getElementById("youtube-detected-banner");
     if (ytBanner) {
       ytBanner.classList.toggle("hidden", !isYtPage);
@@ -1214,6 +1427,46 @@
   function renderStudioLinks(pageUrl) {
     const enc = encodeURIComponent(pageUrl || "");
     const studios = [
+      {
+        name: "AI Blog to Infographic",
+        desc: "8 editable infographic templates, PNG/SVG/PDF & SEO embed",
+        slug: "blog-to-infographic-generator",
+        tone: "icon-rose",
+        tag: "INFOGRAPHIC",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="4" y="3" width="24" height="26" rx="5" fill="#FF6B35"/><rect x="8" y="7" width="16" height="3.5" rx="1.5" fill="#FFFFFF"/><circle cx="10.5" cy="15" r="2.2" fill="#FFFFFF"/><rect x="14.5" y="13.5" width="9.5" height="3" rx="1.2" fill="#FFE4D6"/><circle cx="10.5" cy="21.5" r="2.2" fill="#FFFFFF"/><rect x="14.5" y="20" width="9.5" height="3" rx="1.2" fill="#FFE4D6"/></svg>`,
+      },
+      {
+        name: "Data to Chart & KPI Card",
+        desc: "Turn numbers into 1080p bar charts, donuts & KPI bento grids",
+        slug: "data-to-chart-visual-card-maker",
+        tone: "icon-blue",
+        tag: "DATA CHART",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="4" width="26" height="24" rx="6" fill="#3452D1"/><rect x="8" y="16" width="3.5" height="8" rx="1.2" fill="#9AABFF"/><rect x="14.2" y="11" width="3.5" height="13" rx="1.2" fill="#FFFFFF"/><rect x="20.5" y="8" width="3.5" height="16" rx="1.2" fill="#10B981"/></svg>`,
+      },
+      {
+        name: "2×2 Matrix, SWOT & Flywheel",
+        desc: "6 consulting-grade mental model & strategy diagram templates",
+        slug: "framework-matrix-diagram-builder",
+        tone: "icon-indigo",
+        tag: "2×2 MATRIX",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="3" width="26" height="26" rx="6" fill="#7C3AED"/><rect x="7" y="7" width="8" height="8" rx="2" fill="#FFFFFF"/><rect x="17" y="7" width="8" height="8" rx="2" fill="#DDD6FE"/><rect x="7" y="17" width="8" height="8" rx="2" fill="#DDD6FE"/><rect x="17" y="17" width="8" height="8" rx="2" fill="#10B981"/></svg>`,
+      },
+      {
+        name: "Pinterest Tall Pin (1000×1500)",
+        desc: "6 vertical 2:3 Pin templates + blog photo & Pinterest SEO",
+        slug: "pinterest-pin-visual-generator",
+        tone: "icon-rose",
+        tag: "PINTEREST",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><circle cx="16" cy="16" r="13" fill="#E60023"/><path d="M16.2 8.5C11.9 8.5 9.5 11.5 9.5 14.8C9.5 16.5 10.4 18.1 11.9 18.7L12.7 17.2C12 16 11.7 15.2 11.7 14.3C11.7 12.1 13.4 10.3 16.1 10.3C18.5 10.3 20.1 11.8 20.1 14.1C20.1 16.9 18.8 19.1 17 19.1C16 19.1 15.2 18.3 15.5 17.2L16.2 14.2C16.4 13.4 15.9 12.6 15 12.6C14 12.6 13.2 13.6 13.2 15L12.1 22.3C12.9 24.2 13.6 22.9 13.9 21.8L14.5 19.5C15 20.3 16 20.9 17.2 20.9C20.6 20.9 22.9 17.8 22.9 14C22.9 10.6 20 8.5 16.2 8.5Z" fill="#FFFFFF"/></svg>`,
+      },
+      {
+        name: "Quote & Testimonial Cards",
+        desc: "Verified post screenshots, highlighter quotes & 5-star reviews",
+        slug: "quote-stat-testimonial-card-studio",
+        tone: "icon-amber",
+        tag: "QUOTE CARD",
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="4" width="26" height="24" rx="6" fill="#0F172A"/><path d="M10 15C10 12.2 11.8 10.4 14.5 10V12.2C13 12.5 12.4 13.4 12.4 14.6H14.5V19H10V15ZM17.5 15C17.5 12.2 19.3 10.4 22 10V12.2C20.5 12.5 19.9 13.4 19.9 14.6H22V19H17.5V15Z" fill="#FF6B35"/></svg>`,
+      },
       {
         name: "YouTube Transcript & .SRT",
         desc: "Extract timestamps, chapters, summary & .SRT subtitles",
@@ -1780,6 +2033,33 @@
       ?.addEventListener("change", (e) => {
         togglePageOverlay("headings", e.target.checked);
       });
+
+    
+    // YouTube Studio Subtabs & Copy
+    document.querySelectorAll("#yt-studio-subtabs .filter-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#yt-studio-subtabs .filter-pill").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeYtSubTab = btn.getAttribute("data-yt-sub") || "transcript";
+        renderYoutubeStudioContent();
+      });
+    });
+
+    document.getElementById("btn-yt-copy-current")?.addEventListener("click", async () => {
+      const box = document.getElementById("yt-studio-content-box");
+      const text = (box?.innerText || "").trim();
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      showToast(`Copied YouTube ${activeYtSubTab} to clipboard!`);
+    });
+
+    // Social AI Post Polisher buttons
+    document.querySelectorAll("#social-polisher-pills .filter-pill").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const act = btn.getAttribute("data-polish-action") || "hook";
+        polishSocialTextareaContent(act);
+      });
+    });
 
     // Initial scan
     scanActiveTab();

@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   UrlArticleExtractorBar,
   type ExtractedImageAsset,
   type UniversalExtractResponse,
 } from "../tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "../tool-ui/SocialVisualCardBuilder";
+import {
+  focusToolSection,
+  ToolRunOverlay,
+} from "../tool-ui/ToolRunOverlay";
 import type {
   FacebookPostFormat,
   FacebookPostOutput,
@@ -14,21 +18,31 @@ import type {
 
 export function FacebookPostGeneratorClient() {
   const [topicOrContent, setTopicOrContent] = useState(
-    "We analyzed 100+ organic social campaigns and discovered that placing external links directly in the main Facebook post body reduces feed reach by up to 60%. Instead, turning your blog article into a native 3-point story post—paired with a 1080x1080 visual takeaway card and placing the full article link in the First Comment—consistently triples engagement and click-throughs."
+    "We analyzed 100+ organic social campaigns and discovered that placing external links directly in the main Facebook post body reduces feed reach by up to 60%. Instead, turning your blog article into a native 3-point story post—paired with a 1080x1080 visual takeaway card and placing the full article link in the First Comment—consistently triples engagement and click-throughs.",
   );
-  const [targetAudience, setTargetAudience] = useState("Digital Marketers, Creators & Founders");
-  const [postFormat, setPostFormat] = useState<FacebookPostFormat>("story-engagement");
+  const [targetAudience, setTargetAudience] = useState(
+    "Digital Marketers, Creators & Founders",
+  );
+  const [postFormat, setPostFormat] =
+    useState<FacebookPostFormat>("story-engagement");
   const [destinationUrl, setDestinationUrl] = useState("");
-  const [brandTone, setBrandTone] = useState("Conversational, Warm & High-Value");
-  const [extractedImages, setExtractedImages] = useState<ExtractedImageAsset[]>([]);
+  const [brandTone, setBrandTone] = useState(
+    "Conversational, Warm & High-Value",
+  );
+  const [extractedImages, setExtractedImages] = useState<ExtractedImageAsset[]>(
+    [],
+  );
   const [selectedVariationIdx, setSelectedVariationIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<FacebookPostOutput | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   function handleUrlExtracted(payload: UniversalExtractResponse) {
-    setTopicOrContent(payload.cleanText || payload.description || payload.title);
+    setTopicOrContent(
+      payload.cleanText || payload.description || payload.title,
+    );
     if (payload.url) {
       setDestinationUrl(payload.url);
     }
@@ -40,7 +54,9 @@ export function FacebookPostGeneratorClient() {
 
   async function handleGenerate() {
     if (!topicOrContent.trim()) {
-      setError("Please enter a topic or extract content from an article URL first.");
+      setError(
+        "Please enter a topic or extract content from an article URL first.",
+      );
       return;
     }
     setLoading(true);
@@ -63,8 +79,13 @@ export function FacebookPostGeneratorClient() {
       }
       setResult(data as FacebookPostOutput);
       setSelectedVariationIdx(0);
+      focusToolSection(resultsRef.current);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate Facebook posts.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to generate Facebook posts.",
+      );
     } finally {
       setLoading(false);
     }
@@ -76,12 +97,23 @@ export function FacebookPostGeneratorClient() {
     setTimeout(() => setCopiedKey(null), 2000);
   }
 
-  const activeVariation = result?.variations?.[selectedVariationIdx] || result?.variations?.[0];
+  const activeVariation =
+    result?.variations?.[selectedVariationIdx] || result?.variations?.[0];
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
+      <ToolRunOverlay
+        open={loading}
+        title="Generating Facebook Posts & Companion Visual Card..."
+        subtitle="Creating 3 zero-click post variations, a First-Comment Link Box, and a connected post + image package."
+      />
+
       <UrlArticleExtractorBar
         onExtracted={handleUrlExtracted}
+        onSelectSubTopic={(sub, data) => {
+          setTopicOrContent(`${sub.title}\n\n${sub.content}`);
+          if (data.url) setDestinationUrl(data.url);
+        }}
         label="Option 1: Fetch Content, Sub-Topics & Images from Any Article or YouTube URL"
       />
 
@@ -142,13 +174,23 @@ export function FacebookPostGeneratorClient() {
               </label>
               <select
                 value={postFormat}
-                onChange={(e) => setPostFormat(e.target.value as FacebookPostFormat)}
+                onChange={(e) =>
+                  setPostFormat(e.target.value as FacebookPostFormat)
+                }
                 className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm font-medium text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
-                <option value="story-engagement">Story Lesson + Engagement Question</option>
-                <option value="value-listicle">Zero-Click Value Breakdown (1-2-3 List)</option>
-                <option value="community-debate">A vs. B Community Poll / Debate</option>
-                <option value="promo-first-comment">Soft Launch + First-Comment Link Hook</option>
+                <option value="story-engagement">
+                  Story Lesson + Engagement Question
+                </option>
+                <option value="value-listicle">
+                  Zero-Click Value Breakdown (1-2-3 List)
+                </option>
+                <option value="community-debate">
+                  A vs. B Community Poll / Debate
+                </option>
+                <option value="promo-first-comment">
+                  Soft Launch + First-Comment Link Hook
+                </option>
               </select>
             </div>
             <div>
@@ -176,18 +218,27 @@ export function FacebookPostGeneratorClient() {
             disabled={loading}
             className="w-full rounded-xl bg-[#ff6b35] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
           >
-            {loading ? "Generating Facebook Posts & Graphic Cards..." : "Generate Facebook Posts + Visual Card"}
+            {loading
+              ? "Generating Facebook Posts & Graphic Cards..."
+              : "Generate Facebook Posts + Visual Card"}
           </button>
         </div>
 
-        <div className="space-y-5">
+        <div
+          ref={resultsRef}
+          tabIndex={-1}
+          className="space-y-5 focus:outline-none"
+        >
           {!result ? (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center dark:border-slate-700 dark:bg-[#111827]">
               <p className="text-sm font-bold text-slate-800 dark:text-white">
                 Generate High-Reach Facebook Posts + Companion Graphic Cards
               </p>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Includes 3 post variations, a dedicated <strong>First-Comment Link Box</strong> (so Facebook doesn&apos;t throttle your reach), and an interactive 1080p image generator.
+                Includes 3 post variations, a dedicated{" "}
+                <strong>First-Comment Link Box</strong> (so Facebook
+                doesn&apos;t throttle your reach), and an interactive 1080p
+                image generator.
               </p>
             </div>
           ) : (
@@ -222,10 +273,14 @@ export function FacebookPostGeneratorClient() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleCopy(activeVariation.fullPostText, "main-post")}
+                      onClick={() =>
+                        handleCopy(activeVariation.fullPostText, "main-post")
+                      }
                       className="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
                     >
-                      {copiedKey === "main-post" ? "Copied Post!" : "Copy Main Post"}
+                      {copiedKey === "main-post"
+                        ? "Copied Post!"
+                        : "Copy Main Post"}
                     </button>
                   </div>
 
@@ -244,10 +299,17 @@ export function FacebookPostGeneratorClient() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => handleCopy(activeVariation.firstCommentText, "first-comment")}
+                      onClick={() =>
+                        handleCopy(
+                          activeVariation.firstCommentText,
+                          "first-comment",
+                        )
+                      }
                       className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100"
                     >
-                      {copiedKey === "first-comment" ? "Copied!" : "Copy First Comment"}
+                      {copiedKey === "first-comment"
+                        ? "Copied!"
+                        : "Copy First Comment"}
                     </button>
                   </div>
 
@@ -267,8 +329,13 @@ export function FacebookPostGeneratorClient() {
               {activeVariation && (
                 <SocialVisualCardBuilder
                   platformLabel="Facebook Post"
-                  defaultHeadline={activeVariation.visualHeadline || activeVariation.hookLine}
-                  defaultBody={activeVariation.visualSubtext || activeVariation.engagementQuestion}
+                  defaultHeadline={
+                    activeVariation.visualHeadline || activeVariation.hookLine
+                  }
+                  defaultBody={
+                    activeVariation.visualSubtext ||
+                    activeVariation.engagementQuestion
+                  }
                   defaultSublabel="FACEBOOK INSIGHT"
                   postTextToShare={activeVariation.fullPostText}
                   extractedImages={extractedImages}

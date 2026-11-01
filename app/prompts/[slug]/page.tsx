@@ -1,3 +1,13 @@
+import TopicClusterPromptArticle from "@/features/prompts/TopicClusterPromptArticle";
+import InfographicVizPromptArticle from "@/features/prompts/InfographicVizPromptArticle";
+import LinkedinB2bPromptArticle from "@/features/prompts/LinkedinB2bPromptArticle";
+import LinkBuildingPromptArticle from "@/features/prompts/LinkBuildingPromptArticle";
+import TechnicalSeoPromptArticle from "@/features/prompts/TechnicalSeoPromptArticle";
+import AiSearchPromptArticle from "@/features/prompts/AiSearchPromptArticle";
+import LocalSeoPromptArticle from "@/features/prompts/LocalSeoPromptArticle";
+import OnPageWritingPromptArticle from "@/features/prompts/OnPageWritingPromptArticle";
+import VideoScriptPromptArticle from "@/features/prompts/VideoScriptPromptArticle";
+import RepurposingPromptArticle from "@/features/prompts/RepurposingPromptArticle";
 import KeywordPromptArticle from "@/features/prompts/KeywordPromptArticle";
 import IntentPromptArticle from "@/features/prompts/IntentPromptArticle";
 import MetaPromptArticle from "@/features/prompts/MetaPromptArticle";
@@ -35,6 +45,7 @@ export function generateMetadata({
     metadataBase: new URL(origin),
     title: `${detail.title} | Do It With AI Tools`,
     description,
+    keywords: prompt.tags,
     alternates: { canonical: `${origin}${promptPath(prompt.id)}` },
     robots: { index: detail.ready, follow: true },
     openGraph: {
@@ -82,6 +93,7 @@ export default function PromptDetailPage({
     "@graph": [
       {
         "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
         itemListElement: [
           { "@type": "ListItem", position: 1, name: "Home", item: origin },
           {
@@ -97,9 +109,13 @@ export default function PromptDetailPage({
         ? [
             {
               "@type": "Article",
+              "@id": `${url}#article`,
               headline: detail.title,
               ...(detail.publishedAt
-                ? { datePublished: detail.publishedAt }
+                ? {
+                    datePublished: detail.publishedAt,
+                    dateModified: detail.publishedAt,
+                  }
                 : {}),
               ...(detail.cover
                 ? { image: new URL(detail.cover.src, origin).href }
@@ -107,10 +123,27 @@ export default function PromptDetailPage({
               description: detail.description || prompt.description,
               url,
               mainEntityOfPage: url,
+              isPartOf: {
+                "@type": "CollectionPage",
+                "@id": `${origin}/prompts#page`,
+                url: `${origin}/prompts`,
+              },
+              about: prompt.tags,
               author: {
                 "@type": "Person",
+                "@id": `${origin}/author/sufian-mustafa#person`,
                 name: "Sufian Mustafa",
                 url: `${origin}/author/sufian-mustafa`,
+              },
+              publisher: {
+                "@type": "Organization",
+                "@id": `${origin}#organization`,
+                name: "Do It With AI Tools",
+                url: origin,
+                logo: {
+                  "@type": "ImageObject",
+                  url: `${origin}/doitwithai-logo-square.png`,
+                },
               },
             },
           ]
@@ -119,6 +152,26 @@ export default function PromptDetailPage({
   };
   if (prompt.id === "keyword-research")
     return <KeywordPromptArticle schema={schema} />;
+  if (prompt.id === "content-repurposing")
+    return <RepurposingPromptArticle schema={schema} />;
+  if (prompt.id === "youtube-video-scripts")
+    return <VideoScriptPromptArticle schema={schema} />;
+  if (prompt.id === "on-page-seo-writing")
+    return <OnPageWritingPromptArticle schema={schema} />;
+  if (prompt.id === "local-seo-gbp")
+    return <LocalSeoPromptArticle schema={schema} />;
+  if (prompt.id === "ai-search-aeo-geo")
+    return <AiSearchPromptArticle schema={schema} />;
+  if (prompt.id === "technical-seo-audit-schema")
+    return <TechnicalSeoPromptArticle schema={schema} />;
+  if (prompt.id === "link-building-digital-pr")
+    return <LinkBuildingPromptArticle schema={schema} />;
+  if (prompt.id === "linkedin-personal-branding")
+    return <LinkedinB2bPromptArticle schema={schema} />;
+  if (prompt.id === "infographic-data-visualization")
+    return <InfographicVizPromptArticle schema={schema} />;
+  if (prompt.id === "topic-clustering-authority")
+    return <TopicClusterPromptArticle schema={schema} />;
   if (prompt.id === "search-intent")
     return <IntentPromptArticle schema={schema} />;
   if (prompt.id === "meta-title") return <MetaPromptArticle schema={schema} />;

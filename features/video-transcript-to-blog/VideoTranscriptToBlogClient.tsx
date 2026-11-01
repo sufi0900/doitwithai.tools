@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   CheckCircle2,
   Copy,
@@ -27,6 +28,7 @@ export default function VideoTranscriptToBlogClient() {
   );
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState("");
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const deterministicArticle = useMemo(
     () => buildDeterministicBlogFromTranscript(input),
@@ -59,6 +61,7 @@ export default function VideoTranscriptToBlogClient() {
       if (data?.article) {
         setAiArticle(data.article);
         notify("Polished transcript into an SEO blog article with AI!");
+        setTimeout(() => focusToolSection(resultsRef.current), 120);
       }
     } catch {
       notify("Generated blog post from transcript.");
@@ -116,6 +119,7 @@ export default function VideoTranscriptToBlogClient() {
         }}
       />
 
+      <ToolRunOverlay active={loadingAi} title="Polishing Transcript Into SEO Blog Article" description="Structuring H2 chapters, Featured Snippet definition block, and FAQPage schema…" />
       {toast && (
         <div
           role="status"

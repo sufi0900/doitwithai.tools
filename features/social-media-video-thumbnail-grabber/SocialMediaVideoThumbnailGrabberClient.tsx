@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import Link from "next/link";
 import type { VideoInspectResult } from "./model";
 
@@ -110,6 +111,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
     DEFAULT_DEMO_RESULT.thumbnails.map((t) => t.id)
   );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -142,6 +144,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
       const typed = data as VideoInspectResult;
       setResult(typed);
       setSelectedIds(typed.thumbnails.map((t) => t.id));
+      setTimeout(() => focusToolSection(resultsRef.current), 120);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to inspect URL.");
     } finally {
@@ -208,6 +211,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
+      <ToolRunOverlay active={loading || zipLoading} title={zipLoading ? "Packaging 4K Thumbnails & Storyboard into .ZIP" : "Extracting 4K Video Thumbnails & Storyboard Frames"} description={zipLoading ? "Bundling high-resolution covers and CSV manifest…" : "Inspecting MaxRes 1080p/4K covers, SD/HQ fallbacks, and in-video storyboard stills…"} />
       {/* Top URL Inspector Bar */}
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -294,7 +298,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
       </div>
 
       {/* Thumbnail & Storyboard Grid */}
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div ref={resultsRef} tabIndex={-1} className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 focus:outline-none">
         {result.thumbnails.map((thumb) => {
           const isSelected = selectedIds.includes(thumb.id);
           return (
