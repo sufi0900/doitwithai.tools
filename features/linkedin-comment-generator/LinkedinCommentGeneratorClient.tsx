@@ -6,10 +6,7 @@ import {
   UrlArticleExtractorBar,
   type UniversalExtractResponse,
 } from "../tool-ui/UrlArticleExtractorBar";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "../tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "../tool-ui/ToolRunOverlay";
 import type {
   CommentGoal,
   IncomingCommentItem,
@@ -150,13 +147,13 @@ export function LinkedinCommentGeneratorClient() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
       <ToolRunOverlay
-        open={loading}
+        active={loading}
         title={
           mode === "reply-to-comments-on-my-post"
             ? "Drafting Contextual Replies to Your Post's Comments..."
             : "Drafting 5 Strategic LinkedIn Comments..."
         }
-        subtitle="Analyzing post thesis, commenter intent, and B2B conversation hooks."
+        description="Analyzing post thesis, commenter intent, and B2B conversation hooks."
       />
 
       {/* Mode Switcher Banner */}

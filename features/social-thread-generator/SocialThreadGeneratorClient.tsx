@@ -12,10 +12,7 @@ import UrlArticleExtractorBar, {
   type ExtractedImageAsset,
 } from "@/features/tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "@/features/tool-ui/SocialVisualCardBuilder";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicThread,
   DEFAULT_THREAD_INPUT,
@@ -116,9 +113,9 @@ export default function SocialThreadGeneratorClient() {
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       <ToolRunOverlay
-        open={loadingAi}
+        active={loadingAi}
         title={`Splitting Into ${input.platform} Thread...`}
-        subtitle="Building numbered posts, 3 viral opening hook variations, and character-safe splits."
+        description="Building numbered posts, 3 viral opening hook variations, and character-safe splits."
       />
 
       <UrlArticleExtractorBar

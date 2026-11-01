@@ -10,10 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicFrameworkDiagram,
   DEFAULT_FRAMEWORK_DIAGRAM_INPUT,
@@ -600,9 +597,9 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       <ToolRunOverlay
-        open={loading}
+        active={loading}
         title="Mapping Content Into Strategic Framework Diagram..."
-        subtitle="Structuring quadrants, flywheel stages, and architecture pillars onto a 1200×1200 visual board."
+        description="Structuring quadrants, flywheel stages, and architecture pillars onto a 1200×1200 visual board."
       />
 
       <UrlArticleExtractorBar

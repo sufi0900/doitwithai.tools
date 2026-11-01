@@ -13,10 +13,7 @@ import {
 import UrlArticleExtractorBar, {
   type ExtractedImageAsset,
 } from "@/features/tool-ui/UrlArticleExtractorBar";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicPinterestVisualPack,
   DEFAULT_PINTEREST_VISUAL_INPUT,
@@ -395,9 +392,9 @@ export default function PinterestPinVisualGeneratorClient() {
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       <ToolRunOverlay
-        open={loading}
+        active={loading}
         title="Designing 1000×1500 Tall Pinterest Pins & SEO Copy..."
-        subtitle="Building 2:3 vertical Pin graphics, overlay hooks, and keyword-indexed descriptions."
+        description="Building 2:3 vertical Pin graphics, overlay hooks, and keyword-indexed descriptions."
       />
 
       <UrlArticleExtractorBar

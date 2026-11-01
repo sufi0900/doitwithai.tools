@@ -4,10 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { CheckCircle2, Copy, Sparkles } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import { EditableInfographicStudio } from "@/features/tool-ui/EditableInfographicStudio";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicBlogInfographic,
   DEFAULT_BLOG_INFOGRAPHIC_INPUT,
@@ -63,9 +60,9 @@ export default function BlogToInfographicGeneratorClient() {
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       <ToolRunOverlay
-        open={loading}
+        active={loading}
         title="Designing Visual Infographic & Extracting Key Nodes..."
-        subtitle="Structuring your content into scannable visual cards across 8 editable infographic templates."
+        description="Structuring your content into scannable visual cards across 8 editable infographic templates."
       />
 
       <UrlArticleExtractorBar

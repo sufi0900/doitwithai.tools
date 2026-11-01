@@ -8,10 +8,7 @@ import {
   type UniversalExtractResponse,
 } from "../tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "../tool-ui/SocialVisualCardBuilder";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "../tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "../tool-ui/ToolRunOverlay";
 import type {
   InstagramCarouselSlide,
   InstagramCaptionOutput,
@@ -307,9 +304,9 @@ export function InstagramCaptionGeneratorClient() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
       <ToolRunOverlay
-        open={loading}
+        active={loading}
         title="Generating Instagram Captions & 5 Visual Carousel Slides..."
-        subtitle="Building scroll-stopping hooks, 5 rendered 1080×1080 carousel slide graphics, and tiered hashtags."
+        description="Building scroll-stopping hooks, 5 rendered 1080×1080 carousel slide graphics, and tiered hashtags."
       />
 
       <UrlArticleExtractorBar

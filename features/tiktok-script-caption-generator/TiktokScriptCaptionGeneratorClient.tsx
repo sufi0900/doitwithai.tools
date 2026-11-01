@@ -7,10 +7,7 @@ import {
   type UniversalExtractResponse,
 } from "../tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "../tool-ui/SocialVisualCardBuilder";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "../tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "../tool-ui/ToolRunOverlay";
 import type {
   TiktokScriptOutput,
   TiktokVideoStyle,
@@ -105,9 +102,9 @@ export function TiktokScriptCaptionGeneratorClient() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
       <ToolRunOverlay
-        open={loading}
+        active={loading}
         title={`Writing ${durationSeconds}s TikTok Script & SEO Caption...`}
-        subtitle="Generating connected teleprompter dialogue, 3 scroll-stopping hooks, and TikTok Search keywords."
+        description="Generating connected teleprompter dialogue, 3 scroll-stopping hooks, and TikTok Search keywords."
       />
 
       <UrlArticleExtractorBar

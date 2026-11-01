@@ -10,10 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicQuotePack,
   DEFAULT_QUOTE_STUDIO_INPUT,
@@ -469,9 +466,9 @@ export default function QuoteStatTestimonialCardStudioClient() {
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       <ToolRunOverlay
-        open={loading}
+        active={loading}
         title="Extracting Best Quotes & Designing Visual Cards..."
-        subtitle="Building 5 shareable quote, tweet-style, and testimonial graphics."
+        description="Building 5 shareable quote, tweet-style, and testimonial graphics."
       />
 
       <UrlArticleExtractorBar

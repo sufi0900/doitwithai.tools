@@ -12,10 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicDataChart,
   DEFAULT_DATA_TO_CHART_INPUT,
@@ -530,9 +527,9 @@ export default function DataToChartVisualCardMakerClient() {
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
     >
       <ToolRunOverlay
-        open={loading}
+        active={loading}
         title="Extracting Statistics & Plotting Visual Chart Card..."
-        subtitle="Turning numbers, percentages, and benchmarks into a high-contrast 1080×1080 chart graphic."
+        description="Turning numbers, percentages, and benchmarks into a high-contrast 1080×1080 chart graphic."
       />
 
       <UrlArticleExtractorBar

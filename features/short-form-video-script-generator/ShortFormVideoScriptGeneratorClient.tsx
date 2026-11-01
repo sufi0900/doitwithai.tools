@@ -11,10 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
 import {
   buildDeterministicShortScript,
   DEFAULT_SHORT_SCRIPT_INPUT,
@@ -125,9 +122,9 @@ export default function ShortFormVideoScriptGeneratorClient() {
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
       <ToolRunOverlay
-        open={loadingAi}
+        active={loadingAi}
         title={`Writing ${input.durationSeconds}s ${input.platform} Script...`}
-        subtitle="Crafting a continuous teleprompter voiceover script, 3 scroll-stopping hooks, and B-roll cues."
+        description="Crafting a continuous teleprompter voiceover script, 3 scroll-stopping hooks, and B-roll cues."
       />
 
       <UrlArticleExtractorBar

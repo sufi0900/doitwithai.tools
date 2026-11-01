@@ -7,10 +7,7 @@ import {
   type UniversalExtractResponse,
 } from "../tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "../tool-ui/SocialVisualCardBuilder";
-import {
-  focusToolSection,
-  ToolRunOverlay,
-} from "../tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { focusToolSection } from "../tool-ui/ToolRunOverlay";
 import type {
   FacebookPostFormat,
   FacebookPostOutput,
@@ -103,9 +100,9 @@ export function FacebookPostGeneratorClient() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
       <ToolRunOverlay
-        open={loading}
+        active={loading}
         title="Generating Facebook Posts & Companion Visual Card..."
-        subtitle="Creating 3 zero-click post variations, a First-Comment Link Box, and a connected post + image package."
+        description="Creating 3 zero-click post variations, a First-Comment Link Box, and a connected post + image package."
       />
 
       <UrlArticleExtractorBar
