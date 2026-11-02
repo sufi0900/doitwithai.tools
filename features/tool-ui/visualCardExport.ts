@@ -17,7 +17,7 @@ export type StudioColorThemeId =
   | "midnight-executive";
 
 export interface SharedVisualTheme {
-  id: string;
+  id: StudioColorThemeId;
   label: string;
   bgStart: string;
   bgEnd: string;
