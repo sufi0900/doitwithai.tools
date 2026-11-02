@@ -19,6 +19,16 @@ import {
 } from "../tool-ui/UrlArticleExtractorBar";
 import { SocialVisualCardBuilder } from "../tool-ui/SocialVisualCardBuilder";
 import ToolRunOverlay, { focusToolSection } from "../tool-ui/ToolRunOverlay";
+import styles from "../tool-ui/visual-studio.module.css";
+import { SocialCardArtwork } from "../tool-ui/SocialCardArtwork";
+import { TemplateThumbnail } from "../tool-ui/InfographicArtwork";
+import {
+  prepareVisualSvg,
+  visualSvgCanvas,
+  saveVisualBlob,
+} from "../tool-ui/svgExport";
+import { wrapVisualText, sourceMetric } from "../tool-ui/visualText";
+import { zipStored } from "../outreach-email/docx";
 import { PlatformBrandIcon } from "../tool-ui/PlatformBrandIcon";
 import {
   CAROUSEL_SLIDE_TEMPLATES,
@@ -32,38 +42,7 @@ import {
   type InstagramPostFormat,
 } from "./model";
 
-function wrapSvgLines(
-  text: string,
-  maxCharsPerLine: number,
-  maxLines: number,
-): string[] {
-  const words = String(text || "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .filter(Boolean);
-  if (!words.length) return [""];
-  const lines: string[] = [];
-  let current = "";
-  for (const w of words) {
-    const candidate = current ? `${current} ${w}` : w;
-    if (candidate.length > maxCharsPerLine && current) {
-      lines.push(current);
-      current = w;
-      if (lines.length >= maxLines - 1) break;
-    } else {
-      current = candidate;
-    }
-  }
-  if (current && lines.length < maxLines) {
-    lines.push(
-      current.length > maxCharsPerLine + 5
-        ? `${current.slice(0, maxCharsPerLine)}…`
-        : current,
-    );
-  }
-  return lines;
-}
+const wrapSvgLines = wrapVisualText;
 
 export function InstagramCaptionGeneratorClient() {
   const [topicOrContent, setTopicOrContent] = useState(
@@ -100,6 +79,21 @@ export function InstagramCaptionGeneratorClient() {
     DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT,
   );
   const [toastMsg, setToastMsg] = useState("");
+  const [exporting, setExporting] = useState(false);
+  async function runExport(action: () => Promise<void>) {
+    setExporting(true);
+    try {
+      await action();
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Could not export your slides.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const slideSvgRefs = useRef<Record<number, SVGSVGElement | null>>({});
@@ -167,7 +161,17 @@ export function InstagramCaptionGeneratorClient() {
       if (!response.ok) {
         throw new Error(data.error || "Failed to generate Instagram captions.");
       }
-      setResult(data as InstagramCaptionOutput);
+      setResult({
+        ...data,
+        carouselSlides: data.carouselSlides.map(
+          (slide: InstagramCarouselSlide) => ({
+            ...slide,
+            metricBadge: sourceMetric(
+              `${slide.headline} ${slide.supportingText}`,
+            ),
+          }),
+        ),
+      } as InstagramCaptionOutput);
       setSelectedCaptionIdx(0);
       setActiveSlideNumber(1);
       notify("Rendered 5 Vector Carousel Slides & Captions in 1 click!");
@@ -249,30 +253,9 @@ export function InstagramCaptionGeneratorClient() {
     slideNum: number,
     scale = 2,
   ): Promise<HTMLCanvasElement | null> {
-    const svgStr = serializeSlideSvg(slideNum);
-    if (!svgStr) return null;
-    const canvas = document.createElement("canvas");
-    canvas.width = 1080 * scale;
-    canvas.height = 1080 * scale;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        resolve(canvas);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(null);
-      };
-      img.src = url;
-    });
+    const svg = slideSvgRefs.current[slideNum];
+    if (!svg) return null;
+    return visualSvgCanvas(svg, 1080, 1080, scale);
   }
 
   async function downloadSingleSlidePng(slideNumber: number) {
@@ -288,17 +271,14 @@ export function InstagramCaptionGeneratorClient() {
     notify(`Downloaded 2x Retina Slide 0${slideNumber} (.PNG)!`);
   }
 
-  function downloadSingleSlideSvg(slideNumber: number) {
-    const svgStr = serializeSlideSvg(slideNumber);
-    if (!svgStr) return;
-    const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.download = `carousel-slide-0${slideNumber}-${slideTemplate}.svg`;
-    link.href = url;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notify(`Downloaded Vector Slide 0${slideNumber} (.SVG)!`);
+  async function downloadSingleSlideSvg(slideNumber: number) {
+    const svg = slideSvgRefs.current[slideNumber];
+    if (!svg) return;
+    const source = await prepareVisualSvg(svg, 1080, 1080);
+    saveVisualBlob(
+      new Blob([source], { type: "image/svg+xml;charset=utf-8" }),
+      `carousel-slide-${slideNumber}.svg`,
+    );
   }
 
   async function copySlideToClipboard(slideNumber: number) {
@@ -319,62 +299,43 @@ export function InstagramCaptionGeneratorClient() {
 
   async function printPdfCarouselDeck() {
     if (!result?.carouselSlides?.length) return;
-    const dataUrls: string[] = [];
-    for (const s of result.carouselSlides) {
-      const c = await renderSlideSvgToCanvas(s.slideNumber, 2);
-      if (c) dataUrls.push(c.toDataURL("image/png"));
+    const { jsPDF } = await import("jspdf");
+    const pdf = new jsPDF({ unit: "px", format: [1080, 1080] });
+    for (const [index, slide] of result.carouselSlides.entries()) {
+      const canvas = await renderSlideSvgToCanvas(slide.slideNumber, 2);
+      if (!canvas) throw new Error("A slide could not be rendered. Try again.");
+      if (index) pdf.addPage([1080, 1080]);
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 1080, 1080);
     }
-
-    const win = window.open("", "_blank");
-    if (!win) return;
-    const imgHtml = dataUrls
-      .map(
-        (src, i) =>
-          `<div style="page-break-after:always;display:flex;justify-content:center;align-items:center;height:100vh;background:#090d16"><img src="${src}" style="max-height:94vh;max-width:94vw;border-radius:16px" alt="Slide ${i + 1}" /></div>`,
-      )
-      .join("\n");
-
-    win.document.write(
-      `<!doctype html><html><head><title>${niche} - Carousel PDF Deck</title><style>@page{margin:0;size:1080px 1080px}body{margin:0;background:#090d16}@media print{body{background:#fff}}</style></head><body>${imgHtml}<script>window.onload=()=>{setTimeout(()=>window.print(),350)}</script></body></html>`,
-    );
-    win.document.close();
-    notify("Opened Multi-Page PDF Carousel Export (Ready for LinkedIn & IG)!");
+    pdf.save("carousel-deck.pdf");
+    notify("Downloaded your carousel PDF.");
   }
 
   async function downloadAllCarouselSlidesAndCaption() {
-    if (!result?.carouselSlides?.length) return;
-    result.carouselSlides.forEach((s, idx) => {
-      setTimeout(() => {
-        void downloadSingleSlidePng(s.slideNumber);
-      }, idx * 260);
-    });
-
-    const activeCap =
-      result.captions?.[selectedCaptionIdx] || result.captions?.[0];
-    if (activeCap) {
-      const tags = [
-        ...result.hashtagTiers.broadReach,
-        ...result.hashtagTiers.nicheSpecific,
-        ...result.hashtagTiers.communitySearch,
-      ].join(" ");
-      const fullTxt = `${activeCap.fullCaption}\n\n${tags}\n\n--- CAROUSEL SLIDES ---\n${result.carouselSlides
-        .map(
-          (s) =>
-            `Slide 0${s.slideNumber}: ${s.headline}\n${s.supportingText}`,
-        )
-        .join("\n\n")}`;
-      navigator.clipboard.writeText(`${activeCap.fullCaption}\n\n${tags}`);
-      setTimeout(() => {
-        const blob = new Blob([fullTxt], { type: "text/plain;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "carousel-slides-and-caption-bundle.txt";
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1500);
-      }, result.carouselSlides.length * 260 + 150);
+    const entries: Record<string, string | Uint8Array> = {};
+    for (const slide of result.carouselSlides) {
+      const canvas = await renderSlideSvgToCanvas(slide.slideNumber, 2);
+      if (!canvas) throw new Error("A slide could not be rendered.");
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("PNG export failed"))),
+          "image/png",
+        ),
+      );
+      entries[`slide-${String(slide.slideNumber).padStart(2, "0")}.png`] =
+        new Uint8Array(await blob.arrayBuffer());
     }
-    notify("Downloaded All 5 Slide PNGs + Caption Pack & Copied Text!");
+    const caption = result.captions[selectedCaptionIdx] || result.captions[0];
+    entries["caption.txt"] =
+      (caption?.fullCaption || "") +
+      "\n\n" +
+      Object.values(result.hashtagTiers).flat().join(" ");
+    const bytes = zipStored(entries);
+    saveVisualBlob(
+      new Blob([Uint8Array.from(bytes)], { type: "application/zip" }),
+      "carousel-and-caption.zip",
+    );
+    notify("Downloaded all slides and caption in one ZIP.");
   }
 
   const activeCaption =
@@ -393,686 +354,107 @@ export function InstagramCaptionGeneratorClient() {
 
   const primaryArticleImageUrl = extractedImages?.[0]?.src || "";
 
-  // Render each slide as a rich, template-driven Vector SVG Poster (1080x1080)
   function renderCarouselSlideSvg(
     slide: InstagramCarouselSlide,
     totalSlides: number,
   ) {
-    const pad = 76;
-    const isCover = slide.slideNumber === 1;
-    const isLast = slide.slideNumber === totalSlides;
-    const usePhoto =
+    const kind = {
+      "editorial-magazine":
+        slide.slideNumber === 1 ? "editorial" : "quote-card",
+      "visual-roadmap-nodes": "framework-steps",
+      "stat-gauge-spotlight": "stat-spotlight",
+      "split-versus-contrast": "before-after-split",
+      "photo-glass-overlay": "article-photo-card",
+      "founder-notebook-memo": "founder-memo",
+      "bold-ribbon-banners": "carousel-slide",
+      "swiss-minimal-grid": "executive-minimal",
+    }[slideTemplate];
+    const photo =
       (slideTemplate === "photo-glass-overlay" ||
         photoSlideNumbers.has(slide.slideNumber)) &&
-      Boolean(primaryArticleImageUrl);
-
-    const hLines = wrapSvgLines(
-      slide.headline,
-      slideTemplate === "stat-gauge-spotlight" && !isCover ? 22 : 26,
-      3,
-    );
-    const bLines = wrapSvgLines(slide.supportingText, 38, 4);
-    const metricText =
-      slide.metricBadge ||
-      (isCover
-        ? "SWIPE GUIDE"
-        : isLast
-          ? "100% READY"
-          : `STEP 0${slide.slideNumber - 1}`);
-    const tagText = (
-      slide.categoryTag ||
-      niche ||
-      "CAROUSEL PLAYBOOK"
-    )
-      .slice(0, 26)
-      .toUpperCase();
-
+      primaryArticleImageUrl;
     return (
       <svg
         ref={(el) => {
           slideSvgRefs.current[slide.slideNumber] = el;
         }}
         viewBox="0 0 1080 1080"
-        className="aspect-square h-auto w-full block rounded-xl"
+        className="block aspect-square h-auto w-full rounded-xl"
         role="img"
         aria-label={`Slide ${slide.slideNumber}: ${slide.headline}`}
+        fontFamily="Arial, Helvetica, sans-serif"
       >
         <defs>
-          <linearGradient
-            id={`slBg-${slide.slideNumber}`}
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="100%"
-          >
-            <stop offset="0%" stopColor={palette.bgStart} />
-            <stop offset="100%" stopColor={palette.bgEnd} />
+          <linearGradient id={`deck-${slide.slideNumber}`} x2="1" y2="1">
+            <stop stopColor={palette.bgStart} />
+            <stop offset="1" stopColor={palette.bgEnd} />
           </linearGradient>
-          <linearGradient
-            id={`slAcc-${slide.slideNumber}`}
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="0%"
-          >
-            <stop offset="0%" stopColor={palette.accent} />
-            <stop offset="100%" stopColor={palette.accentSecondary} />
-          </linearGradient>
-          <filter
-            id={`slShadow-${slide.slideNumber}`}
-            x="-8%"
-            y="-8%"
-            width="116%"
-            height="120%"
-          >
-            <feDropShadow
-              dx="0"
-              dy="12"
-              stdDeviation="14"
-              floodColor="#000000"
-              floodOpacity="0.28"
-            />
-          </filter>
-          <pattern
-            id={`slGrid-${slide.slideNumber}`}
-            width="48"
-            height="48"
-            patternUnits="userSpaceOnUse"
-          >
-            <circle
-              cx="4"
-              cy="4"
-              r="1.8"
-              fill={palette.textSecondary}
-              fillOpacity="0.16"
-            />
-          </pattern>
         </defs>
-
-        {/* 1. Background & Ambient Vector Orbs */}
         <rect
           width="1080"
           height="1080"
-          fill={`url(#slBg-${slide.slideNumber})`}
+          fill={`url(#deck-${slide.slideNumber})`}
         />
-        <rect
-          width="1080"
-          height="1080"
-          fill={`url(#slGrid-${slide.slideNumber})`}
-        />
-        <circle
-          cx="960"
-          cy="140"
-          r="230"
-          fill={palette.accent}
-          fillOpacity="0.14"
-        />
-        <circle
-          cx="120"
-          cy="940"
-          r="210"
-          fill={palette.accentSecondary}
-          fillOpacity="0.12"
-        />
-
-        {/* Swiss Grid Architectural Lines if selected */}
-        {slideTemplate === "swiss-minimal-grid" && (
-          <g stroke={palette.cardBorder} strokeOpacity="0.3" strokeWidth="2">
-            <line x1={pad} y1="0" x2={pad} y2="1080" />
-            <line x1={1080 - pad} y1="0" x2={1080 - pad} y2="1080" />
-            <line x1="0" y1="165" x2="1080" y2="165" />
-            <line x1="0" y1="940" x2="1080" y2="940" />
-          </g>
-        )}
-
-        {/* 2. Top Progress Track & Slide Counter */}
-        <rect
-          x={pad}
-          y="46"
-          width={1080 - pad * 2}
-          height="8"
-          rx="4"
-          fill={palette.textSecondary}
-          fillOpacity="0.2"
-        />
-        <rect
-          x={pad}
-          y="46"
-          width={Math.round(((1080 - pad * 2) * slide.slideNumber) / totalSlides)}
-          height="8"
-          rx="4"
-          fill={`url(#slAcc-${slide.slideNumber})`}
-        />
-
-        {/* Slide Number Pill */}
-        <rect
-          x={pad}
-          y="76"
-          width="205"
-          height="46"
-          rx="23"
-          fill={palette.accent}
-        />
+        <rect width="1080" height="14" fill={palette.accent} />
         <text
-          x={pad + 102}
-          y="106"
-          textAnchor="middle"
-          fill="#FFFFFF"
-          fontSize="20"
-          fontWeight="900"
-          fontFamily="system-ui, -apple-system, sans-serif"
+          x="76"
+          y="105"
+          fontSize="21"
+          fontWeight="700"
+          letterSpacing="2"
+          fill={palette.textSecondary}
         >
-          SLIDE 0{slide.slideNumber} / 0{totalSlides}
+          {(slide.categoryTag || niche).slice(0, 44).toUpperCase()}
         </text>
-
-        {/* Category Kicker on Top Right */}
+        <SocialCardArtwork
+          kind={photo ? "article-photo-card" : kind}
+          headline={slide.headline}
+          body={slide.supportingText}
+          metric={slide.metricBadge}
+          width={1080}
+          height={1080}
+          palette={palette}
+          image={photo || "/visual-studio/paper-sculpture.png"}
+          imageStyle={photo ? "photo" : "paper"}
+          step={String(slide.slideNumber).padStart(2, "0")}
+        />
+        <line
+          x1="76"
+          x2="1004"
+          y1="960"
+          y2="960"
+          stroke={palette.textSecondary}
+          strokeOpacity=".25"
+        />
         <text
-          x={1080 - pad}
-          y="106"
-          textAnchor="end"
+          x="76"
+          y="1005"
           fill={palette.textSecondary}
-          fontSize="20"
-          fontWeight="800"
-          letterSpacing="1.2"
-          fontFamily="system-ui, -apple-system, sans-serif"
-        >
-          {tagText}
-        </text>
-
-        {/* 3. TEMPLATE-SPECIFIC SLIDE BODY */}
-        {usePhoto ? (
-          /* TEMPLATE 5: PHOTO + FROSTED GLASS OVERLAY */
-          <g>
-            <image
-              href={primaryArticleImageUrl}
-              x={pad}
-              y="148"
-              width={1080 - pad * 2}
-              height="420"
-              preserveAspectRatio="xMidYMid slice"
-            />
-            <rect
-              x={pad}
-              y="535"
-              width={1080 - pad * 2}
-              height="385"
-              rx="32"
-              fill={palette.cardSurface}
-              stroke={palette.accent}
-              strokeWidth="3"
-              filter={`url(#slShadow-${slide.slideNumber})`}
-            />
-            {hLines.slice(0, 2).map((l, i) => (
-              <text
-                key={i}
-                x={pad + 44}
-                y={610 + i * 52}
-                fill={palette.textPrimary}
-                fontSize="42"
-                fontWeight="900"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-            {bLines.slice(0, 3).map((l, i) => (
-              <text
-                key={i}
-                x={pad + 44}
-                y={735 + i * 42}
-                fill={palette.textSecondary}
-                fontSize="28"
-                fontWeight="500"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-          </g>
-        ) : slideTemplate === "stat-gauge-spotlight" ? (
-          /* TEMPLATE 3: RADIAL KPI RING & STAT DECK */
-          <g>
-            <rect
-              x={pad}
-              y="155"
-              width={1080 - pad * 2}
-              height="760"
-              rx="36"
-              fill={palette.cardSurface}
-              stroke={palette.cardBorder}
-              strokeWidth="3"
-              filter={`url(#slShadow-${slide.slideNumber})`}
-            />
-            {/* Radial Donut Ring */}
-            <g transform={`translate(${pad + 150}, 340)`}>
-              <circle
-                cx="0"
-                cy="0"
-                r="98"
-                fill="none"
-                stroke={palette.textSecondary}
-                strokeOpacity="0.18"
-                strokeWidth="18"
-              />
-              <circle
-                cx="0"
-                cy="0"
-                r="98"
-                fill="none"
-                stroke={palette.accent}
-                strokeWidth="18"
-                strokeDasharray="480 620"
-                strokeLinecap="round"
-                transform="rotate(-90)"
-              />
-              <text
-                x="0"
-                y="12"
-                textAnchor="middle"
-                fill={palette.textPrimary}
-                fontSize="42"
-                fontWeight="900"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {metricText.slice(0, 7)}
-              </text>
-            </g>
-
-            {hLines.map((l, i) => (
-              <text
-                key={i}
-                x={pad + 290}
-                y={275 + i * 54}
-                fill={palette.textPrimary}
-                fontSize="42"
-                fontWeight="900"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-
-            <rect
-              x={pad + 48}
-              y="500"
-              width={1080 - pad * 2 - 96}
-              height="360"
-              rx="24"
-              fill={palette.bgStart}
-              fillOpacity="0.55"
-              stroke={palette.accent}
-              strokeOpacity="0.4"
-              strokeWidth="2"
-            />
-            {bLines.map((l, i) => (
-              <text
-                key={i}
-                x={pad + 84}
-                y={575 + i * 48}
-                fill={palette.textSecondary}
-                fontSize="31"
-                fontWeight="600"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-          </g>
-        ) : slideTemplate === "split-versus-contrast" ? (
-          /* TEMPLATE 4: OLD WAY VS NEW WAY SPLIT */
-          <g>
-            <rect
-              x={pad}
-              y="155"
-              width={1080 - pad * 2}
-              height="240"
-              rx="28"
-              fill={palette.cardSurface}
-              stroke={palette.accent}
-              strokeWidth="2.5"
-              filter={`url(#slShadow-${slide.slideNumber})`}
-            />
-            <text
-              x={pad + 44}
-              y="220"
-              fill={palette.accent}
-              fontSize="20"
-              fontWeight="900"
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              KEY TRANSFORMATION · {metricText}
-            </text>
-            {hLines.slice(0, 2).map((l, i) => (
-              <text
-                key={i}
-                x={pad + 44}
-                y={278 + i * 52}
-                fill={palette.textPrimary}
-                fontSize="42"
-                fontWeight="900"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-
-            {/* Bottom High-Contrast Solution Card */}
-            <rect
-              x={pad}
-              y="425"
-              width={1080 - pad * 2}
-              height="490"
-              rx="28"
-              fill={palette.cardSurface}
-              stroke="#10B981"
-              strokeWidth="3"
-              filter={`url(#slShadow-${slide.slideNumber})`}
-            />
-            <rect
-              x={pad + 44}
-              y="465"
-              width="290"
-              height="44"
-              rx="22"
-              fill="rgba(16, 185, 129, 0.2)"
-            />
-            <text
-              x={pad + 68}
-              y="494"
-              fill="#34D399"
-              fontSize="20"
-              fontWeight="900"
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              ✓ HIGH-LEVERAGE ACTION
-            </text>
-            {bLines.map((l, i) => (
-              <text
-                key={i}
-                x={pad + 44}
-                y={575 + i * 52}
-                fill={palette.textPrimary}
-                fontSize="33"
-                fontWeight="600"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-          </g>
-        ) : slideTemplate === "visual-roadmap-nodes" ? (
-          /* TEMPLATE 2: CONNECTED ROADMAP TIMELINE NODES */
-          <g>
-            {/* Horizontal Milestone Track */}
-            <line
-              x1={pad + 60}
-              y1="215"
-              x2={1080 - pad - 60}
-              y2="215"
-              stroke={palette.textSecondary}
-              strokeOpacity="0.3"
-              strokeWidth="6"
-            />
-            {Array.from({ length: totalSlides }).map((_, idx) => {
-              const num = idx + 1;
-              const cx =
-                pad +
-                60 +
-                Math.floor(((1080 - pad * 2 - 120) * idx) / Math.max(1, totalSlides - 1));
-              const active = num <= slide.slideNumber;
-              return (
-                <g key={num}>
-                  <circle
-                    cx={cx}
-                    cy="215"
-                    r={num === slide.slideNumber ? 30 : 20}
-                    fill={active ? palette.accent : palette.cardSurface}
-                    stroke={palette.accent}
-                    strokeWidth="3"
-                  />
-                  <text
-                    x={cx}
-                    y="222"
-                    textAnchor="middle"
-                    fill="#FFFFFF"
-                    fontSize="18"
-                    fontWeight="900"
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    0{num}
-                  </text>
-                </g>
-              );
-            })}
-
-            <rect
-              x={pad}
-              y="280"
-              width={1080 - pad * 2}
-              height="635"
-              rx="36"
-              fill={palette.cardSurface}
-              stroke={palette.cardBorder}
-              strokeWidth="3"
-              filter={`url(#slShadow-${slide.slideNumber})`}
-            />
-            <rect
-              x={pad + 48}
-              y="330"
-              width="210"
-              height="44"
-              rx="22"
-              fill={palette.badgeBg}
-            />
-            <text
-              x={pad + 153}
-              y="359"
-              textAnchor="middle"
-              fill={palette.accent}
-              fontSize="20"
-              fontWeight="900"
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              {metricText}
-            </text>
-
-            {hLines.map((l, i) => (
-              <text
-                key={i}
-                x={pad + 48}
-                y={445 + i * 58}
-                fill={palette.textPrimary}
-                fontSize="46"
-                fontWeight="900"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-
-            <rect
-              x={pad + 48}
-              y={455 + hLines.length * 58}
-              width="130"
-              height="8"
-              rx="4"
-              fill={`url(#slAcc-${slide.slideNumber})`}
-            />
-
-            {bLines.map((l, i) => (
-              <text
-                key={i}
-                x={pad + 48}
-                y={520 + hLines.length * 58 + i * 48}
-                fill={palette.textSecondary}
-                fontSize="32"
-                fontWeight="500"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-          </g>
-        ) : (
-          /* DEFAULT: EDITORIAL MAGAZINE, FOUNDER MEMO, 3D RIBBON BANNERS & SWISS GRID */
-          <g>
-            <rect
-              x={pad}
-              y="155"
-              width={1080 - pad * 2}
-              height="760"
-              rx="36"
-              fill={palette.cardSurface}
-              stroke={palette.cardBorder}
-              strokeWidth="3"
-              filter={`url(#slShadow-${slide.slideNumber})`}
-            />
-
-            {/* Top Left Accent Pillar */}
-            <rect
-              x={pad}
-              y="155"
-              width="14"
-              height="760"
-              rx="7"
-              fill={`url(#slAcc-${slide.slideNumber})`}
-            />
-
-            {/* Giant Watermark Number */}
-            <text
-              x={1080 - pad - 48}
-              y="385"
-              textAnchor="end"
-              fill={palette.textPrimary}
-              fillOpacity="0.06"
-              fontSize="230"
-              fontWeight="900"
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              0{slide.slideNumber}
-            </text>
-
-            {/* 3D Folded Ribbon or Metric Pill */}
-            {slideTemplate === "bold-ribbon-banners" ? (
-              <g>
-                <polygon
-                  points={`${pad - 14},205 ${pad + 220},205 ${pad + 242},235 ${pad + 220},265 ${pad - 14},265`}
-                  fill={palette.accent}
-                  filter={`url(#slShadow-${slide.slideNumber})`}
-                />
-                <text
-                  x={pad + 98}
-                  y="243"
-                  textAnchor="middle"
-                  fill="#FFFFFF"
-                  fontSize="22"
-                  fontWeight="900"
-                  fontFamily="system-ui, -apple-system, sans-serif"
-                >
-                  {metricText}
-                </text>
-              </g>
-            ) : (
-              <g>
-                <rect
-                  x={pad + 52}
-                  y="210"
-                  width="210"
-                  height="48"
-                  rx="24"
-                  fill={palette.badgeBg}
-                  stroke={palette.accent}
-                  strokeWidth="1.8"
-                />
-                <text
-                  x={pad + 157}
-                  y="241"
-                  textAnchor="middle"
-                  fill={palette.accent}
-                  fontSize="20"
-                  fontWeight="900"
-                  fontFamily="system-ui, -apple-system, sans-serif"
-                >
-                  {metricText}
-                </text>
-              </g>
-            )}
-
-            {/* Headline */}
-            {hLines.map((l, i) => (
-              <text
-                key={i}
-                x={pad + 52}
-                y={340 + i * 62}
-                fill={palette.textPrimary}
-                fontSize={isCover ? "52" : "46"}
-                fontWeight="900"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-
-            {/* Gradient Divider */}
-            <rect
-              x={pad + 52}
-              y={355 + hLines.length * 62}
-              width="140"
-              height="8"
-              rx="4"
-              fill={`url(#slAcc-${slide.slideNumber})`}
-            />
-
-            {/* Supporting Body Copy */}
-            {bLines.map((l, i) => (
-              <text
-                key={i}
-                x={pad + 52}
-                y={425 + hLines.length * 62 + i * 50}
-                fill={palette.textSecondary}
-                fontSize="33"
-                fontWeight="500"
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-          </g>
-        )}
-
-        {/* 4. Footer Attribution & Swipe Bar */}
-        <text
-          x={pad}
-          y="985"
-          fill={palette.textSecondary}
-          fontSize="24"
-          fontWeight="800"
-          fontFamily="system-ui, -apple-system, sans-serif"
+          fontSize="22"
+          fontWeight="700"
         >
           doitwithai.tools
         </text>
         <text
-          x={1080 - pad}
-          y="985"
+          x="1004"
+          y="1005"
           textAnchor="end"
-          fill={palette.accent}
-          fontSize="24"
-          fontWeight="900"
-          fontFamily="system-ui, -apple-system, sans-serif"
+          fill={palette.textSecondary}
+          fontSize="22"
         >
-          {slide.slideNumber < totalSlides
-            ? `Swipe for Slide 0${slide.slideNumber + 1} →`
-            : "Save & Share This Carousel ★"}
+          {slide.slideNumber} / {totalSlides} →
         </text>
       </svg>
     );
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
+    <section
+      className={`${styles.studio} mx-auto max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
+    >
       <ToolRunOverlay
         active={loading}
-        title="Generating 5 Vector Carousel Slides & Captions in 1 Click..."
+        title="Creating your carousel…"
         description="Rendering swipeable 1080×1080 vector cards across 8 slide templates and 12 color themes."
       />
 
@@ -1110,10 +492,10 @@ export function InstagramCaptionGeneratorClient() {
       />
 
       {/* MAIN STUDIO WORKSPACE */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.35fr)] items-start">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
         {/* LEFT COLUMN: TOPIC / IDEA INPUT & LIVE SLIDE EDITOR */}
         <div className="space-y-5">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
+          <div className="shadow-xs space-y-4 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
             <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-3.5 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
                 <PlatformBrandIcon brand="carousel-slides" size={34} />
@@ -1122,7 +504,8 @@ export function InstagramCaptionGeneratorClient() {
                     Option 2: Topic Idea or Outline
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Enter any topic—1 click generates all 5 slides &amp; captions.
+                    Enter any topic—1 click generates all 5 slides &amp;
+                    captions.
                   </p>
                 </div>
               </div>
@@ -1136,7 +519,7 @@ export function InstagramCaptionGeneratorClient() {
                 rows={4}
                 value={topicOrContent}
                 onChange={(e) => setTopicOrContent(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-900 focus:border-[#ff6b35] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs leading-5 text-slate-900 focus:border-[#4058d0] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
 
@@ -1202,7 +585,7 @@ export function InstagramCaptionGeneratorClient() {
               type="button"
               onClick={() => void executeGenerate()}
               disabled={loading}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#ff6b35] px-4 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
             >
               <Sparkles size={16} />
               {loading
@@ -1213,10 +596,11 @@ export function InstagramCaptionGeneratorClient() {
 
           {/* LIVE INLINE SLIDE TEXT EDITOR */}
           {activeEditingSlide && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-3 dark:border-slate-800 dark:bg-[#111827]">
+            <div className="shadow-xs space-y-3 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
               <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-slate-800">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
-                  Live Slide Editor · Editing Slide 0{activeEditingSlide.slideNumber}
+                <span className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
+                  Live Slide Editor · Editing Slide 0
+                  {activeEditingSlide.slideNumber}
                 </span>
                 <div className="flex gap-1">
                   {result.carouselSlides.map((s) => (
@@ -1239,7 +623,7 @@ export function InstagramCaptionGeneratorClient() {
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                    Metric / Step Pill Badge
+                    Step label or source statistic
                   </label>
                   <input
                     type="text"
@@ -1319,21 +703,23 @@ export function InstagramCaptionGeneratorClient() {
           tabIndex={-1}
           className="space-y-6 focus:outline-none"
         >
-          <div className="rounded-3xl border-2 border-[#3452d1]/25 bg-white p-5 shadow-xs dark:border-[#5271ff]/30 dark:bg-[#111827] space-y-4">
+          <div className="shadow-xs space-y-4 rounded-3xl border-2 border-[#3452d1]/25 bg-white p-5 dark:border-[#5271ff]/30 dark:bg-[#111827]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
               <div>
-                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
-                  <Layers size={14} /> 8 Vector Carousel Templates · 12 Themes + Custom Pickers
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
+                  <Layers size={14} /> 8 Carousel Layouts · 12 Themes + Custom
+                  Pickers
                 </span>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                  5-Slide Vector Carousel Studio (Hover Over Any Slide to Download)
+                  Your carousel · Select a slide to edit
                 </h3>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={printPdfCarouselDeck}
+                  disabled={exporting}
+                  onClick={() => void runExport(printPdfCarouselDeck)}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-emerald-500"
                 >
                   <Printer size={14} />
@@ -1341,139 +727,180 @@ export function InstagramCaptionGeneratorClient() {
                 </button>
                 <button
                   type="button"
-                  onClick={downloadAllCarouselSlidesAndCaption}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#e85d2a]"
+                  disabled={exporting}
+                  onClick={() =>
+                    void runExport(downloadAllCarouselSlidesAndCaption)
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#4058d0] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#3452d1]"
                 >
                   <PackageCheck size={14} />
-                  All 5 PNGs + Caption
+                  Download ZIP + Caption
                 </button>
               </div>
             </div>
 
-            {/* 8 Carousel Slide Template Selector Pills */}
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {CAROUSEL_SLIDE_TEMPLATES.map((tpl) => (
-                <button
-                  key={tpl.id}
-                  type="button"
-                  onClick={() => setSlideTemplate(tpl.id)}
-                  className={`rounded-xl border p-2.5 text-left transition ${
-                    slideTemplate === tpl.id
-                      ? "border-[#ff6b35] bg-[#ff6b35]/10 ring-1 ring-[#ff6b35]"
-                      : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-1">
-                    <strong className="truncate text-[11px] font-extrabold text-slate-900 dark:text-white">
-                      {tpl.label}
-                    </strong>
-                    <span className="shrink-0 rounded bg-[#3452d1]/15 px-1.5 py-0.5 text-[9px] font-black text-[#3452d1] dark:text-[#9aabff]">
-                      {tpl.badge}
-                    </span>
-                  </div>
-                  <span className="mt-0.5 line-clamp-1 block text-[10px] text-slate-500 dark:text-slate-400">
-                    {tpl.desc}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* 12 Color Themes + 4 Live Custom Color Pickers */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                  Designer Color Palette (11 Presets + Custom)
-                </label>
-                <select
-                  value={carouselTheme}
-                  onChange={(e) =>
-                    setCarouselTheme(e.target.value as CarouselThemeId)
-                  }
-                  aria-label="Carousel color theme"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-                >
-                  {Object.values(CAROUSEL_THEMES).map((thm) => (
-                    <option key={thm.id} value={thm.id}>
-                      {thm.label}
-                    </option>
+            <details className="rounded-xl border border-slate-400/30 p-4">
+              <summary className="font-semibold">
+                Customize layout &amp; colors
+              </summary>
+              <div className="mt-4 space-y-4">
+                {" "}
+                {/* 8 Carousel Slide Template Selector Pills */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {CAROUSEL_SLIDE_TEMPLATES.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => setSlideTemplate(tpl.id)}
+                      className={`rounded-xl border p-2.5 text-left transition ${
+                        slideTemplate === tpl.id
+                          ? "border-[#4058d0] bg-[#4058d0]/10 ring-1 ring-[#4058d0]"
+                          : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <strong className="truncate text-[11px] font-extrabold text-slate-900 dark:text-white">
+                          {tpl.label}
+                        </strong>
+                        <span className="shrink-0 rounded bg-[#3452d1]/15 px-1.5 py-0.5 text-[9px] font-black text-[#3452d1] dark:text-[#9aabff]">
+                          {tpl.badge}
+                        </span>
+                      </div>
+                      <span className="mt-0.5 line-clamp-1 block text-[10px] text-slate-500 dark:text-slate-400">
+                        {tpl.desc}
+                      </span>
+                    </button>
                   ))}
-                  <option value="custom-brand">
-                    🎨 Custom Brand Colors (Use Pickers →)
-                  </option>
-                </select>
-              </div>
+                </div>
+                {/* 12 Color Themes + 4 Live Custom Color Pickers */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                      Designer Color Palette (11 Presets + Custom)
+                    </label>
+                    <select
+                      value={carouselTheme}
+                      onChange={(e) =>
+                        setCarouselTheme(e.target.value as CarouselThemeId)
+                      }
+                      aria-label="Carousel color theme"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    >
+                      {Object.values(CAROUSEL_THEMES).map((thm) => (
+                        <option key={thm.id} value={thm.id}>
+                          {thm.label}
+                        </option>
+                      ))}
+                      <option value="custom-brand">
+                        🎨 Custom Brand Colors (Use Pickers →)
+                      </option>
+                    </select>
+                  </div>
 
-              <div>
-                <label className="mb-1 flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                  <Palette size={12} className="text-[#ff6b35]" /> Custom Brand Color Pickers
-                </label>
-                <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
-                  <label className="flex items-center gap-1 text-[11px] font-bold">
-                    <input
-                      type="color"
-                      value={palette.bgStart}
-                      onChange={(e) => {
-                        setCarouselTheme("custom-brand");
-                        setCustomColors((p) => ({
-                          ...p,
-                          bgStart: e.target.value,
-                        }));
-                      }}
-                      className="h-6 w-6 cursor-pointer border-0 bg-transparent"
-                    />
-                    BG
-                  </label>
-                  <label className="flex items-center gap-1 text-[11px] font-bold">
-                    <input
-                      type="color"
-                      value={palette.cardSurface}
-                      onChange={(e) => {
-                        setCarouselTheme("custom-brand");
-                        setCustomColors((p) => ({
-                          ...p,
-                          cardSurface: e.target.value,
-                        }));
-                      }}
-                      className="h-6 w-6 cursor-pointer border-0 bg-transparent"
-                    />
-                    Card
-                  </label>
-                  <label className="flex items-center gap-1 text-[11px] font-bold">
-                    <input
-                      type="color"
-                      value={palette.accent}
-                      onChange={(e) => {
-                        setCarouselTheme("custom-brand");
-                        setCustomColors((p) => ({
-                          ...p,
-                          accent: e.target.value,
-                        }));
-                      }}
-                      className="h-6 w-6 cursor-pointer border-0 bg-transparent"
-                    />
-                    Accent
-                  </label>
-                  <label className="flex items-center gap-1 text-[11px] font-bold">
-                    <input
-                      type="color"
-                      value={palette.textPrimary}
-                      onChange={(e) => {
-                        setCarouselTheme("custom-brand");
-                        setCustomColors((p) => ({
-                          ...p,
-                          textPrimary: e.target.value,
-                        }));
-                      }}
-                      className="h-6 w-6 cursor-pointer border-0 bg-transparent"
-                    />
-                    Text
-                  </label>
+                  <div>
+                    <label className="mb-1 flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                      <Palette size={12} className="text-[#4058d0]" /> Custom
+                      Brand Color Pickers
+                    </label>
+                    <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+                      <label className="flex items-center gap-1 text-[11px] font-bold">
+                        <input
+                          type="color"
+                          value={palette.bgStart}
+                          onChange={(e) => {
+                            setCarouselTheme("custom-brand");
+                            setCustomColors((p) => ({
+                              ...(carouselTheme === "custom-brand"
+                                ? p
+                                : {
+                                    bgStart: palette.bgStart,
+                                    cardSurface: palette.cardSurface,
+                                    accent: palette.accent,
+                                    textPrimary: palette.textPrimary,
+                                  }),
+                              bgStart: e.target.value,
+                            }));
+                          }}
+                          className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                        />
+                        BG
+                      </label>
+                      <label className="flex items-center gap-1 text-[11px] font-bold">
+                        <input
+                          type="color"
+                          value={palette.cardSurface}
+                          onChange={(e) => {
+                            setCarouselTheme("custom-brand");
+                            setCustomColors((p) => ({
+                              ...(carouselTheme === "custom-brand"
+                                ? p
+                                : {
+                                    bgStart: palette.bgStart,
+                                    cardSurface: palette.cardSurface,
+                                    accent: palette.accent,
+                                    textPrimary: palette.textPrimary,
+                                  }),
+                              cardSurface: e.target.value,
+                            }));
+                          }}
+                          className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                        />
+                        Card
+                      </label>
+                      <label className="flex items-center gap-1 text-[11px] font-bold">
+                        <input
+                          type="color"
+                          value={palette.accent}
+                          onChange={(e) => {
+                            setCarouselTheme("custom-brand");
+                            setCustomColors((p) => ({
+                              ...(carouselTheme === "custom-brand"
+                                ? p
+                                : {
+                                    bgStart: palette.bgStart,
+                                    cardSurface: palette.cardSurface,
+                                    accent: palette.accent,
+                                    textPrimary: palette.textPrimary,
+                                  }),
+                              accent: e.target.value,
+                            }));
+                          }}
+                          className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                        />
+                        Accent
+                      </label>
+                      <label className="flex items-center gap-1 text-[11px] font-bold">
+                        <input
+                          type="color"
+                          value={palette.textPrimary}
+                          onChange={(e) => {
+                            setCarouselTheme("custom-brand");
+                            setCustomColors((p) => ({
+                              ...(carouselTheme === "custom-brand"
+                                ? p
+                                : {
+                                    bgStart: palette.bgStart,
+                                    cardSurface: palette.cardSurface,
+                                    accent: palette.accent,
+                                    textPrimary: palette.textPrimary,
+                                  }),
+                              textPrimary: e.target.value,
+                            }));
+                          }}
+                          className="h-6 w-6 cursor-pointer border-0 bg-transparent"
+                        />
+                        Text
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-
+            </details>
             {/* 5-SLIDE VECTOR GRID WITH HOVER PNG / SVG / COPY OVERLAY */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+              data-slide-gallery
+              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            >
               {result.carouselSlides.map((slide) => {
                 const isSelectedForEdit =
                   activeSlideNumber === slide.slideNumber;
@@ -1482,16 +909,19 @@ export function InstagramCaptionGeneratorClient() {
                 return (
                   <div
                     key={slide.slideNumber}
+                    data-slide-card
+                    data-active={isSelectedForEdit}
                     onClick={() => setActiveSlideNumber(slide.slideNumber)}
-                    className={`group relative flex flex-col justify-between rounded-2xl border-2 p-2.5 transition cursor-pointer ${
+                    className={`group relative flex cursor-pointer flex-col justify-between rounded-2xl border-2 p-2.5 transition ${
                       isSelectedForEdit
-                        ? "border-[#ff6b35] bg-[#ff6b35]/5 ring-2 ring-[#ff6b35]/20"
+                        ? "border-[#4058d0] bg-[#4058d0]/5 ring-2 ring-[#4058d0]/20"
                         : "border-slate-200 bg-slate-50 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900"
                     }`}
                   >
                     <div className="mb-2 flex items-center justify-between gap-1">
-                      <span className="rounded-md bg-[#ff6b35]/15 px-2 py-0.5 text-[11px] font-black text-[#ff6b35]">
-                        Slide 0{slide.slideNumber} / 0{result.carouselSlides.length}
+                      <span className="rounded-md bg-[#4058d0]/15 px-2 py-0.5 text-[11px] font-black text-[#4058d0]">
+                        Slide 0{slide.slideNumber} / 0
+                        {result.carouselSlides.length}
                       </span>
                       <div className="flex items-center gap-1.5">
                         {primaryArticleImageUrl && (
@@ -1511,7 +941,15 @@ export function InstagramCaptionGeneratorClient() {
                           </button>
                         )}
                         <span className="text-[10px] font-bold text-slate-400">
-                          Click to Edit
+                          <button
+                            type="button"
+                            aria-pressed={isSelectedForEdit}
+                            onClick={() =>
+                              setActiveSlideNumber(slide.slideNumber)
+                            }
+                          >
+                            {isSelectedForEdit ? "Editing" : "Edit slide"}
+                          </button>
                         </span>
                       </div>
                     </div>
@@ -1519,15 +957,20 @@ export function InstagramCaptionGeneratorClient() {
                     {/* HOVERABLE VECTOR SVG SLIDE */}
                     <div className="relative overflow-hidden rounded-xl border border-slate-300 bg-slate-950 shadow-sm dark:border-slate-700">
                       {/* FLOATING HOVER DOWNLOAD BAR (PNG · SVG · COPY) */}
-                      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-2 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+                      <div
+                        data-export-toolbar
+                        className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-2 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+                      >
                         <div className="pointer-events-auto flex items-center gap-1 rounded-xl border border-white/20 bg-slate-900/90 p-1.5 shadow-xl backdrop-blur-md">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              void downloadSingleSlidePng(slide.slideNumber);
+                              void runExport(() =>
+                                downloadSingleSlidePng(slide.slideNumber),
+                              );
                             }}
-                            className="inline-flex items-center gap-1 rounded-lg bg-[#ff6b35] px-2.5 py-1 text-[11px] font-extrabold text-white hover:bg-[#e85d2a]"
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[11px] font-extrabold text-white hover:bg-[#3452d1]"
                             title="Download 2x Retina PNG"
                           >
                             <Download size={11} />
@@ -1537,7 +980,9 @@ export function InstagramCaptionGeneratorClient() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              downloadSingleSlideSvg(slide.slideNumber);
+                              void runExport(() =>
+                                downloadSingleSlideSvg(slide.slideNumber),
+                              );
                             }}
                             className="inline-flex items-center gap-1 rounded-lg bg-[#3452d1] px-2 py-1 text-[11px] font-extrabold text-white hover:bg-[#2842b5]"
                             title="Download Editable Vector SVG"
@@ -1579,7 +1024,7 @@ export function InstagramCaptionGeneratorClient() {
                 onClick={() => setSelectedCaptionIdx(idx)}
                 className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${
                   selectedCaptionIdx === idx
-                    ? "bg-[#3452d1] text-white shadow-xs"
+                    ? "shadow-xs bg-[#3452d1] text-white"
                     : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 }`}
               >
@@ -1589,10 +1034,10 @@ export function InstagramCaptionGeneratorClient() {
           </div>
 
           {activeCaption && (
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
+            <div className="shadow-xs space-y-4 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#ff6b35]">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#4058d0]">
                     Above-the-Fold Hook (First 125 Characters)
                   </span>
                   <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
@@ -1615,11 +1060,11 @@ export function InstagramCaptionGeneratorClient() {
                 </button>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
+              <div className="whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-sm leading-relaxed text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
                 {activeCaption.fullCaption}
               </div>
 
-              <div className="rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 flex flex-wrap items-center justify-between gap-2 dark:border-slate-800 dark:bg-slate-900/50">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/50">
                 <div className="text-xs text-slate-700 dark:text-slate-300">
                   <strong className="font-semibold text-slate-900 dark:text-white">
                     Instagram SEO Alt Text:{" "}

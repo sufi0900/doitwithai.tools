@@ -167,7 +167,7 @@ export function UrlArticleExtractorBar({
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#ff6b35] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
           >
             <Sparkles size={15} />
             {loading ? "Extracting & Generating…" : buttonLabel}
@@ -188,7 +188,7 @@ export function UrlArticleExtractorBar({
             <div className="mt-3.5 rounded-xl border border-[#3452d1]/25 bg-white/90 p-3 shadow-2xs dark:border-slate-700 dark:bg-slate-900/90">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
-                  <Layers size={14} className="text-[#ff6b35]" />
+                  <Layers size={14} className="text-[#4058d0]" />
                   Topic #1 Auto-Generated Below — Click Any Other Sub-Topic to Switch Angles:
                 </span>
               </div>

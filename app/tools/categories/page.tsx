@@ -33,7 +33,7 @@ export default function CategoriesPage() {
           return (
             <article
               key={category.slug}
-              className={`rounded-2xl border p-8 ${conversion ? "border-orange-200 bg-orange-50/60 dark:border-orange-300/25 dark:bg-orange-300/[0.04]" : "border-slate-200 dark:border-slate-700"}`}
+              className={`rounded-2xl border p-8 ${conversion ? "border-orange-200 bg-[#5271ff]/10/60 dark:border-orange-300/25 dark:bg-orange-300/[0.04]" : "border-slate-200 dark:border-slate-700"}`}
             >
               {conversion && (
                 <div className="mb-5 flex items-center justify-between gap-3">

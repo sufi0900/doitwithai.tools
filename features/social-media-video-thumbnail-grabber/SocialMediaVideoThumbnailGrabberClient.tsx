@@ -287,7 +287,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
               size={40}
             />
             <div>
-              <span className="text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
                 YouTube, Shorts &amp; Social Video Cover Grabber
               </span>
               <h2 className="text-base font-bold text-slate-900 dark:text-white">
@@ -314,12 +314,12 @@ export function SocialMediaVideoThumbnailGrabberClient() {
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             placeholder="https://www.youtube.com/watch?v=... or YouTube Shorts / Social URL"
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-slate-50/70 px-4 py-3 text-sm font-medium text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           />
           <button
             type="submit"
             disabled={loading}
-            className="shrink-0 rounded-xl bg-[#ff6b35] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
+            className="shrink-0 rounded-xl bg-[#4058d0] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
           >
             {loading
               ? "Extracting Covers & Frames..."
@@ -358,13 +358,13 @@ export function SocialMediaVideoThumbnailGrabberClient() {
               <>
                 <Link
                   href={`/tools/youtube-transcript-generator?url=${encodeURIComponent(result.sourceUrl)}`}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 hover:border-[#ff6b35] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 hover:border-[#4058d0] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                   Extract Transcript &amp; .SRT →
                 </Link>
                 <Link
                   href={`/tools/video-transcript-to-blog?url=${encodeURIComponent(result.sourceUrl)}`}
-                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 hover:border-[#ff6b35] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-800 hover:border-[#4058d0] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
                   Turn Video into SEO Blog →
                 </Link>
@@ -388,7 +388,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
               key={thumb.id}
               className={`flex flex-col justify-between rounded-2xl border bg-white p-4 shadow-xs transition dark:bg-[#111827] ${
                 isSelected
-                  ? "border-[#ff6b35]/70 dark:border-[#ff6b35]/70"
+                  ? "border-[#4058d0]/70 dark:border-[#4058d0]/70"
                   : "border-slate-200 dark:border-slate-800"
               }`}
             >
@@ -399,9 +399,9 @@ export function SocialMediaVideoThumbnailGrabberClient() {
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleThumbSelection(thumb.id)}
-                      className="h-4 w-4 accent-[#ff6b35]"
+                      className="h-4 w-4 accent-[#4058d0]"
                     />
-                    <span className="rounded-md bg-orange-50 px-2 py-0.5 text-[11px] font-bold text-[#ff6b35]">
+                    <span className="rounded-md bg-[#5271ff]/10 px-2 py-0.5 text-[11px] font-bold text-[#4058d0]">
                       {thumb.category}
                     </span>
                   </label>
@@ -418,7 +418,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
                       onClick={() =>
                         void handleDownloadSingleImage(thumb.url, filename)
                       }
-                      className="inline-flex items-center gap-1 rounded-lg bg-[#ff6b35] px-2.5 py-1 text-[11px] font-extrabold text-white hover:bg-[#e85d2a]"
+                      className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[11px] font-extrabold text-white hover:bg-[#3452d1]"
                     >
                       <Download size={12} /> Download JPG
                     </button>

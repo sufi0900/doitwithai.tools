@@ -1,5 +1,8 @@
 "use client";
 
+import { TemplateThumbnail } from "@/features/tool-ui/InfographicArtwork";
+import studioStyles from "@/features/tool-ui/visual-studio.module.css";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -12,7 +15,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
-import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, {
+  focusToolSection,
+} from "@/features/tool-ui/ToolRunOverlay";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 import {
   copyCanvasImageToClipboard,
@@ -105,7 +110,7 @@ const QUADRANT_ACCENTS = [
   "#F59E0B",
   "#F43F5E",
   "#A855F7",
-  "#FF6B35",
+  "#4058d0",
 ];
 
 function wrapDiagramText(
@@ -139,11 +144,11 @@ export default function FrameworkMatrixDiagramBuilderClient() {
     DEFAULT_FRAMEWORK_DIAGRAM_INPUT,
   );
   const [aiPack, setAiPack] = useState<FrameworkDiagramPack | null>(null);
-  const [nodes, setNodes] = useState<DiagramNodeItem[]>(() =>
-    buildDeterministicFrameworkDiagram(DEFAULT_FRAMEWORK_DIAGRAM_INPUT).nodes,
+  const [nodes, setNodes] = useState<DiagramNodeItem[]>(
+    () =>
+      buildDeterministicFrameworkDiagram(DEFAULT_FRAMEWORK_DIAGRAM_INPUT).nodes,
   );
-  const [themeId, setThemeId] =
-    useState<SharedVisualThemeId>("cyber-violet");
+  const [themeId, setThemeId] = useState<SharedVisualThemeId>("cyber-violet");
   const [customColors, setCustomColors] = useState({
     bgStart: "#130924",
     cardBg: "#241042",
@@ -204,11 +209,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
     }
   }
 
-  function updateNode(
-    id: string,
-    field: keyof DiagramNodeItem,
-    value: string,
-  ) {
+  function updateNode(id: string, field: keyof DiagramNodeItem, value: string) {
     setNodes((prev) =>
       prev.map((n) => (n.id === id ? { ...n, [field]: value } : n)),
     );
@@ -379,8 +380,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       ctx.stroke();
 
       activeNodes.forEach((node, idx) => {
-        const angle =
-          -Math.PI / 2 + (idx * (Math.PI * 2)) / activeNodes.length;
+        const angle = -Math.PI / 2 + (idx * (Math.PI * 2)) / activeNodes.length;
         const nx = cx + Math.cos(angle) * radiusX;
         const ny = cy + Math.sin(angle) * radiusY;
 
@@ -416,8 +416,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       }
 
       activeNodes.forEach((node, idx) => {
-        const angle =
-          -Math.PI / 2 + (idx * (Math.PI * 2)) / activeNodes.length;
+        const angle = -Math.PI / 2 + (idx * (Math.PI * 2)) / activeNodes.length;
         const nx = cx + Math.cos(angle) * radiusX - cardW / 2;
         const ny = cy + Math.sin(angle) * radiusY - cardH / 2;
         const accent = QUADRANT_ACCENTS[idx % QUADRANT_ACCENTS.length];
@@ -535,7 +534,9 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         let barW = maxW;
         let x = padX;
         if (input.template === "layered-pyramid") {
-          barW = Math.floor(maxW * (0.52 + (0.48 * idx) / Math.max(1, count - 1)));
+          barW = Math.floor(
+            maxW * (0.52 + (0.48 * idx) / Math.max(1, count - 1)),
+          );
           x = Math.floor((W - barW) / 2);
         } else if (input.template === "staircase-maturity") {
           barW = Math.floor(maxW * 0.76);
@@ -593,7 +594,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
   return (
     <section
       aria-label="2x2 Strategy Matrix and Framework Diagram Studio"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
+      className={`${studioStyles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}
@@ -656,17 +657,19 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       <div
         ref={resultsRef}
         tabIndex={-1}
-        className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-5 focus:outline-none"
+        className="shadow-xs space-y-5 rounded-3xl border border-slate-200 bg-white p-5 focus:outline-none dark:border-slate-800 dark:bg-[#111827] sm:p-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <PlatformBrandIcon brand="matrix-diagram" size={36} />
             <div>
               <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                <GitBranch size={14} /> 12 Framework &amp; Matrix Templates · 10 Themes + Custom Pickers
+                <GitBranch size={14} /> 12 Framework &amp; Matrix Templates · 10
+                Themes + Custom Pickers
               </span>
               <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                Strategic Framework &amp; Diagram Studio (Hover Over Diagram to Download)
+                Strategic Framework &amp; Diagram Studio (Hover Over Diagram to
+                Download)
               </h2>
             </div>
           </div>
@@ -675,38 +678,43 @@ export default function FrameworkMatrixDiagramBuilderClient() {
             type="button"
             onClick={() => void handleGenerateAiDiagram()}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#e85d2a]"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#3452d1]"
           >
             <Sparkles size={14} />
             {loading ? "Building Diagram…" : "Generate AI Diagram (1-Click)"}
           </button>
         </div>
 
-        {/* 12 Diagram Template Selector Grid */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {DIAGRAM_TEMPLATES.map((tpl) => (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() =>
-                setInput((prev) => ({ ...prev, template: tpl.id }))
-              }
-              className={`rounded-xl border p-2.5 text-left transition ${
-                input.template === tpl.id
-                  ? "border-[#ff6b35] bg-[#ff6b35]/10 ring-1 ring-[#ff6b35]"
-                  : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
-              }`}
-            >
-              <strong className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">
-                {tpl.label}
-              </strong>
-              <span className="mt-0.5 line-clamp-1 block text-[10px] text-slate-500 dark:text-slate-400">
-                {tpl.desc}
-              </span>
-            </button>
-          ))}
-        </div>
-
+        <details className="rounded-2xl border border-slate-400/30 p-4">
+          <summary className="font-semibold">Choose a template</summary>
+          <div className="mt-4">
+            {/* 12 Diagram Template Selector Grid */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {DIAGRAM_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() =>
+                    setInput((prev) => ({ ...prev, template: tpl.id }))
+                  }
+                  className={`rounded-xl border p-2.5 text-left transition ${
+                    input.template === tpl.id
+                      ? "border-[#4058d0] bg-[#4058d0]/10 ring-1 ring-[#4058d0]"
+                      : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
+                  }`}
+                >
+                  <TemplateThumbnail id={tpl.id} category="mindmap" />
+                  <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+                    {tpl.label}
+                  </strong>
+                  <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                    {tpl.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </details>
         {/* 10 Color Themes + Custom Brand Color Pickers */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
@@ -733,7 +741,8 @@ export default function FrameworkMatrixDiagramBuilderClient() {
 
           <div>
             <label className="mb-1 flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-200">
-              <Palette size={13} className="text-[#ff6b35]" /> Live Custom Color Pickers
+              <Palette size={13} className="text-[#4058d0]" /> Live Custom Color
+              Pickers
             </label>
             <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
               <label className="flex items-center gap-1 text-[11px] font-bold">
@@ -794,9 +803,9 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         </div>
 
         {/* 2-COLUMN WORKSPACE: LEFT = QUADRANT / NODE EDITOR, RIGHT = HOVERABLE DIAGRAM CANVAS */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] items-start">
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
           <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
                   Diagram Headline
@@ -850,14 +859,14 @@ export default function FrameworkMatrixDiagramBuilderClient() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-2.5 dark:border-slate-800 dark:bg-slate-900/60 max-h-[450px] overflow-y-auto">
+            <div className="max-h-[450px] space-y-2.5 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
                 Edit Quadrants / Stages ({nodes.length})
               </h3>
               {nodes.map((node, i) => (
                 <div
                   key={node.id}
-                  className="rounded-xl border border-slate-200 bg-white p-3 space-y-2 dark:border-slate-800 dark:bg-slate-950"
+                  className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950"
                 >
                   <div className="grid gap-2 sm:grid-cols-3">
                     <div>
@@ -898,9 +907,12 @@ export default function FrameworkMatrixDiagramBuilderClient() {
 
           {/* RIGHT: HOVERABLE 1200x1200 DIAGRAM CANVAS WITH PNG / SVG / PDF OVERLAY */}
           <div className="space-y-4">
-            <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2.5 shadow-xl dark:border-slate-700">
+            <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2.5 shadow-xl dark:border-slate-700">
               {/* FLOATING HOVER DOWNLOAD BAR */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+              <div
+                data-export-toolbar
+                className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+              >
                 <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/20 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-md">
                   <button
                     type="button"
@@ -911,7 +923,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                         () => notify("Downloaded 1200×1200 Diagram (.PNG)!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl bg-[#ff6b35] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#e85d2a]"
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#4058d0] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#3452d1]"
                   >
                     <Download size={13} />
                     Download PNG
@@ -960,14 +972,17 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                 </div>
               </div>
 
-              <div className="pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md backdrop-blur-xs transition-opacity sm:inline-flex sm:group-hover:opacity-0">
-                <Download size={12} className="text-[#ff6b35]" />
+              <div
+                data-export-hint
+                className="backdrop-blur-xs pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md transition-opacity sm:inline-flex sm:group-hover:opacity-0"
+              >
+                <Download size={12} className="text-[#4058d0]" />
                 <span>Hover to Download (PNG · SVG · PDF)</span>
               </div>
 
               <canvas
                 ref={canvasRef}
-                className="mx-auto block aspect-square w-full h-auto rounded-xl"
+                className="mx-auto block aspect-square h-auto w-full rounded-xl"
               />
             </div>
 
@@ -977,7 +992,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                 await navigator.clipboard.writeText(pack.socialPostText);
                 notify("Copied Strategic Framework Social Caption!");
               }}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             >
               <Copy size={14} />
               Copy Companion Framework Social Caption

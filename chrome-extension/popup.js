@@ -1928,7 +1928,7 @@ Save this post for your next content sprint! 👇
         slug: "blog-to-infographic-generator",
         tone: "icon-rose",
         tag: "INFOGRAPHIC",
-        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="4" y="3" width="24" height="26" rx="5" fill="#FF6B35"/><rect x="8" y="7" width="16" height="3.5" rx="1.5" fill="#FFFFFF"/><circle cx="10.5" cy="15" r="2.2" fill="#FFFFFF"/><rect x="14.5" y="13.5" width="9.5" height="3" rx="1.2" fill="#FFE4D6"/><circle cx="10.5" cy="21.5" r="2.2" fill="#FFFFFF"/><rect x="14.5" y="20" width="9.5" height="3" rx="1.2" fill="#FFE4D6"/></svg>`,
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="4" y="3" width="24" height="26" rx="5" fill="#4058d0"/><rect x="8" y="7" width="16" height="3.5" rx="1.5" fill="#FFFFFF"/><circle cx="10.5" cy="15" r="2.2" fill="#FFFFFF"/><rect x="14.5" y="13.5" width="9.5" height="3" rx="1.2" fill="#FFE4D6"/><circle cx="10.5" cy="21.5" r="2.2" fill="#FFFFFF"/><rect x="14.5" y="20" width="9.5" height="3" rx="1.2" fill="#FFE4D6"/></svg>`,
       },
       {
         name: "Data to Chart & KPI Card",
@@ -1960,7 +1960,7 @@ Save this post for your next content sprint! 👇
         slug: "quote-stat-testimonial-card-studio",
         tone: "icon-amber",
         tag: "QUOTE CARD",
-        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="4" width="26" height="24" rx="6" fill="#0F172A"/><path d="M10 15C10 12.2 11.8 10.4 14.5 10V12.2C13 12.5 12.4 13.4 12.4 14.6H14.5V19H10V15ZM17.5 15C17.5 12.2 19.3 10.4 22 10V12.2C20.5 12.5 19.9 13.4 19.9 14.6H22V19H17.5V15Z" fill="#FF6B35"/></svg>`,
+        svg: `<svg viewBox="0 0 32 32" width="24" height="24" fill="none"><rect x="3" y="4" width="26" height="24" rx="6" fill="#0F172A"/><path d="M10 15C10 12.2 11.8 10.4 14.5 10V12.2C13 12.5 12.4 13.4 12.4 14.6H14.5V19H10V15ZM17.5 15C17.5 12.2 19.3 10.4 22 10V12.2C20.5 12.5 19.9 13.4 19.9 14.6H22V19H17.5V15Z" fill="#4058d0"/></svg>`,
       },
       {
         name: "YouTube Transcript & .SRT",

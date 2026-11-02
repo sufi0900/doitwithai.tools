@@ -1003,8 +1003,8 @@ export default function AnalyzerClient() {
                 )}
               </div>
 
-              <div className="rounded-2xl border border-[#ff6b35]/30 bg-orange-50/40 p-4 dark:border-[#ff6b35]/30 dark:bg-slate-900/60">
-                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider text-[#ff6b35]">
+              <div className="rounded-2xl border border-[#4058d0]/30 bg-[#5271ff]/5 p-4 dark:border-[#4058d0]/30 dark:bg-slate-900/60">
+                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider text-[#4058d0]">
                   <Layers size={13} /> 1-Click Page Repurposing &amp; Visual Studio Hub
                 </span>
                 <h4 className="text-sm font-black text-slate-900 dark:text-white">
@@ -1040,10 +1040,10 @@ export default function AnalyzerClient() {
                     <Link
                       key={slug}
                       href={`/tools/${slug}${page.url ? `?url=${encodeURIComponent(page.url)}` : ""}`}
-                      className="inline-flex items-center justify-between gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-extrabold text-slate-800 shadow-2xs transition hover:border-[#ff6b35] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      className="inline-flex items-center justify-between gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-extrabold text-slate-800 shadow-2xs transition hover:border-[#4058d0] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                     >
                       <span className="truncate">{label}</span>
-                      <ArrowUpRight size={12} className="shrink-0 text-[#ff6b35]" />
+                      <ArrowUpRight size={12} className="shrink-0 text-[#4058d0]" />
                     </Link>
                   ))}
                 </div>

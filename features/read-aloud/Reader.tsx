@@ -411,7 +411,7 @@ export default function Reader({
         </section>
       )}
 
-      <section className="rounded-2xl border border-orange-200 bg-orange-50/40 p-5 dark:border-orange-900 dark:bg-orange-950/10 sm:p-7">
+      <section className="rounded-2xl border border-orange-200 bg-[#5271ff]/5 p-5 dark:border-orange-900 dark:bg-orange-950/10 sm:p-7">
         <p className="text-xs font-bold uppercase tracking-widest text-[#9A3412] dark:text-[#FDBA74]">
           Voice &amp; Narration Settings for &ldquo;{article.title.slice(0, 68)}
           {article.title.length > 68 ? "…" : ""}&rdquo;

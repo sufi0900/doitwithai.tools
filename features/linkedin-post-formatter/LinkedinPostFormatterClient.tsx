@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import styles from "@/features/tool-ui/visual-studio.module.css";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -55,8 +56,7 @@ export default function LinkedinPostFormatterClient() {
 
     const selected = postText.slice(start, end);
     const converted = applyUnicodeStyle(selected, style);
-    const updated =
-      postText.slice(0, start) + converted + postText.slice(end);
+    const updated = postText.slice(0, start) + converted + postText.slice(end);
     setPostText(updated);
     notify("Applied Unicode formatting to selected text!");
   }
@@ -81,7 +81,7 @@ export default function LinkedinPostFormatterClient() {
   return (
     <section
       aria-label="LinkedIn Post Formatter and Visual Feed Studio"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
+      className={`${styles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
     >
       {/* 1-CLICK ARTICLE URL TO FORMATTED LINKEDIN POST + ATTACHED VISUAL */}
       <UrlArticleExtractorBar
@@ -133,9 +133,9 @@ export default function LinkedinPostFormatterClient() {
       )}
 
       {/* CLEAN 2-PANEL STUDIO: LEFT = UNICODE POST EDITOR + HOOK SCORECARD, RIGHT = FULL-WIDTH FEED PREVIEW & ATTACHED IMAGE */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] items-start">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1.2fr)]">
         {/* LEFT PANEL: UNICODE POST EDITOR + FRAMEWORKS + HOOK QUALITY CHECK */}
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-4">
+        <div className="shadow-xs space-y-4 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3.5 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
               <PlatformBrandIcon brand="linkedin" size={34} />
@@ -145,7 +145,8 @@ export default function LinkedinPostFormatterClient() {
                   1. LinkedIn Post Editor &amp; Unicode Styler
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Highlight any words below and click a Unicode button to style them.
+                  Highlight any words below and click a Unicode button to style
+                  them.
                 </p>
               </div>
             </div>
@@ -154,7 +155,7 @@ export default function LinkedinPostFormatterClient() {
           {/* 1-Click Viral Framework Pills */}
           <div>
             <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Load a Proven Viral Post Template:
+              Start with a writing framework:
             </span>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {LINKEDIN_HOOK_TEMPLATES.map((tpl) => (
@@ -244,47 +245,52 @@ export default function LinkedinPostFormatterClient() {
             </button>
           </div>
 
-          {/* COMPACT INLINE LINKEDIN HOOK & READABILITY SCORECARD */}
-          <div className="border-t border-slate-200 pt-4 dark:border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                <Sparkles size={15} className="text-[#ff6b35]" />
-                LinkedIn Feed Hook &amp; Readability Score
-              </span>
-              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
-                {analysis.hookScore} / 100
-              </span>
-            </div>
+          <details>
+            <summary className="font-semibold">
+              Writing checks · {analysis.hookScore}/100
+            </summary>{" "}
+            {/* COMPACT INLINE LINKEDIN HOOK & READABILITY SCORECARD */}
+            <div className="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                  <Sparkles size={15} className="text-[#4058d0]" />
+                  LinkedIn Feed Hook &amp; Readability Score
+                </span>
+                <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
+                  {analysis.hookScore} / 100
+                </span>
+              </div>
 
-            <div className="grid gap-2 sm:grid-cols-2">
-              {analysis.checks.map((chk) => (
-                <div
-                  key={chk.label}
-                  className="flex items-start gap-2 rounded-xl border border-slate-200/80 bg-slate-50/70 p-2.5 text-[11px] dark:border-slate-800 dark:bg-slate-900/60"
-                >
-                  {chk.passed ? (
-                    <CheckCircle2
-                      size={14}
-                      className="mt-0.5 shrink-0 text-emerald-500"
-                    />
-                  ) : (
-                    <AlertTriangle
-                      size={14}
-                      className="mt-0.5 shrink-0 text-amber-500"
-                    />
-                  )}
-                  <div>
-                    <strong className="block font-bold text-slate-900 dark:text-white">
-                      {chk.label}
-                    </strong>
-                    <span className="text-slate-600 dark:text-slate-300">
-                      {chk.detail}
-                    </span>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {analysis.checks.map((chk) => (
+                  <div
+                    key={chk.label}
+                    className="flex items-start gap-2 rounded-xl border border-slate-200/80 bg-slate-50/70 p-2.5 text-[11px] dark:border-slate-800 dark:bg-slate-900/60"
+                  >
+                    {chk.passed ? (
+                      <CheckCircle2
+                        size={14}
+                        className="mt-0.5 shrink-0 text-emerald-500"
+                      />
+                    ) : (
+                      <AlertTriangle
+                        size={14}
+                        className="mt-0.5 shrink-0 text-amber-500"
+                      />
+                    )}
+                    <div>
+                      <strong className="block font-bold text-slate-900 dark:text-white">
+                        {chk.label}
+                      </strong>
+                      <span className="text-slate-600 dark:text-slate-300">
+                        {chk.detail}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                ))}
+              </div>
+            </div>{" "}
+          </details>
         </div>
 
         {/* RIGHT PANEL: FULL-WIDTH CONNECTED FEED PREVIEW + ATTACHED POST IMAGE STUDIO */}

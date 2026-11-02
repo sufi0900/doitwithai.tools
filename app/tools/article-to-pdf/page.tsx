@@ -123,7 +123,7 @@ export default function Page() {
       <header className="relative isolate overflow-hidden bg-[#241B25] text-white">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 -top-28 h-96 w-96 rounded-full bg-orange-500/20 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-28 h-96 w-96 rounded-full bg-[#5271ff]/100/20 blur-3xl"
         />
         <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <nav
@@ -256,7 +256,7 @@ export default function Page() {
           ))}
         </div>
       </section>
-      <section className={`${section} bg-orange-50/50 dark:bg-orange-950/10`}>
+      <section className={`${section} bg-[#5271ff]/10/50 dark:bg-orange-950/10`}>
         <h2 className="text-2xl font-extrabold">
           Example: prepare a reading copy for a review meeting
         </h2>

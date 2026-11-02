@@ -15,6 +15,11 @@ import {
   Smartphone,
   Sparkles,
 } from "lucide-react";
+import { wrapVisualText, sourceMetric } from "./visualText";
+import { TemplateThumbnail } from "./InfographicArtwork";
+import { SocialCardArtwork } from "./SocialCardArtwork";
+import { prepareVisualSvg, visualSvgCanvas, saveVisualBlob } from "./svgExport";
+import styles from "./visual-studio.module.css";
 import type { ExtractedImageAsset } from "./UrlArticleExtractorBar";
 import { PlatformBrandIcon } from "./PlatformBrandIcon";
 
@@ -68,27 +73,27 @@ interface CardTheme {
 const THEMES: Record<Exclude<CardThemeId, "custom-brand">, CardTheme> = {
   "royal-indigo": {
     label: "Royal Cobalt & Sky",
-    bgStart: "#0B1120",
-    bgEnd: "#1E3A8A",
-    cardSurface: "#172554",
-    accent: "#38BDF8",
-    accentSecondary: "#818CF8",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#DBEAFE",
-    badgeBg: "rgba(56, 189, 248, 0.2)",
-    badgeText: "#7DD3FC",
+    bgStart: "#5271ff",
+    bgEnd: "#314bd6",
+    cardSurface: "#4058d0",
+    accent: "#ffffff",
+    accentSecondary: "#b9c7ff",
+    textPrimary: "#ffffff",
+    textSecondary: "#edf0ff",
+    badgeBg: "#ffffff20",
+    badgeText: "#ffffff",
   },
   "brand-orange": {
     label: "Midnight & Electric Orange",
     bgStart: "#0F172A",
     bgEnd: "#1E293B",
     cardSurface: "#1E293B",
-    accent: "#FF6B35",
+    accent: "#4058d0",
     accentSecondary: "#FBBF24",
     textPrimary: "#FFFFFF",
     textSecondary: "#E2E8F0",
-    badgeBg: "rgba(255, 107, 53, 0.2)",
-    badgeText: "#FF8C5A",
+    badgeBg: "rgba(82, 113, 255, 0.2)",
+    badgeText: "#8094ff",
   },
   "midnight-slate": {
     label: "Executive Carbon & Cyan",
@@ -162,41 +167,14 @@ const CARD_TEMPLATES: { id: CardTemplateId; label: string; badge: string }[] = [
   { id: "carousel-slide", label: "7. Carousel Hook Cover", badge: "SLIDE" },
   { id: "contrarian-banner", label: "8. Bold Contrarian Truth", badge: "HOOK" },
   { id: "executive-minimal", label: "9. Boardroom White Card", badge: "LIGHT" },
-  { id: "article-photo-card", label: "10. Article Photo + Caption", badge: "PHOTO" },
+  {
+    id: "article-photo-card",
+    label: "10. Article Photo + Caption",
+    badge: "PHOTO",
+  },
 ];
 
-function wrapSvgLines(
-  text: string,
-  maxCharsPerLine: number,
-  maxLines: number,
-): string[] {
-  const words = String(text || "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .filter(Boolean);
-  if (!words.length) return [""];
-  const lines: string[] = [];
-  let current = "";
-  for (const w of words) {
-    const candidate = current ? `${current} ${w}` : w;
-    if (candidate.length > maxCharsPerLine && current) {
-      lines.push(current);
-      current = w;
-      if (lines.length >= maxLines - 1) break;
-    } else {
-      current = candidate;
-    }
-  }
-  if (current && lines.length < maxLines) {
-    lines.push(
-      current.length > maxCharsPerLine + 5
-        ? `${current.slice(0, maxCharsPerLine)}…`
-        : current,
-    );
-  }
-  return lines;
-}
+const wrapSvgLines = wrapVisualText;
 
 export function SocialVisualCardBuilder({
   platformLabel = "LinkedIn Post",
@@ -207,24 +185,24 @@ export function SocialVisualCardBuilder({
   extractedImages = [],
   showIntegratedFeedPreview = true,
 }: SocialVisualCardBuilderProps) {
-  const [template, setTemplate] = useState<CardTemplateId>("framework-steps");
+  const [template, setTemplate] = useState<CardTemplateId>("carousel-slide");
   const [themeId, setThemeId] = useState<CardThemeId>("royal-indigo");
   const [customColors, setCustomColors] = useState({
     bgStart: "#0B1120",
-    accent: "#FF6B35",
+    accent: "#4058d0",
     textPrimary: "#FFFFFF",
   });
   const [aspectRatio, setAspectRatio] = useState<AspectRatioId>("1:1");
   const [headline, setHeadline] = useState(defaultHeadline);
   const [bodyCopy, setBodyCopy] = useState(defaultBody);
-  const [statMetric, setStatMetric] = useState("84%");
+  const [statMetric, setStatMetric] = useState("");
   const [authorHandle, setAuthorHandle] = useState("@doitwithai.tools");
   const [badgeLabel, setBadgeLabel] = useState(defaultSublabel);
   const [selectedImage, setSelectedImage] =
     useState<ExtractedImageAsset | null>(null);
   const [feedDevice, setFeedDevice] = useState<"mobile" | "desktop">("mobile");
   const [feedExpanded, setFeedExpanded] = useState(false);
-  const [showCustomizer, setShowCustomizer] = useState(true);
+  const [showCustomizer, setShowCustomizer] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [copiedImg, setCopiedImg] = useState(false);
 
@@ -243,7 +221,7 @@ export function SocialVisualCardBuilder({
     if (defaultBody) {
       setBodyCopy(defaultBody.slice(0, 260));
       const m = defaultBody.match(/[+-]?\d+(?:\.\d+)?%|\b\d+(?:\.\d+)?x\b/i);
-      if (m) setStatMetric(m[0]);
+      setStatMetric(sourceMetric(defaultBody));
     }
   }, [defaultBody]);
 
@@ -278,8 +256,7 @@ export function SocialVisualCardBuilder({
   }, [themeId, customColors, template]);
 
   const W = aspectRatio === "16:9" ? 1200 : 1080;
-  const H =
-    aspectRatio === "1:1" ? 1080 : aspectRatio === "4:5" ? 1350 : 675;
+  const H = aspectRatio === "1:1" ? 1080 : aspectRatio === "4:5" ? 1350 : 675;
   const pad = aspectRatio === "16:9" ? 64 : 76;
 
   function serializeSvg(): string {
@@ -294,37 +271,20 @@ export function SocialVisualCardBuilder({
   }
 
   async function renderToCanvas(scale = 2): Promise<HTMLCanvasElement | null> {
-    const svgStr = serializeSvg();
-    if (!svgStr) return null;
-    const canvas = document.createElement("canvas");
-    canvas.width = W * scale;
-    canvas.height = H * scale;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        resolve(canvas);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(null);
-      };
-      img.src = url;
-    });
+    if (!svgRef.current) return null;
+    try {
+      return await visualSvgCanvas(svgRef.current, W, H, scale);
+    } catch (error) {
+      notify(
+        error instanceof Error ? error.message : "Could not export this image.",
+      );
+      return null;
+    }
   }
 
   async function handleDownloadPng() {
     const canvas = await renderToCanvas(2);
-    if (!canvas) {
-      handleDownloadSvg();
-      return;
-    }
+    if (!canvas) return;
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
     a.download = `${platformLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${template}-${aspectRatio.replace(":", "x")}.png`;
@@ -332,32 +292,30 @@ export function SocialVisualCardBuilder({
     notify("Downloaded 2x Retina Post Image (.PNG)!");
   }
 
-  function handleDownloadSvg() {
-    const svgStr = serializeSvg();
-    if (!svgStr) return;
-    const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${platformLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${template}.svg`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notify("Downloaded Editable Vector Graphic (.SVG)!");
+  async function handleDownloadSvg() {
+    if (!svgRef.current) return;
+    try {
+      const source = await prepareVisualSvg(svgRef.current, W, H);
+      saveVisualBlob(
+        new Blob([source], { type: "image/svg+xml;charset=utf-8" }),
+        `social-${template}.svg`,
+      );
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "Could not export SVG.");
+    }
   }
 
   async function handlePrintPdf() {
     const canvas = await renderToCanvas(2);
-    const dataUrl = canvas ? canvas.toDataURL("image/png") : "";
-    const svgStr = serializeSvg();
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(
-      `<!doctype html><html><head><title>${headline}</title><style>@page{margin:8mm}body{margin:0;display:flex;justify-content:center;align-items:center;background:#0f172a;min-height:100vh}@media print{body{background:#fff}}img,svg{max-width:100%;max-height:95vh}</style></head><body>${
-        dataUrl ? `<img src="${dataUrl}" alt="${headline}"/>` : svgStr
-      }<script>window.onload=()=>{setTimeout(()=>window.print(),300)}</script></body></html>`,
-    );
-    win.document.close();
-    notify("Opened PDF Export Dialog!");
+    if (!canvas) return;
+    const { jsPDF } = await import("jspdf");
+    const pdf = new jsPDF({
+      orientation: W > H ? "landscape" : "portrait",
+      unit: "px",
+      format: [W, H],
+    });
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, W, H);
+    pdf.save(`social-${template}.pdf`);
   }
 
   async function handleCopyCardImage() {
@@ -456,7 +414,9 @@ export function SocialVisualCardBuilder({
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-5">
+    <div
+      className={`${styles.studio} space-y-5 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6`}
+    >
       {toastMsg && (
         <div
           role="status"
@@ -476,12 +436,12 @@ export function SocialVisualCardBuilder({
           />
           <div>
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-              2. Live {platformLabel} Feed Preview &amp; Attached Graphic
+              {platformLabel} preview &amp; image
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               See your post text + attached visual together.{" "}
-              <strong className="text-[#ff6b35]">
-                Hover over the image to download PNG, SVG, or PDF.
+              <strong className="text-[#4058d0]">
+                Download your image, then attach it when publishing.
               </strong>
             </p>
           </div>
@@ -497,7 +457,7 @@ export function SocialVisualCardBuilder({
             }}
             className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
               feedDevice === "mobile"
-                ? "bg-[#3452d1] text-white shadow-xs"
+                ? "shadow-xs bg-[#3452d1] text-white"
                 : "text-slate-600 dark:text-slate-300"
             }`}
           >
@@ -512,7 +472,7 @@ export function SocialVisualCardBuilder({
             }}
             className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
               feedDevice === "desktop"
-                ? "bg-[#3452d1] text-white shadow-xs"
+                ? "shadow-xs bg-[#3452d1] text-white"
                 : "text-slate-600 dark:text-slate-300"
             }`}
           >
@@ -527,13 +487,14 @@ export function SocialVisualCardBuilder({
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-extrabold text-[#3452d1] dark:text-[#9aabff]">
-              Extracted Article Images ({extractedImages.length}) — Click Any Photo to Attach It Below Your Post:
+              Extracted Article Images ({extractedImages.length}) — Click Any
+              Photo to Attach It Below Your Post:
             </span>
             {template === "article-photo-card" && (
               <button
                 type="button"
                 onClick={() => setTemplate("framework-steps")}
-                className="text-xs font-bold text-[#ff6b35] hover:underline"
+                className="text-xs font-bold text-[#4058d0] hover:underline"
               >
                 Switch Back to Vector Graphic Card
               </button>
@@ -558,7 +519,7 @@ export function SocialVisualCardBuilder({
                   }}
                   className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-xl border-2 transition ${
                     isSelected
-                      ? "border-[#ff6b35] ring-2 ring-[#ff6b35]/30"
+                      ? "border-[#4058d0] ring-2 ring-[#4058d0]/30"
                       : "border-slate-200 hover:border-[#3452d1] dark:border-slate-700"
                   }`}
                 >
@@ -581,7 +542,7 @@ export function SocialVisualCardBuilder({
           <div className="p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3452d1] to-[#ff6b35] text-sm font-black text-white shadow-xs">
+                <div className="shadow-xs flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3452d1] to-[#4058d0] text-sm font-black text-white">
                   AI
                 </div>
                 <div>
@@ -594,7 +555,9 @@ export function SocialVisualCardBuilder({
                 </div>
               </div>
               <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-extrabold text-emerald-700 dark:text-emerald-300">
-                {feedExpanded ? "Expanded Post" : `${feedDevice.toUpperCase()} Fold Preview`}
+                {feedExpanded
+                  ? "Expanded Post"
+                  : `${feedDevice.toUpperCase()} Fold Preview`}
               </span>
             </div>
 
@@ -632,23 +595,27 @@ export function SocialVisualCardBuilder({
         {/* CLEAR CONNECTOR BANNER EXPLAINING THAT THIS GRAPHIC ATTACHES BELOW THE POST */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-y border-slate-200 bg-slate-100/90 px-4 py-2 text-[11px] font-extrabold text-slate-700 dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-300">
           <span className="inline-flex items-center gap-1.5">
-            <ImageIcon size={13} className="text-[#ff6b35]" />
-            ATTACHED POST IMAGE ({aspectRatio} · {CARD_TEMPLATES.find((t) => t.id === template)?.label})
+            <ImageIcon size={13} className="text-[#4058d0]" />
+            ATTACHED POST IMAGE ({aspectRatio} ·{" "}
+            {CARD_TEMPLATES.find((t) => t.id === template)?.label})
           </span>
           <span className="text-[#3452d1] dark:text-[#9aabff]">
-            Hover over the image below to download PNG, SVG, or PDF ↓
+            Use the download actions below.
           </span>
         </div>
 
         {/* HOVERABLE VECTOR SVG POST GRAPHIC STAGE */}
-        <div className="group relative flex items-center justify-center bg-slate-950 p-3 sm:p-4">
+        <div className="group relative flex flex-col items-center justify-center bg-slate-950 p-3 sm:p-4">
           {/* FLOATING HOVER DOWNLOAD BAR OVER THE ATTACHED IMAGE */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+          <div
+            data-export-toolbar
+            className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+          >
             <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-white/20 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-md">
               <button
                 type="button"
                 onClick={handleDownloadPng}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#e85d2a]"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#4058d0] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#3452d1]"
               >
                 <Download size={14} />
                 Download PNG
@@ -681,8 +648,11 @@ export function SocialVisualCardBuilder({
           </div>
 
           {/* Persistent corner hint when not hovered on desktop */}
-          <div className="pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md backdrop-blur-xs transition-opacity sm:inline-flex sm:group-hover:opacity-0">
-            <Download size={12} className="text-[#ff6b35]" />
+          <div
+            data-export-hint
+            className="backdrop-blur-xs pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md transition-opacity sm:inline-flex sm:group-hover:opacity-0"
+          >
+            <Download size={12} className="text-[#4058d0]" />
             <span>Hover to Download Image (PNG · SVG · PDF)</span>
           </div>
 
@@ -690,7 +660,8 @@ export function SocialVisualCardBuilder({
           <svg
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
-            className="mx-auto block max-h-[460px] w-full rounded-xl object-contain shadow-lg"
+            className="mx-auto block max-h-[700px] w-full rounded-xl object-contain shadow-lg"
+            fontFamily="Arial, Helvetica, sans-serif"
             role="img"
             aria-label={headline}
           >
@@ -703,13 +674,7 @@ export function SocialVisualCardBuilder({
                 <stop offset="0%" stopColor={theme.accent} />
                 <stop offset="100%" stopColor={theme.accentSecondary} />
               </linearGradient>
-              <filter
-                id="scShadow"
-                x="-8%"
-                y="-8%"
-                width="116%"
-                height="120%"
-              >
+              <filter id="scShadow" x="-8%" y="-8%" width="116%" height="120%">
                 <feDropShadow
                   dx="0"
                   dy="10"
@@ -764,233 +729,21 @@ export function SocialVisualCardBuilder({
               {(badgeLabel || platformLabel).toUpperCase()}
             </text>
 
-            {/* TEMPLATE-SPECIFIC VECTOR BODY */}
-            {template === "article-photo-card" && selectedImage ? (
-              <g>
-                <image
-                  href={selectedImage.src}
-                  x={pad}
-                  y={pad + 68}
-                  width={W - pad * 2}
-                  height={Math.floor(H * 0.46)}
-                  preserveAspectRatio="xMidYMid slice"
-                />
-                <rect
-                  x={pad}
-                  y={pad + 86 + Math.floor(H * 0.46)}
-                  width={W - pad * 2}
-                  height={H - pad * 2 - 150 - Math.floor(H * 0.46)}
-                  rx={24}
-                  fill={theme.cardSurface}
-                  stroke={theme.accent}
-                  strokeWidth={2.5}
-                />
-                {headlineLines.slice(0, 2).map((l, i) => (
-                  <text
-                    key={i}
-                    x={pad + 32}
-                    y={pad + 146 + Math.floor(H * 0.46) + i * 48}
-                    fill={theme.textPrimary}
-                    fontSize={38}
-                    fontWeight={900}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {l}
-                  </text>
-                ))}
-              </g>
-            ) : template === "stat-spotlight" ? (
-              <g>
-                {/* Oversized Radial Gauge + KPI Stat */}
-                <g transform={`translate(${pad + 130}, ${pad + 210})`}>
-                  <circle
-                    cx={0}
-                    cy={0}
-                    r={105}
-                    fill="none"
-                    stroke={theme.textSecondary}
-                    strokeOpacity={0.2}
-                    strokeWidth={18}
-                  />
-                  <circle
-                    cx={0}
-                    cy={0}
-                    r={105}
-                    fill="none"
-                    stroke={theme.accent}
-                    strokeWidth={18}
-                    strokeDasharray="520 660"
-                    strokeLinecap="round"
-                    transform="rotate(-90)"
-                  />
-                  <text
-                    x={0}
-                    y={16}
-                    textAnchor="middle"
-                    fill={theme.textPrimary}
-                    fontSize={54}
-                    fontWeight={900}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {statMetric}
-                  </text>
-                </g>
-
-                {headlineLines.map((l, i) => (
-                  <text
-                    key={i}
-                    x={pad + 275}
-                    y={pad + 150 + i * 54}
-                    fill={theme.textPrimary}
-                    fontSize={42}
-                    fontWeight={900}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {l.slice(0, 22)}
-                  </text>
-                ))}
-
-                <rect
-                  x={pad}
-                  y={pad + 360}
-                  width={W - pad * 2}
-                  height={H - pad * 2 - 440}
-                  rx={24}
-                  fill={theme.cardSurface}
-                  stroke={theme.accent}
-                  strokeWidth={2}
-                  filter="url(#scShadow)"
-                />
-                {bodyLines.map((l, i) => (
-                  <text
-                    key={i}
-                    x={pad + 36}
-                    y={pad + 425 + i * 44}
-                    fill={theme.textSecondary}
-                    fontSize={30}
-                    fontWeight={600}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {l}
-                  </text>
-                ))}
-              </g>
-            ) : template === "framework-steps" ||
-              template === "checklist-card" ? (
-              <g>
-                {headlineLines.slice(0, 2).map((l, i) => (
-                  <text
-                    key={i}
-                    x={pad}
-                    y={pad + 112 + i * 54}
-                    fill={theme.textPrimary}
-                    fontSize={44}
-                    fontWeight={900}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {l}
-                  </text>
-                ))}
-                {bulletSteps.map((step, idx) => {
-                  const cardY = pad + 215 + idx * (aspectRatio === "16:9" ? 95 : 195);
-                  const cardH = aspectRatio === "16:9" ? 80 : 168;
-                  const stepLines = wrapSvgLines(step, 42, 2);
-                  return (
-                    <g key={idx}>
-                      <rect
-                        x={pad}
-                        y={cardY}
-                        width={W - pad * 2}
-                        height={cardH}
-                        rx={22}
-                        fill={theme.cardSurface}
-                        stroke={theme.accent}
-                        strokeWidth={2}
-                        filter="url(#scShadow)"
-                      />
-                      <circle
-                        cx={pad + 54}
-                        cy={cardY + cardH / 2}
-                        r={30}
-                        fill={theme.accent}
-                      />
-                      <text
-                        x={pad + 54}
-                        y={cardY + cardH / 2 + 9}
-                        textAnchor="middle"
-                        fill="#FFFFFF"
-                        fontSize={24}
-                        fontWeight={900}
-                        fontFamily="system-ui, -apple-system, sans-serif"
-                      >
-                        {template === "checklist-card" ? "✓" : `0${idx + 1}`}
-                      </text>
-                      {stepLines.map((sl, si) => (
-                        <text
-                          key={si}
-                          x={pad + 108}
-                          y={cardY + cardH / 2 - 8 + si * 34}
-                          fill={theme.textPrimary}
-                          fontSize={26}
-                          fontWeight={700}
-                          fontFamily="system-ui, -apple-system, sans-serif"
-                        >
-                          {sl}
-                        </text>
-                      ))}
-                    </g>
-                  );
-                })}
-              </g>
-            ) : (
-              /* Quote Card / Founder Memo / Carousel Slide / Contrarian / Minimal */
-              <g>
-                <text
-                  x={pad}
-                  y={pad + 150}
-                  fill={theme.accent}
-                  fontSize={110}
-                  fontWeight={900}
-                  fontFamily="Georgia, serif"
-                >
-                  “
-                </text>
-                {headlineLines.map((l, i) => (
-                  <text
-                    key={i}
-                    x={pad}
-                    y={pad + 195 + i * 62}
-                    fill={theme.textPrimary}
-                    fontSize={50}
-                    fontWeight={900}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {l}
-                  </text>
-                ))}
-                <rect
-                  x={pad}
-                  y={pad + 205 + headlineLines.length * 62}
-                  width={130}
-                  height={8}
-                  rx={4}
-                  fill="url(#scAccGrad)"
-                />
-                {bodyLines.map((l, i) => (
-                  <text
-                    key={i}
-                    x={pad}
-                    y={pad + 265 + headlineLines.length * 62 + i * 44}
-                    fill={theme.textSecondary}
-                    fontSize={31}
-                    fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {l}
-                  </text>
-                ))}
-              </g>
-            )}
+            <SocialCardArtwork
+              kind={template}
+              headline={headline}
+              body={bodyCopy}
+              metric={statMetric}
+              width={W}
+              height={H}
+              palette={theme}
+              image={
+                template === "article-photo-card"
+                  ? selectedImage?.src
+                  : "/visual-studio/paper-sculpture.png"
+              }
+              imageStyle={template === "article-photo-card" ? "photo" : "paper"}
+            />
 
             {/* Footer Attribution */}
             <line
@@ -1030,8 +783,8 @@ export function SocialVisualCardBuilder({
 
         {/* Realistic Social Feed Engagement Bar */}
         <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400">
-          <span>👍 ❤️ 💡 184 Reactions</span>
-          <span>42 Comments · 29 Reposts</span>
+          <span>Illustrative feed preview</span>
+          <span>Your image is downloaded separately</span>
         </div>
       </div>
 
@@ -1041,7 +794,7 @@ export function SocialVisualCardBuilder({
           <button
             type="button"
             onClick={handleDownloadPostAndImagePackage}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#ff6b35] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#e85d2a]"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#3452d1]"
           >
             <PackageCheck size={16} />
             Copy Post + Download Attached Image
@@ -1052,7 +805,9 @@ export function SocialVisualCardBuilder({
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-extrabold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
           >
             <SlidersHorizontal size={14} className="text-[#3452d1]" />
-            {showCustomizer ? "Hide Image Customizer" : "Customize Attached Image"}
+            {showCustomizer
+              ? "Hide Image Customizer"
+              : "Customize Attached Image"}
           </button>
         </div>
 
@@ -1061,7 +816,7 @@ export function SocialVisualCardBuilder({
           <button
             type="button"
             onClick={() => handleSharePlatform("linkedin")}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#0A66C2] px-3.5 py-2 text-xs font-extrabold text-white shadow-xs transition hover:opacity-95"
+            className="shadow-xs inline-flex items-center gap-2 rounded-xl bg-[#0A66C2] px-3.5 py-2 text-xs font-extrabold text-white transition hover:opacity-95"
           >
             <PlatformBrandIcon brand="linkedin" size={20} />
             Share on LinkedIn
@@ -1069,7 +824,7 @@ export function SocialVisualCardBuilder({
           <button
             type="button"
             onClick={() => handleSharePlatform("twitter")}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-extrabold text-white shadow-xs transition hover:bg-slate-800 dark:bg-slate-800"
+            className="shadow-xs inline-flex items-center gap-2 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-extrabold text-white transition hover:bg-slate-800 dark:bg-slate-800"
           >
             <PlatformBrandIcon brand="x-threads" size={20} />
             Post on X
@@ -1077,7 +832,7 @@ export function SocialVisualCardBuilder({
           <button
             type="button"
             onClick={() => handleSharePlatform("facebook")}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#1877F2] px-3.5 py-2 text-xs font-extrabold text-white shadow-xs transition hover:opacity-95"
+            className="shadow-xs inline-flex items-center gap-2 rounded-xl bg-[#1877F2] px-3.5 py-2 text-xs font-extrabold text-white transition hover:opacity-95"
           >
             <PlatformBrandIcon brand="facebook" size={20} />
             Facebook
@@ -1087,15 +842,16 @@ export function SocialVisualCardBuilder({
 
       {/* SPACIOUS, FULL-WIDTH ATTACHED IMAGE CUSTOMIZER (NO CRAMPED COLUMNS!) */}
       {showCustomizer && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-4 dark:border-slate-800 dark:bg-slate-900/50">
+        <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
           <div className="flex items-center justify-between">
             <h4 className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
-              <Sparkles size={14} /> Customize Attached Post Image (10 Templates · 8 Themes + Custom Color Picker)
+              <Sparkles size={14} /> Customize Attached Post Image (10 Templates
+              · 8 Themes + Custom Color Picker)
             </h4>
           </div>
 
           {/* 10 Template Pills */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {CARD_TEMPLATES.map((tpl) => (
               <button
                 key={tpl.id}
@@ -1103,11 +859,12 @@ export function SocialVisualCardBuilder({
                 onClick={() => setTemplate(tpl.id)}
                 className={`rounded-xl border p-2.5 text-left transition ${
                   template === tpl.id
-                    ? "border-[#ff6b35] bg-[#ff6b35]/10 ring-1 ring-[#ff6b35]"
+                    ? "border-[#4058d0] bg-[#4058d0]/10 ring-1 ring-[#4058d0]"
                     : "border-slate-200 bg-white hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-950"
                 }`}
               >
-                <span className="block truncate text-[11px] font-extrabold text-slate-900 dark:text-white">
+                <TemplateThumbnail id={tpl.id} />
+                <span className="block text-xs font-extrabold text-slate-900 dark:text-white">
                   {tpl.label}
                 </span>
               </button>
@@ -1152,7 +909,8 @@ export function SocialVisualCardBuilder({
 
             <div>
               <label className="mb-1 flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                <Palette size={12} className="text-[#ff6b35]" /> Custom Color Pickers
+                <Palette size={12} className="text-[#4058d0]" /> Custom Color
+                Pickers
               </label>
               <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 dark:border-slate-700 dark:bg-slate-950">
                 <label className="flex items-center gap-1 text-[11px] font-bold">
@@ -1162,7 +920,13 @@ export function SocialVisualCardBuilder({
                     onChange={(e) => {
                       setThemeId("custom-brand");
                       setCustomColors((p) => ({
-                        ...p,
+                        ...(themeId === "custom-brand"
+                          ? p
+                          : {
+                              bgStart: theme.bgStart,
+                              accent: theme.accent,
+                              textPrimary: theme.textPrimary,
+                            }),
                         bgStart: e.target.value,
                       }));
                     }}
@@ -1177,7 +941,13 @@ export function SocialVisualCardBuilder({
                     onChange={(e) => {
                       setThemeId("custom-brand");
                       setCustomColors((p) => ({
-                        ...p,
+                        ...(themeId === "custom-brand"
+                          ? p
+                          : {
+                              bgStart: theme.bgStart,
+                              accent: theme.accent,
+                              textPrimary: theme.textPrimary,
+                            }),
                         accent: e.target.value,
                       }));
                     }}
@@ -1192,7 +962,13 @@ export function SocialVisualCardBuilder({
                     onChange={(e) => {
                       setThemeId("custom-brand");
                       setCustomColors((p) => ({
-                        ...p,
+                        ...(themeId === "custom-brand"
+                          ? p
+                          : {
+                              bgStart: theme.bgStart,
+                              accent: theme.accent,
+                              textPrimary: theme.textPrimary,
+                            }),
                         textPrimary: e.target.value,
                       }));
                     }}
@@ -1242,6 +1018,17 @@ export function SocialVisualCardBuilder({
             </div>
           </div>
 
+          {template === "stat-spotlight" && (
+            <label className="block text-sm">
+              Statistic from your source (optional)
+              <input
+                value={statMetric}
+                onChange={(e) => setStatMetric(e.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-400/50 bg-transparent p-3"
+                placeholder="Use a value you can verify"
+              />
+            </label>
+          )}
           <div>
             <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
               Supporting Takeaway / Steps Shown on Image

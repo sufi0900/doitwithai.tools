@@ -497,8 +497,8 @@ export function PlatformBrandIcon({
       >
         <defs>
           <linearGradient id={`${uid}-g`} x1="4" y1="3" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#FF8C5A" />
-            <stop offset="55%" stopColor="#FF6B35" />
+            <stop offset="0%" stopColor="#8094ff" />
+            <stop offset="55%" stopColor="#4058d0" />
             <stop offset="100%" stopColor="#C2410C" />
           </linearGradient>
         </defs>
@@ -658,7 +658,7 @@ export function PlatformBrandIcon({
         />
         <path
           d="M10.5 16.5C10.5 13.2 12.6 11.1 15.8 10.6V13.2C14 13.6 13.3 14.6 13.3 16H15.8V21.2H10.5V16.5ZM19.5 16.5C19.5 13.2 21.6 11.1 24.8 10.6V13.2C23 13.6 22.3 14.6 22.3 16H24.8V21.2H19.5V16.5Z"
-          fill="#FF6B35"
+          fill="#4058d0"
         />
       </svg>
     );
@@ -926,7 +926,7 @@ export function PlatformBrandIcon({
       <rect x="10" y="9.5" width="16" height="3" rx="1.5" fill="#FFFFFF" />
       <rect x="10" y="15" width="12" height="2.6" rx="1.3" fill="#E0E7FF" />
       <rect x="10" y="20" width="14" height="2.6" rx="1.3" fill="#E0E7FF" />
-      <circle cx="25.5" cy="19.5" r="3" fill="#FF6B35" />
+      <circle cx="25.5" cy="19.5" r="3" fill="#4058d0" />
     </svg>
   );
 }

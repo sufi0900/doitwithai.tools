@@ -943,7 +943,7 @@
           color: #ffffff;
         }
         .diwat-yt-badge {
-          background: #ff6b35;
+          background: #4058d0;
           color: #fff;
           font-size: 10px;
           font-weight: 800;
@@ -1301,7 +1301,7 @@
       "position:fixed;bottom:20px;right:20px;z-index:2147483646;font-family:Inter,system-ui,sans-serif;background:#0f172a;color:#fff;border:1px solid rgba(82,113,255,0.55);border-radius:14px;padding:8px 12px;box-shadow:0 10px 28px rgba(0,0,0,0.45);display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;";
 
     pill.innerHTML = `
-      <span style="color:#ff8c5a;font-weight:800">✨ DoItWithAI Post Polisher:</span>
+      <span style="color:#8094ff;font-weight:800">✨ DoItWithAI Post Polisher:</span>
       <button type="button" data-polish="hook" style="background:#3b63fb;color:#fff;border:none;border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">⚡ Viral Hook</button>
       <button type="button" data-polish="bullets" style="background:#1e293b;color:#fff;border:1px solid #475569;border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">✅ Format Bullets</button>
       <button type="button" data-polish="expand" style="background:#1e293b;color:#fff;border:1px solid #475569;border-radius:7px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer">🚀 Idea → Full Post</button>

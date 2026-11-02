@@ -1,20 +1,30 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  InfographicArtwork,
+  InfographicBackgroundDecor,
+  EDITORIAL_LAYOUTS,
+  TemplateThumbnail,
+  type InfographicBgWaveStyle,
+} from "./InfographicArtwork";
+import { wrapVisualText, percentageMetric } from "./visualText";
+import { prepareVisualSvg, visualSvgCanvas, saveVisualBlob } from "./svgExport";
+import styles from "./visual-studio.module.css";
+import { inferNodeIcon } from "./infographicIcons";
+export { inferNodeIcon } from "./infographicIcons";
+import {
+  AlertTriangle,
   Check,
-  Code2,
   Copy,
   Download,
-  FileCode2,
   Image as ImageIcon,
   Layers,
-  Maximize2,
   Palette,
   Plus,
-  Printer,
   Sparkles,
   Trash2,
+  Upload,
   Wand2,
 } from "lucide-react";
 
@@ -64,18 +74,18 @@ export type InfographicTemplateCategory =
   | "viral-list";
 
 export type InfographicAspectRatio =
-  | "vertical-poster" // 1000 x 1920
+  | "vertical-poster" // 1080 x 1920
   | "pinterest-tall" // 1000 x 1500
   | "portrait-social" // 1080 x 1350
   | "horizontal-landscape" // 1600 x 1000
   | "square-card"; // 1200 x 1200
 
 export type InfographicColorPaletteId =
+  | "royal-indigo"
   | "navy-orange"
   | "canva-editorial-light"
   | "emerald-slate"
   | "venngage-teal-coral"
-  | "royal-indigo"
   | "terracotta-cream"
   | "cyber-violet"
   | "mckinsey-executive"
@@ -114,6 +124,7 @@ export interface InfographicNodeItem {
   metricValue?: string;
   compareRight?: string;
   icon?: InfographicIconId;
+  customImageUrl?: string;
   accentColor?: string;
 }
 
@@ -132,48 +143,170 @@ export interface InfographicColorPalette {
   badgeText: string;
 }
 
+/**
+ * WCAG 2.1 Relative Luminance & Contrast Ratio Helpers
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const clean = String(hex || "")
+    .trim()
+    .replace(/^#/, "");
+  if (/^[0-9a-fA-F]{3}$/.test(clean)) {
+    return {
+      r: parseInt(clean[0] + clean[0], 16),
+      g: parseInt(clean[1] + clean[1], 16),
+      b: parseInt(clean[2] + clean[2], 16),
+    };
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(clean)) {
+    return {
+      r: parseInt(clean.slice(0, 2), 16),
+      g: parseInt(clean.slice(2, 4), 16),
+      b: parseInt(clean.slice(4, 6), 16),
+    };
+  }
+  return null;
+}
+
+function getRelativeLuminance(hex: string): number {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0.5;
+  const [rs, gs, bs] = [rgb.r / 255, rgb.g / 255, rgb.b / 255].map((c) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4),
+  );
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+function getContrastRatio(hex1: string, hex2: string): number {
+  const l1 = getRelativeLuminance(hex1);
+  const l2 = getRelativeLuminance(hex2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * Samples dominant brand colors from an uploaded logo or article image in the browser
+ */
+function extractBrandPaletteFromImageUrl(
+  imgSrc: string,
+): Promise<{ bgStart: string; cardBg: string; accent: string; accentSecondary: string; textPrimary: string } | null> {
+  if (typeof window === "undefined" || !imgSrc) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        canvas.width = 48;
+        canvas.height = 48;
+        ctx.drawImage(img, 0, 0, 48, 48);
+        const data = ctx.getImageData(0, 0, 48, 48).data;
+        const vibrant: Array<{ r: number; g: number; b: number; sat: number }> = [];
+        for (let i = 0; i < data.length; i += 16) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const a = data[i + 3];
+          if (a < 128) continue;
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const sat = max === 0 ? 0 : (max - min) / max;
+          if (sat > 0.25 && max > 45 && min < 235) {
+            vibrant.push({ r, g, b, sat });
+          }
+        }
+        if (vibrant.length === 0) {
+          resolve(null);
+          return;
+        }
+        vibrant.sort((a, b) => b.sat - a.sat);
+        const primary = vibrant[0];
+        const secondary =
+          vibrant[Math.min(vibrant.length - 1, Math.floor(vibrant.length / 2))] ||
+          primary;
+        const toHex = (c: { r: number; g: number; b: number }) =>
+          `#${[c.r, c.g, c.b]
+            .map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0"))
+            .join("")}`;
+        const accentHex = toHex(primary);
+        const secHex = toHex(secondary);
+        resolve({
+          bgStart: "#0B132B",
+          cardBg: "#152244",
+          accent: accentHex,
+          accentSecondary: secHex,
+          textPrimary: "#FFFFFF",
+        });
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = imgSrc;
+  });
+}
+
 export const INFOGRAPHIC_PALETTES: InfographicColorPalette[] = [
   {
+    id: "royal-indigo",
+    name: "DoItWithAI Royal Blue & Paper (Official Brand)",
+    bgStart: "#F4F6FF",
+    bgEnd: "#E8EDFF",
+    cardBg: "#FFFFFF",
+    cardBorder: "#B8C7FF",
+    textPrimary: "#111C38",
+    textSecondary: "#334155",
+    accent: "#4058D0",
+    accentSecondary: "#5271FF",
+    accentSoft: "rgba(64, 88, 208, 0.14)",
+    badgeText: "#FFFFFF",
+  },
+  {
     id: "navy-orange",
-    name: "Midnight & Electric Orange",
+    name: "DoItWithAI Midnight & Electric Cobalt",
     bgStart: "#0B1120",
     bgEnd: "#172554",
-    cardBg: "#1E293B",
-    cardBorder: "#334155",
+    cardBg: "#152238",
+    cardBorder: "#5271FF",
     textPrimary: "#FFFFFF",
     textSecondary: "#CBD5E1",
-    accent: "#FF6B35",
+    accent: "#5271FF",
     accentSecondary: "#38BDF8",
-    accentSoft: "rgba(255, 107, 53, 0.18)",
+    accentSoft: "rgba(82, 113, 255, 0.2)",
     badgeText: "#FFFFFF",
   },
   {
     id: "canva-editorial-light",
-    name: "Canva Studio Light & Cobalt",
+    name: "Canva Studio Light & Indigo",
     bgStart: "#F8FAFC",
     bgEnd: "#EEF2FF",
     cardBg: "#FFFFFF",
     cardBorder: "#CBD5E1",
     textPrimary: "#0F172A",
-    textSecondary: "#475569",
+    textSecondary: "#334155",
     accent: "#4F46E5",
-    accentSecondary: "#EC4899",
+    accentSecondary: "#0284C7",
     accentSoft: "#E0E7FF",
     badgeText: "#FFFFFF",
   },
   {
     id: "venngage-teal-coral",
-    name: "Venngage Teal & Warm Coral",
+    name: "Executive Teal & Sky",
     bgStart: "#042F2E",
     bgEnd: "#134E4A",
     cardBg: "#0F3D3B",
     cardBorder: "#2DD4BF",
     textPrimary: "#F0FDFA",
-    textSecondary: "#99F6E4",
-    accent: "#FB7185",
-    accentSecondary: "#2DD4BF",
-    accentSoft: "rgba(251, 113, 133, 0.2)",
-    badgeText: "#FFFFFF",
+    textSecondary: "#CCFBF1",
+    accent: "#2DD4BF",
+    accentSecondary: "#38BDF8",
+    accentSoft: "rgba(45, 212, 191, 0.2)",
+    badgeText: "#042F2E",
   },
   {
     id: "emerald-slate",
@@ -183,52 +316,38 @@ export const INFOGRAPHIC_PALETTES: InfographicColorPalette[] = [
     cardBg: "#112233",
     cardBorder: "#10B981",
     textPrimary: "#F8FAFC",
-    textSecondary: "#A7F3D0",
+    textSecondary: "#D1FAE5",
     accent: "#10B981",
-    accentSecondary: "#F59E0B",
+    accentSecondary: "#38BDF8",
     accentSoft: "rgba(16, 185, 129, 0.2)",
     badgeText: "#052E24",
   },
   {
-    id: "royal-indigo",
-    name: "Royal Sapphire & Cyan Glow",
-    bgStart: "#090D16",
-    bgEnd: "#1E3A8A",
-    cardBg: "#152347",
-    cardBorder: "#38BDF8",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#DBEAFE",
-    accent: "#38BDF8",
-    accentSecondary: "#818CF8",
-    accentSoft: "rgba(56, 189, 248, 0.2)",
-    badgeText: "#090D16",
-  },
-  {
     id: "terracotta-cream",
-    name: "Warm Editorial Cream & Terracotta",
+    name: "Warm Editorial Cream & Sapphire",
     bgStart: "#FFFBEB",
     bgEnd: "#FEF3C7",
     cardBg: "#FFFFFF",
-    cardBorder: "#F59E0B",
+    cardBorder: "#4058D0",
     textPrimary: "#1C1917",
-    textSecondary: "#57534E",
-    accent: "#EA580C",
+    textSecondary: "#44403C",
+    accent: "#4058D0",
     accentSecondary: "#0D9488",
-    accentSoft: "#FFEDD5",
+    accentSoft: "#E0E7FF",
     badgeText: "#FFFFFF",
   },
   {
     id: "cyber-violet",
-    name: "AI SaaS Violet & Neon Pink",
+    name: "AI SaaS Violet & Electric Blue",
     bgStart: "#130924",
     bgEnd: "#2E1065",
     cardBg: "#1F123B",
     cardBorder: "#A855F7",
     textPrimary: "#FFFFFF",
     textSecondary: "#E9D5FF",
-    accent: "#E879F9",
+    accent: "#C084FC",
     accentSecondary: "#38BDF8",
-    accentSoft: "rgba(232, 121, 249, 0.22)",
+    accentSoft: "rgba(192, 132, 252, 0.22)",
     badgeText: "#130924",
   },
   {
@@ -241,21 +360,21 @@ export const INFOGRAPHIC_PALETTES: InfographicColorPalette[] = [
     textPrimary: "#0F172A",
     textSecondary: "#334155",
     accent: "#0284C7",
-    accentSecondary: "#0F172A",
+    accentSecondary: "#4058D0",
     accentSoft: "#E0F2FE",
     badgeText: "#FFFFFF",
   },
   {
     id: "rose-charcoal",
-    name: "Obsidian & Crimson Rose",
+    name: "Obsidian & Royal Crimson",
     bgStart: "#18181B",
     bgEnd: "#27272A",
     cardBg: "#232329",
     cardBorder: "#F43F5E",
     textPrimary: "#FAFAFA",
-    textSecondary: "#D4D4D8",
+    textSecondary: "#E4E4E7",
     accent: "#F43F5E",
-    accentSecondary: "#FBBF24",
+    accentSecondary: "#8094FF",
     accentSoft: "rgba(244, 63, 94, 0.2)",
     badgeText: "#FFFFFF",
   },
@@ -267,7 +386,7 @@ export const INFOGRAPHIC_PALETTES: InfographicColorPalette[] = [
     cardBg: "#193D2E",
     cardBorder: "#FBBF24",
     textPrimary: "#FEFCE8",
-    textSecondary: "#D9F99D",
+    textSecondary: "#ECFCCB",
     accent: "#FBBF24",
     accentSecondary: "#34D399",
     accentSoft: "rgba(251, 191, 36, 0.2)",
@@ -391,26 +510,26 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplateMeta[] = [
     badge: "ICEBERG",
   },
 
-  // Category 4: Side-Image & Magazine Editorial
+  // Category 4: Side-Image & Magazine Editorial (Non-Boxed Flowing Editorial + Visual Showcase)
   {
     id: "side-image-editorial-split",
-    label: "13. Left Side-Image Magazine Split",
+    label: "13. Left Visual + Editorial Guide",
     category: "side-image",
-    desc: "Left visual hero image/illustration + Right structured steps",
-    badge: "SIDE IMAGE",
+    desc: "Left framed visual + definition card, Right flowing narrative spine",
+    badge: "EDITORIAL",
   },
   {
     id: "side-image-right-spotlight",
-    label: "14. Right Side-Image Spotlight",
+    label: "14. Right Visual + Definition Guide",
     category: "side-image",
-    desc: "Left numbered breakdown + Right visual poster & stat spotlight",
-    badge: "SIDE IMAGE",
+    desc: "Left flowing narrative breakdown + Right framed visual spotlight",
+    badge: "EDITORIAL",
   },
   {
     id: "side-image-horizontal-board",
-    label: "15. Widescreen Split Hero + Grid (16:9)",
+    label: "15. Widescreen Editorial Split (16:9)",
     category: "side-image",
-    desc: "Landscape left visual cover showcase + 2×3 right insight grid",
+    desc: "Landscape magazine spread with visual showcase & narrative guide",
     recommendedAspect: "horizontal-landscape",
     badge: "16:9 IMAGE",
   },
@@ -501,12 +620,15 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplateMeta[] = [
   },
 ];
 
-const TEMPLATE_CATEGORIES: { id: InfographicTemplateCategory; label: string }[] = [
+const TEMPLATE_CATEGORIES: {
+  id: InfographicTemplateCategory;
+  label: string;
+}[] = [
   { id: "all", label: "All 26 Templates" },
   { id: "roadmap", label: "Roadmaps & Flows (5)" },
   { id: "timeline", label: "Timelines (3)" },
   { id: "hierarchy", label: "Pyramids & Funnels (4)" },
-  { id: "side-image", label: "Side-Image Split (3)" },
+  { id: "side-image", label: "Editorial + Image (3)" },
   { id: "statistical", label: "Charts & Stats (3)" },
   { id: "comparison", label: "VS & Matrices (3)" },
   { id: "mindmap", label: "Mind-Maps & Hex (3)" },
@@ -514,58 +636,27 @@ const TEMPLATE_CATEGORIES: { id: InfographicTemplateCategory; label: string }[] 
 ];
 
 export const ICON_OPTIONS: { id: InfographicIconId; label: string }[] = [
-  { id: "rocket", label: "🚀 Rocket / Launch" },
-  { id: "target", label: "🎯 Target / Goal" },
-  { id: "sparkles", label: "✨ AI / Sparkles" },
-  { id: "chart", label: "📈 Growth Chart" },
-  { id: "shield", label: "🛡️ Security / Trust" },
-  { id: "globe", label: "🌐 Web / Global SEO" },
-  { id: "brain", label: "🧠 Intelligence / Strategy" },
-  { id: "layers", label: "📚 Stack / Architecture" },
-  { id: "zap", label: "⚡ Speed / Automation" },
-  { id: "trophy", label: "🏆 Winner / ROI" },
-  { id: "check", label: "✅ Verified / Audit" },
-  { id: "users", label: "👥 Audience / Community" },
-  { id: "magnet", label: "🧲 Lead Gen / Funnel" },
-  { id: "gear", label: "⚙️ System / Workflow" },
-  { id: "compass", label: "🧭 Roadmap / Direction" },
-  { id: "database", label: "🗄️ Data / Research" },
-  { id: "megaphone", label: "📣 PR / Distribution" },
-  { id: "clock", label: "⏱️ Time / Efficiency" },
-  { id: "lightbulb", label: "💡 Idea / Insight" },
-  { id: "award", label: "🥇 Authority / Quality" },
+  { id: "rocket", label: "Rocket / Launch" },
+  { id: "target", label: "Target / Goal" },
+  { id: "sparkles", label: "AI / Sparkles" },
+  { id: "chart", label: "Growth Chart" },
+  { id: "shield", label: "Security / Trust" },
+  { id: "globe", label: "Web / Global SEO" },
+  { id: "brain", label: "Intelligence / Strategy" },
+  { id: "layers", label: "Stack / Architecture" },
+  { id: "zap", label: "Speed / Automation" },
+  { id: "trophy", label: "Winner / ROI" },
+  { id: "check", label: "Verified / Audit" },
+  { id: "users", label: "Audience / Community" },
+  { id: "magnet", label: "Lead Gen / Funnel" },
+  { id: "gear", label: "System / Workflow" },
+  { id: "compass", label: "Roadmap / Direction" },
+  { id: "database", label: "Data / Research" },
+  { id: "megaphone", label: "PR / Distribution" },
+  { id: "clock", label: "Time / Efficiency" },
+  { id: "lightbulb", label: "Idea / Insight" },
+  { id: "award", label: "Authority / Quality" },
 ];
-
-export function inferNodeIcon(text: string, idx: number): InfographicIconId {
-  const lower = text.toLowerCase();
-  if (/launch|scale|fast|boost|deploy|start|publish/.test(lower)) return "rocket";
-  if (/target|intent|keyword|focus|goal|niche/.test(lower)) return "target";
-  if (/ai|llm|gpt|prompt|automat|generat/.test(lower)) return "sparkles";
-  if (/stat|metric|roi|traffic|growth|revenue|chart|rank/.test(lower)) return "chart";
-  if (/audit|trust|safe|protect|compliance|verify|eeat/.test(lower)) return "shield";
-  if (/seo|search|web|domain|url|global|link/.test(lower)) return "globe";
-  if (/plan|think|strateg|research|analy|framework/.test(lower)) return "brain";
-  if (/cluster|pillar|structure|schema|hub|layer/.test(lower)) return "layers";
-  if (/speed|instant|quick|hook|viral|short/.test(lower)) return "zap";
-  if (/win|top|best|leader|authority|award/.test(lower)) return "trophy";
-  if (/check|list|step|test|review|fix/.test(lower)) return "check";
-  if (/user|audience|customer|client|team|community/.test(lower)) return "users";
-  if (/lead|convert|funnel|cta|click|subscribe/.test(lower)) return "magnet";
-  if (/workflow|process|system|tool|build|pipeline/.test(lower)) return "gear";
-  if (/pr|outreach|share|social|distribute|repurpose/.test(lower)) return "megaphone";
-  if (/data|benchmark|evidence|fact|study|source/.test(lower)) return "database";
-  const fallbackPool: InfographicIconId[] = [
-    "rocket",
-    "target",
-    "brain",
-    "chart",
-    "layers",
-    "zap",
-    "megaphone",
-    "trophy",
-  ];
-  return fallbackPool[idx % fallbackPool.length];
-}
 
 function renderSvgIcon(
   icon: InfographicIconId,
@@ -721,48 +812,58 @@ function renderSvgIcon(
   );
 }
 
-function wrapSvgLines(text: string, maxCharsPerLine: number, maxLines: number): string[] {
-  const words = String(text || "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!words.length) return [""];
-  const lines: string[] = [];
-  let current = "";
-  for (const w of words) {
-    const candidate = current ? `${current} ${w}` : w;
-    if (candidate.length > maxCharsPerLine && current) {
-      lines.push(current);
-      current = w;
-      if (lines.length >= maxLines - 1) break;
-    } else {
-      current = candidate;
-    }
+/**
+ * Renders either the user's custom uploaded node image/icon OR the vector SVG icon.
+ */
+function renderNodeIconOrImage(
+  node: InfographicNodeItem,
+  cx: number,
+  cy: number,
+  size: number,
+  color: string,
+) {
+  if (node.customImageUrl) {
+    const r = size * 0.68;
+    const clipId = `node-img-clip-${node.id.replace(/[^a-zA-Z0-9_-]/g, "")}-${Math.round(cx)}-${Math.round(cy)}`;
+    return (
+      <g>
+        <defs>
+          <clipPath id={clipId}>
+            <circle cx={cx} cy={cy} r={r} />
+          </clipPath>
+        </defs>
+        <image
+          href={node.customImageUrl}
+          x={cx - r}
+          y={cy - r}
+          width={r * 2}
+          height={r * 2}
+          preserveAspectRatio="xMidYMid slice"
+          clipPath={`url(#${clipId})`}
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={2}
+        />
+      </g>
+    );
   }
-  if (current && lines.length < maxLines) {
-    if (current.length > maxCharsPerLine + 6) {
-      lines.push(`${current.slice(0, maxCharsPerLine)}…`);
-    } else {
-      lines.push(current);
-    }
-  }
-  return lines;
+  const iconId = node.icon || inferNodeIcon(node.title, 0);
+  return renderSvgIcon(iconId, cx, cy, size, color);
 }
 
+const wrapSvgLines = wrapVisualText;
 function parsePercentage(metric: string | undefined, idx: number): number {
-  if (metric) {
-    const m = metric.match(/(\d+(?:\.\d+)?)/);
-    if (m) {
-      const val = parseFloat(m[1]);
-      if (val >= 5 && val <= 100) return Math.round(val);
-      if (val > 0 && val < 5) return Math.min(96, Math.round(val * 28));
-    }
-  }
-  const defaults = [88, 76, 92, 68, 84, 95, 79, 91];
-  return defaults[idx % defaults.length];
+  return percentageMetric(metric) ?? Math.min(96, 62 + ((idx * 11) % 34));
 }
 
-function normalizeTemplateId(raw: InfographicTemplateId): InfographicTemplateId {
+function normalizeTemplateId(
+  raw: InfographicTemplateId,
+): InfographicTemplateId {
   if (raw === "timeline-journey") return "alternating-spine-timeline";
   if (raw === "pyramid-funnel") return "isometric-3d-pyramid";
   if (raw === "comparison-versus") return "versus-battle-comparison";
@@ -794,7 +895,7 @@ export function EditableInfographicStudio({
   initialSourceUrl = "https://doitwithai.tools",
   initialTemplate = "winding-s-roadmap",
   initialAspect = "vertical-poster",
-  initialPalette = "navy-orange",
+  initialPalette = "royal-indigo",
   initialNodes,
   initialSideImageUrl = "",
   extractedImages = [],
@@ -807,11 +908,13 @@ export function EditableInfographicStudio({
   const [aspect, setAspect] = useState<InfographicAspectRatio>(initialAspect);
   const [paletteId, setPaletteId] =
     useState<InfographicColorPaletteId>(initialPalette);
+  const [bgWaveStyle, setBgWaveStyle] =
+    useState<InfographicBgWaveStyle>("waves");
   const [customColors, setCustomColors] = useState({
     bgStart: "#0B1120",
-    bgEnd: "#1E293B",
-    cardBg: "#1E293B",
-    accent: "#FF6B35",
+    bgEnd: "#172554",
+    cardBg: "#152238",
+    accent: "#4058D0",
     accentSecondary: "#38BDF8",
     textPrimary: "#FFFFFF",
   });
@@ -820,6 +923,7 @@ export function EditableInfographicStudio({
   const [subtitle, setSubtitle] = useState(initialSubtitle);
   const [footerBrand, setFooterBrand] = useState(initialFooterBrand);
   const [sourceUrl, setSourceUrl] = useState(initialSourceUrl);
+  const [brandLogoUrl, setBrandLogoUrl] = useState("");
   const [sideImageUrl, setSideImageUrl] = useState(initialSideImageUrl);
   const [nodes, setNodes] = useState<InfographicNodeItem[]>(() =>
     initialNodes.map((n, i) => ({
@@ -828,14 +932,19 @@ export function EditableInfographicStudio({
     })),
   );
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [showEmbedModal, setShowEmbedModal] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [toast, setToast] = useState("");
   const [copiedImg, setCopiedImg] = useState(false);
+  const [editorTab, setEditorTab] = useState<"content" | "design" | "brand">(
+    "content",
+  );
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
 
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const headlineInputRef = useRef<HTMLInputElement | null>(null);
+  const sectionTitleInputRef = useRef<HTMLInputElement | null>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setTitle(initialTitle);
     setSubtitle(initialSubtitle);
     if (initialKicker) setKicker(initialKicker);
@@ -860,24 +969,50 @@ export function EditableInfographicStudio({
     initialNodes,
   ]);
 
+  // Automatically sample brand colors when an article image or brand logo is loaded
+  const [detectedArticleColors, setDetectedArticleColors] = useState<{
+    bgStart: string;
+    cardBg: string;
+    accent: string;
+    accentSecondary: string;
+    textPrimary: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const candidateImg = brandLogoUrl || sideImageUrl || extractedImages[0];
+    if (!candidateImg) return;
+    let cancelled = false;
+    extractBrandPaletteFromImageUrl(candidateImg).then((res) => {
+      if (!cancelled && res) {
+        setDetectedArticleColors(res);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [brandLogoUrl, sideImageUrl, extractedImages]);
+
   const palette: InfographicColorPalette = useMemo(() => {
     if (paletteId === "custom-brand") {
+      // Automatically compute high-visibility secondary text color based on card/bg luminance
+      const cardLum = getRelativeLuminance(customColors.cardBg);
+      const bgLum = getRelativeLuminance(customColors.bgStart);
+      const avgLum = (cardLum + bgLum) / 2;
+      const autoSecondary = avgLum < 0.38 ? "#E2E8F0" : "#334155";
+      const accentLum = getRelativeLuminance(customColors.accent);
       return {
         id: "custom-brand",
         name: "Custom Brand Palette",
         bgStart: customColors.bgStart,
-        bgEnd: customColors.bgEnd,
+        bgEnd: customColors.bgEnd || customColors.bgStart,
         cardBg: customColors.cardBg,
         cardBorder: customColors.accent,
         textPrimary: customColors.textPrimary,
-        textSecondary:
-          customColors.textPrimary.toLowerCase() === "#ffffff"
-            ? "#CBD5E1"
-            : "#475569",
+        textSecondary: autoSecondary,
         accent: customColors.accent,
         accentSecondary: customColors.accentSecondary,
-        accentSoft: `${customColors.accent}28`,
-        badgeText: "#FFFFFF",
+        accentSoft: `${customColors.accent}26`,
+        badgeText: accentLum > 0.55 ? "#0F172A" : "#FFFFFF",
       };
     }
     return (
@@ -885,6 +1020,36 @@ export function EditableInfographicStudio({
       INFOGRAPHIC_PALETTES[0]
     );
   }, [paletteId, customColors]);
+
+  // WCAG Contrast & Text Visibility Check
+  const contrastReport = useMemo(() => {
+    const bgContrast = getContrastRatio(palette.bgStart, palette.textPrimary);
+    const cardContrast = getContrastRatio(palette.cardBg, palette.textPrimary);
+    const minContrast = Math.min(bgContrast, cardContrast);
+    return {
+      bgContrast,
+      cardContrast,
+      minContrast,
+      isLowVisibility: minContrast < 4.2,
+    };
+  }, [palette]);
+
+  function autoFixContrast() {
+    const cardLum = getRelativeLuminance(customColors.cardBg);
+    const bgLum = getRelativeLuminance(customColors.bgStart);
+    const isDarkSurface = (cardLum + bgLum) / 2 < 0.42;
+    setCustomColors((prev) => ({
+      ...prev,
+      textPrimary: isDarkSurface ? "#FFFFFF" : "#0F172A",
+      cardBg: isDarkSurface
+        ? prev.cardBg === prev.bgStart
+          ? "#1E293B"
+          : prev.cardBg
+        : "#FFFFFF",
+    }));
+    setPaletteId("custom-brand");
+    notify("Auto-adjusted text and surface contrast for crisp readability!");
+  }
 
   const dimensions = {
     "vertical-poster": {
@@ -921,17 +1086,14 @@ export function EditableInfographicStudio({
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2800);
+    setTimeout(() => setToast(""), 3200);
   }
 
   function handleSelectTemplate(tpl: InfographicTemplateMeta) {
     setTemplate(tpl.id);
     if (tpl.recommendedAspect) {
       setAspect(tpl.recommendedAspect);
-    } else if (
-      aspect === "horizontal-landscape" &&
-      !tpl.recommendedAspect
-    ) {
+    } else if (aspect === "horizontal-landscape" && !tpl.recommendedAspect) {
       setAspect("vertical-poster");
     }
   }
@@ -948,78 +1110,56 @@ export function EditableInfographicStudio({
 
   function addNode() {
     if (nodes.length >= 8) {
-      notify("Maximum 8 visual nodes per infographic for crisp readability.");
+      notify(
+        "Maximum 8 sections reached — keeping 8 or fewer sections preserves balanced 80% card spacing.",
+      );
       return;
     }
     const nextNum = nodes.length + 1;
+    const newId = `node-${Date.now()}`;
     setNodes((prev) => [
       ...prev,
       {
-        id: `node-${Date.now()}`,
+        id: newId,
         badge: `0${nextNum}`,
-        title: `Strategic Pillar #${nextNum}`,
-        body: "Add a concise 10–16 word actionable insight or benchmark for this node.",
-        metricValue: `${Math.min(98, 55 + nextNum * 6)}%`,
-        compareRight: "Automated AI workflow outcome with verified lift.",
+        title: `Key Takeaway #${nextNum}`,
+        body: "Summarize one clear, actionable point with concrete proof so this card fills ~80% of its space.",
+        metricValue: "",
+        compareRight: "",
         icon: inferNodeIcon(`step ${nextNum}`, nextNum),
       },
     ]);
+    setSelectedNodeId(newId);
+    notify(`Added Section #${nextNum} and re-balanced layout spacing.`);
   }
 
   function removeNode(id: string) {
     if (nodes.length <= 3) {
-      notify("Keep at least 3 nodes on the infographic.");
+      notify("Minimum 3 sections required to maintain a balanced infographic layout.");
       return;
     }
-    setNodes((prev) => prev.filter((n) => n.id !== id));
+    setNodes((prev) => {
+      const filtered = prev.filter((n) => n.id !== id);
+      return filtered.map((n, idx) => ({
+        ...n,
+        badge: /^0?\d+$/.test(n.badge) ? `0${idx + 1}` : n.badge,
+      }));
+    });
+    notify("Removed section and re-balanced infographic layout.");
   }
 
-  function serializeSvg(): string {
-    const svgEl = svgRef.current;
-    if (!svgEl) return "";
-    const clone = svgEl.cloneNode(true) as SVGSVGElement;
-    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-    clone.setAttribute("width", String(dimensions.w));
-    clone.setAttribute("height", String(dimensions.h));
-    return new XMLSerializer().serializeToString(clone);
-  }
-
-  async function renderSvgToCanvas(scale = 2): Promise<HTMLCanvasElement | null> {
-    const svgStr = serializeSvg();
-    if (!svgStr) return null;
-    const canvas = document.createElement("canvas");
-    canvas.width = dimensions.w * scale;
-    canvas.height = dimensions.h * scale;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    const svgBlob = new Blob([svgStr], {
-      type: "image/svg+xml;charset=utf-8",
-    });
-    const url = URL.createObjectURL(svgBlob);
-
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        resolve(canvas);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(null);
-      };
-      img.src = url;
-    });
+  async function renderSvgToCanvas(
+    scale = 2,
+  ): Promise<HTMLCanvasElement | null> {
+    if (!svgRef.current) return null;
+    return visualSvgCanvas(svgRef.current, dimensions.w, dimensions.h, scale);
   }
 
   async function downloadHighResPng() {
     const canvas = await renderSvgToCanvas(2);
     if (!canvas) {
       notify("Could not rasterize PNG—downloading Vector SVG instead.");
-      downloadVectorSvg();
+      await downloadVectorSvg();
       return;
     }
     const a = document.createElement("a");
@@ -1029,32 +1169,55 @@ export function EditableInfographicStudio({
     notify("Downloaded High-Resolution 2x Retina Infographic (.PNG)!");
   }
 
-  function downloadVectorSvg() {
-    const svgStr = serializeSvg();
-    if (!svgStr) return;
-    const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `infographic-${template}-${aspect}.svg`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notify("Downloaded Pure Editable Vector Infographic (.SVG)!");
+  async function downloadVectorSvg() {
+    if (!svgRef.current) return;
+    const source = await prepareVisualSvg(
+      svgRef.current,
+      dimensions.w,
+      dimensions.h,
+    );
+    saveVisualBlob(
+      new Blob([source], { type: "image/svg+xml;charset=utf-8" }),
+      `infographic-${template}.svg`,
+    );
+    notify("Downloaded Editable Vector Infographic (.SVG)!");
   }
 
   async function printPdfPoster() {
     const canvas = await renderSvgToCanvas(2);
-    const dataUrl = canvas ? canvas.toDataURL("image/png") : "";
-    const svgStr = serializeSvg();
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(
-      `<!doctype html><html><head><title>${title} - Infographic PDF</title><style>@page{margin:8mm}body{margin:0;display:flex;justify-content:center;align-items:center;background:#0f172a;min-height:100vh}@media print{body{background:#fff}}img,svg{max-width:100%;max-height:96vh;height:auto;width:auto}</style></head><body>${
-        dataUrl ? `<img src="${dataUrl}" alt="${title}"/>` : svgStr
-      }<script>window.onload=()=>{setTimeout(()=>window.print(),350)}</script></body></html>`,
+    if (!canvas) return;
+    const { jsPDF } = await import("jspdf");
+    const pdf = new jsPDF({
+      orientation: dimensions.w > dimensions.h ? "landscape" : "portrait",
+      unit: "px",
+      format: [dimensions.w, dimensions.h],
+    });
+    pdf.addImage(
+      canvas.toDataURL("image/png"),
+      "PNG",
+      0,
+      0,
+      dimensions.w,
+      dimensions.h,
     );
-    win.document.close();
-    notify("Opened Print-Ready PDF Poster Dialog!");
+    pdf.save(`infographic-${template}.pdf`);
+    notify("Downloaded Print-Ready Infographic Poster (.PDF)!");
+  }
+
+  async function runExport(action: () => void | Promise<void>) {
+    setExporting(true);
+    setExportError("");
+    try {
+      await action();
+    } catch (error) {
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : "Download failed. Please try again.",
+      );
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function copyInfographicImage() {
@@ -1071,44 +1234,129 @@ export function EditableInfographicStudio({
         setTimeout(() => setCopiedImg(false), 2200);
       });
     } catch {
-      downloadHighResPng();
+      void downloadHighResPng();
     }
   }
 
   const W = dimensions.w;
   const H = dimensions.h;
-  const padX = W >= 1400 ? 68 : 56;
+  const padX = W >= 1400 ? 64 : 52;
   const activeNodes = nodes.slice(0, 8);
   const count = Math.max(1, activeNodes.length);
 
-  // Header layout calculations
+  // =========================================================================
+  // STRICT OVERFLOW-SAFE HEADER & TYPOGRAPHY GEOMETRY
+  // =========================================================================
   const isHorizontal = aspect === "horizontal-landscape";
-  const headerH = isHorizontal ? 195 : H >= 1500 ? 290 : 245;
-  const footerH = isHorizontal ? 68 : 84;
+  const logoReserveW = brandLogoUrl ? 108 : 0;
+  const availHeaderW = W - padX * 2 - logoReserveW;
+
+  // Dynamic font-size scaling so long headlines NEVER overflow the right margin
+  const titleLen = (title || "").trim().length;
+  const titleFontSize =
+    titleLen > 68
+      ? isHorizontal
+        ? 34
+        : 36
+      : titleLen > 45
+        ? isHorizontal
+          ? 40
+          : 42
+        : isHorizontal
+          ? 44
+          : H >= 1500
+            ? 48
+            : 44;
+
+  // Safe character wrap limit strictly inside availHeaderW
+  const maxTitleCharsPerLine = Math.max(
+    18,
+    Math.floor(availHeaderW / (titleFontSize * 0.59)),
+  );
+  const titleLines = wrapSvgLines(
+    title,
+    maxTitleCharsPerLine,
+    isHorizontal ? 2 : 3,
+  );
+
+  const subtitleFontSize = isHorizontal ? 20 : 21;
+  const maxSubtitleCharsPerLine = Math.max(
+    32,
+    Math.floor(availHeaderW / (subtitleFontSize * 0.53)),
+  );
+  const subtitleLines = wrapSvgLines(subtitle, maxSubtitleCharsPerLine, 2);
+
+  const headerH = Math.max(
+    isHorizontal ? 206 : 256,
+    126 +
+      titleLines.length * (titleFontSize + 10) +
+      subtitleLines.length * (subtitleFontSize + 8) +
+      18,
+  );
+  const footerH = isHorizontal ? 68 : 80;
   const bodyTop = headerH;
-  const bodyBottom = H - footerH - 18;
+  const bodyBottom = H - footerH - 16;
   const availH = Math.max(320, bodyBottom - bodyTop);
   const availW = W - padX * 2;
 
-  const titleLines = wrapSvgLines(title, isHorizontal ? 58 : 34, isHorizontal ? 2 : 3);
-  const subtitleLines = wrapSvgLines(subtitle, isHorizontal ? 88 : 56, 2);
-  const titleFontSize = isHorizontal ? 38 : H >= 1500 ? 44 : 36;
-
-  // Alternate node accent colors for rich visual variety
   const nodeColor = (idx: number) =>
     idx % 2 === 0 ? palette.accent : palette.accentSecondary;
+
+  function focusNodeInEditor(nodeId: string) {
+    setSelectedNodeId(nodeId);
+    setEditorTab("content");
+    setTimeout(() => {
+      sectionTitleInputRef.current?.focus();
+    }, 60);
+  }
 
   // Render the active template inside the SVG body region
   function renderInfographicBody() {
     const activeTpl = normalizeTemplateId(template);
 
+    // Side-image editorial layouts use InfographicArtwork's non-boxed magazine spread
+    if (EDITORIAL_LAYOUTS.has(activeTpl)) {
+      return (
+        <InfographicArtwork
+          template={activeTpl}
+          nodes={activeNodes}
+          palette={palette}
+          width={W}
+          top={bodyTop}
+          height={availH}
+          artwork={sideImageUrl || extractedImages[0] || ""}
+          onSelect={(id) => focusNodeInEditor(id)}
+          icon={(node, x, y, size, color) =>
+            renderNodeIconOrImage(node, x, y, size, color)
+          }
+        />
+      );
+    }
+
     // 1. S-CURVE WINDING SNAKE ROADMAP
     if (activeTpl === "winding-s-roadmap") {
-      const rowGap = 20;
-      const rowH = Math.max(115, Math.floor((availH - rowGap * (count - 1)) / count));
-      const cardW = Math.floor(availW * 0.82);
+      const rowGap = Math.max(14, Math.min(22, Math.floor(availH * 0.02)));
+      const rowH = Math.max(
+        104,
+        Math.floor((availH - rowGap * (count - 1)) / count),
+      );
+      const cardW = Math.floor(availW * 0.83);
+      const textAvailW = cardW - 132;
+      const cardTitleSize = Math.min(23, Math.max(18, Math.floor(rowH * 0.17)));
+      const cardBodySize = Math.min(16.5, Math.max(14, Math.floor(rowH * 0.125)));
+      const maxTitleChars = Math.max(
+        20,
+        Math.floor((textAvailW - (activeNodes[0]?.metricValue ? 130 : 0)) / (cardTitleSize * 0.56)),
+      );
+      const maxBodyChars = Math.max(
+        30,
+        Math.floor(textAvailW / (cardBodySize * 0.53)),
+      );
+      const maxBodyLines = Math.max(
+        1,
+        Math.min(3, Math.floor((rowH - 76) / (cardBodySize * 1.35))),
+      );
 
-      // Build S-curve connecting path between alternating node centers
       const points = activeNodes.map((_, i) => {
         const isLeft = i % 2 === 0;
         const x = isLeft ? padX + 46 : W - padX - 46;
@@ -1129,14 +1377,13 @@ export function EditableInfographicStudio({
 
       return (
         <g>
-          {/* Glowing S-Curve Road Spine */}
           <path
             d={pathD}
             fill="none"
             stroke={palette.accent}
             strokeWidth={14}
             strokeLinecap="round"
-            strokeOpacity={0.22}
+            strokeOpacity={0.2}
           />
           <path
             d={pathD}
@@ -1152,17 +1399,16 @@ export function EditableInfographicStudio({
             const y = bodyTop + i * (rowH + rowGap);
             const x = isLeft ? padX : W - padX - cardW;
             const col = nodeColor(i);
-            const iconId = node.icon || inferNodeIcon(node.title, i);
-            const tLines = wrapSvgLines(node.title, 34, 1);
-            const bLines = wrapSvgLines(node.body, 52, 2);
+            const isSelected = selectedNodeId === node.id;
+            const tLines = wrapSvgLines(node.title, maxTitleChars, 1);
+            const bLines = wrapSvgLines(node.body, maxBodyChars, maxBodyLines);
 
             return (
               <g
                 key={node.id}
-                onClick={() => setSelectedNodeId(node.id)}
+                onClick={() => focusNodeInEditor(node.id)}
                 style={{ cursor: "pointer" }}
               >
-                {/* Main Card */}
                 <rect
                   x={x}
                   y={y}
@@ -1170,11 +1416,20 @@ export function EditableInfographicStudio({
                   height={rowH}
                   rx={24}
                   fill={palette.cardBg}
-                  stroke={col}
-                  strokeWidth={2.5}
-                  filter="url(#dropShadow)"
+                  stroke={isSelected ? "#5271ff" : col}
+                  strokeWidth={isSelected ? 3.5 : 2.2}
+                  filter="url(#card3dShadow)"
                 />
-                {/* Top-left or Top-right glowing accent bar */}
+                {/* 3D Top Inner Highlight */}
+                <rect
+                  x={x + 20}
+                  y={y + 2}
+                  width={cardW - 40}
+                  height={2}
+                  rx={1}
+                  fill="#FFFFFF"
+                  fillOpacity={0.22}
+                />
                 <rect
                   x={isLeft ? x : x + cardW - 12}
                   y={y}
@@ -1184,108 +1439,100 @@ export function EditableInfographicStudio({
                   fill={col}
                 />
 
-                {/* 3D Medallion Icon Circle */}
+                {/* 3D Medallion Icon or Custom Uploaded Image */}
                 <circle
                   cx={x + 56}
                   cy={y + rowH / 2}
-                  r={34}
-                  fill={`${col}22`}
+                  r={32}
+                  fill={`${col}20`}
                   stroke={col}
-                  strokeWidth={2.5}
+                  strokeWidth={2.2}
                 />
-                {renderSvgIcon(iconId, x + 56, y + rowH / 2, 28, col)}
+                {renderNodeIconOrImage(node, x + 56, y + rowH / 2, 28, col)}
 
-                {/* Step Number Ribbon Pill */}
+                {/* Step Number Pill */}
                 <rect
-                  x={x + 106}
-                  y={y + 18}
-                  width={82}
-                  height={28}
-                  rx={14}
+                  x={x + 104}
+                  y={y + 14}
+                  width={78}
+                  height={25}
+                  rx={12.5}
                   fill={col}
                 />
                 <text
-                  x={x + 147}
-                  y={y + 37}
+                  x={x + 143}
+                  y={y + 31}
                   textAnchor="middle"
                   fill={palette.badgeText}
-                  fontSize={14}
+                  fontSize={13}
                   fontWeight={900}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   STEP {node.badge || `0${i + 1}`}
                 </text>
 
-                {/* Metric Callout Badge */}
                 {node.metricValue && (
                   <g>
                     <rect
-                      x={x + cardW - 148}
-                      y={y + 16}
-                      width={126}
-                      height={32}
-                      rx={16}
+                      x={x + cardW - 144}
+                      y={y + 14}
+                      width={122}
+                      height={28}
+                      rx={14}
                       fill={palette.accentSoft}
                       stroke={col}
                       strokeWidth={1.5}
                     />
                     <text
-                      x={x + cardW - 85}
-                      y={y + 37}
+                      x={x + cardW - 83}
+                      y={y + 33}
                       textAnchor="middle"
                       fill={col}
-                      fontSize={15}
+                      fontSize={13.5}
                       fontWeight={800}
-                      fontFamily="system-ui, -apple-system, sans-serif"
                     >
                       {node.metricValue.slice(0, 12)}
                     </text>
                   </g>
                 )}
 
-                {/* Title */}
                 <text
-                  x={x + 106}
-                  y={y + 72}
+                  x={x + 104}
+                  y={y + 64}
                   fill={palette.textPrimary}
-                  fontSize={23}
+                  fontSize={cardTitleSize}
                   fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {tLines[0]}
                 </text>
 
-                {/* Body */}
                 {bLines.map((line, li) => (
                   <text
                     key={li}
-                    x={x + 106}
-                    y={y + 100 + li * 23}
+                    x={x + 104}
+                    y={y + 90 + li * (cardBodySize * 1.35)}
                     fill={palette.textSecondary}
-                    fontSize={17}
+                    fontSize={cardBodySize}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {line}
                   </text>
                 ))}
 
-                {/* Opposite Side Milestone Pin on the S-Curve */}
+                {/* Opposite Side Milestone Pin */}
                 <circle
                   cx={isLeft ? W - padX - 46 : padX + 46}
                   cy={y + rowH / 2}
                   r={24}
                   fill={col}
-                  filter="url(#dropShadow)"
+                  filter="url(#card3dShadow)"
                 />
                 <text
                   x={isLeft ? W - padX - 46 : padX + 46}
-                  y={y + rowH / 2 + 7}
+                  y={y + rowH / 2 + 6}
                   textAnchor="middle"
                   fill={palette.badgeText}
-                  fontSize={18}
+                  fontSize={17}
                   fontWeight={900}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {node.badge || `0${i + 1}`}
                 </text>
@@ -1298,15 +1545,18 @@ export function EditableInfographicStudio({
 
     // 2. ISOMETRIC 3D LAYERED PYRAMID
     if (activeTpl === "isometric-3d-pyramid") {
-      const pyrCenterX = Math.floor(W * 0.36);
-      const pyrTopY = bodyTop + 26;
-      const pyrBottomY = bodyBottom - 26;
+      const pyrCenterX = Math.floor(W * 0.34);
+      const pyrTopY = bodyTop + 20;
+      const pyrBottomY = bodyBottom - 20;
       const pyrH = pyrBottomY - pyrTopY;
       const tierGap = 8;
       const tierH = Math.floor((pyrH - tierGap * (count - 1)) / count);
-      const maxHalfW = Math.floor(availW * 0.28);
-      const cardX = Math.floor(W * 0.62);
+      const maxHalfW = Math.floor(availW * 0.27);
+      const cardX = Math.floor(W * 0.6);
       const cardW = W - padX - cardX;
+      const titleChars = Math.max(18, Math.floor((cardW - 76) / 11));
+      const bodyChars = Math.max(24, Math.floor((cardW - 36) / 8.5));
+      const maxLines = Math.max(1, Math.min(3, Math.floor((tierH - 54) / 20)));
 
       return (
         <g>
@@ -1318,18 +1568,16 @@ export function EditableInfographicStudio({
             const w1 = Math.max(36, Math.floor(maxHalfW * r1));
             const w2 = Math.max(64, Math.floor(maxHalfW * r2));
             const col = nodeColor(i);
-            const iconId = node.icon || inferNodeIcon(node.title, i);
-            const tLines = wrapSvgLines(node.title, 24, 1);
-            const bLines = wrapSvgLines(node.body, 34, 2);
+            const tLines = wrapSvgLines(node.title, titleChars, 1);
+            const bLines = wrapSvgLines(node.body, bodyChars, maxLines);
 
-            // 3D Pyramid Left Face (Brighter) & Right Face (Shaded)
             const leftPoly = `${pyrCenterX},${y1} ${pyrCenterX - w1},${y1 + 10} ${pyrCenterX - w2},${y2} ${pyrCenterX},${y2 + 12}`;
             const rightPoly = `${pyrCenterX},${y1} ${pyrCenterX + w1},${y1 + 10} ${pyrCenterX + w2},${y2} ${pyrCenterX},${y2 + 12}`;
 
             return (
               <g
                 key={node.id}
-                onClick={() => setSelectedNodeId(node.id)}
+                onClick={() => focusNodeInEditor(node.id)}
                 style={{ cursor: "pointer" }}
               >
                 <polygon
@@ -1338,7 +1586,7 @@ export function EditableInfographicStudio({
                   fillOpacity={0.92}
                   stroke={palette.bgStart}
                   strokeWidth={2}
-                  filter="url(#dropShadow)"
+                  filter="url(#card3dShadow)"
                 />
                 <polygon
                   points={rightPoly}
@@ -1347,21 +1595,17 @@ export function EditableInfographicStudio({
                   stroke={palette.bgStart}
                   strokeWidth={2}
                 />
-
-                {/* Tier Badge on Pyramid Center */}
                 <text
                   x={pyrCenterX}
                   y={(y1 + y2) / 2 + 10}
                   textAnchor="middle"
                   fill="#FFFFFF"
-                  fontSize={22}
+                  fontSize={21}
                   fontWeight={900}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {node.badge || `0${i + 1}`}
                 </text>
 
-                {/* Dotted Callout Pointer from Pyramid to Right Detail Card */}
                 <line
                   x1={pyrCenterX + (w1 + w2) / 2 - 6}
                   y1={(y1 + y2) / 2 + 6}
@@ -1371,14 +1615,8 @@ export function EditableInfographicStudio({
                   strokeWidth={2.5}
                   strokeDasharray="6 5"
                 />
-                <circle
-                  cx={cardX}
-                  cy={(y1 + y2) / 2 + 6}
-                  r={6}
-                  fill={col}
-                />
+                <circle cx={cardX} cy={(y1 + y2) / 2 + 6} r={6} fill={col} />
 
-                {/* Right Detail Card */}
                 <rect
                   x={cardX}
                   y={y1}
@@ -1388,23 +1626,17 @@ export function EditableInfographicStudio({
                   fill={palette.cardBg}
                   stroke={col}
                   strokeWidth={2}
-                  filter="url(#dropShadow)"
+                  filter="url(#card3dShadow)"
                 />
-                <circle
-                  cx={cardX + 34}
-                  cy={y1 + 36}
-                  r={20}
-                  fill={`${col}25`}
-                />
-                {renderSvgIcon(iconId, cardX + 34, y1 + 36, 20, col)}
+                <circle cx={cardX + 34} cy={y1 + 34} r={20} fill={`${col}25`} />
+                {renderNodeIconOrImage(node, cardX + 34, y1 + 34, 20, col)}
 
                 <text
-                  x={cardX + 64}
-                  y={y1 + 42}
+                  x={cardX + 62}
+                  y={y1 + 40}
                   fill={palette.textPrimary}
-                  fontSize={20}
+                  fontSize={19}
                   fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {tLines[0]}
                 </text>
@@ -1412,12 +1644,11 @@ export function EditableInfographicStudio({
                 {bLines.map((line, li) => (
                   <text
                     key={li}
-                    x={cardX + 22}
-                    y={y1 + 74 + li * 21}
+                    x={cardX + 20}
+                    y={y1 + 68 + li * 20}
                     fill={palette.textSecondary}
-                    fontSize={15.5}
+                    fontSize={15}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {line}
                   </text>
@@ -1432,12 +1663,17 @@ export function EditableInfographicStudio({
     // 3. CONVERSION FUNNEL STAGES
     if (activeTpl === "conversion-funnel-stages") {
       const rowGap = 14;
-      const tierH = Math.max(96, Math.floor((availH - rowGap * (count - 1)) / count));
+      const tierH = Math.max(
+        92,
+        Math.floor((availH - rowGap * (count - 1)) / count),
+      );
       const funnelCenterX = Math.floor(W * 0.34);
-      const maxTopW = Math.floor(availW * 0.56);
+      const maxTopW = Math.floor(availW * 0.54);
       const minBotW = Math.floor(availW * 0.22);
-      const cardX = Math.floor(W * 0.62);
+      const cardX = Math.floor(W * 0.61);
       const cardW = W - padX - cardX;
+      const bChars = Math.max(24, Math.floor((cardW - 36) / 8.5));
+      const bMaxLines = Math.max(1, Math.min(3, Math.floor((tierH - 46) / 20)));
 
       return (
         <g>
@@ -1447,46 +1683,46 @@ export function EditableInfographicStudio({
             const wTop = maxTopW - ((maxTopW - minBotW) * i) / count;
             const wBot = maxTopW - ((maxTopW - minBotW) * (i + 0.85)) / count;
             const col = nodeColor(i);
-            const pct = parsePercentage(node.metricValue, i);
             const poly = `${funnelCenterX - wTop / 2},${y1} ${funnelCenterX + wTop / 2},${y1} ${funnelCenterX + wBot / 2},${y2} ${funnelCenterX - wBot / 2},${y2}`;
-            const tLines = wrapSvgLines(node.title, 22, 1);
-            const bLines = wrapSvgLines(node.body, 34, 2);
+            const tLines = wrapSvgLines(node.title, 20, 1);
+            const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
 
             return (
-              <g key={node.id}>
+              <g
+                key={node.id}
+                onClick={() => focusNodeInEditor(node.id)}
+                style={{ cursor: "pointer" }}
+              >
                 <polygon
                   points={poly}
                   fill={col}
-                  fillOpacity={0.88 - i * 0.06}
+                  fillOpacity={0.9 - i * 0.05}
                   stroke={palette.textPrimary}
                   strokeOpacity={0.3}
                   strokeWidth={2}
-                  filter="url(#dropShadow)"
+                  filter="url(#card3dShadow)"
                 />
                 <text
                   x={funnelCenterX}
                   y={(y1 + y2) / 2 - 4}
                   textAnchor="middle"
                   fill="#FFFFFF"
-                  fontSize={20}
+                  fontSize={19}
                   fontWeight={900}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {tLines[0]}
                 </text>
                 <text
                   x={funnelCenterX}
-                  y={(y1 + y2) / 2 + 22}
+                  y={(y1 + y2) / 2 + 20}
                   textAnchor="middle"
                   fill="#FFFFFF"
-                  fontSize={16}
+                  fontSize={15}
                   fontWeight={700}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
-                  {node.metricValue || `${pct}% Benchmark`}
+                  {node.metricValue || `Stage 0${i + 1}`}
                 </text>
 
-                {/* Connector & Side Insight Card */}
                 <line
                   x1={funnelCenterX + wTop / 2}
                   y1={(y1 + y2) / 2}
@@ -1504,26 +1740,25 @@ export function EditableInfographicStudio({
                   fill={palette.cardBg}
                   stroke={col}
                   strokeWidth={2}
+                  filter="url(#card3dShadow)"
                 />
                 <text
                   x={cardX + 20}
-                  y={y1 + 32}
+                  y={y1 + 30}
                   fill={col}
-                  fontSize={15}
+                  fontSize={14}
                   fontWeight={900}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
-                  STAGE 0{i + 1} · {node.metricValue || `${pct}%`}
+                  STAGE 0{i + 1} · {node.title.slice(0, 26)}
                 </text>
                 {bLines.map((line, li) => (
                   <text
                     key={li}
                     x={cardX + 20}
-                    y={y1 + 58 + li * 22}
+                    y={y1 + 54 + li * 20}
                     fill={palette.textSecondary}
-                    fontSize={15.5}
+                    fontSize={15}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {line}
                   </text>
@@ -1539,12 +1774,17 @@ export function EditableInfographicStudio({
     if (activeTpl === "alternating-spine-timeline") {
       const centerX = Math.floor(W / 2);
       const rowGap = 16;
-      const rowH = Math.max(115, Math.floor((availH - rowGap * (count - 1)) / count));
-      const cardW = Math.floor(availW / 2 - 48);
+      const rowH = Math.max(
+        106,
+        Math.floor((availH - rowGap * (count - 1)) / count),
+      );
+      const cardW = Math.floor(availW / 2 - 46);
+      const tChars = Math.max(20, Math.floor((cardW - 84) / 11));
+      const bChars = Math.max(26, Math.floor((cardW - 40) / 8.5));
+      const bMaxLines = Math.max(1, Math.min(3, Math.floor((rowH - 58) / 20)));
 
       return (
         <g>
-          {/* Glowing Central Timeline Axis */}
           <line
             x1={centerX}
             y1={bodyTop + 20}
@@ -1559,15 +1799,17 @@ export function EditableInfographicStudio({
             const isLeft = i % 2 === 0;
             const y = bodyTop + i * (rowH + rowGap);
             const cy = y + rowH / 2;
-            const cardX = isLeft ? padX : centerX + 48;
+            const cardX = isLeft ? padX : centerX + 46;
             const col = nodeColor(i);
-            const iconId = node.icon || inferNodeIcon(node.title, i);
-            const tLines = wrapSvgLines(node.title, 26, 2);
-            const bLines = wrapSvgLines(node.body, 34, 3);
+            const tLines = wrapSvgLines(node.title, tChars, 1);
+            const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
 
             return (
-              <g key={node.id}>
-                {/* Horizontal Connector Arm */}
+              <g
+                key={node.id}
+                onClick={() => focusNodeInEditor(node.id)}
+                style={{ cursor: "pointer" }}
+              >
                 <line
                   x1={centerX}
                   y1={cy}
@@ -1576,29 +1818,26 @@ export function EditableInfographicStudio({
                   stroke={col}
                   strokeWidth={3}
                 />
-                {/* Center Spine Node Medallion */}
                 <circle
                   cx={centerX}
                   cy={cy}
-                  r={24}
+                  r={23}
                   fill={col}
                   stroke={palette.bgStart}
                   strokeWidth={4}
-                  filter="url(#dropShadow)"
+                  filter="url(#card3dShadow)"
                 />
                 <text
                   x={centerX}
                   y={cy + 6}
                   textAnchor="middle"
                   fill={palette.badgeText}
-                  fontSize={16}
+                  fontSize={15}
                   fontWeight={900}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {node.badge || `0${i + 1}`}
                 </text>
 
-                {/* Milestone Card */}
                 <rect
                   x={cardX}
                   y={y}
@@ -1608,37 +1847,17 @@ export function EditableInfographicStudio({
                   fill={palette.cardBg}
                   stroke={col}
                   strokeWidth={2.2}
-                  filter="url(#dropShadow)"
+                  filter="url(#card3dShadow)"
                 />
-                <circle
-                  cx={cardX + 34}
-                  cy={y + 34}
-                  r={20}
-                  fill={`${col}22`}
-                />
-                {renderSvgIcon(iconId, cardX + 34, y + 34, 20, col)}
-
-                {node.metricValue && (
-                  <text
-                    x={cardX + cardW - 18}
-                    y={y + 38}
-                    textAnchor="end"
-                    fill={col}
-                    fontSize={15}
-                    fontWeight={900}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {node.metricValue.slice(0, 12)}
-                  </text>
-                )}
+                <circle cx={cardX + 34} cy={y + 34} r={20} fill={`${col}22`} />
+                {renderNodeIconOrImage(node, cardX + 34, y + 34, 20, col)}
 
                 <text
                   x={cardX + 64}
                   y={y + 39}
                   fill={palette.textPrimary}
-                  fontSize={19.5}
+                  fontSize={19}
                   fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {tLines[0]}
                 </text>
@@ -1647,11 +1866,10 @@ export function EditableInfographicStudio({
                   <text
                     key={li}
                     x={cardX + 22}
-                    y={y + 72 + li * 22}
+                    y={y + 68 + li * 21}
                     fill={palette.textSecondary}
-                    fontSize={15.5}
+                    fontSize={15}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {line}
                   </text>
@@ -1663,215 +1881,21 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 5. SIDE-IMAGE EDITORIAL SPLIT (LEFT OR RIGHT) & HORIZONTAL SPLIT BOARD
-    if (
-      activeTpl === "side-image-editorial-split" ||
-      activeTpl === "side-image-right-spotlight" ||
-      activeTpl === "side-image-horizontal-board"
-    ) {
-      const isRightSide = activeTpl === "side-image-right-spotlight";
-      const sideW = Math.floor(availW * 0.37);
-      const listW = availW - sideW - 26;
-      const sideX = isRightSide ? padX + listW + 26 : padX;
-      const listX = isRightSide ? padX : padX + sideW + 26;
-      const rowGap = 16;
-      const rowH = Math.max(108, Math.floor((availH - rowGap * (count - 1)) / count));
-
-      return (
-        <g>
-          {/* Visual Side Showcase Panel */}
-          <clipPath id="sidePanelClip">
-            <rect x={sideX} y={bodyTop} width={sideW} height={availH} rx={28} />
-          </clipPath>
-          <rect
-            x={sideX}
-            y={bodyTop}
-            width={sideW}
-            height={availH}
-            rx={28}
-            fill={palette.cardBg}
-            stroke={palette.accent}
-            strokeWidth={2.5}
-            filter="url(#dropShadow)"
-          />
-
-          <g clipPath="url(#sidePanelClip)">
-            {sideImageUrl ? (
-              <>
-                <image
-                  href={sideImageUrl}
-                  x={sideX}
-                  y={bodyTop}
-                  width={sideW}
-                  height={Math.floor(availH * 0.56)}
-                  preserveAspectRatio="xMidYMid slice"
-                />
-                <rect
-                  x={sideX}
-                  y={bodyTop}
-                  width={sideW}
-                  height={Math.floor(availH * 0.56)}
-                  fill="url(#bgGrad)"
-                  fillOpacity={0.28}
-                />
-              </>
-            ) : (
-              /* Rich Vector Hero Illustration when no external photo is set */
-              <g>
-                <rect
-                  x={sideX}
-                  y={bodyTop}
-                  width={sideW}
-                  height={Math.floor(availH * 0.54)}
-                  fill="url(#accentGrad)"
-                  fillOpacity={0.2}
-                />
-                <circle
-                  cx={sideX + sideW / 2}
-                  cy={bodyTop + availH * 0.25}
-                  r={110}
-                  fill={palette.accent}
-                  fillOpacity={0.18}
-                />
-                <circle
-                  cx={sideX + sideW / 2}
-                  cy={bodyTop + availH * 0.25}
-                  r={72}
-                  fill={palette.accent}
-                  fillOpacity={0.35}
-                />
-                {renderSvgIcon(
-                  "sparkles",
-                  sideX + sideW / 2,
-                  bodyTop + availH * 0.25,
-                  68,
-                  "#FFFFFF",
-                )}
-              </g>
-            )}
-
-            {/* Executive Summary Spotlight Box inside Side Panel */}
-            <rect
-              x={sideX + 24}
-              y={bodyTop + Math.floor(availH * 0.58)}
-              width={sideW - 48}
-              height={Math.floor(availH * 0.38)}
-              rx={22}
-              fill={palette.bgStart}
-              fillOpacity={0.9}
-              stroke={palette.accent}
-              strokeWidth={1.8}
-            />
-            <text
-              x={sideX + 46}
-              y={bodyTop + Math.floor(availH * 0.58) + 42}
-              fill={palette.accent}
-              fontSize={15}
-              fontWeight={900}
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              KEY TAKEAWAY SPOTLIGHT
-            </text>
-            <text
-              x={sideX + 46}
-              y={bodyTop + Math.floor(availH * 0.58) + 92}
-              fill={palette.textPrimary}
-              fontSize={44}
-              fontWeight={900}
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              {activeNodes[0]?.metricValue || `${count} Pillars`}
-            </text>
-            {wrapSvgLines(
-              activeNodes[0]?.body || subtitle,
-              26,
-              5,
-            ).map((l, idx) => (
-              <text
-                key={idx}
-                x={sideX + 46}
-                y={bodyTop + Math.floor(availH * 0.58) + 136 + idx * 26}
-                fill={palette.textSecondary}
-                fontSize={17}
-                fontWeight={600}
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {l}
-              </text>
-            ))}
-          </g>
-
-          {/* Structured Infographic Cards on Opposite Column */}
-          {activeNodes.map((node, i) => {
-            const y = bodyTop + i * (rowH + rowGap);
-            const col = nodeColor(i);
-            const iconId = node.icon || inferNodeIcon(node.title, i);
-            const tLines = wrapSvgLines(node.title, 32, 1);
-            const bLines = wrapSvgLines(node.body, 46, 2);
-
-            return (
-              <g key={node.id}>
-                <rect
-                  x={listX}
-                  y={y}
-                  width={listW}
-                  height={rowH}
-                  rx={20}
-                  fill={palette.cardBg}
-                  stroke={col}
-                  strokeWidth={2}
-                  filter="url(#dropShadow)"
-                />
-                <circle
-                  cx={listX + 46}
-                  cy={y + rowH / 2}
-                  r={28}
-                  fill={`${col}22`}
-                  stroke={col}
-                  strokeWidth={2}
-                />
-                {renderSvgIcon(iconId, listX + 46, y + rowH / 2, 24, col)}
-
-                <text
-                  x={listX + 90}
-                  y={y + 42}
-                  fill={palette.textPrimary}
-                  fontSize={21}
-                  fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
-                >
-                  {node.badge || `0${i + 1}`}. {tLines[0]}
-                </text>
-
-                {bLines.map((line, li) => (
-                  <text
-                    key={li}
-                    x={listX + 90}
-                    y={y + 72 + li * 22}
-                    fill={palette.textSecondary}
-                    fontSize={16}
-                    fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {line}
-                  </text>
-                ))}
-              </g>
-            );
-          })}
-        </g>
-      );
-    }
-
-    // 6. RADIAL DONUT GAUGE & KPI DASHBOARD
+    // 5. RADIAL DONUT GAUGE & KPI DASHBOARD
     if (activeTpl === "stat-donut-kpi-dashboard") {
-      const cols = 2;
+      const cols = isHorizontal ? 3 : 2;
       const rows = Math.ceil(count / cols);
       const gap = 22;
-      const cardW = Math.floor((availW - gap) / cols);
-      const cardH = Math.max(185, Math.floor((availH - gap * (rows - 1)) / rows));
-      const radius = 44;
+      const cardW = Math.floor((availW - gap * (cols - 1)) / cols);
+      const cardH = Math.max(
+        170,
+        Math.floor((availH - gap * (rows - 1)) / rows),
+      );
+      const radius = 42;
       const circum = 2 * Math.PI * radius;
+      const tChars = Math.max(16, Math.floor((cardW - 146) / 11));
+      const bChars = Math.max(26, Math.floor((cardW - 48) / 8.5));
+      const bMaxLines = Math.max(1, Math.min(4, Math.floor((cardH - 134) / 22)));
 
       return (
         <g>
@@ -1883,11 +1907,15 @@ export function EditableInfographicStudio({
             const col = nodeColor(i);
             const pct = parsePercentage(node.metricValue, i);
             const dash = (pct / 100) * circum;
-            const tLines = wrapSvgLines(node.title, 22, 2);
-            const bLines = wrapSvgLines(node.body, 36, 3);
+            const tLines = wrapSvgLines(node.title, tChars, 2);
+            const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
 
             return (
-              <g key={node.id}>
+              <g
+                key={node.id}
+                onClick={() => focusNodeInEditor(node.id)}
+                style={{ cursor: "pointer" }}
+              >
                 <rect
                   x={x}
                   y={y}
@@ -1897,11 +1925,9 @@ export function EditableInfographicStudio({
                   fill={palette.cardBg}
                   stroke={col}
                   strokeWidth={2.2}
-                  filter="url(#dropShadow)"
+                  filter="url(#card3dShadow)"
                 />
-
-                {/* Radial Donut Ring Gauge */}
-                <g transform={`translate(${x + 68}, ${y + 72})`}>
+                <g transform={`translate(${x + 66}, ${y + 68})`}>
                   <circle
                     cx={0}
                     cy={0}
@@ -1927,39 +1953,36 @@ export function EditableInfographicStudio({
                     y={7}
                     textAnchor="middle"
                     fill={palette.textPrimary}
-                    fontSize={21}
+                    fontSize={18}
                     fontWeight={900}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
-                    {node.metricValue ? node.metricValue.slice(0, 6) : `${pct}%`}
+                    {node.metricValue
+                      ? node.metricValue.slice(0, 6)
+                      : `${pct}%`}
                   </text>
                 </g>
 
-                {/* Title Next to Donut */}
                 {tLines.map((line, ti) => (
                   <text
                     key={ti}
-                    x={x + 132}
-                    y={y + 56 + ti * 26}
+                    x={x + 126}
+                    y={y + 52 + ti * 25}
                     fill={palette.textPrimary}
-                    fontSize={21}
+                    fontSize={20}
                     fontWeight={800}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {line}
                   </text>
                 ))}
 
-                {/* Body Below */}
                 {bLines.map((line, bi) => (
                   <text
                     key={bi}
-                    x={x + 28}
-                    y={y + 148 + bi * 23}
+                    x={x + 26}
+                    y={y + 138 + bi * 22}
                     fill={palette.textSecondary}
-                    fontSize={16}
+                    fontSize={15.5}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {line}
                   </text>
@@ -1971,154 +1994,183 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 7. RADIAL HUB & SPOKE MIND-MAP / CIRCULAR FLYWHEEL
+    // 6. RADIAL HUB & SPOKE MIND-MAP / CIRCULAR FLYWHEEL (Collision-Free for 3 to 8 Sections!)
     if (
       activeTpl === "radial-hub-and-spoke" ||
       activeTpl === "circular-flywheel-cycle"
     ) {
       const centerX = Math.floor(W / 2);
       const centerY = Math.floor(bodyTop + availH / 2);
-      const radiusX = Math.floor(availW * 0.34);
-      const radiusY = Math.floor(availH * 0.36);
-      const cardW = isHorizontal ? 340 : 290;
-      const cardH = isHorizontal ? 148 : 165;
+
+      // Symmetric Left/Right Spoke Columns + Center Hub Orb so 3 to 8 cards NEVER overlap or truncate!
+      const leftNodes = activeNodes.filter((_, idx) => idx % 2 === 0);
+      const rightNodes = activeNodes.filter((_, idx) => idx % 2 === 1);
+      const cardW = Math.floor(availW * (isHorizontal ? 0.34 : 0.36));
+      const maxColCount = Math.max(leftNodes.length, rightNodes.length, 1);
+      const cardGap = 20;
+      const cardH = Math.min(
+        210,
+        Math.max(
+          135,
+          Math.floor((availH - cardGap * (maxColCount - 1)) / maxColCount),
+        ),
+      );
+      const hubR = isHorizontal ? 86 : 74;
+
+      const tChars = Math.max(20, Math.floor((cardW - 72) / 10.5));
+      const bChars = Math.max(26, Math.floor((cardW - 36) / 8.2));
+      const bMaxLines = Math.max(2, Math.min(4, Math.floor((cardH - 64) / 20)));
+
+      const renderColumnNode = (
+        node: InfographicNodeItem,
+        globalIdx: number,
+        colIdx: number,
+        totalInCol: number,
+        isLeft: boolean,
+      ) => {
+        const colTotalH = totalInCol * cardH + (totalInCol - 1) * cardGap;
+        const startY = bodyTop + Math.floor((availH - colTotalH) / 2);
+        const x = isLeft ? padX : W - padX - cardW;
+        const y = startY + colIdx * (cardH + cardGap);
+        const anchorX = isLeft ? x + cardW : x;
+        const anchorY = y + cardH / 2;
+        const col = nodeColor(globalIdx);
+        const tLines = wrapSvgLines(node.title, tChars, 2);
+        const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
+        const isSelected = selectedNodeId === node.id;
+
+        // Smooth S-curve Bezier spoke from Center Hub to Card
+        const hubEdgeX = isLeft ? centerX - hubR + 8 : centerX + hubR - 8;
+        const midX = (hubEdgeX + anchorX) / 2;
+        const bezierD = `M ${hubEdgeX} ${centerY} C ${midX} ${centerY}, ${midX} ${anchorY}, ${anchorX} ${anchorY}`;
+
+        return (
+          <g
+            key={node.id}
+            onClick={() => focusNodeInEditor(node.id)}
+            style={{ cursor: "pointer" }}
+          >
+            <path
+              d={bezierD}
+              fill="none"
+              stroke={col}
+              strokeWidth={3.5}
+              strokeOpacity={0.75}
+            />
+            <circle cx={anchorX} cy={anchorY} r={6} fill={col} />
+            <rect
+              x={x}
+              y={y}
+              width={cardW}
+              height={cardH}
+              rx={22}
+              fill={palette.cardBg}
+              stroke={isSelected ? "#5271ff" : col}
+              strokeWidth={isSelected ? 3.5 : 2.4}
+              filter="url(#card3dShadow)"
+            />
+            <circle cx={x + 32} cy={y + 34} r={19} fill={col} />
+            {renderNodeIconOrImage(
+              node,
+              x + 32,
+              y + 34,
+              18,
+              palette.badgeText,
+            )}
+            {tLines.map((tl, ti) => (
+              <text
+                key={ti}
+                x={x + 60}
+                y={y + 32 + ti * 21}
+                fill={palette.textPrimary}
+                fontSize={17.5}
+                fontWeight={800}
+              >
+                {tl}
+              </text>
+            ))}
+            {bLines.map((line, bi) => (
+              <text
+                key={bi}
+                x={x + 20}
+                y={y + 48 + tLines.length * 20 + bi * 19.5}
+                fill={palette.textSecondary}
+                fontSize={14}
+                fontWeight={500}
+              >
+                {line}
+              </text>
+            ))}
+          </g>
+        );
+      };
 
       return (
         <g>
-          {/* Outer Orbit Track */}
-          <ellipse
+          {/* Decorative Orbit Ring behind Central Hub */}
+          <circle
             cx={centerX}
             cy={centerY}
-            rx={radiusX}
-            ry={radiusY}
+            r={hubR + 28}
             fill="none"
             stroke={palette.accent}
-            strokeOpacity={0.28}
-            strokeWidth={4}
-            strokeDasharray="10 8"
+            strokeOpacity={0.22}
+            strokeWidth={3}
+            strokeDasharray="8 6"
           />
 
-          {/* Bezier Spoke Lines */}
-          {activeNodes.map((node, i) => {
-            const angle = (i * 2 * Math.PI) / count - Math.PI / 2;
-            const nx = centerX + Math.cos(angle) * radiusX;
-            const ny = centerY + Math.sin(angle) * radiusY;
-            const col = nodeColor(i);
-            return (
-              <line
-                key={`line-${node.id}`}
-                x1={centerX}
-                y1={centerY}
-                x2={nx}
-                y2={ny}
-                stroke={col}
-                strokeWidth={3.5}
-              />
-            );
-          })}
+          {/* Left Spoke Column */}
+          {leftNodes.map((n, idx) =>
+            renderColumnNode(n, idx * 2, idx, leftNodes.length, true),
+          )}
+          {/* Right Spoke Column */}
+          {rightNodes.map((n, idx) =>
+            renderColumnNode(n, idx * 2 + 1, idx, rightNodes.length, false),
+          )}
 
           {/* Central Hub Core Orb */}
           <circle
             cx={centerX}
             cy={centerY}
-            r={92}
+            r={hubR}
             fill={palette.cardBg}
             stroke={palette.accent}
             strokeWidth={5}
-            filter="url(#dropShadow)"
+            filter="url(#card3dShadow)"
           />
           <circle
             cx={centerX}
             cy={centerY}
-            r={76}
+            r={hubR - 12}
             fill="url(#accentGrad)"
-            fillOpacity={0.25}
+            fillOpacity={0.22}
           />
-          {renderSvgIcon("layers", centerX, centerY - 26, 36, palette.accent)}
+          {renderSvgIcon("layers", centerX, centerY - 22, 32, palette.accent)}
           <text
             x={centerX}
             y={centerY + 14}
             textAnchor="middle"
             fill={palette.textPrimary}
-            fontSize={18}
+            fontSize={16}
             fontWeight={900}
-            fontFamily="system-ui, -apple-system, sans-serif"
           >
             CORE SYSTEM
           </text>
           <text
             x={centerX}
-            y={centerY + 38}
+            y={centerY + 35}
             textAnchor="middle"
             fill={palette.accent}
-            fontSize={15}
+            fontSize={13.5}
             fontWeight={800}
-            fontFamily="system-ui, -apple-system, sans-serif"
           >
             {count} Connected Pillars
           </text>
-
-          {/* Satellite Spoke Cards */}
-          {activeNodes.map((node, i) => {
-            const angle = (i * 2 * Math.PI) / count - Math.PI / 2;
-            const nx = centerX + Math.cos(angle) * radiusX;
-            const ny = centerY + Math.sin(angle) * radiusY;
-            const x = Math.max(padX, Math.min(W - padX - cardW, nx - cardW / 2));
-            const y = Math.max(
-              bodyTop,
-              Math.min(bodyBottom - cardH, ny - cardH / 2),
-            );
-            const col = nodeColor(i);
-            const iconId = node.icon || inferNodeIcon(node.title, i);
-            const tLines = wrapSvgLines(node.title, 22, 1);
-            const bLines = wrapSvgLines(node.body, 32, 3);
-
-            return (
-              <g key={node.id}>
-                <rect
-                  x={x}
-                  y={y}
-                  width={cardW}
-                  height={cardH}
-                  rx={20}
-                  fill={palette.cardBg}
-                  stroke={col}
-                  strokeWidth={2.5}
-                  filter="url(#dropShadow)"
-                />
-                <circle cx={x + 32} cy={y + 34} r={18} fill={col} />
-                {renderSvgIcon(iconId, x + 32, y + 34, 18, palette.badgeText)}
-                <text
-                  x={x + 60}
-                  y={y + 40}
-                  fill={palette.textPrimary}
-                  fontSize={18}
-                  fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
-                >
-                  {tLines[0]}
-                </text>
-                {bLines.map((line, bi) => (
-                  <text
-                    key={bi}
-                    x={x + 20}
-                    y={y + 74 + bi * 21}
-                    fill={palette.textSecondary}
-                    fontSize={14.5}
-                    fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {line}
-                  </text>
-                ))}
-              </g>
-            );
-          })}
         </g>
       );
     }
 
-    // 8. VERSUS BATTLE COMPARISON OR DO'S & DON'TS PLAYBOOK
+    // 7. VERSUS BATTLE COMPARISON OR DO'S & DON'TS PLAYBOOK
     if (
       activeTpl === "versus-battle-comparison" ||
       activeTpl === "dos-and-donts-matrix"
@@ -2126,72 +2178,75 @@ export function EditableInfographicStudio({
       const isDos = activeTpl === "dos-and-donts-matrix";
       const gap = 36;
       const colW = Math.floor((availW - gap) / 2);
-      const rowsTop = bodyTop + 68;
+      const rowsTop = bodyTop + 66;
       const rowGap = 16;
       const rowH = Math.max(
-        112,
-        Math.floor((availH - 68 - rowGap * (count - 1)) / count),
+        106,
+        Math.floor((availH - 66 - rowGap * (count - 1)) / count),
       );
+      const bChars = Math.max(24, Math.floor((colW - 40) / 8.5));
+      const bMaxLines = Math.max(1, Math.min(3, Math.floor((rowH - 52) / 20)));
 
       return (
         <g>
-          {/* Left Header */}
           <rect
             x={padX}
             y={bodyTop}
             width={colW}
-            height={52}
+            height={50}
             rx={16}
-            fill="rgba(244, 63, 94, 0.22)"
+            fill="rgba(244, 63, 94, 0.18)"
             stroke="#F43F5E"
             strokeWidth={2}
           />
           <text
             x={padX + colW / 2}
-            y={bodyTop + 33}
+            y={bodyTop + 32}
             textAnchor="middle"
-            fill="#FDA4AF"
-            fontSize={19}
+            fill="#F43F5E"
+            fontSize={18}
             fontWeight={900}
-            fontFamily="system-ui, -apple-system, sans-serif"
           >
             {isDos ? "✗ COMMON MISTAKES TO AVOID" : "◀ LEGACY / OLD WORKFLOW"}
           </text>
 
-          {/* Right Header */}
           <rect
             x={padX + colW + gap}
             y={bodyTop}
             width={colW}
-            height={52}
+            height={50}
             rx={16}
-            fill="rgba(16, 185, 129, 0.22)"
+            fill="rgba(16, 185, 129, 0.18)"
             stroke="#10B981"
             strokeWidth={2}
           />
           <text
             x={padX + colW + gap + colW / 2}
-            y={bodyTop + 33}
+            y={bodyTop + 32}
             textAnchor="middle"
-            fill="#6EE7B7"
-            fontSize={19}
+            fill="#10B981"
+            fontSize={18}
             fontWeight={900}
-            fontFamily="system-ui, -apple-system, sans-serif"
           >
-            {isDos ? "✓ HIGH-IMPACT BEST PRACTICES" : "▶ AI-FIRST HIGH-LEVERAGE WAY"}
+            {isDos
+              ? "✓ HIGH-IMPACT BEST PRACTICES"
+              : "▶ AI-FIRST HIGH-LEVERAGE WAY"}
           </text>
 
           {activeNodes.map((node, i) => {
             const y = rowsTop + i * (rowH + rowGap);
-            const leftLines = wrapSvgLines(node.body, 34, 3);
+            const leftLines = wrapSvgLines(node.body, bChars, bMaxLines);
             const rightText =
               node.compareRight ||
-              `Execute "${node.title}" with automated verification for ${node.metricValue || "2.4x"} higher ROI.`;
-            const rightLines = wrapSvgLines(rightText, 34, 3);
+              `Apply ${node.title.toLowerCase()} with verified benchmarks and structured execution.`;
+            const rightLines = wrapSvgLines(rightText, bChars, bMaxLines);
 
             return (
-              <g key={node.id}>
-                {/* Left Card */}
+              <g
+                key={node.id}
+                onClick={() => focusNodeInEditor(node.id)}
+                style={{ cursor: "pointer" }}
+              >
                 <rect
                   x={padX}
                   y={y}
@@ -2202,14 +2257,14 @@ export function EditableInfographicStudio({
                   stroke="#F43F5E"
                   strokeOpacity={0.6}
                   strokeWidth={2}
+                  filter="url(#card3dShadow)"
                 />
                 <text
                   x={padX + 20}
-                  y={y + 34}
-                  fill="#FDA4AF"
-                  fontSize={18}
+                  y={y + 32}
+                  fill="#F43F5E"
+                  fontSize={17.5}
                   fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   ✗ {node.title.slice(0, 32)}
                 </text>
@@ -2217,17 +2272,15 @@ export function EditableInfographicStudio({
                   <text
                     key={li}
                     x={padX + 20}
-                    y={y + 62 + li * 22}
+                    y={y + 58 + li * 21}
                     fill={palette.textSecondary}
-                    fontSize={15}
+                    fontSize={14.5}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {l}
                   </text>
                 ))}
 
-                {/* Center VS Emblem */}
                 <circle
                   cx={W / 2}
                   cy={y + rowH / 2}
@@ -2241,12 +2294,10 @@ export function EditableInfographicStudio({
                   fill={palette.badgeText}
                   fontSize={12}
                   fontWeight={900}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {isDos ? "→" : "VS"}
                 </text>
 
-                {/* Right Card */}
                 <rect
                   x={padX + colW + gap}
                   y={y}
@@ -2256,27 +2307,26 @@ export function EditableInfographicStudio({
                   fill={palette.cardBg}
                   stroke="#10B981"
                   strokeWidth={2.5}
-                  filter="url(#dropShadow)"
+                  filter="url(#card3dShadow)"
                 />
                 <text
                   x={padX + colW + gap + 20}
-                  y={y + 34}
-                  fill="#6EE7B7"
-                  fontSize={18}
+                  y={y + 32}
+                  fill="#10B981"
+                  fontSize={17.5}
                   fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
-                  ✓ Winning Play #{i + 1} ({node.metricValue || "Verified"})
+                  ✓ Winning Play #{i + 1}{" "}
+                  {node.metricValue ? `(${node.metricValue})` : ""}
                 </text>
                 {rightLines.map((l, li) => (
                   <text
                     key={li}
                     x={padX + colW + gap + 20}
-                    y={y + 62 + li * 22}
+                    y={y + 58 + li * 21}
                     fill={palette.textPrimary}
-                    fontSize={15}
+                    fontSize={14.5}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {l}
                   </text>
@@ -2288,28 +2338,35 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 9. 3D ASCENDING GROWTH STAIRCASE
+    // 8. 3D ASCENDING GROWTH STAIRCASE
     if (activeTpl === "step-staircase-ascension") {
-      const stepW = Math.floor(availW * 0.68);
+      const stepW = Math.floor(availW * 0.72);
       const maxOffset = availW - stepW;
       const rowGap = 14;
-      const stepH = Math.max(98, Math.floor((availH - rowGap * (count - 1)) / count));
+      const stepH = Math.max(
+        96,
+        Math.floor((availH - rowGap * (count - 1)) / count),
+      );
+      const tChars = Math.max(22, Math.floor((stepW - 116) / 11));
+      const bChars = Math.max(30, Math.floor((stepW - 116) / 8.5));
+      const bMaxLines = Math.max(1, Math.min(3, Math.floor((stepH - 54) / 20)));
 
       return (
         <g>
           {activeNodes.map((node, i) => {
-            // Bottom-left to Top-right ascending staircase or Top-left to Bottom-right
             const x =
               padX + Math.floor((maxOffset * i) / Math.max(1, count - 1));
             const y = bodyTop + i * (stepH + rowGap);
             const col = nodeColor(i);
-            const iconId = node.icon || inferNodeIcon(node.title, i);
-            const tLines = wrapSvgLines(node.title, 32, 1);
-            const bLines = wrapSvgLines(node.body, 46, 2);
+            const tLines = wrapSvgLines(node.title, tChars, 1);
+            const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
 
             return (
-              <g key={node.id}>
-                {/* 3D Step Shadow Base */}
+              <g
+                key={node.id}
+                onClick={() => focusNodeInEditor(node.id)}
+                style={{ cursor: "pointer" }}
+              >
                 <rect
                   x={x + 10}
                   y={y + 10}
@@ -2317,7 +2374,7 @@ export function EditableInfographicStudio({
                   height={stepH}
                   rx={20}
                   fill={col}
-                  fillOpacity={0.28}
+                  fillOpacity={0.25}
                 />
                 <rect
                   x={x}
@@ -2328,18 +2385,18 @@ export function EditableInfographicStudio({
                   fill={palette.cardBg}
                   stroke={col}
                   strokeWidth={2.5}
-                  filter="url(#dropShadow)"
+                  filter="url(#card3dShadow)"
                 />
                 <rect
                   x={x + 18}
-                  y={y + 18}
+                  y={y + 16}
                   width={62}
-                  height={stepH - 36}
+                  height={stepH - 32}
                   rx={14}
                   fill={col}
                 />
-                {renderSvgIcon(
-                  iconId,
+                {renderNodeIconOrImage(
+                  node,
                   x + 49,
                   y + stepH / 2 - 10,
                   22,
@@ -2352,18 +2409,16 @@ export function EditableInfographicStudio({
                   fill={palette.badgeText}
                   fontSize={15}
                   fontWeight={900}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   0{i + 1}
                 </text>
 
                 <text
                   x={x + 98}
-                  y={y + 40}
+                  y={y + 38}
                   fill={palette.textPrimary}
-                  fontSize={21}
+                  fontSize={20}
                   fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {tLines[0]}
                 </text>
@@ -2371,11 +2426,10 @@ export function EditableInfographicStudio({
                   <text
                     key={li}
                     x={x + 98}
-                    y={y + 68 + li * 22}
+                    y={y + 64 + li * 21}
                     fill={palette.textSecondary}
-                    fontSize={16}
+                    fontSize={15.5}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {l}
                   </text>
@@ -2387,23 +2441,25 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 10. EDITORIAL NEWSPAPER / HORIZONTAL BAR CHART BRIEF
+    // 9. EDITORIAL NEWSPAPER / HORIZONTAL BAR CHART BRIEF
     if (activeTpl === "editorial-newspaper-digest") {
-      const chartH = Math.floor(availH * 0.36);
-      const gridTop = bodyTop + chartH + 26;
-      const gridAvailH = availH - chartH - 26;
+      const chartH = Math.floor(availH * 0.34);
+      const gridTop = bodyTop + chartH + 24;
+      const gridAvailH = availH - chartH - 24;
       const cols = 2;
       const rows = Math.ceil(count / cols);
       const gap = 18;
       const cardW = Math.floor((availW - gap) / cols);
       const cardH = Math.max(
-        125,
+        120,
         Math.floor((gridAvailH - gap * (rows - 1)) / rows),
       );
+      const tChars = Math.max(20, Math.floor((cardW - 44) / 10.5));
+      const bChars = Math.max(26, Math.floor((cardW - 44) / 8.2));
+      const bMaxLines = Math.max(1, Math.min(3, Math.floor((cardH - 52) / 20)));
 
       return (
         <g>
-          {/* Top Comparative Horizontal Bar Chart Card */}
           <rect
             x={padX}
             y={bodyTop}
@@ -2413,34 +2469,36 @@ export function EditableInfographicStudio({
             fill={palette.cardBg}
             stroke={palette.accent}
             strokeWidth={2}
-            filter="url(#dropShadow)"
+            filter="url(#card3dShadow)"
           />
           <text
             x={padX + 28}
-            y={bodyTop + 38}
+            y={bodyTop + 36}
             fill={palette.accent}
-            fontSize={16}
+            fontSize={15.5}
             fontWeight={900}
-            fontFamily="system-ui, -apple-system, sans-serif"
           >
             COMPARATIVE IMPACT &amp; BENCHMARK DISTRIBUTION
           </text>
 
           {activeNodes.slice(0, 5).map((node, i) => {
-            const by = bodyTop + 62 + i * Math.floor((chartH - 76) / 5);
+            const by = bodyTop + 56 + i * Math.floor((chartH - 68) / 5);
             const pct = parsePercentage(node.metricValue, i);
             const maxBarW = availW - 360;
             const barW = Math.floor((maxBarW * pct) / 100);
             const col = nodeColor(i);
             return (
-              <g key={`bar-${node.id}`}>
+              <g
+                key={`bar-${node.id}`}
+                onClick={() => focusNodeInEditor(node.id)}
+                style={{ cursor: "pointer" }}
+              >
                 <text
                   x={padX + 28}
-                  y={by + 18}
+                  y={by + 17}
                   fill={palette.textPrimary}
-                  fontSize={15.5}
+                  fontSize={15}
                   fontWeight={700}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {node.title.slice(0, 26)}
                 </text>
@@ -2448,25 +2506,24 @@ export function EditableInfographicStudio({
                   x={padX + 260}
                   y={by}
                   width={maxBarW}
-                  height={22}
-                  rx={11}
+                  height={20}
+                  rx={10}
                   fill={palette.bgStart}
                 />
                 <rect
                   x={padX + 260}
                   y={by}
                   width={barW}
-                  height={22}
-                  rx={11}
+                  height={20}
+                  rx={10}
                   fill={col}
                 />
                 <text
                   x={padX + 272 + barW}
-                  y={by + 16}
+                  y={by + 15}
                   fill={palette.textPrimary}
-                  fontSize={14}
+                  fontSize={13.5}
                   fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {node.metricValue || `${pct}%`}
                 </text>
@@ -2474,17 +2531,20 @@ export function EditableInfographicStudio({
             );
           })}
 
-          {/* Bottom Evidence Cards Grid */}
           {activeNodes.map((node, i) => {
             const c = i % cols;
             const r = Math.floor(i / cols);
             const x = padX + c * (cardW + gap);
             const y = gridTop + r * (cardH + gap);
             const col = nodeColor(i);
-            const tLines = wrapSvgLines(node.title, 26, 1);
-            const bLines = wrapSvgLines(node.body, 36, 3);
+            const tLines = wrapSvgLines(node.title, tChars, 1);
+            const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
             return (
-              <g key={node.id}>
+              <g
+                key={node.id}
+                onClick={() => focusNodeInEditor(node.id)}
+                style={{ cursor: "pointer" }}
+              >
                 <rect
                   x={x}
                   y={y}
@@ -2493,7 +2553,8 @@ export function EditableInfographicStudio({
                   rx={18}
                   fill={palette.cardBg}
                   stroke={col}
-                  strokeWidth={1.8}
+                  strokeWidth={2}
+                  filter="url(#card3dShadow)"
                 />
                 <text
                   x={x + 22}
@@ -2501,7 +2562,6 @@ export function EditableInfographicStudio({
                   fill={col}
                   fontSize={18}
                   fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {node.badge || `0${i + 1}`}. {tLines[0]}
                 </text>
@@ -2509,11 +2569,10 @@ export function EditableInfographicStudio({
                   <text
                     key={li}
                     x={x + 22}
-                    y={y + 62 + li * 21}
+                    y={y + 60 + li * 20}
                     fill={palette.textSecondary}
-                    fontSize={15}
+                    fontSize={14.5}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {l}
                   </text>
@@ -2525,7 +2584,7 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 11. BENTO MOSAIC, HEXAGON CLUSTER, 2x2 QUADRANT, PILLAR TEMPLE, OR HORIZONTAL BOARD
+    // 10. BENTO MOSAIC, HEXAGON CLUSTER, 2x2 QUADRANT, PILLAR TEMPLE, OR HORIZONTAL BOARD
     if (
       activeTpl === "stat-bento-grid" ||
       activeTpl === "honeycomb-hex-cluster" ||
@@ -2539,8 +2598,20 @@ export function EditableInfographicStudio({
       const gap = 22;
       const cardW = Math.floor((availW - gap * (cols - 1)) / cols);
       const cardH = Math.max(
-        170,
+        165,
         Math.floor((availH - gap * (rows - 1)) / rows),
+      );
+      // Dynamic font & line count to achieve ~80% balanced card fill
+      const titleSize = Math.min(24, Math.max(19, Math.floor(cardH * 0.085)));
+      const bodySize = Math.min(18, Math.max(14.5, Math.floor(cardH * 0.065)));
+      const tChars = Math.max(18, Math.floor((cardW - 48) / (titleSize * 0.56)));
+      const bChars = Math.max(24, Math.floor((cardW - 48) / (bodySize * 0.53)));
+      const bMaxLines = Math.max(
+        2,
+        Math.min(
+          5,
+          Math.floor((cardH - 135) / (bodySize * 1.4)),
+        ),
       );
 
       return (
@@ -2551,13 +2622,17 @@ export function EditableInfographicStudio({
             const x = padX + c * (cardW + gap);
             const y = bodyTop + r * (cardH + gap);
             const col = nodeColor(i);
-            const iconId = node.icon || inferNodeIcon(node.title, i);
             const pct = parsePercentage(node.metricValue, i);
-            const tLines = wrapSvgLines(node.title, 24, 2);
-            const bLines = wrapSvgLines(node.body, 34, 3);
+            const tLines = wrapSvgLines(node.title, tChars, 2);
+            const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
+            const isSelected = selectedNodeId === node.id;
 
             return (
-              <g key={node.id}>
+              <g
+                key={node.id}
+                onClick={() => focusNodeInEditor(node.id)}
+                style={{ cursor: "pointer" }}
+              >
                 <rect
                   x={x}
                   y={y}
@@ -2565,11 +2640,21 @@ export function EditableInfographicStudio({
                   height={cardH}
                   rx={activeTpl === "honeycomb-hex-cluster" ? 36 : 24}
                   fill={palette.cardBg}
-                  stroke={col}
-                  strokeWidth={2.5}
-                  filter="url(#dropShadow)"
+                  stroke={isSelected ? "#5271ff" : col}
+                  strokeWidth={isSelected ? 3.5 : 2.4}
+                  filter="url(#card3dShadow)"
                 />
-                {/* Top Icon + Metric Row */}
+                {/* 3D Top Inner Specular Highlight */}
+                <rect
+                  x={x + 22}
+                  y={y + 2}
+                  width={cardW - 44}
+                  height={2}
+                  rx={1}
+                  fill="#FFFFFF"
+                  fillOpacity={0.22}
+                />
+
                 <circle
                   cx={x + 42}
                   cy={y + 42}
@@ -2578,29 +2663,27 @@ export function EditableInfographicStudio({
                   stroke={col}
                   strokeWidth={2}
                 />
-                {renderSvgIcon(iconId, x + 42, y + 42, 22, col)}
+                {renderNodeIconOrImage(node, x + 42, y + 42, 22, col)}
 
                 <text
                   x={x + cardW - 24}
-                  y={y + 50}
+                  y={y + 48}
                   textAnchor="end"
                   fill={col}
-                  fontSize={28}
+                  fontSize={24}
                   fontWeight={900}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
-                  {node.metricValue || `0${i + 1}`}
+                  {node.metricValue || node.badge || `0${i + 1}`}
                 </text>
 
                 {tLines.map((l, ti) => (
                   <text
                     key={ti}
                     x={x + 24}
-                    y={y + 94 + ti * 25}
+                    y={y + 92 + ti * (titleSize * 1.25)}
                     fill={palette.textPrimary}
-                    fontSize={21}
+                    fontSize={titleSize}
                     fontWeight={800}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {l}
                   </text>
@@ -2610,17 +2693,20 @@ export function EditableInfographicStudio({
                   <text
                     key={bi}
                     x={x + 24}
-                    y={y + 142 + bi * 22}
+                    y={
+                      y +
+                      98 +
+                      tLines.length * (titleSize * 1.25) +
+                      bi * (bodySize * 1.38)
+                    }
                     fill={palette.textSecondary}
-                    fontSize={15.5}
+                    fontSize={bodySize}
                     fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     {l}
                   </text>
                 ))}
 
-                {/* Bottom Progress Benchmark Bar */}
                 <rect
                   x={x + 24}
                   y={y + cardH - 22}
@@ -2628,6 +2714,7 @@ export function EditableInfographicStudio({
                   height={8}
                   rx={4}
                   fill={palette.bgStart}
+                  fillOpacity={0.5}
                 />
                 <rect
                   x={x + 24}
@@ -2644,23 +2731,41 @@ export function EditableInfographicStudio({
       );
     }
 
-    // DEFAULT & RIBBON BANNERS / STEP ROADMAP / ICEBERG / ANATOMY / SCORECARD
+    // 11. DEFAULT & RIBBON BANNERS / STEP ROADMAP / ICEBERG / ANATOMY / SCORECARD
     const rowGap = 18;
-    const rowH = Math.max(108, Math.floor((availH - rowGap * (count - 1)) / count));
+    const rowH = Math.max(
+      104,
+      Math.floor((availH - rowGap * (count - 1)) / count),
+    );
     const isRibbon = activeTpl === "numbered-ribbon-banners";
+    const textAvailW = availW - 140;
+    const titleSize = Math.min(23, Math.max(18, Math.floor(rowH * 0.17)));
+    const bodySize = Math.min(16.5, Math.max(14, Math.floor(rowH * 0.125)));
+    const tChars = Math.max(
+      22,
+      Math.floor((textAvailW - (activeNodes[0]?.metricValue ? 150 : 0)) / (titleSize * 0.56)),
+    );
+    const bChars = Math.max(34, Math.floor(textAvailW / (bodySize * 0.53)));
+    const bMaxLines = Math.max(
+      1,
+      Math.min(3, Math.floor((rowH - 64) / (bodySize * 1.35))),
+    );
 
     return (
       <g>
         {activeNodes.map((node, i) => {
           const y = bodyTop + i * (rowH + rowGap);
           const col = nodeColor(i);
-          const iconId = node.icon || inferNodeIcon(node.title, i);
-          const pct = parsePercentage(node.metricValue, i);
-          const tLines = wrapSvgLines(node.title, 38, 1);
-          const bLines = wrapSvgLines(node.body, 62, 2);
+          const tLines = wrapSvgLines(node.title, tChars, 1);
+          const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
+          const isSelected = selectedNodeId === node.id;
 
           return (
-            <g key={node.id}>
+            <g
+              key={node.id}
+              onClick={() => focusNodeInEditor(node.id)}
+              style={{ cursor: "pointer" }}
+            >
               <rect
                 x={padX}
                 y={y}
@@ -2668,27 +2773,25 @@ export function EditableInfographicStudio({
                 height={rowH}
                 rx={22}
                 fill={palette.cardBg}
-                stroke={col}
-                strokeWidth={2.2}
-                filter="url(#dropShadow)"
+                stroke={isSelected ? "#5271ff" : col}
+                strokeWidth={isSelected ? 3.5 : 2.2}
+                filter="url(#card3dShadow)"
               />
 
-              {/* 3D Ribbon Fold or Left Accent Pillar */}
               {isRibbon ? (
                 <g>
                   <polygon
-                    points={`${padX - 12},${y + 18} ${padX + 86},${y + 18} ${padX + 102},${y + 46} ${padX + 86},${y + 74} ${padX - 12},${y + 74}`}
+                    points={`${padX - 10},${y + 18} ${padX + 86},${y + 18} ${padX + 102},${y + 46} ${padX + 86},${y + 74} ${padX - 10},${y + 74}`}
                     fill={col}
-                    filter="url(#dropShadow)"
+                    filter="url(#card3dShadow)"
                   />
                   <text
                     x={padX + 38}
                     y={y + 54}
                     textAnchor="middle"
                     fill={palette.badgeText}
-                    fontSize={24}
+                    fontSize={22}
                     fontWeight={900}
-                    fontFamily="system-ui, -apple-system, sans-serif"
                   >
                     #{node.badge || `0${i + 1}`}
                   </text>
@@ -2697,63 +2800,61 @@ export function EditableInfographicStudio({
                 <g>
                   <rect
                     x={padX + 20}
-                    y={y + (rowH - 68) / 2}
-                    width={68}
-                    height={68}
+                    y={y + (rowH - 64) / 2}
+                    width={64}
+                    height={64}
                     rx={18}
                     fill={`${col}22`}
                     stroke={col}
                     strokeWidth={2}
                   />
-                  {renderSvgIcon(iconId, padX + 54, y + rowH / 2, 30, col)}
+                  {renderNodeIconOrImage(node, padX + 52, y + rowH / 2, 28, col)}
                 </g>
               )}
 
-              {/* Title */}
               <text
-                x={padX + 114}
-                y={y + 42}
+                x={padX + 112}
+                y={y + 40}
                 fill={palette.textPrimary}
-                fontSize={23}
+                fontSize={titleSize}
                 fontWeight={800}
-                fontFamily="system-ui, -apple-system, sans-serif"
               >
                 {tLines[0]}
               </text>
 
-              {/* Metric Pill on Right */}
-              <rect
-                x={padX + availW - 156}
-                y={y + 18}
-                width={134}
-                height={34}
-                rx={17}
-                fill={palette.accentSoft}
-                stroke={col}
-                strokeWidth={1.5}
-              />
-              <text
-                x={padX + availW - 89}
-                y={y + 40}
-                textAnchor="middle"
-                fill={col}
-                fontSize={15}
-                fontWeight={800}
-                fontFamily="system-ui, -apple-system, sans-serif"
-              >
-                {node.metricValue ? node.metricValue.slice(0, 12) : `${pct}% Impact`}
-              </text>
+              {node.metricValue && (
+                <g>
+                  <rect
+                    x={padX + availW - 152}
+                    y={y + 16}
+                    width={130}
+                    height={32}
+                    rx={16}
+                    fill={palette.accentSoft}
+                    stroke={col}
+                    strokeWidth={1.5}
+                  />
+                  <text
+                    x={padX + availW - 87}
+                    y={y + 37}
+                    textAnchor="middle"
+                    fill={col}
+                    fontSize={14}
+                    fontWeight={800}
+                  >
+                    {node.metricValue.slice(0, 12)}
+                  </text>
+                </g>
+              )}
 
-              {/* Body Lines */}
               {bLines.map((l, bi) => (
                 <text
                   key={bi}
-                  x={padX + 114}
-                  y={y + 72 + bi * 24}
+                  x={padX + 112}
+                  y={y + 68 + bi * (bodySize * 1.38)}
                   fill={palette.textSecondary}
-                  fontSize={17}
+                  fontSize={bodySize}
                   fontWeight={500}
-                  fontFamily="system-ui, -apple-system, sans-serif"
                 >
                   {l}
                 </text>
@@ -2765,580 +2866,845 @@ export function EditableInfographicStudio({
     );
   }
 
-  const seoEmbedCode = `<!-- Interactive Infographic Embed Code -->
-<figure style="max-width:850px;margin:24px auto;text-align:center;font-family:system-ui,sans-serif">
-  <a href="${sourceUrl}" target="_blank" rel="noopener">
-    <img src="${sourceUrl.replace(/\/$/, "")}/infographic-${template}.png" alt="${title.replace(/"/g, "&quot;")}" style="width:100%;height:auto;border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,0.15)" loading="lazy" />
-  </a>
-  <figcaption style="margin-top:10px;font-size:13px;color:#475569">
-    <strong>${title}</strong> — Visual Infographic designed with <a href="https://doitwithai.tools/tools/blog-to-infographic-generator" target="_blank" rel="noopener">Do It With AI Tools</a>. Source: <a href="${sourceUrl}" target="_blank" rel="noopener">${footerBrand}</a>.
-  </figcaption>
-</figure>`;
+  const currentNode = nodes.find((n) => n.id === selectedNodeId) || nodes[0];
+  const activeTemplate = INFOGRAPHIC_TEMPLATES.find(
+    (t) => t.id === normalizeTemplateId(template),
+  );
+
+  // Content Length & 80% Box Fill Guidance Helper
+  function getContentFillStatus(
+    text: string,
+    minChars: number,
+    idealMaxChars: number,
+  ): { label: string; colorClass: string } {
+    const len = (text || "").trim().length;
+    if (len === 0) {
+      return {
+        label: "Empty — add text to populate this section",
+        colorClass: "text-amber-500",
+      };
+    }
+    if (len < minChars) {
+      return {
+        label: `${len} chars · Short (add ${minChars - len}+ chars for balanced 80% card fill)`,
+        colorClass: "text-[#5271ff]",
+      };
+    }
+    if (len > idealMaxChars) {
+      return {
+        label: `${len} chars · Long (shorten by ~${len - idealMaxChars} chars to avoid truncation)`,
+        colorClass: "text-amber-500",
+      };
+    }
+    return {
+      label: `${len} chars · Optimal (~80% balanced card fill)`,
+      colorClass: "text-emerald-500",
+    };
+  }
+
+  const headlineStatus = getContentFillStatus(title, 18, 65);
+  const introStatus = getContentFillStatus(subtitle, 35, 130);
+  const nodeTitleStatus = getContentFillStatus(currentNode?.title || "", 10, 42);
+  const nodeBodyStatus = getContentFillStatus(currentNode?.body || "", 45, 145);
+
+  const allAvailableImages = useMemo(() => {
+    const list: Array<{ src: string; label: string }> = [
+      {
+        src: "/visual-studio/paper-sculpture.png",
+        label: "3D Studio Art",
+      },
+    ];
+    extractedImages.forEach((src, i) => {
+      if (src && !list.some((item) => item.src === src)) {
+        list.push({ src, label: `Article #${i + 1}` });
+      }
+    });
+    if (
+      sideImageUrl &&
+      !list.some((item) => item.src === sideImageUrl)
+    ) {
+      list.push({ src: sideImageUrl, label: "Uploaded Art" });
+    }
+    return list;
+  }, [extractedImages, sideImageUrl]);
 
   return (
-    <div className="rounded-3xl border-2 border-[#3452d1]/25 bg-white p-4 shadow-sm dark:border-[#5271ff]/30 dark:bg-[#0B1120] sm:p-6 space-y-6">
+    <div className={`${styles.studio} space-y-5`}>
       {toast && (
         <div
           role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          className="flex items-center gap-2 rounded-xl border border-[#5271ff]/40 bg-[#5271ff]/10 px-4 py-2.5 text-xs font-bold text-[#3452d1] dark:text-[#9aabff]"
         >
           <Check size={15} />
           <span>{toast}</span>
         </div>
       )}
 
-      {/* 1. TEMPLATE BROWSER (26 TEMPLATES ACROSS 8 CATEGORIES) */}
-      <div className="space-y-4 border-b border-slate-200 pb-5 dark:border-slate-800">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
-              <Layers size={14} />
-              26 Realistic Vector Infographic Templates · Pure SVG + 2x Retina
-              PNG + PDF
+      {exportError && (
+        <p role="alert" className={styles.error}>
+          {exportError}
+        </p>
+      )}
+
+      {/* PROMINENT CHANGE TEMPLATE BANNER */}
+      <details className={styles.templateBanner}>
+        <summary className="flex flex-wrap items-center justify-between gap-3 font-bold">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#4058d0] text-white shadow-sm">
+              <Layers size={18} />
             </span>
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">
-              Choose an Infographic Layout or Hover Over the Poster to Download
-            </h3>
+            <div>
+              <span className="block text-sm font-extrabold">
+                Change Infographic Template ({INFOGRAPHIC_TEMPLATES.length} Layouts)
+              </span>
+              <span className="block text-xs opacity-80">
+                Active:{" "}
+                <strong>{activeTemplate?.label.replace(/^\d+\. /, "")}</strong> ·{" "}
+                {activeTemplate?.desc}
+              </span>
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setShowEmbedModal((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          >
-            <Code2 size={14} />
-            SEO Backlink Embed HTML
-          </button>
-        </div>
-
-        {/* Category Filter Tabs */}
-        <div className="flex flex-wrap gap-1.5">
-          {TEMPLATE_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setCategoryFilter(cat.id)}
-              className={`rounded-full px-3 py-1.5 text-xs font-extrabold transition ${
-                categoryFilter === cat.id
-                  ? "bg-[#3452d1] text-white shadow-xs"
-                  : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Scrollable 26-Template Selector Grid */}
-        <div className="grid max-h-60 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {filteredTemplates.map((tpl) => {
-            const active = normalizeTemplateId(template) === tpl.id;
-            return (
+          <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#4058d0] px-3.5 py-2 text-xs font-extrabold text-white shadow-xs">
+            Browse 26 Templates ▾
+          </span>
+        </summary>
+        <div className="mt-4 space-y-4">
+          <div className={styles.tabs}>
+            {TEMPLATE_CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                aria-pressed={categoryFilter === cat.id}
+                onClick={() => setCategoryFilter(cat.id)}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+          <div className={styles.gallery}>
+            {filteredTemplates.map((tpl) => (
               <button
                 key={tpl.id}
                 type="button"
+                aria-pressed={normalizeTemplateId(template) === tpl.id}
                 onClick={() => handleSelectTemplate(tpl)}
-                className={`group rounded-xl border p-3 text-left transition ${
-                  active
-                    ? "border-[#ff6b35] bg-[#ff6b35]/10 ring-1 ring-[#ff6b35] dark:border-[#ff6b35] dark:bg-[#ff6b35]/15"
-                    : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
-                }`}
               >
-                <div className="flex items-center justify-between gap-1.5">
-                  <strong className="truncate text-xs font-extrabold text-slate-900 dark:text-white">
-                    {tpl.label}
-                  </strong>
-                  <span className="shrink-0 rounded-md bg-[#3452d1]/15 px-1.5 py-0.5 text-[10px] font-black text-[#3452d1] dark:text-[#9aabff]">
-                    {tpl.badge}
+                <TemplateThumbnail id={tpl.id} category={tpl.category} />
+                <strong>{tpl.label.replace(/^\d+\. /, "")}</strong>
+                <span className={styles.hint}>{tpl.desc}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </details>
+
+      <div className={styles.workspace}>
+        {/* LEFT CONTROL PANEL (CONTENT | DESIGN | BRAND) */}
+        <div className={styles.panel}>
+          <div className={styles.tabs}>
+            {(["content", "design", "brand"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                aria-pressed={editorTab === tab}
+                onClick={() => setEditorTab(tab)}
+              >
+                {tab[0].toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {/* TAB 1: CONTENT */}
+          {editorTab === "content" && (
+            <>
+              <label>
+                <div className="flex items-center justify-between gap-2">
+                  <span>Headline</span>
+                  <span className={`text-[11px] font-bold ${headlineStatus.colorClass}`}>
+                    {headlineStatus.label}
                   </span>
                 </div>
-                <span className="mt-1 line-clamp-2 block text-[11px] leading-4 text-slate-500 dark:text-slate-400">
-                  {tpl.desc}
+                <input
+                  ref={headlineInputRef}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter infographic headline..."
+                />
+              </label>
+
+              <label>
+                <div className="flex items-center justify-between gap-2">
+                  <span>Introduction</span>
+                  <span className={`text-[11px] font-bold ${introStatus.colorClass}`}>
+                    {introStatus.label}
+                  </span>
+                </div>
+                <textarea
+                  value={subtitle}
+                  onChange={(e) => setSubtitle(e.target.value)}
+                  placeholder="1–2 sentence overview under the headline..."
+                />
+              </label>
+
+              <div className="mt-4 flex items-center justify-between">
+                <h4 className="font-bold">
+                  Edit a section ({nodes.length}/8 sections)
+                </h4>
+                <span className="text-[11px] opacity-75">
+                  Click any card in preview to select
                 </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Aspect Ratio, Color Palette & Custom Brand Color Pickers */}
-        <div className="grid gap-3 pt-1 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <label className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
-              <Layers size={13} className="text-[#3452d1]" />
-              Poster Orientation &amp; Size
-            </label>
-            <select
-              value={aspect}
-              onChange={(e) =>
-                setAspect(e.target.value as InfographicAspectRatio)
-              }
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-            >
-              <option value="vertical-poster">
-                Vertical Infographic Poster (1080×1920)
-              </option>
-              <option value="pinterest-tall">
-                Pinterest 2:3 Tall Pin (1000×1500)
-              </option>
-              <option value="portrait-social">
-                LinkedIn / Instagram 4:5 Portrait (1080×1350)
-              </option>
-              <option value="horizontal-landscape">
-                Horizontal Widescreen Presentation (1600×1000)
-              </option>
-              <option value="square-card">
-                Universal 1:1 Square Visual (1200×1200)
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
-              <Palette size={13} className="text-[#ff6b35]" />
-              Designer Color Theme (12 Presets + Custom)
-            </label>
-            <select
-              value={paletteId}
-              onChange={(e) =>
-                setPaletteId(e.target.value as InfographicColorPaletteId)
-              }
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-            >
-              {INFOGRAPHIC_PALETTES.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-              <option value="custom-brand">
-                🎨 Custom Brand Colors (Use Pickers →)
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200">
-              <Wand2 size={13} className="text-emerald-500" />
-              Custom Color Swatches (Click to Pick)
-            </label>
-            <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
-              <label className="flex items-center gap-1 text-[11px] font-bold">
-                <input
-                  type="color"
-                  value={palette.bgStart}
-                  onChange={(e) => {
-                    setPaletteId("custom-brand");
-                    setCustomColors((prev) => ({
-                      ...prev,
-                      bgStart: e.target.value,
-                      bgEnd: e.target.value,
-                    }));
-                  }}
-                  className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent"
-                />
-                BG
-              </label>
-              <label className="flex items-center gap-1 text-[11px] font-bold">
-                <input
-                  type="color"
-                  value={palette.cardBg.startsWith("#") ? palette.cardBg : "#1E293B"}
-                  onChange={(e) => {
-                    setPaletteId("custom-brand");
-                    setCustomColors((prev) => ({
-                      ...prev,
-                      cardBg: e.target.value,
-                    }));
-                  }}
-                  className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent"
-                />
-                Card
-              </label>
-              <label className="flex items-center gap-1 text-[11px] font-bold">
-                <input
-                  type="color"
-                  value={palette.accent}
-                  onChange={(e) => {
-                    setPaletteId("custom-brand");
-                    setCustomColors((prev) => ({
-                      ...prev,
-                      accent: e.target.value,
-                    }));
-                  }}
-                  className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent"
-                />
-                Accent
-              </label>
-              <label className="flex items-center gap-1 text-[11px] font-bold">
-                <input
-                  type="color"
-                  value={palette.textPrimary}
-                  onChange={(e) => {
-                    setPaletteId("custom-brand");
-                    setCustomColors((prev) => ({
-                      ...prev,
-                      textPrimary: e.target.value,
-                    }));
-                  }}
-                  className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent"
-                />
-                Text
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {showEmbedModal && (
-          <div className="rounded-xl border border-indigo-500/30 bg-slate-900 p-4 text-white space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400">
-                SEO Backlink Acquisition HTML Embed Code
-              </span>
-              <button
-                type="button"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(seoEmbedCode);
-                  notify("Copied SEO Infographic Embed HTML code!");
-                }}
-                className="inline-flex items-center gap-1 rounded-lg bg-[#ff6b35] px-3 py-1 text-xs font-bold text-white"
-              >
-                <Copy size={12} /> Copy Embed HTML
-              </button>
-            </div>
-            <pre className="overflow-x-auto rounded-lg bg-slate-950 p-3 font-mono text-[11px] text-emerald-300">
-              {seoEmbedCode}
-            </pre>
-          </div>
-        )}
-      </div>
-
-      {/* 2. MAIN WORKSPACE: LIVE HOVER-DOWNLOAD INFOGRAPHIC CANVAS (TOP/RIGHT) + INLINE EDITOR (LEFT) */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] items-start">
-        {/* LEFT COLUMN: INLINE HEADER, SIDE-IMAGE & NODE EDITOR */}
-        <div className="space-y-4 order-2 lg:order-1">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
-            <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
-              1. Customize Header, Side Image &amp; Brand Footer
-            </h4>
-
-            <div className="grid gap-2.5 sm:grid-cols-2">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                  Top Kicker Pill
-                </label>
-                <input
-                  type="text"
-                  value={kicker}
-                  onChange={(e) => setKicker(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
-                />
               </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                  Brand Footer Attribution
-                </label>
-                <input
-                  type="text"
-                  value={footerBrand}
-                  onChange={(e) => setFooterBrand(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
-                />
+              <div className={`${styles.nodeNav} mt-2`}>
+                {nodes.map((node, i) => (
+                  <button
+                    key={node.id}
+                    type="button"
+                    aria-label={`Edit section ${i + 1}`}
+                    aria-pressed={currentNode?.id === node.id}
+                    onClick={() => setSelectedNodeId(node.id)}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
               </div>
-            </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                Main Infographic Headline
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                Subtitle / Executive Takeaway
-              </label>
-              <input
-                type="text"
-                value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950"
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                <ImageIcon size={12} className="text-[#ff6b35]" />
-                Side-Image / Hero Artwork URL (Used in Side-Image Split Templates)
-              </label>
-              <input
-                type="url"
-                value={sideImageUrl}
-                onChange={(e) => setSideImageUrl(e.target.value)}
-                placeholder="Paste image URL or select an extracted article image below..."
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950"
-              />
-              {extractedImages.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {extractedImages.slice(0, 5).map((imgUrl, idx) => (
-                    <button
-                      key={imgUrl}
-                      type="button"
-                      onClick={() => {
-                        setSideImageUrl(imgUrl);
-                        setTemplate("side-image-editorial-split");
-                        notify(`Applied Article Image #${idx + 1} to Side-Image Split template!`);
-                      }}
-                      className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[10px] font-bold hover:border-[#ff6b35] dark:border-slate-700 dark:bg-slate-900"
-                    >
-                      Use Article Image #{idx + 1}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* EDITABLE VISUAL NODES */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="flex items-center justify-between">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
-                2. Edit Infographic Nodes &amp; Icons ({nodes.length} / 8)
-              </h4>
-              <button
-                type="button"
-                onClick={addNode}
-                className="inline-flex items-center gap-1 rounded-lg bg-[#3452d1] px-2.5 py-1 text-xs font-extrabold text-white hover:bg-[#2842b5]"
-              >
-                <Plus size={13} /> Add Node
-              </button>
-            </div>
-
-            <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
-              {nodes.map((node, i) => (
-                <div
-                  key={node.id}
-                  className={`rounded-xl border bg-white p-3 space-y-2 shadow-2xs transition dark:bg-slate-950 ${
-                    selectedNodeId === node.id
-                      ? "border-[#ff6b35] ring-1 ring-[#ff6b35]"
-                      : "border-slate-200 dark:border-slate-800"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                      Node #{i + 1}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeNode(node.id)}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:underline"
-                    >
-                      <Trash2 size={12} /> Remove
-                    </button>
-                  </div>
-
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500">
-                        Step / Badge
-                      </label>
-                      <input
-                        type="text"
-                        value={node.badge}
-                        onChange={(e) =>
-                          updateNode(node.id, "badge", e.target.value)
-                        }
-                        className="mt-0.5 w-full rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
-                      />
+              {currentNode && (
+                <>
+                  <label>
+                    <div className="flex items-center justify-between gap-2">
+                      <span>Section title</span>
+                      <span className={`text-[11px] font-bold ${nodeTitleStatus.colorClass}`}>
+                        {nodeTitleStatus.label}
+                      </span>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500">
-                        Stat / KPI Pill
-                      </label>
-                      <input
-                        type="text"
-                        value={node.metricValue || ""}
-                        onChange={(e) =>
-                          updateNode(node.id, "metricValue", e.target.value)
-                        }
-                        placeholder="e.g. 88%, 3.4x ROI"
-                        className="mt-0.5 w-full rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500">
-                        Vector Icon
-                      </label>
-                      <select
-                        value={node.icon || inferNodeIcon(node.title, i)}
-                        onChange={(e) =>
-                          updateNode(
-                            node.id,
-                            "icon",
-                            e.target.value as InfographicIconId,
-                          )
-                        }
-                        className="mt-0.5 w-full rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
-                      >
-                        {ICON_OPTIONS.map((ic) => (
-                          <option key={ic.id} value={ic.id}>
-                            {ic.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500">
-                      Node Headline
-                    </label>
                     <input
-                      type="text"
-                      value={node.title}
+                      ref={sectionTitleInputRef}
+                      value={currentNode.title}
                       onChange={(e) =>
-                        updateNode(node.id, "title", e.target.value)
+                        updateNode(currentNode.id, "title", e.target.value)
                       }
-                      className="mt-0.5 w-full rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
                     />
-                  </div>
+                  </label>
 
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500">
-                      Concise Visual Description
-                    </label>
+                  <label>
+                    <div className="flex items-center justify-between gap-2">
+                      <span>Takeaway</span>
+                      <span className={`text-[11px] font-bold ${nodeBodyStatus.colorClass}`}>
+                        {nodeBodyStatus.label}
+                      </span>
+                    </div>
                     <textarea
-                      rows={2}
-                      value={node.body}
+                      value={currentNode.body}
                       onChange={(e) =>
-                        updateNode(node.id, "body", e.target.value)
+                        updateNode(currentNode.id, "body", e.target.value)
                       }
-                      className="mt-0.5 w-full rounded border border-slate-200 bg-slate-50 p-2 text-xs dark:border-slate-700 dark:bg-slate-900"
                     />
+                  </label>
+
+                  <details className="mt-2 rounded-xl border border-slate-400/25 p-3">
+                    <summary className="font-semibold">
+                      Icon, custom section image &amp; details
+                    </summary>
+                    <div className="mt-3 space-y-3">
+                      <label>
+                        Number or label
+                        <input
+                          value={currentNode.badge}
+                          onChange={(e) =>
+                            updateNode(currentNode.id, "badge", e.target.value)
+                          }
+                        />
+                      </label>
+                      <label>
+                        Statistic from your source (optional)
+                        <input
+                          value={currentNode.metricValue || ""}
+                          placeholder="e.g. +42%, 3.2x, 90 Tools"
+                          onChange={(e) =>
+                            updateNode(
+                              currentNode.id,
+                              "metricValue",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </label>
+                      <label>
+                        Comparison text (for VS / Do &amp; Don&apos;t layouts)
+                        <input
+                          value={currentNode.compareRight || ""}
+                          onChange={(e) =>
+                            updateNode(
+                              currentNode.id,
+                              "compareRight",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </label>
+
+                      {/* Custom Image Upload for this specific section icon */}
+                      <div className="rounded-xl border border-slate-400/30 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold">
+                            Custom Icon / Image for Section #{nodes.indexOf(currentNode) + 1}
+                          </span>
+                          {currentNode.customImageUrl && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateNode(currentNode.id, "customImageUrl", "")
+                              }
+                              className="text-[11px] font-bold text-rose-500 hover:underline"
+                            >
+                              Reset to Vector Icon
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          className="mt-2 text-xs"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              updateNode(
+                                currentNode.id,
+                                "customImageUrl",
+                                String(reader.result),
+                              );
+                              notify(
+                                "Applied custom uploaded image to this section!",
+                              );
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </div>
+
+                      <div
+                        className="grid grid-cols-4 gap-2"
+                        aria-label="Choose a section icon"
+                      >
+                        {ICON_OPTIONS.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            title={option.label}
+                            aria-label={option.label}
+                            aria-pressed={
+                              !currentNode.customImageUrl &&
+                              currentNode.icon === option.id
+                            }
+                            className="flex flex-col items-center rounded-lg border border-slate-400/30 p-2 text-[10px]"
+                            onClick={() => {
+                              updateNode(currentNode.id, "customImageUrl", "");
+                              updateNode(currentNode.id, "icon", option.id);
+                            }}
+                          >
+                            <svg
+                              viewBox="0 0 48 48"
+                              width="30"
+                              height="30"
+                              aria-hidden="true"
+                            >
+                              {renderSvgIcon(option.id, 24, 24, 28, "#5271ff")}
+                            </svg>
+                            <span className="mt-1 truncate">
+                              {option.label.split(" / ")[0]}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </details>
+
+                  <div className={`${styles.toolbar} mt-5`}>
+                    <button type="button" onClick={addNode}>
+                      <Plus size={16} className="mr-1 inline" />
+                      Add section ({nodes.length}/8)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeNode(currentNode.id)}
+                    >
+                      <Trash2 size={16} className="mr-1 inline" />
+                      Remove section
+                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+                </>
+              )}
+              <p className={styles.hint}>
+                Aim for 3–6 words per section title and 12–22 words per takeaway
+                so every box stays ~80% filled without crowding.
+              </p>
+            </>
+          )}
 
-        {/* RIGHT COLUMN: LIVE VECTOR SVG INFOGRAPHIC WITH HOVER DOWNLOAD OVERLAY */}
-        <div className="space-y-3 order-1 lg:order-2">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <span className="font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Live Vector Infographic ({dimensions.label})
-            </span>
-            <span className="inline-flex items-center gap-1 font-bold text-[#ff6b35]">
-              <Sparkles size={13} /> Hover over the infographic to download PNG,
-              SVG, or PDF
-            </span>
-          </div>
+          {/* TAB 2: DESIGN */}
+          {editorTab === "design" && (
+            <>
+              <label>
+                Size &amp; Aspect Ratio
+                <select
+                  value={aspect}
+                  onChange={(e) =>
+                    setAspect(e.target.value as InfographicAspectRatio)
+                  }
+                >
+                  {Object.entries({
+                    "vertical-poster": "Tall poster · 1080 × 1920",
+                    "pinterest-tall": "Pinterest · 1000 × 1500",
+                    "portrait-social": "Portrait · 1080 × 1350",
+                    "horizontal-landscape": "Landscape · 1600 × 1000",
+                    "square-card": "Square · 1200 × 1200",
+                  }).map(([id, label]) => (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-          {/* HOVERABLE INFOGRAPHIC STAGE */}
-          <div
-            className={`group relative overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2.5 shadow-xl transition dark:border-slate-700 ${
-              isFullscreen
-                ? "fixed inset-4 z-50 flex flex-col items-center justify-center bg-slate-950/95 p-6"
-                : ""
-            }`}
-          >
-            {/* FLOATING HOVER DOWNLOAD BAR OVER THE INFOGRAPHIC */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-4 opacity-95 transition-all duration-200 sm:opacity-0 sm:group-hover:opacity-100">
-              <div className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/90 px-3 py-1.5 text-[11px] font-extrabold text-white shadow-lg backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                <span>Pure Vector + 2x Retina Ready</span>
-              </div>
+              <label>
+                Background SVG Wave &amp; Mesh Style
+                <select
+                  value={bgWaveStyle}
+                  onChange={(e) =>
+                    setBgWaveStyle(e.target.value as InfographicBgWaveStyle)
+                  }
+                >
+                  <option value="waves">Layered 3D Silk Waves (Default)</option>
+                  <option value="aurora">Editorial Aurora Ribbons</option>
+                  <option value="rings">Concentric Orbital Rings</option>
+                  <option value="grid">Architectural Blueprint Grid</option>
+                  <option value="minimal">Clean Minimal Gradient</option>
+                </select>
+              </label>
 
-              <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-white/20 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-md">
+              <label>
+                Color theme
+                <select
+                  value={paletteId}
+                  onChange={(e) =>
+                    setPaletteId(e.target.value as InfographicColorPaletteId)
+                  }
+                >
+                  {INFOGRAPHIC_PALETTES.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                  <option value="custom-brand">Custom brand colors</option>
+                </select>
+              </label>
+
+              {detectedArticleColors && (
                 <button
                   type="button"
-                  onClick={downloadHighResPng}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#e85d2a]"
+                  onClick={() => {
+                    setCustomColors({
+                      ...detectedArticleColors,
+                      bgEnd: detectedArticleColors.bgStart,
+                    });
+                    setPaletteId("custom-brand");
+                    notify(
+                      "Applied brand color palette detected from your article/logo!",
+                    );
+                  }}
+                  className="mt-1 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#5271ff]/40 bg-[#5271ff]/10 px-3 py-2 text-xs font-extrabold text-[#4058d0] dark:text-[#9aabff]"
+                >
+                  <Wand2 size={14} />
+                  Apply Detected Article / Logo Brand Colors
+                </button>
+              )}
+
+              {/* Standard Color Swatch Box + Hex Input (Replaces the wide bar!) */}
+              <div className="mt-3 rounded-xl border border-slate-400/25 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold">
+                    <Palette size={14} className="text-[#5271ff]" />
+                    Custom Color Swatches
+                  </span>
+                  <span className="text-[11px] opacity-75">
+                    Click any swatch or edit #HEX
+                  </span>
+                </div>
+
+                <div className={styles.colorSwatchGrid}>
+                  {(
+                    [
+                      ["Background", "bgStart"],
+                      ["Card Surface", "cardBg"],
+                      ["Primary Accent", "accent"],
+                      ["Second Accent", "accentSecondary"],
+                      ["Text Color", "textPrimary"],
+                    ] as const
+                  ).map(([label, key]) => {
+                    const currentVal =
+                      paletteId === "custom-brand"
+                        ? customColors[key]
+                        : key === "bgStart"
+                          ? palette.bgStart
+                          : key === "cardBg"
+                            ? palette.cardBg.startsWith("#")
+                              ? palette.cardBg
+                              : "#ffffff"
+                            : key === "accent"
+                              ? palette.accent
+                              : key === "accentSecondary"
+                                ? palette.accentSecondary
+                                : palette.textPrimary;
+
+                    const applyColorVal = (val: string) => {
+                      const next = {
+                        ...(paletteId === "custom-brand"
+                          ? customColors
+                          : {
+                              bgStart: palette.bgStart,
+                              bgEnd: palette.bgEnd,
+                              cardBg: palette.cardBg.startsWith("#")
+                                ? palette.cardBg
+                                : "#ffffff",
+                              accent: palette.accent,
+                              accentSecondary: palette.accentSecondary,
+                              textPrimary: palette.textPrimary,
+                            }),
+                        [key]: val,
+                      };
+                      if (key === "bgStart") next.bgEnd = val;
+                      setCustomColors(next);
+                      setPaletteId("custom-brand");
+                    };
+
+                    return (
+                      <div key={key} className={styles.colorSwatchCard}>
+                        <input
+                          type="color"
+                          aria-label={label}
+                          className={styles.colorSwatchInput}
+                          value={
+                            /^#[0-9a-fA-F]{6}$/.test(currentVal)
+                              ? currentVal
+                              : "#4058d0"
+                          }
+                          onChange={(e) => applyColorVal(e.target.value)}
+                        />
+                        <div className={styles.colorSwatchMeta}>
+                          <span className={styles.colorSwatchLabel}>
+                            {label}
+                          </span>
+                          <input
+                            type="text"
+                            value={currentVal}
+                            aria-label={`${label} hex code`}
+                            className={styles.colorHexInput}
+                            onChange={(e) => applyColorVal(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Live WCAG Contrast & Visibility Alert */}
+                {contrastReport.isLowVisibility && (
+                  <div role="alert" className={styles.contrastAlert}>
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle
+                        size={16}
+                        className="mt-0.5 shrink-0 text-amber-500"
+                      />
+                      <div className="flex-1">
+                        <strong className="block font-bold">
+                          Low Text Visibility Detected (Contrast{" "}
+                          {contrastReport.minContrast.toFixed(1)}:1)
+                        </strong>
+                        <p className="mt-0.5 text-[11px] opacity-90">
+                          Your selected text color and background/card surface
+                          have low contrast, which makes headings or takeaways
+                          hard to read.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={autoFixContrast}
+                          className="mt-2 inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-3 py-1 text-[11px] font-extrabold text-white"
+                        >
+                          <Sparkles size={12} /> Auto-Fix Text Visibility
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* VISUAL THUMBNAIL PREVIEW PICKER FOR ARTICLE & STUDIO IMAGES */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold">
+                    Artwork for Editorial &amp; Image Layouts (
+                    {allAvailableImages.length} available)
+                  </span>
+                  <span className="text-[11px] opacity-75">
+                    Click thumbnail to apply
+                  </span>
+                </div>
+
+                <div className={styles.imageThumbGrid}>
+                  {allAvailableImages.map((item, idx) => {
+                    const currentArt =
+                      sideImageUrl || "/visual-studio/paper-sculpture.png";
+                    const isSelected = currentArt === item.src;
+                    return (
+                      <button
+                        key={`${item.src}-${idx}`}
+                        type="button"
+                        aria-pressed={isSelected}
+                        className={styles.imageThumbBtn}
+                        onClick={() => {
+                          setSideImageUrl(item.src);
+                          if (!template.startsWith("side-image")) {
+                            setTemplate("side-image-editorial-split");
+                          }
+                          notify(`Selected "${item.label}" for infographic!`);
+                        }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={item.src}
+                          alt={item.label}
+                          className={styles.imageThumbPreview}
+                          loading="lazy"
+                        />
+                        <span className={styles.imageThumbCaption}>
+                          {item.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <label>
+                Upload Custom Hero Artwork
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 10 * 1024 * 1024) {
+                      notify("Choose an image smaller than 10 MB.");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      setSideImageUrl(String(reader.result));
+                      if (!template.startsWith("side-image")) {
+                        setTemplate("side-image-editorial-split");
+                      }
+                      notify("Uploaded custom artwork and applied to layout!");
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+              </label>
+            </>
+          )}
+
+          {/* TAB 3: BRAND */}
+          {editorTab === "brand" && (
+            <>
+              <label>
+                Top Kicker Label
+                <input
+                  value={kicker}
+                  onChange={(e) => setKicker(e.target.value)}
+                />
+              </label>
+              <label>
+                Brand Name (Footer)
+                <input
+                  value={footerBrand}
+                  onChange={(e) => setFooterBrand(e.target.value)}
+                />
+              </label>
+              <label>
+                Source URL
+                <input
+                  value={sourceUrl}
+                  onChange={(e) => setSourceUrl(e.target.value)}
+                />
+              </label>
+
+              {/* Brand Logo Upload + Auto Brand Color Extraction */}
+              <div className="mt-4 rounded-xl border border-slate-400/30 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold">
+                    <Upload size={14} className="text-[#5271ff]" />
+                    Brand Logo (Header &amp; Footer)
+                  </span>
+                  {brandLogoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setBrandLogoUrl("")}
+                      className="text-[11px] font-bold text-rose-500 hover:underline"
+                    >
+                      Remove Logo
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="text-xs"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      const dataUrl = String(reader.result);
+                      setBrandLogoUrl(dataUrl);
+                      const detected =
+                        await extractBrandPaletteFromImageUrl(dataUrl);
+                      if (detected) {
+                        setCustomColors({
+                          ...detected,
+                          bgEnd: detected.bgStart,
+                        });
+                        setPaletteId("custom-brand");
+                        notify(
+                          "Uploaded brand logo and automatically applied your logo's brand colors!",
+                        );
+                      } else {
+                        notify("Added brand logo to infographic!");
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                {brandLogoUrl && (
+                  <div className="flex items-center gap-3 rounded-lg bg-slate-900/40 p-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={brandLogoUrl}
+                      alt="Brand logo preview"
+                      className="h-9 w-9 rounded object-contain bg-white p-1"
+                    />
+                    <span className="text-[11px] font-semibold opacity-85">
+                      Logo active on infographic header &amp; footer
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <p className={styles.hint}>
+                Uploading your logo or extracting an article URL automatically
+                detects brand colors so your infographic matches your site.
+              </p>
+            </>
+          )}
+        </div>
+
+        {/* RIGHT INTERACTIVE SVG PREVIEW CONTAINER WITH TOP-RIGHT DOWNLOAD BAR */}
+        <div className={styles.preview}>
+          <div className={styles.stage}>
+            {/* Top-Right In-Container Download & Quick Status Bar */}
+            <div className={styles.stageTopBar}>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                <Sparkles size={14} className="text-[#8094ff]" />
+                <span>
+                  Click any headline or section card below to edit directly
+                </span>
+              </div>
+              <div className={styles.stageTopActions}>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  disabled={exporting}
+                  onClick={() => void runExport(downloadHighResPng)}
                 >
                   <Download size={14} />
-                  Download PNG
+                  {exporting ? "Exporting…" : "Download PNG"}
                 </button>
                 <button
                   type="button"
-                  onClick={downloadVectorSvg}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#2842b5]"
+                  disabled={exporting}
+                  onClick={() => void runExport(downloadVectorSvg)}
                 >
-                  <FileCode2 size={14} />
                   SVG
                 </button>
                 <button
                   type="button"
-                  onClick={printPdfPoster}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-emerald-500"
+                  disabled={exporting}
+                  onClick={() => void runExport(printPdfPoster)}
                 >
-                  <Printer size={14} />
                   PDF
                 </button>
                 <button
                   type="button"
-                  onClick={copyInfographicImage}
-                  className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20"
+                  disabled={exporting}
+                  onClick={() => void copyInfographicImage()}
                 >
                   <Copy size={13} />
                   {copiedImg ? "Copied!" : "Copy"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setIsFullscreen((v) => !v)}
-                  title="Toggle Fullscreen Preview"
-                  className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 p-2 text-xs font-bold text-white hover:bg-white/20"
-                >
-                  <Maximize2 size={14} />
-                </button>
               </div>
             </div>
 
-            {/* Subtle persistent pill when not hovered on desktop */}
-            <div className="pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1.5 text-[11px] font-bold text-white shadow-md backdrop-blur-xs transition-opacity sm:inline-flex sm:group-hover:opacity-0">
-              <Download size={12} className="text-[#ff6b35]" />
-              <span>Hover to Download (PNG · SVG · PDF)</span>
-            </div>
-
-            {/* PURE VECTOR SVG INFOGRAPHIC POSTER */}
             <svg
               ref={svgRef}
               viewBox={`0 0 ${W} ${H}`}
-              className={`mx-auto block w-full rounded-xl object-contain ${
-                isFullscreen ? "max-h-[88vh]" : "max-h-[860px]"
-              }`}
               role="img"
               aria-label={title}
+              fontFamily="Inter, system-ui, -apple-system, Arial, sans-serif"
             >
               <defs>
-                <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
                   <stop offset="0%" stopColor={palette.bgStart} />
                   <stop offset="100%" stopColor={palette.bgEnd} />
                 </linearGradient>
-                <linearGradient
-                  id="accentGrad"
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="0%"
-                >
+                <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor={palette.accent} />
                   <stop offset="100%" stopColor={palette.accentSecondary} />
                 </linearGradient>
                 <filter
                   id="dropShadow"
-                  x="-8%"
-                  y="-8%"
-                  width="116%"
-                  height="120%"
+                  x="-10%"
+                  y="-10%"
+                  width="120%"
+                  height="130%"
                 >
                   <feDropShadow
                     dx="0"
                     dy="8"
-                    stdDeviation="10"
-                    floodColor="#000000"
-                    floodOpacity="0.28"
+                    stdDeviation="12"
+                    floodOpacity=".14"
+                  />
+                </filter>
+                {/* 3D Elevated Tactile Card Drop Shadow */}
+                <filter
+                  id="card3dShadow"
+                  x="-12%"
+                  y="-10%"
+                  width="124%"
+                  height="132%"
+                >
+                  <feDropShadow
+                    dx="0"
+                    dy="12"
+                    stdDeviation="14"
+                    floodColor="#020617"
+                    floodOpacity="0.22"
+                  />
+                  <feDropShadow
+                    dx="0"
+                    dy="3"
+                    stdDeviation="4"
+                    floodColor={palette.accent}
+                    floodOpacity="0.12"
                   />
                 </filter>
                 <pattern
@@ -3348,156 +3714,185 @@ export function EditableInfographicStudio({
                   patternUnits="userSpaceOnUse"
                 >
                   <circle
-                    cx="4"
-                    cy="4"
-                    r="1.6"
+                    cx="2"
+                    cy="2"
+                    r="1.3"
                     fill={palette.textSecondary}
-                    fillOpacity="0.14"
+                    fillOpacity=".1"
                   />
                 </pattern>
               </defs>
 
-              {/* 1. Poster Background + Subtle Geometric Mesh */}
+              {/* Base Background Gradient */}
               <rect width={W} height={H} fill="url(#bgGrad)" />
-              <rect width={W} height={H} fill="url(#dotGrid)" />
-              <circle
-                cx={W - 90}
-                cy={90}
-                r={210}
-                fill={palette.accent}
-                fillOpacity={0.12}
-              />
-              <circle
-                cx={80}
-                cy={H - 160}
-                r={190}
-                fill={palette.accentSecondary}
-                fillOpacity={0.1}
+
+              {/* Decorative 3D SVG Background Waves / Aurora / Rings / Grid */}
+              <InfographicBackgroundDecor
+                width={W}
+                height={H}
+                palette={palette}
+                style={bgWaveStyle}
               />
 
-              {/* 2. Poster Header Block */}
-              <g>
-                {/* Kicker Pill */}
-                <rect
-                  x={padX}
-                  y={isHorizontal ? 34 : 46}
-                  width={Math.min(
-                    availW,
-                    Math.max(220, (kicker || "VISUAL PLAYBOOK").length * 13 + 48),
-                  )}
-                  height={38}
-                  rx={19}
-                  fill="url(#accentGrad)"
-                />
+              {/* Top Brand Accent Bar */}
+              <rect width={W} height="14" fill="url(#accentGrad)" />
+
+              {/* Clickable Header Region (Kicker, Brand Logo, Overflow-Safe Headline & Subtitle) */}
+              <g
+                onClick={() => {
+                  setEditorTab("content");
+                  setTimeout(() => headlineInputRef.current?.focus(), 60);
+                }}
+                style={{ cursor: "pointer" }}
+              >
                 <text
-                  x={padX + 22}
-                  y={isHorizontal ? 59 : 71}
-                  fill={palette.badgeText}
-                  fontSize={16}
-                  fontWeight={900}
-                  letterSpacing="1.2"
-                  fontFamily="system-ui, -apple-system, sans-serif"
+                  x={padX}
+                  y="62"
+                  fontSize="17"
+                  fontWeight="800"
+                  letterSpacing="2.2"
+                  fill={palette.accent}
                 >
-                  {(kicker || "VISUAL INFOGRAPHIC").toUpperCase()}
+                  {kicker.slice(0, 44).toUpperCase()}
                 </text>
 
-                {/* Main Title */}
-                {titleLines.map((line, idx) => (
-                  <text
-                    key={idx}
-                    x={padX}
-                    y={
-                      (isHorizontal ? 114 : 134) + idx * (titleFontSize + 10)
-                    }
-                    fill={palette.textPrimary}
-                    fontSize={titleFontSize}
-                    fontWeight={900}
-                    fontFamily="system-ui, -apple-system, sans-serif"
+                {brandLogoUrl && (
+                  <g
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditorTab("brand");
+                    }}
                   >
-                    {line}
-                  </text>
-                ))}
+                    <rect
+                      x={W - padX - 84}
+                      y={34}
+                      width={84}
+                      height={84}
+                      rx={18}
+                      fill={palette.cardBg}
+                      stroke={palette.cardBorder}
+                      strokeWidth={2}
+                      filter="url(#card3dShadow)"
+                    />
+                    <image
+                      href={brandLogoUrl}
+                      x={W - padX - 74}
+                      y={44}
+                      width={64}
+                      height={64}
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                  </g>
+                )}
 
-                {/* Subtitle */}
-                {subtitleLines.map((line, idx) => (
-                  <text
-                    key={idx}
-                    x={padX}
-                    y={
-                      (isHorizontal ? 118 : 142) +
-                      titleLines.length * (titleFontSize + 10) +
-                      idx * 28
-                    }
-                    fill={palette.textSecondary}
-                    fontSize={isHorizontal ? 19 : 21}
-                    fontWeight={500}
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                  >
-                    {line}
-                  </text>
-                ))}
+                {titleLines.map((line, i) => {
+                  const estimatedW = line.length * titleFontSize * 0.58;
+                  return (
+                    <text
+                      key={i}
+                      x={padX}
+                      y={116 + i * (titleFontSize + 10)}
+                      fill={palette.textPrimary}
+                      fontSize={titleFontSize}
+                      fontWeight="800"
+                      textLength={
+                        estimatedW > availHeaderW ? availHeaderW : undefined
+                      }
+                      lengthAdjust={
+                        estimatedW > availHeaderW
+                          ? "spacingAndGlyphs"
+                          : undefined
+                      }
+                    >
+                      {line}
+                    </text>
+                  );
+                })}
 
-                {/* Accent Divider Bar */}
-                <rect
-                  x={padX}
-                  y={headerH - 22}
-                  width={180}
-                  height={6}
-                  rx={3}
-                  fill="url(#accentGrad)"
-                />
+                {subtitleLines.map((line, i) => {
+                  const estimatedSubW = line.length * subtitleFontSize * 0.53;
+                  return (
+                    <text
+                      key={i}
+                      x={padX}
+                      y={
+                        126 +
+                        titleLines.length * (titleFontSize + 10) +
+                        i * (subtitleFontSize + 8)
+                      }
+                      fill={palette.textSecondary}
+                      fontSize={subtitleFontSize}
+                      fontWeight="500"
+                      textLength={
+                        estimatedSubW > availHeaderW ? availHeaderW : undefined
+                      }
+                      lengthAdjust={
+                        estimatedSubW > availHeaderW
+                          ? "spacingAndGlyphs"
+                          : undefined
+                      }
+                    >
+                      {line}
+                    </text>
+                  );
+                })}
               </g>
 
-              {/* 3. Dynamic Template Body */}
+              {/* Main Infographic Body */}
               {renderInfographicBody()}
 
-              {/* 4. Poster Footer Bar */}
-              <g transform={`translate(0, ${H - footerH})`}>
-                <rect
-                  width={W}
-                  height={footerH}
-                  fill="#020617"
-                  fillOpacity={0.72}
-                />
+              {/* Clickable Footer Region */}
+              <g
+                onClick={() => setEditorTab("brand")}
+                style={{ cursor: "pointer" }}
+              >
                 <line
-                  x1={0}
-                  y1={0}
-                  x2={W}
-                  y2={0}
-                  stroke={palette.accent}
-                  strokeOpacity={0.4}
-                  strokeWidth={2}
+                  x1={padX}
+                  x2={W - padX}
+                  y1={H - 64}
+                  y2={H - 64}
+                  stroke={palette.textSecondary}
+                  strokeOpacity=".22"
                 />
-                <circle
-                  cx={padX + 14}
-                  cy={footerH / 2}
-                  r={9}
-                  fill={palette.accent}
-                />
+                {brandLogoUrl && (
+                  <image
+                    href={brandLogoUrl}
+                    x={padX}
+                    y={H - 52}
+                    width={32}
+                    height={32}
+                    preserveAspectRatio="xMidYMid meet"
+                  />
+                )}
                 <text
-                  x={padX + 34}
-                  y={footerH / 2 + 7}
-                  fill="#FFFFFF"
-                  fontSize={20}
-                  fontWeight={800}
-                  fontFamily="system-ui, -apple-system, sans-serif"
+                  x={padX + (brandLogoUrl ? 42 : 0)}
+                  y={H - 30}
+                  fontSize="19"
+                  fontWeight="800"
+                  fill={palette.textPrimary}
                 >
-                  {footerBrand || "doitwithai.tools"}
+                  {footerBrand.slice(0, 55)}
                 </text>
                 <text
                   x={W - padX}
-                  y={footerH / 2 + 7}
+                  y={H - 30}
                   textAnchor="end"
-                  fill="#CBD5E1"
-                  fontSize={16}
-                  fontWeight={700}
-                  fontFamily="system-ui, -apple-system, sans-serif"
+                  fontSize="15.5"
+                  fontWeight="600"
+                  fill={palette.textSecondary}
                 >
-                  Save &amp; Share This Visual Guide ★
+                  {sourceUrl
+                    ? "Source: " +
+                      sourceUrl.replace(/^https?:\/\//, "").slice(0, 38)
+                    : "Verified Visual Summary"}
                 </text>
               </g>
             </svg>
           </div>
+          <p className={`${styles.hint} mt-3`}>
+            {dimensions.label} · Click any text or card in the infographic to
+            edit · Vector SVG &amp; 2× PNG ready.
+          </p>
         </div>
       </div>
     </div>

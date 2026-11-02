@@ -462,7 +462,7 @@ export default function YoutubeTranscriptGeneratorClient() {
           <button
             type="submit"
             disabled={loadingFetch}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#ff6b35] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-sm hover:bg-[#e85d2a] disabled:opacity-60"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-sm hover:bg-[#3452d1] disabled:opacity-60"
           >
             <Play size={14} />
             {loadingFetch
@@ -671,7 +671,7 @@ export default function YoutubeTranscriptGeneratorClient() {
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3.5 dark:border-slate-800">
               <div>
-                <span className="text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
                   Deep AI Video Intelligence
                 </span>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">
@@ -812,7 +812,7 @@ export default function YoutubeTranscriptGeneratorClient() {
                         </span>
                         <span>{ins.title}</span>
                       </span>
-                      <span className="rounded-full bg-[#ff6b35]/15 px-2 py-0.5 text-[10px] font-extrabold text-[#ff6b35]">
+                      <span className="rounded-full bg-[#4058d0]/15 px-2 py-0.5 text-[10px] font-extrabold text-[#4058d0]">
                         {ins.category}
                       </span>
                     </div>

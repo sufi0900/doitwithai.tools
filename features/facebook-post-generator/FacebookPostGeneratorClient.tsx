@@ -168,7 +168,7 @@ export function FacebookPostGeneratorClient() {
               value={topicOrContent}
               onChange={(e) => setTopicOrContent(e.target.value)}
               placeholder="Paste your article content, sub-topic, or key message..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
 
@@ -181,7 +181,7 @@ export function FacebookPostGeneratorClient() {
                 type="text"
                 value={targetAudience}
                 onChange={(e) => setTargetAudience(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
             <div>
@@ -193,7 +193,7 @@ export function FacebookPostGeneratorClient() {
                 value={destinationUrl}
                 onChange={(e) => setDestinationUrl(e.target.value)}
                 placeholder="https://example.com/guide"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
           </div>
@@ -208,7 +208,7 @@ export function FacebookPostGeneratorClient() {
                 onChange={(e) =>
                   setPostFormat(e.target.value as FacebookPostFormat)
                 }
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm font-medium text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm font-medium text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
                 <option value="story-engagement">
                   Story Lesson + Engagement Question
@@ -232,7 +232,7 @@ export function FacebookPostGeneratorClient() {
                 type="text"
                 value={brandTone}
                 onChange={(e) => setBrandTone(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
           </div>
@@ -247,7 +247,7 @@ export function FacebookPostGeneratorClient() {
             type="button"
             onClick={() => void runGenerate()}
             disabled={loading}
-            className="w-full rounded-xl bg-[#ff6b35] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
           >
             {loading
               ? "Generating Facebook Posts & Graphic Cards..."

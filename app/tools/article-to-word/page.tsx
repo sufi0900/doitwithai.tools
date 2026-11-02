@@ -249,7 +249,7 @@ export default function Page() {
           supplying a real article.
         </p>
       </section>
-      <section className={`${section} bg-orange-50/50 dark:bg-orange-950/10`}>
+      <section className={`${section} bg-[#5271ff]/10/50 dark:bg-orange-950/10`}>
         <h2 className="text-2xl font-extrabold">
           Choose Word for editing or PDF for a reading copy
         </h2>

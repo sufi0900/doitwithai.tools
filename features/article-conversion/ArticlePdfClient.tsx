@@ -391,7 +391,7 @@ export default function ArticlePdfClient({
               <button
                 type="button"
                 key={id}
-                className={`${button} ${mode === id ? "border-[#9A3412] bg-orange-50 text-[#9A3412] dark:bg-orange-950/40 dark:text-[#FDBA74]" : ""}`}
+                className={`${button} ${mode === id ? "border-[#9A3412] bg-[#5271ff]/10 text-[#9A3412] dark:bg-orange-950/40 dark:text-[#FDBA74]" : ""}`}
                 aria-pressed={mode === id}
                 onClick={() => {
                   setMode(id);

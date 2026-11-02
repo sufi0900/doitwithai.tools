@@ -31,7 +31,7 @@ const TOPIC_METADATA: Record<
     description:
       "Turn articles into clean documents, listening formats, video scripts, and social drafts.",
     badgeColor:
-      "border-orange-500/25 bg-orange-500/10 text-orange-800 dark:border-orange-300/30 dark:bg-orange-500/[0.15] dark:text-orange-200",
+      "border-orange-500/25 bg-[#5271ff]/100/10 text-orange-800 dark:border-orange-300/30 dark:bg-[#5271ff]/100/[0.15] dark:text-orange-200",
   },
   "on-page": {
     shortName: "On-Page SEO",

@@ -3014,7 +3014,7 @@ export default function RepurposePanel({
                         type="button"
                         className={`rounded-lg border px-3 py-1.5 text-left text-xs font-semibold ${
                           newsletterDraft.selectedSubject === sub
-                            ? "border-[#9A3412] bg-orange-50 text-[#9A3412] dark:bg-orange-950/50 dark:text-orange-200"
+                            ? "border-[#9A3412] bg-[#5271ff]/10 text-[#9A3412] dark:bg-orange-950/50 dark:text-orange-200"
                             : "border-slate-200 dark:border-slate-700"
                         }`}
                         onClick={() => {

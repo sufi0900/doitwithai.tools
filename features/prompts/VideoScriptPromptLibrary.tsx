@@ -287,7 +287,7 @@ export default function VideoScriptPromptLibrary() {
               aria-labelledby={`workflow-title-${c.id}`}
             >
               <div className="mb-4">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-[#FF6B35]">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
                   {c.rangeLabel}
                 </span>
                 <h3

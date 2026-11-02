@@ -202,7 +202,7 @@ export function LinkedinCommentGeneratorClient() {
             }}
             className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs sm:text-sm font-extrabold transition ${
               mode === "reply-to-comments-on-my-post"
-                ? "bg-[#ff6b35] text-white shadow-sm"
+                ? "bg-[#4058d0] text-white shadow-sm"
                 : "bg-slate-50 text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300"
             }`}
           >
@@ -260,14 +260,14 @@ export function LinkedinCommentGeneratorClient() {
                   ? "Paste the text of your own LinkedIn post here for full context..."
                   : "Paste the LinkedIn post or article paragraph you want to reply to..."
               }
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
 
           {mode === "reply-to-comments-on-my-post" ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
                   Step 2: Paste 1 or More Comments Received on Your Post (
                   {incomingComments.length})
                 </label>
@@ -339,7 +339,7 @@ export function LinkedinCommentGeneratorClient() {
                   value={yourRole}
                   onChange={(e) => setYourRole(e.target.value)}
                   placeholder="e.g. SaaS Founder, SEO Strategist"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 />
               </div>
             </div>
@@ -355,7 +355,7 @@ export function LinkedinCommentGeneratorClient() {
                     value={yourRole}
                     onChange={(e) => setYourRole(e.target.value)}
                     placeholder="e.g. SaaS Founder, SEO Strategist"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                   />
                 </div>
 
@@ -368,7 +368,7 @@ export function LinkedinCommentGeneratorClient() {
                     value={authorName}
                     onChange={(e) => setAuthorName(e.target.value)}
                     placeholder="e.g. Alex, Sarah"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -382,7 +382,7 @@ export function LinkedinCommentGeneratorClient() {
                   onChange={(e) =>
                     setCommentGoal(e.target.value as CommentGoal)
                   }
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 >
                   <option value="authority-insight">
                     Build Authority &amp; Add Framework Insight
@@ -414,7 +414,7 @@ export function LinkedinCommentGeneratorClient() {
             type="button"
             onClick={() => void runGenerate()}
             disabled={loading}
-            className="w-full rounded-xl bg-[#ff6b35] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
           >
             {loading
               ? "Generating LinkedIn Responses..."
@@ -430,7 +430,7 @@ export function LinkedinCommentGeneratorClient() {
           className="space-y-4 focus:outline-none"
         >
           <div className="rounded-2xl border border-slate-200 bg-slate-900 p-4 text-white">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#ff8c5a]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#8094ff]">
               Detected Post Context
             </span>
             <p className="mt-1 text-xs sm:text-sm font-medium text-slate-100">
@@ -467,7 +467,7 @@ export function LinkedinCommentGeneratorClient() {
                               <span className="text-xs font-extrabold text-slate-900 dark:text-white">
                                 {reply.angleLabel}
                               </span>
-                              <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-[#ff6b35]">
+                              <span className="rounded-full bg-[#5271ff]/10 px-2 py-0.5 text-[10px] font-bold text-[#4058d0]">
                                 {reply.badge}
                               </span>
                             </div>
@@ -513,7 +513,7 @@ export function LinkedinCommentGeneratorClient() {
                         <span className="text-sm font-bold text-slate-900 dark:text-white">
                           {comment.styleLabel}
                         </span>
-                        <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold text-[#ff6b35]">
+                        <span className="rounded-full bg-[#5271ff]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#4058d0]">
                           {comment.badge}
                         </span>
                       </div>

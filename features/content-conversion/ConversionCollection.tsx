@@ -35,7 +35,7 @@ export default function ConversionCollection({
       <header className="relative isolate overflow-hidden bg-[#241B25] text-white">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 -top-28 h-96 w-96 rounded-full bg-orange-500/20 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-28 h-96 w-96 rounded-full bg-[#5271ff]/100/20 blur-3xl"
         />
         <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
           <nav
@@ -175,7 +175,7 @@ export default function ConversionCollection({
                       {item.purpose}
                     </p>
                   </div>
-                  <span className="w-fit rounded-lg border border-orange-200 bg-orange-50 px-3 py-1.5 text-[10px] font-bold tracking-wider text-orange-800 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-200">
+                  <span className="w-fit rounded-lg border border-orange-200 bg-[#5271ff]/10 px-3 py-1.5 text-[10px] font-bold tracking-wider text-orange-800 dark:border-orange-300/20 dark:bg-orange-300/10 dark:text-orange-200">
                     {item.format} · PLANNED
                   </span>
                 </li>

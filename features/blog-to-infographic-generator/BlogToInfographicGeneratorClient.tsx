@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import studioStyles from "@/features/tool-ui/visual-studio.module.css";
 import {
   CheckCircle2,
   Copy,
@@ -36,8 +37,8 @@ const QUICK_IDEA_PRESETS = [
     template: "isometric-3d-pyramid" as const,
   },
   {
-    label: "📊 SaaS Conversion Funnel Benchmarks",
-    title: "B2B SaaS Full-Funnel Conversion Benchmarks",
+    label: "📊 SaaS Conversion Funnel Stages",
+    title: "B2B SaaS Full-Funnel Conversion Stages",
     content: "",
     template: "conversion-funnel-stages" as const,
   },
@@ -48,8 +49,8 @@ const QUICK_IDEA_PRESETS = [
     template: "winding-s-roadmap" as const,
   },
   {
-    label: "🍩 Cold Outreach KPI & Reply Benchmarks",
-    title: "Cold Email & Digital PR Outreach Benchmarks",
+    label: "🍩 Cold Outreach Workflow",
+    title: "Cold Email & Digital PR Outreach Workflow",
     content: "",
     template: "stat-donut-kpi-dashboard" as const,
   },
@@ -88,6 +89,7 @@ export default function BlogToInfographicGeneratorClient() {
   ) {
     const activeInput = overrideInput || input;
     setLoading(true);
+    setAiPack(null);
     try {
       const res = await fetch("/api/ai-tools/blog-to-infographic-generator", {
         method: "POST",
@@ -95,13 +97,20 @@ export default function BlogToInfographicGeneratorClient() {
         body: JSON.stringify(activeInput),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Generation failed");
       if (data?.pack) {
         setAiPack(data.pack);
-        notify("Generated AI Visual Infographic & Evidence Breakdown!");
+        notify(
+          data.provider === "ai"
+            ? "Your infographic draft is ready. Review it before sharing."
+            : "AI is unavailable. Showing an editable outline from your content.",
+        );
       }
       focusToolSection(studioRef.current);
     } catch {
-      notify("Rendered visual infographic blueprint!");
+      notify(
+        "Could not reach AI. Your local editable outline is available below.",
+      );
       focusToolSection(studioRef.current);
     } finally {
       setLoading(false);
@@ -111,12 +120,12 @@ export default function BlogToInfographicGeneratorClient() {
   return (
     <section
       aria-label="Blog and Content Idea to Visual Infographic Studio"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
+      className={`${studioStyles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}
-        title="Synthesizing Evidence & Rendering Vector Infographic..."
-        description="Matching your topic or article to 26 vector templates with KPI badges, icons, and hover export."
+        title="Creating your infographic…"
+        description="Organizing your content and selecting a suitable layout."
       />
 
       {toast && (
@@ -130,14 +139,14 @@ export default function BlogToInfographicGeneratorClient() {
       )}
 
       {/* UNIFIED 1-CLICK INPUT STUDIO (IDEA / TOPIC OR ARTICLE URL) */}
-      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-5">
+      <div className="shadow-xs space-y-5 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
-              1-Click AI Visual Infographic Engine
+            <span className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
+              Article to infographic
             </span>
             <h2 className="text-xl font-black text-slate-900 dark:text-white">
-              Start From Any Random Topic Idea or Paste an Article URL
+              What would you like to explain?
             </h2>
           </div>
 
@@ -147,24 +156,24 @@ export default function BlogToInfographicGeneratorClient() {
               onClick={() => setInputMode("idea")}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-extrabold transition ${
                 inputMode === "idea"
-                  ? "bg-[#3452d1] text-white shadow-xs"
+                  ? "shadow-xs bg-[#3452d1] text-white"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-300"
               }`}
             >
               <Lightbulb size={14} />
-              Option 1: Topic Idea or Article Notes
+              Idea or text
             </button>
             <button
               type="button"
               onClick={() => setInputMode("url")}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-extrabold transition ${
                 inputMode === "url"
-                  ? "bg-[#3452d1] text-white shadow-xs"
+                  ? "shadow-xs bg-[#3452d1] text-white"
                   : "text-slate-600 hover:text-slate-900 dark:text-slate-300"
               }`}
             >
               <Globe size={14} />
-              Option 2: Extract From Article / Video URL
+              Article URL
             </button>
           </div>
         </div>
@@ -187,14 +196,18 @@ export default function BlogToInfographicGeneratorClient() {
                 const contentText =
                   data.keyTakeaways?.length >= 3
                     ? data.keyTakeaways.join("\n")
-                    : firstSub?.content || data.cleanText || input.sourceContent;
+                    : firstSub?.content ||
+                      data.cleanText ||
+                      input.sourceContent;
                 let domain = "doitwithai.tools";
                 try {
                   domain = new URL(data.url).hostname.replace(/^www\./, "");
                 } catch {}
                 const imgs = Array.isArray(data.images)
                   ? data.images
-                      .map((im) => (typeof im === "string" ? im : im?.src || ""))
+                      .map((im) =>
+                        typeof im === "string" ? im : im?.src || "",
+                      )
                       .filter(Boolean)
                   : [];
                 setExtractedImages(imgs);
@@ -244,7 +257,7 @@ export default function BlogToInfographicGeneratorClient() {
             {/* 1-Click Preset Topic Chips */}
             <div>
               <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Try a 1-Click Idea Preset (Auto-Matches Template &amp; Synthesizes Benchmarks):
+                Try an example:
               </span>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {QUICK_IDEA_PRESETS.map((preset) => (
@@ -260,10 +273,12 @@ export default function BlogToInfographicGeneratorClient() {
                         preferredTemplate: preset.template,
                       };
                       setInput(nextInput);
-                      notify(`Loaded "${preset.title}" in ${preset.template} layout!`);
+                      notify(
+                        `Loaded "${preset.title}" in ${preset.template} layout!`,
+                      );
                       focusToolSection(studioRef.current);
                     }}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-[#ff6b35] hover:bg-[#ff6b35]/10 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-[#4058d0] hover:bg-[#4058d0]/10 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
                   >
                     {preset.label}
                   </button>
@@ -337,7 +352,7 @@ export default function BlogToInfographicGeneratorClient() {
                   type="button"
                   onClick={() => handleGenerateAiInfographic()}
                   disabled={loading}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#ff6b35] px-5 py-3 text-sm font-extrabold text-white shadow-md transition hover:bg-[#e85d2a] disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-3 text-sm font-extrabold text-white shadow-md transition hover:bg-[#3452d1] disabled:opacity-60"
                 >
                   <Sparkles size={16} />
                   {loading
@@ -349,7 +364,8 @@ export default function BlogToInfographicGeneratorClient() {
               <div>
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                    Optional Article Excerpt or Key Points (Leave blank to let AI research from your topic!)
+                    Optional Article Excerpt or Key Points (Leave blank to let
+                    AI research from your topic!)
                   </label>
                   {input.sourceContent && (
                     <button
@@ -400,11 +416,11 @@ export default function BlogToInfographicGeneratorClient() {
 
       {/* COMPANION RESEARCHED EVIDENCE BRIEF, SEO ALT TEXT & SOCIAL CAPTION */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827]">
+        <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
           <div className="flex items-center justify-between">
             <h3 className="inline-flex items-center gap-1.5 text-sm font-extrabold">
               <FileText size={15} className="text-[#3452d1]" />
-              Synthesized Evidence &amp; Key Points
+              Source notes &amp; key points
             </h3>
             <button
               type="button"
@@ -412,7 +428,7 @@ export default function BlogToInfographicGeneratorClient() {
                 await navigator.clipboard.writeText(
                   (pack.evidenceSummary || []).join("\n"),
                 );
-                notify("Copied Synthesized Evidence Brief!");
+                notify("Copied source notes.");
               }}
               className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
             >
@@ -426,7 +442,7 @@ export default function BlogToInfographicGeneratorClient() {
           </ul>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827]">
+        <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-extrabold">
               Infographic Image SEO Alt Text
@@ -447,7 +463,7 @@ export default function BlogToInfographicGeneratorClient() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827]">
+        <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-extrabold">
               Companion Social Post Caption

@@ -169,7 +169,7 @@ export default function ToolCatalog({ category }: { category?: string }) {
         !tools.some((tool) =>
           tool.categories.includes("content-conversion"),
         ) && (
-          <p className="mb-5 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm leading-7 text-orange-900 dark:border-orange-300/25 dark:bg-orange-300/5 dark:text-orange-100">
+          <p className="mb-5 rounded-xl border border-orange-200 bg-[#5271ff]/10 p-4 text-sm leading-7 text-orange-900 dark:border-orange-300/25 dark:bg-orange-300/5 dark:text-orange-100">
             The Content Conversion collection is in preparation.{" "}
             <Link
               href="/tools/categories/content-conversion"

@@ -1,5 +1,8 @@
 "use client";
 
+import { TemplateThumbnail } from "@/features/tool-ui/InfographicArtwork";
+import studioStyles from "@/features/tool-ui/visual-studio.module.css";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart3,
@@ -14,7 +17,9 @@ import {
   Trash2,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
-import ToolRunOverlay, { focusToolSection } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, {
+  focusToolSection,
+} from "@/features/tool-ui/ToolRunOverlay";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 import {
   copyCanvasImageToClipboard,
@@ -102,7 +107,7 @@ const CHART_TEMPLATES: {
 ];
 
 const BAR_COLORS = [
-  "#FF6B35",
+  "#4058d0",
   "#38BDF8",
   "#10B981",
   "#A855F7",
@@ -141,15 +146,14 @@ export default function DataToChartVisualCardMakerClient() {
     DEFAULT_DATA_TO_CHART_INPUT,
   );
   const [aiPack, setAiPack] = useState<DataToChartPack | null>(null);
-  const [points, setPoints] = useState<ChartDataPoint[]>(() =>
-    buildDeterministicDataChart(DEFAULT_DATA_TO_CHART_INPUT).points,
+  const [points, setPoints] = useState<ChartDataPoint[]>(
+    () => buildDeterministicDataChart(DEFAULT_DATA_TO_CHART_INPUT).points,
   );
-  const [themeId, setThemeId] =
-    useState<SharedVisualThemeId>("midnight-orange");
+  const [themeId, setThemeId] = useState<SharedVisualThemeId>("royal-cobalt");
   const [customColors, setCustomColors] = useState({
     bgStart: "#0B1120",
     cardBg: "#1E293B",
-    accent: "#FF6B35",
+    accent: "#4058d0",
     textMain: "#FFFFFF",
   });
   const [loading, setLoading] = useState(false);
@@ -181,14 +185,11 @@ export default function DataToChartVisualCardMakerClient() {
     const activeInput = overrideInput || input;
     setLoading(true);
     try {
-      const res = await fetch(
-        "/api/ai-tools/data-to-chart-visual-card-maker",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(activeInput),
-        },
-      );
+      const res = await fetch("/api/ai-tools/data-to-chart-visual-card-maker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(activeInput),
+      });
       const data = await res.json();
       if (data?.pack) {
         setAiPack(data.pack);
@@ -314,7 +315,8 @@ export default function DataToChartVisualCardMakerClient() {
         const row = Math.floor(idx / 2);
         const x = padX + col * (cardW + gap);
         const y = bodyTop + row * (cardH + gap);
-        const barCol = idx === 0 ? theme.accent : BAR_COLORS[idx % BAR_COLORS.length];
+        const barCol =
+          idx === 0 ? theme.accent : BAR_COLORS[idx % BAR_COLORS.length];
 
         ctx.fillStyle = theme.cardBg;
         ctx.strokeStyle = barCol;
@@ -385,7 +387,8 @@ export default function DataToChartVisualCardMakerClient() {
         const x = chartLeft + i * (colW + colGap);
         const barH = Math.max(44, Math.floor((maxBarH * pt.valueNumber) / 100));
         const y = bodyBottom - 58 - barH;
-        const barCol = i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
+        const barCol =
+          i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
 
         ctx.fillStyle = barCol;
         ctx.beginPath();
@@ -415,7 +418,8 @@ export default function DataToChartVisualCardMakerClient() {
           (Math.max(1, pt.valueNumber) / total) * (Math.PI * 2);
         ctx.beginPath();
         ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle);
-        ctx.strokeStyle = i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
+        ctx.strokeStyle =
+          i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
         ctx.lineWidth = 54;
         ctx.stroke();
         startAngle += sliceAngle;
@@ -527,12 +531,15 @@ export default function DataToChartVisualCardMakerClient() {
       const rowGap = 14;
       const rowH = Math.min(
         118,
-        Math.floor((availH - rowGap * (activePts.length - 1)) / activePts.length),
+        Math.floor(
+          (availH - rowGap * (activePts.length - 1)) / activePts.length,
+        ),
       );
 
       activePts.forEach((pt, i) => {
         const y = bodyTop + i * (rowH + rowGap);
-        const barCol = i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
+        const barCol =
+          i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
         const cardW =
           input.template === "funnel-conversion-bars"
             ? Math.floor((W - padX * 2) * (1 - i * 0.08))
@@ -552,11 +559,7 @@ export default function DataToChartVisualCardMakerClient() {
 
         ctx.fillStyle = theme.textMain;
         ctx.font = "800 23px system-ui, -apple-system, sans-serif";
-        ctx.fillText(
-          `${i + 1}. ${pt.label.slice(0, 36)}`,
-          cardX + 26,
-          y + 36,
-        );
+        ctx.fillText(`${i + 1}. ${pt.label.slice(0, 36)}`, cardX + 26, y + 36);
 
         ctx.fillStyle = barCol;
         ctx.font = "900 26px system-ui, -apple-system, sans-serif";
@@ -605,7 +608,7 @@ export default function DataToChartVisualCardMakerClient() {
   return (
     <section
       aria-label="Data to Visual Chart Card Maker Studio"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
+      className={`${studioStyles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}
@@ -666,14 +669,15 @@ export default function DataToChartVisualCardMakerClient() {
       <div
         ref={resultsRef}
         tabIndex={-1}
-        className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6 space-y-5 focus:outline-none"
+        className="shadow-xs space-y-5 rounded-3xl border border-slate-200 bg-white p-5 focus:outline-none dark:border-slate-800 dark:bg-[#111827] sm:p-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <PlatformBrandIcon brand="data-chart" size={36} />
             <div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
-                <BarChart3 size={14} /> 12 Visual Chart Templates · 10 Themes + Custom Pickers
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
+                <BarChart3 size={14} /> 12 Visual Chart Templates · 10 Themes +
+                Custom Pickers
               </span>
               <h2 className="text-lg font-black text-slate-900 dark:text-white">
                 Interactive Data-to-Chart Studio (Hover Over Chart to Download)
@@ -685,38 +689,43 @@ export default function DataToChartVisualCardMakerClient() {
             type="button"
             onClick={() => void handleGenerateAiChart()}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#e85d2a]"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#3452d1]"
           >
             <Sparkles size={14} />
             {loading ? "Building Chart…" : "Generate AI Chart Card (1-Click)"}
           </button>
         </div>
 
-        {/* 12 Chart Template Selector Grid */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {CHART_TEMPLATES.map((tpl) => (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() =>
-                setInput((prev) => ({ ...prev, template: tpl.id }))
-              }
-              className={`rounded-xl border p-2.5 text-left transition ${
-                input.template === tpl.id
-                  ? "border-[#ff6b35] bg-[#ff6b35]/10 ring-1 ring-[#ff6b35]"
-                  : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
-              }`}
-            >
-              <strong className="block truncate text-xs font-extrabold text-slate-900 dark:text-white">
-                {tpl.label}
-              </strong>
-              <span className="mt-0.5 line-clamp-1 block text-[10px] text-slate-500 dark:text-slate-400">
-                {tpl.desc}
-              </span>
-            </button>
-          ))}
-        </div>
-
+        <details className="rounded-2xl border border-slate-400/30 p-4">
+          <summary className="font-semibold">Choose a template</summary>
+          <div className="mt-4">
+            {/* 12 Chart Template Selector Grid */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              {CHART_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() =>
+                    setInput((prev) => ({ ...prev, template: tpl.id }))
+                  }
+                  className={`rounded-xl border p-2.5 text-left transition ${
+                    input.template === tpl.id
+                      ? "border-[#4058d0] bg-[#4058d0]/10 ring-1 ring-[#4058d0]"
+                      : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
+                  }`}
+                >
+                  <TemplateThumbnail id={tpl.id} category="statistical" />
+                  <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+                    {tpl.label}
+                  </strong>
+                  <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                    {tpl.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </details>
         {/* 10 Color Themes + Custom Brand Color Pickers */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
@@ -743,7 +752,8 @@ export default function DataToChartVisualCardMakerClient() {
 
           <div>
             <label className="mb-1 flex items-center gap-1 text-xs font-bold text-slate-700 dark:text-slate-200">
-              <Palette size={13} className="text-[#ff6b35]" /> Live Custom Color Pickers
+              <Palette size={13} className="text-[#4058d0]" /> Live Custom Color
+              Pickers
             </label>
             <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
               <label className="flex items-center gap-1 text-[11px] font-bold">
@@ -804,9 +814,9 @@ export default function DataToChartVisualCardMakerClient() {
         </div>
 
         {/* 2-COLUMN WORKSPACE: LEFT = DATA POINTS EDITOR, RIGHT = HOVERABLE CHART CANVAS */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] items-start">
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
           <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
                   Chart Headline
@@ -860,9 +870,9 @@ export default function DataToChartVisualCardMakerClient() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
                   Edit Data Bars / Metrics ({points.length} / 6)
                 </h3>
                 <button
@@ -874,11 +884,11 @@ export default function DataToChartVisualCardMakerClient() {
                 </button>
               </div>
 
-              <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+              <div className="max-h-[420px] space-y-2.5 overflow-y-auto pr-1">
                 {points.map((pt, i) => (
                   <div
                     key={pt.id}
-                    className="rounded-xl border border-slate-200 bg-white p-3 space-y-2 dark:border-slate-800 dark:bg-slate-950"
+                    className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
@@ -921,7 +931,7 @@ export default function DataToChartVisualCardMakerClient() {
                             }
                           }}
                           placeholder="e.g. 84%"
-                          className="w-full rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-extrabold text-[#ff6b35] dark:border-slate-700 dark:bg-slate-900"
+                          className="w-full rounded border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-extrabold text-[#4058d0] dark:border-slate-700 dark:bg-slate-900"
                         />
                       </div>
                     </div>
@@ -942,9 +952,12 @@ export default function DataToChartVisualCardMakerClient() {
 
           {/* RIGHT: HOVERABLE 1080x1080 CHART CANVAS WITH PNG / SVG / PDF OVERLAY */}
           <div className="space-y-4">
-            <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2.5 shadow-xl dark:border-slate-700">
+            <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2.5 shadow-xl dark:border-slate-700">
               {/* FLOATING HOVER DOWNLOAD BAR */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100">
+              <div
+                data-export-toolbar
+                className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+              >
                 <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/20 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-md">
                   <button
                     type="button"
@@ -955,7 +968,7 @@ export default function DataToChartVisualCardMakerClient() {
                         () => notify("Downloaded High-Res Chart (.PNG)!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl bg-[#ff6b35] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#e85d2a]"
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#4058d0] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#3452d1]"
                   >
                     <Download size={13} />
                     Download PNG
@@ -1004,14 +1017,17 @@ export default function DataToChartVisualCardMakerClient() {
                 </div>
               </div>
 
-              <div className="pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md backdrop-blur-xs transition-opacity sm:inline-flex sm:group-hover:opacity-0">
-                <Download size={12} className="text-[#ff6b35]" />
+              <div
+                data-export-hint
+                className="backdrop-blur-xs pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md transition-opacity sm:inline-flex sm:group-hover:opacity-0"
+              >
+                <Download size={12} className="text-[#4058d0]" />
                 <span>Hover to Download (PNG · SVG · PDF)</span>
               </div>
 
               <canvas
                 ref={canvasRef}
-                className="mx-auto block aspect-square w-full h-auto rounded-xl"
+                className="mx-auto block aspect-square h-auto w-full rounded-xl"
               />
             </div>
 
@@ -1022,7 +1038,7 @@ export default function DataToChartVisualCardMakerClient() {
                   await navigator.clipboard.writeText(pack.socialPostText);
                   notify("Copied Data Summary Social Caption!");
                 }}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               >
                 <Copy size={14} />
                 Copy Companion Data Social Caption

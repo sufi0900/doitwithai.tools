@@ -723,7 +723,7 @@ export default function KeywordResearchClient() {
               </button>
               <button
                 type="button"
-                className={button + " bg-[#ff6b35] text-white border-[#ff6b35]"}
+                className={button + " bg-[#4058d0] text-white border-[#4058d0]"}
                 disabled={busy || rows.length >= 120}
                 onClick={() => void generate(true)}
               >
@@ -1044,7 +1044,7 @@ export default function KeywordResearchClient() {
                           className={`h-full rounded-full ${
                             isEasy
                               ? "bg-gradient-to-r from-emerald-500 to-teal-400"
-                              : "bg-gradient-to-r from-[#4058D0] to-[#ff6b35]"
+                              : "bg-gradient-to-r from-[#4058D0] to-[#4058d0]"
                           }`}
                           style={{ width: `${widthPct}%` }}
                         />

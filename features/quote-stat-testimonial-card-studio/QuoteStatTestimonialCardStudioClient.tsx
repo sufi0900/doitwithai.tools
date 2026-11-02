@@ -1,5 +1,8 @@
 "use client";
 
+import { TemplateThumbnail } from "@/features/tool-ui/InfographicArtwork";
+import studioStyles from "@/features/tool-ui/visual-studio.module.css";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -134,12 +137,11 @@ export default function QuoteStatTestimonialCardStudioClient() {
     DEFAULT_QUOTE_STUDIO_INPUT,
   );
   const [aiPack, setAiPack] = useState<QuoteStudioPack | null>(null);
-  const [cards, setCards] = useState<QuoteCardItem[]>(() =>
-    buildDeterministicQuotePack(DEFAULT_QUOTE_STUDIO_INPUT).cards,
+  const [cards, setCards] = useState<QuoteCardItem[]>(
+    () => buildDeterministicQuotePack(DEFAULT_QUOTE_STUDIO_INPUT).cards,
   );
   const [activeCardIdx, setActiveCardIdx] = useState(0);
-  const [themeId, setThemeId] =
-    useState<StudioColorThemeId>("midnight-executive");
+  const [themeId, setThemeId] = useState<StudioColorThemeId>("royal-cobalt");
   const [customColors, setCustomColors] = useState<CustomStudioColorOverrides>(
     {},
   );
@@ -383,9 +385,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
       ctx.fillStyle = "#F43F5E";
       ctx.font = "900 22px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        isBeforeAfter
-          ? "✗ BEFORE: OLD BOTTLENECK"
-          : "✗ COMMON INDUSTRY MYTH",
+        isBeforeAfter ? "✗ BEFORE: OLD BOTTLENECK" : "✗ COMMON INDUSTRY MYTH",
         innerX + 28,
         cardY + 102,
       );
@@ -659,7 +659,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
   return (
     <section
       aria-label="Viral Quote, Stat Callout and Testimonial Card Studio"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
+      className={`${studioStyles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}
@@ -712,7 +712,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
       <div
         ref={resultsRef}
         tabIndex={-1}
-        className="rounded-2xl border-2 border-[#ff6b35]/25 bg-white p-5 shadow-xs dark:border-[#ff6b35]/35 dark:bg-[#111827] sm:p-6 space-y-6 focus:outline-none"
+        className="shadow-xs space-y-6 rounded-2xl border-2 border-[#4058d0]/25 bg-white p-5 focus:outline-none dark:border-[#4058d0]/35 dark:bg-[#111827] sm:p-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
@@ -722,7 +722,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
               size={42}
             />
             <div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#ff6b35]">
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
                 <MessageSquareQuote size={14} />
                 12 Built-In Quote, Stat &amp; Testimonial Card Templates
               </span>
@@ -745,7 +745,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
             <button
               type="button"
               onClick={downloadQuoteAndCaptionPackage}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#ff6b35] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#e85d2a]"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#3452d1]"
             >
               <PackageCheck size={15} />
               Download Quote PNG + Caption Package
@@ -753,43 +753,48 @@ export default function QuoteStatTestimonialCardStudioClient() {
           </div>
         </div>
 
-        {/* 12 Template Selector */}
-        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {QUOTE_TEMPLATES.map((tpl) => (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() =>
-                setInput((prev) => ({ ...prev, template: tpl.id }))
-              }
-              className={`rounded-xl border p-2.5 text-left transition ${
-                input.template === tpl.id
-                  ? "border-[#ff6b35] bg-[#ff6b35]/10 dark:border-[#ff6b35] dark:bg-[#ff6b35]/20"
-                  : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60"
-              }`}
-            >
-              <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
-                {tpl.label}
-              </strong>
-              <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
-                {tpl.desc}
-              </span>
-            </button>
-          ))}
-        </div>
-
+        <details className="rounded-2xl border border-slate-400/30 p-4">
+          <summary className="font-semibold">Choose a template</summary>
+          <div className="mt-4">
+            {/* 12 Template Selector */}
+            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {QUOTE_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() =>
+                    setInput((prev) => ({ ...prev, template: tpl.id }))
+                  }
+                  className={`rounded-xl border p-2.5 text-left transition ${
+                    input.template === tpl.id
+                      ? "border-[#4058d0] bg-[#4058d0]/10 dark:border-[#4058d0] dark:bg-[#4058d0]/20"
+                      : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60"
+                  }`}
+                >
+                  <TemplateThumbnail id={tpl.id} category="viral-list" />
+                  <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+                    {tpl.label}
+                  </strong>
+                  <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
+                    {tpl.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </details>
         {/* 10 Color Themes + Custom Brand Color Pickers */}
-        <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60 space-y-3">
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-200">
-              <Palette size={14} className="text-[#ff6b35]" />
+              <Palette size={14} className="text-[#4058d0]" />
               10 Card Color Palettes &amp; Live Custom Brand Color Pickers
             </span>
             {Object.keys(customColors).length > 0 && (
               <button
                 type="button"
                 onClick={() => setCustomColors({})}
-                className="text-[11px] font-bold text-[#ff6b35] hover:underline"
+                className="text-[11px] font-bold text-[#4058d0] hover:underline"
               >
                 Reset Custom Colors
               </button>
@@ -807,7 +812,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                 }}
                 className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-extrabold transition ${
                   themeId === t.id && Object.keys(customColors).length === 0
-                    ? "border-[#ff6b35] bg-[#ff6b35] text-white shadow-xs"
+                    ? "shadow-xs border-[#4058d0] bg-[#4058d0] text-white"
                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                 }`}
               >
@@ -885,7 +890,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] items-start">
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
           {/* LEFT: QUOTE SWITCHER & INLINE EDITOR */}
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
@@ -906,7 +911,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
             </div>
 
             {activeCard && (
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
                 <div className="grid gap-2.5 sm:grid-cols-2">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
@@ -1007,7 +1012,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
 
           {/* RIGHT: LIVE 1080x1080 QUOTE CARD CANVAS WITH HOVER DOWNLOAD BAR */}
           <div className="space-y-4">
-            <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
+            <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
               {/* Floating Hover Download Bar */}
               <div className="pointer-events-none absolute inset-x-4 top-4 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/15 bg-slate-950/90 px-3.5 py-2.5 opacity-0 shadow-2xl backdrop-blur-md transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
@@ -1017,7 +1022,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   <button
                     type="button"
                     onClick={downloadActiveQuotePng}
-                    className="inline-flex items-center gap-1 rounded-lg bg-[#ff6b35] px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#e85d2a]"
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#3452d1]"
                   >
                     <Download size={12} /> PNG
                   </button>
@@ -1069,7 +1074,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
 
               <canvas
                 ref={canvasRef}
-                className="mx-auto block aspect-square w-full h-auto rounded-xl"
+                className="mx-auto block aspect-square h-auto w-full rounded-xl"
               />
             </div>
 
@@ -1077,7 +1082,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
               <button
                 type="button"
                 onClick={downloadActiveQuotePng}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-slate-800 dark:bg-slate-800"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-slate-800 dark:bg-slate-800"
               >
                 <Download size={14} />
                 Download Quote Card #0{activeCardIdx + 1} (.PNG)

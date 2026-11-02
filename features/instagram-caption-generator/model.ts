@@ -140,16 +140,16 @@ export const CAROUSEL_THEMES: Record<
   "royal-indigo": {
     id: "royal-indigo",
     label: "Royal Cobalt & Sky",
-    bgStart: "#090D16",
-    bgEnd: "#1E3A8A",
-    cardSurface: "#152347",
+    bgStart: "#5271ff",
+    bgEnd: "#314bd6",
+    cardSurface: "#4058d0",
     cardBorder: "#38BDF8",
-    accent: "#38BDF8",
-    accentSecondary: "#818CF8",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#DBEAFE",
-    badgeBg: "rgba(56, 189, 248, 0.22)",
-    badgeText: "#7DD3FC",
+    accent: "#ffffff",
+    accentSecondary: "#c9d2ff",
+    textPrimary: "#ffffff",
+    textSecondary: "#edf0ff",
+    badgeBg: "#ffffff20",
+    badgeText: "#ffffff",
   },
   "navy-orange": {
     id: "navy-orange",
@@ -157,13 +157,13 @@ export const CAROUSEL_THEMES: Record<
     bgStart: "#0B1120",
     bgEnd: "#1E293B",
     cardSurface: "#1E293B",
-    cardBorder: "#FF6B35",
-    accent: "#FF6B35",
+    cardBorder: "#4058d0",
+    accent: "#4058d0",
     accentSecondary: "#FBBF24",
     textPrimary: "#FFFFFF",
     textSecondary: "#E2E8F0",
-    badgeBg: "rgba(255, 107, 53, 0.22)",
-    badgeText: "#FF8C5A",
+    badgeBg: "rgba(82, 113, 255, 0.22)",
+    badgeText: "#8094ff",
   },
   "dark-emerald": {
     id: "dark-emerald",
@@ -298,9 +298,9 @@ export const DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT: InstagramCaptionOutput = {
     {
       styleLabel: "Save-Worthy Micro-Blog Caption",
       aboveTheFoldHook:
-        "How to turn 1 long-form blog post into a 5-slide visual carousel that earns 3.4x more bookmarks",
+        "How to turn 1 long-form blog post into a 5-slide visual carousel with a clear visual structure",
       fullCaption:
-        "How to turn 1 long-form blog post into a 5-slide visual carousel that earns 3.4x more bookmarks 👇\n\nMost creators spend 90% of their time writing and only 10% packaging their insights for visual feeds.\n\nFlip that ratio with this 5-slide architecture:\n✅ Slide 01: Open with a high-contrast problem statement or benchmark.\n✅ Slide 02: Expose the hidden bottleneck slowing down traditional workflows.\n✅ Slide 03: Break down the 3-step repeatable system.\n✅ Slide 04: Back the framework with a verified KPI or before/after proof.\n✅ Slide 05: Close with a saveable implementation checklist.\n\n📌 Save this carousel for your next content sprint & share it with a teammate!",
+        "How to turn 1 long-form blog post into a 5-slide visual carousel with a clear visual structure 👇\n\nA useful article can support several smaller visual explanations.\n\nFlip that ratio with this 5-slide architecture:\n✅ Slide 01: Open with a high-contrast problem statement or benchmark.\n✅ Slide 02: Expose the hidden bottleneck slowing down traditional workflows.\n✅ Slide 03: Break down the 3-step repeatable system.\n✅ Slide 04: Back the framework with a verified KPI or before/after proof.\n✅ Slide 05: Close with a saveable implementation checklist.\n\n📌 Save this carousel for your next content sprint & share it with a teammate!",
       altTextSeo:
         "5-slide educational carousel showing how to repurpose a blog post into high-retention Instagram and LinkedIn slides.",
     },
@@ -316,9 +316,9 @@ export const DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT: InstagramCaptionOutput = {
     {
       styleLabel: "Founder Behind-the-Scenes Note",
       aboveTheFoldHook:
-        "The simplest shift that doubled our organic save rate on Instagram and LinkedIn:",
+        "The simplest shift we use to organize an Instagram or LinkedIn carousel:",
       fullCaption:
-        "The simplest shift that doubled our organic save rate on Instagram and LinkedIn:\n\nInstead of pasting a link and hoping people click, we started turning every H2 sub-topic into a 5-slide visual playbook.\n\nSave this deck as your template for your next post!",
+        "The simplest shift we use to organize an Instagram or LinkedIn carousel:\n\nInstead of pasting a link and hoping people click, we started turning every H2 sub-topic into a 5-slide visual playbook.\n\nSave this deck as your template for your next post!",
       altTextSeo: "Founder playbook on building educational carousel slides.",
     },
   ],
@@ -327,9 +327,9 @@ export const DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT: InstagramCaptionOutput = {
       slideNumber: 1,
       headline: "How to Turn 1 Blog Post Into a High-Save 5-Slide Carousel",
       supportingText:
-        "The repeatable visual packaging system that earns 3.4x more bookmarks and profile visits.",
+        "The repeatable visual packaging system with a clear visual structure and profile visits.",
       visualPrompt: "Magazine cover slide",
-      metricBadge: "3.4x Saves",
+      metricBadge: "",
       categoryTag: "CAROUSEL PLAYBOOK",
     },
     {
@@ -338,7 +338,7 @@ export const DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT: InstagramCaptionOutput = {
       supportingText:
         "Never cram a 2,000-word article into one post. Extract a single high-signal H2 section so your carousel solves one specific problem.",
       visualPrompt: "Step 1 breakdown",
-      metricBadge: "88% Clarity",
+      metricBadge: "",
       categoryTag: "STEP 01 · FOCUS",
     },
     {
@@ -347,7 +347,7 @@ export const DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT: InstagramCaptionOutput = {
       supportingText:
         "Pair a 5-to-7 word bold headline with a 15-to-20 word explanation and a visual metric badge so mobile readers scan in 3 seconds.",
       visualPrompt: "Step 2 breakdown",
-      metricBadge: "+64% Hold Rate",
+      metricBadge: "",
       categoryTag: "STEP 02 · DENSITY",
     },
     {
@@ -356,7 +356,7 @@ export const DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT: InstagramCaptionOutput = {
       supportingText:
         "Show the exact mistake people make alongside the structured fix. Visual contrast drives comments and DM shares.",
       visualPrompt: "Step 3 comparison",
-      metricBadge: "2.8x Shares",
+      metricBadge: "",
       categoryTag: "STEP 03 · CONTRAST",
     },
     {
@@ -365,7 +365,7 @@ export const DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT: InstagramCaptionOutput = {
       supportingText:
         "1. Pick 1 H2 Angle  •  2. Hook in 8 Words  •  3. One Idea Per Slide  •  4. Add Proof Metric  •  5. Export PDF & PNGs.",
       visualPrompt: "Closing checklist CTA",
-      metricBadge: "100% Ready",
+      metricBadge: "",
       categoryTag: "SAVE & SHARE ★",
     },
   ],
@@ -382,11 +382,7 @@ export const DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT: InstagramCaptionOutput = {
       "#LinkedInCarousels",
       "#InstagramSEO",
     ],
-    communitySearch: [
-      "#MarketingPlaybook",
-      "#B2BContent",
-      "#CreatorWorkflow",
-    ],
+    communitySearch: ["#MarketingPlaybook", "#B2BContent", "#CreatorWorkflow"],
   },
   audioAndReelTip:
     "Keep your first caption line under 125 characters so the curiosity gap appears right before '...more', and upload the multi-page PDF directly to LinkedIn or the 5 PNGs to Instagram.",

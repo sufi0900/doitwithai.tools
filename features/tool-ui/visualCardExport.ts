@@ -12,9 +12,7 @@ export type SharedVisualThemeId =
   | "custom-brand";
 
 export type StudioColorThemeId =
-  | SharedVisualThemeId
-  | "crimson-pinterest"
-  | "midnight-executive";
+  SharedVisualThemeId | "crimson-pinterest" | "midnight-executive";
 
 export interface SharedVisualTheme {
   id: StudioColorThemeId;
@@ -56,8 +54,8 @@ export const SHARED_VISUAL_THEMES: Record<
     bgStart: "#0B1120",
     bgEnd: "#1E293B",
     cardBg: "rgba(30, 41, 59, 0.92)",
-    cardBorder: "rgba(255, 107, 53, 0.45)",
-    accent: "#FF6B35",
+    cardBorder: "rgba(82, 113, 255, 0.45)",
+    accent: "#4058d0",
     accentSecondary: "#38BDF8",
     accentTertiary: "#10B981",
     textMain: "#FFFFFF",
@@ -67,18 +65,18 @@ export const SHARED_VISUAL_THEMES: Record<
   },
   "royal-cobalt": {
     id: "royal-cobalt",
-    label: "Royal Cobalt & Cyan Glow",
-    bgStart: "#090D16",
-    bgEnd: "#1E3A8A",
-    cardBg: "rgba(21, 35, 71, 0.92)",
-    cardBorder: "rgba(56, 189, 248, 0.45)",
-    accent: "#38BDF8",
-    accentSecondary: "#818CF8",
+    label: "DIWAT Blue & Paper",
+    bgStart: "#f6f7ff",
+    bgEnd: "#eef1ff",
+    cardBg: "#ffffff",
+    cardBorder: "#c8d2ff",
+    accent: "#5271ff",
+    accentSecondary: "#8094ff",
     accentTertiary: "#34D399",
-    textMain: "#FFFFFF",
-    textMuted: "#DBEAFE",
-    textSub: "#DBEAFE",
-    isLight: false,
+    textMain: "#18234b",
+    textMuted: "#475569",
+    textSub: "#475569",
+    isLight: true,
   },
   "emerald-authority": {
     id: "emerald-authority",
@@ -211,7 +209,7 @@ export const STUDIO_COLOR_THEMES: StudioColorTheme[] = [
     cardBg: "rgba(30, 12, 22, 0.94)",
     cardBorder: "rgba(230, 0, 35, 0.55)",
     accent: "#E60023",
-    accentSecondary: "#FF6B35",
+    accentSecondary: "#4058d0",
     accentTertiary: "#F59E0B",
     textMain: "#FFFFFF",
     textMuted: "#FFE4E6",
@@ -225,7 +223,7 @@ export const STUDIO_COLOR_THEMES: StudioColorTheme[] = [
     bgEnd: "#161F33",
     cardBg: "rgba(24, 34, 56, 0.94)",
     cardBorder: "rgba(148, 163, 184, 0.32)",
-    accent: "#FF6B35",
+    accent: "#4058d0",
     accentSecondary: "#3452D1",
     accentTertiary: "#10B981",
     textMain: "#FFFFFF",
@@ -258,7 +256,9 @@ export function resolveVisualTheme(
       isLight,
     };
   }
-  return SHARED_VISUAL_THEMES[themeId] || SHARED_VISUAL_THEMES["midnight-orange"];
+  return (
+    SHARED_VISUAL_THEMES[themeId] || SHARED_VISUAL_THEMES["midnight-orange"]
+  );
 }
 
 export function resolveStudioTheme(
@@ -266,8 +266,7 @@ export function resolveStudioTheme(
   overrides: CustomStudioColorOverrides = {},
 ): StudioColorTheme {
   const base =
-    STUDIO_COLOR_THEMES.find((t) => t.id === themeId) ||
-    STUDIO_COLOR_THEMES[0];
+    STUDIO_COLOR_THEMES.find((t) => t.id === themeId) || STUDIO_COLOR_THEMES[0];
   return {
     ...base,
     bgStart: overrides.bgStart || base.bgStart,
@@ -335,26 +334,32 @@ export function downloadCanvasAsEmbeddedSvg(
   if (cb) cb();
 }
 
-export function printCanvasAsPdfPoster(
+export async function printCanvasAsPdfPoster(
   canvas: HTMLCanvasElement | null,
   title: string,
   subtitleOrOnDone?: string | (() => void),
   onDone?: () => void,
 ) {
   if (!canvas) return;
-  const dataUrl = canvas.toDataURL("image/png");
-  const subtitle =
-    typeof subtitleOrOnDone === "string" ? subtitleOrOnDone : "";
-  const cb =
-    typeof subtitleOrOnDone === "function" ? subtitleOrOnDone : onDone;
-
-  const win = window.open("", "_blank");
-  if (!win) return;
-  win.document.write(
-    `<!doctype html><html><head><title>${title} - PDF Export</title><style>@page{margin:8mm}body{margin:0;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#090d16;min-height:100vh;font-family:system-ui,sans-serif;color:#fff}@media print{body{background:#fff;color:#0f172a}}img{max-width:100%;max-height:90vh;height:auto;width:auto}p{max-width:720px;font-size:12px;opacity:0.8;text-align:center;margin-top:8px}</style></head><body><img src="${dataUrl}" alt="${title}"/>${subtitle ? `<p>${subtitle}</p>` : ""}<script>window.onload=()=>{setTimeout(()=>window.print(),300)}</script></body></html>`,
+  const { jsPDF } = await import("jspdf");
+  const pdf = new jsPDF({
+    orientation: canvas.width > canvas.height ? "landscape" : "portrait",
+    unit: "px",
+    format: [canvas.width, canvas.height],
+  });
+  pdf.addImage(
+    canvas.toDataURL("image/png"),
+    "PNG",
+    0,
+    0,
+    canvas.width,
+    canvas.height,
   );
-  win.document.close();
-  if (cb) cb();
+  pdf.save(
+    `${title.replace(/[^a-z0-9]+/gi, "-").slice(0, 80) || "visual"}.pdf`,
+  );
+  const cb = typeof subtitleOrOnDone === "function" ? subtitleOrOnDone : onDone;
+  cb?.();
 }
 
 export async function copyCanvasImageToClipboard(
@@ -367,9 +372,7 @@ export async function copyCanvasImageToClipboard(
       canvas.toBlob((b) => resolve(b), "image/png"),
     );
     if (!blob) return false;
-    await navigator.clipboard.write([
-      new ClipboardItem({ "image/png": blob }),
-    ]);
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
     if (onDone) onDone();
     return true;
   } catch {

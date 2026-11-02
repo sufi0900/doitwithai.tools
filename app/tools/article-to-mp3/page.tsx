@@ -128,7 +128,7 @@ export default function Page() {
       <header className="relative overflow-hidden bg-[#291B26] text-white">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-24 -top-20 h-80 w-80 rounded-full bg-orange-500/20 blur-3xl"
+          className="pointer-events-none absolute -right-24 -top-20 h-80 w-80 rounded-full bg-[#5271ff]/100/20 blur-3xl"
         />
         <div className={`${section} relative py-12 sm:py-16`}>
           <nav
@@ -207,7 +207,7 @@ export default function Page() {
         </p>
       </section>
       <section
-        className={`${section} border-y border-slate-200 bg-orange-50/50 dark:border-slate-800 dark:bg-orange-950/10`}
+        className={`${section} border-y border-slate-200 bg-[#5271ff]/10/50 dark:border-slate-800 dark:bg-orange-950/10`}
       >
         <h2 className="text-2xl font-extrabold">
           How to convert an article into downloadable audio

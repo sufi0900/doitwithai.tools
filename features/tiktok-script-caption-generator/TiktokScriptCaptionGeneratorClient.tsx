@@ -161,7 +161,7 @@ export function TiktokScriptCaptionGeneratorClient() {
               rows={6}
               value={topicOrContent}
               onChange={(e) => setTopicOrContent(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 p-3 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
 
@@ -174,7 +174,7 @@ export function TiktokScriptCaptionGeneratorClient() {
                 type="text"
                 value={niche}
                 onChange={(e) => setNiche(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
 
@@ -187,7 +187,7 @@ export function TiktokScriptCaptionGeneratorClient() {
                 onChange={(e) =>
                   setDurationSeconds(e.target.value as "15" | "30" | "60")
                 }
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm font-medium text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm font-medium text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
                 <option value="15">15 Seconds (Fast Punchy Hook)</option>
                 <option value="30">30 Seconds (High-Retention Breakdown)</option>
@@ -203,7 +203,7 @@ export function TiktokScriptCaptionGeneratorClient() {
             <select
               value={videoStyle}
               onChange={(e) => setVideoStyle(e.target.value as TiktokVideoStyle)}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-[#ff6b35] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2.5 text-sm font-medium text-slate-900 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             >
               <option value="greenscreen-breakdown">
                 Green-Screen Article / Screenshot Breakdown
@@ -230,7 +230,7 @@ export function TiktokScriptCaptionGeneratorClient() {
             type="button"
             onClick={() => void runGenerate()}
             disabled={loading}
-            className="w-full rounded-xl bg-[#ff6b35] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#e85d2a] disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
           >
             {loading
               ? "Writing TikTok Script & SEO Caption..."
@@ -253,7 +253,7 @@ export function TiktokScriptCaptionGeneratorClient() {
                   key={i}
                   className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 space-y-1.5 dark:border-slate-800 dark:bg-slate-900"
                 >
-                  <span className="rounded-md bg-[#ff6b35]/10 px-2 py-0.5 text-[10px] font-bold uppercase text-[#ff6b35]">
+                  <span className="rounded-md bg-[#4058d0]/10 px-2 py-0.5 text-[10px] font-bold uppercase text-[#4058d0]">
                     {h.style}
                   </span>
                   <p className="text-xs font-bold text-slate-900 dark:text-white">
@@ -325,7 +325,7 @@ export function TiktokScriptCaptionGeneratorClient() {
                       <span className="rounded-md bg-slate-900 px-2.5 py-0.5 text-[11px] font-bold text-white">
                         {beat.timeRange} — {beat.beatLabel}
                       </span>
-                      <span className="rounded-md bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold text-[#ff6b35]">
+                      <span className="rounded-md bg-[#5271ff]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#4058d0]">
                         On-Screen Text: &ldquo;{beat.onScreenText}&rdquo;
                       </span>
                     </div>
@@ -369,7 +369,7 @@ export function TiktokScriptCaptionGeneratorClient() {
 
             <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 text-xs sm:text-sm text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
               {result.tiktokSeoCaption}
-              <div className="mt-2 font-semibold text-[#ff6b35]">
+              <div className="mt-2 font-semibold text-[#4058d0]">
                 {result.hashtags.join(" ")}
               </div>
             </div>
