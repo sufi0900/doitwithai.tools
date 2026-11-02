@@ -1,4 +1,4 @@
-/** Embed bitmap assets so downloaded SVG/PNG files match the editor, including offline. */
+/** Embed bitmap assets so downloaded SVG/PNG files match the editor, including offline and external article images. */
 export async function prepareVisualSvg(
   element: SVGSVGElement,
   width: number,
@@ -9,38 +9,75 @@ export async function prepareVisualSvg(
   clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
   clone.setAttribute("width", String(width));
   clone.setAttribute("height", String(height));
-  clone.setAttribute("font-family", "Arial, Helvetica, sans-serif");
+  clone.setAttribute(
+    "font-family",
+    "Inter, system-ui, -apple-system, Arial, Helvetica, sans-serif",
+  );
   clone.querySelectorAll("[data-editor-only]").forEach((el) => el.remove());
+
   for (const image of Array.from(clone.querySelectorAll("image"))) {
     const href = image.getAttribute("href") || image.getAttribute("xlink:href");
     if (!href || href.startsWith("data:image/")) continue;
-    const url = new URL(href, location.origin);
-    if (!["https:", "http:", "blob:"].includes(url.protocol))
-      throw new Error("Choose an image file or a valid image URL.");
-    let blob: Blob;
+
+    let url: URL;
+    try {
+      url = new URL(href, location.origin);
+      if (!["https:", "http:", "blob:"].includes(url.protocol)) {
+        image.remove();
+        continue;
+      }
+    } catch {
+      image.remove();
+      continue;
+    }
+
+    let dataUrl = "";
+
+    // 1. Try direct browser fetch first (works for same-origin and CORS-enabled CDNs)
     try {
       const response = await fetch(url.href, {
         credentials: "omit",
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(8000),
       });
-      if (!response.ok) throw new Error("Image request failed");
-      blob = await response.blob();
-      if (!blob.type.startsWith("image/")) throw new Error("Not an image");
-      if (blob.size > 10 * 1024 * 1024) throw new Error("Image too large");
-    } catch {
-      throw new Error(
-        "This image cannot be included in the download. Upload the image file, choose built-in artwork, or remove it.",
-      );
+      if (response.ok) {
+        const blob = await response.blob();
+        if (blob.type.startsWith("image/") && blob.size <= 12 * 1024 * 1024) {
+          dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    } catch {}
+
+    // 2. Fallback: Use our same-origin server image proxy (/api/ai-tools/universal-extract?proxyImage=...)
+    // This bypasses browser CORS restrictions on external blog/article images 100% of the time!
+    if (!dataUrl && /^https?:/i.test(url.protocol)) {
+      try {
+        const proxyUrl = `/api/ai-tools/universal-extract?proxyImage=${encodeURIComponent(url.href)}`;
+        const proxyRes = await fetch(proxyUrl, {
+          signal: AbortSignal.timeout(12000),
+        });
+        if (proxyRes.ok) {
+          const json = (await proxyRes.json()) as { dataUrl?: string };
+          if (json?.dataUrl && json.dataUrl.startsWith("data:image/")) {
+            dataUrl = json.dataUrl;
+          }
+        }
+      } catch {}
     }
-    const data = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-    image.setAttribute("href", data);
-    image.removeAttribute("xlink:href");
+
+    if (dataUrl) {
+      image.setAttribute("href", dataUrl);
+      image.removeAttribute("xlink:href");
+    } else {
+      // Never block or crash the user's download if an external URL is offline; remove the unreachable image node cleanly
+      image.remove();
+    }
   }
+
   return new XMLSerializer().serializeToString(clone);
 }
 

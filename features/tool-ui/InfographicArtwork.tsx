@@ -130,7 +130,7 @@ export function TemplateThumbnail({
 }
 
 /**
- * Renders decorative vector SVG background waves, aurora ribbons, orbital rings,
+ * Renders rich, graphic-designer SVG background waves, aurora ribbons, orbital rings,
  * or architectural grids behind the infographic so designs feel 3D and crafted.
  */
 export function InfographicBackgroundDecor({
@@ -149,35 +149,54 @@ export function InfographicBackgroundDecor({
   if (style === "waves") {
     return (
       <g pointerEvents="none">
-        {/* Top-Right Ambient Glow & Wave */}
+        {/* Top-Right Ambient Orb & Layered Header Wave */}
         <circle
-          cx={W * 0.88}
+          cx={W * 0.9}
           cy={H * 0.08}
-          r={Math.min(W, H) * 0.28}
+          r={Math.min(W, H) * 0.32}
           fill={p.accent}
+          fillOpacity={0.11}
+        />
+        <circle
+          cx={W * 0.08}
+          cy={H * 0.24}
+          r={Math.min(W, H) * 0.22}
+          fill={p.accentSecondary}
           fillOpacity={0.08}
         />
         <path
-          d={`M 0 ${H * 0.16} C ${W * 0.28} ${H * 0.09}, ${W * 0.68} ${H * 0.22}, ${W} ${H * 0.13} L ${W} 0 L 0 0 Z`}
+          d={`M 0 ${H * 0.18} C ${W * 0.28} ${H * 0.08}, ${W * 0.68} ${H * 0.24}, ${W} ${H * 0.13} L ${W} 0 L 0 0 Z`}
           fill={p.accent}
-          fillOpacity={0.06}
-        />
-        {/* Mid-Canvas Flowing Silk Wave Ribbon */}
-        <path
-          d={`M 0 ${H * 0.52} C ${W * 0.32} ${H * 0.44}, ${W * 0.66} ${H * 0.60}, ${W} ${H * 0.50} L ${W} ${H * 0.62} C ${W * 0.66} ${H * 0.72}, ${W * 0.32} ${H * 0.56}, 0 ${H * 0.64} Z`}
-          fill={p.accentSecondary}
-          fillOpacity={0.055}
-        />
-        {/* Bottom Layered 3D Waves */}
-        <path
-          d={`M 0 ${H * 0.86} C ${W * 0.35} ${H * 0.79}, ${W * 0.65} ${H * 0.93}, ${W} ${H * 0.84} L ${W} ${H} L 0 ${H} Z`}
-          fill={p.accent}
-          fillOpacity={0.08}
-        />
-        <path
-          d={`M 0 ${H * 0.92} C ${W * 0.25} ${H * 0.97}, ${W * 0.72} ${H * 0.87}, ${W} ${H * 0.93} L ${W} ${H} L 0 ${H} Z`}
-          fill={p.accentSecondary}
           fillOpacity={0.09}
+        />
+        <path
+          d={`M 0 ${H * 0.14} C ${W * 0.36} ${H * 0.21}, ${W * 0.72} ${H * 0.06}, ${W} ${H * 0.16} L ${W} 0 L 0 0 Z`}
+          fill={p.accentSecondary}
+          fillOpacity={0.065}
+        />
+        {/* Mid-Canvas Flowing Silk Wave Ribbon + Contour Stroke */}
+        <path
+          d={`M 0 ${H * 0.48} C ${W * 0.32} ${H * 0.39}, ${W * 0.66} ${H * 0.57}, ${W} ${H * 0.46} L ${W} ${H * 0.61} C ${W * 0.66} ${H * 0.71}, ${W * 0.32} ${H * 0.54}, 0 ${H * 0.63} Z`}
+          fill={p.accentSecondary}
+          fillOpacity={0.085}
+        />
+        <path
+          d={`M 0 ${H * 0.48} C ${W * 0.32} ${H * 0.39}, ${W * 0.66} ${H * 0.57}, ${W} ${H * 0.46}`}
+          fill="none"
+          stroke={p.accent}
+          strokeOpacity={0.16}
+          strokeWidth={2}
+        />
+        {/* Bottom Multi-Layered 3D Waves */}
+        <path
+          d={`M 0 ${H * 0.84} C ${W * 0.35} ${H * 0.76}, ${W * 0.65} ${H * 0.92}, ${W} ${H * 0.82} L ${W} ${H} L 0 ${H} Z`}
+          fill={p.accent}
+          fillOpacity={0.11}
+        />
+        <path
+          d={`M 0 ${H * 0.9} C ${W * 0.28} ${H * 0.97}, ${W * 0.72} ${H * 0.85}, ${W} ${H * 0.92} L ${W} ${H} L 0 ${H} Z`}
+          fill={p.accentSecondary}
+          fillOpacity={0.13}
         />
       </g>
     );
@@ -187,21 +206,21 @@ export function InfographicBackgroundDecor({
     return (
       <g pointerEvents="none">
         <path
-          d={`M -80 ${H * 0.22} Q ${W * 0.45} ${H * 0.05} ${W + 80} ${H * 0.28} L ${W + 80} ${H * 0.42} Q ${W * 0.45} ${H * 0.18} -80 ${H * 0.36} Z`}
+          d={`M -80 ${H * 0.22} Q ${W * 0.45} ${H * 0.04} ${W + 80} ${H * 0.28} L ${W + 80} ${H * 0.44} Q ${W * 0.45} ${H * 0.18} -80 ${H * 0.38} Z`}
           fill={p.accent}
-          fillOpacity={0.07}
+          fillOpacity={0.11}
         />
         <path
-          d={`M -80 ${H * 0.68} Q ${W * 0.55} ${H * 0.86} ${W + 80} ${H * 0.62} L ${W + 80} ${H * 0.76} Q ${W * 0.55} ${H * 0.98} -80 ${H * 0.82} Z`}
+          d={`M -80 ${H * 0.66} Q ${W * 0.55} ${H * 0.86} ${W + 80} ${H * 0.6} L ${W + 80} ${H * 0.76} Q ${W * 0.55} ${H * 0.98} -80 ${H * 0.82} Z`}
           fill={p.accentSecondary}
-          fillOpacity={0.07}
+          fillOpacity={0.11}
         />
         <circle
-          cx={W * 0.12}
-          cy={H * 0.84}
-          r={Math.min(W, H) * 0.22}
+          cx={W * 0.14}
+          cy={H * 0.82}
+          r={Math.min(W, H) * 0.25}
           fill={p.accent}
-          fillOpacity={0.06}
+          fillOpacity={0.09}
         />
       </g>
     );
@@ -210,7 +229,7 @@ export function InfographicBackgroundDecor({
   if (style === "rings") {
     return (
       <g pointerEvents="none">
-        {[0.24, 0.36, 0.48].map((rFactor, idx) => (
+        {[0.22, 0.34, 0.46].map((rFactor, idx) => (
           <circle
             key={idx}
             cx={W * 0.85}
@@ -218,12 +237,12 @@ export function InfographicBackgroundDecor({
             r={Math.min(W, H) * rFactor}
             fill="none"
             stroke={p.accent}
-            strokeOpacity={0.09 - idx * 0.02}
-            strokeWidth={2}
+            strokeOpacity={0.14 - idx * 0.03}
+            strokeWidth={2.5}
             strokeDasharray={idx % 2 === 1 ? "10 8" : undefined}
           />
         ))}
-        {[0.22, 0.34].map((rFactor, idx) => (
+        {[0.2, 0.32, 0.44].map((rFactor, idx) => (
           <circle
             key={`b-${idx}`}
             cx={W * 0.14}
@@ -231,8 +250,8 @@ export function InfographicBackgroundDecor({
             r={Math.min(W, H) * rFactor}
             fill="none"
             stroke={p.accentSecondary}
-            strokeOpacity={0.09 - idx * 0.02}
-            strokeWidth={2}
+            strokeOpacity={0.14 - idx * 0.03}
+            strokeWidth={2.5}
           />
         ))}
       </g>
@@ -244,9 +263,9 @@ export function InfographicBackgroundDecor({
     <g pointerEvents="none">
       <rect width={W} height={H} fill="url(#dotGrid)" />
       <path
-        d={`M 0 ${H * 0.9} Q ${W * 0.5} ${H * 0.82} ${W} ${H * 0.9} L ${W} ${H} L 0 ${H} Z`}
+        d={`M 0 ${H * 0.88} Q ${W * 0.5} ${H * 0.8} ${W} ${H * 0.88} L ${W} ${H} L 0 ${H} Z`}
         fill={p.accent}
-        fillOpacity={0.06}
+        fillOpacity={0.09}
       />
     </g>
   );
@@ -254,7 +273,7 @@ export function InfographicBackgroundDecor({
 
 /**
  * Only side-image editorial split layouts delegate to InfographicArtwork;
- * all other 23 templates use their dedicated 3D vector geometries in EditableInfographicStudio!
+ * all other templates use their dedicated 3D vector geometries in EditableInfographicStudio!
  */
 export const EDITORIAL_LAYOUTS = new Set([
   "side-image-editorial-split",
@@ -264,7 +283,7 @@ export const EDITORIAL_LAYOUTS = new Set([
 
 /**
  * Magazine-grade Informational & Editorial Split Infographic Layouts
- * (No repetitive 6-box grid — features a framed hero visual + definition card on one side
+ * (Supports 1 to 6 points cleanly — features a framed hero visual + definition card on one side
  * and a flowing editorial narrative spine with custom icons/images on the other side!)
  */
 export function InfographicArtwork({
@@ -275,6 +294,7 @@ export function InfographicArtwork({
   top,
   height,
   artwork,
+  selectedNodeId,
   onSelect,
   icon,
 }: {
@@ -285,6 +305,7 @@ export function InfographicArtwork({
   top: number;
   height: number;
   artwork?: string;
+  selectedNodeId?: string | null;
   onSelect: (id: string) => void;
   icon: (
     node: InfographicNodeItem,
@@ -296,7 +317,7 @@ export function InfographicArtwork({
 }) {
   const pad = width >= 1400 ? 64 : 52;
   const availW = width - pad * 2;
-  const availH = Math.max(360, height - 12);
+  const availH = Math.max(320, height - 8);
   const count = Math.max(1, nodes.length);
   const isRightImage = template === "side-image-right-spotlight";
   const isHorizontalBoard =
@@ -312,30 +333,36 @@ export function InfographicArtwork({
   const primaryNode = nodes[0];
   const imgBoxH = Math.floor(availH * 0.56);
   const defBoxY = top + imgBoxH + 18;
-  const defBoxH = availH - imgBoxH - 18;
+  const defBoxH = Math.max(120, availH - imgBoxH - 18);
 
   // Flowing Editorial Narrative Sheet on the opposite side (single elevated sheet with divided narrative items)
   const itemH = Math.floor((availH - 36) / count);
-  const titleFontSize = Math.min(23, Math.max(17, Math.floor(itemH * 0.2)));
-  const bodyFontSize = Math.min(16.5, Math.max(13.5, Math.floor(itemH * 0.145)));
+  const titleFontSize = Math.min(24, Math.max(16.5, Math.floor(itemH * 0.19)));
+  const bodyFontSize = Math.min(17, Math.max(13.5, Math.floor(itemH * 0.135)));
   const textStartOffset = 88;
   const textMaxW = editorialW - textStartOffset - 28;
-  const maxTitleChars = Math.max(20, Math.floor(textMaxW / (titleFontSize * 0.56)));
-  const maxBodyChars = Math.max(28, Math.floor(textMaxW / (bodyFontSize * 0.53)));
+  const maxTitleChars = Math.max(
+    20,
+    Math.floor(textMaxW / (titleFontSize * 0.56)),
+  );
+  const maxBodyChars = Math.max(
+    28,
+    Math.floor(textMaxW / (bodyFontSize * 0.53)),
+  );
   const maxBodyLines = Math.max(
     1,
     Math.min(
-      3,
-      Math.floor((itemH - titleFontSize * 1.8 - 22) / (bodyFontSize * 1.38)),
+      count <= 3 ? 4 : 3,
+      Math.floor((itemH - titleFontSize * 1.8 - 18) / (bodyFontSize * 1.35)),
     ),
   );
 
-  const defMaxChars = Math.max(20, Math.floor((visualW - 52) / (16 * 0.55)));
+  const defMaxChars = Math.max(20, Math.floor((visualW - 52) / (15.5 * 0.55)));
   const defLines = wrapVisualText(
     primaryNode?.body ||
       "Key definition and strategic context for this visual guide.",
     defMaxChars,
-    Math.max(2, Math.min(5, Math.floor((defBoxH - 96) / 24))),
+    Math.max(1, Math.min(4, Math.floor((defBoxH - 92) / 22))),
   );
 
   return (
@@ -451,24 +478,30 @@ export function InfographicArtwork({
           height={defBoxH}
           rx={26}
           fill={p.cardBg}
-          stroke={p.cardBorder}
-          strokeWidth={2}
+          stroke={
+            primaryNode && selectedNodeId === primaryNode.id
+              ? "#5271ff"
+              : p.cardBorder
+          }
+          strokeWidth={
+            primaryNode && selectedNodeId === primaryNode.id ? 3.5 : 2
+          }
           filter="url(#card3dShadow)"
         />
         <rect
           x={visualX + 24}
-          y={defBoxY + 22}
+          y={defBoxY + 20}
           width={148}
-          height={28}
-          rx={14}
+          height={26}
+          rx={13}
           fill={p.accent}
         />
         <text
           x={visualX + 98}
-          y={defBoxY + 41}
+          y={defBoxY + 38}
           textAnchor="middle"
           fill={p.badgeText}
-          fontSize={12.5}
+          fontSize={12}
           fontWeight={800}
           letterSpacing={1}
         >
@@ -477,9 +510,9 @@ export function InfographicArtwork({
 
         <text
           x={visualX + 26}
-          y={defBoxY + 82}
+          y={defBoxY + 76}
           fill={p.textPrimary}
-          fontSize={22}
+          fontSize={21}
           fontWeight={800}
         >
           {
@@ -495,9 +528,9 @@ export function InfographicArtwork({
           <text
             key={idx}
             x={visualX + 26}
-            y={defBoxY + 114 + idx * 23}
+            y={defBoxY + 104 + idx * 22}
             fill={p.textSecondary}
-            fontSize={15.5}
+            fontSize={15}
             fontWeight={500}
           >
             {line}
@@ -533,8 +566,11 @@ export function InfographicArtwork({
         const rowY = top + 18 + i * itemH;
         const centerY = rowY + itemH / 2;
         const col = i % 2 === 0 ? p.accent : p.accentSecondary;
+        const isSelected = selectedNodeId === n.id;
         const tLines = wrapVisualText(n.title, maxTitleChars, 1);
         const bLines = wrapVisualText(n.body, maxBodyChars, maxBodyLines);
+        const titleBaselineY =
+          rowY + Math.max(26, Math.min(44, Math.floor(itemH * 0.28)));
 
         return (
           <g
@@ -542,7 +578,23 @@ export function InfographicArtwork({
             onClick={() => onSelect(n.id)}
             style={{ cursor: "pointer" }}
           >
-            {/* Subtle Hover/Row Divider (No cluttered individual boxes!) */}
+            {/* Active Selection Highlight Ring inside Editorial Sheet */}
+            {isSelected && (
+              <rect
+                x={editorialX + 14}
+                y={rowY + 4}
+                width={editorialW - 28}
+                height={itemH - 8}
+                rx={16}
+                fill="#5271ff"
+                fillOpacity={0.1}
+                stroke="#5271ff"
+                strokeWidth={2.5}
+                strokeDasharray="6 4"
+              />
+            )}
+
+            {/* Subtle Row Divider */}
             {i > 0 && (
               <line
                 x1={editorialX + 28}
@@ -583,7 +635,7 @@ export function InfographicArtwork({
             {/* Step Number + Section Heading */}
             <text
               x={editorialX + textStartOffset}
-              y={rowY + Math.max(28, Math.floor(itemH * 0.28))}
+              y={titleBaselineY}
               fill={p.textPrimary}
               fontSize={titleFontSize}
               fontWeight={800}
@@ -598,7 +650,7 @@ export function InfographicArtwork({
             {n.metricValue && (
               <text
                 x={editorialX + editorialW - 24}
-                y={rowY + Math.max(28, Math.floor(itemH * 0.28))}
+                y={titleBaselineY}
                 textAnchor="end"
                 fill={col}
                 fontSize={14}
@@ -614,8 +666,7 @@ export function InfographicArtwork({
                 key={li}
                 x={editorialX + textStartOffset}
                 y={
-                  rowY +
-                  Math.max(28, Math.floor(itemH * 0.28)) +
+                  titleBaselineY +
                   titleFontSize * 1.15 +
                   li * (bodyFontSize * 1.35)
                 }

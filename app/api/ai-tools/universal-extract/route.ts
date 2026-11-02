@@ -1478,3 +1478,36 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET(request: NextRequest) {
+  const rawImgUrl = request.nextUrl.searchParams.get("proxyImage")?.trim() || "";
+  if (!rawImgUrl) {
+    return NextResponse.json({ error: "Missing proxyImage URL" }, { status: 400 });
+  }
+  try {
+    const validated = publicUrl(rawImgUrl);
+    const res = await fetch(validated.href, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36",
+        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) {
+      return NextResponse.json({ error: "Upstream image error" }, { status: 422 });
+    }
+    const contentType = (res.headers.get("content-type") || "image/png").split(";")[0].trim();
+    if (!contentType.startsWith("image/")) {
+      return NextResponse.json({ error: "Not an image" }, { status: 422 });
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.byteLength > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: "Image exceeds 10MB" }, { status: 422 });
+    }
+    const dataUrl = `data:${contentType};base64,${buf.toString("base64")}`;
+    return NextResponse.json({ dataUrl });
+  } catch {
+    return NextResponse.json({ error: "Could not proxy image" }, { status: 422 });
+  }
+}
