@@ -1,5 +1,8 @@
 "use client";
 
+import { TemplateThumbnail } from "@/features/tool-ui/InfographicArtwork";
+import studioStyles from "@/features/tool-ui/visual-studio.module.css";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -137,8 +140,7 @@ export default function PinterestPinVisualGeneratorClient() {
   );
   const [aiPack, setAiPack] = useState<PinterestVisualPack | null>(null);
   const [activeVarIdx, setActiveVarIdx] = useState(0);
-  const [themeId, setThemeId] =
-    useState<StudioColorThemeId>("crimson-pinterest");
+  const [themeId, setThemeId] = useState<StudioColorThemeId>("royal-cobalt");
   const [customColors, setCustomColors] = useState<CustomStudioColorOverrides>(
     {},
   );
@@ -383,7 +385,10 @@ export default function PinterestPinVisualGeneratorClient() {
         }
       });
       ctx.textAlign = "left";
-    } else if (input.template === "comparison-pin" || input.template === "before-after-pin") {
+    } else if (
+      input.template === "comparison-pin" ||
+      input.template === "before-after-pin"
+    ) {
       // 2-Column or Top/Bottom Mistake vs Solution
       const colW = Math.floor((W - padX * 2 - 24) / 2);
       const colH = availH;
@@ -426,16 +431,12 @@ export default function PinterestPinVisualGeneratorClient() {
           colW - 48,
           2,
         );
-        mLines.forEach((l, li) =>
-          ctx.fillText(l, padX + 24, iy + li * 26),
-        );
+        mLines.forEach((l, li) => ctx.fillText(l, padX + 24, iy + li * 26));
 
         ctx.fillStyle = activeTheme.textMain;
         ctx.font = "800 22px system-ui, -apple-system, sans-serif";
         const sLines = wrapPinText(ctx, stepText, colW - 48, 3);
-        sLines.forEach((l, li) =>
-          ctx.fillText(l, rightX + 24, iy + li * 26),
-        );
+        sLines.forEach((l, li) => ctx.fillText(l, rightX + 24, iy + li * 26));
       });
     } else if (input.template === "bento-grid-pin") {
       // 2x3 Bento Grid Cheat Sheet
@@ -519,7 +520,8 @@ export default function PinterestPinVisualGeneratorClient() {
       ctx.font = "700 26px system-ui, -apple-system, sans-serif";
       const bLines = wrapPinText(
         ctx,
-        steps[0] || "Consistent 2:3 visual pins compound evergreen search clicks.",
+        steps[0] ||
+          "Consistent 2:3 visual pins compound evergreen search clicks.",
         W - padX * 2 - 260,
         3,
       );
@@ -530,7 +532,9 @@ export default function PinterestPinVisualGeneratorClient() {
       const listTop = curY + ringBoxH + 20;
       const remH = H - footerH - listTop - 20;
       const subSteps = steps.slice(1, 5);
-      const rH = Math.floor((remH - 14 * (subSteps.length - 1)) / Math.max(1, subSteps.length));
+      const rH = Math.floor(
+        (remH - 14 * (subSteps.length - 1)) / Math.max(1, subSteps.length),
+      );
       subSteps.forEach((st, idx) => {
         const y = listTop + idx * (rH + 14);
         ctx.fillStyle = activeTheme.cardBg;
@@ -586,7 +590,9 @@ export default function PinterestPinVisualGeneratorClient() {
       const lowerTop = curY + quoteBoxH + 22;
       const lowerH = H - footerH - lowerTop - 22;
       const rules = steps.slice(1, 4);
-      const rH = Math.floor((lowerH - 14 * (rules.length - 1)) / Math.max(1, rules.length));
+      const rH = Math.floor(
+        (lowerH - 14 * (rules.length - 1)) / Math.max(1, rules.length),
+      );
       rules.forEach((st, idx) => {
         const y = lowerTop + idx * (rH + 14);
         ctx.fillStyle = activeTheme.cardBg;
@@ -607,7 +613,10 @@ export default function PinterestPinVisualGeneratorClient() {
       const rowGap = 16;
       const rowH = Math.min(
         136,
-        Math.max(82, Math.floor((availH - rowGap * (stepCount - 1)) / stepCount)),
+        Math.max(
+          82,
+          Math.floor((availH - rowGap * (stepCount - 1)) / stepCount),
+        ),
       );
 
       if (input.template === "step-mini-infographic") {
@@ -616,7 +625,10 @@ export default function PinterestPinVisualGeneratorClient() {
         ctx.lineWidth = 6;
         ctx.beginPath();
         ctx.moveTo(padX + 50, curY + 30);
-        ctx.lineTo(padX + 50, curY + (stepCount - 1) * (rowH + rowGap) + rowH - 30);
+        ctx.lineTo(
+          padX + 50,
+          curY + (stepCount - 1) * (rowH + rowGap) + rowH - 30,
+        );
         ctx.stroke();
       }
 
@@ -714,7 +726,7 @@ export default function PinterestPinVisualGeneratorClient() {
   return (
     <section
       aria-label="Pinterest Tall Pin Visual Generator and SEO Studio"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
+      className={`${studioStyles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}
@@ -776,7 +788,7 @@ export default function PinterestPinVisualGeneratorClient() {
       <div
         ref={resultsRef}
         tabIndex={-1}
-        className="rounded-2xl border-2 border-[#E60023]/25 bg-white p-5 shadow-xs dark:border-[#E60023]/35 dark:bg-[#111827] sm:p-6 space-y-6 focus:outline-none"
+        className="shadow-xs space-y-6 rounded-2xl border-2 border-[#E60023]/25 bg-white p-5 focus:outline-none dark:border-[#E60023]/35 dark:bg-[#111827] sm:p-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
@@ -817,33 +829,38 @@ export default function PinterestPinVisualGeneratorClient() {
           </div>
         </div>
 
-        {/* 12 Template Selector */}
-        <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {PIN_TEMPLATES.map((tpl) => (
-            <button
-              key={tpl.id}
-              type="button"
-              onClick={() =>
-                setInput((prev) => ({ ...prev, template: tpl.id }))
-              }
-              className={`rounded-xl border p-2.5 text-left transition ${
-                input.template === tpl.id
-                  ? "border-[#E60023] bg-[#E60023]/10 dark:border-[#E60023] dark:bg-[#E60023]/20"
-                  : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60"
-              }`}
-            >
-              <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
-                {tpl.label}
-              </strong>
-              <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
-                {tpl.desc}
-              </span>
-            </button>
-          ))}
-        </div>
-
+        <details className="rounded-2xl border border-slate-400/30 p-4">
+          <summary className="font-semibold">Choose a template</summary>
+          <div className="mt-4">
+            {/* 12 Template Selector */}
+            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {PIN_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() =>
+                    setInput((prev) => ({ ...prev, template: tpl.id }))
+                  }
+                  className={`rounded-xl border p-2.5 text-left transition ${
+                    input.template === tpl.id
+                      ? "border-[#E60023] bg-[#E60023]/10 dark:border-[#E60023] dark:bg-[#E60023]/20"
+                      : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60"
+                  }`}
+                >
+                  <TemplateThumbnail id={tpl.id} category="side-image" />
+                  <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+                    {tpl.label}
+                  </strong>
+                  <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
+                    {tpl.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </details>
         {/* 10 Color Themes + Custom Brand Color Pickers */}
-        <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60 space-y-3">
+        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-200">
               <Palette size={14} className="text-[#E60023]" />
@@ -871,7 +888,7 @@ export default function PinterestPinVisualGeneratorClient() {
                 }}
                 className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-extrabold transition ${
                   themeId === t.id && Object.keys(customColors).length === 0
-                    ? "border-[#E60023] bg-[#E60023] text-white shadow-xs"
+                    ? "shadow-xs border-[#E60023] bg-[#E60023] text-white"
                     : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
                 }`}
               >
@@ -998,7 +1015,7 @@ export default function PinterestPinVisualGeneratorClient() {
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] items-start">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
           {/* LEFT: PIN VARIATION SWITCHER, INLINE TEXT OVERLAY EDITOR & SEO COPY */}
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
@@ -1009,7 +1026,7 @@ export default function PinterestPinVisualGeneratorClient() {
                   onClick={() => setActiveVarIdx(i)}
                   className={`rounded-xl px-3.5 py-2 text-xs font-extrabold transition ${
                     activeVarIdx === i
-                      ? "bg-[#E60023] text-white shadow-xs"
+                      ? "shadow-xs bg-[#E60023] text-white"
                       : "border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                   }`}
                 >
@@ -1018,7 +1035,7 @@ export default function PinterestPinVisualGeneratorClient() {
               ))}
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
@@ -1093,7 +1110,7 @@ export default function PinterestPinVisualGeneratorClient() {
             </div>
 
             {/* PINTEREST SEO TITLE, DESCRIPTION & ALT TEXT */}
-            <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-950">
+            <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-[#E60023]">
                   Pinterest Search SEO Copy (Title + Description + Alt Text)
@@ -1112,7 +1129,7 @@ export default function PinterestPinVisualGeneratorClient() {
                 </button>
               </div>
 
-              <div className="text-xs space-y-2">
+              <div className="space-y-2 text-xs">
                 <div>
                   <strong className="text-slate-500">Pin Title (100c): </strong>
                   <span className="font-bold text-slate-900 dark:text-white">
@@ -1121,7 +1138,7 @@ export default function PinterestPinVisualGeneratorClient() {
                 </div>
                 <div>
                   <strong className="text-slate-500">SEO Description: </strong>
-                  <p className="mt-0.5 text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <p className="mt-0.5 leading-relaxed text-slate-700 dark:text-slate-300">
                     {activePin.seoDescription}
                   </p>
                 </div>
@@ -1137,7 +1154,7 @@ export default function PinterestPinVisualGeneratorClient() {
 
           {/* RIGHT: LIVE 1000x1500 (2:3) TALL PINTEREST PIN CANVAS WITH HOVER EXPORT BAR */}
           <div className="space-y-3">
-            <div className="group relative overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
+            <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
               {/* Floating Hover Download Bar */}
               <div className="pointer-events-none absolute inset-x-4 top-4 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/15 bg-slate-950/90 px-3.5 py-2.5 opacity-0 shadow-2xl backdrop-blur-md transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
@@ -1199,7 +1216,7 @@ export default function PinterestPinVisualGeneratorClient() {
 
               <canvas
                 ref={canvasRef}
-                className="mx-auto block h-auto max-h-[680px] w-full object-contain rounded-xl"
+                className="mx-auto block h-auto max-h-[680px] w-full rounded-xl object-contain"
               />
             </div>
 
@@ -1207,7 +1224,7 @@ export default function PinterestPinVisualGeneratorClient() {
               <button
                 type="button"
                 onClick={downloadTallPinPng}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#E60023] px-4 py-3 text-xs font-extrabold text-white shadow-sm hover:bg-[#c8001e]"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#E60023] px-4 py-3 text-xs font-extrabold text-white shadow-sm hover:bg-[#c8001e]"
               >
                 <Download size={15} />
                 Download 1000×1500 Tall Pin (.PNG)

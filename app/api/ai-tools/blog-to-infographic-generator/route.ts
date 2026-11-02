@@ -1,3 +1,4 @@
+import { sourceMetric } from "@/features/tool-ui/visualText";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
@@ -11,7 +12,7 @@ import {
   detectBestTemplateForTopic,
   type BlogToInfographicInput,
 } from "@/features/blog-to-infographic-generator/model";
-import { inferNodeIcon } from "@/features/tool-ui/EditableInfographicStudio";
+import { inferNodeIcon } from "@/features/tool-ui/infographicIcons";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,7 +60,7 @@ const aiInfographicSchema = z.object({
         compareRight: z.string(),
       }),
     )
-    .min(4)
+    .min(1)
     .max(8),
   seoAltText: z.string(),
   socialCaption: z.string(),
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
               {
                 role: "system",
                 content:
-                  "You are an elite Information Designer and Research Analyst. Whether the user provides a full article excerpt OR a short random topic/idea, synthesize 6 research-backed, high-signal visual infographic nodes complete with realistic quantitative benchmarks/metrics (e.g. '84%', '3.2x ROI', '+142%'), concise 3-to-5 word titles, and 12-to-16 word actionable explanations. Also select the best-fitting visual template from the 26 options and return a 6-point evidenceSummary array.",
+                  "You are an information designer. Summarize ONLY the supplied content into 1 to 8 distinct, concise infographic sections. Preserve the source meaning. Never invent percentages, benchmarks, comparisons, citations, research findings or performance claims. Use metricValue only when that exact statistic appears in the supplied sourceContent, otherwise use an empty string. Do not claim to have browsed or verified sources: no research tool is available here. For topic-only input, provide a clearly labelled conceptual draft without unsupported facts or statistics. Return a short title, readable subtitle, useful section titles and bodies, a suitable template, and an evidenceSummary that describes the limits of the supplied material.",
               },
               {
                 role: "user",
@@ -125,9 +126,19 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({
             pack: {
               ...res.output_parsed,
+              evidenceSummary: [
+                "Drafted from supplied content; no independent web research was performed.",
+                ...res.output_parsed.evidenceSummary,
+              ],
               nodes: res.output_parsed.nodes.map((n, idx) => ({
                 id: `ai-node-${idx + 1}`,
                 ...n,
+                metricValue:
+                  n.metricValue &&
+                  input.sourceContent.includes(n.metricValue) &&
+                  sourceMetric(n.metricValue)
+                    ? n.metricValue
+                    : "",
                 icon: inferNodeIcon(`${n.title} ${n.body}`, idx),
               })),
             },
