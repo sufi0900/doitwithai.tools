@@ -6,9 +6,10 @@ export const useAnimationCleanup = () => {
   const cleanupRef = useRef([]);
 
   useEffect(() => {
+    const cleanups = cleanupRef.current;
     return () => {
       // Cleanup all animations on unmount
-      cleanupRef.current.forEach(cleanup => cleanup());
+      cleanups.forEach(cleanup => cleanup());
     };
   }, []);
 

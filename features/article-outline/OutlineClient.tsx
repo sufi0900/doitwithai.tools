@@ -420,8 +420,8 @@ export default function OutlineClient() {
             </p>
           )}
           <p className="mt-4 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Your brief is sent to the configured AI provider when you generate.
-            Avoid confidential information. Local edits are lost on refresh.
+            Use a focused brief to guide your outline. Avoid confidential
+            information. Local edits are lost on refresh.
           </p>
           {error && (
             <p

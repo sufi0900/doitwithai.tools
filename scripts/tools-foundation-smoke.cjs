@@ -375,7 +375,7 @@ async function run() {
     await page.waitForFunction(() =>
       document
         .querySelector('[role="alert"]')
-        ?.textContent.includes("Readability provider unavailable"),
+        ?.textContent.includes("We could not complete this request"),
     );
     assert.equal(
       await page.$eval(
@@ -558,7 +558,7 @@ async function run() {
     await page.waitForFunction(() =>
       document
         .querySelector('form [role="alert"]')
-        ?.textContent.includes("Outline provider unavailable"),
+        ?.textContent.includes("We could not complete this request"),
     );
     assert.equal(
       await page.$eval('[aria-label="Selected H1"]', (n) => n.value),

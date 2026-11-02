@@ -1,8 +1,9 @@
+import { rateLimitFailure } from "@/lib/ai-tools/rate-limit";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getGeminiClient,
   getGeminiModel,
-  isGeminiConfigured,
+  isAiConfigured,
   geminiTextFormat,
   geminiFailure,
 } from "@/lib/ai-tools/gemini";
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     ? process.env.GEMINI_ALT_TEXT_VISION_MODEL?.trim() ||
       getGeminiModel("ALT_TEXT")
     : getGeminiModel("ALT_TEXT");
-  if (!isGeminiConfigured(model))
+  if (!isAiConfigured(model, Boolean(input.data.image)))
     return error(
       "The generator has not been connected to its AI provider yet.",
       503,
@@ -75,9 +76,9 @@ export async function POST(request: NextRequest) {
   let limit;
   try {
     limit = await checkAiToolRateLimit(request, "alt-text");
-  } catch {
+  } catch (cause) {
     return error(
-      "The generator is temporarily unavailable.",
+      rateLimitFailure(cause).message,
       503,
       "RATE_LIMIT_UNAVAILABLE",
     );

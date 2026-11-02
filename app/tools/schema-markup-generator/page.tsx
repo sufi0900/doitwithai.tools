@@ -1,3 +1,8 @@
+import {
+  ToolHeroBackground,
+  toolHeroSurface,
+  toolHeroHeading,
+} from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -75,7 +80,7 @@ const faqs = [
   {
     question: "Can the generator fetch a page URL automatically?",
     answer:
-      "Yes. URL analysis is optional. The server accepts only public HTTP or HTTPS HTML pages, blocks private and local network targets, limits redirects and response size, and treats fetched content as untrusted evidence.",
+      "Yes. URL analysis is optional. Use an accessible public page, then review its extracted details before preparing your markup.",
   },
   {
     question: "Which schema types are included?",
@@ -179,12 +184,10 @@ export default function SchemaMarkupGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className="relative overflow-hidden bg-slate-950 pb-20 pt-10 text-white sm:pt-16 lg:pb-28">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-36 top-0 h-96 w-96 rounded-full bg-[#5271ff]/30 blur-3xl" />
-          <div className="absolute -right-28 top-40 h-80 w-80 rounded-full bg-cyan-400/15 blur-3xl" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,white,transparent_82%)]" />
-        </div>
+      <div
+        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}
+      >
+        <ToolHeroBackground />
 
         <div className="relative mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
           <nav
@@ -209,7 +212,7 @@ export default function SchemaMarkupGeneratorPage() {
             </div>
             <h1 className="mt-7 text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
               Schema Markup Generator for
-              <span className="block bg-gradient-to-r from-[#7f9aff] via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+              <span className={`block ${toolHeroHeading}`}>
                 Complete, Connected JSON-LD
               </span>
             </h1>

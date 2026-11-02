@@ -2,6 +2,12 @@ import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { compactOutputSchema } from "./compact-schema";
 import { readBoundedJson } from "./request-body";
+import {
+  generateGroq,
+  getGroqModel,
+  isGroqConfigured,
+  GroqError,
+} from "./groq";
 
 export function getGeminiModel(tool?: string) {
   const override = tool ? process.env[`GEMINI_${tool}_MODEL`]?.trim() : "";
@@ -35,7 +41,7 @@ type Format<T> = {
 type Part =
   | { type: "input_text"; text: string }
   | { type: "input_image"; image_url: string; detail?: string };
-type Params<T> = {
+export type GenerationParams<T> = {
   model: string;
   max_output_tokens: number;
   store?: false;
@@ -50,6 +56,7 @@ export class GeminiError extends Error {
     public readonly upstreamStatus?: number,
     public readonly providerStatus?: string,
     public readonly finishReason?: string,
+    public failures?: { gemini: string; groq: string },
   ) {
     super(code);
   }
@@ -101,8 +108,8 @@ function parts(content: string | Part[]) {
     return { inlineData: { mimeType: match[1], data: match[2] } };
   });
 }
-async function generate<T>(
-  params: Params<T>,
+async function generateGemini<T>(
+  params: GenerationParams<T>,
   options: { timeout?: number; maxRetries?: 0 } = {},
 ) {
   if (!isGeminiConfigured(params.model))
@@ -125,7 +132,6 @@ async function generate<T>(
           cache: "no-store",
           signal: controller.signal,
           body: JSON.stringify({
-            store: false,
             systemInstruction: {
               parts: params.input
                 .filter((item) => item.role === "system")
@@ -281,6 +287,139 @@ async function generate<T>(
     clearTimeout(timer);
   }
 }
+export function isAiConfigured(model: string, image = false) {
+  return isGeminiConfigured(model) || isGroqConfigured(image);
+}
+
+type GenerationResult<T> = {
+  output_parsed: T;
+  provider?: "gemini" | "groq";
+  model?: string;
+};
+async function generate<T>(
+  params: GenerationParams<T>,
+  options: { timeout?: number; maxRetries?: 0 } = {},
+): Promise<GenerationResult<T>> {
+  // Validate image transport locally before trying either provider.
+  for (const input of params.input) parts(input.content);
+  const image = params.input.some(
+    (item) =>
+      Array.isArray(item.content) &&
+      item.content.some((part) => part.type === "input_image"),
+  );
+  const traceId = randomUUID();
+  const startedAt = Date.now();
+  const trace = (
+    provider: "gemini" | "groq",
+    state: "started" | "succeeded" | "failed" | "skipped",
+    code?: string,
+  ) => {
+    process.stderr.write(
+      JSON.stringify({
+        event: "ai_provider_attempt",
+        traceId,
+        provider,
+        state,
+        code,
+        elapsedMs: Date.now() - startedAt,
+        model: provider === "gemini" ? params.model : getGroqModel(image),
+      }) + "\n",
+    );
+  };
+  if (!isGroqConfigured(image)) {
+    trace("groq", "skipped", "AI_NOT_CONFIGURED");
+    trace(
+      "gemini",
+      isGeminiConfigured(params.model) ? "started" : "skipped",
+      isGeminiConfigured(params.model) ? undefined : "AI_NOT_CONFIGURED",
+    );
+    try {
+      const result = await generateGemini(params, options);
+      trace("gemini", "succeeded");
+      return result;
+    } catch (cause) {
+      if (!(cause instanceof GeminiError)) throw cause;
+      trace("gemini", "failed", cause.code);
+      const failure = cause;
+      failure.failures = { gemini: cause.code, groq: "NOT_CONFIGURED" };
+      process.stderr.write(
+        JSON.stringify({
+          event: "ai_generation_failed",
+          traceId,
+          requestId: failure.requestId,
+          ...failure.failures,
+        }) + "\n",
+      );
+      throw failure;
+    }
+  }
+  const total = Math.max(1, Math.min(options.timeout ?? 45000, 50000));
+  const deadline = Date.now() + total;
+  let firstFailure: GeminiError;
+  trace(
+    "gemini",
+    isGeminiConfigured(params.model) ? "started" : "skipped",
+    isGeminiConfigured(params.model) ? undefined : "AI_NOT_CONFIGURED",
+  );
+  try {
+    const result = await generateGemini(params, {
+      ...options,
+      timeout: Math.max(1, Math.min(25000, Math.floor(total * 0.55))),
+    });
+    trace("gemini", "succeeded");
+    return { ...result, provider: "gemini", model: params.model };
+  } catch (cause) {
+    if (!(cause instanceof GeminiError)) throw cause;
+    // A provider refusal is not a service outage. Preserve the existing refusal behavior.
+    if (["OUTPUT_BLOCKED", "INVALID_IMAGE"].includes(cause.code)) throw cause;
+    trace("gemini", "failed", cause.code);
+    firstFailure = cause;
+  }
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) throw new GeminiError(504, "PROVIDER_TIMEOUT");
+  process.stderr.write(
+    JSON.stringify({
+      event: "ai_provider_fallback",
+      from: "gemini",
+      to: "groq",
+      code: firstFailure.code,
+    }) + "\n",
+  );
+  try {
+    trace("groq", "started");
+    const result = await generateGroq(params, remaining, image);
+    trace("groq", "succeeded");
+    return { ...result, provider: "groq", model: getGroqModel(image) };
+  } catch (cause) {
+    const failure =
+      cause instanceof GroqError
+        ? cause
+        : new GroqError(502, "PROVIDER_FAILED");
+    trace("groq", "failed", failure.code);
+    const finalFailure = new GeminiError(
+      failure.code === "OUTPUT_BLOCKED" ? 422 : failure.status,
+      failure.code === "OUTPUT_BLOCKED"
+        ? "OUTPUT_BLOCKED"
+        : "ALL_PROVIDERS_FAILED",
+      undefined,
+      undefined,
+      undefined,
+      { gemini: firstFailure.code, groq: failure.code },
+    );
+    process.stderr.write(
+      JSON.stringify({
+        event: "ai_provider_failure",
+        requestId: finalFailure.requestId,
+        traceId,
+        gemini: firstFailure.code,
+        provider: "groq",
+        code: failure.code,
+        model: getGroqModel(image),
+      }) + "\n",
+    );
+    throw finalFailure;
+  }
+}
 // One stateless client allows handler tests to replace generation without exposing credentials.
 const client = { generate };
 export function getGeminiClient() {
@@ -306,7 +445,7 @@ export function geminiFailure(error: unknown) {
     OUTPUT_LIMIT_REACHED:
       "Gemini reached this request's output limit before finishing. Your input is preserved. Try a smaller request.",
     OUTPUT_BLOCKED:
-      "Gemini blocked this request or response. Review the supplied material. Your input is preserved.",
+      "The AI provider blocked this request or response. Review the supplied material. Your input is preserved.",
     EMPTY_OUTPUT:
       "The AI returned no draft. Please try a more focused request.",
     PROVIDER_FAILED:
@@ -317,11 +456,14 @@ export function geminiFailure(error: unknown) {
       "Gemini rejected the API credentials. The site owner needs to check the key and project access.",
     PROVIDER_MODEL_UNAVAILABLE:
       "The selected Gemini model is unavailable. The site owner needs to check GEMINI_MODEL.",
-    AI_NOT_CONFIGURED: "The generator has not been connected to Gemini yet.",
+    AI_NOT_CONFIGURED:
+      "The generator has not been connected to an AI provider yet.",
+    ALL_PROVIDERS_FAILED:
+      "The AI providers could not return a valid result. Your input is preserved. Please try again later.",
   };
   return messages[error.code]
     ? {
-        message: `${messages[error.code]} Reference: ${error.requestId}`,
+        message: `${messages[error.code]}${error.failures ? ` Gemini: ${error.failures.gemini}. Groq: ${error.failures.groq}.` : ""} Reference: ${error.requestId}`,
         status: error.status,
         code: error.code,
       }

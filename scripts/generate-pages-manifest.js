@@ -21,6 +21,7 @@ function generatePagesManifest() {
     { url: '/ai-learn-earn', title: 'AI Learn & Earn', priority: 'high' },
     { url: '/free-ai-resources', title: 'Free AI Resources', priority: 'medium' },
     { url: '/tools', title: 'Tools', priority: 'high' },
+    { url: '/prompts', title: 'AI Prompt Library', priority: 'high' },
     { url: '/tools/categories', title: 'Tool Categories', priority: 'medium' },
     { url: '/guides', title: 'Practical Guides', priority: 'medium' },
     ...registry.tools.filter(tool => tool.status === 'live').map(tool => ({ url: `/tools/${tool.slug}`, title: tool.name, priority: 'high' })),

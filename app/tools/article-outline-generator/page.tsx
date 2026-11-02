@@ -1,3 +1,8 @@
+import {
+  ToolHeroBackground,
+  toolHeroSurface,
+  toolHeroHeading,
+} from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen, Layers3, ListChecks, PencilLine } from "lucide-react";
@@ -56,15 +61,10 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className="relative overflow-hidden bg-slate-950 pb-20 pt-10 sm:pt-16">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)] bg-[size:28px_28px]"
-        />
-        <div
-          aria-hidden
-          className="absolute -left-32 top-10 h-96 w-96 rounded-full bg-[#5271ff]/25 blur-3xl"
-        />
+      <div
+        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
+      >
+        <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
@@ -84,7 +84,7 @@ export default function Page() {
             </p>
             <h1 className="mt-7 text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
               AI Article Outline Generator
-              <span className="mt-3 block text-balance bg-gradient-to-r from-blue-300 via-cyan-300 to-violet-300 bg-clip-text text-transparent">
+              <span className={`mt-3 block text-balance ${toolHeroHeading}`}>
                 Give Every Section a Purpose
               </span>
             </h1>

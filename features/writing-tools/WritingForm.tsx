@@ -303,8 +303,8 @@ export default function WritingForm({
                     : "Generate 6 H1 headings"}
               </button>
               <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                Your brief is sent to our AI provider. Avoid confidential
-                information. Review every generated claim before use.
+                Include relevant page details. Avoid confidential information.
+                Review every generated claim before use.
               </p>
             </div>
           </fieldset>

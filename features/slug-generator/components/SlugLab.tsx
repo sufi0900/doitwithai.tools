@@ -68,8 +68,8 @@ export default function SlugLab({ candidate, input }: Props) {
                 Refine the permanent page label
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Edit the selected option. Formatting and quality checks update
-                locally without another AI request.
+                Edit the selected option to see updated formatting and quality
+                checks.
               </p>
             </div>
             <ScoreRing score={evaluation.score} label="Slug quality score" />

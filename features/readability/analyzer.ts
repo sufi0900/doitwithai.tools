@@ -9,36 +9,8 @@ export const phraseSuggestions = [
   ["for the purpose of", "for"],
   ["utilize", "use"],
 ] as const;
-export function words(text: string) {
-  return text.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || [];
-}
-export function sentenceParts(
-  text: string,
-): Array<{ text: string; start: number; end: number }> {
-  const Segmenter = (Intl as any).Segmenter;
-  if (Segmenter) {
-    const segmenter = new Segmenter("en", { granularity: "sentence" });
-    // Respect explicit line breaks, including lists, without changing source offsets.
-    return Array.from(text.matchAll(/[^\r\n]+(?:\r?\n|$)/g)).flatMap((line) =>
-      Array.from(segmenter.segment(line[0]), (p: any) => ({
-        text: p.segment,
-        start: line.index! + p.index,
-        end: line.index! + p.index + p.segment.length,
-      })).filter((p) => words(p.text).length),
-    );
-  }
-  const parts = [];
-  const pattern = /[^.!?\n]+(?:[.!?]+["')]*|\n|$)/g;
-  let match;
-  while ((match = pattern.exec(text)))
-    if (words(match[0]).length)
-      parts.push({
-        text: match[0],
-        start: match.index,
-        end: match.index + match[0].length,
-      });
-  return parts;
-}
+import { words, sentenceParts } from "./engine/text";
+export { words, sentenceParts };
 export function analyzeReadability(text: string, threshold = 25) {
   const tokens = words(text);
   const sentences = sentenceParts(text).map((p) => ({

@@ -1,3 +1,18 @@
+// Keep operational diagnostics in server responses and logs, not visitor-facing copy.
+export function publicToolError(message: string, status: number) {
+  if (
+    !/\b(?:api|gemini|groq|redis|upstash|provider|quota|backend|configuration|configured)\b|PROVIDER_|REDIS_|AI_NOT_CONFIGURED|rate.limit/i.test(
+      message,
+    )
+  )
+    return message;
+  if (status === 429)
+    return "You have reached the current usage limit. Please try again later.";
+  if (status === 504)
+    return "This request took too long. Your inputs are preserved. Please try again.";
+  return "We could not complete this request. Your inputs are preserved. Please try again later.";
+}
+
 export class ToolResponseError extends Error {
   constructor(
     message: string,
@@ -51,7 +66,7 @@ export async function readToolResponse<T = Record<string, any>>(
   if (!response.ok)
     throw new ToolResponseError(
       typeof payload.error?.message === "string"
-        ? payload.error.message
+        ? publicToolError(payload.error.message, response.status)
         : "The server could not complete this request. Please try again later.",
       typeof payload.error?.code === "string"
         ? payload.error.code

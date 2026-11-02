@@ -1,0 +1,34 @@
+.outline {
+  --indent: 8px;
+  position: relative;
+}
+.row {
+  position: relative;
+  margin-left: calc(var(--depth) * var(--indent));
+  overflow-wrap: anywhere;
+}
+.branch {
+  position: absolute;
+  left: calc(-1 * var(--indent));
+  top: -13px;
+  width: var(--indent);
+  height: 49px;
+  border-left: 1px solid rgb(148 163 184 / 0.5);
+  border-bottom: 1px solid rgb(148 163 184 / 0.5);
+  border-bottom-left-radius: 8px;
+  pointer-events: none;
+}
+@media (min-width: 640px) {
+  .outline {
+    --indent: 24px;
+  }
+  .branch {
+    top: -17px;
+    height: 57px;
+  }
+}
+@media (min-width: 1024px) {
+  .outline {
+    --indent: 32px;
+  }
+}

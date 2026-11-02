@@ -1,4 +1,5 @@
 "use client";
+import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { RotateCcw, Sparkles, WandSparkles } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -155,7 +156,7 @@ export default function SlugGeneratorForm({ busy, onSubmit }: Props) {
               error={errors.baseUrl}
               hint="Used only to build the live URL preview; the tool does not fetch it."
             >
-              <input
+              <ToolUrlInput
                 id="baseUrl"
                 value={form.baseUrl}
                 onChange={(event) => update("baseUrl", event.target.value)}

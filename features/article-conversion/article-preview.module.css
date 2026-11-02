@@ -1,0 +1,17 @@
+@font-face {
+  font-family: ArticleLatinPreview;
+  src: url("/fonts/article-export/NotoSans-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: ArticleArabicPreview;
+  src: url("/fonts/article-export/NotoNaskhArabic-Regular.ttf")
+    format("truetype");
+  font-display: swap;
+  unicode-range: U+0600-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+.root input,
+.root textarea,
+.root [dir="auto"] {
+  font-family: ArticleLatinPreview, ArticleArabicPreview, Arial, sans-serif;
+}
