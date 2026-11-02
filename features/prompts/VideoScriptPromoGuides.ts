@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const videoScriptPromoGuides: Record<string, KeywordGuide> = {
   shortsAndTeleprompter: {
     href: "/tools/short-form-video-script-generator",
-    image: "/prompts/youtube-shorts-video-script-prompts-hero.webp",
+    image: "/prompts/youtube-shorts-video-script-prompts-hero-v2.webp",
     alt: "Short-Form Video Hook and Connected Teleprompter Script Studio.",
     label: "150-WPM TELEPROMPTER & HOOK STUDIO",
     title: "Generate continuous 30s–60s voiceover scripts and 3 opening hooks",
@@ -13,7 +13,7 @@ export const videoScriptPromoGuides: Record<string, KeywordGuide> = {
   },
   titleAndThumbnail: {
     href: "/tools/youtube-title-thumbnail-optimizer",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
+    image: "/prompts/content-repurposing-prompts-hero-v2.webp",
     alt: "YouTube Title, Thumbnail CTR, and 4K Storyboard Studio.",
     label: "DESIGN THE CLICK BEFORE YOU RECORD",
     title: "Test mobile-safe <55c YouTube titles and 3-word thumbnail hooks",

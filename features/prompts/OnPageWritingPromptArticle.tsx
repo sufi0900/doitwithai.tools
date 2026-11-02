@@ -128,7 +128,7 @@ export default function OnPageWritingPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/on-page-seo-content-writing-prompts-hero.webp"
+            src="/prompts/on-page-seo-content-writing-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="84 ChatGPT prompts for on-page SEO, headings, E-E-A-T, and readability beside an interactive editorial workbench."

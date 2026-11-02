@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const onpageWritingPromoGuides: Record<string, KeywordGuide> = {
   onpageAnalyzer: {
     href: "/tools/on-page-ai-seo-analyzer",
-    image: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
+    image: "/prompts/on-page-seo-content-writing-prompts-hero-v2.webp",
     alt: "On-Page AI SEO, Heading Structure, and E-E-A-T Originality Analyzer.",
     label: "AUDIT YOUR DRAFT BEFORE PUBLISHING",
     title: "Score your page for E-E-A-T, Information Gain & heading structure",
@@ -23,7 +23,7 @@ export const onpageWritingPromoGuides: Record<string, KeywordGuide> = {
   },
   visualInfographicUpgrade: {
     href: "/tools/blog-to-infographic-generator",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
+    image: "/prompts/content-repurposing-prompts-hero-v2.webp",
     alt: "Blog to Visual Infographic and HTML Cheatsheet Studio.",
     label: "BREAK UP WALLS OF TEXT",
     title: "Turn your H2 outline or comparison table into a visual infographic",

@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const technicalSeoPromoGuides: Record<string, KeywordGuide> = {
   robotsAndSitemaps: {
     href: "/tools/robots-txt-generator",
-    image: "/prompts/technical-seo-audit-schema-prompts-hero.webp",
+    image: "/prompts/technical-seo-audit-schema-prompts-hero-v2.webp",
     alt: "Robots.txt Generator, AI Crawler Governance, and Technical SEO Workbench.",
     label: "AUDIT ROBOTS.TXT & AI CRAWLERS",
     title: "Generate clean robots.txt rules & segmented XML sitemaps",
@@ -13,7 +13,7 @@ export const technicalSeoPromoGuides: Record<string, KeywordGuide> = {
   },
   schemaAndRichResults: {
     href: "/tools/schema-markup-generator",
-    image: "/prompts/ai-search-aeo-geo-prompts-hero.webp",
+    image: "/prompts/ai-search-aeo-geo-prompts-hero-v2.webp",
     alt: "JSON-LD Schema Markup Generator and Structured Data Validator.",
     label: "CONNECTED @GRAPH JSON-LD SCHEMA",
     title: "Generate & validate Article, FAQPage, Product & Organization JSON-LD",
@@ -23,7 +23,7 @@ export const technicalSeoPromoGuides: Record<string, KeywordGuide> = {
   },
   cwvAndRedirects: {
     href: "/tools/core-web-vitals-checker",
-    image: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
+    image: "/prompts/on-page-seo-content-writing-prompts-hero-v2.webp",
     alt: "Core Web Vitals Checker and Server Redirect Rule Generator.",
     label: "CORE WEB VITALS & 1-HOP REDIRECTS",
     title: "Diagnose LCP, INP & CLS bottlenecks and flatten redirect chains",

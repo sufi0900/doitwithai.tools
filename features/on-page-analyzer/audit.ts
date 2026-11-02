@@ -1,4 +1,4 @@
-import type { Block, Change, Finding, PageSnapshot, Section } from "./types";
+import type { Block, Change, Finding, PageSnapshot } from "./types";
 import {
   inspectSchemas,
   schemaSources,
@@ -9,6 +9,7 @@ import { readabilityReport } from "./metrics";
 import { crawlerReadiness } from "./crawlers";
 import { answerReadiness } from "./readiness";
 export { summarize } from "./scoring";
+
 export function applyDraft(
   page: PageSnapshot,
   changes: Change[],
@@ -69,7 +70,6 @@ export function applyDraft(
     if (alt && next.images[Number(alt[1])])
       next.images[Number(alt[1])].alt = c.after;
   }
-  // Draft estimates retain duplicate tag counts, directives, links, and published evidence.
   if (
     changes.some(
       (c) =>
@@ -103,6 +103,7 @@ export function applyDraft(
   }
   return next;
 }
+
 export function auditPage(
   page: PageSnapshot,
   keyword = "",
@@ -135,9 +136,11 @@ export function auditPage(
     page.partial && status === "passed" ? "unchecked" : status;
   const headings = page.blocks.filter((b) => /^h[1-6]$/.test(b.tag));
   const h1 = headings.filter((b) => b.tag === "h1");
+  const subheadings = headings.filter((b) => /^h[2-4]$/.test(b.tag));
   const text = page.blocks.map((b) => b.text).join("\n");
   const wordCount = words(text).length;
   const live = page.source === "url";
+
   add(
     "response",
     "technical",
@@ -156,6 +159,7 @@ export function auditPage(
     "redirect-rule-generator",
     10,
   );
+
   const noindex = page.robots.some((raw) => {
     const value = raw.replace(
       /^(?:HTTP X-Robots-Tag|robots|googlebot):\s*/i,
@@ -173,6 +177,7 @@ export function auditPage(
       );
     });
   });
+
   add(
     "indexing",
     "technical",
@@ -186,6 +191,7 @@ export function auditPage(
     "robots-txt-generator",
     10,
   );
+
   add(
     "canonical",
     "technical",
@@ -202,6 +208,7 @@ export function auditPage(
     "slug-generator",
     3,
   );
+
   if (page.canonical && page.url)
     add(
       "canonical-target",
@@ -214,6 +221,7 @@ export function auditPage(
       "A different canonical can be intentional. Its response and indexability need a separate check.",
       "slug-generator",
     );
+
   add(
     "language",
     "technical",
@@ -224,6 +232,7 @@ export function auditPage(
     "hreflang-generator",
     1,
   );
+
   add(
     "viewport",
     "technical",
@@ -234,11 +243,12 @@ export function auditPage(
     "core-web-vitals-checker",
     2,
   );
+
   add(
     "title",
     "search",
     !page.title ? "warning" : page.titleCount > 1 ? "warning" : "passed",
-    "Page title",
+    "Page title presence",
     page.title
       ? `${page.titleCount} title element(s). “${page.title}”`
       : "No nonempty title element was found.",
@@ -247,11 +257,32 @@ export function auditPage(
     5,
     "title",
   );
+
+  // NEW 2026 CHECK #1: Title Length & Mobile Truncation Window (35–60 chars)
+  const titleLen = (page.title || "").trim().length;
+  add(
+    "title-length-ctr",
+    "search",
+    !titleLen
+      ? "warning"
+      : titleLen >= 30 && titleLen <= 62
+        ? "passed"
+        : "warning",
+    "Title length & mobile SERP window",
+    titleLen
+      ? `${titleLen} characters (${titleLen > 62 ? "risks mobile truncation past ~60 chars" : titleLen < 30 ? "under-utilizes SERP title width" : "within 30–62 char mobile-safe window"}).`
+      : "No title text measured.",
+    "Keep titles between 35 and 60 characters and lead with your primary topic or quantified outcome.",
+    "youtube-title-thumbnail-optimizer",
+    3,
+    "title",
+  );
+
   add(
     "description",
     "search",
     !page.description || page.descriptionCount > 1 ? "warning" : "passed",
-    "Meta description",
+    "Meta description presence",
     page.description
       ? `${page.descriptionCount} description tag(s). “${page.description}”`
       : "No nonempty meta description was found.",
@@ -260,6 +291,49 @@ export function auditPage(
     2,
     "description",
   );
+
+  // NEW 2026 CHECK #2: Meta Description Snippet Window (110–160 chars)
+  const descLen = (page.description || "").trim().length;
+  add(
+    "description-length",
+    "search",
+    !descLen
+      ? "warning"
+      : descLen >= 100 && descLen <= 165
+        ? "passed"
+        : "warning",
+    "Meta description length & CTA clarity",
+    descLen
+      ? `${descLen} characters (${descLen > 165 ? "exceeds ~160 char desktop snippet window" : descLen < 100 ? "short summary; expand with key value props" : "optimal 100–165 char snippet range"}).`
+      : "No meta description measured.",
+    "Aim for 120–158 characters summarizing the reader outcome so Google has a clean default snippet.",
+    "meta-description-generator",
+    2,
+    "description",
+  );
+
+  // NEW 2026 CHECK #3: URL Slug Cleanliness & Evergreen Hygiene
+  if (page.url) {
+    let pathname = "/";
+    try {
+      pathname = new URL(page.url).pathname;
+    } catch {}
+    const slugClean =
+      pathname.length <= 75 &&
+      !/[A-Z_]/.test(pathname) &&
+      !/\b(2020|2021|2022|2023|2024)\b/.test(pathname);
+    add(
+      "url-slug-hygiene",
+      "search",
+      slugClean ? "passed" : "warning",
+      "URL slug readability & evergreen hygiene",
+      `Path: ${pathname} (${pathname.length} chars).`,
+      "Use short, lowercase, hyphenated evergreen URL slugs without outdated year stamps or underscores.",
+      "slug-generator",
+      2,
+    );
+  }
+
   add(
     "snippet",
     "search",
@@ -269,15 +343,18 @@ export function auditPage(
     "Pixel measurements are estimates. Display width, device, and search engine rewrites can change the final appearance.",
     "serp-rich-result-preview-generator",
   );
+
   add(
     "social",
     "search",
-    page.ogTitle && page.ogImage ? "passed" : "info",
-    "Social sharing fields",
-    `Open Graph title: ${page.ogTitle || "missing"}. Image: ${page.ogImage || "missing"}.`,
-    "Review sharing metadata separately from search ranking. Check the image in the social preview tool.",
+    page.ogTitle && page.ogImage ? "passed" : "warning",
+    "Open Graph & social card readiness",
+    `Open Graph title: ${page.ogTitle || "missing"}. Image: ${page.ogImage || "missing"}. Twitter card: ${page.twitterCard || "not declared"}.`,
+    "Ensure og:title, og:description, and a 1200×630 og:image are set so links render high-CTR social cards on LinkedIn, X, and Facebook.",
     "og-twitter-preview-generator",
+    2,
   );
+
   add(
     "h1",
     "headings",
@@ -288,13 +365,14 @@ export function auditPage(
           ? "passed"
           : "warning",
     ),
-    "Main heading",
+    "Main heading (H1)",
     `${h1.length} H1 heading(s) in ${page.scope}.`,
     "A clear main heading helps readers identify the page. Multiple H1s are a review item, not an automatic ranking penalty.",
     "h1-heading-generator",
     4,
     h1[0]?.id,
   );
+
   const empty = headings.filter((b) => !b.text),
     skips = headings.filter(
       (b, i) => i > 0 && Number(b.tag[1]) > Number(headings[i - 1].tag[1]) + 1,
@@ -311,6 +389,31 @@ export function auditPage(
     "heading-structure-analyzer",
     3,
   );
+
+  // NEW 2026 CHECK #4: Question Headings for People Also Ask & AI Overviews
+  const questionHeadings = subheadings.filter(
+    (b) =>
+      /^(how|what|why|when|where|who|which|can|does|do|is|are|should)\b/i.test(
+        b.text.trim(),
+      ) || b.text.includes("?"),
+  );
+  add(
+    "question-headings",
+    "headings",
+    bodyStatus(
+      wordCount < 250
+        ? "info"
+        : questionHeadings.length >= 1
+          ? "passed"
+          : "warning",
+    ),
+    "Question-based H2/H3 headings (PAA & AEO)",
+    `${questionHeadings.length} of ${subheadings.length} subheadings are phrased as natural questions.`,
+    "Include 2–4 question-phrased H2/H3 subheadings followed by direct 45-word answers to capture People Also Ask boxes and AI Overview citations.",
+    "faq-schema-generator",
+    2,
+  );
+
   const seenHeadingText = new Set<string>();
   const duplicates = headings.filter((b) => {
     const text = normalize(b.text);
@@ -334,6 +437,7 @@ export function auditPage(
     "heading-structure-analyzer",
     1,
   );
+
   add(
     "content",
     "content",
@@ -344,6 +448,48 @@ export function auditPage(
     "readability-checker",
     4,
   );
+
+  // NEW 2026 CHECK #5: Featured Snippet Definition & List Readiness
+  const listItemsCount = page.blocks.filter(
+    (b) => b.tag === "li" || b.listItem !== undefined,
+  ).length;
+  const conciseParagraphs = page.blocks.filter((b) => {
+    if (/^h/.test(b.tag)) return false;
+    const wc = words(b.text).length;
+    return wc >= 35 && wc <= 65;
+  });
+  add(
+    "featured-snippet-readiness",
+    "content",
+    bodyStatus(
+      conciseParagraphs.length >= 1 || listItemsCount >= 3
+        ? "passed"
+        : "warning",
+    ),
+    "Featured snippet & Position-0 structure",
+    `${conciseParagraphs.length} concise 35–65 word answer paragraph(s); ${listItemsCount} structured list item(s).`,
+    "Place a 40–55 word direct definition paragraph immediately below your H1 or first H2, and use structured bullet/numbered lists for step-by-step takeaways.",
+    "featured-snippet-optimizer",
+    2,
+  );
+
+  // NEW 2026 CHECK #6: Information Gain & Quantitative Proof Density
+  const numericPassages = page.blocks.filter((b) =>
+    /\b\d+(?:\.\d+)?(?:\s*%|\s*x|\s*ms|\s*seconds|\s*days|\s*steps|\+)/i.test(
+      b.text,
+    ),
+  );
+  add(
+    "information-gain-signals",
+    "content",
+    bodyStatus(numericPassages.length >= 2 ? "passed" : "warning"),
+    "Information gain & quantitative proof points",
+    `${numericPassages.length} passage(s) include specific metrics, percentages, multipliers, or benchmarks.`,
+    "Pages with original metrics, benchmarks, and visual data charts earn significantly higher human dwell time and AI search citations.",
+    "data-to-chart-visual-card-maker",
+    2,
+  );
+
   const reading = readabilityReport(page, targetGrade);
   const english = /^en(?:-|$)/i.test(page.language);
   add(
@@ -360,6 +506,7 @@ export function auditPage(
     "readability-checker",
     3,
   );
+
   const longBlocks = page.blocks.filter(
     (b) => !/^h/.test(b.tag) && words(b.text).length > 120,
   );
@@ -374,6 +521,7 @@ export function auditPage(
     1,
     longBlocks[0]?.id,
   );
+
   const seenPassageText = new Set<string>();
   const repeated = page.blocks.filter((b) => {
     if (b.text.length <= 80) return false;
@@ -393,16 +541,20 @@ export function auditPage(
     1,
     repeated[0]?.id,
   );
+
   if (normalize(keyword)) {
     const count = phraseCount(text, keyword);
+    const inTitle = phraseCount(page.title, keyword);
+    const inH1 = h1.reduce((n, b) => n + phraseCount(b.text, keyword), 0);
     add(
       "keyword",
       "content",
-      "info",
-      "Target phrase context",
-      `“${keyword}”: ${count} occurrence(s) in extracted content; title: ${phraseCount(page.title, keyword)}; H1: ${h1.reduce((n, b) => n + phraseCount(b.text, keyword), 0)}.`,
-      "Review natural relevance and synonyms. Exact matches and a fixed keyword density are not required.",
-      "search-intent-checker",
+      count > 0 && (inTitle > 0 || inH1 > 0) ? "passed" : "warning",
+      "Target phrase alignment (Title, H1 & Body)",
+      `“${keyword}”: ${count} occurrence(s) in extracted content; title: ${inTitle}; H1: ${inH1}.`,
+      "Include your primary target phrase naturally in the Title tag, H1 heading, and opening 150 words.",
+      "keyword-research-tool",
+      3,
     );
   } else
     add(
@@ -411,17 +563,21 @@ export function auditPage(
       "unchecked",
       "Target phrase context",
       "No target phrase supplied.",
-      "Add an optional phrase to inspect placement. We do not infer search volume or actual search results.",
-      "search-intent-checker",
+      "Click any Auto-Detected Topical Phrase below or enter a primary keyword above to audit exact placement.",
+      "keyword-research-tool",
     );
+
   let internal: typeof page.links = [],
     external: typeof page.links = [];
   for (const link of page.links) {
     if (!page.url || !/^https?:/.test(link.href)) continue;
-    if (new URL(link.href).origin === new URL(page.url).origin)
-      internal.push(link);
-    else external.push(link);
+    try {
+      if (new URL(link.href).origin === new URL(page.url).origin)
+        internal.push(link);
+      else external.push(link);
+    } catch {}
   }
+
   add(
     "internal-links",
     "links",
@@ -434,6 +590,23 @@ export function auditPage(
     "internal-link-opportunity-finder",
     3,
   );
+
+  // NEW 2026 CHECK #7: External Authority Citations
+  add(
+    "external-citations",
+    "links",
+    !page.url
+      ? "unchecked"
+      : bodyStatus(
+          wordCount < 400 || external.length >= 1 ? "passed" : "warning",
+        ),
+    "External authority citations & E-E-A-T",
+    `${external.length} outbound external link(s) detected across ${wordCount.toLocaleString()} words.`,
+    "Citing authoritative primary sources, official documentation, or studies strengthens editorial trust and E-E-A-T signals.",
+    "eeat-content-auditor",
+    2,
+  );
+
   const generic = page.links.filter(
     (l) => /^(click here|here|read more|learn more)$/i.test(l.text) || !l.text,
   );
@@ -444,9 +617,10 @@ export function auditPage(
     "Anchor clarity",
     `${generic.length} empty or generic text anchor(s). Image-only links need an accessibility review.`,
     "Use descriptive anchors where appropriate. Inspect image links before treating missing text as an error.",
-    "internal-link-opportunity-finder",
+    "internal-link-anchor-auditor",
     3,
   );
+
   add(
     "link-status",
     "links",
@@ -454,9 +628,10 @@ export function auditPage(
     "Destination health & link opportunities",
     `${external.length} external link(s). Linked destinations were not fetched.`,
     "Broken links, orphan pages, incoming links, and new target opportunities require a separate crawl.",
-    "internal-link-opportunity-finder",
+    "broken-link-redirect-auditor",
     2,
   );
+
   const noAlt = page.images.filter((i) => i.alt === null),
     emptyAlt = page.images.filter((i) => i.alt === "");
   add(
@@ -470,6 +645,24 @@ export function auditPage(
     2,
     noAlt.length ? `image:${page.images.indexOf(noAlt[0])}` : undefined,
   );
+
+  // NEW 2026 CHECK #8: Visual Asset & Infographic Density
+  const recommendedImages = Math.max(1, Math.floor(wordCount / 400));
+  add(
+    "visual-asset-density",
+    "media",
+    bodyStatus(
+      page.images.length >= Math.min(2, recommendedImages)
+        ? "passed"
+        : "warning",
+    ),
+    "Visual engagement & infographic density",
+    `${page.images.length} visual asset(s) across ${wordCount.toLocaleString()} words (recommended: ≥${Math.min(3, recommendedImages)} custom visuals, charts, or infographics).`,
+    "Turn key sections into custom vector infographics, framework diagrams, or data chart cards to boost reader dwell time and social saves.",
+    "blog-to-infographic-generator",
+    2,
+  );
+
   const noDimensions = page.images.filter((i) => !i.width || !i.height);
   add(
     "dimensions",
@@ -480,6 +673,7 @@ export function auditPage(
     "CSS aspect-ratio may already reserve space. Confirm layout shifts with performance testing before changing markup.",
     "core-web-vitals-checker",
   );
+
   add(
     "schema-json",
     "schema",
@@ -487,13 +681,14 @@ export function auditPage(
       ? "warning"
       : page.schemas.samples.length
         ? bodyStatus("passed")
-        : "info",
-    "Structured data syntax",
+        : "warning",
+    "Structured data syntax (JSON-LD)",
     `${page.schemas.valid} valid JSON-LD block(s); ${page.schemas.invalid} invalid block(s).`,
     "JSON validity does not establish rich result eligibility. Validate relevant types and compare markup with visible content.",
     "structured-data-validator",
     2,
   );
+
   const schemaReport = inspectSchemas(schemaSources(page.schemas));
   add(
     "schema-fields",
@@ -509,6 +704,24 @@ export function auditPage(
     "structured-data-validator",
     3,
   );
+
+  // NEW 2026 CHECK #9: FAQPage / HowTo Schema Opportunity
+  const hasFaqOrHowToSchema = page.schemas.types.some((t) =>
+    /^(FAQPage|HowTo|Article|BlogPosting|NewsArticle|TechArticle)$/i.test(t),
+  );
+  add(
+    "faq-schema-opportunity",
+    "schema",
+    hasFaqOrHowToSchema ? "passed" : "info",
+    "Article & FAQPage schema coverage",
+    page.schemas.types.length
+      ? `Detected types: ${page.schemas.types.join(", ")}.`
+      : "No Article, BlogPosting, or FAQPage JSON-LD schema detected.",
+    "Add Article/BlogPosting and FAQPage JSON-LD markup so search engines and AI answer engines can parse authorship, dates, and Q&A pairs.",
+    "faq-schema-generator",
+    2,
+  );
+
   add(
     "schema-types",
     "schema",
@@ -519,6 +732,7 @@ export function auditPage(
     "Add markup only when appropriate. Missing schema is not a universal SEO failure, and special AI schema is not required.",
     "schema-markup-generator",
   );
+
   add(
     "schema-eligibility",
     "schema",
@@ -528,6 +742,7 @@ export function auditPage(
     "Use the schema tool and Google's Rich Results Test for supported feature requirements. Display is never guaranteed.",
     "schema-markup-generator",
   );
+
   const readiness = answerReadiness(page);
   const openings = [readiness.opening, ...readiness.sections];
   const available = openings.filter((s) => s.passage);
@@ -544,6 +759,7 @@ export function auditPage(
     "ai-citation-readiness-checker",
     2,
   );
+
   for (const crawler of crawlerReadiness(page).filter((c) => c.scored)) {
     add(
       `crawler-${crawler.token}`,
@@ -561,16 +777,20 @@ export function auditPage(
     );
     if (crawler.status === "blocked") findings[findings.length - 1].credit = 0;
   }
+
   add(
     "author",
     "ai-search",
-    page.author ? "info" : "info",
-    "Authorship evidence",
-    page.author ||
-      "No author metadata extracted. A visible byline may still exist.",
-    "For relevant content, make authorship and experience easy to understand. This is not an E-E-A-T score.",
-    "ai-citation-readiness-checker",
+    page.author ? "passed" : "warning",
+    "Authorship & E-E-A-T attribution",
+    page.author
+      ? `Author detected: ${page.author}${page.modified ? ` · Modified: ${page.modified}` : ""}`
+      : "No explicit author metadata extracted in head or article schema.",
+    "Include clear author attribution, credentials, and last-modified dates to strengthen E-E-A-T trust signals.",
+    "eeat-content-auditor",
+    2,
   );
+
   const claims = page.blocks.filter((b) =>
     /\d+(?:\.\d+)?\s?%|\b(?:research shows|studies show|guaranteed|always|never)\b/i.test(
       b.text,
@@ -587,6 +807,7 @@ export function auditPage(
     0,
     claims[0]?.id,
   );
+
   add(
     "intent",
     "ai-search",
@@ -597,6 +818,7 @@ export function auditPage(
     "search-intent-checker",
     3,
   );
+
   add(
     "robots-file",
     "technical",
@@ -610,6 +832,7 @@ export function auditPage(
     "File availability alone cannot confirm access. Check matching crawler rules, hosting restrictions, and indexing directives separately.",
     "robots-txt-generator",
   );
+
   add(
     "llms",
     "ai-search",
@@ -623,6 +846,7 @@ export function auditPage(
     "This file is optional. It is not required for Google Search or its AI features and does not guarantee citations.",
     "llms-txt-generator",
   );
+
   add(
     "performance",
     "technical",
@@ -632,6 +856,7 @@ export function auditPage(
     "Run the optional mobile or desktop check. Missing real-user field data is not a failed measurement.",
     "core-web-vitals-checker",
   );
+
   add(
     "sitewide",
     "technical",
@@ -641,8 +866,10 @@ export function auditPage(
     "Sitewide duplicates, cannibalization, hreflang reciprocity, and rendered content need additional checks.",
     "keyword-cannibalization-finder",
   );
+
   return findings;
 }
+
 export function changesCsv(changes: Change[]) {
   const quote = (s: string) =>
     `"${(/^[\s]*[=+@-]/.test(s) ? "'" : "") + s.replace(/"/g, '""')}"`;

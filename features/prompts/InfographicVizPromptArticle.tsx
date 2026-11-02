@@ -129,7 +129,7 @@ export default function InfographicVizPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/infographic-data-visualization-prompts-hero.webp"
+            src="/prompts/infographic-data-visualization-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="77 AI prompts for infographics, data visualization charts, 2x2 strategy matrices, and tall Pinterest pins."

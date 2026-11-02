@@ -27,7 +27,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Architect 3-tier topical maps, cluster keywords onto single canonical URLs, set anti-cannibalization scope boundaries, and wire bidirectional Hub-and-Spoke internal links.",
     cover: {
-      src: "/prompts/topic-clustering-topical-authority-prompts-hero.webp",
+      src: "/prompts/topic-clustering-topical-authority-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "94 ChatGPT prompts for topic clustering, pillar pages, and topical authority beside a Hub and Spoke graph.",
@@ -63,7 +63,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Convert long articles and raw data into 8-node visual infographics, quantitative chart cards, 2×2 strategy matrices, circular flywheels, 1000×1500 Pinterest pins, and 1-page HTML cheat sheets.",
     cover: {
-      src: "/prompts/infographic-data-visualization-prompts-hero.webp",
+      src: "/prompts/infographic-data-visualization-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "77 AI prompts for infographics, data visualization charts, 2x2 strategy matrices, and tall Pinterest pins.",
@@ -99,7 +99,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Position your LinkedIn Headline and Featured shelf, craft 140-character mobile fold hooks, storyboard 7-slide PDF carousels and founder memo cards, and turn comments into warm B2B DMs.",
     cover: {
-      src: "/prompts/linkedin-personal-branding-b2b-prompts-hero.webp",
+      src: "/prompts/linkedin-personal-branding-b2b-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "83 ChatGPT prompts for LinkedIn personal branding, 140-character mobile fold hooks, and PDF document carousels.",
@@ -135,7 +135,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Design citable research studies and calculators, write 150-word HARO and journalist quotes, send concise editorial outreach emails, reclaim unlinked mentions, and audit anchor text safety.",
     cover: {
-      src: "/prompts/link-building-digital-pr-prompts-hero.webp",
+      src: "/prompts/link-building-digital-pr-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "88 ChatGPT prompts for link building, Digital PR data studies, and journalist outreach beside an editorial pitch workbench.",
@@ -171,7 +171,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Turn supplied crawl exports, Google Search Console indexing statuses, redirect chains, Schema.org @graph specs, and Core Web Vitals traces into verified fixes and engineering tickets.",
     cover: {
-      src: "/prompts/technical-seo-audit-schema-prompts-hero.webp",
+      src: "/prompts/technical-seo-audit-schema-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "76 ChatGPT prompts for Technical SEO audits, JSON-LD schema markup, and Core Web Vitals diagnostics.",
@@ -207,7 +207,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Format 50-word entity-explicit citation passages, disambiguate your brand in the Knowledge Graph, publish dated GEO benchmarks and trade-off matrices, and generate /llms.txt and @graph JSON-LD.",
     cover: {
-      src: "/prompts/ai-search-aeo-geo-prompts-hero.webp",
+      src: "/prompts/ai-search-aeo-geo-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "91 prompts for AI Search, AEO, GEO, and LLM citation optimization beside an entity graph and citation workbench.",
@@ -243,7 +243,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Align your Google Business Profile categories and services, publish policy-safe GBP Updates, plan genuinely local city service pages, reply to customer reviews, and generate LocalBusiness JSON-LD.",
     cover: {
-      src: "/prompts/local-seo-gbp-prompts-hero.webp",
+      src: "/prompts/local-seo-gbp-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "79 ChatGPT prompts for Local SEO and Google Business Profile optimization beside a Map Pack and review workflow.",
@@ -279,7 +279,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Plan logical H1–H3 heading hierarchies, draft 45-word snippet definitions and comparison tables, weave in first-hand E-E-A-T proof, and edit dense passages for human clarity.",
     cover: {
-      src: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
+      src: "/prompts/on-page-seo-content-writing-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "84 ChatGPT prompts for on-page SEO, headings, E-E-A-T, and readability beside an interactive editorial workbench.",
@@ -315,7 +315,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Design high-CTR title and thumbnail pairs, script 0–3s scroll-stopping hooks, pace 150-WPM teleprompter voiceovers, and convert video transcripts into SEO articles.",
     cover: {
-      src: "/prompts/youtube-shorts-video-script-prompts-hero.webp",
+      src: "/prompts/youtube-shorts-video-script-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "93 AI prompts for YouTube scripts, Shorts, Reels, and TikTok hooks beside an interactive teleprompter workbench.",
@@ -351,7 +351,7 @@ export const promptDetails: Record<string, PromptDetail> = {
     overview:
       "Atomize one authoritative pillar article into channel-native social posts, swipeable carousel decks, 8-node visual infographics, and 30-day distribution calendars.",
     cover: {
-      src: "/prompts/content-repurposing-prompts-hero.webp",
+      src: "/prompts/content-repurposing-prompts-hero-v2.webp",
       width: 1600,
       height: 900,
       alt: "87 content repurposing and social media prompts beside an interactive workbench.",

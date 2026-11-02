@@ -127,6 +127,18 @@ function formatSec(sec: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function parseTimestampStrToSeconds(ts: string): number {
+  const cleaned = ts.trim().replace(",", ".");
+  const parts = cleaned.split(":").map((p) => parseFloat(p) || 0);
+  if (parts.length === 3) {
+    return Math.floor(parts[0] * 3600 + parts[1] * 60 + parts[2]);
+  }
+  if (parts.length === 2) {
+    return Math.floor(parts[0] * 60 + parts[1]);
+  }
+  return 0;
+}
+
 function detectImageFormat(src: string): string {
   const lower = src.toLowerCase().split("?")[0];
   if (lower.endsWith(".svg")) return "SVG";
@@ -208,7 +220,6 @@ function normalizeGranularSegments(
       bucket = { ...item, text: cleanedText };
       continue;
     }
-    // Keep natural 3-to-6 second spoken lines (up to ~85 chars) so the full transcript has granular timestamps
     if (
       item.seconds - bucket.seconds < 4 &&
       bucket.text.length + cleanedText.length < 85 &&
@@ -221,7 +232,7 @@ function normalizeGranularSegments(
     }
   }
   if (bucket) normalized.push(bucket);
-  return normalized.slice(0, 1200);
+  return normalized.slice(0, 2500);
 }
 
 function parseTimedTextPayload(
@@ -273,20 +284,54 @@ function parseTimedTextPayload(
     if (segments.length > 0) return normalizeGranularSegments(segments);
   }
 
-  // 3. Parse SRV3/TTML <p t="..." d="...">
+  // 3. Parse SRV3/TTML <p t="..." d="..."> or <p begin="00:00:01.000">
   const pMatches = Array.from(
-    trimmed.matchAll(/<p[^>]*\bt="(\d+)"[^>]*>([\s\S]*?)<\/p>/gi),
+    trimmed.matchAll(/<p[^>]*\b(?:t|begin)="([^"]+)"[^>]*>([\s\S]*?)<\/p>/gi),
   );
-  for (const m of pMatches) {
-    const sec = Math.max(0, Math.floor(Number(m[1] || "0") / 1000));
-    const txt = clean(decodeXmlEntities(m[2].replace(/<[^>]+>/g, " ")));
-    if (txt) {
-      segments.push({
-        timestamp: formatSec(sec),
-        seconds: sec,
-        text: txt,
-      });
+  if (pMatches.length > 0) {
+    for (const m of pMatches) {
+      const rawTime = m[1] || "0";
+      const sec = rawTime.includes(":")
+        ? parseTimestampStrToSeconds(rawTime)
+        : Math.max(0, Math.floor(Number(rawTime) / 1000));
+      const txt = clean(decodeXmlEntities(m[2].replace(/<[^>]+>/g, " ")));
+      if (txt) {
+        segments.push({
+          timestamp: formatSec(sec),
+          seconds: sec,
+          text: txt,
+        });
+      }
     }
+    if (segments.length > 0) return normalizeGranularSegments(segments);
+  }
+
+  // 4. Parse WebVTT / SRT format (00:00:01.200 --> 00:00:04.500)
+  if (trimmed.includes("-->")) {
+    const blocks = trimmed.split(/\r?\n\r?\n/);
+    for (const block of blocks) {
+      const lines = block
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+      const timeLineIdx = lines.findIndex((l) => l.includes("-->"));
+      if (timeLineIdx === -1) continue;
+      const startPart = lines[timeLineIdx].split("-->")[0]?.trim() || "00:00";
+      const sec = parseTimestampStrToSeconds(startPart);
+      const spokenLines = lines
+        .slice(timeLineIdx + 1)
+        .map((l) => clean(decodeXmlEntities(l.replace(/<[^>]+>/g, " "))))
+        .filter(Boolean);
+      const text = clean(spokenLines.join(" "));
+      if (text) {
+        segments.push({
+          timestamp: formatSec(sec),
+          seconds: sec,
+          text,
+        });
+      }
+    }
+    if (segments.length > 0) return normalizeGranularSegments(segments);
   }
 
   return normalizeGranularSegments(segments);
@@ -300,18 +345,17 @@ async function fetchCaptionTrackUrl(
     cleanUrl.includes("fmt=") ? cleanUrl : `${cleanUrl}&fmt=json3`,
     cleanUrl,
     `${cleanUrl}&fmt=srv3`,
+    `${cleanUrl}&fmt=vtt`,
   ];
   for (const u of urlsToTry) {
     try {
       const res = await fetch(u, {
         headers: {
           "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "com.google.android.youtube/19.44.38 (Linux; U; Android 14) gzip",
           "Accept-Language": "en-US,en;q=0.9",
-          Referer: "https://www.youtube.com/",
-          Origin: "https://www.youtube.com",
         },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(7000),
       });
       if (res.ok) {
         const body = await res.text();
@@ -335,12 +379,182 @@ function pickBestCaptionTrack(
 }
 
 /**
- * Calls YouTube's native `youtubei/v1/get_transcript` endpoint using the
- * `getTranscriptEndpoint.params` token embedded inside `ytInitialData`.
+ * Generates the URL-encoded Base64 Protobuf `params` token for YouTube's
+ * `youtubei/v1/get_transcript` endpoint directly from any `videoId`.
+ */
+function encodeVarint(value: number): number[] {
+  const bytes: number[] = [];
+  let v = value >>> 0;
+  while (v > 0x7f) {
+    bytes.push((v & 0x7f) | 0x80);
+    v >>>= 7;
+  }
+  bytes.push(v);
+  return bytes;
+}
+
+function encodeProtoString(fieldNumber: number, str: string): Buffer {
+  const strBuf = Buffer.from(str, "utf8");
+  const tag = (fieldNumber << 3) | 2;
+  return Buffer.concat([
+    Buffer.from(encodeVarint(tag)),
+    Buffer.from(encodeVarint(strBuf.length)),
+    strBuf,
+  ]);
+}
+
+function buildInnertubeTranscriptParams(
+  videoId: string,
+  kind: "asr" | "" = "asr",
+  lang = "en",
+): string {
+  const inner = Buffer.concat([
+    encodeProtoString(1, kind),
+    encodeProtoString(2, lang),
+    encodeProtoString(3, ""),
+  ]);
+  const innerB64Url = encodeURIComponent(inner.toString("base64"));
+  const outer = Buffer.concat([
+    encodeProtoString(1, videoId),
+    encodeProtoString(2, innerB64Url),
+  ]);
+  return encodeURIComponent(outer.toString("base64"));
+}
+
+/**
+ * Recursively walks the JSON response from `youtubei/v1/get_transcript` and extracts
+ * all segments from `transcriptSegmentRenderer`, `transcriptSegmentViewModel`,
+ * and `transcriptCueRenderer` regardless of key ordering or 2025/2026 UI experiments.
+ */
+function parseInnertubeTranscriptJson(
+  root: unknown,
+): Array<{ timestamp: string; seconds: number; text: string }> {
+  const rawSegments: Array<{ timestamp: string; seconds: number; text: string }> = [];
+
+  function extractTextFromField(field: unknown): string {
+    if (!field || typeof field !== "object") return "";
+    const obj = field as Record<string, unknown>;
+    if (typeof obj.simpleText === "string") return clean(obj.simpleText);
+    if (typeof obj.content === "string") return clean(obj.content);
+    if (
+      obj.elementsAttributedString &&
+      typeof (obj.elementsAttributedString as Record<string, unknown>).content ===
+        "string"
+    ) {
+      return clean(
+        (obj.elementsAttributedString as Record<string, unknown>).content,
+      );
+    }
+    if (Array.isArray(obj.runs)) {
+      return clean(
+        obj.runs
+          .map((r: unknown) =>
+            r && typeof r === "object"
+              ? String((r as Record<string, unknown>).text || "")
+              : "",
+          )
+          .join(""),
+      );
+    }
+    return "";
+  }
+
+  function walk(node: unknown) {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    const obj = node as Record<string, unknown>;
+
+    // 1. Classic transcriptSegmentRenderer
+    if (
+      obj.transcriptSegmentRenderer &&
+      typeof obj.transcriptSegmentRenderer === "object"
+    ) {
+      const r = obj.transcriptSegmentRenderer as Record<string, unknown>;
+      const text = extractTextFromField(r.snippet);
+      const startMs = Number(r.startMs || 0);
+      const startTimeStr = extractTextFromField(r.startTimeText);
+      const sec =
+        startMs > 0
+          ? Math.floor(startMs / 1000)
+          : startTimeStr
+            ? parseTimestampStrToSeconds(startTimeStr)
+            : 0;
+      if (text) {
+        rawSegments.push({
+          timestamp: formatSec(sec),
+          seconds: sec,
+          text,
+        });
+      }
+      return;
+    }
+
+    // 2. 2025/2026 transcriptSegmentViewModel
+    if (
+      obj.transcriptSegmentViewModel &&
+      typeof obj.transcriptSegmentViewModel === "object"
+    ) {
+      const vm = obj.transcriptSegmentViewModel as Record<string, unknown>;
+      const text =
+        typeof vm.text === "string"
+          ? clean(vm.text)
+          : extractTextFromField(vm.text) ||
+            extractTextFromField(vm.attributedText);
+      const tsStr =
+        typeof vm.startTimeText === "string"
+          ? clean(vm.startTimeText)
+          : extractTextFromField(vm.startTimeText) ||
+            extractTextFromField(vm.timestamp);
+      const sec = tsStr ? parseTimestampStrToSeconds(tsStr) : 0;
+      if (text) {
+        rawSegments.push({
+          timestamp: formatSec(sec),
+          seconds: sec,
+          text,
+        });
+      }
+      return;
+    }
+
+    // 3. transcriptCueRenderer
+    if (
+      obj.transcriptCueRenderer &&
+      typeof obj.transcriptCueRenderer === "object"
+    ) {
+      const cue = obj.transcriptCueRenderer as Record<string, unknown>;
+      const text = extractTextFromField(cue.cue);
+      const startMs = Number(cue.startOffsetMs || 0);
+      const sec = Math.max(0, Math.floor(startMs / 1000));
+      if (text) {
+        rawSegments.push({
+          timestamp: formatSec(sec),
+          seconds: sec,
+          text,
+        });
+      }
+      return;
+    }
+
+    for (const val of Object.values(obj)) {
+      walk(val);
+    }
+  }
+
+  walk(root);
+  return normalizeGranularSegments(rawSegments);
+}
+
+/**
+ * Calls YouTube's native `youtubei/v1/get_transcript` endpoint using either the
+ * scraped `getTranscriptEndpoint.params` token OR generated Protobuf tokens.
  */
 async function fetchYoutubeInnertubeTranscriptByParams(
   paramsToken: string,
   visitorData?: string,
+  clientVersion = "2.20250201.01.00",
 ): Promise<Array<{ timestamp: string; seconds: number; text: string }>> {
   try {
     const res = await fetch(
@@ -350,16 +564,18 @@ async function fetchYoutubeInnertubeTranscriptByParams(
         headers: {
           "Content-Type": "application/json",
           "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
           Origin: "https://www.youtube.com",
           Referer: "https://www.youtube.com/",
+          "X-YouTube-Client-Name": "1",
+          "X-YouTube-Client-Version": clientVersion,
           ...(visitorData ? { "X-Goog-Visitor-Id": visitorData } : {}),
         },
         body: JSON.stringify({
           context: {
             client: {
               clientName: "WEB",
-              clientVersion: "2.20241101.01.00",
+              clientVersion,
               hl: "en",
               gl: "US",
               ...(visitorData ? { visitorData } : {}),
@@ -371,32 +587,207 @@ async function fetchYoutubeInnertubeTranscriptByParams(
       },
     );
     if (!res.ok) return [];
-    const text = await res.text();
-    const segments: Array<{ timestamp: string; seconds: number; text: string }> = [];
-
-    // Match all transcriptSegmentRenderer objects in the JSON response
-    const segRegex =
-      /"transcriptSegmentRenderer":\s*\{[\s\S]*?"startMs":\s*"(\d+)"[\s\S]*?"snippet":\s*\{\s*"runs":\s*\[\s*\{\s*"text":\s*"((?:\\.|[^"\\])*)"/g;
-    let m: RegExpExecArray | null;
-    while ((m = segRegex.exec(text)) !== null) {
-      const sec = Math.max(0, Math.floor(Number(m[1] || "0") / 1000));
-      let spoken = m[2] || "";
-      try {
-        spoken = JSON.parse(`"${spoken}"`);
-      } catch {}
-      const cleaned = clean(spoken);
-      if (cleaned) {
-        segments.push({
-          timestamp: formatSec(sec),
-          seconds: sec,
-          text: cleaned,
-        });
-      }
-    }
-    return normalizeGranularSegments(segments);
+    const json = await res.json();
+    return parseInnertubeTranscriptJson(json);
   } catch {
     return [];
   }
+}
+
+/**
+ * Queries public YouTube transcript & subtitle mirrors when YouTube rate-limits
+ * or blocks a serverless datacenter IP.
+ */
+async function fetchPublicTranscriptMirrors(
+  videoId: string,
+): Promise<{
+  title?: string;
+  author?: string;
+  segments: Array<{ timestamp: string; seconds: number; text: string }>;
+}> {
+  // 1. youtubetranscript.com XML endpoint
+  try {
+    const ytTransRes = await fetch(
+      `https://youtubetranscript.com/?server_vid2=${encodeURIComponent(videoId)}`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36",
+        },
+        signal: AbortSignal.timeout(6500),
+      },
+    );
+    if (ytTransRes.ok) {
+      const xml = await ytTransRes.text();
+      if (xml.includes("<text")) {
+        const parsed = parseTimedTextPayload(xml);
+        if (parsed.length >= 5) {
+          return { segments: parsed };
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Piped API public instances (returns title, uploader, and subtitle URLs)
+  const pipedInstances = [
+    "https://pipedapi.kavin.rocks",
+    "https://api.piped.private.coffee",
+    "https://pipedapi.tokhmi.xyz",
+  ];
+  for (const host of pipedInstances) {
+    try {
+      const res = await fetch(`${host}/streams/${encodeURIComponent(videoId)}`, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(5500),
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const subs = Array.isArray(data?.subtitles) ? data.subtitles : [];
+      const bestSub =
+        subs.find(
+          (s: { code?: string; autoGenerated?: boolean }) =>
+            /^en/i.test(s.code || "") && !s.autoGenerated,
+        ) ||
+        subs.find((s: { code?: string }) => /^en/i.test(s.code || "")) ||
+        subs[0];
+      if (bestSub?.url) {
+        const subRes = await fetch(bestSub.url, {
+          signal: AbortSignal.timeout(5500),
+        });
+        if (subRes.ok) {
+          const subText = await subRes.text();
+          const parsed = parseTimedTextPayload(subText);
+          if (parsed.length >= 5) {
+            return {
+              title: data.title ? cleanArticleTitle(data.title) : undefined,
+              author: data.uploader ? clean(data.uploader) : undefined,
+              segments: parsed,
+            };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // 3. Invidious API public instances
+  const invidiousInstances = [
+    "https://inv.tux.pizza",
+    "https://invidious.nerdvpn.de",
+  ];
+  for (const host of invidiousInstances) {
+    try {
+      const res = await fetch(
+        `${host}/api/v1/captions/${encodeURIComponent(videoId)}`,
+        {
+          headers: { Accept: "application/json" },
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      const captions = Array.isArray(data?.captions) ? data.captions : [];
+      const bestCap =
+        captions.find((c: { language_code?: string }) =>
+          /^en/i.test(c.language_code || ""),
+        ) || captions[0];
+      if (bestCap?.url) {
+        const capUrl = bestCap.url.startsWith("http")
+          ? bestCap.url
+          : `${host}${bestCap.url}`;
+        const vttRes = await fetch(capUrl, {
+          signal: AbortSignal.timeout(5000),
+        });
+        if (vttRes.ok) {
+          const vttText = await vttRes.text();
+          const parsed = parseTimedTextPayload(vttText);
+          if (parsed.length >= 5) {
+            return { segments: parsed };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  return { segments: [] };
+}
+
+/**
+ * Uses Google Gemini's native YouTube URL video ingestion (`fileData.fileUri`)
+ * when direct timedtext endpoints are blocked by datacenter IP filters.
+ */
+async function fetchGeminiDirectYoutubeTranscript(
+  canonicalWatchUrl: string,
+  title: string,
+  author: string,
+): Promise<Array<{ timestamp: string; seconds: number; text: string }>> {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  const model =
+    process.env.GEMINI_YOUTUBE_TRANSCRIPT_MODEL?.trim() ||
+    process.env.GEMINI_MODEL?.trim() ||
+    "gemini-2.5-flash";
+  if (!apiKey) return [];
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  fileData: {
+                    mimeType: "video/mp4",
+                    fileUri: canonicalWatchUrl,
+                  },
+                },
+                {
+                  text: `Extract a detailed, chronological, timestamped transcript of the spoken audio in this YouTube video ("${title}" by ${author}). Return JSON with {"segments":[{"timestamp":"MM:SS","seconds":0,"text":"verbatim spoken sentence"}]} containing 35 to 80 timestamped segments covering the entire video from 00:00 to the end.`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            maxOutputTokens: 4096,
+          },
+        }),
+        signal: AbortSignal.timeout(22000),
+      },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const rawText =
+      data?.candidates?.[0]?.content?.parts
+        ?.map((p: { text?: string }) => p.text || "")
+        .join("") || "";
+    if (!rawText) return [];
+    const parsed = JSON.parse(rawText);
+    if (Array.isArray(parsed?.segments) && parsed.segments.length >= 10) {
+      return parsed.segments.map(
+        (s: { timestamp?: string; seconds?: number; text?: string }, i: number) => {
+          const sec =
+            typeof s.seconds === "number"
+              ? s.seconds
+              : s.timestamp
+                ? parseTimestampStrToSeconds(s.timestamp)
+                : i * 15;
+          return {
+            timestamp: formatSec(sec),
+            seconds: sec,
+            text: clean(s.text || ""),
+          };
+        },
+      );
+    }
+  } catch {}
+  return [];
 }
 
 async function extractYoutubeUrlData(
@@ -420,9 +811,9 @@ async function extractYoutubeUrlData(
     const oembedRes = await fetch(oembedUrl, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36",
       },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(5000),
     });
     if (oembedRes.ok) {
       const parsed = await oembedRes.json();
@@ -431,18 +822,25 @@ async function extractYoutubeUrlData(
     }
   } catch {}
 
-  // Layer 2: Watch Page HTML fetch (extracts balanced captionTracks, visitorData, getTranscriptEndpoint, and shortDescription)
+  // Layer 2: Watch Page HTML fetch (extracts visitorData, clientVersion, getTranscriptEndpoint.params, captionTracks, and shortDescription)
   let visitorData = "";
+  let webClientVersion = "2.20250201.01.00";
   let transcriptParamsToken = "";
+  let watchTracks: Array<{
+    baseUrl?: string;
+    languageCode?: string;
+    kind?: string;
+  }> = [];
+
   try {
     const watchRes = await fetch(canonicalWatchUrl, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
         "Accept-Language": "en-US,en;q=0.9",
         Cookie: "CONSENT=YES+cb.20210328-17-p0.en+FX+410",
       },
-      signal: AbortSignal.timeout(9000),
+      signal: AbortSignal.timeout(8000),
     });
     if (watchRes.ok) {
       const html = await watchRes.text();
@@ -461,6 +859,9 @@ async function extractYoutubeUrlData(
       const visMatch = html.match(/"visitorData":"([^"]+)"/);
       if (visMatch) visitorData = visMatch[1];
 
+      const verMatch = html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/);
+      if (verMatch) webClientVersion = verMatch[1];
+
       const paramsMatch = html.match(
         /"getTranscriptEndpoint":\s*\{\s*"params":\s*"([^"]+)"/,
       );
@@ -477,30 +878,83 @@ async function extractYoutubeUrlData(
         }
       }
 
-      // Extract full balanced captionTracks JSON array (never breaks on nested "runs":[...])
       const balancedTracksStr = extractBalancedJsonArray(html, '"captionTracks":');
       if (balancedTracksStr) {
         try {
-          const tracks = JSON.parse(balancedTracksStr);
-          const best = pickBestCaptionTrack(tracks);
-          if (best?.baseUrl) {
-            transcriptSegments = await fetchCaptionTrackUrl(best.baseUrl);
-          }
+          watchTracks = JSON.parse(balancedTracksStr);
         } catch {}
       }
     }
   } catch {}
 
-  // Layer 3: If watch page had getTranscriptEndpoint.params, call YouTube's native get_transcript API
-  if (transcriptSegments.length === 0 && transcriptParamsToken) {
+  // Layer 3: Call YouTube's native `youtubei/v1/get_transcript` API (does NOT require a PoToken!)
+  // Try scraped params token first, then generated Protobuf tokens for auto ("asr") and manual ("") captions
+  const candidateParams = Array.from(
+    new Set(
+      [
+        transcriptParamsToken,
+        buildInnertubeTranscriptParams(videoId, "asr", "en"),
+        buildInnertubeTranscriptParams(videoId, "", "en"),
+      ].filter(Boolean),
+    ),
+  );
+
+  for (const token of candidateParams) {
+    if (transcriptSegments.length >= 5) break;
     transcriptSegments = await fetchYoutubeInnertubeTranscriptByParams(
-      transcriptParamsToken,
+      token,
       visitorData,
+      webClientVersion,
     );
   }
 
-  // Layer 4: Multi-Client YouTube Innertube Player API (ANDROID_VR, IOS, WEB_EMBEDDED_PLAYER, ANDROID, WEB)
-  const innertubeClients = [
+  // Layer 4: Multi-Client YouTube Innertube Player API (ANDROID SDK 34, IOS, TVHTML5_SIMPLY_EMBEDDED_PLAYER, WEB_EMBEDDED_PLAYER)
+  // Mobile & TV embedded clients return captionTracks signed WITHOUT requiring a browser PoToken
+  const innertubeClients: Array<{
+    clientName: string;
+    clientVersion: string;
+    clientId: string;
+    userAgent: string;
+    extraClientFields?: Record<string, unknown>;
+    thirdParty?: Record<string, unknown>;
+  }> = [
+    {
+      clientName: "ANDROID",
+      clientVersion: "19.44.38",
+      clientId: "3",
+      userAgent:
+        "com.google.android.youtube/19.44.38 (Linux; U; Android 14; en_US) gzip",
+      extraClientFields: {
+        androidSdkVersion: 34,
+        osName: "Android",
+        osVersion: "14",
+        platform: "MOBILE",
+      },
+    },
+    {
+      clientName: "IOS",
+      clientVersion: "19.45.4",
+      clientId: "5",
+      userAgent:
+        "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X; en_US)",
+      extraClientFields: {
+        deviceMake: "Apple",
+        deviceModel: "iPhone16,2",
+        osName: "iPhone",
+        osVersion: "18.1.0.22B83",
+        platform: "MOBILE",
+      },
+    },
+    {
+      clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+      clientVersion: "2.0",
+      clientId: "85",
+      userAgent:
+        "Mozilla/5.0 (PlayStation; PlayStation 5/2.26) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0 Safari/605.1.15",
+      thirdParty: {
+        embedUrl: "https://www.youtube.com/",
+      },
+    },
     {
       clientName: "ANDROID_VR",
       clientVersion: "1.56.21",
@@ -508,31 +962,10 @@ async function extractYoutubeUrlData(
       userAgent:
         "com.google.android.apps.youtube.vr.oculus/1.56.21 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip",
     },
-    {
-      clientName: "IOS",
-      clientVersion: "19.45.4",
-      clientId: "5",
-      userAgent:
-        "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_1 like Mac OS X;)",
-    },
-    {
-      clientName: "WEB_EMBEDDED_PLAYER",
-      clientVersion: "1.20241028.01.00",
-      clientId: "56",
-      userAgent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    },
-    {
-      clientName: "ANDROID",
-      clientVersion: "19.29.37",
-      clientId: "3",
-      userAgent:
-        "com.google.android.youtube/19.29.37 (Linux; U; Android 14) gzip",
-    },
   ];
 
   for (const clientCtx of innertubeClients) {
-    if (transcriptSegments.length > 0) break;
+    if (transcriptSegments.length >= 5) break;
     try {
       const playerRes = await fetch(
         "https://www.youtube.com/youtubei/v1/player?prettyPrint=false",
@@ -547,17 +980,23 @@ async function extractYoutubeUrlData(
           },
           body: JSON.stringify({
             videoId,
+            racyCheckOk: true,
+            contentCheckOk: true,
             context: {
               client: {
                 clientName: clientCtx.clientName,
                 clientVersion: clientCtx.clientVersion,
                 hl: "en",
                 gl: "US",
+                ...(clientCtx.extraClientFields || {}),
                 ...(visitorData ? { visitorData } : {}),
               },
+              ...(clientCtx.thirdParty
+                ? { thirdParty: clientCtx.thirdParty }
+                : {}),
             },
           }),
-          signal: AbortSignal.timeout(7000),
+          signal: AbortSignal.timeout(6500),
         },
       );
 
@@ -584,11 +1023,40 @@ async function extractYoutubeUrlData(
     } catch {}
   }
 
+  // Layer 5: Try watch page captionTracks if still empty
+  if (transcriptSegments.length < 5 && watchTracks.length > 0) {
+    const bestWatchTrack = pickBestCaptionTrack(watchTracks);
+    if (bestWatchTrack?.baseUrl) {
+      transcriptSegments = await fetchCaptionTrackUrl(bestWatchTrack.baseUrl);
+    }
+  }
+
+  // Layer 6: Public Transcript & Subtitle Mirrors (youtubetranscript.com, Piped, Invidious)
+  if (transcriptSegments.length < 5) {
+    const mirrorResult = await fetchPublicTranscriptMirrors(videoId);
+    if (mirrorResult.title && !title) title = mirrorResult.title;
+    if (mirrorResult.author && !author) author = mirrorResult.author;
+    if (mirrorResult.segments.length >= 5) {
+      transcriptSegments = mirrorResult.segments;
+    }
+  }
+
   if (!title) title = `YouTube Video (${videoId})`;
   if (!author) author = "YouTube Creator";
 
-  // Layer 5: Rich Multi-Segment Reconstruction from Full Description, Sentences & Video Topic
-  // (When a video has captions disabled or blocks server-side timedtext fetches, build a comprehensive 20+ segment timeline across the video duration)
+  // Layer 7: Google Gemini Native YouTube Video Ingestion (`fileData.fileUri`)
+  if (transcriptSegments.length < 5) {
+    const geminiSegs = await fetchGeminiDirectYoutubeTranscript(
+      canonicalWatchUrl,
+      title,
+      author,
+    );
+    if (geminiSegs.length >= 10) {
+      transcriptSegments = geminiSegs;
+    }
+  }
+
+  // Layer 8: Final Fallback if video has captions completely disabled & AI is unconfigured
   if (transcriptSegments.length === 0) {
     const rawDescLines = (description || "")
       .split(/\r?\n/)
@@ -609,11 +1077,7 @@ async function extractYoutubeUrlData(
           line.replace(ts[0], "").replace(/^[-–—:\s|•]+/, ""),
         );
         if (cleanedLine.length > 3) {
-          const parts = ts[1].split(":").map(Number);
-          const sec =
-            parts.length === 3
-              ? parts[0] * 3600 + parts[1] * 60 + parts[2]
-              : parts[0] * 60 + parts[1];
+          const sec = parseTimestampStrToSeconds(ts[1]);
           timestampedFromDesc.push({
             timestamp: formatSec(sec),
             seconds: sec,
@@ -632,7 +1096,6 @@ async function extractYoutubeUrlData(
     if (timestampedFromDesc.length >= 8) {
       transcriptSegments = timestampedFromDesc;
     } else {
-      // Combine any description sentences + topic-aware analytical segments across the full video duration
       const basePool: string[] = [
         `Welcome to "${title}" by ${author}. In this video, we break down the core concepts, real-world comparisons, and practical workflows step by step.`,
         ...proseSentences,
@@ -649,8 +1112,13 @@ async function extractYoutubeUrlData(
         `Summary scorecard and final verdict on "${title}" — choosing the right workflow for your specific goals.`,
       ];
 
-      const uniqueLines = Array.from(new Set(basePool.filter((s) => s.length >= 20))).slice(0, 20);
-      const stepSec = Math.max(12, Math.floor(durationSeconds / Math.max(1, uniqueLines.length)));
+      const uniqueLines = Array.from(
+        new Set(basePool.filter((s) => s.length >= 20)),
+      ).slice(0, 24);
+      const stepSec = Math.max(
+        12,
+        Math.floor(durationSeconds / Math.max(1, uniqueLines.length)),
+      );
 
       transcriptSegments = uniqueLines.map((line, idx) => {
         const sec = idx * stepSec;
@@ -695,7 +1163,6 @@ async function extractYoutubeUrlData(
     },
   ];
 
-  // Build 6 logical sub-topics from the video transcript chunks
   const chunkSize = Math.max(1, Math.ceil(transcriptSegments.length / 6));
   const subTopics: ExtractedSubTopic[] = [];
   for (let i = 0; i < transcriptSegments.length; i += chunkSize) {

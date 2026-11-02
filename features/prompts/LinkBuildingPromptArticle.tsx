@@ -133,7 +133,7 @@ export default function LinkBuildingPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/link-building-digital-pr-prompts-hero.webp"
+            src="/prompts/link-building-digital-pr-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="88 ChatGPT prompts for link building, Digital PR data studies, and journalist outreach beside an editorial pitch workbench."

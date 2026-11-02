@@ -128,7 +128,7 @@ export default function LocalSeoPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/local-seo-gbp-prompts-hero.webp"
+            src="/prompts/local-seo-gbp-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="79 ChatGPT prompts for Local SEO and Google Business Profile optimization beside a Map Pack and review workflow."

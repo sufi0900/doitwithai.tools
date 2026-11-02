@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const infographicVizPromoGuides: Record<string, KeywordGuide> = {
   blogInfographicStudio: {
     href: "/tools/blog-to-infographic-generator",
-    image: "/prompts/infographic-data-visualization-prompts-hero.webp",
+    image: "/prompts/infographic-data-visualization-prompts-hero-v2.webp",
     alt: "AI Blog to Visual Infographic Studio with 6 Editable Templates.",
     label: "RENDER 8-NODE VISUAL INFOGRAPHICS",
     title: "Turn any blog post or outline into a downloadable PNG/SVG infographic",
@@ -13,7 +13,7 @@ export const infographicVizPromoGuides: Record<string, KeywordGuide> = {
   },
   chartAndMatrixStudios: {
     href: "/tools/data-to-chart-visual-card-maker",
-    image: "/prompts/link-building-digital-pr-prompts-hero.webp",
+    image: "/prompts/link-building-digital-pr-prompts-hero-v2.webp",
     alt: "AI Data to Visual Chart Card Maker and 2x2 Matrix Builder.",
     label: "DATA CHARTS & 2×2 STRATEGY MATRICES",
     title: "Build Bar, Line, Donut & 2×2 Matrix cards from raw numbers",
@@ -23,7 +23,7 @@ export const infographicVizPromoGuides: Record<string, KeywordGuide> = {
   },
   pinterestAndQuoteStudios: {
     href: "/tools/pinterest-pin-visual-generator",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
+    image: "/prompts/content-repurposing-prompts-hero-v2.webp",
     alt: "1000x1500 Tall Pinterest Pin Studio and Quote/Testimonial Card Maker.",
     label: "1000×1500 TALL PINS & QUOTE CARDS",
     title: "Export 2:3 Tall Pinterest Pins, Founder Memos & Stat Callout cards",

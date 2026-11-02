@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const linkedinB2bPromoGuides: Record<string, KeywordGuide> = {
   postFormatter: {
     href: "/tools/linkedin-post-formatter",
-    image: "/prompts/linkedin-personal-branding-b2b-prompts-hero.webp",
+    image: "/prompts/linkedin-personal-branding-b2b-prompts-hero-v2.webp",
     alt: "LinkedIn Post Formatter, 140-Character Mobile Fold Previewer, and B2B Workbench.",
     label: "PREVIEW YOUR 140C MOBILE FOLD",
     title: "Test your LinkedIn hook before the '...see more' cutoff",
@@ -13,7 +13,7 @@ export const linkedinB2bPromoGuides: Record<string, KeywordGuide> = {
   },
   carouselStudio: {
     href: "/tools/blog-to-linkedin-carousel",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
+    image: "/prompts/content-repurposing-prompts-hero-v2.webp",
     alt: "Blog to LinkedIn PDF Document Carousel Studio.",
     label: "1080×1350 PDF CAROUSEL STUDIO",
     title: "Turn your outline into a swipeable 5-to-10 slide PDF carousel",
@@ -23,7 +23,7 @@ export const linkedinB2bPromoGuides: Record<string, KeywordGuide> = {
   },
   quoteAndMatrixCards: {
     href: "/tools/quote-stat-testimonial-card-studio",
-    image: "/prompts/infographic-data-visualization-prompts-hero.webp",
+    image: "/prompts/infographic-data-visualization-prompts-hero-v2.webp",
     alt: "Founder Memo, Quote, Testimonial, and 2x2 Matrix Visual Studio.",
     label: "FOUNDER MEMOS & 2×2 STRATEGY CARDS",
     title: "Pair your post with a Founder Memo, Stat Callout or 2×2 Matrix",

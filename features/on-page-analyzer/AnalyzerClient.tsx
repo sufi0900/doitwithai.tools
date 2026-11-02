@@ -1,10 +1,12 @@
 "use client";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
+import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   ArrowUpRight,
+  BarChart3,
   Check,
   CheckCircle2,
   ChevronRight,
@@ -13,17 +15,16 @@ import {
   Download,
   FileCode2,
   Globe2,
+  Layers,
   LayoutDashboard,
   Link2,
   ListTree,
   Loader2,
-  Monitor,
   PencilLine,
   Play,
   RotateCcw,
   Search,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   TriangleAlert,
   X,
@@ -32,9 +33,8 @@ import {
   applyDraft,
   auditPage,
   changesCsv,
-  phraseCount,
+  sampleOpeningReviewBlocks,
   summarize,
-  words,
 } from "./audit";
 import {
   SECTIONS,
@@ -62,9 +62,8 @@ import SearchAppearance from "./SearchAppearance";
 import { sectionHash, sectionFromHash } from "./navigation";
 import { categoryScores } from "./scoring";
 import { tools } from "@/features/tool-catalog/catalog";
-import { linkReport } from "./metrics";
+import { extractTopicalEntitiesAndNgrams, linkReport } from "./metrics";
 import type { EditorialReview } from "./review";
-import { sampleOpeningReviewBlocks } from "./audit";
 
 type Editor = {
   field: string;
@@ -117,7 +116,7 @@ export default function AnalyzerClient() {
   const [source, setSource] = useState<"url" | "paste">("url"),
     [url, setUrl] = useState(""),
     [html, setHtml] = useState("");
-  const [keyword, setKeyword] = useState(""),
+  const [keyword, setKeyword] = useState("content planning"),
     [audience, setAudience] = useState("");
   const [secondary, setSecondary] = useState(""),
     [related, setRelated] = useState(""),
@@ -156,6 +155,7 @@ export default function AnalyzerClient() {
   const canvasRef = useRef<HTMLDivElement>(null);
   const pendingNavigation = useRef(false);
   const importScroll = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const draft = useMemo(
     () => (page ? applyDraft(page, changes) : null),
     [page, changes],
@@ -167,6 +167,10 @@ export default function AnalyzerClient() {
   );
   const summary = summarize(findings);
   const categorySummaries = categoryScores(findings);
+  const detectedTopicalNgrams = useMemo(
+    () => (active ? extractTopicalEntitiesAndNgrams(active, 10) : []),
+    [active],
+  );
   const reviewFingerprint = useMemo(
     () => JSON.stringify({ blocks: active?.blocks, keyword, audience }),
     [active, keyword, audience],
@@ -185,6 +189,7 @@ export default function AnalyzerClient() {
     )
     .sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
   const headings = active?.blocks.filter((b) => /^h[1-6]$/.test(b.tag)) || [];
+
   function scrollToCategory(target: Section = section) {
     const pane = target === "overview" ? reportRef.current : canvasRef.current;
     if (!pane) return;
@@ -229,6 +234,26 @@ export default function AnalyzerClient() {
       window.removeEventListener("hashchange", restore);
     };
   }, []);
+
+  // Auto-load ?url= & ?keyword= from query params or pre-load sample audit on initial mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const paramUrl = params.get("url");
+    const paramKw = params.get("keyword") || params.get("seed");
+    if (paramKw && paramKw.trim()) {
+      setKeyword(paramKw.trim());
+    }
+    if (paramUrl && paramUrl.trim()) {
+      setUrl(paramUrl.trim());
+      setSource("url");
+      void runAudit(false, paramUrl.trim(), false);
+    } else {
+      void runAudit(true, undefined, false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(
     () => () => {
       requestRef.current?.abort();
@@ -275,7 +300,12 @@ export default function AnalyzerClient() {
       document.removeEventListener("keydown", handleKey);
     };
   }, [editor]);
-  async function runAudit(example = false) {
+
+  async function runAudit(
+    example = false,
+    overrideUrl?: string,
+    shouldScroll = true,
+  ) {
     requestRef.current?.abort();
     suggestRef.current?.abort();
     reviewRef.current?.abort();
@@ -287,7 +317,7 @@ export default function AnalyzerClient() {
     setNotice("");
     const currentUrl = example
       ? "https://example.com/content-planning"
-      : url.trim();
+      : (overrideUrl ?? url).trim();
     try {
       const response = await fetch("/api/ai-tools/on-page/analyze", {
         method: "POST",
@@ -312,7 +342,7 @@ export default function AnalyzerClient() {
       setReviewError("");
       if (example)
         setNotice(
-          "Example report. This sample contains intentional issues and an illustrative, unverified claim.",
+          "Interactive sample audit loaded. Paste any live URL above to audit your own page across 36+ SEO, AEO & Visual checks.",
         );
       else if (data.cached)
         setNotice(
@@ -320,13 +350,17 @@ export default function AnalyzerClient() {
         );
       else
         setNotice(
-          "Audit complete. Review the coverage and priority findings below.",
+          "Audit complete. Review the coverage, topical entities, and priority findings below.",
         );
-      importScroll.current = setTimeout(
-        () =>
-          scrollToCategory(sectionFromHash(window.location.hash) || "overview"),
-        80,
-      );
+      if (shouldScroll) {
+        importScroll.current = setTimeout(
+          () =>
+            scrollToCategory(
+              sectionFromHash(window.location.hash) || "overview",
+            ),
+          80,
+        );
+      }
     } catch (e) {
       if (!controller.signal.aborted)
         setError(
@@ -578,15 +612,24 @@ export default function AnalyzerClient() {
     <div className={styles.app} id="on-page-analyzer">
       <section className={styles.inputCard} aria-label="Start a page audit">
         <div className={styles.panelTitle}>
-          <div>
-            <span className={styles.eyebrow}>Your page, under the lens</span>
-            <h2>Start with one page.</h2>
+          <div className="flex items-center gap-3">
+            <PlatformBrandIcon
+              brand="onpage-writer"
+              slug="on-page-ai-seo-analyzer"
+              size={42}
+            />
+            <div>
+              <span className={styles.eyebrow}>
+                36+ Factor SEO, AEO/GEO &amp; Visual Engagement Audit
+              </span>
+              <h2>Audit &amp; Improve Any Webpage in Real Time.</h2>
+            </div>
           </div>
           <button
             className={styles.quiet}
             type="button"
             disabled={loading}
-            onClick={() => runAudit(true)}
+            onClick={() => void runAudit(true)}
           >
             <Play size={15} />
             Try example
@@ -620,7 +663,7 @@ export default function AnalyzerClient() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            runAudit();
+            void runAudit(false);
           }}
         >
           <label className={styles.label} htmlFor="audit-url">
@@ -749,39 +792,7 @@ export default function AnalyzerClient() {
           </div>
         )}
       </section>
-      {!page && (
-        <section
-          className={styles.emptyGrid}
-          aria-label="What your audit includes"
-        >
-          {[
-            [
-              Search,
-              "Inspect the essentials",
-              "Titles, headings, links, images, directives, and structured data in one report.",
-            ],
-            [
-              PencilLine,
-              "Improve with context",
-              "Edit selected fields, compare suggestions, and keep a reviewable change list.",
-            ],
-            [
-              ShieldCheck,
-              "Know what was checked",
-              "Clear evidence, visible coverage, and honest limits. No ranking promises.",
-            ],
-          ].map(([Icon, title, text]) => {
-            const I = Icon as typeof Search;
-            return (
-              <div key={title as string}>
-                <I size={22} />
-                <h3>{title as string}</h3>
-                <p>{text as string}</p>
-              </div>
-            );
-          })}
-        </section>
-      )}
+
       {page && active && (
         <EvidenceReviewScope key={page.checkedAt}>
           <div
@@ -848,15 +859,6 @@ export default function AnalyzerClient() {
                   Scores use assessed weight only. Below 60% coverage, the
                   overall score is withheld.
                 </p>
-                <p>
-                  Below 90% coverage, scores are provisional. Manual
-                  acknowledgments never increase audit health. Product weights
-                  are not Google ranking factors.
-                </p>
-                <p>
-                  Blocked search crawler policies earn zero access points.
-                  Training policies never change this score.
-                </p>
                 <div className={styles.weightList}>
                   {categorySummaries.map((c) => (
                     <span key={c.id}>
@@ -886,15 +888,15 @@ export default function AnalyzerClient() {
                     : summary.score === null
                       ? "More evidence is needed."
                       : summary.score >= 80
-                        ? "A good foundation to build on."
+                        ? "A strong foundation to build on."
                         : summary.score >= 50
-                          ? "Useful improvements are within reach."
+                          ? "High-impact improvements are within reach."
                           : "Start with the essentials."}
                 </h3>
                 <p>
                   {mode === "improve"
                     ? `Draft estimate. Original snapshot: ${originalSummary.score ?? "not available"}/100.`
-                    : "Your checklist score reflects completed checks. Inspect the evidence before making changes."}
+                    : "Your checklist score reflects completed checks across Search, Headings, Content, Links, Media, Technical, Schema, and AI Search."}
                 </p>
                 <small>
                   {summary.coverage}% weighted coverage ·{" "}
@@ -902,8 +904,7 @@ export default function AnalyzerClient() {
                     ? "Provisional score"
                     : "Measured checklist"}{" "}
                   · {summary.assessed} of {summary.total} checks assessed ·{" "}
-                  {page.partial ? "Partial extraction" : "Returned HTML"} ·
-                  Rankings and AI citations are not predicted.
+                  {page.partial ? "Partial extraction" : "Returned HTML"}
                 </small>
               </div>
             </section>
@@ -933,11 +934,122 @@ export default function AnalyzerClient() {
                 </p>
               </div>
             </div>
+
             <CategoryReport
               findings={findings}
               active={section}
               onSelect={navigateSection}
             />
+
+            {/* NEW: AUTO-DETECTED TOPICAL ENTITIES & 1-CLICK REPURPOSING HUB */}
+            <div className="my-5 grid gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider text-[#4058D0] dark:text-[#9aabff]">
+                      <BarChart3 size={13} /> Auto-Detected Topical Entities &amp; N-Grams
+                    </span>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                      Click Any Phrase to Set as Target Keyword or Research Volumes
+                    </h4>
+                  </div>
+                  {keyword && (
+                    <Link
+                      href={`/tools/keyword-research-tool?seed=${encodeURIComponent(keyword)}${page.url ? `&url=${encodeURIComponent(page.url)}` : ""}`}
+                      className="inline-flex items-center gap-1 rounded-lg bg-[#4058D0] px-2.5 py-1 text-[11px] font-extrabold text-white"
+                    >
+                      Research &ldquo;{keyword.slice(0, 22)}&rdquo; Volumes{" "}
+                      <ArrowUpRight size={11} />
+                    </Link>
+                  )}
+                </div>
+
+                {detectedTopicalNgrams.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {detectedTopicalNgrams.map((item) => {
+                      const isSelected =
+                        keyword.toLowerCase().trim() === item.phrase;
+                      return (
+                        <button
+                          key={item.phrase}
+                          type="button"
+                          onClick={() => setKeyword(item.phrase)}
+                          className={`inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition ${
+                            isSelected
+                              ? "border-[#4058D0] bg-[#4058D0] text-white shadow-xs"
+                              : "border-slate-200 bg-white text-slate-800 hover:border-[#4058D0] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                          }`}
+                        >
+                          <span>{item.phrase}</span>
+                          <span className="rounded bg-black/10 px-1.5 py-0.5 font-mono text-[10px]">
+                            {item.count}× ({item.density}%)
+                          </span>
+                          {(item.inTitle || item.inH1) && (
+                            <span
+                              title="Present in Title or H1"
+                              className="text-[10px] font-extrabold text-emerald-500"
+                            >
+                              ★ H1/Title
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Import a full article to view recurring 2-word and 3-word topical entities.
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-[#ff6b35]/30 bg-orange-50/40 p-4 dark:border-[#ff6b35]/30 dark:bg-slate-900/60">
+                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider text-[#ff6b35]">
+                  <Layers size={13} /> 1-Click Page Repurposing &amp; Visual Studio Hub
+                </span>
+                <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                  Turn This Audited Page Into Visuals, Carousels &amp; Keyword Clusters
+                </h4>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {[
+                    [
+                      "blog-to-infographic-generator",
+                      "🎨 Visual Infographic",
+                    ],
+                    [
+                      "instagram-caption-generator",
+                      "📱 5-Slide Carousel",
+                    ],
+                    [
+                      "data-to-chart-visual-card-maker",
+                      "📊 Data Chart Card",
+                    ],
+                    [
+                      "pinterest-pin-visual-generator",
+                      "📌 1000×1500 Tall Pin",
+                    ],
+                    [
+                      "linkedin-post-formatter",
+                      "💼 LinkedIn Post + Card",
+                    ],
+                    [
+                      "keyword-research-tool",
+                      "🔍 Keyword Volumes",
+                    ],
+                  ].map(([slug, label]) => (
+                    <Link
+                      key={slug}
+                      href={`/tools/${slug}${page.url ? `?url=${encodeURIComponent(page.url)}` : ""}`}
+                      className="inline-flex items-center justify-between gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-extrabold text-slate-800 shadow-2xs transition hover:border-[#ff6b35] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                    >
+                      <span className="truncate">{label}</span>
+                      <ArrowUpRight size={12} className="shrink-0 text-[#ff6b35]" />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             <div className={styles.modeBar}>
               <div className={styles.segment}>
                 <button

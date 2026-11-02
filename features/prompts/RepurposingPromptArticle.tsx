@@ -132,7 +132,7 @@ export default function RepurposingPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/content-repurposing-prompts-hero.webp"
+            src="/prompts/content-repurposing-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="87 content repurposing and social media prompts beside an interactive workbench showing LinkedIn, Carousel, Infographic, X Thread, and Pinterest workflows."

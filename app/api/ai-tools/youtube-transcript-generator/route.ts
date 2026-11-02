@@ -26,14 +26,17 @@ const inputSchema = z.object({
         text: z.string(),
       }),
     )
-    .max(1200)
+    .max(4000)
     .default([]),
 });
 
 const aiSummarySchema = z.object({
-  executiveSummary: z.string().min(120).max(900),
-  executiveSummaryParagraphs: z.array(z.string().min(60).max(420)).min(3).max(4),
-  keyTakeaways: z.array(z.string().min(25).max(260)).min(6).max(10),
+  executiveSummary: z.string().min(120).max(1200),
+  executiveSummaryParagraphs: z
+    .array(z.string().min(60).max(520))
+    .min(3)
+    .max(4),
+  keyTakeaways: z.array(z.string().min(25).max(300)).min(6).max(10),
   deepInsights: z
     .array(
       z.object({
@@ -45,13 +48,13 @@ const aiSummarySchema = z.object({
     )
     .min(6)
     .max(10),
-  actionChecklist: z.array(z.string().min(20).max(220)).min(5).max(8),
+  actionChecklist: z.array(z.string().min(20).max(260)).min(5).max(8),
   chapters: z
     .array(
       z.object({
         timestamp: z.string().min(3).max(16),
-        heading: z.string().min(5).max(90),
-        summary: z.string().min(20).max(260),
+        heading: z.string().min(5).max(110),
+        summary: z.string().min(20).max(320),
       }),
     )
     .min(5)
@@ -70,7 +73,7 @@ const aiSummarySchema = z.object({
 export async function POST(request: NextRequest) {
   let input: z.infer<typeof inputSchema>;
   try {
-    input = inputSchema.parse(await readBoundedJson(request, 450_000));
+    input = inputSchema.parse(await readBoundedJson(request, 900_000));
   } catch (error) {
     return NextResponse.json(
       {
@@ -99,13 +102,13 @@ export async function POST(request: NextRequest) {
     const res = await client.generate(
       {
         model,
-        max_output_tokens: 2600,
+        max_output_tokens: 3200,
         store: false,
         input: [
           {
             role: "system",
             content:
-              "You are a Senior Video Content Intelligence Analyst. Given a YouTube video's title and full timestamped transcript, produce a comprehensive, deep synthesis: (1) a 3-paragraph executive summary covering Core Premise, Methodology/Comparisons, and Final Verdict, (2) 8 deep key insights with timestamps, categories, bold titles, and detailed explanations covering the full timeline from start to finish, (3) a 6-step actionable implementation checklist, (4) 6 to 8 timestamped chapters with clear headings and 2-sentence summaries, and (5) 5 detailed Video FAQs.",
+              "You are a Senior Video Content Intelligence Analyst. Given a YouTube video's title, channel, and full timestamped transcript, produce an exhaustive, high-signal synthesis: (1) a 3-paragraph executive summary covering Core Premise & Context, Key Rules/Methodology/Comparisons across the middle of the video, and Final Verdict & Strategic Recommendations, (2) 8 deep key insights with exact timestamps, categories, bold titles, and detailed explanations spanning the full timeline from 0:00 to the end, (3) a 6-step actionable implementation checklist, (4) 6 to 8 timestamped chapters with clear headings and 2-sentence summaries, and (5) 5 detailed Video FAQs.",
           },
           {
             role: "user",
@@ -113,7 +116,7 @@ export async function POST(request: NextRequest) {
               title: fallback.title,
               channelName: fallback.channelName,
               segmentCount: fallback.segments.length,
-              transcript: fallback.timestampedTranscript.slice(0, 18_000),
+              transcript: fallback.timestampedTranscript.slice(0, 24_000),
             }),
           },
         ],
@@ -123,7 +126,7 @@ export async function POST(request: NextRequest) {
           }),
         },
       },
-      { timeout: 28000 },
+      { timeout: 32000 },
     );
 
     if (!res.output_parsed) {

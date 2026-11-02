@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const repurposingPromoGuides: Record<string, KeywordGuide> = {
   infographicStudio: {
     href: "/tools/blog-to-infographic-generator",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
+    image: "/prompts/content-repurposing-prompts-hero-v2.webp",
     alt: "Interactive AI Blog & Idea to Visual Infographic Studio with 8 built-in templates.",
     label: "TURN TEXT INTO VISUAL ASSETS",
     title: "Convert any blog post or prompt output into an editable infographic",

@@ -1,5 +1,6 @@
 import { parseDelimited } from "@/features/keyword-clustering/import";
-import { keywordKey, type ResearchReport } from "./schema";
+import { keywordKey, type EnrichedKeywordRow } from "./schema";
+
 export type Metric = {
   keyword: string;
   volume: string;
@@ -7,6 +8,7 @@ export type Metric = {
   bidLow: string;
   bidHigh: string;
 };
+
 export function importMetrics(text: string) {
   if (text.length > 100000) throw Error("Use a CSV or TSV file below 100 KB.");
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/);
@@ -33,10 +35,11 @@ export function importMetrics(text: string) {
     "average monthly searches",
     "search volume",
     "volume",
+    "estimated monthly volume",
   );
-  const comp = index("competition", "advertising competition"),
-    low = index("top of page bid (low range)", "bid low"),
-    high = index("top of page bid (high range)", "bid high");
+  const comp = index("competition", "advertising competition", "paid competition"),
+    low = index("top of page bid (low range)", "bid low", "cpc low"),
+    high = index("top of page bid (high range)", "bid high", "cpc high");
   const map = new Map<string, Metric>();
   let duplicates = 0;
   for (const row of rows.slice(1)) {
@@ -55,7 +58,7 @@ export function importMetrics(text: string) {
     if (
       rawVolume &&
       rawVolume !== "--" &&
-      !/^\d[\d, .]*(?:\s*[kKmM])?(?:\s*[-–]\s*\d[\d, .]*(?:\s*[kKmM])?)?$/.test(
+      !/^\d[\d, .]*(?:\s*[kKmM])?(?:\s*[-–]\s*\d[\d, .]*(?:\s*[kKmM])?)?(?:\/mo)?$/.test(
         rawVolume,
       )
     )
@@ -75,8 +78,9 @@ export function importMetrics(text: string) {
   if (!map.size) throw Error("No keyword rows were found.");
   return { metrics: [...map.values()], duplicates, hasVolume: volume >= 0 };
 }
+
 export function exportCsv(
-  rows: (ResearchReport["keywords"][number] & { origin?: string })[],
+  rows: (EnrichedKeywordRow & { origin?: string })[],
   metrics: Metric[],
   market: string,
 ) {
@@ -86,30 +90,38 @@ export function exportCsv(
   return [
     [
       "Keyword",
-      "Idea source",
-      "Inferred intent",
-      "Proposed group",
-      "Suggested format",
-      "Reader task",
-      "Uploaded volume",
-      "Uploaded ad competition",
-      "Uploaded bid low",
-      "Uploaded bid high",
-      "Market context",
+      "Source Signal",
+      "Inferred Intent",
+      "Topic Cluster Group",
+      "Suggested Page Format",
+      "Estimated Monthly Volume",
+      "Keyword Difficulty (KD 0-100)",
+      "Difficulty Tier",
+      "Ad Competition",
+      "CPC Bid Low",
+      "CPC Bid High",
+      "Search Trend",
+      "SERP Features",
+      "Reader Task",
+      "Market Context",
     ],
     ...rows.map((r) => {
       const m = map.get(keywordKey(r.keyword));
       return [
         r.keyword,
-        r.origin || "Generated suggestion",
+        r.sourceSignal || r.origin || "Google Suggest + AI",
         r.intent,
         r.group,
         r.format,
+        m?.volume || r.estimatedVolume,
+        String(r.keywordDifficulty),
+        r.difficultyLabel,
+        m?.competition || r.competition,
+        m?.bidLow || r.cpcLow,
+        m?.bidHigh || r.cpcHigh,
+        r.trend,
+        (r.serpFeatures || []).join(" | "),
         r.task,
-        m?.volume || "Unavailable",
-        m?.competition || "",
-        m?.bidLow || "",
-        m?.bidHigh || "",
         market,
       ];
     }),

@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const localSeoPromoGuides: Record<string, KeywordGuide> = {
   gbpAuditor: {
     href: "/tools/google-business-profile-auditor",
-    image: "/prompts/local-seo-gbp-prompts-hero.webp",
+    image: "/prompts/local-seo-gbp-prompts-hero-v2.webp",
     alt: "Google Business Profile Completeness Auditor and Local Pack Workbench.",
     label: "AUDIT YOUR GOOGLE BUSINESS PROFILE",
     title: "Score your GBP categories, 750c description, services & Q&As",
@@ -13,7 +13,7 @@ export const localSeoPromoGuides: Record<string, KeywordGuide> = {
   },
   servicePageAndReviews: {
     href: "/tools/local-seo-service-page-planner",
-    image: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
+    image: "/prompts/on-page-seo-content-writing-prompts-hero-v2.webp",
     alt: "Local SEO Service and City Landing Page Planner.",
     label: "ANTI-DOORWAY CITY & SERVICE PAGES",
     title: "Architect unique city & service pages that convert local callers",

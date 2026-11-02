@@ -129,7 +129,7 @@ export default function TechnicalSeoPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/technical-seo-audit-schema-prompts-hero.webp"
+            src="/prompts/technical-seo-audit-schema-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="76 ChatGPT prompts for Technical SEO audits, JSON-LD schema markup, and Core Web Vitals diagnostics."

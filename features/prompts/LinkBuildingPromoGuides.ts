@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const linkBuildingPromoGuides: Record<string, KeywordGuide> = {
   digitalPrPlanner: {
     href: "/tools/digital-pr-linkable-asset-planner",
-    image: "/prompts/link-building-digital-pr-prompts-hero.webp",
+    image: "/prompts/link-building-digital-pr-prompts-hero-v2.webp",
     alt: "Digital PR Linkable Asset Planner and Journalist Pitch Workbench.",
     label: "PLAN CITABLE DATA STUDIES & PR HOOKS",
     title: "Design linkable benchmark studies, calculators & press angles",
@@ -13,7 +13,7 @@ export const linkBuildingPromoGuides: Record<string, KeywordGuide> = {
   },
   journalistAndOutreach: {
     href: "/tools/journalist-pitch-builder",
-    image: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
+    image: "/prompts/on-page-seo-content-writing-prompts-hero-v2.webp",
     alt: "HARO Journalist Pitch Response Builder and Outreach Email Studio.",
     label: "150-WORD JOURNALIST QUOTES & OUTREACH",
     title: "Draft quotable HARO / Qwoted responses & 95-word outreach emails",
@@ -23,7 +23,7 @@ export const linkBuildingPromoGuides: Record<string, KeywordGuide> = {
   },
   visualChartPr: {
     href: "/tools/data-to-chart-visual-card-maker",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
+    image: "/prompts/content-repurposing-prompts-hero-v2.webp",
     alt: "AI Data Chart Maker and Blog to Visual Infographic Studio for Digital PR.",
     label: "VISUAL PR & EMBEDDABLE CHART CARDS",
     title: "Turn your study numbers into embeddable SVG/PNG chart cards",

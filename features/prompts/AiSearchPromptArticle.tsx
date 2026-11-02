@@ -129,7 +129,7 @@ export default function AiSearchPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/ai-search-aeo-geo-prompts-hero.webp"
+            src="/prompts/ai-search-aeo-geo-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="91 prompts for AI Search, AEO, GEO, and LLM citation optimization beside an entity graph and citation workbench."

@@ -131,7 +131,7 @@ export default function VideoScriptPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/youtube-shorts-video-script-prompts-hero.webp"
+            src="/prompts/youtube-shorts-video-script-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="93 AI prompts for YouTube scripts, Shorts, Reels, and TikTok hooks beside an interactive teleprompter and video packaging workbench."

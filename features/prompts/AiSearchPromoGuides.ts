@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const aiSearchPromoGuides: Record<string, KeywordGuide> = {
   citationOptimizer: {
     href: "/tools/ai-citation-readiness-checker",
-    image: "/prompts/ai-search-aeo-geo-prompts-hero.webp",
+    image: "/prompts/ai-search-aeo-geo-prompts-hero-v2.webp",
     alt: "AI Citation, Featured Snippet, and Answer Passage Optimizer.",
     label: "OPTIMIZE FOR AI CITATIONS & SNIPPETS",
     title: "Format 50-word self-contained answer passages & comparison tables",
@@ -13,7 +13,7 @@ export const aiSearchPromoGuides: Record<string, KeywordGuide> = {
   },
   llmsTxtAndBrandVisibility: {
     href: "/tools/llms-txt-generator",
-    image: "/prompts/on-page-seo-content-writing-prompts-hero.webp",
+    image: "/prompts/on-page-seo-content-writing-prompts-hero-v2.webp",
     alt: "LLMs.txt Generator and AI Brand Visibility Prompt Studio.",
     label: "LLMS.TXT & AI CRAWLER READINESS",
     title: "Generate a clean /llms.txt index & test your AI brand visibility",
@@ -23,7 +23,7 @@ export const aiSearchPromoGuides: Record<string, KeywordGuide> = {
   },
   dataChartsAndMatrices: {
     href: "/tools/data-to-chart-visual-card-maker",
-    image: "/prompts/content-repurposing-prompts-hero.webp",
+    image: "/prompts/content-repurposing-prompts-hero-v2.webp",
     alt: "AI Data Chart Maker and 2x2 Strategy Matrix Studio.",
     label: "GEO BENCHMARK CHARTS & 2×2 MATRICES",
     title: "Turn your benchmark stats & trade-offs into visual chart cards",

@@ -3,7 +3,7 @@ import type { KeywordGuide } from "./KeywordGuideCard";
 export const topicClusterPromoGuides: Record<string, KeywordGuide> = {
   topicalMapStudio: {
     href: "/tools/topical-map-generator",
-    image: "/prompts/topic-clustering-topical-authority-prompts-hero.webp",
+    image: "/prompts/topic-clustering-topical-authority-prompts-hero-v2.webp",
     alt: "AI Topical Map Generator, Pillar-Spoke Architect, and Internal Link Matrix.",
     label: "ARCHITECT YOUR PILLAR & SPOKE SILO",
     title: "Generate a 3-tier Topical Map with Pillar Hubs & supporting spokes",
@@ -23,7 +23,7 @@ export const topicClusterPromoGuides: Record<string, KeywordGuide> = {
   },
   internalLinksAndVisualMap: {
     href: "/tools/internal-link-opportunity-finder",
-    image: "/prompts/infographic-data-visualization-prompts-hero.webp",
+    image: "/prompts/infographic-data-visualization-prompts-hero-v2.webp",
     alt: "Internal Link Opportunity Finder and Hub & Spoke Diagram Builder.",
     label: "HUB & SPOKE INTERNAL LINK MATRIX",
     title: "Map bidirectional Hub-to-Spoke internal links & visual diagrams",

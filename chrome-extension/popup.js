@@ -367,11 +367,11 @@
         const p = String(tsStr || "").trim().split(":").map((n) => parseInt(n, 10) || 0);
         return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : 0;
       };
-      const nativeSegs = document.querySelectorAll("ytd-transcript-segment-renderer");
+      const nativeSegs = document.querySelectorAll("ytd-transcript-segment-renderer, transcript-segment-view-model");
       if (nativeSegs.length >= 3) {
         nativeSegs.forEach((el) => {
-          const ts = clean(el.querySelector(".segment-timestamp")?.textContent || "");
-          const sp = clean(el.querySelector(".segment-text")?.textContent || "");
+          const ts = clean(el.querySelector(".segment-timestamp, .ytwTranscriptSegmentViewModelTimestamp, [class*='Timestamp']")?.textContent || "");
+          const sp = clean(el.querySelector(".segment-text, .yt-core-attributed-string, [class*='SegmentText']")?.textContent || "");
           if (ts && sp) youtubeSegments.push({ startSeconds: parseTs(ts), timestamp: ts, text: sp });
         });
       }
@@ -909,6 +909,7 @@
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
         .replace(/&#x27;/g, "'")
+        .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
         .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
         .replace(/\s+/g, " ")
         .trim();
@@ -920,8 +921,8 @@
       return h > 0 ? `${h}:${m < 10 ? "0" : ""}${m}:${r < 10 ? "0" : ""}${r}` : `${m}:${r < 10 ? "0" : ""}${r}`;
     };
     const parseTs = (tsStr) => {
-      const p = String(tsStr || "").trim().split(":").map((n) => parseInt(n, 10) || 0);
-      return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : 0;
+      const p = String(tsStr || "").trim().replace(",", ".").split(":").map((n) => parseFloat(n) || 0);
+      return p.length === 3 ? Math.floor(p[0] * 3600 + p[1] * 60 + p[2]) : p.length === 2 ? Math.floor(p[0] * 60 + p[1]) : 0;
     };
     const extractBalancedArray = (source, keyMarker) => {
       const kIdx = source.indexOf(keyMarker);
@@ -944,113 +945,283 @@
       }
       return null;
     };
+    const encodeVarint = (val) => {
+      const out = [];
+      let v = val >>> 0;
+      while (v > 0x7f) { out.push((v & 0x7f) | 0x80); v >>>= 7; }
+      out.push(v);
+      return out;
+    };
+    const encodeProtoString = (fieldNum, str) => {
+      const utf8 = new TextEncoder().encode(String(str || ""));
+      const tag = (fieldNum << 3) | 2;
+      return new Uint8Array([...encodeVarint(tag), ...encodeVarint(utf8.length), ...utf8]);
+    };
+    const uint8ToBase64 = (bytes) => {
+      let bin = "";
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    };
+    const buildProtoParams = (vid, kind, lang) => {
+      const p1 = encodeProtoString(1, kind || "");
+      const p2 = encodeProtoString(2, lang || "en");
+      const p3 = encodeProtoString(3, "");
+      const inner = new Uint8Array(p1.length + p2.length + p3.length);
+      inner.set(p1, 0); inner.set(p2, p1.length); inner.set(p3, p1.length + p2.length);
+      const innerB64Url = encodeURIComponent(uint8ToBase64(inner));
+      const o1 = encodeProtoString(1, vid);
+      const o2 = encodeProtoString(2, innerB64Url);
+      const outer = new Uint8Array(o1.length + o2.length);
+      outer.set(o1, 0); outer.set(o2, o1.length);
+      return encodeURIComponent(uint8ToBase64(outer));
+    };
+    const mergeGranular = (rawSegs) => {
+      const merged = [];
+      let b = null;
+      for (const s of rawSegs) {
+        const txt = clean(s.text);
+        if (!txt || /^\[?(music|applause|laughter)\]?$/i.test(txt)) continue;
+        if (!b) { b = { ...s, text: txt }; continue; }
+        if (s.startSeconds - b.startSeconds < 4 && b.text.length + txt.length < 85 && !/[.!?]$/.test(b.text)) {
+          b.text = `${b.text} ${txt}`.trim();
+        } else { merged.push(b); b = { ...s, text: txt }; }
+      }
+      if (b) merged.push(b);
+      return merged;
+    };
+    const parseInnertubeJson = (root) => {
+      const raw = [];
+      const getText = (f) => {
+        if (!f || typeof f !== "object") return "";
+        if (typeof f.simpleText === "string") return clean(f.simpleText);
+        if (typeof f.content === "string") return clean(f.content);
+        if (f.elementsAttributedString && typeof f.elementsAttributedString.content === "string") {
+          return clean(f.elementsAttributedString.content);
+        }
+        if (Array.isArray(f.runs)) return clean(f.runs.map((r) => (r && r.text) || "").join(""));
+        return "";
+      };
+      const walk = (n) => {
+        if (!n || typeof n !== "object") return;
+        if (Array.isArray(n)) { for (const x of n) walk(x); return; }
+        if (n.transcriptSegmentRenderer) {
+          const r = n.transcriptSegmentRenderer;
+          const text = getText(r.snippet);
+          const ms = Number(r.startMs || 0);
+          const tsStr = getText(r.startTimeText);
+          const sec = ms > 0 ? Math.floor(ms / 1000) : tsStr ? parseTs(tsStr) : 0;
+          if (text) raw.push({ startSeconds: sec, timestamp: fmtTime(sec), text });
+          return;
+        }
+        if (n.transcriptSegmentViewModel) {
+          const vm = n.transcriptSegmentViewModel;
+          const text = typeof vm.text === "string" ? clean(vm.text) : getText(vm.text) || getText(vm.attributedText);
+          const tsStr = typeof vm.startTimeText === "string" ? clean(vm.startTimeText) : getText(vm.startTimeText) || getText(vm.timestamp);
+          const sec = tsStr ? parseTs(tsStr) : 0;
+          if (text) raw.push({ startSeconds: sec, timestamp: fmtTime(sec), text });
+          return;
+        }
+        if (n.transcriptCueRenderer) {
+          const c = n.transcriptCueRenderer;
+          const text = getText(c.cue);
+          const sec = Math.max(0, Math.floor(Number(c.startOffsetMs || 0) / 1000));
+          if (text) raw.push({ startSeconds: sec, timestamp: fmtTime(sec), text });
+          return;
+        }
+        for (const k of Object.keys(n)) walk(n[k]);
+      };
+      walk(root);
+      return mergeGranular(raw);
+    };
+    const parseTimedText = (body) => {
+      const trimmed = String(body || "").trim();
+      if (!trimmed) return [];
+      const rawSegs = [];
+      if (trimmed.startsWith("{")) {
+        try {
+          const j = JSON.parse(trimmed);
+          for (const ev of (j.events || [])) {
+            if (!ev.segs) continue;
+            const line = decodeEntities(ev.segs.map((s) => s.utf8 || "").join(""));
+            if (!line || /^\[.*\]$/.test(line)) continue;
+            const sec = Math.max(0, Math.floor((ev.tStartMs || 0) / 1000));
+            rawSegs.push({ startSeconds: sec, timestamp: fmtTime(sec), text: line });
+          }
+        } catch {}
+      }
+      if (!rawSegs.length) {
+        for (const m of trimmed.matchAll(/<text[^>]*start="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/gi)) {
+          const sec = Math.max(0, Math.floor(parseFloat(m[1] || "0")));
+          const txt = decodeEntities(m[2].replace(/<[^>]+>/g, " "));
+          if (txt) rawSegs.push({ startSeconds: sec, timestamp: fmtTime(sec), text: txt });
+        }
+      }
+      if (!rawSegs.length) {
+        for (const m of trimmed.matchAll(/<p[^>]*\b(?:t|begin)="([^"]+)"[^>]*>([\s\S]*?)<\/p>/gi)) {
+          const rt = m[1] || "0";
+          const sec = rt.includes(":") ? parseTs(rt) : Math.max(0, Math.floor(Number(rt) / 1000));
+          const txt = decodeEntities(m[2].replace(/<[^>]+>/g, " "));
+          if (txt) rawSegs.push({ startSeconds: sec, timestamp: fmtTime(sec), text: txt });
+        }
+      }
+      return mergeGranular(rawSegs);
+    };
+    const scrapeDom = () => {
+      const out = [];
+      const nodes = document.querySelectorAll("ytd-transcript-segment-renderer, transcript-segment-view-model");
+      if (nodes.length >= 3) {
+        nodes.forEach((el) => {
+          const ts = clean(el.querySelector(".segment-timestamp, .ytwTranscriptSegmentViewModelTimestamp, [class*='Timestamp']")?.textContent || "");
+          const sp = clean(el.querySelector(".segment-text, .yt-core-attributed-string, [class*='SegmentText']")?.textContent || "");
+          if (ts && sp) out.push({ startSeconds: parseTs(ts), timestamp: ts, text: sp });
+        });
+      }
+      return out;
+    };
 
     const titleEl = document.querySelector("h1.ytd-watch-metadata yt-formatted-string, h1.title, title");
     const rawTitle = clean(titleEl?.textContent || document.title || "YouTube Video").replace(/\s*-\s*YouTube$/i, "").trim();
     const chanEl = document.querySelector("#owner #channel-name a, ytd-channel-name a");
     const channelName = clean(chanEl?.textContent || "YouTube Creator");
+    const uObj = new URL(location.href);
+    const videoId = uObj.searchParams.get("v") || (uObj.pathname.includes("/shorts/") ? uObj.pathname.split("/shorts/")[1]?.split("/")[0] : "") || "";
 
-    let segments = [];
-    const nativeSegs = document.querySelectorAll("ytd-transcript-segment-renderer");
-    if (nativeSegs.length >= 3) {
-      nativeSegs.forEach((el) => {
-        const ts = clean(el.querySelector(".segment-timestamp")?.textContent || "");
-        const sp = clean(el.querySelector(".segment-text")?.textContent || "");
-        if (ts && sp) segments.push({ startSeconds: parseTs(ts), timestamp: ts, text: sp });
-      });
-    }
-    if (segments.length < 3) {
-      const secPanel = document.querySelector("#secondary");
-      if (secPanel) {
-        const seen = new Set();
-        secPanel.querySelectorAll("div, li, p").forEach((row) => {
-          if (row.closest("#diwat-yt-merlin-card")) return;
-          if (row.children.length > 4) return;
-          const raw = clean(row.textContent || "");
-          const m = raw.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(.{8,240})$/);
-          if (m && !seen.has(m[1] + m[2].slice(0, 16))) {
-            seen.add(m[1] + m[2].slice(0, 16));
-            segments.push({ startSeconds: parseTs(m[1]), timestamp: m[1], text: m[2].trim() });
-          }
-        });
+    // Engine 1 & 2: Scrape DOM or auto-click YouTube's native "Show transcript" button
+    let segments = scrapeDom();
+    if (segments.length < 4) {
+      const expandBtn = document.querySelector("tp-yt-paper-button#expand, #description-inline-expander #expand");
+      if (expandBtn && typeof expandBtn.click === "function") { try { expandBtn.click(); } catch {} }
+      const findBtn = () =>
+        document.querySelector("ytd-video-description-transcript-section-renderer button") ||
+        document.querySelector('button[aria-label*="Show transcript" i]') ||
+        document.querySelector('button[aria-label*="transcript" i]') ||
+        Array.from(document.querySelectorAll("ytd-button-renderer button, yt-button-shape button")).find((b) =>
+          /show transcript|^transcript$/i.test((b.textContent || b.getAttribute("aria-label") || "").trim())
+        );
+      let btn = findBtn();
+      if (!btn) { await new Promise((r) => setTimeout(r, 200)); btn = findBtn(); }
+      if (btn && typeof btn.click === "function") {
+        try { btn.click(); } catch {}
+        for (let i = 0; i < 14; i++) {
+          await new Promise((r) => setTimeout(r, 170));
+          segments = scrapeDom();
+          if (segments.length >= 4) break;
+        }
       }
     }
 
-    if (segments.length < 4) {
+    // Engine 3 & 4: Fetch watch page metadata + get_transcript Protobuf + Android/iOS Innertube player
+    if (segments.length < 4 && videoId) {
+      let visitorData = "";
+      let clientVersion = "2.20250201.01.00";
+      let scrapedParams = "";
+      let watchTracks = [];
       try {
         const res = await fetch(location.href, { credentials: "include" });
         const html = res.ok ? await res.text() : document.documentElement.innerHTML;
+        const vm = html.match(/"visitorData":"([^"]+)"/);
+        if (vm) visitorData = vm[1];
+        const cvm = html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/);
+        if (cvm) clientVersion = cvm[1];
+        const pm = html.match(/"getTranscriptEndpoint":\s*\{\s*"params":\s*"([^"]+)"/);
+        if (pm) scrapedParams = pm[1];
         const arrStr = extractBalancedArray(html, '"captionTracks":');
-        if (arrStr) {
-          const tracks = JSON.parse(arrStr);
-          const best = tracks.find((t) => /^en/i.test(t.languageCode) && t.kind !== "asr") || tracks.find((t) => /^en/i.test(t.languageCode)) || tracks[0];
-          if (best && best.baseUrl) {
-            const base = best.baseUrl.replace(/\\u0026/g, "&").replace(/&amp;/g, "&");
-            for (const u of [base.includes("fmt=") ? base : `${base}&fmt=json3`, base]) {
-              const cr = await fetch(u, { credentials: "include" });
-              if (cr.ok) {
-                const body = (await cr.text()).trim();
-                const rawSegs = [];
-                if (body.startsWith("{")) {
-                  const j = JSON.parse(body);
-                  for (const ev of (j.events || [])) {
-                    if (!ev.segs) continue;
-                    const line = decodeEntities(ev.segs.map((s) => s.utf8 || "").join(""));
-                    if (!line || /^\[.*\]$/.test(line)) continue;
-                    const sec = Math.max(0, Math.floor((ev.tStartMs || 0) / 1000));
-                    rawSegs.push({ startSeconds: sec, timestamp: fmtTime(sec), text: line });
-                  }
-                } else {
-                  for (const m of body.matchAll(/<text[^>]*start="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/gi)) {
-                    const sec = Math.max(0, Math.floor(parseFloat(m[1] || "0")));
-                    const txt = decodeEntities(m[2].replace(/<[^>]+>/g, " "));
-                    if (txt) rawSegs.push({ startSeconds: sec, timestamp: fmtTime(sec), text: txt });
-                  }
-                }
-                if (rawSegs.length > 0) {
-                  const merged = [];
-                  let b = null;
-                  for (const s of rawSegs) {
-                    if (!b) { b = { ...s }; continue; }
-                    if (s.startSeconds - b.startSeconds < 4 && b.text.length + s.text.length < 80 && !/[.!?]$/.test(b.text)) {
-                      b.text = `${b.text} ${s.text}`.trim();
-                    } else { merged.push(b); b = { ...s }; }
-                  }
-                  if (b) merged.push(b);
-                  segments = merged;
-                  break;
-                }
-              }
-            }
-          }
-        }
+        if (arrStr) { try { watchTracks = JSON.parse(arrStr); } catch {} }
+      } catch {}
 
-        if (segments.length < 4) {
-          const pm = html.match(/"getTranscriptEndpoint":\s*\{\s*"params":\s*"([^"]+)"/);
-          if (pm && pm[1]) {
-            const gtr = await fetch("https://www.youtube.com/youtubei/v1/get_transcript?prettyPrint=false", {
+      const tokens = Array.from(new Set([
+        scrapedParams,
+        buildProtoParams(videoId, "asr", "en"),
+        buildProtoParams(videoId, "", "en"),
+      ].filter(Boolean)));
+
+      for (const tk of tokens) {
+        if (segments.length >= 4) break;
+        try {
+          const gtr = await fetch("https://www.youtube.com/youtubei/v1/get_transcript?prettyPrint=false", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+              "X-YouTube-Client-Name": "1",
+              "X-YouTube-Client-Version": clientVersion,
+              ...(visitorData ? { "X-Goog-Visitor-Id": visitorData } : {}),
+            },
+            body: JSON.stringify({
+              context: {
+                client: {
+                  clientName: "WEB",
+                  clientVersion,
+                  hl: "en",
+                  gl: "US",
+                  ...(visitorData ? { visitorData } : {}),
+                },
+              },
+              params: tk,
+            }),
+          });
+          if (gtr.ok) {
+            const gtJson = await gtr.json();
+            const parsed = parseInnertubeJson(gtJson);
+            if (parsed.length >= 4) { segments = parsed; break; }
+          }
+        } catch {}
+      }
+
+      if (segments.length < 4) {
+        const clients = [
+          { clientName: "ANDROID", clientVersion: "19.44.38", clientId: "3", extra: { androidSdkVersion: 34, osName: "Android", osVersion: "14", platform: "MOBILE" } },
+          { clientName: "IOS", clientVersion: "19.45.4", clientId: "5", extra: { deviceMake: "Apple", deviceModel: "iPhone16,2", osName: "iPhone", osVersion: "18.1.0.22B83", platform: "MOBILE" } },
+        ];
+        for (const c of clients) {
+          if (segments.length >= 4) break;
+          try {
+            const pr = await fetch("https://www.youtube.com/youtubei/v1/player?prettyPrint=false", {
               method: "POST",
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "X-YouTube-Client-Name": c.clientId, "X-YouTube-Client-Version": c.clientVersion },
               body: JSON.stringify({
-                context: { client: { clientName: "WEB", clientVersion: "2.20241101.01.00", hl: "en", gl: "US" } },
-                params: pm[1],
+                videoId,
+                racyCheckOk: true,
+                contentCheckOk: true,
+                context: { client: { clientName: c.clientName, clientVersion: c.clientVersion, hl: "en", gl: "US", ...c.extra } },
               }),
             });
-            if (gtr.ok) {
-              const gtt = await gtr.text();
-              const re = /"transcriptSegmentRenderer":\s*\{[\s\S]*?"startMs":\s*"(\d+)"[\s\S]*?"snippet":\s*\{\s*"runs":\s*\[\s*\{\s*"text":\s*"((?:\\.|[^"\\])*)"/g;
-              let m;
-              while ((m = re.exec(gtt)) !== null) {
-                const sec = Math.max(0, Math.floor(Number(m[1] || "0") / 1000));
-                let sp = m[2] || "";
-                try { sp = JSON.parse(`"${sp}"`); } catch {}
-                if (clean(sp)) segments.push({ startSeconds: sec, timestamp: fmtTime(sec), text: clean(sp) });
+            if (pr.ok) {
+              const pj = await pr.json();
+              const tracks = pj?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+              if (Array.isArray(tracks) && tracks.length) {
+                const best = tracks.find((t) => /^en/i.test(t.languageCode) && t.kind !== "asr") || tracks.find((t) => /^en/i.test(t.languageCode)) || tracks[0];
+                if (best?.baseUrl) {
+                  const base = best.baseUrl.replace(/\\u0026/g, "&").replace(/&amp;/g, "&");
+                  for (const u of [base.includes("fmt=") ? base : `${base}&fmt=json3`, base, `${base}&fmt=srv3`]) {
+                    const tr = await fetch(u);
+                    if (tr.ok) {
+                      const parsed = parseTimedText(await tr.text());
+                      if (parsed.length >= 4) { segments = parsed; break; }
+                    }
+                  }
+                }
               }
             }
+          } catch {}
+        }
+      }
+
+      if (segments.length < 4 && watchTracks.length) {
+        const best = watchTracks.find((t) => /^en/i.test(t.languageCode) && t.kind !== "asr") || watchTracks.find((t) => /^en/i.test(t.languageCode)) || watchTracks[0];
+        if (best?.baseUrl) {
+          const base = best.baseUrl.replace(/\\u0026/g, "&").replace(/&amp;/g, "&");
+          for (const u of [base.includes("fmt=") ? base : `${base}&fmt=json3`, base]) {
+            try {
+              const cr = await fetch(u, { credentials: "include" });
+              if (cr.ok) {
+                const parsed = parseTimedText(await cr.text());
+                if (parsed.length >= 4) { segments = parsed; break; }
+              }
+            } catch {}
           }
         }
-      } catch {}
+      }
     }
 
     const cNodes = Array.from(document.querySelectorAll("ytd-comment-thread-renderer #content-text")).slice(0, 15);
@@ -1060,7 +1231,7 @@
       text: clean(n.textContent || ""),
     }));
 
-    return { rawTitle, channelName, url: location.href, segments, comments };
+    return { videoId, rawTitle, channelName, url: location.href, segments, comments };
   }
 
   function renderYoutubeStudioContent() {
@@ -1463,8 +1634,25 @@ Save this post for your next content sprint! 👇
       setHref("yt-quick-short", "short-form-video-script-generator");
       setHref("yt-quick-thumb", "social-media-video-thumbnail-grabber");
 
-      currentYoutubePack = buildFallbackYoutubePack(data);
-      renderYoutubeStudioContent();
+      if (Array.isArray(data.youtubeSegments) && data.youtubeSegments.length >= 15) {
+        currentYoutubePack = buildYoutubePackFromSegments(
+          data.title,
+          data.youtubeChannel,
+          data.url,
+          data.youtubeSegments,
+          data.youtubeComments
+        );
+        renderYoutubeStudioContent();
+      } else {
+        const box = document.getElementById("yt-studio-content-box");
+        const titleEl = document.getElementById("yt-studio-title");
+        const chanEl = document.getElementById("yt-studio-channel");
+        if (titleEl) titleEl.textContent = (data.title || "YouTube Video").replace(/\s*-\s*YouTube$/i, "");
+        if (chanEl) chanEl.textContent = `▶ YOUTUBE STUDIO v2.4 · EXTRACTING FULL SPOKEN TRANSCRIPT...`;
+        if (box) {
+          box.innerHTML = `<div class="item-row"><div style="font-weight:700;color:var(--link-color)">⏳ Extracting full timestamped transcript &amp; auto-captions from YouTube player...</div></div>`;
+        }
+      }
 
       if (!hasAutoSwitchedYoutube) {
         hasAutoSwitchedYoutube = true;
@@ -1476,19 +1664,40 @@ Save this post for your next content sprint! 👇
 
       resolveTargetTab((tab) => {
         if (!tab || !tab.id) return;
+        let settledReal = false;
+        const applyExtractedPack = (packObj) => {
+          if (!packObj || !Array.isArray(packObj.segments) || packObj.segments.length === 0) return;
+          if (settledReal && (currentYoutubePack?.segments?.length || 0) >= packObj.segments.length) return;
+          settledReal = true;
+          currentYoutubePack = packObj;
+          renderYoutubeStudioContent();
+          try {
+            if (chrome.storage && chrome.storage.local && packObj.videoId) {
+              chrome.storage.local.set({
+                [`diwat_ext_yt_transcript_${packObj.videoId}`]: packObj,
+                diwat_ext_yt_transcript_latest: packObj,
+              });
+            }
+          } catch {}
+        };
+
         if (chrome.scripting && chrome.scripting.executeScript) {
           chrome.scripting.executeScript(
             { target: { tabId: tab.id }, func: extractFullYoutubeTranscriptInTab },
             (results) => {
               const r = results && results[0] && results[0].result;
               if (r && Array.isArray(r.segments) && r.segments.length > 0) {
-                currentYoutubePack = buildYoutubePackFromSegments(
+                const built = buildYoutubePackFromSegments(
                   r.rawTitle || data.title,
                   r.channelName || data.youtubeChannel,
                   r.url || data.url,
                   r.segments,
                   r.comments
                 );
+                built.videoId = r.videoId || "";
+                applyExtractedPack(built);
+              } else if (!settledReal) {
+                currentYoutubePack = buildFallbackYoutubePack(data);
                 renderYoutubeStudioContent();
               }
             }
@@ -1496,9 +1705,8 @@ Save this post for your next content sprint! 👇
         }
         if (chrome.tabs && chrome.tabs.sendMessage) {
           chrome.tabs.sendMessage(tab.id, { type: "GET_YOUTUBE_VIDEO_PACK" }, (resp) => {
-            if (!chrome.runtime.lastError && resp && resp.ok && resp.pack && resp.pack.segments?.length > (currentYoutubePack?.segments?.length || 0)) {
-              currentYoutubePack = resp.pack;
-              renderYoutubeStudioContent();
+            if (!chrome.runtime.lastError && resp && resp.ok && resp.pack && resp.pack.segments?.length >= 4) {
+              applyExtractedPack(resp.pack);
             }
           });
         }

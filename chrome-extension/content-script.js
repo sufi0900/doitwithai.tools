@@ -1,9 +1,13 @@
-// Do It With AI v2.3 — In-Page YouTube Full Transcript, Deep AI Summary & Social Post Polisher
+// Do It With AI v2.4 — In-Page YouTube Full Transcript, Deep AI Summary, Web Studio Bridge & Social Post Polisher
 (function () {
   "use strict";
 
   const HOST = location.hostname.replace(/^www\./i, "").toLowerCase();
   const IS_YOUTUBE = HOST.includes("youtube.com");
+  const IS_DOITWITHAI_WEB =
+    HOST.includes("doitwithai.tools") ||
+    HOST.includes("vercel.app") ||
+    HOST.includes("localhost");
   const IS_SOCIAL =
     HOST.includes("linkedin.com") ||
     HOST.includes("twitter.com") ||
@@ -17,12 +21,21 @@
   function getYoutubeVideoId(urlStr) {
     try {
       const u = new URL(urlStr || location.href);
+      if (u.hostname.includes("youtu.be")) {
+        return u.pathname.split("/").filter(Boolean)[0] || "";
+      }
       if (u.pathname.startsWith("/watch")) return u.searchParams.get("v") || "";
       if (u.pathname.startsWith("/shorts/")) {
         return u.pathname.split("/shorts/")[1]?.split("/")[0] || "";
       }
+      if (u.pathname.startsWith("/embed/") || u.pathname.startsWith("/live/")) {
+        return u.pathname.split("/").filter(Boolean)[1] || "";
+      }
     } catch {}
-    return "";
+    const m = String(urlStr || "").match(
+      /(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{11})/,
+    );
+    return m ? m[1] : "";
   }
 
   function decodeXmlEntities(str) {
@@ -33,6 +46,9 @@
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
       .replace(/&#x27;/g, "'")
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+        String.fromCharCode(parseInt(hex, 16)),
+      )
       .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(Number(dec)))
       .replace(/\s+/g, " ")
       .trim();
@@ -50,17 +66,17 @@
   }
 
   function parseTimestampToSeconds(tsStr) {
-    const cleanTs = String(tsStr || "").trim();
-    const parts = cleanTs.split(":").map((n) => parseInt(n, 10) || 0);
-    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    const cleanTs = String(tsStr || "").trim().replace(",", ".");
+    const parts = cleanTs.split(":").map((n) => parseFloat(n) || 0);
+    if (parts.length === 3) {
+      return Math.floor(parts[0] * 3600 + parts[1] * 60 + parts[2]);
+    }
+    if (parts.length === 2) {
+      return Math.floor(parts[0] * 60 + parts[1]);
+    }
     return 0;
   }
 
-  /**
-   * Balanced JSON array extractor so nested brackets inside
-   * `"name":{"runs":[{"text":"English (auto-generated)"}]}` never truncate!
-   */
   function extractBalancedJsonArray(source, keyMarker) {
     const keyIdx = source.indexOf(keyMarker);
     if (keyIdx === -1) return null;
@@ -96,6 +112,170 @@
       }
     }
     return null;
+  }
+
+  /**
+   * Generates URL-encoded Base64 Protobuf `params` token for `youtubei/v1/get_transcript`
+   */
+  function encodeVarint(val) {
+    const out = [];
+    let v = val >>> 0;
+    while (v > 0x7f) {
+      out.push((v & 0x7f) | 0x80);
+      v >>>= 7;
+    }
+    out.push(v);
+    return out;
+  }
+
+  function encodeProtoString(fieldNum, str) {
+    const utf8 = new TextEncoder().encode(String(str || ""));
+    const tag = (fieldNum << 3) | 2;
+    return new Uint8Array([
+      ...encodeVarint(tag),
+      ...encodeVarint(utf8.length),
+      ...utf8,
+    ]);
+  }
+
+  function uint8ToBase64(bytes) {
+    let bin = "";
+    for (let i = 0; i < bytes.length; i++) {
+      bin += String.fromCharCode(bytes[i]);
+    }
+    return btoa(bin);
+  }
+
+  function buildInnertubeTranscriptParams(videoId, kind, lang) {
+    const p1 = encodeProtoString(1, kind || "");
+    const p2 = encodeProtoString(2, lang || "en");
+    const p3 = encodeProtoString(3, "");
+    const inner = new Uint8Array(p1.length + p2.length + p3.length);
+    inner.set(p1, 0);
+    inner.set(p2, p1.length);
+    inner.set(p3, p1.length + p2.length);
+    const innerB64Url = encodeURIComponent(uint8ToBase64(inner));
+
+    const o1 = encodeProtoString(1, videoId);
+    const o2 = encodeProtoString(2, innerB64Url);
+    const outer = new Uint8Array(o1.length + o2.length);
+    outer.set(o1, 0);
+    outer.set(o2, o1.length);
+    return encodeURIComponent(uint8ToBase64(outer));
+  }
+
+  function normalizeSegments(rawSegs) {
+    const merged = [];
+    let bucket = null;
+    for (const seg of rawSegs) {
+      const cleanedText = String(seg.text || "").replace(/\s+/g, " ").trim();
+      if (!cleanedText || /^\[?(music|applause|laughter)\]?$/i.test(cleanedText)) {
+        continue;
+      }
+      if (!bucket) {
+        bucket = { ...seg, text: cleanedText };
+        continue;
+      }
+      if (
+        seg.startSeconds - bucket.startSeconds < 4 &&
+        bucket.text.length + cleanedText.length < 85 &&
+        !/[.!?]$/.test(bucket.text)
+      ) {
+        bucket.text = `${bucket.text} ${cleanedText}`.replace(/\s+/g, " ").trim();
+      } else {
+        merged.push(bucket);
+        bucket = { ...seg, text: cleanedText };
+      }
+    }
+    if (bucket) merged.push(bucket);
+    return merged;
+  }
+
+  function parseInnertubeTranscriptJson(root) {
+    const rawSegs = [];
+
+    function extractText(field) {
+      if (!field || typeof field !== "object") return "";
+      if (typeof field.simpleText === "string") return field.simpleText.trim();
+      if (typeof field.content === "string") return field.content.trim();
+      if (
+        field.elementsAttributedString &&
+        typeof field.elementsAttributedString.content === "string"
+      ) {
+        return field.elementsAttributedString.content.trim();
+      }
+      if (Array.isArray(field.runs)) {
+        return field.runs.map((r) => (r && r.text) || "").join("").trim();
+      }
+      return "";
+    }
+
+    function walk(node) {
+      if (!node || typeof node !== "object") return;
+      if (Array.isArray(node)) {
+        for (const item of node) walk(item);
+        return;
+      }
+      if (node.transcriptSegmentRenderer) {
+        const r = node.transcriptSegmentRenderer;
+        const text = extractText(r.snippet);
+        const startMs = Number(r.startMs || 0);
+        const tsText = extractText(r.startTimeText);
+        const sec =
+          startMs > 0
+            ? Math.floor(startMs / 1000)
+            : tsText
+              ? parseTimestampToSeconds(tsText)
+              : 0;
+        if (text) {
+          rawSegs.push({
+            startSeconds: sec,
+            timestamp: formatTime(sec),
+            text,
+          });
+        }
+        return;
+      }
+      if (node.transcriptSegmentViewModel) {
+        const vm = node.transcriptSegmentViewModel;
+        const text =
+          typeof vm.text === "string"
+            ? vm.text.trim()
+            : extractText(vm.text) || extractText(vm.attributedText);
+        const tsStr =
+          typeof vm.startTimeText === "string"
+            ? vm.startTimeText.trim()
+            : extractText(vm.startTimeText) || extractText(vm.timestamp);
+        const sec = tsStr ? parseTimestampToSeconds(tsStr) : 0;
+        if (text) {
+          rawSegs.push({
+            startSeconds: sec,
+            timestamp: formatTime(sec),
+            text,
+          });
+        }
+        return;
+      }
+      if (node.transcriptCueRenderer) {
+        const cue = node.transcriptCueRenderer;
+        const text = extractText(cue.cue);
+        const sec = Math.max(0, Math.floor(Number(cue.startOffsetMs || 0) / 1000));
+        if (text) {
+          rawSegs.push({
+            startSeconds: sec,
+            timestamp: formatTime(sec),
+            text,
+          });
+        }
+        return;
+      }
+      for (const k of Object.keys(node)) {
+        walk(node[k]);
+      }
+    }
+
+    walk(root);
+    return normalizeSegments(rawSegs);
   }
 
   function parseTimedTextResponse(rawText) {
@@ -142,10 +322,13 @@
 
     if (rawSegs.length === 0) {
       const pMatches = Array.from(
-        trimmed.matchAll(/<p[^>]*\bt="(\d+)"[^>]*>([\s\S]*?)<\/p>/gi),
+        trimmed.matchAll(/<p[^>]*\b(?:t|begin)="([^"]+)"[^>]*>([\s\S]*?)<\/p>/gi),
       );
       for (const m of pMatches) {
-        const startSec = Math.max(0, Math.floor(Number(m[1] || "0") / 1000));
+        const rawT = m[1] || "0";
+        const startSec = rawT.includes(":")
+          ? parseTimestampToSeconds(rawT)
+          : Math.max(0, Math.floor(Number(rawT) / 1000));
         const txt = decodeXmlEntities(m[2].replace(/<[^>]+>/g, " "));
         if (txt) {
           rawSegs.push({
@@ -157,42 +340,52 @@
       }
     }
 
-    // Keep granular spoken lines (~3-6s) so every timestamp is preserved
-    const merged = [];
-    let bucket = null;
-    for (const seg of rawSegs) {
-      if (!bucket) {
-        bucket = { ...seg };
-        continue;
-      }
-      if (
-        seg.startSeconds - bucket.startSeconds < 4 &&
-        bucket.text.length + seg.text.length < 80 &&
-        !/[.!?]$/.test(bucket.text)
-      ) {
-        bucket.text = `${bucket.text} ${seg.text}`.replace(/\s+/g, " ").trim();
-      } else {
-        merged.push(bucket);
-        bucket = { ...seg };
+    if (rawSegs.length === 0 && trimmed.includes("-->")) {
+      const blocks = trimmed.split(/\r?\n\r?\n/);
+      for (const b of blocks) {
+        const lines = b
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter(Boolean);
+        const idx = lines.findIndex((l) => l.includes("-->"));
+        if (idx === -1) continue;
+        const sec = parseTimestampToSeconds(lines[idx].split("-->")[0] || "0:00");
+        const txt = decodeXmlEntities(
+          lines
+            .slice(idx + 1)
+            .join(" ")
+            .replace(/<[^>]+>/g, " "),
+        );
+        if (txt) {
+          rawSegs.push({
+            startSeconds: sec,
+            timestamp: formatTime(sec),
+            text: txt,
+          });
+        }
       }
     }
-    if (bucket) merged.push(bucket);
-    return merged;
+
+    return normalizeSegments(rawSegs);
   }
 
   function scrapeRenderedTranscriptFromDom() {
     const domSegs = [];
-    // 1. Native YouTube ytd-transcript-segment-renderer
+    // 1. Classic ytd-transcript-segment-renderer & 2025/2026 transcript-segment-view-model
     const nativeRenderers = document.querySelectorAll(
-      "ytd-transcript-segment-renderer",
+      "ytd-transcript-segment-renderer, transcript-segment-view-model",
     );
     if (nativeRenderers.length >= 3) {
       nativeRenderers.forEach((el) => {
         const tsText = (
-          el.querySelector(".segment-timestamp")?.textContent || ""
+          el.querySelector(
+            ".segment-timestamp, .ytwTranscriptSegmentViewModelTimestamp, [class*='Timestamp']",
+          )?.textContent || ""
         ).trim();
         const spoken = (
-          el.querySelector(".segment-text")?.textContent || ""
+          el.querySelector(
+            ".segment-text, .yt-core-attributed-string, [class*='SegmentText']",
+          )?.textContent || ""
         )
           .replace(/\s+/g, " ")
           .trim();
@@ -207,32 +400,83 @@
       if (domSegs.length >= 3) return domSegs;
     }
 
-    // 2. Check any other transcript container on the page (#secondary or engagement panels)
-    const secondary = document.querySelector("#secondary");
-    if (secondary) {
-      const candidateRows = secondary.querySelectorAll("div, li, p");
-      const seenTs = new Set();
-      candidateRows.forEach((row) => {
-        if (row.closest("#diwat-yt-merlin-card")) return;
+    // 2. Engagement panel searchable transcript container
+    const engagementPanel = document.querySelector(
+      'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
+    );
+    if (engagementPanel) {
+      const seen = new Set();
+      engagementPanel.querySelectorAll("div, ytd-transcript-segment-renderer").forEach((row) => {
         if (row.children.length > 4) return;
         const raw = (row.textContent || "").replace(/\s+/g, " ").trim();
-        const m = raw.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(.{8,240})$/);
+        const m = raw.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(.{4,260})$/);
         if (m) {
-          const ts = m[1];
-          const txt = m[2].trim();
-          const key = `${ts}-${txt.slice(0, 20)}`;
-          if (!seenTs.has(key)) {
-            seenTs.add(key);
+          const key = `${m[1]}-${m[2].slice(0, 20)}`;
+          if (!seen.has(key)) {
+            seen.add(key);
             domSegs.push({
-              startSeconds: parseTimestampToSeconds(ts),
-              timestamp: ts,
-              text: txt,
+              startSeconds: parseTimestampToSeconds(m[1]),
+              timestamp: m[1],
+              text: m[2].trim(),
             });
           }
         }
       });
     }
     return domSegs.length >= 4 ? domSegs : [];
+  }
+
+  /**
+   * Programmatically clicks YouTube's native "Show transcript" button if present
+   * so YouTube's own player loads the PoToken-authenticated transcript into the DOM.
+   */
+  async function autoOpenAndScrapeNativeTranscriptPanel() {
+    let existing = scrapeRenderedTranscriptFromDom();
+    if (existing.length >= 4) return existing;
+
+    // Expand description first if needed so the "Show transcript" button is mounted
+    const expandBtn = document.querySelector(
+      "tp-yt-paper-button#expand, #description-inline-expander #expand",
+    );
+    if (expandBtn && typeof expandBtn.click === "function") {
+      try {
+        expandBtn.click();
+      } catch {}
+    }
+
+    const findTranscriptButton = () =>
+      document.querySelector(
+        "ytd-video-description-transcript-section-renderer button",
+      ) ||
+      document.querySelector('button[aria-label*="Show transcript" i]') ||
+      document.querySelector('button[aria-label*="transcript" i]') ||
+      Array.from(
+        document.querySelectorAll(
+          "ytd-button-renderer button, yt-button-shape button",
+        ),
+      ).find((b) =>
+        /show transcript|^transcript$/i.test(
+          (b.textContent || b.getAttribute("aria-label") || "").trim(),
+        ),
+      );
+
+    let btn = findTranscriptButton();
+    if (!btn) {
+      await new Promise((r) => setTimeout(r, 250));
+      btn = findTranscriptButton();
+    }
+
+    if (btn && typeof btn.click === "function") {
+      try {
+        btn.click();
+      } catch {}
+      for (let attempt = 0; attempt < 15; attempt++) {
+        await new Promise((r) => setTimeout(r, 180));
+        existing = scrapeRenderedTranscriptFromDom();
+        if (existing.length >= 4) return existing;
+      }
+    }
+    return existing;
   }
 
   function sampleEvenly(arr, count) {
@@ -245,45 +489,51 @@
     return out;
   }
 
-  async function extractYoutubeDataInPage(videoId) {
-    if (ytDataCache[videoId] && ytDataCache[videoId].segments?.length > 5) {
-      return ytDataCache[videoId];
-    }
-
-    const titleEl =
-      document.querySelector("h1.ytd-watch-metadata yt-formatted-string") ||
-      document.querySelector("h1.title") ||
-      document.querySelector("title");
-    const rawTitle = (titleEl?.textContent || document.title || "YouTube Video")
-      .replace(/\s*-\s*YouTube$/i, "")
-      .trim();
-
-    const channelEl =
-      document.querySelector("#owner #channel-name a") ||
-      document.querySelector("ytd-channel-name a");
-    const channelName = (channelEl?.textContent || "YouTube Creator").trim();
-
+  async function fetchSegmentsForVideoId(videoId, allowDomClick) {
+    let segments = [];
     let description = "";
-    const descExpander =
-      document.querySelector("#description-inline-expander") ||
-      document.querySelector("ytd-text-inline-expander#description-inline-expander");
-    if (descExpander && descExpander.textContent) {
-      description = descExpander.textContent.replace(/\s+/g, " ").trim();
+    let extractedTitle = "";
+    let extractedChannel = "";
+
+    if (IS_YOUTUBE && allowDomClick) {
+      segments = await autoOpenAndScrapeNativeTranscriptPanel();
     }
 
-    // Layer 1: Check if transcript segments are already rendered in the live DOM
-    let segments = scrapeRenderedTranscriptFromDom();
+    let visitorData = "";
+    let clientVersion = "2.20250201.01.00";
+    let scrapedParamsToken = "";
+    let watchTracks = [];
 
-    // Layer 2: Fetch current watch page HTML (works even after YouTube SPA navigation) & parse balanced captionTracks
     if (segments.length < 4) {
       try {
         const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const pageRes = await fetch(watchUrl, { credentials: "include" });
-        const html = pageRes.ok
-          ? await pageRes.text()
-          : document.documentElement.innerHTML;
-
-        if (!description) {
+        const pageRes = await fetch(watchUrl, {
+          credentials: IS_YOUTUBE ? "include" : "omit",
+        });
+        if (pageRes.ok) {
+          const html = await pageRes.text();
+          const tMatch = html.match(/<title>([^<]+)<\/title>/i);
+          if (tMatch) {
+            extractedTitle = decodeXmlEntities(
+              tMatch[1].replace(/\s*-\s*YouTube$/i, ""),
+            );
+          }
+          const aMatch = html.match(/"ownerChannelName":"((?:\\.|[^"\\])*)"/);
+          if (aMatch) {
+            try {
+              extractedChannel = JSON.parse(`"${aMatch[1]}"`);
+            } catch {
+              extractedChannel = aMatch[1];
+            }
+          }
+          const visMatch = html.match(/"visitorData":"([^"]+)"/);
+          if (visMatch) visitorData = visMatch[1];
+          const verMatch = html.match(/"INNERTUBE_CLIENT_VERSION":"([^"]+)"/);
+          if (verMatch) clientVersion = verMatch[1];
+          const pMatch = html.match(
+            /"getTranscriptEndpoint":\s*\{\s*"params":\s*"([^"]+)"/,
+          );
+          if (pMatch) scrapedParamsToken = pMatch[1];
           const descMatch = html.match(/"shortDescription":"((?:\\.|[^"\\])*)"/);
           if (descMatch) {
             try {
@@ -292,118 +542,238 @@
               description = descMatch[1];
             }
           }
-        }
-
-        const balancedTracks = extractBalancedJsonArray(html, '"captionTracks":');
-        if (balancedTracks) {
-          const tracks = JSON.parse(balancedTracks);
-          if (Array.isArray(tracks) && tracks.length > 0) {
-            const preferred =
-              tracks.find((t) => /^en/i.test(t.languageCode) && t.kind !== "asr") ||
-              tracks.find((t) => /^en/i.test(t.languageCode)) ||
-              tracks[0];
-            if (preferred && preferred.baseUrl) {
-              const cleanUrl = preferred.baseUrl
-                .replace(/\\u0026/g, "&")
-                .replace(/&amp;/g, "&");
-              const urls = [
-                cleanUrl.includes("fmt=") ? cleanUrl : `${cleanUrl}&fmt=json3`,
-                cleanUrl,
-              ];
-              for (const u of urls) {
-                try {
-                  const capRes = await fetch(u, { credentials: "include" });
-                  if (capRes.ok) {
-                    const capText = await capRes.text();
-                    const parsedSegs = parseTimedTextResponse(capText);
-                    if (parsedSegs.length > 0) {
-                      segments = parsedSegs;
-                      break;
-                    }
-                  }
-                } catch {}
-              }
-            }
-          }
-        }
-
-        // Layer 3: Native YouTube get_transcript endpoint using getTranscriptEndpoint.params
-        if (segments.length < 4) {
-          const paramsMatch = html.match(
-            /"getTranscriptEndpoint":\s*\{\s*"params":\s*"([^"]+)"/,
-          );
-          if (paramsMatch && paramsMatch[1]) {
-            const gtRes = await fetch(
-              "https://www.youtube.com/youtubei/v1/get_transcript?prettyPrint=false",
-              {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  context: {
-                    client: {
-                      clientName: "WEB",
-                      clientVersion: "2.20241101.01.00",
-                      hl: "en",
-                      gl: "US",
-                    },
-                  },
-                  params: paramsMatch[1],
-                }),
-              },
-            );
-            if (gtRes.ok) {
-              const gtText = await gtRes.text();
-              const segRegex =
-                /"transcriptSegmentRenderer":\s*\{[\s\S]*?"startMs":\s*"(\d+)"[\s\S]*?"snippet":\s*\{\s*"runs":\s*\[\s*\{\s*"text":\s*"((?:\\.|[^"\\])*)"/g;
-              const gtSegs = [];
-              let m;
-              while ((m = segRegex.exec(gtText)) !== null) {
-                const sec = Math.max(0, Math.floor(Number(m[1] || "0") / 1000));
-                let spoken = m[2] || "";
-                try {
-                  spoken = JSON.parse(`"${spoken}"`);
-                } catch {}
-                if (spoken.trim()) {
-                  gtSegs.push({
-                    startSeconds: sec,
-                    timestamp: formatTime(sec),
-                    text: spoken.trim(),
-                  });
-                }
-              }
-              if (gtSegs.length > 0) segments = gtSegs;
-            }
+          const balanced = extractBalancedJsonArray(html, '"captionTracks":');
+          if (balanced) {
+            try {
+              watchTracks = JSON.parse(balanced);
+            } catch {}
           }
         }
       } catch {}
     }
 
-    // Layer 4: If video has no captions at all, build rich multi-segment timeline from full description & video topic
-    if (segments.length === 0) {
-      const descSentences = (description || "")
-        .split(/\r?\n|(?<=[.!?])\s+/)
-        .map((s) => s.replace(/\s+/g, " ").trim())
-        .filter((s) => s.length >= 20 && !/^https?:\/\//i.test(s));
-
-      const pool = [
-        `Opening breakdown of "${rawTitle}" by ${channelName}, establishing the core problem and evaluation criteria.`,
-        ...descSentences,
-        `Detailed walkthrough of the primary features, performance benchmarks, and real-world comparisons in "${rawTitle}".`,
-        `Key differences in accuracy, speed, context retention, and day-to-day workflow integration.`,
-        `Practical examples and live demonstrations showing how to get the best output quality.`,
-        `Common mistakes to avoid and optimization best practices recommended by ${channelName}.`,
-        `Final verdict, summary scorecard, and recommended next steps from "${rawTitle}".`,
-      ];
-      const uniquePool = Array.from(new Set(pool)).slice(0, 14);
-      segments = uniquePool.map((line, idx) => ({
-        startSeconds: idx * 25,
-        timestamp: formatTime(idx * 25),
-        text: line,
-      }));
+    // Engine 3: `youtubei/v1/get_transcript` with scraped + Protobuf-generated params
+    if (segments.length < 4) {
+      const candidateTokens = Array.from(
+        new Set(
+          [
+            scrapedParamsToken,
+            buildInnertubeTranscriptParams(videoId, "asr", "en"),
+            buildInnertubeTranscriptParams(videoId, "", "en"),
+          ].filter(Boolean),
+        ),
+      );
+      for (const token of candidateTokens) {
+        if (segments.length >= 4) break;
+        try {
+          const gtRes = await fetch(
+            "https://www.youtube.com/youtubei/v1/get_transcript?prettyPrint=false",
+            {
+              method: "POST",
+              credentials: IS_YOUTUBE ? "include" : "omit",
+              headers: {
+                "Content-Type": "application/json",
+                "X-YouTube-Client-Name": "1",
+                "X-YouTube-Client-Version": clientVersion,
+                ...(visitorData ? { "X-Goog-Visitor-Id": visitorData } : {}),
+              },
+              body: JSON.stringify({
+                context: {
+                  client: {
+                    clientName: "WEB",
+                    clientVersion,
+                    hl: "en",
+                    gl: "US",
+                    ...(visitorData ? { visitorData } : {}),
+                  },
+                },
+                params: token,
+              }),
+            },
+          );
+          if (gtRes.ok) {
+            const gtJson = await gtRes.json();
+            const parsed = parseInnertubeTranscriptJson(gtJson);
+            if (parsed.length >= 4) {
+              segments = parsed;
+              break;
+            }
+          }
+        } catch {}
+      }
     }
 
-    // Group segments into ~25-second readable paragraphs for deep summary & insights synthesis
+    // Engine 4: Mobile & Embedded Innertube `/youtubei/v1/player` (no PoToken required!)
+    if (segments.length < 4) {
+      const clients = [
+        {
+          clientName: "ANDROID",
+          clientVersion: "19.44.38",
+          clientId: "3",
+          extra: {
+            androidSdkVersion: 34,
+            osName: "Android",
+            osVersion: "14",
+            platform: "MOBILE",
+          },
+        },
+        {
+          clientName: "IOS",
+          clientVersion: "19.45.4",
+          clientId: "5",
+          extra: {
+            deviceMake: "Apple",
+            deviceModel: "iPhone16,2",
+            osName: "iPhone",
+            osVersion: "18.1.0.22B83",
+            platform: "MOBILE",
+          },
+        },
+      ];
+      for (const c of clients) {
+        if (segments.length >= 4) break;
+        try {
+          const pRes = await fetch(
+            "https://www.youtube.com/youtubei/v1/player?prettyPrint=false",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-YouTube-Client-Name": c.clientId,
+                "X-YouTube-Client-Version": c.clientVersion,
+              },
+              body: JSON.stringify({
+                videoId,
+                racyCheckOk: true,
+                contentCheckOk: true,
+                context: {
+                  client: {
+                    clientName: c.clientName,
+                    clientVersion: c.clientVersion,
+                    hl: "en",
+                    gl: "US",
+                    ...c.extra,
+                  },
+                },
+              }),
+            },
+          );
+          if (pRes.ok) {
+            const pJson = await pRes.json();
+            if (!extractedTitle && pJson?.videoDetails?.title) {
+              extractedTitle = pJson.videoDetails.title;
+            }
+            if (!extractedChannel && pJson?.videoDetails?.author) {
+              extractedChannel = pJson.videoDetails.author;
+            }
+            const tracks =
+              pJson?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+            if (Array.isArray(tracks) && tracks.length > 0) {
+              const best =
+                tracks.find(
+                  (t) => /^en/i.test(t.languageCode) && t.kind !== "asr",
+                ) ||
+                tracks.find((t) => /^en/i.test(t.languageCode)) ||
+                tracks[0];
+              if (best?.baseUrl) {
+                const base = best.baseUrl
+                  .replace(/\\u0026/g, "&")
+                  .replace(/&amp;/g, "&");
+                for (const u of [
+                  base.includes("fmt=") ? base : `${base}&fmt=json3`,
+                  base,
+                  `${base}&fmt=srv3`,
+                ]) {
+                  const tRes = await fetch(u);
+                  if (tRes.ok) {
+                    const tBody = await tRes.text();
+                    const parsed = parseTimedTextResponse(tBody);
+                    if (parsed.length >= 4) {
+                      segments = parsed;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch {}
+      }
+    }
+
+    // Engine 5: Try watch page captionTracks if still needed
+    if (segments.length < 4 && watchTracks.length > 0) {
+      const best =
+        watchTracks.find(
+          (t) => /^en/i.test(t.languageCode) && t.kind !== "asr",
+        ) ||
+        watchTracks.find((t) => /^en/i.test(t.languageCode)) ||
+        watchTracks[0];
+      if (best?.baseUrl) {
+        const base = best.baseUrl
+          .replace(/\\u0026/g, "&")
+          .replace(/&amp;/g, "&");
+        for (const u of [
+          base.includes("fmt=") ? base : `${base}&fmt=json3`,
+          base,
+        ]) {
+          try {
+            const capRes = await fetch(u, { credentials: "include" });
+            if (capRes.ok) {
+              const capText = await capRes.text();
+              const parsed = parseTimedTextResponse(capText);
+              if (parsed.length >= 4) {
+                segments = parsed;
+                break;
+              }
+            }
+          } catch {}
+        }
+      }
+    }
+
+    return {
+      segments,
+      description,
+      extractedTitle,
+      extractedChannel,
+    };
+  }
+
+  async function extractYoutubeDataInPage(videoId) {
+    if (ytDataCache[videoId] && ytDataCache[videoId].segments?.length > 15) {
+      return ytDataCache[videoId];
+    }
+
+    const titleEl =
+      document.querySelector("h1.ytd-watch-metadata yt-formatted-string") ||
+      document.querySelector("h1.title") ||
+      document.querySelector("title");
+    let rawTitle = (titleEl?.textContent || document.title || "YouTube Video")
+      .replace(/\s*-\s*YouTube$/i, "")
+      .trim();
+
+    const channelEl =
+      document.querySelector("#owner #channel-name a") ||
+      document.querySelector("ytd-channel-name a");
+    let channelName = (channelEl?.textContent || "YouTube Creator").trim();
+
+    const fetched = await fetchSegmentsForVideoId(videoId, true);
+    let segments = fetched.segments;
+    if (
+      (!rawTitle || rawTitle === "YouTube Video") &&
+      fetched.extractedTitle
+    ) {
+      rawTitle = fetched.extractedTitle;
+    }
+    if (
+      (!channelName || channelName === "YouTube Creator") &&
+      fetched.extractedChannel
+    ) {
+      channelName = fetched.extractedChannel;
+    }
+
+    // Group segments into ~30-second chronological paragraphs for deep summary & insights synthesis
     const paragraphs = [];
     let currentPara = null;
     for (const seg of segments) {
@@ -412,8 +782,8 @@
         continue;
       }
       if (
-        seg.startSeconds - currentPara.startSeconds < 26 &&
-        currentPara.text.length + seg.text.length < 340
+        seg.startSeconds - currentPara.startSeconds < 32 &&
+        currentPara.text.length + seg.text.length < 380
       ) {
         currentPara.text = `${currentPara.text} ${seg.text}`.trim();
       } else {
@@ -435,7 +805,7 @@
       .filter(Boolean).length;
 
     const summaryBullets = [
-      `Overview (${segments.length} segments · ${totalWords.toLocaleString()} words): In "${rawTitle}", ${channelName} provides a complete walkthrough from foundational setup to advanced execution.`,
+      `Executive Overview (${segments.length} spoken segments · ${totalWords.toLocaleString()} words): In "${rawTitle}", ${channelName} walks through the core methodology, strategic rules, and real-world execution from start to finish.`,
       ...sampledSummary.map((p) => `[${p.timestamp}] ${p.text}`),
     ];
 
@@ -478,7 +848,7 @@
       },
       {
         q: "How can I repurpose this full transcript into an SEO article, infographic, or social post?",
-        a: "Click 'Convert Video to SEO Blog' or 'Create Shorts / Reels Script' below to send all extracted transcript segments directly into the DoItWithAI studio.",
+        a: "Click 'Full Studio & .SRT' or 'Video to Blog' below to send all extracted transcript segments directly into the DoItWithAI studio.",
       },
     ];
 
@@ -498,14 +868,25 @@
       url: location.href,
       title: rawTitle,
       channelName,
-      description,
+      description: fetched.description || "",
       segments,
       summaryBullets,
       insights,
       faqs,
       comments,
     };
-    ytDataCache[videoId] = pack;
+
+    if (segments.length >= 4) {
+      ytDataCache[videoId] = pack;
+      try {
+        if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({
+            [`diwat_ext_yt_transcript_${videoId}`]: pack,
+            diwat_ext_yt_transcript_latest: pack,
+          });
+        }
+      } catch {}
+    }
     return pack;
   }
 
@@ -661,8 +1042,8 @@
     card.innerHTML = `
       <div class="diwat-yt-header">
         <div class="diwat-yt-brand">
-          <span>▶ DoItWithAI YouTube Assistant</span>
-          <span class="diwat-yt-badge" id="diwat-yt-seg-count">Full Transcript &amp; AI Summary</span>
+          <span>▶ DoItWithAI YouTube Assistant v2.4</span>
+          <span class="diwat-yt-badge" id="diwat-yt-seg-count">Extracting Transcript...</span>
         </div>
         <button type="button" id="diwat-yt-refresh" class="diwat-yt-btn" title="Refresh Transcript & Comments">↻ Refresh</button>
       </div>
@@ -674,7 +1055,7 @@
         <button type="button" class="diwat-yt-tab" data-yt-tab="comments">Comments</button>
       </div>
       <div class="diwat-yt-body" id="diwat-yt-body">
-        <div style="color:#94a3b8;font-weight:600">Extracting full YouTube transcript, summary &amp; deep insights...</div>
+        <div style="color:#94a3b8;font-weight:600">⏳ Extracting full timestamped YouTube transcript, summary &amp; deep insights...</div>
       </div>
       <div class="diwat-yt-actions">
         <button type="button" id="diwat-yt-copy" class="diwat-yt-btn primary">📋 Copy Full Transcript</button>
@@ -697,6 +1078,10 @@
       }
 
       if (activeTab === "transcript") {
+        if (!loadedPack.segments.length) {
+          bodyEl.innerHTML = `<div style="color:#cbd5e1">No spoken captions detected yet. Click <strong>↻ Refresh</strong> or open the video's native transcript panel.</div>`;
+          return;
+        }
         bodyEl.innerHTML = loadedPack.segments
           .map(
             (s) => `
@@ -811,6 +1196,69 @@
           copyBtn.textContent = "📋 Copy Full Transcript";
         }, 2000);
       }
+    });
+  }
+
+  // =========================================================================
+  // WEB STUDIO BRIDGE (Syncs Extension-Extracted Transcripts to doitwithai.tools / vercel.app)
+  // =========================================================================
+  function initWebStudioBridge() {
+    if (!IS_DOITWITHAI_WEB) return;
+
+    // 1. Sync any cached transcripts from chrome.storage.local into window.localStorage
+    try {
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(null, (items) => {
+          if (!items) return;
+          for (const [k, v] of Object.entries(items)) {
+            if (k.startsWith("diwat_ext_yt_transcript")) {
+              try {
+                window.localStorage.setItem(k, JSON.stringify(v));
+              } catch {}
+            }
+          }
+        });
+      }
+    } catch {}
+
+    // 2. Listen for on-demand residential YouTube transcript requests from YoutubeTranscriptGeneratorClient
+    window.addEventListener("diwat:request-youtube-transcript", async (ev) => {
+      const detail = (ev && ev.detail) || {};
+      const targetId = detail.videoId || getYoutubeVideoId(detail.url || "");
+      if (!targetId) {
+        window.dispatchEvent(
+          new CustomEvent("diwat:youtube-transcript-response", { detail: null }),
+        );
+        return;
+      }
+
+      try {
+        const fetched = await fetchSegmentsForVideoId(targetId, false);
+        if (fetched.segments && fetched.segments.length >= 4) {
+          const payload = {
+            videoId: targetId,
+            title: fetched.extractedTitle || "",
+            channelName: fetched.extractedChannel || "",
+            segments: fetched.segments,
+          };
+          try {
+            window.localStorage.setItem(
+              `diwat_ext_yt_transcript_${targetId}`,
+              JSON.stringify(payload),
+            );
+          } catch {}
+          window.dispatchEvent(
+            new CustomEvent("diwat:youtube-transcript-response", {
+              detail: payload,
+            }),
+          );
+          return;
+        }
+      } catch {}
+
+      window.dispatchEvent(
+        new CustomEvent("diwat:youtube-transcript-response", { detail: null }),
+      );
     });
   }
 
@@ -935,6 +1383,9 @@
   if (IS_YOUTUBE) {
     setInterval(injectYoutubeMerlinPanel, 1800);
     injectYoutubeMerlinPanel();
+  }
+  if (IS_DOITWITHAI_WEB) {
+    initWebStudioBridge();
   }
   if (IS_SOCIAL) {
     setTimeout(injectSocialComposerPolisher, 2000);

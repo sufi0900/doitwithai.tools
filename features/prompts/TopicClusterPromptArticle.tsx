@@ -129,7 +129,7 @@ export default function TopicClusterPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/topic-clustering-topical-authority-prompts-hero.webp"
+            src="/prompts/topic-clustering-topical-authority-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="94 ChatGPT prompts for topic clustering, pillar pages, and topical authority beside a Hub and Spoke graph."

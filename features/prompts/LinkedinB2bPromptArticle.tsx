@@ -129,7 +129,7 @@ export default function LinkedinB2bPromptArticle({
         {/* Featured Hero Image */}
         <figure>
           <Image
-            src="/prompts/linkedin-personal-branding-b2b-prompts-hero.webp"
+            src="/prompts/linkedin-personal-branding-b2b-prompts-hero-v2.webp"
             width={1600}
             height={900}
             alt="83 ChatGPT prompts for LinkedIn personal branding, 140-character mobile fold hooks, and PDF document carousels."

@@ -25,6 +25,7 @@ import {
   buildYoutubeTranscriptPack,
   DEFAULT_YT_SEGMENTS,
   DEFAULT_YT_TRANSCRIPT_URL,
+  extractYoutubeVideoId,
   type TranscriptSegment,
   type YoutubeTranscriptPack,
 } from "./model";
@@ -39,7 +40,6 @@ function parseRawPastedTranscript(raw: string): TranscriptSegment[] {
   let autoSec = 0;
 
   for (const line of lines) {
-    // Handle standalone timestamp line like "0:04" or "01:15"
     if (/^\d{1,2}:\d{2}(?::\d{2})?$/.test(line)) {
       pendingTimestamp = line;
       continue;
@@ -90,6 +90,106 @@ function parseRawPastedTranscript(raw: string): TranscriptSegment[] {
     }
   }
   return parsed;
+}
+
+type ExtensionTranscriptBridgePayload = {
+  videoId?: string;
+  title?: string;
+  channelName?: string;
+  segments?: Array<{
+    timestamp?: string;
+    seconds?: number;
+    startSeconds?: number;
+    text?: string;
+  }>;
+};
+
+function normalizeBridgeSegments(
+  raw?: ExtensionTranscriptBridgePayload["segments"],
+): TranscriptSegment[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((s, idx) => {
+      const sec =
+        typeof s.seconds === "number"
+          ? s.seconds
+          : typeof s.startSeconds === "number"
+            ? s.startSeconds
+            : idx * 5;
+      const m = Math.floor(sec / 60);
+      const r = sec % 60;
+      const ts =
+        s.timestamp && s.timestamp.trim()
+          ? s.timestamp.trim()
+          : `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+      return {
+        timestamp: ts.length === 4 ? `0${ts}` : ts,
+        seconds: sec,
+        text: String(s.text || "").trim(),
+      };
+    })
+    .filter((s) => s.text.length > 0);
+}
+
+function requestTranscriptFromExtensionBridge(
+  targetVideoId: string,
+  targetUrl: string,
+): Promise<ExtensionTranscriptBridgePayload | null> {
+  if (typeof window === "undefined") return Promise.resolve(null);
+
+  // 1. Check localStorage cache populated by the DoItWithAI Chrome Extension content script
+  try {
+    const byId = window.localStorage.getItem(
+      `diwat_ext_yt_transcript_${targetVideoId}`,
+    );
+    if (byId) {
+      const parsed = JSON.parse(byId) as ExtensionTranscriptBridgePayload;
+      if (Array.isArray(parsed?.segments) && parsed.segments.length >= 10) {
+        return Promise.resolve(parsed);
+      }
+    }
+    const latest = window.localStorage.getItem(
+      "diwat_ext_yt_transcript_latest",
+    );
+    if (latest) {
+      const parsed = JSON.parse(latest) as ExtensionTranscriptBridgePayload;
+      if (
+        parsed?.videoId === targetVideoId &&
+        Array.isArray(parsed?.segments) &&
+        parsed.segments.length >= 10
+      ) {
+        return Promise.resolve(parsed);
+      }
+    }
+  } catch {}
+
+  // 2. Ask the active DoItWithAI Chrome Extension content script to fetch using residential browser IP
+  return new Promise((resolve) => {
+    let settled = false;
+    const handler = (ev: Event) => {
+      const custom = ev as CustomEvent<ExtensionTranscriptBridgePayload>;
+      if (settled) return;
+      settled = true;
+      window.removeEventListener("diwat:youtube-transcript-response", handler);
+      resolve(custom.detail || null);
+    };
+    window.addEventListener("diwat:youtube-transcript-response", handler);
+    window.dispatchEvent(
+      new CustomEvent("diwat:request-youtube-transcript", {
+        detail: { videoId: targetVideoId, url: targetUrl },
+      }),
+    );
+    setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        window.removeEventListener(
+          "diwat:youtube-transcript-response",
+          handler,
+        );
+        resolve(null);
+      }
+    }, 2800);
+  });
 }
 
 export default function YoutubeTranscriptGeneratorClient() {
@@ -144,7 +244,7 @@ export default function YoutubeTranscriptGeneratorClient() {
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2800);
+    setTimeout(() => setToast(""), 3200);
   }
 
   async function fetchVideoByUrl(targetUrl: string) {
@@ -152,66 +252,76 @@ export default function YoutubeTranscriptGeneratorClient() {
     if (!trimmed) return;
     setLoadingFetch(true);
     setAiPack(null);
+    const parsedYtId = extractYoutubeVideoId(trimmed);
+
     try {
-      const res = await fetch("/api/ai-tools/universal-extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed }),
-      });
-      const data = await res.json();
-      if (data && !data.error) {
-        const nextVideoId = data.videoId || videoId;
-        const nextTitle = data.title || title;
-        const nextAuthor = data.author || channelName;
-        const nextSegs: TranscriptSegment[] =
-          data.transcriptSegments && data.transcriptSegments.length > 0
-            ? data.transcriptSegments
-            : data.paragraphs && data.paragraphs.length > 0
-              ? data.paragraphs.map((p: string, idx: number) => ({
-                  timestamp: `${String(Math.floor((idx * 15) / 60)).padStart(2, "0")}:${String((idx * 15) % 60).padStart(2, "0")}`,
-                  seconds: idx * 15,
-                  text: p,
-                }))
-              : segments;
+      // Run residential Chrome Extension bridge & Server-Side Universal Extract in parallel
+      const [bridgeData, serverRes] = await Promise.all([
+        requestTranscriptFromExtensionBridge(parsedYtId, trimmed),
+        fetch("/api/ai-tools/universal-extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: trimmed }),
+        }).catch(() => null),
+      ]);
 
-        setVideoId(nextVideoId);
-        setTitle(nextTitle);
-        setChannelName(nextAuthor);
-        setSegments(nextSegs);
+      const data = serverRes ? await serverRes.json().catch(() => null) : null;
+      const bridgeSegs = normalizeBridgeSegments(bridgeData?.segments);
+      const serverSegs: TranscriptSegment[] =
+        data?.transcriptSegments && data.transcriptSegments.length > 0
+          ? data.transcriptSegments
+          : data?.paragraphs && data.paragraphs.length > 0
+            ? data.paragraphs.map((p: string, idx: number) => ({
+                timestamp: `${String(Math.floor((idx * 15) / 60)).padStart(2, "0")}:${String((idx * 15) % 60).padStart(2, "0")}`,
+                seconds: idx * 15,
+                text: p,
+              }))
+            : [];
 
-        notify(
-          `Extracted ${nextSegs.length} timestamped segments for "${nextTitle}" — running deep AI synthesis!`,
+      const nextSegs =
+        bridgeSegs.length > serverSegs.length
+          ? bridgeSegs
+          : serverSegs.length > 0
+            ? serverSegs
+            : segments;
+
+      const nextVideoId =
+        bridgeData?.videoId || data?.videoId || parsedYtId || videoId;
+      const nextTitle = bridgeData?.title || data?.title || title;
+      const nextAuthor =
+        bridgeData?.channelName || data?.author || channelName;
+
+      setVideoId(nextVideoId);
+      setTitle(nextTitle);
+      setChannelName(nextAuthor);
+      setSegments(nextSegs);
+
+      notify(
+        `Extracted ${nextSegs.length} timestamped lines for "${nextTitle}" — running deep AI synthesis!`,
+      );
+
+      try {
+        const aiRes = await fetch(
+          "/api/ai-tools/youtube-transcript-generator",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              videoId: nextVideoId,
+              videoUrl: trimmed,
+              title: nextTitle,
+              channelName: nextAuthor,
+              segments: nextSegs,
+            }),
+          },
         );
+        const aiData = await aiRes.json();
+        if (aiData?.pack) {
+          setAiPack(aiData.pack);
+        }
+      } catch {}
 
-        // Immediately trigger AI synthesis in the same 1-click flow!
-        try {
-          const aiRes = await fetch(
-            "/api/ai-tools/youtube-transcript-generator",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                videoId: nextVideoId,
-                videoUrl: trimmed,
-                title: nextTitle,
-                channelName: nextAuthor,
-                segments: nextSegs,
-              }),
-            },
-          );
-          const aiData = await aiRes.json();
-          if (aiData?.pack) {
-            setAiPack(aiData.pack);
-          }
-        } catch {}
-
-        setTimeout(() => focusToolSection(resultsRef.current), 120);
-      } else {
-        notify(
-          data?.error?.message ||
-            "Loaded video metadata. You can also paste custom transcript lines.",
-        );
-      }
+      setTimeout(() => focusToolSection(resultsRef.current), 120);
     } catch {
       notify("Loaded video transcript workspace.");
     } finally {
@@ -287,7 +397,7 @@ export default function YoutubeTranscriptGeneratorClient() {
         }
         description={
           loadingFetch
-            ? "Connecting to YouTube Innertube & TimedText tracks (including EN - auto) and building granular timestamped lines..."
+            ? "Connecting to YouTube Innertube, TimedText & Extension Bridge (including EN - auto) and building granular timestamped lines..."
             : "Analyzing the full video timeline from 0:00 to the end to generate deep takeaways, chapters, and FAQs..."
         }
       />
