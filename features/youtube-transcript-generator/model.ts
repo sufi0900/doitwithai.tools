@@ -1,3 +1,34 @@
+export function extractYoutubeVideoId(rawUrl: string): string {
+  const trimmed = String(rawUrl || "").trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) return trimmed;
+  try {
+    const u = new URL(trimmed);
+    if (u.hostname.includes("youtu.be")) {
+      const id = u.pathname.split("/").filter(Boolean)[0] || "";
+      if (/^[A-Za-z0-9_-]{11}$/.test(id)) return id;
+    }
+    if (u.hostname.includes("youtube.com")) {
+      const v = u.searchParams.get("v");
+      if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) return v;
+      const parts = u.pathname.split("/").filter(Boolean);
+      if (
+        (parts[0] === "shorts" ||
+          parts[0] === "embed" ||
+          parts[0] === "live" ||
+          parts[0] === "v") &&
+        parts[1] &&
+        /^[A-Za-z0-9_-]{11}$/.test(parts[1])
+      ) {
+        return parts[1];
+      }
+    }
+  } catch {}
+  const m = trimmed.match(
+    /(?:v=|youtu\.be\/|shorts\/|embed\/)([A-Za-z0-9_-]{11})/,
+  );
+  return m ? m[1] : "";
+}
+
 export type TranscriptSegment = {
   timestamp: string;
   seconds: number;
