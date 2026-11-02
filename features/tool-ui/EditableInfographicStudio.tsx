@@ -7,6 +7,7 @@ import {
   EDITORIAL_LAYOUTS,
   TemplateThumbnail,
   type InfographicBgWaveStyle,
+  type InfographicImageFitMode,
 } from "./InfographicArtwork";
 import { wrapVisualText, percentageMetric } from "./visualText";
 import { prepareVisualSvg, visualSvgCanvas, saveVisualBlob } from "./svgExport";
@@ -552,19 +553,19 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplateMeta[] = [
     maxNodes: 6,
   },
 
-  // Category 4: Side-Image & Magazine Editorial (Supports 1 to 6 points!)
+  // Category 4: Side-Image & Magazine Editorial (Supports both Horizontal & Vertical images cleanly!)
   {
     id: "side-image-editorial-split",
-    label: "13. Left Visual + Editorial Guide",
+    label: "13. Hero Visual + Editorial Grid",
     category: "side-image",
-    desc: "Left framed visual + definition card, Right flowing narrative spine",
+    desc: "Top 16:9 hero visual banner + balanced 2-column editorial cards",
     badge: "EDITORIAL",
     minNodes: 1,
     maxNodes: 6,
   },
   {
     id: "side-image-right-spotlight",
-    label: "14. Right Visual + Definition Guide",
+    label: "14. Right Visual + Spotlight Guide",
     category: "side-image",
     desc: "Left flowing narrative breakdown + Right framed visual spotlight",
     badge: "EDITORIAL",
@@ -883,7 +884,8 @@ function renderSvgIcon(
 }
 
 /**
- * Renders either the user's custom uploaded node image/icon OR the vector SVG icon.
+ * Renders either the user's custom uploaded node image/icon (as a crisp, larger rounded-square thumbnail)
+ * OR the vector SVG icon.
  */
 function renderNodeIconOrImage(
   node: InfographicNodeItem,
@@ -893,31 +895,50 @@ function renderNodeIconOrImage(
   color: string,
 ) {
   if (node.customImageUrl) {
-    const r = size * 0.68;
+    const boxSize = Math.max(46, Math.round(size * 1.95));
+    const half = boxSize / 2;
+    const rx = Math.round(boxSize * 0.26);
     const clipId = `node-img-clip-${node.id.replace(/[^a-zA-Z0-9_-]/g, "")}-${Math.round(cx)}-${Math.round(cy)}`;
     return (
       <g>
         <defs>
           <clipPath id={clipId}>
-            <circle cx={cx} cy={cy} r={r} />
+            <rect
+              x={cx - half}
+              y={cy - half}
+              width={boxSize}
+              height={boxSize}
+              rx={rx}
+            />
           </clipPath>
         </defs>
+        <rect
+          x={cx - half}
+          y={cy - half}
+          width={boxSize}
+          height={boxSize}
+          rx={rx}
+          fill="#FFFFFF"
+        />
         <image
           href={node.customImageUrl}
-          x={cx - r}
-          y={cy - r}
-          width={r * 2}
-          height={r * 2}
+          x={cx - half}
+          y={cy - half}
+          width={boxSize}
+          height={boxSize}
           preserveAspectRatio="xMidYMid slice"
+          imageRendering="optimizeQuality"
           clipPath={`url(#${clipId})`}
         />
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
+        <rect
+          x={cx - half}
+          y={cy - half}
+          width={boxSize}
+          height={boxSize}
+          rx={rx}
           fill="none"
           stroke={color}
-          strokeWidth={2}
+          strokeWidth={2.5}
         />
       </g>
     );
@@ -980,6 +1001,8 @@ export function EditableInfographicStudio({
     useState<InfographicColorPaletteId>(initialPalette);
   const [bgWaveStyle, setBgWaveStyle] =
     useState<InfographicBgWaveStyle>("waves");
+  const [imageFitMode, setImageFitMode] =
+    useState<InfographicImageFitMode>("contain");
   const [customColors, setCustomColors] = useState({
     bgStart: "#0B1120",
     bgEnd: "#172554",
@@ -1006,8 +1029,16 @@ export function EditableInfographicStudio({
   const [canvasEditMode, setCanvasEditMode] = useState<
     "header" | "footer" | "node" | null
   >(null);
-  // Interactive Canvas Zoom (0 = Fit to Screen, or 75 / 100 / 125 / 150 / 200)
+  // Interactive Canvas Zoom (0 = Fit to Screen, or 60..220)
   const [zoomPercent, setZoomPercent] = useState<number>(0);
+  // Drag-to-pan state when zoomed in
+  const [isPanning, setIsPanning] = useState(false);
+  const panOriginRef = useRef<{
+    startX: number;
+    startY: number;
+    scrollLeft: number;
+    scrollTop: number;
+  } | null>(null);
 
   const [toast, setToast] = useState("");
   const [sectionLimitNotice, setSectionLimitNotice] = useState("");
@@ -1019,6 +1050,7 @@ export function EditableInfographicStudio({
   const [exportError, setExportError] = useState("");
 
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
   const stageAlertRef = useRef<HTMLDivElement | null>(null);
   const inCanvasInputRef = useRef<HTMLInputElement | null>(null);
   const headlineInputRef = useRef<HTMLInputElement | null>(null);
@@ -1202,7 +1234,6 @@ export function EditableInfographicStudio({
         `"${tpl.label.replace(/^\d+\. /, "")}" displays up to ${tpl.maxNodes} sections for a clean layout.`,
       );
     } else if (nodes.length < tpl.minNodes) {
-      // Automatically pad nodes if current count is below template minimum
       setNodes((prev) => {
         const copy = [...prev];
         while (copy.length < tpl.minNodes) {
@@ -1275,8 +1306,8 @@ export function EditableInfographicStudio({
     notify("Removed section and re-balanced infographic layout.");
   }
 
-  // Zoom Helpers
-  const ZOOM_STEPS = [75, 100, 125, 150, 200];
+  // Interactive Zoom Helpers (Buttons + Mouse Wheel + Drag Panning)
+  const ZOOM_STEPS = [75, 100, 125, 150, 175, 200];
   function handleZoomIn() {
     setZoomPercent((prev) => {
       if (prev === 0) return 100;
@@ -1292,15 +1323,52 @@ export function EditableInfographicStudio({
     });
   }
 
+  function handleCanvasWheel(e: React.WheelEvent<HTMLDivElement>) {
+    // Allow mouse wheel zoom directly when Ctrl/Meta is held OR when the user is already in zoom mode
+    if (e.ctrlKey || e.metaKey || zoomPercent > 0) {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 15 : -15;
+      setZoomPercent((prev) => {
+        const base = prev === 0 ? 90 : prev;
+        const next = Math.max(60, Math.min(220, base + delta));
+        return next <= 65 && delta < 0 ? 0 : next;
+      });
+    }
+  }
+
+  function handleMouseDownPan(e: React.MouseEvent<HTMLDivElement>) {
+    if (zoomPercent === 0 || !viewportRef.current) return;
+    setIsPanning(true);
+    panOriginRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      scrollLeft: viewportRef.current.scrollLeft,
+      scrollTop: viewportRef.current.scrollTop,
+    };
+  }
+
+  function handleMouseMovePan(e: React.MouseEvent<HTMLDivElement>) {
+    if (!isPanning || !panOriginRef.current || !viewportRef.current) return;
+    const dx = e.clientX - panOriginRef.current.startX;
+    const dy = e.clientY - panOriginRef.current.startY;
+    viewportRef.current.scrollLeft = panOriginRef.current.scrollLeft - dx;
+    viewportRef.current.scrollTop = panOriginRef.current.scrollTop - dy;
+  }
+
+  function handleMouseUpPan() {
+    setIsPanning(false);
+    panOriginRef.current = null;
+  }
+
   async function renderSvgToCanvas(
-    scale = 2,
+    scale = 2.5,
   ): Promise<HTMLCanvasElement | null> {
     if (!svgRef.current) return null;
     return visualSvgCanvas(svgRef.current, dimensions.w, dimensions.h, scale);
   }
 
   async function downloadHighResPng() {
-    const canvas = await renderSvgToCanvas(2);
+    const canvas = await renderSvgToCanvas(2.5);
     if (!canvas) {
       notify("Could not rasterize PNG—downloading Vector SVG instead.");
       await downloadVectorSvg();
@@ -1308,9 +1376,9 @@ export function EditableInfographicStudio({
     }
     const a = document.createElement("a");
     a.download = `infographic-${template}-${aspect}.png`;
-    a.href = canvas.toDataURL("image/png");
+    a.href = canvas.toDataURL("image/png", 1.0);
     a.click();
-    notify("Downloaded High-Resolution 2x Retina Infographic (.PNG)!");
+    notify("Downloaded Ultra-HD 2.5x Infographic (.PNG)!");
   }
 
   async function downloadVectorSvg() {
@@ -1328,7 +1396,7 @@ export function EditableInfographicStudio({
   }
 
   async function printPdfPoster() {
-    const canvas = await renderSvgToCanvas(2);
+    const canvas = await renderSvgToCanvas(2.5);
     if (!canvas) return;
     const { jsPDF } = await import("jspdf");
     const pdf = new jsPDF({
@@ -1337,7 +1405,7 @@ export function EditableInfographicStudio({
       format: [dimensions.w, dimensions.h],
     });
     pdf.addImage(
-      canvas.toDataURL("image/png"),
+      canvas.toDataURL("image/png", 1.0),
       "PNG",
       0,
       0,
@@ -1372,7 +1440,7 @@ export function EditableInfographicStudio({
 
   async function copyInfographicImage() {
     try {
-      const canvas = await renderSvgToCanvas(2);
+      const canvas = await renderSvgToCanvas(2.5);
       if (!canvas) return;
       canvas.toBlob(async (blob) => {
         if (!blob) return;
@@ -1380,7 +1448,7 @@ export function EditableInfographicStudio({
           new ClipboardItem({ "image/png": blob }),
         ]);
         setCopiedImg(true);
-        notify("Copied High-Res Infographic Image to Clipboard!");
+        notify("Copied Ultra-HD Infographic Image to Clipboard!");
         setTimeout(() => setCopiedImg(false), 2200);
       });
     } catch {
@@ -1403,7 +1471,6 @@ export function EditableInfographicStudio({
   const logoReserveW = brandLogoUrl ? 108 : 0;
   const availHeaderW = W - padX * 2 - logoReserveW;
 
-  // Dynamic font-size scaling so long headlines NEVER overflow the right margin
   const titleLen = (title || "").trim().length;
   const titleFontSize =
     titleLen > 68
@@ -1502,12 +1569,13 @@ export function EditableInfographicStudio({
     }, 40);
   }
 
-  // Render the active template inside the SVG body region
-  // Every single template strictly bounds its rows inside `availH` so cards NEVER touch or overlap the footer!
+  // =========================================================================
+  // FULL 26-TEMPLATE RENDERER WITH MATHEMATICAL VERTICAL CENTERING IN EVERY CARD
+  // =========================================================================
   function renderInfographicBody() {
     const activeTpl = normalizeTemplateId(template);
 
-    // Side-image editorial layouts use InfographicArtwork's non-boxed magazine spread
+    // Side-image editorial layouts use InfographicArtwork's non-distorted studio spread
     if (EDITORIAL_LAYOUTS.has(activeTpl)) {
       return (
         <InfographicArtwork
@@ -1518,6 +1586,7 @@ export function EditableInfographicStudio({
           top={bodyTop}
           height={availH}
           artwork={sideImageUrl || extractedImages[0] || ""}
+          imageFitMode={imageFitMode}
           selectedNodeId={
             canvasEditMode === "node" ? selectedNodeId : undefined
           }
@@ -1529,22 +1598,27 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 1. S-CURVE WINDING SNAKE ROADMAP (Auto-switches to 2-column grid if Square/Landscape with >= 6 items so it never overflows footer!)
+    // 1. S-CURVE WINDING SNAKE ROADMAP (Vertically centered cards + dynamic line count for 3–8 sections!)
     if (
       activeTpl === "winding-s-roadmap" &&
       !(isCompactCanvas && count >= 6)
     ) {
-      const rowGap = Math.max(10, Math.min(20, Math.floor(availH * 0.018)));
-      const rowH = Math.floor((availH - rowGap * (count - 1)) / count);
+      const rowGap = Math.max(12, Math.min(22, Math.floor(availH * 0.02)));
+      const rawRowH = Math.floor((availH - rowGap * (count - 1)) / count);
+      const rowH = Math.min(265, rawRowH);
+      const totalStackH = count * rowH + (count - 1) * rowGap;
+      const startY =
+        bodyTop + Math.min(24, Math.max(0, Math.floor((availH - totalStackH) / 2)));
+
       const cardW = Math.floor(availW * 0.83);
       const textAvailW = cardW - 132;
       const cardTitleSize = Math.min(
-        23,
-        Math.max(15.5, Math.floor(rowH * 0.18)),
+        24,
+        Math.max(16, Math.floor(rowH * (count <= 4 ? 0.145 : 0.175))),
       );
       const cardBodySize = Math.min(
-        16.5,
-        Math.max(12.5, Math.floor(rowH * 0.135)),
+        17,
+        Math.max(13, Math.floor(rowH * (count <= 4 ? 0.105 : 0.135))),
       );
       const maxTitleChars = Math.max(
         20,
@@ -1557,25 +1631,18 @@ export function EditableInfographicStudio({
         30,
         Math.floor(textAvailW / (cardBodySize * 0.53)),
       );
-      const titleYOffset = Math.min(
-        62,
-        Math.max(38, Math.floor(rowH * 0.44)),
-      );
-      const bodyStartYOffset = titleYOffset + Math.floor(cardTitleSize * 1.15);
       const maxBodyLines = Math.max(
         1,
         Math.min(
-          3,
-          Math.floor(
-            (rowH - bodyStartYOffset - 8) / (cardBodySize * 1.32),
-          ),
+          count <= 3 ? 5 : count <= 5 ? 4 : 3,
+          Math.floor((rowH - 52 - cardTitleSize * 1.3) / (cardBodySize * 1.34)),
         ),
       );
 
       const points = activeNodes.map((_, i) => {
         const isLeft = i % 2 === 0;
         const x = isLeft ? padX + 46 : W - padX - 46;
-        const y = bodyTop + i * (rowH + rowGap) + rowH / 2;
+        const y = startY + i * (rowH + rowGap) + rowH / 2;
         return { x, y, isLeft };
       });
 
@@ -1611,14 +1678,24 @@ export function EditableInfographicStudio({
 
           {activeNodes.map((node, i) => {
             const isLeft = i % 2 === 0;
-            const y = bodyTop + i * (rowH + rowGap);
+            const y = startY + i * (rowH + rowGap);
             const x = isLeft ? padX : W - padX - cardW;
             const col = nodeColor(i);
             const isSelected =
               canvasEditMode === "node" && selectedNodeId === node.id;
             const tLines = wrapSvgLines(node.title, maxTitleChars, 1);
             const bLines = wrapSvgLines(node.body, maxBodyChars, maxBodyLines);
-            const iconR = Math.min(32, Math.max(22, Math.floor(rowH * 0.28)));
+            const iconR = Math.min(32, Math.max(22, Math.floor(rowH * 0.25)));
+
+            // Vertically center Title + Body inside the card!
+            const pillH = rowH >= 104 ? 26 : 0;
+            const titleLineH = cardTitleSize * 1.22;
+            const bodyLineH = cardBodySize * 1.35;
+            const contentBlockH =
+              pillH + tLines.length * titleLineH + 6 + bLines.length * bodyLineH;
+            const blockTopY =
+              y + Math.max(14, Math.floor((rowH - contentBlockH) / 2));
+            const titleBaselineY = blockTopY + pillH + cardTitleSize * 0.88;
 
             return (
               <g
@@ -1631,7 +1708,7 @@ export function EditableInfographicStudio({
                   y={y}
                   width={cardW}
                   height={rowH}
-                  rx={Math.min(24, Math.floor(rowH * 0.22))}
+                  rx={Math.min(24, Math.floor(rowH * 0.2))}
                   fill={palette.cardBg}
                   stroke={isSelected ? "#5271ff" : col}
                   strokeWidth={isSelected ? 4 : 2.2}
@@ -1639,11 +1716,12 @@ export function EditableInfographicStudio({
                 />
                 {isSelected && (
                   <rect
+                    data-editor-only="true"
                     x={x - 4}
                     y={y - 4}
                     width={cardW + 8}
                     height={rowH + 8}
-                    rx={Math.min(26, Math.floor(rowH * 0.24))}
+                    rx={26}
                     fill="none"
                     stroke="#5271ff"
                     strokeWidth={2.5}
@@ -1659,7 +1737,7 @@ export function EditableInfographicStudio({
                   fill={col}
                 />
 
-                {/* 3D Medallion Icon or Custom Uploaded Image */}
+                {/* Vertically Centered Medallion Icon or Custom Uploaded Image */}
                 <circle
                   cx={x + 56}
                   cy={y + rowH / 2}
@@ -1676,12 +1754,11 @@ export function EditableInfographicStudio({
                   col,
                 )}
 
-                {/* Step Number Pill */}
-                {rowH >= 96 && (
+                {pillH > 0 && (
                   <>
                     <rect
                       x={x + 104}
-                      y={y + 10}
+                      y={blockTopY}
                       width={76}
                       height={22}
                       rx={11}
@@ -1689,7 +1766,7 @@ export function EditableInfographicStudio({
                     />
                     <text
                       x={x + 142}
-                      y={y + 25}
+                      y={blockTopY + 15}
                       textAnchor="middle"
                       fill={palette.badgeText}
                       fontSize={12}
@@ -1704,7 +1781,7 @@ export function EditableInfographicStudio({
                   <g>
                     <rect
                       x={x + cardW - 144}
-                      y={y + 10}
+                      y={blockTopY}
                       width={122}
                       height={24}
                       rx={12}
@@ -1714,7 +1791,7 @@ export function EditableInfographicStudio({
                     />
                     <text
                       x={x + cardW - 83}
-                      y={y + 26}
+                      y={blockTopY + 16}
                       textAnchor="middle"
                       fill={col}
                       fontSize={12.5}
@@ -1727,7 +1804,7 @@ export function EditableInfographicStudio({
 
                 <text
                   x={x + 104}
-                  y={y + titleYOffset}
+                  y={titleBaselineY}
                   fill={palette.textPrimary}
                   fontSize={cardTitleSize}
                   fontWeight={800}
@@ -1739,7 +1816,7 @@ export function EditableInfographicStudio({
                   <text
                     key={li}
                     x={x + 104}
-                    y={y + bodyStartYOffset + li * (cardBodySize * 1.3)}
+                    y={titleBaselineY + 8 + (li + 0.85) * bodyLineH}
                     fill={palette.textSecondary}
                     fontSize={cardBodySize}
                     fontWeight={500}
@@ -1748,11 +1825,10 @@ export function EditableInfographicStudio({
                   </text>
                 ))}
 
-                {/* Opposite Side Milestone Pin */}
                 <circle
                   cx={isLeft ? W - padX - 46 : padX + 46}
                   cy={y + rowH / 2}
-                  r={Math.min(24, Math.floor(rowH * 0.24))}
+                  r={Math.min(24, Math.floor(rowH * 0.22))}
                   fill={col}
                   filter="url(#card3dShadow)"
                 />
@@ -1773,24 +1849,27 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 2. ISOMETRIC 3D LAYERED PYRAMID
+    // 2. ISOMETRIC 3D LAYERED PYRAMID (Vertically centered callout cards!)
     if (activeTpl === "isometric-3d-pyramid") {
       const pyrCenterX = Math.floor(W * 0.34);
       const pyrTopY = bodyTop + 10;
       const pyrBottomY = bodyBottom - 10;
       const pyrH = pyrBottomY - pyrTopY;
-      const tierGap = 8;
+      const tierGap = 10;
       const tierH = Math.floor((pyrH - tierGap * (count - 1)) / count);
       const maxHalfW = Math.floor(availW * 0.27);
       const cardX = Math.floor(W * 0.6);
       const cardW = W - padX - cardX;
-      const titleFont = Math.min(19, Math.max(15, Math.floor(tierH * 0.2)));
-      const bodyFont = Math.min(15, Math.max(12.5, Math.floor(tierH * 0.14)));
-      const titleChars = Math.max(18, Math.floor((cardW - 76) / 10.5));
-      const bodyChars = Math.max(24, Math.floor((cardW - 36) / 8.2));
+      const titleFont = Math.min(20, Math.max(15.5, Math.floor(tierH * 0.15)));
+      const bodyFont = Math.min(15.5, Math.max(12.5, Math.floor(tierH * 0.11)));
+      const titleChars = Math.max(18, Math.floor((cardW - 82) / (titleFont * 0.56)));
+      const bodyChars = Math.max(24, Math.floor((cardW - 82) / (bodyFont * 0.53)));
       const maxLines = Math.max(
         1,
-        Math.min(3, Math.floor((tierH - 50) / (bodyFont * 1.32))),
+        Math.min(
+          count <= 4 ? 4 : 3,
+          Math.floor((tierH - 36 - titleFont * 1.3) / (bodyFont * 1.34)),
+        ),
       );
 
       return (
@@ -1807,6 +1886,12 @@ export function EditableInfographicStudio({
               canvasEditMode === "node" && selectedNodeId === node.id;
             const tLines = wrapSvgLines(node.title, titleChars, 1);
             const bLines = wrapSvgLines(node.body, bodyChars, maxLines);
+
+            const titleLineH = titleFont * 1.22;
+            const bodyLineH = bodyFont * 1.35;
+            const blockH = titleLineH + 6 + bLines.length * bodyLineH;
+            const startTextY =
+              y1 + Math.max(16, Math.floor((tierH - blockH) / 2)) + titleFont * 0.85;
 
             const leftPoly = `${pyrCenterX},${y1} ${pyrCenterX - w1},${y1 + 10} ${pyrCenterX - w2},${y2} ${pyrCenterX},${y2 + 10}`;
             const rightPoly = `${pyrCenterX},${y1} ${pyrCenterX + w1},${y1 + 10} ${pyrCenterX + w2},${y2} ${pyrCenterX},${y2 + 10}`;
@@ -1866,16 +1951,22 @@ export function EditableInfographicStudio({
                   filter="url(#card3dShadow)"
                 />
                 <circle
-                  cx={cardX + 30}
-                  cy={y1 + 30}
-                  r={18}
+                  cx={cardX + 36}
+                  cy={y1 + tierH / 2}
+                  r={20}
                   fill={`${col}25`}
                 />
-                {renderNodeIconOrImage(node, cardX + 30, y1 + 30, 18, col)}
+                {renderNodeIconOrImage(
+                  node,
+                  cardX + 36,
+                  y1 + tierH / 2,
+                  19,
+                  col,
+                )}
 
                 <text
-                  x={cardX + 56}
-                  y={y1 + 35}
+                  x={cardX + 68}
+                  y={startTextY}
                   fill={palette.textPrimary}
                   fontSize={titleFont}
                   fontWeight={800}
@@ -1886,8 +1977,8 @@ export function EditableInfographicStudio({
                 {bLines.map((line, li) => (
                   <text
                     key={li}
-                    x={cardX + 20}
-                    y={y1 + 60 + li * (bodyFont * 1.3)}
+                    x={cardX + 68}
+                    y={startTextY + 6 + (li + 0.85) * bodyLineH}
                     fill={palette.textSecondary}
                     fontSize={bodyFont}
                     fontWeight={500}
@@ -1902,7 +1993,7 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 3. CONVERSION FUNNEL STAGES
+    // 3. CONVERSION FUNNEL STAGES (Vertically centered stage callouts!)
     if (activeTpl === "conversion-funnel-stages") {
       const rowGap = 12;
       const tierH = Math.floor((availH - rowGap * (count - 1)) / count);
@@ -1911,11 +2002,15 @@ export function EditableInfographicStudio({
       const minBotW = Math.floor(availW * 0.22);
       const cardX = Math.floor(W * 0.61);
       const cardW = W - padX - cardX;
-      const bodyFont = Math.min(15, Math.max(12.5, Math.floor(tierH * 0.145)));
-      const bChars = Math.max(24, Math.floor((cardW - 36) / 8.5));
+      const titleFont = Math.min(18, Math.max(14, Math.floor(tierH * 0.14)));
+      const bodyFont = Math.min(15.5, Math.max(12.5, Math.floor(tierH * 0.11)));
+      const bChars = Math.max(24, Math.floor((cardW - 36) / (bodyFont * 0.54)));
       const bMaxLines = Math.max(
         1,
-        Math.min(3, Math.floor((tierH - 44) / (bodyFont * 1.32))),
+        Math.min(
+          count <= 4 ? 4 : 3,
+          Math.floor((tierH - 36 - titleFont * 1.3) / (bodyFont * 1.34)),
+        ),
       );
 
       return (
@@ -1931,6 +2026,11 @@ export function EditableInfographicStudio({
             const poly = `${funnelCenterX - wTop / 2},${y1} ${funnelCenterX + wTop / 2},${y1} ${funnelCenterX + wBot / 2},${y2} ${funnelCenterX - wBot / 2},${y2}`;
             const tLines = wrapSvgLines(node.title, 20, 1);
             const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
+
+            const bodyLineH = bodyFont * 1.35;
+            const blockH = titleFont * 1.2 + 6 + bLines.length * bodyLineH;
+            const startTextY =
+              y1 + Math.max(16, Math.floor((tierH - blockH) / 2)) + titleFont * 0.85;
 
             return (
               <g
@@ -1988,10 +2088,10 @@ export function EditableInfographicStudio({
                   filter="url(#card3dShadow)"
                 />
                 <text
-                  x={cardX + 20}
-                  y={y1 + 28}
+                  x={cardX + 22}
+                  y={startTextY}
                   fill={col}
-                  fontSize={13.5}
+                  fontSize={titleFont}
                   fontWeight={900}
                 >
                   STAGE 0{i + 1} · {node.title.slice(0, 26)}
@@ -1999,8 +2099,8 @@ export function EditableInfographicStudio({
                 {bLines.map((line, li) => (
                   <text
                     key={li}
-                    x={cardX + 20}
-                    y={y1 + 50 + li * (bodyFont * 1.32)}
+                    x={cardX + 22}
+                    y={startTextY + 6 + (li + 0.85) * bodyLineH}
                     fill={palette.textSecondary}
                     fontSize={bodyFont}
                     fontWeight={500}
@@ -2015,28 +2115,42 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 4. ALTERNATING SPINE TIMELINE
+    // 4. ALTERNATING SPINE TIMELINE (Vertically centered cards!)
     if (activeTpl === "alternating-spine-timeline") {
       const centerX = Math.floor(W / 2);
-      const rowGap = Math.max(10, Math.min(16, Math.floor(availH * 0.018)));
-      const rowH = Math.floor((availH - rowGap * (count - 1)) / count);
+      const rowGap = Math.max(10, Math.min(18, Math.floor(availH * 0.018)));
+      const rawRowH = Math.floor((availH - rowGap * (count - 1)) / count);
+      const rowH = Math.min(260, rawRowH);
+      const totalStackH = count * rowH + (count - 1) * rowGap;
+      const startY =
+        bodyTop + Math.min(24, Math.max(0, Math.floor((availH - totalStackH) / 2)));
+
       const cardW = Math.floor(availW / 2 - 46);
-      const titleFont = Math.min(19, Math.max(15, Math.floor(rowH * 0.2)));
-      const bodyFont = Math.min(15, Math.max(12.5, Math.floor(rowH * 0.145)));
-      const tChars = Math.max(20, Math.floor((cardW - 84) / (titleFont * 0.56)));
-      const bChars = Math.max(26, Math.floor((cardW - 40) / (bodyFont * 0.54)));
+      const titleFont = Math.min(20, Math.max(15, Math.floor(rowH * 0.16)));
+      const bodyFont = Math.min(15.5, Math.max(12.5, Math.floor(rowH * 0.115)));
+      const tChars = Math.max(
+        18,
+        Math.floor((cardW - 82) / (titleFont * 0.56)),
+      );
+      const bChars = Math.max(
+        24,
+        Math.floor((cardW - 82) / (bodyFont * 0.54)),
+      );
       const bMaxLines = Math.max(
         1,
-        Math.min(3, Math.floor((rowH - 50) / (bodyFont * 1.32))),
+        Math.min(
+          count <= 4 ? 4 : 3,
+          Math.floor((rowH - 36 - titleFont * 1.3) / (bodyFont * 1.34)),
+        ),
       );
 
       return (
         <g>
           <line
             x1={centerX}
-            y1={bodyTop + 16}
+            y1={startY + 16}
             x2={centerX}
-            y2={bodyBottom - 16}
+            y2={startY + totalStackH - 16}
             stroke={palette.accent}
             strokeWidth={6}
             strokeLinecap="round"
@@ -2044,7 +2158,7 @@ export function EditableInfographicStudio({
 
           {activeNodes.map((node, i) => {
             const isLeft = i % 2 === 0;
-            const y = bodyTop + i * (rowH + rowGap);
+            const y = startY + i * (rowH + rowGap);
             const cy = y + rowH / 2;
             const cardX = isLeft ? padX : centerX + 46;
             const col = nodeColor(i);
@@ -2052,6 +2166,11 @@ export function EditableInfographicStudio({
               canvasEditMode === "node" && selectedNodeId === node.id;
             const tLines = wrapSvgLines(node.title, tChars, 1);
             const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
+
+            const bodyLineH = bodyFont * 1.35;
+            const blockH = titleFont * 1.2 + 6 + bLines.length * bodyLineH;
+            const startTextY =
+              y + Math.max(16, Math.floor((rowH - blockH) / 2)) + titleFont * 0.85;
 
             return (
               <g
@@ -2070,7 +2189,7 @@ export function EditableInfographicStudio({
                 <circle
                   cx={centerX}
                   cy={cy}
-                  r={Math.min(22, Math.floor(rowH * 0.24))}
+                  r={Math.min(22, Math.floor(rowH * 0.22))}
                   fill={col}
                   stroke={palette.bgStart}
                   strokeWidth={4}
@@ -2098,12 +2217,17 @@ export function EditableInfographicStudio({
                   strokeWidth={isSelected ? 4 : 2.2}
                   filter="url(#card3dShadow)"
                 />
-                <circle cx={cardX + 30} cy={y + 30} r={18} fill={`${col}22`} />
-                {renderNodeIconOrImage(node, cardX + 30, y + 30, 18, col)}
+                <circle
+                  cx={cardX + 36}
+                  cy={cy}
+                  r={20}
+                  fill={`${col}22`}
+                />
+                {renderNodeIconOrImage(node, cardX + 36, cy, 19, col)}
 
                 <text
-                  x={cardX + 58}
-                  y={y + 35}
+                  x={cardX + 68}
+                  y={startTextY}
                   fill={palette.textPrimary}
                   fontSize={titleFont}
                   fontWeight={800}
@@ -2114,8 +2238,8 @@ export function EditableInfographicStudio({
                 {bLines.map((line, li) => (
                   <text
                     key={li}
-                    x={cardX + 22}
-                    y={y + 58 + li * (bodyFont * 1.32)}
+                    x={cardX + 68}
+                    y={startTextY + 6 + (li + 0.85) * bodyLineH}
                     fill={palette.textSecondary}
                     fontSize={bodyFont}
                     fontWeight={500}
@@ -2130,25 +2254,30 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 5. RADIAL DONUT GAUGE & KPI DASHBOARD (Strictly bounded inside availH!)
+    // 5. RADIAL DONUT GAUGE & KPI DASHBOARD (Vertically centered cards!)
     if (activeTpl === "stat-donut-kpi-dashboard") {
       const cols = isHorizontal ? 3 : 2;
       const rows = Math.ceil(count / cols);
       const gap = 20;
       const cardW = Math.floor((availW - gap * (cols - 1)) / cols);
       const cardH = Math.floor((availH - gap * (rows - 1)) / rows);
-      const radius = Math.min(42, Math.max(28, Math.floor(cardH * 0.2)));
+      const radius = Math.min(42, Math.max(28, Math.floor(cardH * 0.18)));
       const circum = 2 * Math.PI * radius;
-      const titleFont = Math.min(20, Math.max(16, Math.floor(cardH * 0.1)));
-      const bodyFont = Math.min(15.5, Math.max(13, Math.floor(cardH * 0.08)));
-      const tChars = Math.max(16, Math.floor((cardW - 140) / (titleFont * 0.56)));
-      const bChars = Math.max(26, Math.floor((cardW - 48) / (bodyFont * 0.54)));
-      const bodyTopOffset = Math.min(132, Math.max(94, radius * 2 + 34));
+      const titleFont = Math.min(21, Math.max(16, Math.floor(cardH * 0.085)));
+      const bodyFont = Math.min(16, Math.max(13, Math.floor(cardH * 0.068)));
+      const tChars = Math.max(
+        16,
+        Math.floor((cardW - radius * 2 - 58) / (titleFont * 0.56)),
+      );
+      const bChars = Math.max(
+        22,
+        Math.floor((cardW - radius * 2 - 58) / (bodyFont * 0.54)),
+      );
       const bMaxLines = Math.max(
         1,
         Math.min(
-          4,
-          Math.floor((cardH - bodyTopOffset - 14) / (bodyFont * 1.35)),
+          rows <= 2 ? 5 : 4,
+          Math.floor((cardH - 44 - titleFont * 1.8) / (bodyFont * 1.35)),
         ),
       );
 
@@ -2167,6 +2296,14 @@ export function EditableInfographicStudio({
             const tLines = wrapSvgLines(node.title, tChars, 2);
             const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
 
+            const titleLineH = titleFont * 1.22;
+            const bodyLineH = bodyFont * 1.36;
+            const blockH =
+              tLines.length * titleLineH + 8 + bLines.length * bodyLineH;
+            const startTextY =
+              y + Math.max(24, Math.floor((cardH - blockH) / 2)) + titleFont * 0.85;
+            const textLeftX = x + radius * 2 + 44;
+
             return (
               <g
                 key={node.id}
@@ -2184,7 +2321,8 @@ export function EditableInfographicStudio({
                   strokeWidth={isSelected ? 4 : 2.2}
                   filter="url(#card3dShadow)"
                 />
-                <g transform={`translate(${x + 22 + radius}, ${y + 22 + radius})`}>
+                {/* Vertically Centered Donut Gauge on Left of Card */}
+                <g transform={`translate(${x + 22 + radius}, ${y + cardH / 2})`}>
                   <circle
                     cx={0}
                     cy={0}
@@ -2222,8 +2360,8 @@ export function EditableInfographicStudio({
                 {tLines.map((line, ti) => (
                   <text
                     key={ti}
-                    x={x + radius * 2 + 40}
-                    y={y + 44 + ti * (titleFont * 1.22)}
+                    x={textLeftX}
+                    y={startTextY + ti * titleLineH}
                     fill={palette.textPrimary}
                     fontSize={titleFont}
                     fontWeight={800}
@@ -2235,8 +2373,13 @@ export function EditableInfographicStudio({
                 {bLines.map((line, bi) => (
                   <text
                     key={bi}
-                    x={x + 24}
-                    y={y + bodyTopOffset + bi * (bodyFont * 1.35)}
+                    x={textLeftX}
+                    y={
+                      startTextY +
+                      tLines.length * titleLineH +
+                      6 +
+                      bi * bodyLineH
+                    }
                     fill={palette.textSecondary}
                     fontSize={bodyFont}
                     fontWeight={500}
@@ -2251,7 +2394,7 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 6. RADIAL HUB & SPOKE MIND-MAP / CIRCULAR FLYWHEEL (Zero Empty Vertical Gap!)
+    // 6. RADIAL HUB & SPOKE MIND-MAP / CIRCULAR FLYWHEEL (Vertically centered spoke cards!)
     if (
       activeTpl === "radial-hub-and-spoke" ||
       activeTpl === "circular-flywheel-cycle"
@@ -2264,22 +2407,27 @@ export function EditableInfographicStudio({
       const cardW = Math.floor(availW * (isHorizontal ? 0.35 : 0.37));
       const maxColCount = Math.max(leftNodes.length, rightNodes.length, 1);
       const cardGap = 22;
-      // Fill the available height proportionally instead of capping at 210px!
       const rawCardH = Math.floor(
         (availH - 16 - cardGap * (maxColCount - 1)) / maxColCount,
       );
-      const cardH = Math.min(360, Math.max(110, rawCardH));
+      const cardH = Math.min(340, Math.max(110, rawCardH));
       const hubR = isHorizontal ? 84 : 76;
 
-      const titleFont = Math.min(22, Math.max(16.5, Math.floor(cardH * 0.085)));
+      const titleFont = Math.min(22, Math.max(16.5, Math.floor(cardH * 0.088)));
       const bodyFont = Math.min(16.5, Math.max(13.5, Math.floor(cardH * 0.068)));
-      const tChars = Math.max(18, Math.floor((cardW - 76) / (titleFont * 0.56)));
-      const bChars = Math.max(24, Math.floor((cardW - 40) / (bodyFont * 0.53)));
+      const tChars = Math.max(
+        16,
+        Math.floor((cardW - 84) / (titleFont * 0.56)),
+      );
+      const bChars = Math.max(
+        22,
+        Math.floor((cardW - 84) / (bodyFont * 0.53)),
+      );
       const bMaxLines = Math.max(
         2,
         Math.min(
           6,
-          Math.floor((cardH - 68 - titleFont * 1.8) / (bodyFont * 1.38)),
+          Math.floor((cardH - 44 - titleFont * 1.8) / (bodyFont * 1.38)),
         ),
       );
 
@@ -2291,9 +2439,9 @@ export function EditableInfographicStudio({
         isLeft: boolean,
       ) => {
         const colTotalH = totalInCol * cardH + (totalInCol - 1) * cardGap;
-        // Start right below the header (small 12px top padding) so there is NO dead empty gap under the Introduction!
         const startY =
-          bodyTop + Math.min(28, Math.max(8, Math.floor((availH - colTotalH) / 2)));
+          bodyTop +
+          Math.min(28, Math.max(8, Math.floor((availH - colTotalH) / 2)));
         const x = isLeft ? padX : W - padX - cardW;
         const y = startY + colIdx * (cardH + cardGap);
         const anchorX = isLeft ? x + cardW : x;
@@ -2303,6 +2451,13 @@ export function EditableInfographicStudio({
         const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
         const isSelected =
           canvasEditMode === "node" && selectedNodeId === node.id;
+
+        const titleLineH = titleFont * 1.22;
+        const bodyLineH = bodyFont * 1.36;
+        const blockH =
+          tLines.length * titleLineH + 6 + bLines.length * bodyLineH;
+        const startTextY =
+          y + Math.max(20, Math.floor((cardH - blockH) / 2)) + titleFont * 0.85;
 
         const hubEdgeX = isLeft ? centerX - hubR + 8 : centerX + hubR - 8;
         const midX = (hubEdgeX + anchorX) / 2;
@@ -2335,6 +2490,7 @@ export function EditableInfographicStudio({
             />
             {isSelected && (
               <rect
+                data-editor-only="true"
                 x={x - 4}
                 y={y - 4}
                 width={cardW + 8}
@@ -2346,19 +2502,19 @@ export function EditableInfographicStudio({
                 strokeDasharray="8 5"
               />
             )}
-            <circle cx={x + 34} cy={y + 36} r={21} fill={col} />
+            <circle cx={x + 36} cy={anchorY} r={22} fill={col} />
             {renderNodeIconOrImage(
               node,
-              x + 34,
-              y + 36,
+              x + 36,
+              anchorY,
               20,
               palette.badgeText,
             )}
             {tLines.map((tl, ti) => (
               <text
                 key={ti}
-                x={x + 64}
-                y={y + 34 + ti * (titleFont * 1.2)}
+                x={x + 70}
+                y={startTextY + ti * titleLineH}
                 fill={palette.textPrimary}
                 fontSize={titleFont}
                 fontWeight={800}
@@ -2369,12 +2525,12 @@ export function EditableInfographicStudio({
             {bLines.map((line, bi) => (
               <text
                 key={bi}
-                x={x + 22}
+                x={x + 70}
                 y={
-                  y +
-                  52 +
-                  tLines.length * (titleFont * 1.2) +
-                  bi * (bodyFont * 1.38)
+                  startTextY +
+                  tLines.length * titleLineH +
+                  6 +
+                  bi * bodyLineH
                 }
                 fill={palette.textSecondary}
                 fontSize={bodyFont}
@@ -2448,7 +2604,7 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 7. VERSUS BATTLE COMPARISON OR DO'S & DON'TS PLAYBOOK
+    // 7. VERSUS BATTLE COMPARISON OR DO'S & DON'TS PLAYBOOK (Vertically centered comparison pairs!)
     if (
       activeTpl === "versus-battle-comparison" ||
       activeTpl === "dos-and-donts-matrix"
@@ -2458,15 +2614,19 @@ export function EditableInfographicStudio({
       const colW = Math.floor((availW - gap) / 2);
       const rowsTop = bodyTop + 60;
       const rowGap = 14;
-      const rowH = Math.floor(
+      const rawRowH = Math.floor(
         (availH - 60 - rowGap * (count - 1)) / count,
       );
-      const titleFont = Math.min(17.5, Math.max(14, Math.floor(rowH * 0.18)));
-      const bodyFont = Math.min(14.5, Math.max(12, Math.floor(rowH * 0.14)));
+      const rowH = Math.min(250, rawRowH);
+      const titleFont = Math.min(18.5, Math.max(14, Math.floor(rowH * 0.15)));
+      const bodyFont = Math.min(15, Math.max(12, Math.floor(rowH * 0.115)));
       const bChars = Math.max(24, Math.floor((colW - 40) / (bodyFont * 0.55)));
       const bMaxLines = Math.max(
         1,
-        Math.min(3, Math.floor((rowH - 46) / (bodyFont * 1.32))),
+        Math.min(
+          count <= 4 ? 4 : 3,
+          Math.floor((rowH - 36 - titleFont * 1.3) / (bodyFont * 1.34)),
+        ),
       );
 
       return (
@@ -2525,6 +2685,12 @@ export function EditableInfographicStudio({
               `Apply ${node.title.toLowerCase()} with verified benchmarks and structured execution.`;
             const rightLines = wrapSvgLines(rightText, bChars, bMaxLines);
 
+            const bodyLineH = bodyFont * 1.35;
+            const maxCardLines = Math.max(leftLines.length, rightLines.length);
+            const blockH = titleFont * 1.2 + 6 + maxCardLines * bodyLineH;
+            const startTextY =
+              y + Math.max(16, Math.floor((rowH - blockH) / 2)) + titleFont * 0.85;
+
             return (
               <g
                 key={node.id}
@@ -2544,8 +2710,8 @@ export function EditableInfographicStudio({
                   filter="url(#card3dShadow)"
                 />
                 <text
-                  x={padX + 20}
-                  y={y + 30}
+                  x={padX + 22}
+                  y={startTextY}
                   fill="#F43F5E"
                   fontSize={titleFont}
                   fontWeight={800}
@@ -2555,8 +2721,8 @@ export function EditableInfographicStudio({
                 {leftLines.map((l, li) => (
                   <text
                     key={li}
-                    x={padX + 20}
-                    y={y + 52 + li * (bodyFont * 1.32)}
+                    x={padX + 22}
+                    y={startTextY + 6 + (li + 0.85) * bodyLineH}
                     fill={palette.textSecondary}
                     fontSize={bodyFont}
                     fontWeight={500}
@@ -2594,8 +2760,8 @@ export function EditableInfographicStudio({
                   filter="url(#card3dShadow)"
                 />
                 <text
-                  x={padX + colW + gap + 20}
-                  y={y + 30}
+                  x={padX + colW + gap + 22}
+                  y={startTextY}
                   fill="#10B981"
                   fontSize={titleFont}
                   fontWeight={800}
@@ -2606,8 +2772,8 @@ export function EditableInfographicStudio({
                 {rightLines.map((l, li) => (
                   <text
                     key={li}
-                    x={padX + colW + gap + 20}
-                    y={y + 52 + li * (bodyFont * 1.32)}
+                    x={padX + colW + gap + 22}
+                    y={startTextY + 6 + (li + 0.85) * bodyLineH}
                     fill={palette.textPrimary}
                     fontSize={bodyFont}
                     fontWeight={500}
@@ -2622,19 +2788,27 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 8. 3D ASCENDING GROWTH STAIRCASE
+    // 8. 3D ASCENDING GROWTH STAIRCASE (Vertically centered steps!)
     if (activeTpl === "step-staircase-ascension") {
       const stepW = Math.floor(availW * 0.72);
       const maxOffset = availW - stepW;
       const rowGap = 12;
-      const stepH = Math.floor((availH - rowGap * (count - 1)) / count);
-      const titleFont = Math.min(20, Math.max(15.5, Math.floor(stepH * 0.2)));
-      const bodyFont = Math.min(15.5, Math.max(12.5, Math.floor(stepH * 0.145)));
+      const rawStepH = Math.floor((availH - rowGap * (count - 1)) / count);
+      const stepH = Math.min(250, rawStepH);
+      const totalStackH = count * stepH + (count - 1) * rowGap;
+      const startY =
+        bodyTop + Math.min(24, Math.max(0, Math.floor((availH - totalStackH) / 2)));
+
+      const titleFont = Math.min(21, Math.max(15.5, Math.floor(stepH * 0.16)));
+      const bodyFont = Math.min(16, Math.max(12.5, Math.floor(stepH * 0.115)));
       const tChars = Math.max(22, Math.floor((stepW - 116) / (titleFont * 0.56)));
       const bChars = Math.max(30, Math.floor((stepW - 116) / (bodyFont * 0.54)));
       const bMaxLines = Math.max(
         1,
-        Math.min(3, Math.floor((stepH - 48) / (bodyFont * 1.32))),
+        Math.min(
+          count <= 4 ? 4 : 3,
+          Math.floor((stepH - 36 - titleFont * 1.3) / (bodyFont * 1.34)),
+        ),
       );
 
       return (
@@ -2642,12 +2816,17 @@ export function EditableInfographicStudio({
           {activeNodes.map((node, i) => {
             const x =
               padX + Math.floor((maxOffset * i) / Math.max(1, count - 1));
-            const y = bodyTop + i * (stepH + rowGap);
+            const y = startY + i * (stepH + rowGap);
             const col = nodeColor(i);
             const isSelected =
               canvasEditMode === "node" && selectedNodeId === node.id;
             const tLines = wrapSvgLines(node.title, tChars, 1);
             const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
+
+            const bodyLineH = bodyFont * 1.35;
+            const blockH = titleFont * 1.2 + 6 + bLines.length * bodyLineH;
+            const startTextY =
+              y + Math.max(16, Math.floor((stepH - blockH) / 2)) + titleFont * 0.85;
 
             return (
               <g
@@ -2703,7 +2882,7 @@ export function EditableInfographicStudio({
 
                 <text
                   x={x + 94}
-                  y={y + 34}
+                  y={startTextY}
                   fill={palette.textPrimary}
                   fontSize={titleFont}
                   fontWeight={800}
@@ -2714,7 +2893,7 @@ export function EditableInfographicStudio({
                   <text
                     key={li}
                     x={x + 94}
-                    y={y + 56 + li * (bodyFont * 1.32)}
+                    y={startTextY + 6 + (li + 0.85) * bodyLineH}
                     fill={palette.textSecondary}
                     fontSize={bodyFont}
                     fontWeight={500}
@@ -2729,7 +2908,7 @@ export function EditableInfographicStudio({
       );
     }
 
-    // 9. EDITORIAL NEWSPAPER / HORIZONTAL BAR CHART BRIEF
+    // 9. EDITORIAL NEWSPAPER / HORIZONTAL BAR CHART BRIEF (Vertically centered evidence cards!)
     if (activeTpl === "editorial-newspaper-digest") {
       const chartH = Math.floor(availH * 0.34);
       const gridTop = bodyTop + chartH + 20;
@@ -2739,11 +2918,16 @@ export function EditableInfographicStudio({
       const gap = 16;
       const cardW = Math.floor((availW - gap) / cols);
       const cardH = Math.floor((gridAvailH - gap * (rows - 1)) / rows);
-      const tChars = Math.max(20, Math.floor((cardW - 44) / 10.5));
-      const bChars = Math.max(26, Math.floor((cardW - 44) / 8.2));
+      const titleFont = Math.min(19, Math.max(15.5, Math.floor(cardH * 0.13)));
+      const bodyFont = Math.min(15, Math.max(12.5, Math.floor(cardH * 0.095)));
+      const tChars = Math.max(20, Math.floor((cardW - 44) / (titleFont * 0.56)));
+      const bChars = Math.max(26, Math.floor((cardW - 44) / (bodyFont * 0.54)));
       const bMaxLines = Math.max(
         1,
-        Math.min(3, Math.floor((cardH - 48) / 19)),
+        Math.min(
+          rows <= 2 ? 4 : 3,
+          Math.floor((cardH - 36 - titleFont * 1.3) / (bodyFont * 1.35)),
+        ),
       );
 
       return (
@@ -2829,6 +3013,12 @@ export function EditableInfographicStudio({
               canvasEditMode === "node" && selectedNodeId === node.id;
             const tLines = wrapSvgLines(node.title, tChars, 1);
             const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
+
+            const bodyLineH = bodyFont * 1.35;
+            const blockH = titleFont * 1.2 + 6 + bLines.length * bodyLineH;
+            const startTextY =
+              y + Math.max(16, Math.floor((cardH - blockH) / 2)) + titleFont * 0.85;
+
             return (
               <g
                 key={node.id}
@@ -2847,10 +3037,10 @@ export function EditableInfographicStudio({
                   filter="url(#card3dShadow)"
                 />
                 <text
-                  x={x + 20}
-                  y={y + 30}
+                  x={x + 22}
+                  y={startTextY}
                   fill={col}
-                  fontSize={17}
+                  fontSize={titleFont}
                   fontWeight={800}
                 >
                   {node.badge || `0${i + 1}`}. {tLines[0]}
@@ -2858,10 +3048,10 @@ export function EditableInfographicStudio({
                 {bLines.map((l, li) => (
                   <text
                     key={li}
-                    x={x + 20}
-                    y={y + 54 + li * 19}
+                    x={x + 22}
+                    y={startTextY + 6 + (li + 0.85) * bodyLineH}
                     fill={palette.textSecondary}
-                    fontSize={14}
+                    fontSize={bodyFont}
                     fontWeight={500}
                   >
                     {l}
@@ -2875,6 +3065,7 @@ export function EditableInfographicStudio({
     }
 
     // 10. BENTO MOSAIC, HEXAGON CLUSTER, 2x2 QUADRANT, PILLAR TEMPLE, HORIZONTAL BOARD, OR COMPACT S-ROADMAP
+    // Vertically centers the Title + Body text block between the top header row and bottom progress bar!
     if (
       activeTpl === "stat-bento-grid" ||
       activeTpl === "honeycomb-hex-cluster" ||
@@ -2893,11 +3084,10 @@ export function EditableInfographicStudio({
       const rows = Math.ceil(count / cols);
       const gap = 20;
       const cardW = Math.floor((availW - gap * (cols - 1)) / cols);
-      // Strictly bound cardH inside availH so the bottom row NEVER touches the footer!
       const cardH = Math.floor((availH - gap * (rows - 1)) / rows);
 
-      const titleSize = Math.min(23, Math.max(16.5, Math.floor(cardH * 0.095)));
-      const bodySize = Math.min(17, Math.max(13, Math.floor(cardH * 0.072)));
+      const titleSize = Math.min(23, Math.max(16.5, Math.floor(cardH * 0.085)));
+      const bodySize = Math.min(17, Math.max(13, Math.floor(cardH * 0.065)));
       const tChars = Math.max(
         18,
         Math.floor((cardW - 48) / (titleSize * 0.56)),
@@ -2906,30 +3096,52 @@ export function EditableInfographicStudio({
         24,
         Math.floor((cardW - 48) / (bodySize * 0.53)),
       );
-      const titleStartY = Math.min(88, Math.max(66, Math.floor(cardH * 0.34)));
-      const bodyStartY =
-        titleStartY + Math.floor(titleSize * 1.25) + 4;
+      const topIconZoneH = 66;
+      const bottomBarZoneH = 28;
+      const middleAvailH = Math.max(60, cardH - topIconZoneH - bottomBarZoneH);
       const bMaxLines = Math.max(
         1,
         Math.min(
-          5,
-          Math.floor((cardH - bodyStartY - 26) / (bodySize * 1.35)),
+          rows <= 2 ? 6 : 4,
+          Math.floor((middleAvailH - titleSize * 1.8) / (bodySize * 1.36)),
         ),
       );
 
       return (
         <g>
           {activeNodes.map((node, i) => {
-            const c = i % cols;
+            const isLastOdd =
+              count % cols === 1 && i === count - 1 && cols === 2;
+            const c = isLastOdd ? 0 : i % cols;
             const r = Math.floor(i / cols);
+            const actualCardW = isLastOdd ? availW : cardW;
             const x = padX + c * (cardW + gap);
             const y = bodyTop + r * (cardH + gap);
             const col = nodeColor(i);
             const pct = parsePercentage(node.metricValue, i);
-            const tLines = wrapSvgLines(node.title, tChars, 2);
-            const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
+            const curTChars = Math.max(
+              18,
+              Math.floor((actualCardW - 48) / (titleSize * 0.56)),
+            );
+            const curBChars = Math.max(
+              24,
+              Math.floor((actualCardW - 48) / (bodySize * 0.53)),
+            );
+            const tLines = wrapSvgLines(node.title, curTChars, 2);
+            const bLines = wrapSvgLines(node.body, curBChars, bMaxLines);
             const isSelected =
               canvasEditMode === "node" && selectedNodeId === node.id;
+
+            // Vertically center Title + Body inside the middle zone of the Bento card!
+            const titleLineH = titleSize * 1.22;
+            const bodyLineH = bodySize * 1.36;
+            const blockH =
+              tLines.length * titleLineH + 6 + bLines.length * bodyLineH;
+            const startTextY =
+              y +
+              topIconZoneH +
+              Math.max(8, Math.floor((middleAvailH - blockH) / 2)) +
+              titleSize * 0.85;
 
             return (
               <g
@@ -2940,7 +3152,7 @@ export function EditableInfographicStudio({
                 <rect
                   x={x}
                   y={y}
-                  width={cardW}
+                  width={actualCardW}
                   height={cardH}
                   rx={activeTpl === "honeycomb-hex-cluster" ? 32 : 22}
                   fill={palette.cardBg}
@@ -2950,9 +3162,10 @@ export function EditableInfographicStudio({
                 />
                 {isSelected && (
                   <rect
+                    data-editor-only="true"
                     x={x - 4}
                     y={y - 4}
-                    width={cardW + 8}
+                    width={actualCardW + 8}
                     height={cardH + 8}
                     rx={26}
                     fill="none"
@@ -2973,7 +3186,7 @@ export function EditableInfographicStudio({
                 {renderNodeIconOrImage(node, x + 38, y + 36, 20, col)}
 
                 <text
-                  x={x + cardW - 22}
+                  x={x + actualCardW - 22}
                   y={y + 42}
                   textAnchor="end"
                   fill={col}
@@ -2987,7 +3200,7 @@ export function EditableInfographicStudio({
                   <text
                     key={ti}
                     x={x + 24}
-                    y={y + titleStartY + ti * (titleSize * 1.22)}
+                    y={startTextY + ti * titleLineH}
                     fill={palette.textPrimary}
                     fontSize={titleSize}
                     fontWeight={800}
@@ -3001,11 +3214,10 @@ export function EditableInfographicStudio({
                     key={bi}
                     x={x + 24}
                     y={
-                      y +
-                      titleStartY +
-                      tLines.length * (titleSize * 1.22) +
-                      4 +
-                      bi * (bodySize * 1.35)
+                      startTextY +
+                      tLines.length * titleLineH +
+                      6 +
+                      bi * bodyLineH
                     }
                     fill={palette.textSecondary}
                     fontSize={bodySize}
@@ -3018,7 +3230,7 @@ export function EditableInfographicStudio({
                 <rect
                   x={x + 24}
                   y={y + cardH - 18}
-                  width={cardW - 48}
+                  width={actualCardW - 48}
                   height={7}
                   rx={3.5}
                   fill={palette.bgStart}
@@ -3027,7 +3239,7 @@ export function EditableInfographicStudio({
                 <rect
                   x={x + 24}
                   y={y + cardH - 18}
-                  width={Math.floor(((cardW - 48) * pct) / 100)}
+                  width={Math.floor(((actualCardW - 48) * pct) / 100)}
                   height={7}
                   rx={3.5}
                   fill={col}
@@ -3040,21 +3252,32 @@ export function EditableInfographicStudio({
     }
 
     // 11. DEFAULT & RIBBON BANNERS / STEP ROADMAP / ICEBERG / ANATOMY / SCORECARD
-    // Automatically uses a 2-column balanced layout on Square (1200x1200) or Landscape (1600x1000) when >= 5 items
-    // so the bottom cards NEVER overflow into the footer!
+    // Vertically centers the Title + Body text block inside each row card!
     const useTwoColGrid =
       (isCompactCanvas && count >= 5) || availH / count < 112;
     const cols = useTwoColGrid ? 2 : 1;
     const rows = Math.ceil(count / cols);
     const colGap = 22;
-    const rowGap = useTwoColGrid ? 18 : Math.max(12, Math.min(18, Math.floor(availH * 0.018)));
+    const rowGap = useTwoColGrid
+      ? 18
+      : Math.max(12, Math.min(20, Math.floor(availH * 0.018)));
     const cardW = Math.floor((availW - colGap * (cols - 1)) / cols);
-    const rowH = Math.floor((availH - rowGap * (rows - 1)) / rows);
+    const rawRowH = Math.floor((availH - rowGap * (rows - 1)) / rows);
+    const rowH = Math.min(265, rawRowH);
+    const totalGridH = rows * rowH + (rows - 1) * rowGap;
+    const startGridY =
+      bodyTop + Math.min(24, Math.max(0, Math.floor((availH - totalGridH) / 2)));
 
     const isRibbon = activeTpl === "numbered-ribbon-banners";
     const textAvailW = cardW - 128;
-    const titleSize = Math.min(22, Math.max(16, Math.floor(rowH * 0.175)));
-    const bodySize = Math.min(16, Math.max(13, Math.floor(rowH * 0.13)));
+    const titleSize = Math.min(
+      23,
+      Math.max(16, Math.floor(rowH * (rows <= 4 ? 0.145 : 0.175))),
+    );
+    const bodySize = Math.min(
+      16.5,
+      Math.max(13, Math.floor(rowH * (rows <= 4 ? 0.105 : 0.13))),
+    );
     const tChars = Math.max(
       18,
       Math.floor(
@@ -3063,33 +3286,46 @@ export function EditableInfographicStudio({
       ),
     );
     const bChars = Math.max(24, Math.floor(textAvailW / (bodySize * 0.53)));
-    const titleBaselineOffset = Math.min(
-      40,
-      Math.max(28, Math.floor(rowH * 0.32)),
-    );
-    const bodyBaselineOffset =
-      titleBaselineOffset + Math.floor(titleSize * 1.25);
     const bMaxLines = Math.max(
       1,
       Math.min(
-        3,
-        Math.floor((rowH - bodyBaselineOffset - 10) / (bodySize * 1.34)),
+        rows <= 3 ? 5 : rows <= 4 ? 4 : 3,
+        Math.floor((rowH - 36 - titleSize * 1.3) / (bodySize * 1.35)),
       ),
     );
 
     return (
       <g>
         {activeNodes.map((node, i) => {
-          const c = i % cols;
+          const isLastOdd =
+            cols === 2 && count % 2 === 1 && i === count - 1;
+          const c = isLastOdd ? 0 : i % cols;
           const r = Math.floor(i / cols);
+          const actualCardW = isLastOdd ? availW : cardW;
           const x = padX + c * (cardW + colGap);
-          const y = bodyTop + r * (rowH + rowGap);
+          const y = startGridY + r * (rowH + rowGap);
           const col = nodeColor(i);
+          const curTextW = actualCardW - 128;
+          const curBChars = Math.max(
+            24,
+            Math.floor(curTextW / (bodySize * 0.53)),
+          );
           const tLines = wrapSvgLines(node.title, tChars, 1);
-          const bLines = wrapSvgLines(node.body, bChars, bMaxLines);
+          const bLines = wrapSvgLines(node.body, curBChars, bMaxLines);
           const isSelected =
             canvasEditMode === "node" && selectedNodeId === node.id;
-          const boxIconSize = Math.min(60, Math.max(44, Math.floor(rowH * 0.52)));
+          const boxIconSize = Math.min(
+            62,
+            Math.max(44, Math.floor(rowH * 0.48)),
+          );
+
+          // Vertically center Title + Body inside the card!
+          const titleLineH = titleSize * 1.22;
+          const bodyLineH = bodySize * 1.35;
+          const blockH =
+            tLines.length * titleLineH + 6 + bLines.length * bodyLineH;
+          const startTextY =
+            y + Math.max(16, Math.floor((rowH - blockH) / 2)) + titleSize * 0.85;
 
           return (
             <g
@@ -3100,7 +3336,7 @@ export function EditableInfographicStudio({
               <rect
                 x={x}
                 y={y}
-                width={cardW}
+                width={actualCardW}
                 height={rowH}
                 rx={20}
                 fill={palette.cardBg}
@@ -3110,9 +3346,10 @@ export function EditableInfographicStudio({
               />
               {isSelected && (
                 <rect
+                  data-editor-only="true"
                   x={x - 4}
                   y={y - 4}
-                  width={cardW + 8}
+                  width={actualCardW + 8}
                   height={rowH + 8}
                   rx={24}
                   fill="none"
@@ -3125,13 +3362,13 @@ export function EditableInfographicStudio({
               {isRibbon ? (
                 <g>
                   <polygon
-                    points={`${x - 8},${y + 16} ${x + 80},${y + 16} ${x + 94},${y + Math.min(44, rowH / 2)} ${x + 80},${y + Math.min(72, rowH - 14)} ${x - 8},${y + Math.min(72, rowH - 14)}`}
+                    points={`${x - 8},${y + rowH / 2 - 26} ${x + 80},${y + rowH / 2 - 26} ${x + 94},${y + rowH / 2} ${x + 80},${y + rowH / 2 + 26} ${x - 8},${y + rowH / 2 + 26}`}
                     fill={col}
                     filter="url(#card3dShadow)"
                   />
                   <text
                     x={x + 36}
-                    y={y + Math.min(50, rowH / 2 + 6)}
+                    y={y + rowH / 2 + 7}
                     textAnchor="middle"
                     fill={palette.badgeText}
                     fontSize={20}
@@ -3164,7 +3401,7 @@ export function EditableInfographicStudio({
 
               <text
                 x={x + 104}
-                y={y + titleBaselineOffset}
+                y={startTextY}
                 fill={palette.textPrimary}
                 fontSize={titleSize}
                 fontWeight={800}
@@ -3175,7 +3412,7 @@ export function EditableInfographicStudio({
               {node.metricValue && (
                 <g>
                   <rect
-                    x={x + cardW - 140}
+                    x={x + actualCardW - 140}
                     y={y + 14}
                     width={120}
                     height={28}
@@ -3185,7 +3422,7 @@ export function EditableInfographicStudio({
                     strokeWidth={1.5}
                   />
                   <text
-                    x={x + cardW - 80}
+                    x={x + actualCardW - 80}
                     y={y + 33}
                     textAnchor="middle"
                     fill={col}
@@ -3201,7 +3438,7 @@ export function EditableInfographicStudio({
                 <text
                   key={bi}
                   x={x + 104}
-                  y={y + bodyBaselineOffset + bi * (bodySize * 1.34)}
+                  y={startTextY + 6 + (bi + 0.85) * bodyLineH}
                   fill={palette.textSecondary}
                   fontSize={bodySize}
                   fontWeight={500}
@@ -3223,7 +3460,11 @@ export function EditableInfographicStudio({
     nodes.findIndex((n) => n.id === currentNode?.id),
   );
 
-  // Content Length & 80% Box Fill Guidance Helper
+  // Dynamic Content Length Guidance that adapts to the number of active cards (`count`)!
+  // Fewer cards (1-3) -> larger cards -> allow up to 260 chars; More cards (6-8) -> compact cards -> 140 chars.
+  const dynamicBodyMinChars = count <= 3 ? 55 : count <= 5 ? 45 : 35;
+  const dynamicBodyIdealMaxChars = count <= 3 ? 260 : count <= 5 ? 195 : 145;
+
   function getContentFillStatus(
     text: string,
     minChars: number,
@@ -3238,18 +3479,18 @@ export function EditableInfographicStudio({
     }
     if (len < minChars) {
       return {
-        label: `${len} chars · Short (add ${minChars - len}+ chars for balanced 80% card fill)`,
+        label: `${len} chars · Short (add ${minChars - len}+ chars for balanced card fill)`,
         colorClass: "text-[#5271ff]",
       };
     }
     if (len > idealMaxChars) {
       return {
-        label: `${len} chars · Long (shorten by ~${len - idealMaxChars} chars to avoid truncation)`,
+        label: `${len} chars · Long (shorten by ~${len - idealMaxChars} chars for ${count} sections)`,
         colorClass: "text-amber-500",
       };
     }
     return {
-      label: `${len} chars · Optimal (~80% balanced card fill)`,
+      label: `${len}/${idealMaxChars} chars · Optimal (~80% balanced fill for ${count} sections)`,
       colorClass: "text-emerald-500",
     };
   }
@@ -3258,16 +3499,15 @@ export function EditableInfographicStudio({
   const introStatus = getContentFillStatus(subtitle, 35, 320);
   const nodeTitleStatus = getContentFillStatus(
     currentNode?.title || "",
-    10,
-    42,
+    8,
+    46,
   );
   const nodeBodyStatus = getContentFillStatus(
     currentNode?.body || "",
-    45,
-    155,
+    dynamicBodyMinChars,
+    dynamicBodyIdealMaxChars,
   );
 
-  // Only real extracted article images or user-uploaded artwork (NO generic 3D paper sculpture!)
   const allAvailableImages = useMemo(() => {
     const list: Array<{ src: string; label: string }> = [
       {
@@ -3288,8 +3528,8 @@ export function EditableInfographicStudio({
 
   return (
     <div className={`${styles.studio} space-y-5`}>
-      {/* PROMINENT CHANGE TEMPLATE BANNER */}
-      <details className={styles.templateBanner}>
+      {/* PROMINENT CHANGE TEMPLATE BANNER (OPEN BY DEFAULT!) */}
+      <details open className={styles.templateBanner}>
         <summary className="flex flex-wrap items-center justify-between gap-3 font-bold">
           <div className="flex items-center gap-3">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#4058d0] text-white shadow-sm">
@@ -3297,7 +3537,7 @@ export function EditableInfographicStudio({
             </span>
             <div>
               <span className="block text-sm font-extrabold">
-                Change Infographic Template ({INFOGRAPHIC_TEMPLATES.length}{" "}
+                Choose Infographic Template ({INFOGRAPHIC_TEMPLATES.length}{" "}
                 Layouts)
               </span>
               <span className="block text-xs opacity-80">
@@ -3311,7 +3551,7 @@ export function EditableInfographicStudio({
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#4058d0] px-3.5 py-2 text-xs font-extrabold text-white shadow-xs">
-            Browse 26 Templates ▾
+            Toggle 26 Templates ▾
           </span>
         </summary>
         <div className="mt-4 space-y-4">
@@ -3550,7 +3790,7 @@ export function EditableInfographicStudio({
                                 String(reader.result),
                               );
                               notify(
-                                "Applied custom uploaded image to this section!",
+                                "Applied crisp custom uploaded image to this section!",
                               );
                             };
                             reader.readAsDataURL(file);
@@ -3642,13 +3882,11 @@ export function EditableInfographicStudio({
                 </>
               )}
               <p className={styles.hint}>
-                Template rule:{" "}
-                <strong>{activeTemplate.label.replace(/^\d+\. /, "")}</strong>{" "}
-                supports{" "}
-                {minNodesForTemplate === maxNodesForTemplate
-                  ? `exactly ${maxNodesForTemplate} sections`
-                  : `${minNodesForTemplate} to ${maxNodesForTemplate} sections`}{" "}
-                so cards stay ~80% filled and never overlap the footer.
+                Dynamic card sizing: with <strong>{count} sections</strong>,
+                each card comfortably fits up to{" "}
+                <strong>{dynamicBodyIdealMaxChars} characters</strong> (~
+                {count <= 3 ? "5–6" : count <= 5 ? "4" : "3"} lines) and
+                automatically centers your text vertically.
               </p>
             </>
           )}
@@ -3850,8 +4088,31 @@ export function EditableInfographicStudio({
                 )}
               </div>
 
-              {/* VISUAL THUMBNAIL PREVIEW PICKER FOR ARTICLE & UPLOADED IMAGES */}
+              {/* HERO IMAGE SCALING MODE (Supports Both Horizontal & Vertical Images!) */}
               <div className="mt-4">
+                <span className="mb-1.5 block text-xs font-extrabold">
+                  Hero Image Fit Mode (Horizontal &amp; Vertical Support)
+                </span>
+                <div className={styles.tabs}>
+                  <button
+                    type="button"
+                    aria-pressed={imageFitMode === "contain"}
+                    onClick={() => setImageFitMode("contain")}
+                  >
+                    Fit Full Image (No Crop)
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={imageFitMode === "cover"}
+                    onClick={() => setImageFitMode("cover")}
+                  >
+                    Fill Frame (Cover)
+                  </button>
+                </div>
+              </div>
+
+              {/* VISUAL THUMBNAIL PREVIEW PICKER FOR ARTICLE & UPLOADED IMAGES */}
+              <div className="mt-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-extrabold">
                     Artwork for Editorial Split Layouts (
@@ -4027,62 +4288,20 @@ export function EditableInfographicStudio({
           )}
         </div>
 
-        {/* RIGHT INTERACTIVE SVG PREVIEW CONTAINER WITH ZOOM, IN-CANVAS KEYBOARD EDITOR & DOWNLOAD BAR */}
+        {/* RIGHT INTERACTIVE SVG PREVIEW CONTAINER */}
+        {/* 1. Top Bar = Download Buttons; 2. Below Download = In-Canvas Editor; 3. Immediately Below = Infographic; 4. Bottom = Zoom Controls */}
         <div className={styles.preview}>
           <div className={styles.stage}>
-            {/* Top-Right In-Container Zoom + Download Bar */}
+            {/* 1. TOP DOWNLOAD & COPY BAR */}
             <div className={styles.stageTopBar}>
-              {/* Interactive Canvas Zoom Controls */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div
-                  className={styles.zoomControlGroup}
-                  role="group"
-                  aria-label="Zoom infographic preview"
-                >
-                  <button
-                    type="button"
-                    title="Zoom Out"
-                    aria-label="Zoom Out"
-                    onClick={handleZoomOut}
-                  >
-                    <ZoomOut size={14} />
-                  </button>
-                  <span className={styles.zoomBadge}>
-                    {zoomPercent === 0 ? "Fit" : `${zoomPercent}%`}
-                  </span>
-                  <button
-                    type="button"
-                    title="Zoom In"
-                    aria-label="Zoom In"
-                    onClick={handleZoomIn}
-                  >
-                    <ZoomIn size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    title="Reset Zoom to Fit Screen"
-                    onClick={() => setZoomPercent(0)}
-                  >
-                    <Maximize2 size={13} />
-                    <span>Fit</span>
-                  </button>
-                  <button
-                    type="button"
-                    title="Zoom to 125% for close-up inspection"
-                    onClick={() =>
-                      setZoomPercent((z) => (z === 125 ? 0 : 125))
-                    }
-                  >
-                    125%
-                  </button>
-                </div>
-
-                <span className="hidden text-[11px] font-semibold text-slate-300 xl:inline">
-                  Click any text or card below to type directly
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                <Sparkles size={14} className="text-[#8094ff]" />
+                <span>
+                  Click any text or card below to edit directly with your
+                  keyboard
                 </span>
               </div>
 
-              {/* Download & Copy Buttons */}
               <div className={styles.stageTopActions}>
                 <button
                   type="button"
@@ -4118,7 +4337,7 @@ export function EditableInfographicStudio({
               </div>
             </div>
 
-            {/* CONTEXTUAL IN-VIEW ERROR OR STATUS BANNER (Right inside the preview stage!) */}
+            {/* CONTEXTUAL IN-VIEW ERROR OR STATUS BANNER */}
             <div ref={stageAlertRef}>
               {exportError && (
                 <div
@@ -4157,7 +4376,7 @@ export function EditableInfographicStudio({
               )}
             </div>
 
-            {/* DIRECT IN-CANVAS FLOATING KEYBOARD EDITOR BAR (Opens when user clicks any element on the SVG!) */}
+            {/* 2. DIRECT IN-CANVAS FLOATING KEYBOARD EDITOR BAR (Below Download bar, above Infographic!) */}
             {canvasEditMode && (
               <div
                 className={styles.inCanvasEditorBar}
@@ -4295,8 +4514,24 @@ export function EditableInfographicStudio({
               </div>
             )}
 
-            {/* ZOOMABLE 2D SCROLLABLE SVG VIEWPORT */}
-            <div className={styles.stageCanvasViewport}>
+            {/* 3. INFOGRAPHIC CANVAS VIEWPORT (Supports Ctrl+Wheel Zoom & Drag-to-Pan!) */}
+            <div
+              ref={viewportRef}
+              className={styles.stageCanvasViewport}
+              onWheel={handleCanvasWheel}
+              onMouseDown={handleMouseDownPan}
+              onMouseMove={handleMouseMovePan}
+              onMouseUp={handleMouseUpPan}
+              onMouseLeave={handleMouseUpPan}
+              style={{
+                cursor:
+                  zoomPercent > 0
+                    ? isPanning
+                      ? "grabbing"
+                      : "grab"
+                    : "default",
+              }}
+            >
               <svg
                 ref={svgRef}
                 viewBox={`0 0 ${W} ${H}`}
@@ -4307,7 +4542,7 @@ export function EditableInfographicStudio({
                   zoomPercent === 0
                     ? {
                         width: "100%",
-                        maxHeight: "80vh",
+                        maxHeight: "76vh",
                         height: "auto",
                       }
                     : {
@@ -4393,13 +4628,14 @@ export function EditableInfographicStudio({
                 {/* Top Brand Accent Bar */}
                 <rect width={W} height="14" fill="url(#accentGrad)" />
 
-                {/* Clickable Header Region (Kicker, Brand Logo, Overflow-Safe Headline & Dynamic Multi-Line Introduction) */}
+                {/* Clickable Header Region */}
                 <g
                   onClick={focusHeaderInEditor}
                   style={{ cursor: "pointer" }}
                 >
                   {canvasEditMode === "header" && (
                     <rect
+                      data-editor-only="true"
                       x={padX - 16}
                       y={24}
                       width={W - (padX - 16) * 2}
@@ -4519,6 +4755,7 @@ export function EditableInfographicStudio({
                 >
                   {canvasEditMode === "footer" && (
                     <rect
+                      data-editor-only="true"
                       x={padX - 14}
                       y={H - 62}
                       width={W - (padX - 14) * 2}
@@ -4574,10 +4811,70 @@ export function EditableInfographicStudio({
                 </g>
               </svg>
             </div>
+
+            {/* 4. BOTTOM ZOOM CONTROLS BAR (Placed at the bottom of the infographic preview!) */}
+            <div className={styles.stageBottomZoomBar}>
+              <div
+                className={styles.zoomControlGroup}
+                role="group"
+                aria-label="Zoom infographic preview"
+              >
+                <button
+                  type="button"
+                  title="Zoom Out"
+                  aria-label="Zoom Out"
+                  onClick={handleZoomOut}
+                >
+                  <ZoomOut size={14} />
+                </button>
+                <span className={styles.zoomBadge}>
+                  {zoomPercent === 0 ? "Auto Fit" : `${zoomPercent}%`}
+                </span>
+                <button
+                  type="button"
+                  title="Zoom In"
+                  aria-label="Zoom In"
+                  onClick={handleZoomIn}
+                >
+                  <ZoomIn size={14} />
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={zoomPercent === 0}
+                  title="Fit full infographic to screen"
+                  onClick={() => setZoomPercent(0)}
+                >
+                  <Maximize2 size={12} />
+                  <span>Reset Fit</span>
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={zoomPercent === 100}
+                  onClick={() => setZoomPercent(100)}
+                >
+                  100%
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={zoomPercent === 135}
+                  onClick={() => setZoomPercent(135)}
+                >
+                  135%
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={zoomPercent === 175}
+                  onClick={() => setZoomPercent(175)}
+                >
+                  175%
+                </button>
+              </div>
+
+              <span className="text-[11px] font-semibold text-slate-300">
+                {dimensions.label} · Ctrl + Scroll wheel or click +/- to zoom
+              </span>
+            </div>
           </div>
-          <p className={`${styles.hint} mt-3`}>
-            {dimensions.label} · Zoom ({zoomPercent === 0 ? "Fit" : `${zoomPercent}%`}) · Click any text or card on the infographic to edit directly with your keyboard.
-          </p>
         </div>
       </div>
     </div>

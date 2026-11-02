@@ -5,12 +5,12 @@
 }
 .studio button,
 .studio summary {
-  min-height: 42px;
+  min-height: 40px;
   cursor: pointer;
 }
 .studio input:not([type="color"]):not([type="file"]):not([type="checkbox"]),
 .studio select {
-  min-height: 42px;
+  min-height: 40px;
 }
 .studio button:focus-visible,
 .studio summary:focus-visible,
@@ -88,7 +88,7 @@
   resize: vertical;
 }
 
-/* Prominent Change Template Banner */
+/* Prominent Change Template Banner (Open by default) */
 .templateBanner {
   border: 2px solid rgba(82, 113, 255, 0.38);
   border-radius: 20px;
@@ -189,7 +189,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
   gap: 12px;
-  max-height: 460px;
+  max-height: 360px;
   overflow: auto;
   padding: 4px;
 }
@@ -221,7 +221,7 @@
 }
 .preview {
   position: sticky;
-  top: 84px;
+  top: 76px;
   min-width: 0;
 }
 .stage {
@@ -233,28 +233,10 @@
       transparent 0% 50%
     )
     50% / 20px 20px;
-  padding: 14px;
+  padding: 12px;
 }
 
-/* Zoomable 2D Canvas Viewport */
-.stageCanvasViewport {
-  position: relative;
-  width: 100%;
-  max-height: 82vh;
-  overflow: auto;
-  border-radius: 14px;
-  padding: 4px;
-  scroll-behavior: smooth;
-}
-.stageCanvasViewport > svg {
-  display: block;
-  margin: 0 auto;
-  border-radius: 14px;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.25);
-  transition: width 0.16s ease;
-}
-
-/* Top-Right In-Container Download, Zoom & Quick-Edit Bar */
+/* Top Download & Action Bar (Right at the top above the infographic) */
 .stageTopBar {
   display: flex;
   flex-wrap: wrap;
@@ -262,8 +244,8 @@
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 10px;
-  padding: 10px 14px;
-  border-radius: 14px;
+  padding: 8px 12px;
+  border-radius: 13px;
   background: rgba(15, 23, 42, 0.92);
   border: 1px solid rgba(82, 113, 255, 0.38);
   color: #f8fafc;
@@ -293,60 +275,99 @@
   background: rgba(51, 65, 85, 0.95);
 }
 
-/* Interactive Zoom Controls Group */
+/* Direct In-Canvas Floating Keyboard Editor Bar (Below Download bar, above Infographic) */
+.inCanvasEditorBar {
+  margin-bottom: 10px;
+  padding: 11px 14px;
+  border-radius: 13px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 2px solid #5271ff;
+  color: #f8fafc;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.32);
+}
+.inCanvasEditorBar input,
+.inCanvasEditorBar textarea {
+  width: 100%;
+  min-height: 34px !important;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 8px;
+  background: #1e293b;
+  color: #ffffff;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.inCanvasEditorBar textarea {
+  min-height: 54px !important;
+  resize: vertical;
+}
+
+/* Zoomable 2D Canvas Viewport (Immediately visible!) */
+.stageCanvasViewport {
+  position: relative;
+  width: 100%;
+  max-height: 78vh;
+  overflow: auto;
+  border-radius: 14px;
+  padding: 4px;
+}
+.stageCanvasViewport > svg {
+  display: block;
+  margin: 0 auto;
+  border-radius: 14px;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.25);
+  transition: width 0.14s ease;
+}
+
+/* Bottom Zoom Controls Bar (Below the Infographic Canvas!) */
+.stageBottomZoomBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 13px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #f8fafc;
+}
 .zoomControlGroup {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 3px;
   border-radius: 10px;
-  background: rgba(2, 6, 23, 0.65);
+  background: rgba(2, 6, 23, 0.72);
   border: 1px solid rgba(148, 163, 184, 0.28);
 }
 .zoomControlGroup button {
   min-height: 28px !important;
-  padding: 3px 8px !important;
+  padding: 3px 9px !important;
   border-radius: 7px !important;
   font-size: 11.5px !important;
+  font-weight: 700 !important;
   border: none !important;
   background: transparent !important;
+  color: #f8fafc !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .zoomControlGroup button:hover {
-  background: rgba(82, 113, 255, 0.25) !important;
+  background: rgba(82, 113, 255, 0.28) !important;
+}
+.zoomControlGroup button[aria-pressed="true"] {
+  background: #4058d0 !important;
+  color: #ffffff !important;
 }
 .zoomBadge {
   font-size: 11.5px;
   font-weight: 800;
-  padding: 0 6px;
-  color: #e2e8f0;
-  min-width: 48px;
+  padding: 0 8px;
+  color: #9aabff;
+  min-width: 68px;
   text-align: center;
-}
-
-/* Direct In-Canvas Floating Keyboard Editor Bar */
-.inCanvasEditorBar {
-  margin-bottom: 12px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.95);
-  border: 2px solid #5271ff;
-  color: #f8fafc;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.35);
-}
-.inCanvasEditorBar input,
-.inCanvasEditorBar textarea {
-  width: 100%;
-  min-height: 36px !important;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  border-radius: 9px;
-  background: #1e293b;
-  color: #ffffff;
-  padding: 7px 10px;
-  font-size: 13px;
-}
-.inCanvasEditorBar textarea {
-  min-height: 60px !important;
-  resize: vertical;
 }
 
 /* Contextual In-View Error / Status Alert inside Preview Stage */
@@ -455,7 +476,7 @@
   border-color: #5271ff;
 }
 .imageThumbBtn[aria-pressed="true"] {
-  border-color: #5271ff;
+  border: 2px solid #5271ff;
   background: rgba(82, 113, 255, 0.16);
   box-shadow: 0 0 0 2px rgba(82, 113, 255, 0.25);
 }

@@ -12,6 +12,8 @@ export type InfographicBgWaveStyle =
   | "grid"
   | "minimal";
 
+export type InfographicImageFitMode = "contain" | "cover";
+
 export function TemplateThumbnail({
   id,
   category = "roadmap",
@@ -149,7 +151,6 @@ export function InfographicBackgroundDecor({
   if (style === "waves") {
     return (
       <g pointerEvents="none">
-        {/* Top-Right Ambient Orb & Layered Header Wave */}
         <circle
           cx={W * 0.9}
           cy={H * 0.08}
@@ -174,7 +175,6 @@ export function InfographicBackgroundDecor({
           fill={p.accentSecondary}
           fillOpacity={0.065}
         />
-        {/* Mid-Canvas Flowing Silk Wave Ribbon + Contour Stroke */}
         <path
           d={`M 0 ${H * 0.48} C ${W * 0.32} ${H * 0.39}, ${W * 0.66} ${H * 0.57}, ${W} ${H * 0.46} L ${W} ${H * 0.61} C ${W * 0.66} ${H * 0.71}, ${W * 0.32} ${H * 0.54}, 0 ${H * 0.63} Z`}
           fill={p.accentSecondary}
@@ -187,7 +187,6 @@ export function InfographicBackgroundDecor({
           strokeOpacity={0.16}
           strokeWidth={2}
         />
-        {/* Bottom Multi-Layered 3D Waves */}
         <path
           d={`M 0 ${H * 0.84} C ${W * 0.35} ${H * 0.76}, ${W * 0.65} ${H * 0.92}, ${W} ${H * 0.82} L ${W} ${H} L 0 ${H} Z`}
           fill={p.accent}
@@ -271,10 +270,6 @@ export function InfographicBackgroundDecor({
   );
 }
 
-/**
- * Only side-image editorial split layouts delegate to InfographicArtwork;
- * all other templates use their dedicated 3D vector geometries in EditableInfographicStudio!
- */
 export const EDITORIAL_LAYOUTS = new Set([
   "side-image-editorial-split",
   "side-image-right-spotlight",
@@ -283,8 +278,10 @@ export const EDITORIAL_LAYOUTS = new Set([
 
 /**
  * Magazine-grade Informational & Editorial Split Infographic Layouts
- * (Supports 1 to 6 points cleanly — features a framed hero visual + definition card on one side
- * and a flowing editorial narrative spine with custom icons/images on the other side!)
+ * - Supports both Horizontal (16:9 banners/diagrams) and Vertical images without distortion or cropping!
+ * - Zero foggy gradient overlay over the user's image and zero overlapping badges covering image text!
+ * - Never duplicates Section #1 in a separate box!
+ * - Vertically centers Title + Body text inside every narrative row and card!
  */
 export function InfographicArtwork({
   template,
@@ -294,6 +291,7 @@ export function InfographicArtwork({
   top,
   height,
   artwork,
+  imageFitMode = "contain",
   selectedNodeId,
   onSelect,
   icon,
@@ -305,6 +303,7 @@ export function InfographicArtwork({
   top: number;
   height: number;
   artwork?: string;
+  imageFitMode?: InfographicImageFitMode;
   selectedNodeId?: string | null;
   onSelect: (id: string) => void;
   icon: (
@@ -319,27 +318,303 @@ export function InfographicArtwork({
   const availW = width - pad * 2;
   const availH = Math.max(320, height - 8);
   const count = Math.max(1, nodes.length);
-  const isRightImage = template === "side-image-right-spotlight";
-  const isHorizontalBoard =
-    template === "side-image-horizontal-board" || width >= 1400;
+  const preserveRatio =
+    imageFitMode === "cover" ? "xMidYMid slice" : "xMidYMid meet";
 
-  // Split proportions: 41% Visual Showcase Panel, 56% Flowing Editorial Information Sheet
-  const visualW = Math.floor(availW * (isHorizontalBoard ? 0.39 : 0.41));
+  // =========================================================================
+  // MODE A: On Vertical / Portrait / Square Canvases, "side-image-editorial-split"
+  // uses a WIDE 16:9 HERO VISUAL SHOWCASE BANNER AT THE TOP + BALANCED EDITORIAL GRID BELOW
+  // so horizontal blog images/diagrams are NEVER squished or sliced in a narrow side column!
+  // =========================================================================
+  const useTopHeroBanner =
+    template === "side-image-editorial-split" && width < 1400;
+
+  if (useTopHeroBanner) {
+    const heroBoxH = Math.floor(availH * (width === height ? 0.36 : 0.33));
+    const gridTopY = top + heroBoxH + 22;
+    const gridAvailH = availH - heroBoxH - 22;
+    const cols = count === 1 ? 1 : 2;
+    const rows = Math.ceil(count / cols);
+    const gap = 18;
+    const cardW = Math.floor((availW - gap * (cols - 1)) / cols);
+    const cardH = Math.floor((gridAvailH - gap * (rows - 1)) / rows);
+
+    const titleFontSize = Math.min(
+      23,
+      Math.max(16.5, Math.floor(cardH * 0.13)),
+    );
+    const bodyFontSize = Math.min(
+      16.5,
+      Math.max(13.5, Math.floor(cardH * 0.095)),
+    );
+    const textLeftOffset = 88;
+    const textMaxW = cardW - textLeftOffset - 24;
+    const maxTitleChars = Math.max(
+      18,
+      Math.floor(textMaxW / (titleFontSize * 0.56)),
+    );
+    const maxBodyChars = Math.max(
+      24,
+      Math.floor(textMaxW / (bodyFontSize * 0.53)),
+    );
+    const maxBodyLines = Math.max(
+      1,
+      Math.min(
+        count <= 2 ? 5 : count <= 4 ? 4 : 3,
+        Math.floor((cardH - 36 - titleFontSize * 1.4) / (bodyFontSize * 1.36)),
+      ),
+    );
+
+    const innerPad = 12;
+    const innerImgX = pad + innerPad;
+    const innerImgY = top + innerPad;
+    const innerImgW = availW - innerPad * 2;
+    const innerImgH = heroBoxH - innerPad * 2;
+
+    return (
+      <g fontFamily="Inter, system-ui, -apple-system, sans-serif">
+        <defs>
+          <clipPath id="editorialTopHeroClip">
+            <rect
+              x={innerImgX}
+              y={innerImgY}
+              width={innerImgW}
+              height={innerImgH}
+              rx={18}
+            />
+          </clipPath>
+        </defs>
+
+        {/* Top Full-Width Framed Studio Image Showcase */}
+        <rect
+          x={pad}
+          y={top}
+          width={availW}
+          height={heroBoxH}
+          rx={24}
+          fill={p.cardBg}
+          stroke={p.accent}
+          strokeWidth={2.5}
+          filter="url(#card3dShadow)"
+        />
+        {/* Studio Mat Backdrop behind "contain" images so any aspect ratio looks intentional */}
+        <rect
+          x={innerImgX}
+          y={innerImgY}
+          width={innerImgW}
+          height={innerImgH}
+          rx={18}
+          fill={p.bgStart}
+          fillOpacity={0.65}
+        />
+        <g clipPath="url(#editorialTopHeroClip)">
+          {artwork ? (
+            <image
+              href={artwork}
+              x={innerImgX}
+              y={innerImgY}
+              width={innerImgW}
+              height={innerImgH}
+              preserveAspectRatio={preserveRatio}
+              imageRendering="optimizeQuality"
+            />
+          ) : (
+            <g>
+              <rect
+                x={innerImgX}
+                y={innerImgY}
+                width={innerImgW}
+                height={innerImgH}
+                fill="url(#accentGrad)"
+                fillOpacity={0.14}
+              />
+              <circle
+                cx={pad + availW / 2}
+                cy={top + heroBoxH / 2}
+                r={Math.min(availW, heroBoxH) * 0.24}
+                fill={p.accent}
+                fillOpacity={0.16}
+              />
+              {nodes[0] &&
+                icon(
+                  nodes[0],
+                  pad + availW / 2,
+                  top + heroBoxH / 2,
+                  60,
+                  p.accent,
+                )}
+            </g>
+          )}
+        </g>
+
+        {/* Balanced Editorial Cards Grid Below Hero Visual (Vertically Centered Content!) */}
+        {nodes.map((n, i) => {
+          const isLastOdd = count % 2 === 1 && i === count - 1 && cols === 2;
+          const c = isLastOdd ? 0 : i % cols;
+          const r = Math.floor(i / cols);
+          const actualCardW = isLastOdd ? availW : cardW;
+          const x = pad + c * (cardW + gap);
+          const y = gridTopY + r * (cardH + gap);
+          const col = i % 2 === 0 ? p.accent : p.accentSecondary;
+          const isSelected = selectedNodeId === n.id;
+
+          const curTextMaxW = actualCardW - textLeftOffset - 24;
+          const curTitleChars = Math.max(
+            18,
+            Math.floor(curTextMaxW / (titleFontSize * 0.56)),
+          );
+          const curBodyChars = Math.max(
+            24,
+            Math.floor(curTextMaxW / (bodyFontSize * 0.53)),
+          );
+          const tLines = wrapVisualText(n.title, curTitleChars, 2);
+          const bLines = wrapVisualText(n.body, curBodyChars, maxBodyLines);
+
+          const titleLineH = titleFontSize * 1.22;
+          const bodyLineH = bodyFontSize * 1.36;
+          const blockH =
+            tLines.length * titleLineH + 6 + bLines.length * bodyLineH;
+          const startTextY =
+            y + Math.max(20, Math.floor((cardH - blockH) / 2)) + titleFontSize * 0.85;
+
+          return (
+            <g
+              key={n.id}
+              onClick={() => onSelect(n.id)}
+              style={{ cursor: "pointer" }}
+            >
+              <rect
+                x={x}
+                y={y}
+                width={actualCardW}
+                height={cardH}
+                rx={22}
+                fill={p.cardBg}
+                stroke={isSelected ? "#5271ff" : col}
+                strokeWidth={isSelected ? 4 : 2.2}
+                filter="url(#card3dShadow)"
+              />
+              {isSelected && (
+                <rect
+                  data-editor-only="true"
+                  x={x - 4}
+                  y={y - 4}
+                  width={actualCardW + 8}
+                  height={cardH + 8}
+                  rx={25}
+                  fill="none"
+                  stroke="#5271ff"
+                  strokeWidth={2.5}
+                  strokeDasharray="8 5"
+                />
+              )}
+              <rect
+                x={x}
+                y={y}
+                width={10}
+                height={cardH}
+                rx={5}
+                fill={col}
+              />
+
+              {/* Vertically Centered Medallion */}
+              <circle
+                cx={x + 48}
+                cy={y + cardH / 2}
+                r={26}
+                fill={`${col}20`}
+                stroke={col}
+                strokeWidth={2}
+              />
+              {icon(n, x + 48, y + cardH / 2, 24, col)}
+
+              {/* Vertically Centered Title + Body Block */}
+              {tLines.map((tl, ti) => (
+                <text
+                  key={ti}
+                  x={x + textLeftOffset}
+                  y={startTextY + ti * titleLineH}
+                  fill={p.textPrimary}
+                  fontSize={titleFontSize}
+                  fontWeight={800}
+                >
+                  {ti === 0 && (
+                    <tspan fill={col} fontWeight={900}>
+                      {n.badge || `0${i + 1}`}.{" "}
+                    </tspan>
+                  )}
+                  {tl}
+                </text>
+              ))}
+
+              {n.metricValue && (
+                <text
+                  x={x + actualCardW - 20}
+                  y={y + 28}
+                  textAnchor="end"
+                  fill={col}
+                  fontSize={13.5}
+                  fontWeight={800}
+                >
+                  {n.metricValue.slice(0, 14)}
+                </text>
+              )}
+
+              {bLines.map((bl, bi) => (
+                <text
+                  key={bi}
+                  x={x + textLeftOffset}
+                  y={
+                    startTextY +
+                    tLines.length * titleLineH +
+                    6 +
+                    bi * bodyLineH
+                  }
+                  fill={p.textSecondary}
+                  fontSize={bodyFontSize}
+                  fontWeight={500}
+                >
+                  {bl}
+                </text>
+              ))}
+            </g>
+          );
+        })}
+      </g>
+    );
+  }
+
+  // =========================================================================
+  // MODE B: SIDE-BY-SIDE EDITORIAL SPLIT ("side-image-horizontal-board" & "side-image-right-spotlight")
+  // - Full-height Studio Visual Showcase on Left (or Right) with ZERO foggy overlay, ZERO cropping by default,
+  //   and ZERO duplicate Section #1 card!
+  // - Unified Narrative Sheet on the opposite side with vertically centered rows!
+  // =========================================================================
+  const isRightImage = template === "side-image-right-spotlight";
+  const visualW = Math.floor(availW * (width >= 1400 ? 0.44 : 0.42));
   const gap = 28;
   const editorialW = availW - visualW - gap;
   const visualX = isRightImage ? pad + editorialW + gap : pad;
   const editorialX = isRightImage ? pad : pad + visualW + gap;
 
-  const primaryNode = nodes[0];
-  const imgBoxH = Math.floor(availH * 0.56);
-  const defBoxY = top + imgBoxH + 18;
-  const defBoxH = Math.max(120, availH - imgBoxH - 18);
+  const captionBarH = 66;
+  const framePad = 14;
+  const innerImgX = visualX + framePad;
+  const innerImgY = top + framePad;
+  const innerImgW = visualW - framePad * 2;
+  const innerImgH = availH - captionBarH - framePad * 2;
 
-  // Flowing Editorial Narrative Sheet on the opposite side (single elevated sheet with divided narrative items)
-  const itemH = Math.floor((availH - 36) / count);
-  const titleFontSize = Math.min(24, Math.max(16.5, Math.floor(itemH * 0.19)));
-  const bodyFontSize = Math.min(17, Math.max(13.5, Math.floor(itemH * 0.135)));
-  const textStartOffset = 88;
+  // Flowing Editorial Narrative Sheet on the opposite side (with vertically centered rows!)
+  const itemH = Math.floor((availH - 32) / count);
+  const titleFontSize = Math.min(
+    24,
+    Math.max(17, Math.floor(itemH * (count <= 3 ? 0.16 : 0.19))),
+  );
+  const bodyFontSize = Math.min(
+    17,
+    Math.max(13.5, Math.floor(itemH * (count <= 3 ? 0.115 : 0.135))),
+  );
+  const textStartOffset = 92;
   const textMaxW = editorialW - textStartOffset - 28;
   const maxTitleChars = Math.max(
     20,
@@ -352,194 +627,127 @@ export function InfographicArtwork({
   const maxBodyLines = Math.max(
     1,
     Math.min(
-      count <= 3 ? 4 : 3,
-      Math.floor((itemH - titleFontSize * 1.8 - 18) / (bodyFontSize * 1.35)),
+      count <= 2 ? 6 : count <= 4 ? 4 : 3,
+      Math.floor((itemH - 28 - titleFontSize * 1.4) / (bodyFontSize * 1.36)),
     ),
-  );
-
-  const defMaxChars = Math.max(20, Math.floor((visualW - 52) / (15.5 * 0.55)));
-  const defLines = wrapVisualText(
-    primaryNode?.body ||
-      "Key definition and strategic context for this visual guide.",
-    defMaxChars,
-    Math.max(1, Math.min(4, Math.floor((defBoxH - 92) / 22))),
   );
 
   return (
     <g fontFamily="Inter, system-ui, -apple-system, sans-serif">
       <defs>
-        <clipPath id="editorialHeroImgClip">
+        <clipPath id="editorialSideImgClip">
           <rect
-            x={visualX}
-            y={top}
-            width={visualW}
-            height={imgBoxH}
-            rx={26}
+            x={innerImgX}
+            y={innerImgY}
+            width={innerImgW}
+            height={innerImgH}
+            rx={18}
           />
         </clipPath>
       </defs>
 
       {/* ================================================================= */}
-      {/* VISUAL SHOWCASE COLUMN (FRAMED HERO ARTWORK + DEFINITION CALLOUT) */}
+      {/* FULL-HEIGHT STUDIO VISUAL SHOWCASE COLUMN (NO DUPLICATE CARD!)    */}
       {/* ================================================================= */}
-      <g
-        onClick={() => primaryNode && onSelect(primaryNode.id)}
-        style={{ cursor: "pointer" }}
-      >
+      <g>
         <rect
           x={visualX}
           y={top}
           width={visualW}
-          height={imgBoxH}
-          rx={26}
+          height={availH}
+          rx={28}
           fill={p.cardBg}
           stroke={p.accent}
           strokeWidth={2.5}
           filter="url(#card3dShadow)"
         />
-        <g clipPath="url(#editorialHeroImgClip)">
+        {/* Subtle Matted Studio Canvas inside Frame so both horizontal & vertical images look crisp */}
+        <rect
+          x={innerImgX}
+          y={innerImgY}
+          width={innerImgW}
+          height={innerImgH}
+          rx={18}
+          fill={p.bgStart}
+          fillOpacity={0.7}
+          stroke={p.cardBorder}
+          strokeOpacity={0.4}
+          strokeWidth={1.5}
+        />
+
+        <g clipPath="url(#editorialSideImgClip)">
           {artwork ? (
-            <>
-              <image
-                href={artwork}
-                x={visualX}
-                y={top}
-                width={visualW}
-                height={imgBoxH}
-                preserveAspectRatio="xMidYMid slice"
-              />
-              <rect
-                x={visualX}
-                y={top + imgBoxH * 0.55}
-                width={visualW}
-                height={imgBoxH * 0.45}
-                fill="url(#bgGrad)"
-                fillOpacity={0.72}
-              />
-            </>
+            <image
+              href={artwork}
+              x={innerImgX}
+              y={innerImgY}
+              width={innerImgW}
+              height={innerImgH}
+              preserveAspectRatio={preserveRatio}
+              imageRendering="optimizeQuality"
+            />
           ) : (
             <g>
               <rect
-                x={visualX}
-                y={top}
-                width={visualW}
-                height={imgBoxH}
+                x={innerImgX}
+                y={innerImgY}
+                width={innerImgW}
+                height={innerImgH}
                 fill="url(#accentGrad)"
-                fillOpacity={0.18}
+                fillOpacity={0.15}
               />
               <circle
                 cx={visualX + visualW / 2}
-                cy={top + imgBoxH * 0.44}
-                r={Math.min(visualW, imgBoxH) * 0.28}
+                cy={innerImgY + innerImgH / 2}
+                r={Math.min(innerImgW, innerImgH) * 0.28}
                 fill={p.accent}
                 fillOpacity={0.18}
               />
-              {primaryNode &&
+              {nodes[0] &&
                 icon(
-                  primaryNode,
+                  nodes[0],
                   visualX + visualW / 2,
-                  top + imgBoxH * 0.44,
-                  64,
+                  innerImgY + innerImgH / 2,
+                  68,
                   p.accent,
                 )}
             </g>
           )}
-
-          {/* Top-Left Floating Visual Pill inside Image Frame */}
-          <rect
-            x={visualX + 20}
-            y={top + 20}
-            width={168}
-            height={34}
-            rx={17}
-            fill={p.bgStart}
-            fillOpacity={0.86}
-            stroke={p.accent}
-            strokeWidth={1.5}
-          />
-          <text
-            x={visualX + 104}
-            y={top + 42}
-            textAnchor="middle"
-            fill={p.textPrimary}
-            fontSize={13}
-            fontWeight={800}
-            letterSpacing={1.2}
-          >
-            VISUAL OVERVIEW
-          </text>
         </g>
 
-        {/* Bottom Definition & Key Takeaway Card under the Hero Image */}
+        {/* Clean Studio Caption Bar Below Image (Never overlaps the image itself!) */}
         <rect
-          x={visualX}
-          y={defBoxY}
-          width={visualW}
-          height={defBoxH}
-          rx={26}
-          fill={p.cardBg}
-          stroke={
-            primaryNode && selectedNodeId === primaryNode.id
-              ? "#5271ff"
-              : p.cardBorder
-          }
-          strokeWidth={
-            primaryNode && selectedNodeId === primaryNode.id ? 3.5 : 2
-          }
-          filter="url(#card3dShadow)"
-        />
-        <rect
-          x={visualX + 24}
-          y={defBoxY + 20}
-          width={148}
-          height={26}
-          rx={13}
+          x={visualX + 20}
+          y={top + availH - captionBarH + 10}
+          width={142}
+          height={28}
+          rx={14}
           fill={p.accent}
         />
         <text
-          x={visualX + 98}
-          y={defBoxY + 38}
+          x={visualX + 91}
+          y={top + availH - captionBarH + 29}
           textAnchor="middle"
           fill={p.badgeText}
           fontSize={12}
           fontWeight={800}
-          letterSpacing={1}
+          letterSpacing={1.1}
         >
-          KEY TAKEAWAY
+          VISUAL SUMMARY
         </text>
-
         <text
-          x={visualX + 26}
-          y={defBoxY + 76}
-          fill={p.textPrimary}
-          fontSize={21}
-          fontWeight={800}
+          x={visualX + 174}
+          y={top + availH - captionBarH + 29}
+          fill={p.textSecondary}
+          fontSize={14}
+          fontWeight={700}
         >
-          {
-            wrapVisualText(
-              primaryNode?.title || "Core Concept",
-              Math.max(16, Math.floor((visualW - 52) / 13)),
-              1,
-            )[0]
-          }
+          {count} Key Takeaways Breakdown
         </text>
-
-        {defLines.map((line, idx) => (
-          <text
-            key={idx}
-            x={visualX + 26}
-            y={defBoxY + 104 + idx * 22}
-            fill={p.textSecondary}
-            fontSize={15}
-            fontWeight={500}
-          >
-            {line}
-          </text>
-        ))}
       </g>
 
       {/* ================================================================= */}
-      {/* EDITORIAL INFORMATION SHEET COLUMN (CLEAN UNIFIED NARRATIVE FLOW) */}
+      {/* EDITORIAL INFORMATION SHEET COLUMN (VERTICALLY CENTERED ROWS!)    */}
       {/* ================================================================= */}
       <rect
         x={editorialX}
@@ -552,7 +760,6 @@ export function InfographicArtwork({
         strokeWidth={2}
         filter="url(#card3dShadow)"
       />
-      {/* Top 3D Specular Highlight Bar */}
       <rect
         x={editorialX + 24}
         y={top}
@@ -563,14 +770,22 @@ export function InfographicArtwork({
       />
 
       {nodes.map((n, i) => {
-        const rowY = top + 18 + i * itemH;
+        const rowY = top + 16 + i * itemH;
         const centerY = rowY + itemH / 2;
         const col = i % 2 === 0 ? p.accent : p.accentSecondary;
         const isSelected = selectedNodeId === n.id;
-        const tLines = wrapVisualText(n.title, maxTitleChars, 1);
+        const tLines = wrapVisualText(n.title, maxTitleChars, 2);
         const bLines = wrapVisualText(n.body, maxBodyChars, maxBodyLines);
-        const titleBaselineY =
-          rowY + Math.max(26, Math.min(44, Math.floor(itemH * 0.28)));
+
+        // True vertical centering of Title + Body inside each narrative row!
+        const titleLineH = titleFontSize * 1.22;
+        const bodyLineH = bodyFontSize * 1.38;
+        const textBlockH =
+          tLines.length * titleLineH + 6 + bLines.length * bodyLineH;
+        const firstLineY =
+          rowY +
+          Math.max(20, Math.floor((itemH - textBlockH) / 2)) +
+          titleFontSize * 0.85;
 
         return (
           <g
@@ -578,9 +793,9 @@ export function InfographicArtwork({
             onClick={() => onSelect(n.id)}
             style={{ cursor: "pointer" }}
           >
-            {/* Active Selection Highlight Ring inside Editorial Sheet */}
             {isSelected && (
               <rect
+                data-editor-only="true"
                 x={editorialX + 14}
                 y={rowY + 4}
                 width={editorialW - 28}
@@ -594,7 +809,6 @@ export function InfographicArtwork({
               />
             )}
 
-            {/* Subtle Row Divider */}
             {i > 0 && (
               <line
                 x1={editorialX + 28}
@@ -607,13 +821,12 @@ export function InfographicArtwork({
               />
             )}
 
-            {/* Vertical Spine Connector Line between Medallions */}
             {i < count - 1 && (
               <line
                 x1={editorialX + 48}
-                y1={centerY + 26}
+                y1={centerY + 28}
                 x2={editorialX + 48}
-                y2={rowY + itemH + itemH / 2 - 26}
+                y2={rowY + itemH + itemH / 2 - 28}
                 stroke={col}
                 strokeOpacity={0.35}
                 strokeWidth={2.5}
@@ -621,36 +834,38 @@ export function InfographicArtwork({
               />
             )}
 
-            {/* Icon or Custom Uploaded Image Medallion */}
             <circle
               cx={editorialX + 48}
               cy={centerY}
-              r={25}
+              r={26}
               fill={`${col}22`}
               stroke={col}
               strokeWidth={2}
             />
             {icon(n, editorialX + 48, centerY, 24, col)}
 
-            {/* Step Number + Section Heading */}
-            <text
-              x={editorialX + textStartOffset}
-              y={titleBaselineY}
-              fill={p.textPrimary}
-              fontSize={titleFontSize}
-              fontWeight={800}
-            >
-              <tspan fill={col} fontWeight={900}>
-                {n.badge || `0${i + 1}`}.{" "}
-              </tspan>
-              {tLines[0]}
-            </text>
+            {tLines.map((tl, ti) => (
+              <text
+                key={ti}
+                x={editorialX + textStartOffset}
+                y={firstLineY + ti * titleLineH}
+                fill={p.textPrimary}
+                fontSize={titleFontSize}
+                fontWeight={800}
+              >
+                {ti === 0 && (
+                  <tspan fill={col} fontWeight={900}>
+                    {n.badge || `0${i + 1}`}.{" "}
+                  </tspan>
+                )}
+                {tl}
+              </text>
+            ))}
 
-            {/* Metric Badge on Top-Right of Row if provided */}
             {n.metricValue && (
               <text
                 x={editorialX + editorialW - 24}
-                y={titleBaselineY}
+                y={firstLineY}
                 textAnchor="end"
                 fill={col}
                 fontSize={14}
@@ -660,15 +875,15 @@ export function InfographicArtwork({
               </text>
             )}
 
-            {/* Concise Narrative Explanation */}
             {bLines.map((line, li) => (
               <text
                 key={li}
                 x={editorialX + textStartOffset}
                 y={
-                  titleBaselineY +
-                  titleFontSize * 1.15 +
-                  li * (bodyFontSize * 1.35)
+                  firstLineY +
+                  tLines.length * titleLineH +
+                  6 +
+                  li * bodyLineH
                 }
                 fill={p.textSecondary}
                 fontSize={bodyFontSize}
