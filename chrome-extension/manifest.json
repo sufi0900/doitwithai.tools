@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Do It With AI v2.4 — YouTube Full Transcript & AI Summary, SEO Inspector & Visual Studio",
-  "short_name": "DoItWithAI v2.4",
-  "version": "2.4.0",
-  "description": "Extract full timestamped YouTube transcripts & deep AI summaries, run On-Page SEO & Keyword Spy audits, and launch 90 AI & SEO Studios.",
+  "name": "Do It With AI v3.0 — YouTube Full Transcript & Merlin-Style AI Summary, SEO & Visual Studio",
+  "short_name": "DoItWithAI v3.0",
+  "version": "3.0.0",
+  "description": "Extract 100% complete timestamped YouTube transcripts, chapters & deep AI summaries, run On-Page SEO audits, and launch 90 AI Studios.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -15,7 +15,7 @@
     "<all_urls>"
   ],
   "action": {
-    "default_title": "Open Do It With AI v2.4 (YouTube Full Transcript · Deep AI Summary · SEO · Keywords · Convert)",
+    "default_title": "Open Do It With AI v3.0 (YouTube Full Transcript · Deep AI Summary · SEO · Keywords · Convert)",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

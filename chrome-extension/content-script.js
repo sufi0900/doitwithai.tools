@@ -1,4 +1,4 @@
-// Do It With AI v2.4 — In-Page YouTube Full Transcript, Deep AI Summary, Web Studio Bridge & Social Post Polisher
+// Do It With AI v3.0 — In-Page YouTube Full Transcript, Merlin-Style AI Summary, Web Studio Bridge & Social Post Polisher
 (function () {
   "use strict";
 
@@ -65,6 +65,14 @@
     return `${m}:${r < 10 ? "0" : ""}${r}`;
   }
 
+  function formatSrtTimestamp(sec) {
+    const total = Math.max(0, Math.floor(Number(sec) || 0));
+    const hrs = Math.floor(total / 3600);
+    const mins = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")},000`;
+  }
+
   function parseTimestampToSeconds(tsStr) {
     const cleanTs = String(tsStr || "").trim().replace(",", ".");
     const parts = cleanTs.split(":").map((n) => parseFloat(n) || 0);
@@ -114,9 +122,6 @@
     return null;
   }
 
-  /**
-   * Generates URL-encoded Base64 Protobuf `params` token for `youtubei/v1/get_transcript`
-   */
   function encodeVarint(val) {
     const out = [];
     let v = val >>> 0;
@@ -164,31 +169,33 @@
     return encodeURIComponent(uint8ToBase64(outer));
   }
 
+  /**
+   * Preserves every individual timestamped caption cue (`0:00`, `0:01`, `0:03`, `0:06`... `10:25`)
+   * without merging lines into paragraphs, matching YouTube's native transcript & Merlin AI!
+   */
   function normalizeSegments(rawSegs) {
-    const merged = [];
-    let bucket = null;
+    const out = [];
     for (const seg of rawSegs) {
       const cleanedText = String(seg.text || "").replace(/\s+/g, " ").trim();
-      if (!cleanedText || /^\[?(music|applause|laughter)\]?$/i.test(cleanedText)) {
+      if (!cleanedText) continue;
+      const sec =
+        typeof seg.startSeconds === "number"
+          ? seg.startSeconds
+          : typeof seg.seconds === "number"
+            ? seg.seconds
+            : parseTimestampToSeconds(seg.timestamp);
+      const prev = out[out.length - 1];
+      if (prev && prev.startSeconds === sec && prev.text === cleanedText) {
         continue;
       }
-      if (!bucket) {
-        bucket = { ...seg, text: cleanedText };
-        continue;
-      }
-      if (
-        seg.startSeconds - bucket.startSeconds < 4 &&
-        bucket.text.length + cleanedText.length < 85 &&
-        !/[.!?]$/.test(bucket.text)
-      ) {
-        bucket.text = `${bucket.text} ${cleanedText}`.replace(/\s+/g, " ").trim();
-      } else {
-        merged.push(bucket);
-        bucket = { ...seg, text: cleanedText };
-      }
+      out.push({
+        startSeconds: sec,
+        seconds: sec,
+        timestamp: formatTime(sec),
+        text: cleanedText,
+      });
     }
-    if (bucket) merged.push(bucket);
-    return merged;
+    return out;
   }
 
   function parseInnertubeTranscriptJson(root) {
@@ -230,6 +237,7 @@
         if (text) {
           rawSegs.push({
             startSeconds: sec,
+            seconds: sec,
             timestamp: formatTime(sec),
             text,
           });
@@ -250,6 +258,7 @@
         if (text) {
           rawSegs.push({
             startSeconds: sec,
+            seconds: sec,
             timestamp: formatTime(sec),
             text,
           });
@@ -259,10 +268,14 @@
       if (node.transcriptCueRenderer) {
         const cue = node.transcriptCueRenderer;
         const text = extractText(cue.cue);
-        const sec = Math.max(0, Math.floor(Number(cue.startOffsetMs || 0) / 1000));
+        const sec = Math.max(
+          0,
+          Math.floor(Number(cue.startOffsetMs || 0) / 1000),
+        );
         if (text) {
           rawSegs.push({
             startSeconds: sec,
+            seconds: sec,
             timestamp: formatTime(sec),
             text,
           });
@@ -292,10 +305,11 @@
           const line = decodeXmlEntities(
             ev.segs.map((s) => s.utf8 || "").join(""),
           );
-          if (!line || /^\[.*\]$/.test(line)) continue;
+          if (!line) continue;
           const startSec = Math.max(0, Math.floor((ev.tStartMs || 0) / 1000));
           rawSegs.push({
             startSeconds: startSec,
+            seconds: startSec,
             timestamp: formatTime(startSec),
             text: line,
           });
@@ -305,7 +319,9 @@
 
     if (rawSegs.length === 0) {
       const xmlMatches = Array.from(
-        trimmed.matchAll(/<text[^>]*start="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/gi),
+        trimmed.matchAll(
+          /<text[^>]*start="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/gi,
+        ),
       );
       for (const m of xmlMatches) {
         const startSec = Math.max(0, Math.floor(parseFloat(m[1] || "0")));
@@ -313,6 +329,7 @@
         if (txt) {
           rawSegs.push({
             startSeconds: startSec,
+            seconds: startSec,
             timestamp: formatTime(startSec),
             text: txt,
           });
@@ -322,7 +339,9 @@
 
     if (rawSegs.length === 0) {
       const pMatches = Array.from(
-        trimmed.matchAll(/<p[^>]*\b(?:t|begin)="([^"]+)"[^>]*>([\s\S]*?)<\/p>/gi),
+        trimmed.matchAll(
+          /<p[^>]*\b(?:t|begin)="([^"]+)"[^>]*>([\s\S]*?)<\/p>/gi,
+        ),
       );
       for (const m of pMatches) {
         const rawT = m[1] || "0";
@@ -333,6 +352,7 @@
         if (txt) {
           rawSegs.push({
             startSeconds: startSec,
+            seconds: startSec,
             timestamp: formatTime(startSec),
             text: txt,
           });
@@ -349,7 +369,9 @@
           .filter(Boolean);
         const idx = lines.findIndex((l) => l.includes("-->"));
         if (idx === -1) continue;
-        const sec = parseTimestampToSeconds(lines[idx].split("-->")[0] || "0:00");
+        const sec = parseTimestampToSeconds(
+          lines[idx].split("-->")[0] || "0:00",
+        );
         const txt = decodeXmlEntities(
           lines
             .slice(idx + 1)
@@ -359,6 +381,7 @@
         if (txt) {
           rawSegs.push({
             startSeconds: sec,
+            seconds: sec,
             timestamp: formatTime(sec),
             text: txt,
           });
@@ -369,72 +392,75 @@
     return normalizeSegments(rawSegs);
   }
 
+  /**
+   * Universal 2025/2026 YouTube DOM Transcript Engagement Panel Scraper
+   * Handles classic ytd-transcript-segment-renderer, modern transcript-segment-view-model,
+   * and zero-whitespace timestamp+text concatenation!
+   */
   function scrapeRenderedTranscriptFromDom() {
     const domSegs = [];
-    // 1. Classic ytd-transcript-segment-renderer & 2025/2026 transcript-segment-view-model
     const nativeRenderers = document.querySelectorAll(
-      "ytd-transcript-segment-renderer, transcript-segment-view-model",
+      "ytd-transcript-segment-renderer, transcript-segment-view-model, ytd-macro-markers-list-item-renderer",
     );
-    if (nativeRenderers.length >= 3) {
+    if (nativeRenderers.length >= 5) {
       nativeRenderers.forEach((el) => {
-        const tsText = (
-          el.querySelector(
-            ".segment-timestamp, .ytwTranscriptSegmentViewModelTimestamp, [class*='Timestamp']",
-          )?.textContent || ""
-        ).trim();
-        const spoken = (
-          el.querySelector(
-            ".segment-text, .yt-core-attributed-string, [class*='SegmentText']",
-          )?.textContent || ""
-        )
-          .replace(/\s+/g, " ")
-          .trim();
-        if (tsText && spoken) {
+        const tsEl = el.querySelector(
+          ".segment-timestamp, .ytwTranscriptSegmentViewModelTimestamp, [class*='Timestamp'], [class*='timestamp'], #time",
+        );
+        const txtEl = el.querySelector(
+          ".segment-text, .yt-core-attributed-string, [class*='SegmentText'], #details h4",
+        );
+        const tsText = (tsEl?.textContent || "").trim();
+        const spoken = (txtEl?.textContent || "").replace(/\s+/g, " ").trim();
+        if (tsText && spoken && /^\d{1,2}:\d{2}(?::\d{2})?$/.test(tsText)) {
+          const sec = parseTimestampToSeconds(tsText);
           domSegs.push({
-            startSeconds: parseTimestampToSeconds(tsText),
-            timestamp: tsText,
+            startSeconds: sec,
+            seconds: sec,
+            timestamp: formatTime(sec),
             text: spoken,
           });
         }
       });
-      if (domSegs.length >= 3) return domSegs;
+      if (domSegs.length >= 10) return normalizeSegments(domSegs);
     }
 
-    // 2. Engagement panel searchable transcript container
-    const engagementPanel = document.querySelector(
-      'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
-    );
+    const engagementPanel =
+      document.querySelector(
+        'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
+      ) || document.querySelector("ytd-transcript-renderer");
+
     if (engagementPanel) {
       const seen = new Set();
-      engagementPanel.querySelectorAll("div, ytd-transcript-segment-renderer").forEach((row) => {
-        if (row.children.length > 4) return;
-        const raw = (row.textContent || "").replace(/\s+/g, " ").trim();
-        const m = raw.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(.{4,260})$/);
-        if (m) {
-          const key = `${m[1]}-${m[2].slice(0, 20)}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            domSegs.push({
-              startSeconds: parseTimestampToSeconds(m[1]),
-              timestamp: m[1],
-              text: m[2].trim(),
-            });
+      engagementPanel
+        .querySelectorAll("div, ytd-transcript-segment-renderer")
+        .forEach((row) => {
+          if (row.children.length > 5) return;
+          const raw = (row.textContent || "").replace(/\s+/g, " ").trim();
+          // Allow optional or zero whitespace between timestamp and text!
+          const m = raw.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s*(.{3,300})$/);
+          if (m && !/^\d+:\d+$/.test(m[2])) {
+            const key = `${m[1]}-${m[2].slice(0, 24)}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              const sec = parseTimestampToSeconds(m[1]);
+              domSegs.push({
+                startSeconds: sec,
+                seconds: sec,
+                timestamp: formatTime(sec),
+                text: m[2].trim(),
+              });
+            }
           }
-        }
-      });
+        });
     }
-    return domSegs.length >= 4 ? domSegs : [];
+    return domSegs.length >= 10 ? normalizeSegments(domSegs) : [];
   }
 
-  /**
-   * Programmatically clicks YouTube's native "Show transcript" button if present
-   * so YouTube's own player loads the PoToken-authenticated transcript into the DOM.
-   */
   async function autoOpenAndScrapeNativeTranscriptPanel() {
     let existing = scrapeRenderedTranscriptFromDom();
-    if (existing.length >= 4) return existing;
+    if (existing.length >= 15) return existing;
 
-    // Expand description first if needed so the "Show transcript" button is mounted
     const expandBtn = document.querySelector(
       "tp-yt-paper-button#expand, #description-inline-expander #expand",
     );
@@ -473,7 +499,7 @@
       for (let attempt = 0; attempt < 15; attempt++) {
         await new Promise((r) => setTimeout(r, 180));
         existing = scrapeRenderedTranscriptFromDom();
-        if (existing.length >= 4) return existing;
+        if (existing.length >= 15) return existing;
       }
     }
     return existing;
@@ -489,22 +515,69 @@
     return out;
   }
 
+  function requestMainWorldExtraction(videoId) {
+    return new Promise((resolve) => {
+      if (
+        typeof chrome === "undefined" ||
+        !chrome.runtime ||
+        !chrome.runtime.sendMessage
+      ) {
+        resolve(null);
+        return;
+      }
+      try {
+        chrome.runtime.sendMessage(
+          { type: "EXTRACT_YOUTUBE_MAIN_WORLD", videoId },
+          (res) => {
+            if (chrome.runtime.lastError) {
+              resolve(null);
+              return;
+            }
+            resolve(res || null);
+          },
+        );
+      } catch {
+        resolve(null);
+      }
+    });
+  }
+
   async function fetchSegmentsForVideoId(videoId, allowDomClick) {
     let segments = [];
     let description = "";
     let extractedTitle = "";
     let extractedChannel = "";
 
-    if (IS_YOUTUBE && allowDomClick) {
-      segments = await autoOpenAndScrapeNativeTranscriptPanel();
+    // Engine 1: Main-World Player & First-Party `get_transcript` via background.js `world: "MAIN"`
+    const mainWorldRes = await requestMainWorldExtraction(videoId);
+    if (mainWorldRes) {
+      if (mainWorldRes.title) extractedTitle = mainWorldRes.title;
+      if (mainWorldRes.author) extractedChannel = mainWorldRes.author;
+      if (
+        Array.isArray(mainWorldRes.segments) &&
+        mainWorldRes.segments.length >= 15
+      ) {
+        segments = normalizeSegments(mainWorldRes.segments);
+      }
+    }
+
+    // Engine 2: Native YouTube Transcript DOM Panel Scraper
+    if (segments.length < 15 && IS_YOUTUBE && allowDomClick) {
+      const domSegs = await autoOpenAndScrapeNativeTranscriptPanel();
+      if (domSegs.length > segments.length) {
+        segments = domSegs;
+      }
     }
 
     let visitorData = "";
     let clientVersion = "2.20250201.01.00";
     let scrapedParamsToken = "";
-    let watchTracks = [];
+    let watchTracks =
+      (mainWorldRes && Array.isArray(mainWorldRes.captionTracks)
+        ? mainWorldRes.captionTracks
+        : []) || [];
 
-    if (segments.length < 4) {
+    if (segments.length < 15) {
       try {
         const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
         const pageRes = await fetch(watchUrl, {
@@ -513,13 +586,13 @@
         if (pageRes.ok) {
           const html = await pageRes.text();
           const tMatch = html.match(/<title>([^<]+)<\/title>/i);
-          if (tMatch) {
+          if (tMatch && !extractedTitle) {
             extractedTitle = decodeXmlEntities(
               tMatch[1].replace(/\s*-\s*YouTube$/i, ""),
             );
           }
           const aMatch = html.match(/"ownerChannelName":"((?:\\.|[^"\\])*)"/);
-          if (aMatch) {
+          if (aMatch && !extractedChannel) {
             try {
               extractedChannel = JSON.parse(`"${aMatch[1]}"`);
             } catch {
@@ -534,7 +607,9 @@
             /"getTranscriptEndpoint":\s*\{\s*"params":\s*"([^"]+)"/,
           );
           if (pMatch) scrapedParamsToken = pMatch[1];
-          const descMatch = html.match(/"shortDescription":"((?:\\.|[^"\\])*)"/);
+          const descMatch = html.match(
+            /"shortDescription":"((?:\\.|[^"\\])*)"/,
+          );
           if (descMatch) {
             try {
               description = JSON.parse(`"${descMatch[1]}"`);
@@ -542,18 +617,20 @@
               description = descMatch[1];
             }
           }
-          const balanced = extractBalancedJsonArray(html, '"captionTracks":');
-          if (balanced) {
-            try {
-              watchTracks = JSON.parse(balanced);
-            } catch {}
+          if (watchTracks.length === 0) {
+            const balanced = extractBalancedJsonArray(html, '"captionTracks":');
+            if (balanced) {
+              try {
+                watchTracks = JSON.parse(balanced);
+              } catch {}
+            }
           }
         }
       } catch {}
     }
 
     // Engine 3: `youtubei/v1/get_transcript` with scraped + Protobuf-generated params
-    if (segments.length < 4) {
+    if (segments.length < 15) {
       const candidateTokens = Array.from(
         new Set(
           [
@@ -564,7 +641,7 @@
         ),
       );
       for (const token of candidateTokens) {
-        if (segments.length >= 4) break;
+        if (segments.length >= 15) break;
         try {
           const gtRes = await fetch(
             "https://www.youtube.com/youtubei/v1/get_transcript?prettyPrint=false",
@@ -594,17 +671,16 @@
           if (gtRes.ok) {
             const gtJson = await gtRes.json();
             const parsed = parseInnertubeTranscriptJson(gtJson);
-            if (parsed.length >= 4) {
+            if (parsed.length > segments.length) {
               segments = parsed;
-              break;
             }
           }
         } catch {}
       }
     }
 
-    // Engine 4: Mobile & Embedded Innertube `/youtubei/v1/player` (no PoToken required!)
-    if (segments.length < 4) {
+    // Engine 4: Mobile & Embedded Innertube `/youtubei/v1/player`
+    if (segments.length < 15) {
       const clients = [
         {
           clientName: "ANDROID",
@@ -631,7 +707,7 @@
         },
       ];
       for (const c of clients) {
-        if (segments.length >= 4) break;
+        if (segments.length >= 15) break;
         try {
           const pRes = await fetch(
             "https://www.youtube.com/youtubei/v1/player?prettyPrint=false",
@@ -688,7 +764,7 @@
                   if (tRes.ok) {
                     const tBody = await tRes.text();
                     const parsed = parseTimedTextResponse(tBody);
-                    if (parsed.length >= 4) {
+                    if (parsed.length > segments.length) {
                       segments = parsed;
                       break;
                     }
@@ -702,7 +778,7 @@
     }
 
     // Engine 5: Try watch page captionTracks if still needed
-    if (segments.length < 4 && watchTracks.length > 0) {
+    if (segments.length < 15 && watchTracks.length > 0) {
       const best =
         watchTracks.find(
           (t) => /^en/i.test(t.languageCode) && t.kind !== "asr",
@@ -722,7 +798,7 @@
             if (capRes.ok) {
               const capText = await capRes.text();
               const parsed = parseTimedTextResponse(capText);
-              if (parsed.length >= 4) {
+              if (parsed.length > segments.length) {
                 segments = parsed;
                 break;
               }
@@ -741,7 +817,7 @@
   }
 
   async function extractYoutubeDataInPage(videoId) {
-    if (ytDataCache[videoId] && ytDataCache[videoId].segments?.length > 15) {
+    if (ytDataCache[videoId] && ytDataCache[videoId].segments?.length >= 25) {
       return ytDataCache[videoId];
     }
 
@@ -759,7 +835,7 @@
     let channelName = (channelEl?.textContent || "YouTube Creator").trim();
 
     const fetched = await fetchSegmentsForVideoId(videoId, true);
-    let segments = fetched.segments;
+    const segments = fetched.segments || [];
     if (
       (!rawTitle || rawTitle === "YouTube Video") &&
       fetched.extractedTitle
@@ -773,7 +849,7 @@
       channelName = fetched.extractedChannel;
     }
 
-    // Group segments into ~30-second chronological paragraphs for deep summary & insights synthesis
+    // Group granular lines into ~35-second chronological paragraphs for summary, chapters & insights
     const paragraphs = [];
     let currentPara = null;
     for (const seg of segments) {
@@ -782,8 +858,8 @@
         continue;
       }
       if (
-        seg.startSeconds - currentPara.startSeconds < 32 &&
-        currentPara.text.length + seg.text.length < 380
+        seg.startSeconds - currentPara.startSeconds < 35 &&
+        currentPara.text.length + seg.text.length < 400
       ) {
         currentPara.text = `${currentPara.text} ${seg.text}`.trim();
       } else {
@@ -805,9 +881,23 @@
       .filter(Boolean).length;
 
     const summaryBullets = [
-      `Executive Overview (${segments.length} spoken segments · ${totalWords.toLocaleString()} words): In "${rawTitle}", ${channelName} walks through the core methodology, strategic rules, and real-world execution from start to finish.`,
+      `Executive Overview (${segments.length} timestamped lines · ${totalWords.toLocaleString()} words): In "${rawTitle}", ${channelName} walks through the core methodology, strategic rules, and real-world execution from 0:00 to ${segments[segments.length - 1]?.timestamp || "the end"}.`,
       ...sampledSummary.map((p) => `[${p.timestamp}] ${p.text}`),
     ];
+
+    const sampledChapters = sampleEvenly(
+      paragraphs.length >= 7 ? paragraphs : segments,
+      Math.min(7, Math.max(5, paragraphs.length)),
+    );
+    const chapters = sampledChapters.map((seg, idx) => {
+      const words = seg.text.split(/\s+/).slice(0, 7).join(" ").replace(/[.,:;!?]+$/, "");
+      return {
+        timestamp: seg.timestamp,
+        seconds: seg.startSeconds,
+        heading: `Chapter ${idx + 1}: ${words}`,
+        summary: seg.text,
+      };
+    });
 
     const sampledInsights = sampleEvenly(
       paragraphs.length >= 8 ? paragraphs : segments,
@@ -816,12 +906,12 @@
     const insightLabels = [
       "Core Premise",
       "Key Mechanism",
-      "Benchmark Comparison",
+      "Benchmark Proof",
       "Workflow Strategy",
       "Critical Differentiator",
       "Implementation Tip",
       "Optimization Rule",
-      "Final Takeaway",
+      "Final Verdict",
     ];
     const insights = sampledInsights.map(
       (seg, idx) =>
@@ -848,20 +938,9 @@
       },
       {
         q: "How can I repurpose this full transcript into an SEO article, infographic, or social post?",
-        a: "Click 'Full Studio & .SRT' or 'Video to Blog' below to send all extracted transcript segments directly into the DoItWithAI studio.",
+        a: "Click 'Full Studio ↗' or 'Video to Blog ↗' below to send all extracted transcript segments directly into the DoItWithAI studio.",
       },
     ];
-
-    const commentNodes = Array.from(
-      document.querySelectorAll("ytd-comment-thread-renderer #content-text"),
-    ).slice(0, 15);
-    const authorNodes = Array.from(
-      document.querySelectorAll("ytd-comment-thread-renderer #author-text"),
-    ).slice(0, 15);
-    const comments = commentNodes.map((node, i) => ({
-      author: (authorNodes[i]?.textContent || `Viewer #${i + 1}`).trim(),
-      text: (node.textContent || "").replace(/\s+/g, " ").trim(),
-    }));
 
     const pack = {
       videoId,
@@ -870,16 +949,21 @@
       channelName,
       description: fetched.description || "",
       segments,
+      wordCount: totalWords,
       summaryBullets,
+      chapters,
       insights,
       faqs,
-      comments,
     };
 
-    if (segments.length >= 4) {
+    if (segments.length >= 15) {
       ytDataCache[videoId] = pack;
       try {
-        if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        if (
+          typeof chrome !== "undefined" &&
+          chrome.storage &&
+          chrome.storage.local
+        ) {
           chrome.storage.local.set({
             [`diwat_ext_yt_transcript_${videoId}`]: pack,
             diwat_ext_yt_transcript_latest: pack,
@@ -919,45 +1003,57 @@
           font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
           background: #0f172a;
           color: #f8fafc;
-          border: 1px solid rgba(82, 113, 255, 0.45);
+          border: 1.5px solid rgba(82, 113, 255, 0.5);
           border-radius: 16px;
-          padding: 14px;
+          padding: 12px;
           margin-bottom: 16px;
-          box-shadow: 0 10px 28px rgba(15, 23, 42, 0.45);
+          box-shadow: 0 12px 32px rgba(15, 23, 42, 0.5);
           z-index: 99;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        #diwat-yt-merlin-card * {
+          box-sizing: border-box;
         }
         .diwat-yt-header {
           display: flex;
+          flex-wrap: wrap;
           align-items: center;
           justify-content: space-between;
-          gap: 8px;
-          padding-bottom: 10px;
-          border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+          gap: 6px;
+          padding-bottom: 9px;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.2);
         }
         .diwat-yt-brand {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
           font-weight: 800;
-          font-size: 13.5px;
+          font-size: 13px;
           color: #ffffff;
+          min-width: 0;
         }
         .diwat-yt-badge {
-          background: #4058d0;
-          color: #fff;
+          background: linear-gradient(90deg, #3452d1 0%, #5271ff 100%);
+          color: #ffffff;
           font-size: 10px;
           font-weight: 800;
-          padding: 2px 7px;
+          padding: 2px 8px;
           border-radius: 999px;
-          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .diwat-yt-header-btns {
+          display: flex;
+          align-items: center;
+          gap: 5px;
         }
         .diwat-yt-tabs {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 4px;
-          margin-top: 10px;
+          gap: 3px;
+          margin-top: 9px;
           background: #1e293b;
-          padding: 4px;
+          padding: 3.5px;
           border-radius: 10px;
         }
         .diwat-yt-tab {
@@ -965,73 +1061,137 @@
           border: none;
           color: #cbd5e1;
           font-size: 11px;
-          font-weight: 700;
-          padding: 6px 4px;
+          font-weight: 750;
+          padding: 6px 2px;
           border-radius: 7px;
           cursor: pointer;
           text-align: center;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
           transition: all 0.15s;
         }
+        .diwat-yt-tab:hover {
+          color: #ffffff;
+          background: rgba(82, 113, 255, 0.15);
+        }
         .diwat-yt-tab.active {
-          background: #3b63fb;
+          background: #4058d0;
+          color: #ffffff;
+          box-shadow: 0 2px 8px rgba(64, 88, 208, 0.35);
+        }
+        .diwat-yt-toolbar {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 8px;
+        }
+        .diwat-yt-search {
+          flex: 1;
+          min-width: 0;
+          background: #141c2e;
+          border: 1px solid rgba(148, 163, 184, 0.3);
+          color: #f8fafc;
+          border-radius: 8px;
+          padding: 5px 9px;
+          font-size: 11.5px;
+          outline: none;
+        }
+        .diwat-yt-search:focus {
+          border-color: #5271ff;
+        }
+        .diwat-yt-mini-btn {
+          background: #1e293b;
+          color: #e2e8f0;
+          border: 1px solid rgba(148, 163, 184, 0.3);
+          border-radius: 8px;
+          padding: 5px 8px;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .diwat-yt-mini-btn:hover {
+          border-color: #5271ff;
           color: #ffffff;
         }
         .diwat-yt-body {
-          margin-top: 10px;
-          max-height: 340px;
+          margin-top: 8px;
+          max-height: 360px;
           overflow-y: auto;
-          background: #141c2e;
+          background: #111827;
           border: 1px solid rgba(148, 163, 184, 0.2);
-          border-radius: 10px;
-          padding: 10px;
+          border-radius: 11px;
+          padding: 8px;
           font-size: 12.5px;
-          line-height: 1.55;
+          line-height: 1.5;
+          transition: max-height 0.2s ease;
+        }
+        .diwat-yt-body.expanded {
+          max-height: 620px;
         }
         .diwat-yt-seg {
           display: flex;
+          align-items: baseline;
           gap: 8px;
           padding: 5px 6px;
           border-radius: 7px;
           cursor: pointer;
+          transition: background 0.12s;
         }
         .diwat-yt-seg:hover {
-          background: rgba(59, 99, 251, 0.18);
+          background: rgba(64, 88, 208, 0.22);
+        }
+        .diwat-yt-seg.active-cue {
+          background: rgba(82, 113, 255, 0.26);
+          border-left: 3px solid #5271ff;
         }
         .diwat-yt-ts {
-          font-family: monospace;
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
           font-size: 11px;
           font-weight: 800;
-          color: #7dd3fc;
-          background: rgba(14, 165, 233, 0.16);
+          color: #93c5fd;
+          background: rgba(59, 130, 246, 0.18);
           padding: 1px 6px;
           border-radius: 5px;
-          height: fit-content;
           flex-shrink: 0;
         }
         .diwat-yt-actions {
-          display: flex;
-          flex-wrap: wrap;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 6px;
-          margin-top: 10px;
+          margin-top: 9px;
         }
         .diwat-yt-btn {
           background: #1e293b;
           color: #f8fafc;
           border: 1px solid rgba(148, 163, 184, 0.32);
-          border-radius: 8px;
-          padding: 6px 10px;
+          border-radius: 9px;
+          padding: 7px 8px;
           font-size: 11.5px;
-          font-weight: 700;
+          font-weight: 750;
           cursor: pointer;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
-          gap: 4px;
+          justify-content: center;
+          gap: 5px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          transition: all 0.15s;
+        }
+        .diwat-yt-btn:hover {
+          border-color: #5271ff;
+          background: #26354d;
         }
         .diwat-yt-btn.primary {
-          background: #3b63fb;
-          border-color: #3b63fb;
+          background: #4058d0;
+          border-color: #5271ff;
           color: #ffffff;
+        }
+        .diwat-yt-btn.primary:hover {
+          background: #3448b5;
         }
       `;
       document.head.appendChild(style);
@@ -1042,24 +1202,37 @@
     card.innerHTML = `
       <div class="diwat-yt-header">
         <div class="diwat-yt-brand">
-          <span>▶ DoItWithAI YouTube Assistant v2.4</span>
-          <span class="diwat-yt-badge" id="diwat-yt-seg-count">Extracting Transcript...</span>
+          <span>▶ DoItWithAI Assistant</span>
+          <span class="diwat-yt-badge" id="diwat-yt-seg-count">Extracting...</span>
         </div>
-        <button type="button" id="diwat-yt-refresh" class="diwat-yt-btn" title="Refresh Transcript & Comments">↻ Refresh</button>
+        <div class="diwat-yt-header-btns">
+          <button type="button" id="diwat-yt-expand" class="diwat-yt-mini-btn" title="Expand or collapse transcript box">↕ Expand</button>
+          <button type="button" id="diwat-yt-refresh" class="diwat-yt-mini-btn" title="Refresh Transcript">↻</button>
+        </div>
       </div>
+
       <div class="diwat-yt-tabs">
         <button type="button" class="diwat-yt-tab active" data-yt-tab="transcript">Transcript</button>
         <button type="button" class="diwat-yt-tab" data-yt-tab="summary">Summary</button>
+        <button type="button" class="diwat-yt-tab" data-yt-tab="chapters">Chapters</button>
         <button type="button" class="diwat-yt-tab" data-yt-tab="insights">Insights</button>
         <button type="button" class="diwat-yt-tab" data-yt-tab="faqs">FAQs</button>
-        <button type="button" class="diwat-yt-tab" data-yt-tab="comments">Comments</button>
       </div>
+
+      <div class="diwat-yt-toolbar" id="diwat-yt-toolbar">
+        <input type="search" id="diwat-yt-search" class="diwat-yt-search" placeholder="🔍 Search keyword or timestamp..." />
+        <button type="button" id="diwat-yt-sync" class="diwat-yt-mini-btn" title="Jump to current video playback time">🎯 Sync</button>
+        <button type="button" id="diwat-yt-ts-toggle" class="diwat-yt-mini-btn" title="Show or hide timestamps">⏱ On</button>
+      </div>
+
       <div class="diwat-yt-body" id="diwat-yt-body">
-        <div style="color:#94a3b8;font-weight:600">⏳ Extracting full timestamped YouTube transcript, summary &amp; deep insights...</div>
+        <div style="color:#94a3b8;font-weight:600;padding:8px">⏳ Extracting 100% full timestamped YouTube transcript (0:00 → end) &amp; AI summary...</div>
       </div>
+
       <div class="diwat-yt-actions">
-        <button type="button" id="diwat-yt-copy" class="diwat-yt-btn primary">📋 Copy Full Transcript</button>
-        <a id="diwat-yt-open-studio" href="https://doitwithai.tools/tools/youtube-transcript-generator?url=${encodeURIComponent(location.href)}" target="_blank" rel="noopener noreferrer" class="diwat-yt-btn">📝 Full Studio &amp; .SRT ↗</a>
+        <button type="button" id="diwat-yt-copy" class="diwat-yt-btn primary">📋 Copy Transcript</button>
+        <button type="button" id="diwat-yt-srt" class="diwat-yt-btn">📄 Download .SRT</button>
+        <a id="diwat-yt-open-studio" href="https://doitwithai.tools/tools/youtube-transcript-generator?url=${encodeURIComponent(location.href)}" target="_blank" rel="noopener noreferrer" class="diwat-yt-btn">📝 Full Studio ↗</a>
         <a id="diwat-yt-open-blog" href="https://doitwithai.tools/tools/video-transcript-to-blog?url=${encodeURIComponent(location.href)}" target="_blank" rel="noopener noreferrer" class="diwat-yt-btn">✍️ Video to Blog ↗</a>
       </div>
     `;
@@ -1068,30 +1241,56 @@
 
     let activeTab = "transcript";
     let loadedPack = null;
+    let searchQuery = "";
+    let showTimestamps = true;
 
     function renderActiveYtTab() {
       const bodyEl = document.getElementById("diwat-yt-body");
       const badgeEl = document.getElementById("diwat-yt-seg-count");
+      const toolbarEl = document.getElementById("diwat-yt-toolbar");
       if (!bodyEl || !loadedPack) return;
+
       if (badgeEl) {
-        badgeEl.textContent = `${loadedPack.segments.length} Lines`;
+        const lastTs =
+          loadedPack.segments[loadedPack.segments.length - 1]?.timestamp ||
+          "0:00";
+        badgeEl.textContent = `${loadedPack.segments.length} Lines · ${lastTs}`;
+      }
+
+      if (toolbarEl) {
+        toolbarEl.style.display = activeTab === "transcript" ? "flex" : "none";
       }
 
       if (activeTab === "transcript") {
         if (!loadedPack.segments.length) {
-          bodyEl.innerHTML = `<div style="color:#cbd5e1">No spoken captions detected yet. Click <strong>↻ Refresh</strong> or open the video's native transcript panel.</div>`;
+          bodyEl.innerHTML = `<div style="color:#cbd5e1;padding:8px">No spoken captions detected yet. Click <strong>↻</strong> in the top-right to retry.</div>`;
           return;
         }
-        bodyEl.innerHTML = loadedPack.segments
+        const q = searchQuery.trim().toLowerCase();
+        const filtered = q
+          ? loadedPack.segments.filter(
+              (s) =>
+                s.text.toLowerCase().includes(q) ||
+                s.timestamp.toLowerCase().includes(q),
+            )
+          : loadedPack.segments;
+
+        if (!filtered.length) {
+          bodyEl.innerHTML = `<div style="color:#94a3b8;padding:8px">No transcript lines match "${searchQuery}".</div>`;
+          return;
+        }
+
+        bodyEl.innerHTML = filtered
           .map(
             (s) => `
             <div class="diwat-yt-seg" data-seek="${s.startSeconds}">
-              <span class="diwat-yt-ts">${s.timestamp}</span>
+              ${showTimestamps ? `<span class="diwat-yt-ts">${s.timestamp}</span>` : ""}
               <span>${s.text}</span>
             </div>
           `,
           )
           .join("");
+
         bodyEl.querySelectorAll(".diwat-yt-seg").forEach((row) => {
           row.addEventListener("click", () => {
             const sec = Number(row.getAttribute("data-seek") || 0);
@@ -1104,18 +1303,46 @@
         });
       } else if (activeTab === "summary") {
         bodyEl.innerHTML = `
-          <div style="font-weight:800;color:#7dd3fc;margin-bottom:8px">Multi-Section Executive Video Summary</div>
+          <div style="font-weight:800;color:#93c5fd;margin-bottom:8px">Multi-Section Executive Video Summary</div>
           <div style="display:flex;flex-direction:column;gap:8px">
             ${loadedPack.summaryBullets
               .map(
                 (b, i) => `
-                <div style="padding:7px 9px;background:#0f172a;border-radius:8px;border:1px solid rgba(148,163,184,0.16)">
-                  <strong style="color:#38bdf8">${i === 0 ? "Overview" : `Section #${i}`}:</strong> ${b}
+                <div style="padding:8px 10px;background:#0f172a;border-radius:8px;border:1px solid rgba(148,163,184,0.18)">
+                  <strong style="color:#60a5fa">${i === 0 ? "Overview" : `Key Section #${i}`}:</strong> ${b}
                 </div>`,
               )
               .join("")}
           </div>
         `;
+      } else if (activeTab === "chapters") {
+        bodyEl.innerHTML = `
+          <div style="font-weight:800;color:#a5b4fc;margin-bottom:8px">Timestamped Video Chapters (${loadedPack.chapters.length})</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${loadedPack.chapters
+              .map(
+                (ch) => `
+                <div class="diwat-yt-seg" data-seek="${ch.seconds}" style="flex-direction:column;gap:4px;background:#0f172a;border:1px solid rgba(148,163,184,0.18);padding:8px 10px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span class="diwat-yt-ts">${ch.timestamp}</span>
+                    <strong style="color:#ffffff;font-size:12px">${ch.heading}</strong>
+                  </div>
+                  <div style="color:#cbd5e1;font-size:11.5px">${ch.summary}</div>
+                </div>`,
+              )
+              .join("")}
+          </div>
+        `;
+        bodyEl.querySelectorAll(".diwat-yt-seg").forEach((row) => {
+          row.addEventListener("click", () => {
+            const sec = Number(row.getAttribute("data-seek") || 0);
+            const video = document.querySelector("video");
+            if (video) {
+              video.currentTime = sec;
+              video.play();
+            }
+          });
+        });
       } else if (activeTab === "insights") {
         bodyEl.innerHTML = `
           <div style="font-weight:800;color:#6ee7b7;margin-bottom:8px">Deep Key Insights (${loadedPack.insights.length} Takeaways)</div>
@@ -1123,7 +1350,7 @@
             ${loadedPack.insights
               .map(
                 (b) => `
-                <div style="padding:7px 9px;background:#0f172a;border-radius:8px;border:1px solid rgba(16,185,129,0.2)">
+                <div style="padding:8px 10px;background:#0f172a;border-radius:8px;border:1px solid rgba(16,185,129,0.22)">
                   💡 ${b}
                 </div>`,
               )
@@ -1141,21 +1368,6 @@
           `,
           )
           .join("");
-      } else if (activeTab === "comments") {
-        if (!loadedPack.comments.length) {
-          bodyEl.innerHTML = `<div style="color:#cbd5e1">Scroll down slightly to load YouTube comments, then click <strong>↻ Refresh</strong> in the top right of this box to analyze viewer comments.</div>`;
-        } else {
-          bodyEl.innerHTML = loadedPack.comments
-            .map(
-              (c) => `
-              <div style="margin-bottom:8px;padding:6px 8px;background:#0f172a;border-radius:7px">
-                <strong style="color:#7dd3fc;font-size:11px">${c.author}</strong>
-                <div style="color:#f1f5f9;font-size:12px;margin-top:2px">${c.text}</div>
-              </div>
-            `,
-            )
-            .join("");
-        }
       }
     }
 
@@ -1175,8 +1387,46 @@
       });
     });
 
+    card.querySelector("#diwat-yt-search")?.addEventListener("input", (e) => {
+      searchQuery = e.target.value || "";
+      renderActiveYtTab();
+    });
+
+    card.querySelector("#diwat-yt-ts-toggle")?.addEventListener("click", (e) => {
+      showTimestamps = !showTimestamps;
+      e.currentTarget.textContent = showTimestamps ? "⏱ On" : "⏱ Off";
+      renderActiveYtTab();
+    });
+
+    card.querySelector("#diwat-yt-sync")?.addEventListener("click", () => {
+      const video = document.querySelector("video");
+      const bodyEl = document.getElementById("diwat-yt-body");
+      if (!video || !bodyEl) return;
+      const curSec = video.currentTime || 0;
+      const rows = Array.from(bodyEl.querySelectorAll(".diwat-yt-seg"));
+      let bestRow = null;
+      for (const r of rows) {
+        r.classList.remove("active-cue");
+        const s = Number(r.getAttribute("data-seek") || 0);
+        if (s <= curSec + 1) bestRow = r;
+      }
+      if (bestRow) {
+        bestRow.classList.add("active-cue");
+        bestRow.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+
+    card.querySelector("#diwat-yt-expand")?.addEventListener("click", (e) => {
+      const bodyEl = document.getElementById("diwat-yt-body");
+      if (!bodyEl) return;
+      const isExp = bodyEl.classList.toggle("expanded");
+      e.currentTarget.textContent = isExp ? "↕ Collapse" : "↕ Expand";
+    });
+
     card.querySelector("#diwat-yt-refresh")?.addEventListener("click", () => {
       delete ytDataCache[videoId];
+      const badgeEl = document.getElementById("diwat-yt-seg-count");
+      if (badgeEl) badgeEl.textContent = "Refreshing...";
       extractYoutubeDataInPage(videoId).then((pack) => {
         loadedPack = pack;
         renderActiveYtTab();
@@ -1184,18 +1434,36 @@
     });
 
     card.querySelector("#diwat-yt-copy")?.addEventListener("click", async () => {
-      if (!loadedPack) return;
+      if (!loadedPack || !loadedPack.segments.length) return;
       const text = loadedPack.segments
-        .map((s) => `[${s.timestamp}] ${s.text}`)
+        .map((s) => (showTimestamps ? `${s.timestamp} ${s.text}` : s.text))
         .join("\n");
       await navigator.clipboard.writeText(text);
       const copyBtn = card.querySelector("#diwat-yt-copy");
       if (copyBtn) {
-        copyBtn.textContent = "✓ Copied Full Transcript!";
+        copyBtn.textContent = `✓ Copied (${loadedPack.segments.length} lines)!`;
         setTimeout(() => {
-          copyBtn.textContent = "📋 Copy Full Transcript";
+          copyBtn.textContent = "📋 Copy Transcript";
         }, 2000);
       }
+    });
+
+    card.querySelector("#diwat-yt-srt")?.addEventListener("click", () => {
+      if (!loadedPack || !loadedPack.segments.length) return;
+      const srt = loadedPack.segments
+        .map((s, idx) => {
+          const nextSec =
+            loadedPack.segments[idx + 1]?.startSeconds || s.startSeconds + 4;
+          return `${idx + 1}\n${formatSrtTimestamp(s.startSeconds)} --> ${formatSrtTimestamp(nextSec)}\n${s.text}\n`;
+        })
+        .join("\n");
+      const blob = new Blob([srt], { type: "text/plain;charset=utf-8" });
+      const u = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = u;
+      a.download = `transcript-${videoId}.srt`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(u), 1500);
     });
   }
 
@@ -1205,9 +1473,12 @@
   function initWebStudioBridge() {
     if (!IS_DOITWITHAI_WEB) return;
 
-    // 1. Sync any cached transcripts from chrome.storage.local into window.localStorage
     try {
-      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+      if (
+        typeof chrome !== "undefined" &&
+        chrome.storage &&
+        chrome.storage.local
+      ) {
         chrome.storage.local.get(null, (items) => {
           if (!items) return;
           for (const [k, v] of Object.entries(items)) {
@@ -1221,7 +1492,6 @@
       }
     } catch {}
 
-    // 2. Listen for on-demand residential YouTube transcript requests from YoutubeTranscriptGeneratorClient
     window.addEventListener("diwat:request-youtube-transcript", async (ev) => {
       const detail = (ev && ev.detail) || {};
       const targetId = detail.videoId || getYoutubeVideoId(detail.url || "");
@@ -1234,7 +1504,7 @@
 
       try {
         const fetched = await fetchSegmentsForVideoId(targetId, false);
-        if (fetched.segments && fetched.segments.length >= 4) {
+        if (fetched.segments && fetched.segments.length >= 15) {
           const payload = {
             videoId: targetId,
             title: fetched.extractedTitle || "",
@@ -1282,7 +1552,10 @@
         .map((s) => s.trim())
         .filter(Boolean);
       const head = parts[0] || clean;
-      const items = parts.slice(1).map((p) => `✅ ${p}`).join("\n");
+      const items = parts
+        .slice(1)
+        .map((p) => `✅ ${p}`)
+        .join("\n");
       return `📌 ${head}\n\n${items || "✅ Focus on clarity over complexity\n✅ Measure retention and saves\n✅ Repurpose top performers across formats"}\n\nSave this for your next sprint!`;
     }
     if (mode === "expand") {
@@ -1362,8 +1635,11 @@
     });
   }
 
-  // Listen for messages from popup.js when popup is opened on a YouTube tab
-  if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
+  if (
+    typeof chrome !== "undefined" &&
+    chrome.runtime &&
+    chrome.runtime.onMessage
+  ) {
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       if (msg && msg.type === "GET_YOUTUBE_VIDEO_PACK") {
         const vid = getYoutubeVideoId(location.href);

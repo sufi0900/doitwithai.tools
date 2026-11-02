@@ -56,11 +56,11 @@ function parseRawPastedTranscript(raw: string): TranscriptSegment[] {
           ? parts[0] * 3600 + parts[1] * 60 + parts[2]
           : parts[0] * 60 + parts[1];
       parsed.push({
-        timestamp: ts.length === 4 ? `0${ts}` : ts,
+        timestamp: ts,
         seconds: sec,
         text: txt,
       });
-      autoSec = sec + 5;
+      autoSec = sec + 3;
       pendingTimestamp = "";
     } else if (pendingTimestamp) {
       const parts = pendingTimestamp.split(":").map(Number);
@@ -69,24 +69,21 @@ function parseRawPastedTranscript(raw: string): TranscriptSegment[] {
           ? parts[0] * 3600 + parts[1] * 60 + parts[2]
           : parts[0] * 60 + parts[1];
       parsed.push({
-        timestamp:
-          pendingTimestamp.length === 4
-            ? `0${pendingTimestamp}`
-            : pendingTimestamp,
+        timestamp: pendingTimestamp,
         seconds: sec,
         text: line,
       });
-      autoSec = sec + 5;
+      autoSec = sec + 3;
       pendingTimestamp = "";
     } else {
       const m = Math.floor(autoSec / 60);
       const s = autoSec % 60;
       parsed.push({
-        timestamp: `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`,
+        timestamp: `${m}:${String(s).padStart(2, "0")}`,
         seconds: autoSec,
         text: line,
       });
-      autoSec += 8;
+      autoSec += 5;
     }
   }
   return parsed;
@@ -115,15 +112,15 @@ function normalizeBridgeSegments(
           ? s.seconds
           : typeof s.startSeconds === "number"
             ? s.startSeconds
-            : idx * 5;
+            : idx * 3;
       const m = Math.floor(sec / 60);
       const r = sec % 60;
       const ts =
         s.timestamp && s.timestamp.trim()
           ? s.timestamp.trim()
-          : `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+          : `${m}:${String(r).padStart(2, "0")}`;
       return {
-        timestamp: ts.length === 4 ? `0${ts}` : ts,
+        timestamp: ts,
         seconds: sec,
         text: String(s.text || "").trim(),
       };
@@ -137,14 +134,14 @@ function requestTranscriptFromExtensionBridge(
 ): Promise<ExtensionTranscriptBridgePayload | null> {
   if (typeof window === "undefined") return Promise.resolve(null);
 
-  // 1. Check localStorage cache populated by the DoItWithAI Chrome Extension content script
+  // 1. Check localStorage cache populated by the DoItWithAI Chrome Extension content script (require >= 35 lines so partial snippets are ignored)
   try {
     const byId = window.localStorage.getItem(
       `diwat_ext_yt_transcript_${targetVideoId}`,
     );
     if (byId) {
       const parsed = JSON.parse(byId) as ExtensionTranscriptBridgePayload;
-      if (Array.isArray(parsed?.segments) && parsed.segments.length >= 10) {
+      if (Array.isArray(parsed?.segments) && parsed.segments.length >= 35) {
         return Promise.resolve(parsed);
       }
     }
@@ -156,7 +153,7 @@ function requestTranscriptFromExtensionBridge(
       if (
         parsed?.videoId === targetVideoId &&
         Array.isArray(parsed?.segments) &&
-        parsed.segments.length >= 10
+        parsed.segments.length >= 35
       ) {
         return Promise.resolve(parsed);
       }
@@ -188,8 +185,15 @@ function requestTranscriptFromExtensionBridge(
         );
         resolve(null);
       }
-    }, 2800);
+    }, 3200);
   });
+}
+
+function scoreTranscriptCompleteness(segs: TranscriptSegment[]): number {
+  if (!segs || segs.length === 0) return 0;
+  const maxSec = segs[segs.length - 1]?.seconds || 0;
+  const totalChars = segs.reduce((acc, s) => acc + s.text.length, 0);
+  return maxSec * 4 + segs.length * 10 + Math.floor(totalChars / 20);
 }
 
 export default function YoutubeTranscriptGeneratorClient() {
@@ -272,14 +276,17 @@ export default function YoutubeTranscriptGeneratorClient() {
           ? data.transcriptSegments
           : data?.paragraphs && data.paragraphs.length > 0
             ? data.paragraphs.map((p: string, idx: number) => ({
-                timestamp: `${String(Math.floor((idx * 15) / 60)).padStart(2, "0")}:${String((idx * 15) % 60).padStart(2, "0")}`,
+                timestamp: `${Math.floor((idx * 15) / 60)}:${String((idx * 15) % 60).padStart(2, "0")}`,
                 seconds: idx * 15,
                 text: p,
               }))
             : [];
 
+      const bridgeScore = scoreTranscriptCompleteness(bridgeSegs);
+      const serverScore = scoreTranscriptCompleteness(serverSegs);
+
       const nextSegs =
-        bridgeSegs.length > serverSegs.length
+        bridgeScore > serverScore && bridgeSegs.length > 0
           ? bridgeSegs
           : serverSegs.length > 0
             ? serverSegs
@@ -287,9 +294,9 @@ export default function YoutubeTranscriptGeneratorClient() {
 
       const nextVideoId =
         bridgeData?.videoId || data?.videoId || parsedYtId || videoId;
-      const nextTitle = bridgeData?.title || data?.title || title;
+      const nextTitle = data?.title || bridgeData?.title || title;
       const nextAuthor =
-        bridgeData?.channelName || data?.author || channelName;
+        data?.author || bridgeData?.channelName || channelName;
 
       setVideoId(nextVideoId);
       setTitle(nextTitle);
@@ -297,7 +304,7 @@ export default function YoutubeTranscriptGeneratorClient() {
       setSegments(nextSegs);
 
       notify(
-        `Extracted ${nextSegs.length} timestamped lines for "${nextTitle}" — running deep AI synthesis!`,
+        `Extracted ${nextSegs.length} timestamped lines (0:00 → ${nextSegs[nextSegs.length - 1]?.timestamp || "end"}) — running deep AI synthesis!`,
       );
 
       try {
@@ -392,12 +399,12 @@ export default function YoutubeTranscriptGeneratorClient() {
         active={loadingFetch || loadingAi}
         title={
           loadingFetch
-            ? "Extracting Full YouTube Video Transcript & Auto-Captions..."
+            ? "Extracting Complete Full-Length YouTube Video Transcript..."
             : "Synthesizing Multi-Section Executive Summary, Key Insights & Chapters..."
         }
         description={
           loadingFetch
-            ? "Connecting to YouTube Innertube, TimedText & Extension Bridge (including EN - auto) and building granular timestamped lines..."
+            ? "Retrieving 100% of spoken lines from 0:00 to the end of the video across YouTube TimedText, Innertube & Gemini..."
             : "Analyzing the full video timeline from 0:00 to the end to generate deep takeaways, chapters, and FAQs..."
         }
       />
@@ -427,7 +434,7 @@ export default function YoutubeTranscriptGeneratorClient() {
                 Paste Any YouTube Video or Shorts URL (1-Click Full Transcript + Deep AI Summary)
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Extracts manual subtitles, auto-generated (<code>EN - auto</code>) tracks, timestamped lines, 8+ deep insights, and chapters in a single click.
+                Extracts complete line-by-line timestamped transcripts from <code>0:00</code> to the end, 8+ deep insights, chapters, and FAQs in a single click.
               </p>
             </div>
           </div>
@@ -456,7 +463,7 @@ export default function YoutubeTranscriptGeneratorClient() {
             type="text"
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://www.youtube.com/watch?v=cH9LbVH7EI4 or https://youtu.be/..."
+            placeholder="https://www.youtube.com/watch?v=S-AK2ik_fU0 or https://youtu.be/..."
             className="w-full min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-mono text-xs sm:text-sm dark:border-slate-700 dark:bg-slate-900"
           />
           <button
@@ -799,24 +806,24 @@ export default function YoutubeTranscriptGeneratorClient() {
 
             {/* TAB 2: DEEP KEY INSIGHTS ACROSS FULL VIDEO TIMELINE */}
             {activeSynthTab === "insights" && (
-              <div className="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
+              <div className="space-y-2.5">
                 {pack.deepInsights.map((ins, i) => (
                   <div
                     key={i}
-                    className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-1.5 dark:border-slate-800 dark:bg-slate-900/60"
+                    className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/70"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#3452d1] dark:text-[#9aabff]">
-                        <span className="rounded bg-[#3452d1]/15 px-2 py-0.5 font-mono text-[11px]">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-900 dark:text-white">
+                        <span className="rounded bg-[#3452d1] px-2 py-0.5 font-mono text-[11px] text-white">
                           {ins.timestamp}
                         </span>
-                        <span>{ins.title}</span>
+                        {ins.title}
                       </span>
-                      <span className="rounded-full bg-[#4058d0]/15 px-2 py-0.5 text-[10px] font-extrabold text-[#4058d0]">
+                      <span className="rounded-full bg-[#3452d1]/10 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-[#3452d1] dark:text-[#9aabff]">
                         {ins.category}
                       </span>
                     </div>
-                    <p className="text-xs leading-5 text-slate-700 dark:text-slate-200">
+                    <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-300">
                       {ins.detail}
                     </p>
                   </div>
@@ -824,63 +831,61 @@ export default function YoutubeTranscriptGeneratorClient() {
               </div>
             )}
 
-            {/* TAB 3: TIMESTAMPED YOUTUBE DESCRIPTION CHAPTERS */}
+            {/* TAB 3: TIMESTAMPED YOUTUBE CHAPTERS */}
             {activeSynthTab === "chapters" && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-500">
-                    Copy-ready for YouTube Description Box:
+                    Ready to paste into YouTube Description
                   </span>
                   <button
                     type="button"
                     onClick={async () => {
-                      const chText = pack.chapters
+                      const ytChapters = pack.chapters
                         .map((c) => `${c.timestamp} ${c.heading}`)
                         .join("\n");
-                      await navigator.clipboard.writeText(chText);
-                      notify("Copied YouTube description chapters!");
+                      await navigator.clipboard.writeText(ytChapters);
+                      notify("Copied YouTube description chapter timestamps!");
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-[#3452d1] px-3 py-1 text-xs font-bold text-white"
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-800"
                   >
-                    <Copy size={12} /> Copy Chapters
+                    <Copy size={11} /> Copy Chapter Timestamps
                   </button>
                 </div>
 
-                <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
-                  {pack.chapters.map((ch, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 text-xs dark:border-slate-800 dark:bg-slate-900/60"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="rounded bg-[#3452d1]/15 px-2 py-0.5 font-mono text-[11px] font-extrabold text-[#3452d1] dark:text-[#9aabff]">
-                          {ch.timestamp}
-                        </span>
-                        <strong className="font-bold text-slate-900 dark:text-white">
-                          {ch.heading}
-                        </strong>
-                      </div>
-                      <p className="mt-1.5 leading-5 text-slate-600 dark:text-slate-300">
-                        {ch.summary}
-                      </p>
+                {pack.chapters.map((ch, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-[#3452d1]/15 px-2 py-0.5 font-mono text-xs font-extrabold text-[#3452d1] dark:text-[#9aabff]">
+                        {ch.timestamp}
+                      </span>
+                      <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">
+                        {ch.heading}
+                      </h4>
                     </div>
-                  ))}
-                </div>
+                    <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                      {ch.summary}
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
 
             {/* TAB 4: VIDEO FAQS */}
             {activeSynthTab === "faqs" && (
-              <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
-                {pack.videoFaqs.map((faq, idx) => (
+              <div className="space-y-3">
+                {pack.videoFaqs.map((faq, i) => (
                   <div
-                    key={idx}
-                    className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-1.5 dark:border-slate-800 dark:bg-slate-900/60"
+                    key={i}
+                    className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900"
                   >
-                    <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
-                      Q{idx + 1}: {faq.question}
-                    </strong>
-                    <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+                    <h4 className="text-xs font-extrabold text-slate-900 dark:text-white">
+                      Q{i + 1}: {faq.question}
+                    </h4>
+                    <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-300">
                       {faq.answer}
                     </p>
                   </div>
