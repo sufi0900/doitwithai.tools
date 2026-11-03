@@ -24,7 +24,7 @@ import {
   DEFAULT_SHORT_SCRIPT_INPUT,
   type ShortFormScriptInput,
   type ShortFormScriptPack,
-  type ShortScriptSegment,
+  type ScriptTimelineSegment,
   type ShortVideoDuration,
   type ShortVideoPlatform,
 } from "./model";
@@ -44,7 +44,7 @@ export default function ShortFormVideoScriptGeneratorClient() {
   const [teleprompterFontPx, setTeleprompterFontPx] = useState<number>(17);
   const [editableVoiceover, setEditableVoiceover] = useState<string>("");
   const [editableSegments, setEditableSegments] = useState<
-    ShortScriptSegment[]
+    ScriptTimelineSegment[]
   >([]);
   const [editableCaption, setEditableCaption] = useState<string>("");
   const [toast, setToast] = useState("");
@@ -90,7 +90,7 @@ export default function ShortFormVideoScriptGeneratorClient() {
 
   function updateSegmentField(
     idx: number,
-    field: keyof ShortScriptSegment,
+    field: keyof ScriptTimelineSegment,
     value: string,
   ) {
     setEditableSegments((prev) => {

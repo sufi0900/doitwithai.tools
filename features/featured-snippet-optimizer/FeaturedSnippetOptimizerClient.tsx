@@ -355,14 +355,14 @@ export default function FeaturedSnippetOptimizerClient() {
               }
               if (res.description) {
                 setCoreFacts(res.description);
-              } else if (res.text) {
-                setCoreFacts(res.text.slice(0, 480));
+              } else if (res.cleanText) {
+                setCoreFacts(res.cleanText.slice(0, 480));
               }
-              if (res.text) {
-                setContentOrHtml(res.text.slice(0, 4000));
+              if (res.cleanText) {
+                setContentOrHtml(res.cleanText.slice(0, 4000));
               }
               setFeedback(
-                `Extracted content from ${res.siteName || res.url}. Click "Audit Passages & Generate 3 Snippet Formats" to refresh.`,
+                `Extracted content from ${res.domain || res.url}. Click "Audit Passages & Generate 3 Snippet Formats" to refresh.`,
               );
             }}
           />

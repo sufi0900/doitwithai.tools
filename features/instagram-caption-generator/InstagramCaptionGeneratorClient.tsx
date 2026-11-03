@@ -274,7 +274,7 @@ export function InstagramCaptionGeneratorClient() {
       headline: `Step 0${nextNum - 1}: Key Strategic Action`,
       supportingText:
         "Break down one high-impact action per card so readers save and share your carousel.",
-      visualDirection: "Clean vector card",
+      visualPrompt: "Clean vector card",
       metricBadge: `0${nextNum}`,
       categoryTag: niche,
     };

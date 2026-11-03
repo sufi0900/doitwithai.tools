@@ -19,6 +19,7 @@ export type SuggestedContentUpgrade = {
 };
 
 export type InformationGainReport = {
+  topic: string;
   overallScore: number;
   verdict: "high-information-gain" | "moderate-differentiation" | "commodity-consensus";
   verdictLabel: string;
@@ -307,6 +308,7 @@ export function evaluateInformationGain(params: {
   ];
 
   return {
+    topic: topicClean,
     overallScore,
     verdict,
     verdictLabel,

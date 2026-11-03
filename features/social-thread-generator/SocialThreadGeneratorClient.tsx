@@ -111,7 +111,7 @@ export default function SocialThreadGeneratorClient() {
     const newPost: ThreadPostItem = {
       index: nextTotal,
       total: nextTotal,
-      role: "Key Insight",
+      role: "Body Insight",
       text: `${input.includeNumbering ? `${nextTotal}/${nextTotal}\n\n` : ""}Add your next actionable point or example here.`,
       charCount: 54,
       maxChars,
