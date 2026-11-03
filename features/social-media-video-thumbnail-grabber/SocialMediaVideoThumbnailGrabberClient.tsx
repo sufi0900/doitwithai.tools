@@ -17,7 +17,7 @@ import ToolRunOverlay, {
 } from "@/features/tool-ui/ToolRunOverlay";
 import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import Link from "next/link";
-import type { VideoInspectResult, VideoThumbnailAsset } from "./model";
+import type { VideoInspectResult, ThumbnailVariant } from "./model";
 
 const DEFAULT_DEMO_RESULT: VideoInspectResult = {
   isYoutube: true,
@@ -142,7 +142,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
     DEFAULT_DEMO_RESULT.thumbnails.map((t) => t.id),
   );
   const [inspectedThumb, setInspectedThumb] =
-    useState<VideoThumbnailAsset | null>(null);
+    useState<ThumbnailVariant | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);

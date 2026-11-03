@@ -28,6 +28,7 @@ import {
   buildGscCtrDocx,
   exportGscCtrCsv,
   type CtrCurveProfile,
+  type CtrOpportunityRow,
   type GscCtrReport,
 } from "./model";
 
@@ -88,16 +89,16 @@ export default function GscCtrOptimizerClient() {
       if (!prev) return prev;
       return {
         ...prev,
-        rows: prev.rows.map((r) =>
-          r.id === rowId
-            ? {
-                ...r,
-                titleVariants: r.titleVariants.map((tv, i) =>
-                  i === idx ? value : tv,
-                ),
-              }
-            : r,
-        ),
+        rows: prev.rows.map((r) => {
+          if (r.id !== rowId || !Number.isInteger(idx) || idx < 0 || idx > 2) {
+            return r;
+          }
+          const titleVariants: CtrOpportunityRow["titleVariants"] = [
+            ...r.titleVariants,
+          ];
+          titleVariants[idx] = value;
+          return { ...r, titleVariants };
+        }),
       };
     });
   }

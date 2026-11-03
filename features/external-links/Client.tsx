@@ -20,33 +20,34 @@ const example =
 const INITIAL_EVIDENCE_PAGE: EvidenceInput = {
   url: "https://example.com/article",
   title: "Illustrative source review",
+  author: "",
   checkedAt: "2026-04-01T00:00:00.000Z",
   scope: "main",
   partial: false,
   warnings: [],
   blocks: [
     {
-      kind: "heading",
+      id: "example:0",
       tag: "h1",
       text: "Illustrative source review",
     },
     {
-      kind: "paragraph",
+      id: "example:1",
       tag: "p",
       text: "Read Google’s link guidance for anchor examples.",
     },
     {
-      kind: "heading",
+      id: "example:2",
       tag: "h2",
       text: "Compare the context",
     },
     {
-      kind: "paragraph",
+      id: "example:3",
       tag: "p",
       text: "For a second reference, click here.",
     },
     {
-      kind: "paragraph",
+      id: "example:4",
       tag: "p",
       text: "This example placement needs a relationship decision: View the example product.",
     },
@@ -56,23 +57,19 @@ const INITIAL_EVIDENCE_PAGE: EvidenceInput = {
       href: "https://developers.google.com/search/docs/crawling-indexing/links-crawlable",
       text: "Google’s link guidance",
       rel: "",
-      context: "Read Google’s link guidance for anchor examples.",
-      section: "Illustrative source review",
+      blockId: "example:1",
     },
     {
       href: "https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links",
       text: "click here",
       rel: "nofollow,ugc",
-      context: "For a second reference, click here.",
-      section: "Compare the context",
+      blockId: "example:3",
     },
     {
       href: "https://example.org/product",
       text: "View the example product",
       rel: "",
-      context:
-        "This example placement needs a relationship decision: View the example product.",
-      section: "Compare the context",
+      blockId: "example:4",
     },
   ],
 };

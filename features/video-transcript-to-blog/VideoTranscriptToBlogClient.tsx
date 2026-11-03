@@ -130,6 +130,7 @@ export default function VideoTranscriptToBlogClient() {
           {
             heading: `Key Takeaway #${prev.sections.length + 1}`,
             timestamp: "",
+            keyTakeawayBullet: "",
             paragraphs: [
               "Add your supporting breakdown, practitioner examples, or action steps here.",
             ],
