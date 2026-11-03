@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Printer,
   QrCode,
+  RotateCcw,
   Sparkles,
   Star,
 } from "lucide-react";
@@ -62,12 +63,19 @@ export default function GoogleReviewLinkGeneratorClient() {
   const [activeTemplateId, setActiveTemplateId] = useState<
     "sms" | "whatsapp" | "email" | "receipt"
   >("whatsapp");
+  const [templateOverrides, setTemplateOverrides] = useState<
+    Record<string, { subject?: string; body?: string }>
+  >({});
   const [toast, setToast] = useState("");
 
   const result = useMemo(() => generateReviewLinkPack(input), [input]);
-  const activeTemplate =
+  const rawTemplate =
     result.templates.find((t) => t.id === activeTemplateId) ||
     result.templates[0];
+  const activeSubject =
+    templateOverrides[activeTemplateId]?.subject ?? rawTemplate.subject;
+  const activeBody =
+    templateOverrides[activeTemplateId]?.body ?? rawTemplate.body;
 
   function notify(msg: string) {
     setToast(msg);
@@ -78,6 +86,7 @@ export default function GoogleReviewLinkGeneratorClient() {
     key: K,
     val: ReviewLinkInput[K],
   ) {
+    setTemplateOverrides({});
     setInput((prev) => ({ ...prev, [key]: val }));
   }
 
@@ -154,6 +163,7 @@ export default function GoogleReviewLinkGeneratorClient() {
               key={preset.label}
               type="button"
               onClick={() => {
+                setTemplateOverrides({});
                 setInput(preset.data);
                 notify(`Loaded "${preset.label}" preset.`);
               }}
@@ -296,6 +306,20 @@ export default function GoogleReviewLinkGeneratorClient() {
                   className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
                 />
               </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                  Poster Subheadline (Shown on Printable Counter Card)
+                </label>
+                <input
+                  type="text"
+                  value={input.posterSubheadline}
+                  onChange={(e) =>
+                    updateField("posterSubheadline", e.target.value)
+                  }
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs dark:border-slate-700 dark:bg-slate-900"
+                />
+              </div>
             </div>
           </div>
 
@@ -370,12 +394,12 @@ export default function GoogleReviewLinkGeneratorClient() {
             </div>
           </div>
 
-          {/* Multi-Channel Review Request Templates */}
+          {/* Multi-Channel Review Request Templates (Inline Editable) */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="flex items-center gap-2 text-base font-extrabold">
                 <MessageSquare size={18} className="text-[#5271ff]" />
-                3. High-Converting Review Request Templates
+                3. High-Converting Review Request Templates (Editable)
               </h3>
               <div className="flex flex-wrap gap-1.5">
                 {result.templates.map((t) => (
@@ -395,37 +419,77 @@ export default function GoogleReviewLinkGeneratorClient() {
               </div>
             </div>
 
-            {activeTemplate.subject && (
-              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-slate-800 dark:bg-slate-900">
-                <span className="font-bold text-slate-500">Subject Line: </span>
-                <strong className="text-slate-900 dark:text-white">
-                  {activeTemplate.subject}
-                </strong>
+            {rawTemplate.subject && (
+              <div className="mt-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs dark:border-slate-800 dark:bg-slate-900">
+                <span className="shrink-0 font-bold text-slate-500">
+                  Subject Line:
+                </span>
+                <input
+                  type="text"
+                  value={activeSubject || ""}
+                  onChange={(e) =>
+                    setTemplateOverrides((prev) => ({
+                      ...prev,
+                      [activeTemplateId]: {
+                        ...prev[activeTemplateId],
+                        subject: e.target.value,
+                      },
+                    }))
+                  }
+                  aria-label="Edit email subject line"
+                  className="min-w-0 flex-1 bg-transparent font-bold text-slate-900 focus:outline-none dark:text-white"
+                />
               </div>
             )}
 
             <textarea
               rows={6}
-              readOnly
-              value={activeTemplate.body}
-              className="mt-3 w-full rounded-xl border border-slate-300 bg-slate-50 p-3.5 text-xs leading-6 text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              value={activeBody}
+              onChange={(e) =>
+                setTemplateOverrides((prev) => ({
+                  ...prev,
+                  [activeTemplateId]: {
+                    ...prev[activeTemplateId],
+                    body: e.target.value,
+                  },
+                }))
+              }
+              aria-label={`Edit ${activeTemplateId} review request message`}
+              className="mt-3 w-full rounded-xl border border-slate-300 bg-slate-50 p-3.5 text-xs leading-6 text-slate-800 focus:border-[#3452d1] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             />
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                {activeTemplate.charCount} chars · {activeTemplate.tip}
+                {activeBody.length} chars · {rawTemplate.tip}
               </span>
-              <button
-                type="button"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(activeTemplate.body);
-                  notify(`Copied ${activeTemplate.channel} template!`);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2 text-xs font-bold text-white hover:bg-[#2842b5]"
-              >
-                <Copy size={14} />
-                Copy {activeTemplate.id.toUpperCase()} Message
-              </button>
+              <div className="flex flex-wrap gap-2">
+                {templateOverrides[activeTemplateId] && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTemplateOverrides((prev) => {
+                        const next = { ...prev };
+                        delete next[activeTemplateId];
+                        return next;
+                      })
+                    }
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    <RotateCcw size={12} /> Reset
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(activeBody);
+                    notify(`Copied ${rawTemplate.channel} template!`);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2 text-xs font-bold text-white hover:bg-[#2842b5]"
+                >
+                  <Copy size={14} />
+                  Copy {activeTemplateId.toUpperCase()} Message
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -15,17 +15,107 @@ import {
   type WritingKind,
   type WritingOutput,
 } from "./schema";
+import { sampleBrief } from "./config";
 import WritingForm from "./WritingForm";
 import WritingResults from "./WritingResults";
+
+const INITIAL_META_OUTPUT: WritingOutput = {
+  candidates: [
+    {
+      text: "Learn how to write clear meta titles with AI using a practical brief, side-by-side examples, and a pre-publish editorial review checklist.",
+      approach: "Clear summary",
+      explanation:
+        "Summarizes the specific workflow, worked examples, and review checklist on the page.",
+    },
+    {
+      text: "A step-by-step guide to drafting and reviewing accurate page titles with AI so your search snippet matches what readers find on the page.",
+      approach: "Clear summary",
+      explanation:
+        "Focuses on accuracy and alignment between the title promise and page content.",
+    },
+    {
+      text: "Avoid generic AI title tags. Use our worked examples and editorial checklist to write specific, reader-first meta titles for your guides.",
+      approach: "Reader benefit",
+      explanation:
+        "Highlights how readers avoid generic wording using the supplied examples.",
+    },
+    {
+      text: "Give readers a clear reason to click with meta titles grounded in your real page content, audience task, and editorial checklist.",
+      approach: "Reader benefit",
+      explanation:
+        "Emphasizes grounding the headline in real page substance for content marketers.",
+    },
+    {
+      text: "Compare three meta title angles, test your draft against our review checklist, and refine the wording before you publish.",
+      approach: "Next step",
+      explanation:
+        "Invites the reader to compare alternatives and run the review checklist.",
+    },
+    {
+      text: "Explore worked meta title examples and use the step-by-step review checklist to verify your next page title before publishing.",
+      approach: "Next step",
+      explanation:
+        "Directs readers to the worked examples and verification workflow.",
+    },
+  ],
+};
+
+const INITIAL_H1_OUTPUT: WritingOutput = {
+  candidates: [
+    {
+      text: "Write Clear Meta Titles with AI and Review Them Before Publishing",
+      approach: "Topic first",
+      explanation:
+        "Names the core topic and pairs it with the human review workflow covered in the guide.",
+    },
+    {
+      text: "AI-Assisted Meta Titles: Worked Examples and an Editorial Checklist",
+      approach: "Topic first",
+      explanation:
+        "Places the subject first and specifies the worked examples and checklist on the page.",
+    },
+    {
+      text: "How to Draft, Compare, and Verify Page Titles Using AI",
+      approach: "Task first",
+      explanation:
+        "Leads with the three concrete actions the reader will perform in the tutorial.",
+    },
+    {
+      text: "Use a Focused Page Brief to Write Accurate Meta Titles with AI",
+      approach: "Task first",
+      explanation:
+        "Centers the reader's primary action of briefing AI with real page substance.",
+    },
+    {
+      text: "A Content Marketer's Workflow for Writing Honest Meta Titles with AI",
+      approach: "Audience first",
+      explanation:
+        "Addresses content marketers directly and sets an editorial expectation.",
+    },
+    {
+      text: "For Editorial Teams: How to Shape AI Title Drafts Into Clear Page Headlines",
+      approach: "Audience first",
+      explanation:
+        "Speaks to teams reviewing AI drafts before publication.",
+    },
+  ],
+};
+
 export default function WritingClient({ kind }: { kind: WritingKind }) {
   const [result, setResult] = useState<{
     output: WritingOutput;
     input: WritingInput;
     generation: number;
-  } | null>(null);
+  } | null>(() => ({
+    output: kind === "meta-description" ? INITIAL_META_OUTPUT : INITIAL_H1_OUTPUT,
+    input: { ...sampleBrief },
+    generation: 1,
+  }));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(
+    "Six sample options are pre-loaded below. Choose any direction to refine it in the live editing lab, or generate new options from your brief.",
+  );
   const controllerRef = useRef<AbortController | null>(null);
   useEffect(() => () => controllerRef.current?.abort(), []);
   async function generate(input: WritingInput) {

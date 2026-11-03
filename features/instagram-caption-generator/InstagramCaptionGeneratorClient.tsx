@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Check,
   Copy,
   Download,
@@ -9,8 +10,15 @@ import {
   Layers,
   PackageCheck,
   Palette,
+  Plus,
   Printer,
+  RotateCcw,
   Sparkles,
+  Trash2,
+  Type,
+  Upload,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import {
   UrlArticleExtractorBar,
@@ -27,7 +35,7 @@ import {
   visualSvgCanvas,
   saveVisualBlob,
 } from "../tool-ui/svgExport";
-import { wrapVisualText, sourceMetric } from "../tool-ui/visualText";
+import { sourceMetric } from "../tool-ui/visualText";
 import { zipStored } from "../outreach-email/docx";
 import { PlatformBrandIcon } from "../tool-ui/PlatformBrandIcon";
 import {
@@ -42,7 +50,8 @@ import {
   type InstagramPostFormat,
 } from "./model";
 
-const wrapSvgLines = wrapVisualText;
+const MIN_CAROUSEL_SLIDES = 3;
+const MAX_CAROUSEL_SLIDES = 8;
 
 export function InstagramCaptionGeneratorClient() {
   const [topicOrContent, setTopicOrContent] = useState(
@@ -56,6 +65,10 @@ export function InstagramCaptionGeneratorClient() {
   );
   const [extractedImages, setExtractedImages] = useState<ExtractedImageAsset[]>(
     [],
+  );
+  const [customUploadedPhoto, setCustomUploadedPhoto] = useState<string>("");
+  const [imageFitMode, setImageFitMode] = useState<"contain" | "cover">(
+    "contain",
   );
   const [selectedCaptionIdx, setSelectedCaptionIdx] = useState(0);
   const [activeSlideNumber, setActiveSlideNumber] = useState(1);
@@ -72,31 +85,31 @@ export function InstagramCaptionGeneratorClient() {
   const [photoSlideNumbers, setPhotoSlideNumbers] = useState<Set<number>>(
     new Set(),
   );
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Pre-populated with DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT so all 5 slides are live on page load!
   const [result, setResult] = useState<InstagramCaptionOutput>(
     DEFAULT_INSTAGRAM_CAROUSEL_OUTPUT,
   );
   const [toastMsg, setToastMsg] = useState("");
   const [exporting, setExporting] = useState(false);
+
+  const resultsRef = useRef<HTMLDivElement | null>(null);
+  const slideSvgRefs = useRef<Record<number, SVGSVGElement | null>>({});
+
   async function runExport(action: () => Promise<void>) {
     setExporting(true);
     try {
       await action();
-    } catch (error) {
+    } catch (err) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "Could not export your slides.",
+        err instanceof Error ? err.message : "Could not export your slides.",
       );
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } finally {
       setExporting(false);
     }
   }
-
-  const resultsRef = useRef<HTMLDivElement | null>(null);
-  const slideSvgRefs = useRef<Record<number, SVGSVGElement | null>>({});
 
   const palette: CarouselThemePalette = useMemo(() => {
     if (carouselTheme === "custom-brand") {
@@ -122,8 +135,9 @@ export function InstagramCaptionGeneratorClient() {
   }, [carouselTheme, customColors]);
 
   function notify(msg: string) {
+    setError(null);
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(""), 3000);
+    setTimeout(() => setToastMsg(""), 3200);
   }
 
   async function executeGenerate(inputOverride?: {
@@ -139,6 +153,7 @@ export function InstagramCaptionGeneratorClient() {
 
     if (!activeTopic.trim()) {
       setError("Please enter a topic or fetch an article URL first.");
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
     setLoading(true);
@@ -164,8 +179,9 @@ export function InstagramCaptionGeneratorClient() {
       setResult({
         ...data,
         carouselSlides: data.carouselSlides.map(
-          (slide: InstagramCarouselSlide) => ({
+          (slide: InstagramCarouselSlide, idx: number) => ({
             ...slide,
+            slideNumber: idx + 1,
             metricBadge: sourceMetric(
               `${slide.headline} ${slide.supportingText}`,
             ),
@@ -174,7 +190,7 @@ export function InstagramCaptionGeneratorClient() {
       } as InstagramCaptionOutput);
       setSelectedCaptionIdx(0);
       setActiveSlideNumber(1);
-      notify("Rendered 5 Vector Carousel Slides & Captions in 1 click!");
+      notify("Rendered Vector Carousel Slides & Captions in 1 click!");
       setTimeout(() => focusToolSection(resultsRef.current), 120);
     } catch (err) {
       setError(
@@ -182,12 +198,12 @@ export function InstagramCaptionGeneratorClient() {
           ? err.message
           : "Failed to generate Instagram captions.",
       );
+      setTimeout(() => focusToolSection(resultsRef.current), 80);
     } finally {
       setLoading(false);
     }
   }
 
-  // 1-CLICK URL EXTRACTION: UrlArticleExtractorBar already auto-selects Topic #1 and passes it here
   function handleUrlExtracted(payload: UniversalExtractResponse) {
     const initialText =
       payload.cleanText || payload.description || payload.title;
@@ -211,6 +227,24 @@ export function InstagramCaptionGeneratorClient() {
     });
   }
 
+  function handleCustomPhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid PNG, JPG, WebP, or SVG image.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setCustomUploadedPhoto(reader.result);
+        setPhotoSlideNumbers((prev) => new Set(prev).add(activeSlideNumber));
+        notify(`Attached custom photo to Slide 0${activeSlideNumber}!`);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
   function handleCopy(text: string, label: string) {
     navigator.clipboard.writeText(text);
     notify(`Copied ${label} to clipboard!`);
@@ -229,6 +263,45 @@ export function InstagramCaptionGeneratorClient() {
     }));
   }
 
+  function handleAddSlide() {
+    if (result.carouselSlides.length >= MAX_CAROUSEL_SLIDES) {
+      notify(`Maximum ${MAX_CAROUSEL_SLIDES} carousel slides reached.`);
+      return;
+    }
+    const nextNum = result.carouselSlides.length + 1;
+    const newSlide: InstagramCarouselSlide = {
+      slideNumber: nextNum,
+      headline: `Step 0${nextNum - 1}: Key Strategic Action`,
+      supportingText:
+        "Break down one high-impact action per card so readers save and share your carousel.",
+      visualDirection: "Clean vector card",
+      metricBadge: `0${nextNum}`,
+      categoryTag: niche,
+    };
+    setResult((prev) => ({
+      ...prev,
+      carouselSlides: [...prev.carouselSlides, newSlide],
+    }));
+    setActiveSlideNumber(nextNum);
+    notify(`Added Slide 0${nextNum} to your carousel deck!`);
+  }
+
+  function handleRemoveSlide(slideNumToRemove: number) {
+    if (result.carouselSlides.length <= MIN_CAROUSEL_SLIDES) {
+      notify(`Carousel decks require at least ${MIN_CAROUSEL_SLIDES} slides.`);
+      return;
+    }
+    const filtered = result.carouselSlides
+      .filter((s) => s.slideNumber !== slideNumToRemove)
+      .map((s, idx) => ({ ...s, slideNumber: idx + 1 }));
+    setResult((prev) => ({
+      ...prev,
+      carouselSlides: filtered,
+    }));
+    setActiveSlideNumber(Math.min(slideNumToRemove, filtered.length));
+    notify(`Removed slide and renumbered ${filtered.length}-slide deck.`);
+  }
+
   function togglePhotoSlide(slideNum: number) {
     setPhotoSlideNumbers((prev) => {
       const next = new Set(prev);
@@ -236,17 +309,6 @@ export function InstagramCaptionGeneratorClient() {
       else next.add(slideNum);
       return next;
     });
-  }
-
-  function serializeSlideSvg(slideNum: number): string {
-    const svgEl = slideSvgRefs.current[slideNum];
-    if (!svgEl) return "";
-    const clone = svgEl.cloneNode(true) as SVGSVGElement;
-    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-    clone.setAttribute("width", "1080");
-    clone.setAttribute("height", "1080");
-    return new XMLSerializer().serializeToString(clone);
   }
 
   async function renderSlideSvgToCanvas(
@@ -261,7 +323,7 @@ export function InstagramCaptionGeneratorClient() {
   async function downloadSingleSlidePng(slideNumber: number) {
     const canvas = await renderSlideSvgToCanvas(slideNumber, 2);
     if (!canvas) {
-      downloadSingleSlideSvg(slideNumber);
+      await downloadSingleSlideSvg(slideNumber);
       return;
     }
     const link = document.createElement("a");
@@ -279,6 +341,7 @@ export function InstagramCaptionGeneratorClient() {
       new Blob([source], { type: "image/svg+xml;charset=utf-8" }),
       `carousel-slide-${slideNumber}.svg`,
     );
+    notify(`Downloaded Editable Vector Slide 0${slideNumber} (.SVG)!`);
   }
 
   async function copySlideToClipboard(slideNumber: number) {
@@ -308,7 +371,7 @@ export function InstagramCaptionGeneratorClient() {
       pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 1080, 1080);
     }
     pdf.save("carousel-deck.pdf");
-    notify("Downloaded your carousel PDF.");
+    notify("Downloaded your multi-page LinkedIn / Instagram Carousel PDF!");
   }
 
   async function downloadAllCarouselSlidesAndCaption() {
@@ -352,7 +415,11 @@ export function InstagramCaptionGeneratorClient() {
     result?.carouselSlides?.find((s) => s.slideNumber === activeSlideNumber) ||
     result?.carouselSlides?.[0];
 
-  const primaryArticleImageUrl = extractedImages?.[0]?.src || "";
+  const primaryArticleImageUrl =
+    customUploadedPhoto || extractedImages?.[0]?.src || "";
+
+  const canAddSlide = result.carouselSlides.length < MAX_CAROUSEL_SLIDES;
+  const canRemoveSlide = result.carouselSlides.length > MIN_CAROUSEL_SLIDES;
 
   function renderCarouselSlideSvg(
     slide: InstagramCarouselSlide,
@@ -372,7 +439,9 @@ export function InstagramCaptionGeneratorClient() {
     const photo =
       (slideTemplate === "photo-glass-overlay" ||
         photoSlideNumbers.has(slide.slideNumber)) &&
-      primaryArticleImageUrl;
+      primaryArticleImageUrl
+        ? primaryArticleImageUrl
+        : undefined;
     return (
       <svg
         ref={(el) => {
@@ -382,7 +451,7 @@ export function InstagramCaptionGeneratorClient() {
         className="block aspect-square h-auto w-full rounded-xl"
         role="img"
         aria-label={`Slide ${slide.slideNumber}: ${slide.headline}`}
-        fontFamily="Arial, Helvetica, sans-serif"
+        fontFamily="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
       >
         <defs>
           <linearGradient id={`deck-${slide.slideNumber}`} x2="1" y2="1">
@@ -400,7 +469,7 @@ export function InstagramCaptionGeneratorClient() {
           x="76"
           y="105"
           fontSize="21"
-          fontWeight="700"
+          fontWeight="800"
           letterSpacing="2"
           fill={palette.textSecondary}
         >
@@ -414,8 +483,9 @@ export function InstagramCaptionGeneratorClient() {
           width={1080}
           height={1080}
           palette={palette}
-          image={photo || "/visual-studio/paper-sculpture.png"}
-          imageStyle={photo ? "photo" : "paper"}
+          image={photo}
+          imageStyle="photo"
+          imageFitMode={imageFitMode}
           step={String(slide.slideNumber).padStart(2, "0")}
         />
         <line
@@ -431,7 +501,7 @@ export function InstagramCaptionGeneratorClient() {
           y="1005"
           fill={palette.textSecondary}
           fontSize="22"
-          fontWeight="700"
+          fontWeight="800"
         >
           doitwithai.tools
         </text>
@@ -439,8 +509,9 @@ export function InstagramCaptionGeneratorClient() {
           x="1004"
           y="1005"
           textAnchor="end"
-          fill={palette.textSecondary}
+          fill={palette.accent}
           fontSize="22"
+          fontWeight="800"
         >
           {slide.slideNumber} / {totalSlides} →
         </text>
@@ -458,17 +529,7 @@ export function InstagramCaptionGeneratorClient() {
         description="Rendering swipeable 1080×1080 vector cards across 8 slide templates and 12 color themes."
       />
 
-      {toastMsg && (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
-        >
-          <Check size={14} />
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
-      {/* 1-CLICK ARTICLE URL EXTRACTION (TOPIC #1 AUTO-SELECTED & GENERATED IN 1 SINGLE CLICK) */}
+      {/* 1-CLICK ARTICLE URL EXTRACTION */}
       <UrlArticleExtractorBar
         onExtracted={handleUrlExtracted}
         onSelectSubTopic={(sub, fullData) => {
@@ -486,13 +547,13 @@ export function InstagramCaptionGeneratorClient() {
             callToAction,
           });
         }}
-        label="Option 1: Paste Any Article or YouTube URL (Auto-Selects Topic #1 & Renders 5 Carousel Slides in 1 Click)"
+        label="Option 1: Paste Any Article or YouTube URL (Auto-Selects Topic #1 & Renders Carousel Slides in 1 Click)"
         placeholder="https://example.com/your-article-slug..."
-        buttonLabel="Extract & Generate 5 Slides (1-Click)"
+        buttonLabel="Extract & Generate Slides (1-Click)"
       />
 
       {/* MAIN STUDIO WORKSPACE */}
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.68fr)_minmax(0,1.32fr)]">
         {/* LEFT COLUMN: TOPIC / IDEA INPUT & LIVE SLIDE EDITOR */}
         <div className="space-y-5">
           <div className="shadow-xs space-y-4 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
@@ -504,8 +565,7 @@ export function InstagramCaptionGeneratorClient() {
                     Option 2: Topic Idea or Outline
                   </h2>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Enter any topic—1 click generates all 5 slides &amp;
-                    captions.
+                    Enter any topic—1 click generates all slides &amp; captions.
                   </p>
                 </div>
               </div>
@@ -565,7 +625,7 @@ export function InstagramCaptionGeneratorClient() {
 
             <div>
               <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-200">
-                Closing Call-To-Action (Slide 5)
+                Closing Call-To-Action
               </label>
               <input
                 type="text"
@@ -575,12 +635,6 @@ export function InstagramCaptionGeneratorClient() {
               />
             </div>
 
-            {error && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700">
-                {error}
-              </div>
-            )}
-
             <button
               type="button"
               onClick={() => void executeGenerate()}
@@ -589,35 +643,73 @@ export function InstagramCaptionGeneratorClient() {
             >
               <Sparkles size={16} />
               {loading
-                ? "Rendering 5 Vector Carousel Slides…"
-                : "Generate 5 Carousel Slides & Captions (1-Click)"}
+                ? "Rendering Vector Carousel Slides…"
+                : "Generate Carousel Slides & Captions (1-Click)"}
             </button>
           </div>
 
-          {/* LIVE INLINE SLIDE TEXT EDITOR */}
+          {/* LIVE INLINE SLIDE TEXT EDITOR WITH ADD / RED REMOVE SLIDE */}
           {activeEditingSlide && (
             <div className="shadow-xs space-y-3 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-slate-800">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-800">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
-                  Live Slide Editor · Editing Slide 0
-                  {activeEditingSlide.slideNumber}
+                  Live Slide Editor · Slide 0{activeEditingSlide.slideNumber} of{" "}
+                  0{result.carouselSlides.length}
                 </span>
-                <div className="flex gap-1">
-                  {result.carouselSlides.map((s) => (
-                    <button
-                      key={s.slideNumber}
-                      type="button"
-                      onClick={() => setActiveSlideNumber(s.slideNumber)}
-                      className={`h-7 w-7 rounded-lg text-xs font-extrabold transition ${
-                        activeSlideNumber === s.slideNumber
-                          ? "bg-[#3452d1] text-white"
-                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                      }`}
-                    >
-                      {s.slideNumber}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleAddSlide}
+                    disabled={!canAddSlide}
+                    style={{
+                      cursor: canAddSlide ? "pointer" : "not-allowed",
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[11px] font-extrabold text-white transition hover:bg-[#3452d1] disabled:opacity-45"
+                    title={
+                      canAddSlide
+                        ? "Add a new slide to the carousel"
+                        : `Maximum ${MAX_CAROUSEL_SLIDES} slides reached`
+                    }
+                  >
+                    <Plus size={12} /> Add Slide
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleRemoveSlide(activeEditingSlide.slideNumber)
+                    }
+                    disabled={!canRemoveSlide}
+                    style={{
+                      backgroundColor: "#e11d48",
+                      cursor: canRemoveSlide ? "pointer" : "not-allowed",
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-extrabold text-white transition hover:opacity-90 disabled:opacity-45"
+                    title={
+                      canRemoveSlide
+                        ? `Remove Slide 0${activeEditingSlide.slideNumber}`
+                        : `Minimum ${MIN_CAROUSEL_SLIDES} slides required`
+                    }
+                  >
+                    <Trash2 size={12} /> Remove
+                  </button>
                 </div>
+              </div>
+
+              <div className="flex flex-wrap gap-1">
+                {result.carouselSlides.map((s) => (
+                  <button
+                    key={s.slideNumber}
+                    type="button"
+                    onClick={() => setActiveSlideNumber(s.slideNumber)}
+                    className={`h-7 w-7 rounded-lg text-xs font-extrabold transition ${
+                      activeSlideNumber === s.slideNumber
+                        ? "bg-[#3452d1] text-white"
+                        : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                  >
+                    {s.slideNumber}
+                  </button>
+                ))}
               </div>
 
               <div className="grid gap-2.5 sm:grid-cols-2">
@@ -641,7 +733,7 @@ export function InstagramCaptionGeneratorClient() {
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                    Top-Right Category Kicker
+                    Top Category Kicker
                   </label>
                   <input
                     type="text"
@@ -659,8 +751,11 @@ export function InstagramCaptionGeneratorClient() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                  Slide 0{activeEditingSlide.slideNumber} Headline
+                <label className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                  <span>Slide 0{activeEditingSlide.slideNumber} Headline</span>
+                  <span className="text-[10px] text-[#4058d0]">
+                    {activeEditingSlide.headline.length}/75c (~80% optimal)
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -677,8 +772,11 @@ export function InstagramCaptionGeneratorClient() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                  Slide Supporting Copy
+                <label className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                  <span>Slide Supporting Copy</span>
+                  <span className="text-[10px] text-[#4058d0]">
+                    {activeEditingSlide.supportingText.length}/165c
+                  </span>
                 </label>
                 <textarea
                   rows={3}
@@ -697,13 +795,43 @@ export function InstagramCaptionGeneratorClient() {
           )}
         </div>
 
-        {/* RIGHT COLUMN: 8-TEMPLATE VECTOR CAROUSEL DECK + HOVER EXPORT + CAPTIONS */}
+        {/* RIGHT COLUMN: 8-TEMPLATE VECTOR CAROUSEL DECK + ZOOM & EXPORT + CAPTIONS */}
         <div
           ref={resultsRef}
           tabIndex={-1}
           className="space-y-6 focus:outline-none"
         >
           <div className="shadow-xs space-y-4 rounded-3xl border-2 border-[#3452d1]/25 bg-white p-5 dark:border-[#5271ff]/30 dark:bg-[#111827]">
+            {/* CONTEXTUAL IN-VIEW ALERTS */}
+            {error && (
+              <div
+                role="alert"
+                className="flex items-center justify-between gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-700 dark:text-rose-300"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <AlertTriangle size={15} />
+                  {error}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setError(null)}
+                  className="underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            {toastMsg && (
+              <div
+                role="status"
+                className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+              >
+                <Check size={14} />
+                <span>{toastMsg}</span>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
               <div>
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
@@ -711,11 +839,22 @@ export function InstagramCaptionGeneratorClient() {
                   Pickers
                 </span>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                  Your carousel · Select a slide to edit
+                  Your {result.carouselSlides.length}-Slide Carousel · Click any
+                  slide to edit
                 </h3>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddSlide}
+                  disabled={!canAddSlide}
+                  style={{ cursor: canAddSlide ? "pointer" : "not-allowed" }}
+                  className="inline-flex items-center gap-1 rounded-xl border border-[#4058d0] bg-[#4058d0]/10 px-3 py-2 text-xs font-extrabold text-[#4058d0] hover:bg-[#4058d0] hover:text-white disabled:opacity-45"
+                >
+                  <Plus size={14} /> Add Slide (
+                  {result.carouselSlides.length}/{MAX_CAROUSEL_SLIDES})
+                </button>
                 <button
                   type="button"
                   disabled={exporting}
@@ -739,14 +878,15 @@ export function InstagramCaptionGeneratorClient() {
               </div>
             </div>
 
-            <details className="rounded-xl border border-slate-400/30 p-4">
-              <summary className="font-semibold">
-                Customize layout &amp; colors
+            {/* OPEN BY DEFAULT SO ALL 8 TEMPLATES & 12 THEMES ARE IMMEDIATELY VISIBLE */}
+            <details open className="rounded-xl border border-slate-400/30 p-4">
+              <summary className="cursor-pointer font-extrabold text-slate-900 dark:text-white">
+                Customize Carousel Layout, Photo Framing &amp; Brand Colors (8
+                Templates · 12 Themes)
               </summary>
               <div className="mt-4 space-y-4">
-                {" "}
                 {/* 8 Carousel Slide Template Selector Pills */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {CAROUSEL_SLIDE_TEMPLATES.map((tpl) => (
                     <button
                       key={tpl.id}
@@ -758,7 +898,8 @@ export function InstagramCaptionGeneratorClient() {
                           : "border-slate-200 bg-slate-50/70 hover:border-[#3452d1] dark:border-slate-800 dark:bg-slate-900/60"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-1">
+                      <TemplateThumbnail id={tpl.id} />
+                      <div className="mt-1 flex items-center justify-between gap-1">
                         <strong className="truncate text-[11px] font-extrabold text-slate-900 dark:text-white">
                           {tpl.label}
                         </strong>
@@ -772,6 +913,62 @@ export function InstagramCaptionGeneratorClient() {
                     </button>
                   ))}
                 </div>
+
+                {/* Custom Photo Upload + Fit / Cover Toggle */}
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#4058d0] px-3 py-1.5 text-xs font-extrabold text-white hover:bg-[#3452d1]">
+                      <Upload size={13} />
+                      Upload Slide Photo (Horiz / Vert)
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCustomPhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <div className="inline-flex items-center rounded-xl border border-slate-300 bg-white p-0.5 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-950">
+                      <button
+                        type="button"
+                        onClick={() => setImageFitMode("contain")}
+                        className={`rounded-lg px-2.5 py-1 ${
+                          imageFitMode === "contain"
+                            ? "bg-[#3452d1] text-white"
+                            : "text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        Fit Full Image (No Crop)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setImageFitMode("cover")}
+                        className={`rounded-lg px-2.5 py-1 ${
+                          imageFitMode === "cover"
+                            ? "bg-[#3452d1] text-white"
+                            : "text-slate-600 dark:text-slate-300"
+                        }`}
+                      >
+                        Fill Frame (Cover)
+                      </button>
+                    </div>
+                  </div>
+                  {primaryArticleImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomUploadedPhoto("");
+                        setPhotoSlideNumbers(new Set());
+                        if (slideTemplate === "photo-glass-overlay") {
+                          setSlideTemplate("editorial-magazine");
+                        }
+                      }}
+                      className="text-xs font-bold text-rose-600 hover:underline"
+                    >
+                      Clear Slide Photos
+                    </button>
+                  )}
+                </div>
+
                 {/* 12 Color Themes + 4 Live Custom Color Pickers */}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
@@ -896,10 +1093,83 @@ export function InstagramCaptionGeneratorClient() {
                 </div>
               </div>
             </details>
-            {/* 5-SLIDE VECTOR GRID WITH HOVER PNG / SVG / COPY OVERLAY */}
+
+            {/* DIRECT IN-CANVAS KEYBOARD BAR + ZOOM CONTROLS FOR CAROUSEL DECK */}
+            {activeEditingSlide && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800 bg-[#0d1424] px-4 py-2.5 text-xs text-slate-200">
+                <div className="flex min-w-[240px] flex-1 items-center gap-2">
+                  <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-[#9aabff]">
+                    <Type size={13} /> Slide 0{activeEditingSlide.slideNumber}{" "}
+                    Headline:
+                  </span>
+                  <input
+                    type="text"
+                    value={activeEditingSlide.headline}
+                    onChange={(e) =>
+                      updateSlideField(
+                        activeEditingSlide.slideNumber,
+                        "headline",
+                        e.target.value,
+                      )
+                    }
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-white focus:border-[#5271ff] focus:outline-none"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) =>
+                        Math.max(0.75, +(z - 0.15).toFixed(2)),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomOut size={12} /> -
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel(1)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold ${
+                      zoomLevel === 1
+                        ? "bg-[#4058d0] text-white"
+                        : "bg-slate-800 text-slate-200"
+                    }`}
+                  >
+                    Grid Fit ({Math.round(zoomLevel * 100)}%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) => Math.min(2, +(z + 0.25).toFixed(2)))
+                    }
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomIn size={12} /> +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel(zoomLevel === 1.5 ? 1 : 1.5)}
+                    className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                      zoomLevel > 1.2
+                        ? "bg-[#3452d1] text-white"
+                        : "bg-slate-800 text-slate-300"
+                    }`}
+                  >
+                    {zoomLevel > 1.2 ? "Reset Grid" : "150% Large View"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* MULTI-SLIDE VECTOR GRID WITH PERSISTENT EXPORT BAR ON EVERY SLIDE */}
             <div
               data-slide-gallery
-              className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              className={
+                zoomLevel > 1.25
+                  ? "grid gap-5 sm:grid-cols-1 lg:grid-cols-2"
+                  : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+              }
             >
               {result.carouselSlides.map((slide) => {
                 const isSelectedForEdit =
@@ -923,7 +1193,7 @@ export function InstagramCaptionGeneratorClient() {
                         Slide 0{slide.slideNumber} / 0
                         {result.carouselSlides.length}
                       </span>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         {primaryArticleImageUrl && (
                           <button
                             type="button"
@@ -940,70 +1210,48 @@ export function InstagramCaptionGeneratorClient() {
                             {hasPhoto ? "Photo On" : "+ Photo"}
                           </button>
                         )}
-                        <span className="text-[10px] font-bold text-slate-400">
-                          <button
-                            type="button"
-                            aria-pressed={isSelectedForEdit}
-                            onClick={() =>
-                              setActiveSlideNumber(slide.slideNumber)
-                            }
-                          >
-                            {isSelectedForEdit ? "Editing" : "Edit slide"}
-                          </button>
-                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void runExport(() =>
+                              downloadSingleSlidePng(slide.slideNumber),
+                            );
+                          }}
+                          className="inline-flex items-center gap-0.5 rounded bg-[#4058d0] px-2 py-0.5 text-[10px] font-extrabold text-white hover:bg-[#3452d1]"
+                          title="Download 2x Retina PNG"
+                        >
+                          <Download size={10} /> PNG
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void runExport(() =>
+                              downloadSingleSlideSvg(slide.slideNumber),
+                            );
+                          }}
+                          className="inline-flex items-center gap-0.5 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold text-white hover:bg-slate-700"
+                          title="Download Editable Vector SVG"
+                        >
+                          SVG
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void copySlideToClipboard(slide.slideNumber);
+                          }}
+                          className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] font-bold text-slate-700 hover:bg-slate-200 dark:border-slate-700 dark:text-slate-200"
+                          title="Copy Slide Image"
+                        >
+                          Copy
+                        </button>
                       </div>
                     </div>
 
-                    {/* HOVERABLE VECTOR SVG SLIDE */}
+                    {/* VECTOR SVG SLIDE */}
                     <div className="relative overflow-hidden rounded-xl border border-slate-300 bg-slate-950 shadow-sm dark:border-slate-700">
-                      {/* FLOATING HOVER DOWNLOAD BAR (PNG · SVG · COPY) */}
-                      <div
-                        data-export-toolbar
-                        className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-2 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
-                      >
-                        <div className="pointer-events-auto flex items-center gap-1 rounded-xl border border-white/20 bg-slate-900/90 p-1.5 shadow-xl backdrop-blur-md">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void runExport(() =>
-                                downloadSingleSlidePng(slide.slideNumber),
-                              );
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[11px] font-extrabold text-white hover:bg-[#3452d1]"
-                            title="Download 2x Retina PNG"
-                          >
-                            <Download size={11} />
-                            PNG
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void runExport(() =>
-                                downloadSingleSlideSvg(slide.slideNumber),
-                              );
-                            }}
-                            className="inline-flex items-center gap-1 rounded-lg bg-[#3452d1] px-2 py-1 text-[11px] font-extrabold text-white hover:bg-[#2842b5]"
-                            title="Download Editable Vector SVG"
-                          >
-                            <FileCode2 size={11} />
-                            SVG
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void copySlideToClipboard(slide.slideNumber);
-                            }}
-                            className="rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-[11px] font-bold text-white hover:bg-white/20"
-                            title="Copy Slide Image"
-                          >
-                            Copy
-                          </button>
-                        </div>
-                      </div>
-
                       {renderCarouselSlideSvg(
                         slide,
                         result.carouselSlides.length,

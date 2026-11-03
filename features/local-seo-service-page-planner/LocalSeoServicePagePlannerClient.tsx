@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Copy,
   Download,
+  FileText,
   Layers,
   MapPin,
   ShieldCheck,
@@ -28,12 +29,52 @@ export default function LocalSeoServicePagePlannerClient() {
   );
   const [selectedSlug, setSelectedSlug] = useState<string>("");
   const [aiBrief, setAiBrief] = useState<CityBrief | null>(null);
+  const [pageOverrides, setPageOverrides] = useState<
+    Record<
+      string,
+      { h1Heading?: string; metaTitle?: string; metaDescription?: string }
+    >
+  >({});
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState("");
 
   const matrix = useMemo(() => buildServiceAreaMatrix(input), [input]);
-  const selectedPage =
+  const rawPage =
     matrix.pages.find((p) => p.slug === selectedSlug) || matrix.pages[0];
+
+  const selectedPage = useMemo(() => {
+    if (!rawPage) return null;
+    const ov = pageOverrides[rawPage.slug] || {};
+    return {
+      ...rawPage,
+      h1Heading: ov.h1Heading ?? rawPage.h1Heading,
+      metaTitle: ov.metaTitle ?? rawPage.metaTitle,
+      metaDescription: ov.metaDescription ?? rawPage.metaDescription,
+    };
+  }, [rawPage, pageOverrides]);
+
+  const fallbackBrief = useMemo<CityBrief | null>(() => {
+    if (!selectedPage) return null;
+    return {
+      localizedIntroParagraph: `Need trusted ${selectedPage.targetService.toLowerCase()} in ${selectedPage.targetCity}, ${input.stateAbbr}? ${input.businessName} dispatches licensed local specialists across ${selectedPage.targetCity} with transparent upfront pricing, verified local references, and fast response windows (${input.uniqueLocalProofNotes}).`,
+      localProofChecklist: [
+        `Embed 2–3 recent project photos or customer reviews specifically from ${selectedPage.targetCity}.`,
+        `Mention local ${selectedPage.targetCity} neighborhoods, landmarks, or municipal codes relevant to ${selectedPage.targetService.toLowerCase()}.`,
+      ],
+      citySpecificFaqs: [
+        {
+          question: `How quickly can ${input.businessName} provide ${selectedPage.targetService.toLowerCase()} in ${selectedPage.targetCity}?`,
+          answer: `Our ${input.hubCity}-based crew serves ${selectedPage.targetCity}, ${input.stateAbbr} daily with same-day and next-day scheduling.`,
+        },
+        {
+          question: `What does ${selectedPage.targetService.toLowerCase()} cost in ${selectedPage.targetCity}, ${input.stateAbbr}?`,
+          answer: `We provide written, itemized estimates before work begins so ${selectedPage.targetCity} homeowners and businesses know the exact scope and warranty coverage.`,
+        },
+      ],
+    };
+  }, [selectedPage, input]);
+
+  const activeBrief = aiBrief || fallbackBrief;
 
   function notify(msg: string) {
     setToast(msg);
@@ -92,6 +133,39 @@ export default function LocalSeoServicePagePlannerClient() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     notify("Downloaded Local Service-Area Page Matrix (.CSV)!");
+  }
+
+  function downloadSelectedPageBriefMd() {
+    if (!selectedPage || !activeBrief) return;
+    const lines = [
+      `# Local Service Page Blueprint: ${selectedPage.h1Heading}`,
+      `- **URL Slug:** ${selectedPage.slug}`,
+      `- **Page Type:** ${selectedPage.pageType}`,
+      `- **Primary Keyword:** ${selectedPage.primaryKeyword}`,
+      `- **Meta Title (${selectedPage.metaTitle.length} chars):** ${selectedPage.metaTitle}`,
+      `- **Meta Description (${selectedPage.metaDescription.length} chars):** ${selectedPage.metaDescription}`,
+      "",
+      "## Recommended H2 Heading Outline",
+      ...selectedPage.h2Outline.map((h) => `- H2: ${h}`),
+      "",
+      "## Localized Intro Paragraph",
+      activeBrief.localizedIntroParagraph,
+      "",
+      "## City-Specific FAQs",
+      ...activeBrief.citySpecificFaqs.map(
+        (f) => `### Q: ${f.question}\nA: ${f.answer}\n`,
+      ),
+    ];
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedPage.slug.replace(/[^a-z0-9-]+/gi, "-").replace(/^-|-$/g, "")}-brief.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify("Downloaded Selected Page Brief (.MD)!");
   }
 
   return (
@@ -263,7 +337,7 @@ export default function LocalSeoServicePagePlannerClient() {
                         {p.slug}
                       </span>
                       <p className="mt-0.5 truncate font-bold text-slate-900 dark:text-white">
-                        {p.h1Heading}
+                        {pageOverrides[p.slug]?.h1Heading ?? p.h1Heading}
                       </p>
                     </div>
                     <span className="shrink-0 rounded-full bg-slate-200 px-2.5 py-0.5 text-[10px] font-extrabold text-slate-800 dark:bg-slate-800 dark:text-slate-200">
@@ -276,30 +350,39 @@ export default function LocalSeoServicePagePlannerClient() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: SELECTED PAGE BLUEPRINT & AI LOCALIZED CONTENT BRIEF */}
+        {/* RIGHT COLUMN: SELECTED PAGE BLUEPRINT (INLINE EDITABLE) & LOCALIZED CONTENT BRIEF */}
         {selectedPage && (
           <div className="space-y-6">
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-xs font-extrabold uppercase tracking-wider text-[#5271ff]">
-                    Page SEO Blueprint · {selectedPage.pageType}
+                    Page SEO Blueprint (Editable) · {selectedPage.pageType}
                   </span>
                   <h3 className="mt-0.5 text-lg font-black">
                     {selectedPage.h1Heading}
                   </h3>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleGenerateCityBrief}
-                  disabled={loadingAi}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
-                >
-                  <Sparkles size={14} />
-                  {loadingAi
-                    ? "Building City Brief…"
-                    : "Generate AI City Copy & FAQs"}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={downloadSelectedPageBriefMd}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-extrabold text-slate-800 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                  >
+                    <FileText size={13} /> Brief (.MD)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleGenerateCityBrief}
+                    disabled={loadingAi}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
+                  >
+                    <Sparkles size={14} />
+                    {loadingAi
+                      ? "Building City Brief…"
+                      : "Generate AI City Copy & FAQs"}
+                  </button>
+                </div>
               </div>
 
               <div className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/70">
@@ -315,11 +398,44 @@ export default function LocalSeoServicePagePlannerClient() {
 
                 <div>
                   <span className="font-extrabold text-slate-500">
+                    H1 HEADING:
+                  </span>
+                  <input
+                    type="text"
+                    value={selectedPage.h1Heading}
+                    onChange={(e) =>
+                      setPageOverrides((prev) => ({
+                        ...prev,
+                        [selectedPage.slug]: {
+                          ...prev[selectedPage.slug],
+                          h1Heading: e.target.value,
+                        },
+                      }))
+                    }
+                    aria-label="Edit selected page H1 heading"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 font-bold text-slate-900 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <span className="font-extrabold text-slate-500">
                     META TITLE ({selectedPage.metaTitle.length} chars):
                   </span>
-                  <p className="mt-0.5 font-bold text-slate-900 dark:text-white">
-                    {selectedPage.metaTitle}
-                  </p>
+                  <input
+                    type="text"
+                    value={selectedPage.metaTitle}
+                    onChange={(e) =>
+                      setPageOverrides((prev) => ({
+                        ...prev,
+                        [selectedPage.slug]: {
+                          ...prev[selectedPage.slug],
+                          metaTitle: e.target.value,
+                        },
+                      }))
+                    }
+                    aria-label="Edit selected page meta title"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 font-bold text-slate-900 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  />
                 </div>
 
                 <div>
@@ -327,9 +443,21 @@ export default function LocalSeoServicePagePlannerClient() {
                     META DESCRIPTION ({selectedPage.metaDescription.length}{" "}
                     chars):
                   </span>
-                  <p className="mt-0.5 text-slate-700 dark:text-slate-300">
-                    {selectedPage.metaDescription}
-                  </p>
+                  <textarea
+                    rows={2}
+                    value={selectedPage.metaDescription}
+                    onChange={(e) =>
+                      setPageOverrides((prev) => ({
+                        ...prev,
+                        [selectedPage.slug]: {
+                          ...prev[selectedPage.slug],
+                          metaDescription: e.target.value,
+                        },
+                      }))
+                    }
+                    aria-label="Edit selected page meta description"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-slate-700 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  />
                 </div>
               </div>
 
@@ -375,17 +503,38 @@ export default function LocalSeoServicePagePlannerClient() {
               </div>
             </div>
 
-            {aiBrief && (
+            {activeBrief && (
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
-                <h4 className="text-base font-extrabold">
-                  AI-Generated Local Intro &amp; {selectedPage.targetCity} FAQs
-                </h4>
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-base font-extrabold">
+                    Localized Intro &amp; {selectedPage.targetCity} FAQs
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const text = [
+                        activeBrief.localizedIntroParagraph,
+                        "",
+                        ...activeBrief.citySpecificFaqs.map(
+                          (f) => `Q: ${f.question}\nA: ${f.answer}`,
+                        ),
+                      ].join("\n\n");
+                      await navigator.clipboard.writeText(text);
+                      notify(
+                        `Copied ${selectedPage.targetCity} intro & FAQs!`,
+                      );
+                    }}
+                    className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    <Copy size={12} /> Copy Intro &amp; FAQs
+                  </button>
+                </div>
                 <p className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-6 dark:border-slate-800 dark:bg-slate-900">
-                  {aiBrief.localizedIntroParagraph}
+                  {activeBrief.localizedIntroParagraph}
                 </p>
 
                 <div className="mt-4 space-y-2.5">
-                  {aiBrief.citySpecificFaqs.map((faq, i) => (
+                  {activeBrief.citySpecificFaqs.map((faq, i) => (
                     <div
                       key={i}
                       className="rounded-xl border border-slate-200 p-3 text-xs dark:border-slate-800"

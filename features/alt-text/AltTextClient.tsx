@@ -6,6 +6,7 @@ import {
   Copy,
   Download,
   ImagePlus,
+  RotateCcw,
   ScanEye,
   Sparkles,
   X,
@@ -19,12 +20,14 @@ import {
 } from "./schema";
 import { altAttribute, reviewAlt } from "./review";
 import { prepareImage } from "./prepare-image";
+
 const field =
   "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-7 text-slate-900 outline-none focus:border-[#5271ff] focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-blue-900";
 const button =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-blue-200 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 disabled:opacity-50";
 const card =
   "rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-7";
+
 const examples = {
   informative: {
     description:
@@ -61,25 +64,75 @@ const examples = {
     currentAlt: "Blue wave",
   },
 };
+
+const INITIAL_ALT_SOURCE: AltInput = {
+  mode: "description",
+  purpose: "informative",
+  description: examples.informative.description,
+  context: examples.informative.context,
+  destination: examples.informative.destination,
+  visibleText: examples.informative.visibleText,
+  currentAlt: examples.informative.currentAlt,
+  image: "",
+};
+
+const INITIAL_ALT_OUTPUT: AltOutput = {
+  candidates: [
+    {
+      text: "Writer reviewing a printed article draft at a desk beside an open laptop and notebook",
+      explanation:
+        "Concise scene description focused on the editorial review workflow.",
+    },
+    {
+      text: "Editor comparing a printed draft against notes on a laptop before publishing",
+      explanation:
+        "Emphasizes the page context of human review prior to publication.",
+    },
+    {
+      text: "Person seated at a wooden desk marking up a printed article next to a laptop",
+      explanation:
+        "Direct visual description without repeating surrounding heading words.",
+    },
+  ],
+  extendedDescription: "",
+  review: [
+    "Removed redundant 'Image of' prefix and keyword stuffing from the original alt attribute.",
+    "Kept the description grounded in visible desk, printed draft, and laptop details.",
+    "Check whether the surrounding caption already states the editorial workflow.",
+  ],
+};
+
 export default function AltTextClient() {
-  const [mode, setMode] = useState<AltInput["mode"]>("upload");
+  const [mode, setMode] = useState<AltInput["mode"]>("description");
   const [purpose, setPurpose] = useState<AltInput["purpose"]>("informative");
-  const [description, setDescription] = useState("");
-  const [context, setContext] = useState("");
-  const [destination, setDestination] = useState("");
-  const [visibleText, setVisibleText] = useState("");
-  const [currentAlt, setCurrentAlt] = useState("");
+  const [description, setDescription] = useState(
+    examples.informative.description,
+  );
+  const [context, setContext] = useState(examples.informative.context);
+  const [destination, setDestination] = useState(
+    examples.informative.destination,
+  );
+  const [visibleText, setVisibleText] = useState(
+    examples.informative.visibleText,
+  );
+  const [currentAlt, setCurrentAlt] = useState(examples.informative.currentAlt);
   const [image, setImage] = useState<Awaited<
     ReturnType<typeof prepareImage>
   > | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
-  const [result, setResult] = useState<AltOutput | null>(null);
-  const [source, setSource] = useState<AltInput | null>(null);
-  const [edits, setEdits] = useState<string[]>([]);
-  const [extended, setExtended] = useState("");
+  const [status, setStatus] = useState(
+    "Sample alt-text workspace loaded. Edit any alternative below or upload your own image.",
+  );
+  const [result, setResult] = useState<AltOutput | null>(INITIAL_ALT_OUTPUT);
+  const [source, setSource] = useState<AltInput | null>(INITIAL_ALT_SOURCE);
+  const [edits, setEdits] = useState<string[]>(
+    INITIAL_ALT_OUTPUT.candidates.map((c) => c.text),
+  );
+  const [extended, setExtended] = useState(
+    INITIAL_ALT_OUTPUT.extendedDescription,
+  );
   const [selected, setSelected] = useState(0);
   const [reviewed, setReviewed] = useState<boolean[]>([false, false, false]);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -93,6 +146,7 @@ export default function AltTextClient() {
     source?.purpose || "informative",
   );
   const currentChecks = reviewAlt(currentAlt, "", context, purpose);
+
   async function copy(value: string) {
     try {
       await navigator.clipboard.writeText(value);
@@ -103,12 +157,14 @@ export default function AltTextClient() {
       );
     }
   }
+
   function clearImage() {
     uploadVersion.current++;
     setImage(null);
     setPreparing(false);
     if (fileRef.current) fileRef.current.value = "";
   }
+
   function useExample() {
     const e = examples[purpose];
     clearImage();
@@ -121,6 +177,19 @@ export default function AltTextClient() {
     setError("");
     setStatus("Written example loaded. No image has been uploaded.");
   }
+
+  function clearAll() {
+    clearImage();
+    setMode("upload");
+    setDescription("");
+    setContext("");
+    setDestination("");
+    setVisibleText("");
+    setCurrentAlt("");
+    setError("");
+    setStatus("Cleared brief inputs. Previous alternatives remain below until you generate again.");
+  }
+
   async function upload(file?: File) {
     if (!file) return;
     const version = ++uploadVersion.current;
@@ -146,6 +215,7 @@ export default function AltTextClient() {
       if (fileRef.current) fileRef.current.value = "";
     }
   }
+
   async function generate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -215,6 +285,7 @@ export default function AltTextClient() {
       setBusy(false);
     }
   }
+
   function download() {
     const text = `Image purpose: ${source ? purposeLabels[source.purpose] : ""}\nSource: ${source?.image ? "Uploaded image and notes" : "Written description"}\n\nAlt text:\n${edited}\n\nHTML attribute:\n${altAttribute(edited)}${extended ? `\n\nExtended description for nearby page text:\n${extended}` : ""}\n\nReview this draft against the image and its page context before publishing.\n`;
     const url = URL.createObjectURL(
@@ -227,6 +298,7 @@ export default function AltTextClient() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     setStatus("Draft downloaded.");
   }
+
   return (
     <div className="space-y-7">
       <form
@@ -236,7 +308,7 @@ export default function AltTextClient() {
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#4058D0] dark:text-blue-300">
               01 · Image and purpose
             </p>
             <h2 className="mt-3 text-2xl font-black text-slate-950 dark:text-white">
@@ -247,14 +319,26 @@ export default function AltTextClient() {
               page context to explain its purpose.
             </p>
           </div>
-          <button
-            type="button"
-            className={button}
-            onClick={useExample}
-            disabled={busy || preparing}
-          >
-            Try an example
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={button}
+              onClick={useExample}
+              disabled={busy || preparing}
+            >
+              <Sparkles aria-hidden className="h-3.5 w-3.5 text-[#4058D0]" />
+              Try an example
+            </button>
+            <button
+              type="button"
+              className={button}
+              onClick={clearAll}
+              disabled={busy || preparing}
+            >
+              <RotateCcw aria-hidden className="h-3.5 w-3.5" />
+              Clear brief
+            </button>
+          </div>
         </div>
         <div className="mt-6">
           <label htmlFor="alt-source-mode" className="text-sm font-bold">
@@ -293,7 +377,7 @@ export default function AltTextClient() {
                   setPurpose(value as AltInput["purpose"]);
                   setError("");
                 }}
-                className={`min-h-14 rounded-xl border px-3 py-3 text-left text-xs font-bold transition focus-visible:ring-4 focus-visible:ring-blue-200 ${purpose === value ? "border-[#5271ff] bg-blue-50 text-[#4662df] dark:bg-blue-950 dark:text-blue-200" : "border-slate-200 text-slate-600 hover:border-blue-300 dark:border-slate-700 dark:text-slate-300"}`}
+                className={`min-h-14 rounded-xl border px-3 py-3 text-left text-xs font-bold transition focus-visible:ring-4 focus-visible:ring-blue-200 ${purpose === value ? "border-[#4058D0] bg-blue-50 text-[#4058D0] dark:bg-blue-950 dark:text-blue-200" : "border-slate-200 text-slate-600 hover:border-blue-300 dark:border-slate-700 dark:text-slate-300"}`}
               >
                 {label}
               </button>
@@ -337,7 +421,7 @@ export default function AltTextClient() {
                     htmlFor="alt-image"
                     className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white"
                   >
-                    <ImagePlus aria-hidden className="h-5 w-5 text-[#5271ff]" />
+                    <ImagePlus aria-hidden className="h-5 w-5 text-[#4058D0]" />
                     {mode === "upload"
                       ? "Upload one image (required)"
                       : "Upload an image to switch to image mode"}
@@ -350,7 +434,7 @@ export default function AltTextClient() {
                     disabled={busy || preparing}
                     onChange={(e) => void upload(e.target.files?.[0])}
                     aria-describedby="alt-upload-help"
-                    className="mt-4 w-full min-w-0 text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#4662df] file:px-4 file:py-3 file:font-bold file:text-white dark:text-slate-300"
+                    className="mt-4 w-full min-w-0 text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#4058D0] file:px-4 file:py-3 file:font-bold file:text-white dark:text-slate-300"
                   />
                   <p
                     id="alt-upload-help"
@@ -363,7 +447,7 @@ export default function AltTextClient() {
                   {preparing && (
                     <p
                       role="status"
-                      className="mt-3 text-sm text-[#4662df] dark:text-blue-200"
+                      className="mt-3 text-sm text-[#4058D0] dark:text-blue-200"
                     >
                       Preparing your image…
                     </p>
@@ -456,7 +540,7 @@ export default function AltTextClient() {
                       className="text-sm font-bold text-slate-900 dark:text-white"
                     >
                       Link destination or button action{" "}
-                      <span className="text-[#4662df] dark:text-blue-200">
+                      <span className="text-[#4058D0] dark:text-blue-200">
                         (required)
                       </span>
                     </label>
@@ -472,7 +556,7 @@ export default function AltTextClient() {
                   </div>
                 )}
                 {purpose === "complex" && (
-                  <p className="rounded-xl bg-blue-50 p-4 text-xs leading-6 text-[#4662df] dark:bg-blue-950/40 dark:text-blue-200">
+                  <p className="rounded-xl bg-blue-50 p-4 text-xs leading-6 text-[#4058D0] dark:bg-blue-950/40 dark:text-blue-200">
                     Supply exact values and labels in your notes. The result
                     includes a separate extended description for nearby page
                     text.
@@ -543,7 +627,7 @@ export default function AltTextClient() {
                 data-alt-generate
                 type="submit"
                 disabled={busy || preparing}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#4662df] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/20 hover:bg-[#3852bd] focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-50"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#4058D0] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/20 hover:bg-[#3452D1] focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-50"
               >
                 <Sparkles aria-hidden className="h-4 w-4" />
                 {busy ? "Drafting alternatives…" : "Generate alt text"}
@@ -560,9 +644,15 @@ export default function AltTextClient() {
           {error}
         </p>
       )}
-      <p role="status" aria-live="polite" className="text-sm text-blue-100">
-        {status}
-      </p>
+      {status && (
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-blue-200 bg-blue-50/80 px-4 py-2.5 text-xs font-bold text-[#4058D0] dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200"
+        >
+          {status}
+        </p>
+      )}
       {result && source && purpose !== "decorative" && (
         <section
           ref={resultRef}
@@ -570,7 +660,7 @@ export default function AltTextClient() {
           aria-label="Alt text alternatives"
           className={`${card} scroll-mt-28 outline-none focus-visible:ring-4 focus-visible:ring-blue-300`}
         >
-          <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#4058D0] dark:text-blue-300">
             02 · Compare and refine
           </p>
           <h2 className="mt-3 text-2xl font-black text-slate-950 dark:text-white">
@@ -594,9 +684,9 @@ export default function AltTextClient() {
                   setSelected(i);
                   setReviewed([false, false, false]);
                 }}
-                className={`min-w-0 rounded-2xl border p-5 text-left focus-visible:ring-4 focus-visible:ring-blue-200 ${selected === i ? "border-[#5271ff] bg-blue-50 dark:bg-blue-950/40" : "border-slate-200 hover:border-blue-300 dark:border-slate-700"}`}
+                className={`min-w-0 rounded-2xl border p-5 text-left focus-visible:ring-4 focus-visible:ring-blue-200 ${selected === i ? "border-[#4058D0] bg-blue-50 dark:bg-blue-950/40" : "border-slate-200 hover:border-blue-300 dark:border-slate-700"}`}
               >
-                <span className="flex items-center justify-between gap-3 text-xs font-bold text-[#4662df] dark:text-blue-200">
+                <span className="flex items-center justify-between gap-3 text-xs font-bold text-[#4058D0] dark:text-blue-200">
                   Alternative {i + 1}
                   {selected === i && <Check aria-hidden className="h-4 w-4" />}
                 </span>
@@ -725,7 +815,7 @@ export default function AltTextClient() {
             <aside className="min-w-0 space-y-5">
               <div className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700">
                 <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
-                  <ScanEye aria-hidden className="h-5 w-5 text-[#5271ff]" />
+                  <ScanEye aria-hidden className="h-5 w-5 text-[#4058D0]" />
                   Review in context
                 </h3>
                 {source.image && (
@@ -768,7 +858,10 @@ export default function AltTextClient() {
                   ))}
                 </ul>
               </div>
-              <details className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700">
+              <details
+                open
+                className="rounded-2xl border border-slate-200 p-5 dark:border-slate-700"
+              >
                 <summary className="cursor-pointer text-sm font-bold text-slate-900 dark:text-white">
                   AI review notes for the generated drafts
                 </summary>
@@ -799,7 +892,7 @@ export default function AltTextClient() {
                           old.map((v, n) => (n === i ? e.target.checked : v)),
                         )
                       }
-                      className="mt-1 h-4 w-4 accent-[#5271ff]"
+                      className="mt-1 h-4 w-4 accent-[#4058D0]"
                     />
                     {label}
                   </label>

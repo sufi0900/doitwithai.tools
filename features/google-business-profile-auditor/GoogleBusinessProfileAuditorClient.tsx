@@ -20,11 +20,47 @@ import {
 export default function GoogleBusinessProfileAuditorClient() {
   const [input, setInput] = useState<GbpAuditInput>(DEFAULT_GBP_AUDIT_INPUT);
   const [aiPack, setAiPack] = useState<GbpOptimizationPack | null>(null);
+  const [descOverride, setDescOverride] = useState<string | null>(null);
+  const [qaOverrides, setQaOverrides] = useState<
+    Record<number, { question?: string; answer?: string }>
+  >({});
+  const [postOverrides, setPostOverrides] = useState<
+    Record<number, { headline?: string; body?: string }>
+  >({});
+  const [checkFilter, setCheckFilter] = useState<"all" | "issues" | "pass">(
+    "all",
+  );
   const [loadingAi, setLoadingAi] = useState(false);
   const [toast, setToast] = useState("");
 
   const audit = useMemo(() => auditGoogleBusinessProfile(input), [input]);
-  const pack = aiPack || audit.optimizationPack;
+  const basePack = aiPack || audit.optimizationPack;
+
+  const pack = useMemo<GbpOptimizationPack>(() => {
+    return {
+      ...basePack,
+      optimizedDescription: descOverride ?? basePack.optimizedDescription,
+      qaSeeds: basePack.qaSeeds.map((qa, i) => ({
+        question: qaOverrides[i]?.question ?? qa.question,
+        answer: qaOverrides[i]?.answer ?? qa.answer,
+      })),
+      weeklyPosts: basePack.weeklyPosts.map((p, i) => ({
+        ...p,
+        headline: postOverrides[i]?.headline ?? p.headline,
+        body: postOverrides[i]?.body ?? p.body,
+      })),
+    };
+  }, [basePack, descOverride, qaOverrides, postOverrides]);
+
+  const filteredChecks = useMemo(
+    () =>
+      checkFilter === "all"
+        ? audit.checks
+        : checkFilter === "pass"
+          ? audit.checks.filter((c) => c.status === "pass")
+          : audit.checks.filter((c) => c.status !== "pass"),
+    [audit.checks, checkFilter],
+  );
 
   function notify(msg: string) {
     setToast(msg);
@@ -35,6 +71,9 @@ export default function GoogleBusinessProfileAuditorClient() {
     key: K,
     val: GbpAuditInput[K],
   ) {
+    setDescOverride(null);
+    setQaOverrides({});
+    setPostOverrides({});
     setInput((prev) => ({ ...prev, [key]: val }));
   }
 
@@ -60,6 +99,9 @@ export default function GoogleBusinessProfileAuditorClient() {
       const data = await res.json();
       if (data?.optimizationPack) {
         setAiPack(data.optimizationPack);
+        setDescOverride(null);
+        setQaOverrides({});
+        setPostOverrides({});
         notify("Generated custom GBP Description, Q&As, and Weekly Posts!");
       }
     } catch {
@@ -348,11 +390,42 @@ export default function GoogleBusinessProfileAuditorClient() {
 
           {/* 10-Point Diagnostic Checklist */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
-            <h3 className="text-base font-extrabold">
-              2. 10-Point Google Local Pack Diagnostic Checklist
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-extrabold">
+                2. 10-Point Google Local Pack Diagnostic Checklist
+              </h3>
+              <div className="flex gap-1.5">
+                {(
+                  [
+                    ["all", `All (${audit.checks.length})`],
+                    [
+                      "issues",
+                      `Action Needed (${audit.checks.filter((c) => c.status !== "pass").length})`,
+                    ],
+                    [
+                      "pass",
+                      `Passed (${audit.checks.filter((c) => c.status === "pass").length})`,
+                    ],
+                  ] as const
+                ).map(([val, lbl]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setCheckFilter(val)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold ${
+                      checkFilter === val
+                        ? "bg-[#3452d1] text-white"
+                        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                  >
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="mt-4 space-y-2.5">
-              {audit.checks.map((chk) => (
+              {filteredChecks.map((chk) => (
                 <div
                   key={chk.id}
                   className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-900/60"
@@ -394,13 +467,13 @@ export default function GoogleBusinessProfileAuditorClient() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: READY-TO-PASTE GBP DESCRIPTION, Q&A SEEDS & WEEKLY POSTS */}
+        {/* RIGHT COLUMN: READY-TO-PASTE GBP DESCRIPTION, Q&A SEEDS & WEEKLY POSTS (INLINE EDITABLE) */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <span className="text-xs font-extrabold uppercase tracking-wider text-[#5271ff]">
-                  Copy-Paste GBP Assets
+                  Copy-Paste GBP Assets (Editable)
                 </span>
                 <h3 className="text-base font-extrabold">
                   Optimized 750-Char GBP Description
@@ -430,9 +503,14 @@ export default function GoogleBusinessProfileAuditorClient() {
               </div>
             </div>
 
-            <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-6 text-slate-800 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-              {pack.optimizedDescription}
-            </p>
+            <textarea
+              rows={5}
+              maxLength={750}
+              value={pack.optimizedDescription}
+              onChange={(e) => setDescOverride(e.target.value)}
+              aria-label="Edit optimized GBP description"
+              className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-6 text-slate-800 focus:border-[#3452d1] focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+            />
             <span className="mt-2 block text-[11px] font-semibold text-slate-500">
               {pack.optimizedDescription.length} / 750 characters · Compliant
               with Google Business Profile guidelines
@@ -445,8 +523,8 @@ export default function GoogleBusinessProfileAuditorClient() {
               Pre-Seeded GBP Questions &amp; Answers (Owner Q&amp;A)
             </h3>
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-              Google allows business owners to post and answer their own most
-              common customer questions directly on their GBP listing.
+              Edit any question or answer inline before posting to your Google
+              Business Profile Q&amp;A section.
             </p>
 
             <div className="mt-4 space-y-3">
@@ -455,10 +533,19 @@ export default function GoogleBusinessProfileAuditorClient() {
                   key={idx}
                   className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-900/60"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <strong className="font-bold text-slate-900 dark:text-white">
-                      Q: {qa.question}
-                    </strong>
+                  <div className="flex items-center justify-between gap-2">
+                    <input
+                      type="text"
+                      value={qa.question}
+                      onChange={(e) =>
+                        setQaOverrides((prev) => ({
+                          ...prev,
+                          [idx]: { ...prev[idx], question: e.target.value },
+                        }))
+                      }
+                      aria-label={`Edit GBP Question #${idx + 1}`}
+                      className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
                     <button
                       type="button"
                       onClick={async () => {
@@ -467,14 +554,23 @@ export default function GoogleBusinessProfileAuditorClient() {
                         );
                         notify(`Copied Q&A #${idx + 1}!`);
                       }}
-                      className="shrink-0 rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-800"
+                      className="shrink-0 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-800"
                     >
                       Copy
                     </button>
                   </div>
-                  <p className="mt-1.5 leading-5 text-slate-600 dark:text-slate-300">
-                    <strong>A:</strong> {qa.answer}
-                  </p>
+                  <textarea
+                    rows={2}
+                    value={qa.answer}
+                    onChange={(e) =>
+                      setQaOverrides((prev) => ({
+                        ...prev,
+                        [idx]: { ...prev[idx], answer: e.target.value },
+                      }))
+                    }
+                    aria-label={`Edit GBP Answer #${idx + 1}`}
+                    className="mt-2 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-700 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  />
                 </div>
               ))}
             </div>
@@ -503,17 +599,35 @@ export default function GoogleBusinessProfileAuditorClient() {
                         );
                         notify(`Copied "${post.type}" GBP post!`);
                       }}
-                      className="rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-800"
+                      className="rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-800"
                     >
                       Copy Post
                     </button>
                   </div>
-                  <strong className="mt-2 block text-sm font-bold text-slate-900 dark:text-white">
-                    {post.headline}
-                  </strong>
-                  <p className="mt-1 leading-5 text-slate-600 dark:text-slate-300">
-                    {post.body}
-                  </p>
+                  <input
+                    type="text"
+                    value={post.headline}
+                    onChange={(e) =>
+                      setPostOverrides((prev) => ({
+                        ...prev,
+                        [idx]: { ...prev[idx], headline: e.target.value },
+                      }))
+                    }
+                    aria-label={`Edit GBP Post #${idx + 1} headline`}
+                    className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-bold text-slate-900 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                  />
+                  <textarea
+                    rows={3}
+                    value={post.body}
+                    onChange={(e) =>
+                      setPostOverrides((prev) => ({
+                        ...prev,
+                        [idx]: { ...prev[idx], body: e.target.value },
+                      }))
+                    }
+                    aria-label={`Edit GBP Post #${idx + 1} body`}
+                    className="mt-2 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-700 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  />
                   <span className="mt-2 inline-block rounded bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
                     Recommended Button: {post.ctaLabel}
                   </span>

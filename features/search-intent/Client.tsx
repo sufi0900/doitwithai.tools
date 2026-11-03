@@ -12,23 +12,50 @@ import {
   exportCsv,
   type IntentReport,
 } from "./schema";
+
+const INITIAL_INTENT_DATA = {
+  keywords: [
+    "how to write a meta title",
+    "best AI writing tools",
+    "buy a keyword research course",
+  ],
+  audience: "Content creators planning their first SEO articles",
+  market: "English-language readers",
+  notes: "",
+};
+
 const field =
   "mt-2 w-full rounded-xl border border-white/15 bg-slate-950/70 px-4 py-3 text-sm leading-6 text-white placeholder:text-slate-500 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30";
 const button =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-sm font-bold transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-300 disabled:cursor-not-allowed disabled:opacity-50";
+
 export default function SearchIntentClient() {
-  const [keywords, setKeywords] = useState("");
-  const [audience, setAudience] = useState("");
-  const [market, setMarket] = useState("");
-  const [notes, setNotes] = useState("");
-  const [report, setReport] = useState<IntentReport | null>(null);
+  const [keywords, setKeywords] = useState(
+    INITIAL_INTENT_DATA.keywords.join("\n"),
+  );
+  const [audience, setAudience] = useState(INITIAL_INTENT_DATA.audience);
+  const [market, setMarket] = useState(INITIAL_INTENT_DATA.market);
+  const [notes, setNotes] = useState(INITIAL_INTENT_DATA.notes);
+  const [report, setReport] = useState<IntentReport | null>(() =>
+    quickAnalyze(INITIAL_INTENT_DATA),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(
+    "Sample intent analysis loaded. Review the suggested reader tasks and content angles on the right, or enter your own queries.",
+  );
   const active = useRef<AbortController | null>(null);
   const results = useRef<HTMLDivElement | null>(null);
-  const [completedInput, setCompletedInput] = useState("");
+  const mountedRef = useRef(false);
+  const [completedInput, setCompletedInput] = useState(() =>
+    JSON.stringify(INITIAL_INTENT_DATA),
+  );
+
   useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
     if (!report) return;
     const frame = requestAnimationFrame(() => {
       results.current?.focus({ preventScroll: true });
@@ -41,7 +68,9 @@ export default function SearchIntentClient() {
     });
     return () => cancelAnimationFrame(frame);
   }, [report]);
+
   useEffect(() => () => active.current?.abort(), []);
+
   const input = () =>
     inputSchema.safeParse({
       keywords: parseKeywords(keywords),
@@ -49,6 +78,7 @@ export default function SearchIntentClient() {
       market,
       notes,
     });
+
   function quick(event?: React.FormEvent) {
     event?.preventDefault();
     if (active.current) return;
@@ -64,43 +94,21 @@ export default function SearchIntentClient() {
       "Keyword check complete. Choose Review with AI to include your audience context and pasted notes.",
     );
   }
+
   function example() {
     if (active.current) return;
-    setCompletedInput(
-      JSON.stringify({
-        keywords: [
-          "how to write a meta title",
-          "best AI writing tools",
-          "buy a keyword research course",
-        ],
-        audience: "Content creators planning their first SEO articles",
-        market: "English-language readers",
-        notes: "",
-      }),
-    );
-    setKeywords(
-      "how to write a meta title\nbest AI writing tools\nbuy a keyword research course",
-    );
-    setAudience("Content creators planning their first SEO articles");
-    setMarket("English-language readers");
-    setNotes("");
-    setReport(
-      quickAnalyze({
-        keywords: [
-          "how to write a meta title",
-          "best AI writing tools",
-          "buy a keyword research course",
-        ],
-        audience: "Content creators planning their first SEO articles",
-        market: "English-language readers",
-        notes: "",
-      }),
-    );
+    setCompletedInput(JSON.stringify(INITIAL_INTENT_DATA));
+    setKeywords(INITIAL_INTENT_DATA.keywords.join("\n"));
+    setAudience(INITIAL_INTENT_DATA.audience);
+    setMarket(INITIAL_INTENT_DATA.market);
+    setNotes(INITIAL_INTENT_DATA.notes);
+    setReport(quickAnalyze(INITIAL_INTENT_DATA));
     setError("");
     setStatus(
       "Example loaded. Review the suggested reader tasks and content angles.",
     );
   }
+
   async function analyze() {
     if (active.current) return;
     const parsed = input();
@@ -147,6 +155,7 @@ export default function SearchIntentClient() {
       setBusy(false);
     }
   }
+
   async function copy() {
     if (!report) return;
     try {
@@ -156,6 +165,7 @@ export default function SearchIntentClient() {
       setStatus("Clipboard access is unavailable. Download the CSV instead.");
     }
   }
+
   function download() {
     if (!report) return;
     const url = URL.createObjectURL(
@@ -169,11 +179,13 @@ export default function SearchIntentClient() {
     anchor.click();
     URL.revokeObjectURL(url);
   }
+
   const parsedCurrent = input();
   const stale =
     report &&
     (!parsedCurrent.success ||
       JSON.stringify(parsedCurrent.data) !== completedInput);
+
   return (
     <section
       id="intent-checker"
@@ -220,7 +232,7 @@ export default function SearchIntentClient() {
                 Quick checks use English wording cues.
               </p>
             </div>
-            <details className="rounded-xl border border-white/10 p-4">
+            <details open className="rounded-xl border border-white/10 p-4">
               <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-white">
                 Add context for an AI review{" "}
                 <span className="font-normal text-slate-400">optional</span>
@@ -295,7 +307,7 @@ export default function SearchIntentClient() {
               <button
                 type="submit"
                 className={
-                  button + " bg-[#5271ff] text-white hover:bg-blue-600"
+                  button + " bg-[#4058D0] text-white hover:bg-[#3452D1]"
                 }
               >
                 <Search aria-hidden className="h-4 w-4" />

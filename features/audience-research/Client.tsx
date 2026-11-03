@@ -15,16 +15,19 @@ import {
   type AudienceInput,
   type AudienceReport,
 } from "./schema";
+
 const initial: AudienceInput = {
-  brief: "",
+  brief:
+    "A learning website offering practical SEO guides and tools for independent business bloggers.",
   websiteText: "",
   notes: "",
   market: "",
-  goal: "Identify potential customers and useful ways to reach them.",
+  goal: "Help readers write and review accurate page metadata.",
   businessType: "Infer from context",
   stage: "Infer from context",
   focus: "Explore options",
 };
+
 const field =
   "mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm leading-6 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5271FF] dark:border-slate-600 dark:bg-slate-950 dark:text-white";
 const button =
@@ -48,14 +51,17 @@ const destinations: Record<(typeof channels)[number], string> = {
   X: "https://x.com/search?q=",
   Offline: "",
 };
+
 export default function AudienceClient() {
   const [input, setInput] = useState<AudienceInput>(initial),
     [url, setUrl] = useState(""),
     [importNote, setImportNote] = useState(""),
-    [mode, setMode] = useState("website"),
+    [mode, setMode] = useState("idea"),
     [busy, setBusy] = useState<"import" | "plan" | null>(null),
     [error, setError] = useState(""),
-    [message, setMessage] = useState(""),
+    [message, setMessage] = useState(
+      "Illustrative example loaded. Explore Buyer Personas, Content & Channels, and Validation Plan on the right, or enter your own website/brief.",
+    ),
     [tab, setTab] = useState<(typeof tabs)[number]>("Overview"),
     [selected, setSelected] = useState(0);
   const [saved, setSaved] = useState<{
@@ -63,7 +69,12 @@ export default function AudienceClient() {
     input: AudienceInput;
     example: boolean;
     source: string;
-  } | null>(null);
+  } | null>(() => ({
+    report: exampleReport(),
+    input: initial,
+    example: true,
+    source: "",
+  }));
   const [decisions, setDecisions] = useState<Record<string, string>>({});
   const [fieldErrors, setFieldErrors] = useState({
     brief: "",
@@ -72,10 +83,12 @@ export default function AudienceClient() {
   });
   const dialog = useRef<HTMLDialogElement>(null),
     actionError = useRef<HTMLParagraphElement>(null);
+
   useEffect(() => {
     if (busy && !dialog.current?.open) dialog.current?.showModal();
     else if (!busy) dialog.current?.close();
   }, [busy]);
+
   useEffect(() => {
     if (error) {
       actionError.current?.focus({ preventScroll: true });
@@ -85,10 +98,18 @@ export default function AudienceClient() {
       });
     }
   }, [error]);
+
   const active = useRef<AbortController | null>(null),
-    result = useRef<HTMLDivElement>(null);
+    result = useRef<HTMLDivElement>(null),
+    mountedRef = useRef(false);
+
   useEffect(() => () => active.current?.abort(), []);
+
   useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
     if (!saved) return;
     const frame = requestAnimationFrame(() => {
       result.current?.focus({ preventScroll: true });
@@ -101,6 +122,7 @@ export default function AudienceClient() {
     });
     return () => cancelAnimationFrame(frame);
   }, [saved]);
+
   function update<K extends keyof AudienceInput>(
     key: K,
     value: AudienceInput[K],
@@ -113,6 +135,7 @@ export default function AudienceClient() {
         ...inputErrors({ ...input, [key]: value }),
       }));
   }
+
   async function run(kind: "import" | "plan") {
     if (active.current) return;
     const needsImport =
@@ -231,6 +254,7 @@ export default function AudienceClient() {
       setBusy(null);
     }
   }
+
   function example() {
     const data = {
       ...initial,
@@ -258,6 +282,7 @@ export default function AudienceClient() {
       "Illustrative example loaded. No audience research was performed.",
     );
   }
+
   function download(csv = false) {
     if (!saved) return;
     const body = csv
@@ -283,6 +308,7 @@ export default function AudienceClient() {
     link.click();
     URL.revokeObjectURL(href);
   }
+
   async function copy() {
     if (!saved) return;
     try {
@@ -301,8 +327,10 @@ export default function AudienceClient() {
       setMessage("Clipboard unavailable. Download your report instead.");
     }
   }
+
   const stale = saved && JSON.stringify(input) !== JSON.stringify(saved.input),
     persona = saved?.report.segments[selected];
+
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:p-7">
       <dialog
@@ -316,7 +344,7 @@ export default function AudienceClient() {
       >
         <Loader2
           size={36}
-          className="animate-spin motion-reduce:animate-none mx-auto text-blue-600"
+          className="animate-spin motion-reduce:animate-none mx-auto text-[#4058D0]"
           aria-hidden
         />
         <h2
@@ -342,7 +370,7 @@ export default function AudienceClient() {
       <div
         role="status"
         aria-live="polite"
-        className="mb-3 text-sm leading-6 text-blue-700 dark:text-blue-200"
+        className="mb-3 text-sm leading-6 text-[#4058D0] dark:text-blue-200"
       >
         {message}
       </div>
@@ -417,7 +445,7 @@ export default function AudienceClient() {
               </div>
             )}
             <details
-              open={mode === "idea"}
+              open
               className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
             >
               <summary className="cursor-pointer text-sm font-semibold">
@@ -462,7 +490,7 @@ export default function AudienceClient() {
                   </p>
                 </div>
                 {input.websiteText && (
-                  <details>
+                  <details open>
                     <summary className="cursor-pointer text-sm font-semibold">
                       Review imported page text
                     </summary>
@@ -801,7 +829,7 @@ export default function AudienceClient() {
                         <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
                           {s.fit}
                         </p>
-                        <span className="mt-3 block text-sm font-semibold text-blue-700 dark:text-blue-300">
+                        <span className="mt-3 block text-sm font-semibold text-[#4058D0] dark:text-blue-300">
                           Review working persona →
                         </span>
                       </button>
@@ -918,7 +946,10 @@ export default function AudienceClient() {
                             </section>
                           );
                         })}
-                        <details className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
+                        <details
+                          open
+                          className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800"
+                        >
                           <summary className="cursor-pointer text-sm font-semibold">
                             Research gaps to investigate
                           </summary>
@@ -956,6 +987,7 @@ export default function AudienceClient() {
                         </p>
                         {saved.report.channelPlan.map((plan) => (
                           <details
+                            open
                             key={plan.channel}
                             className="rounded-xl border border-slate-200 p-4 dark:border-slate-700"
                           >
@@ -983,7 +1015,10 @@ export default function AudienceClient() {
                             </div>
                           </details>
                         ))}
-                        <details className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800">
+                        <details
+                          open
+                          className="rounded-xl bg-slate-100 p-4 dark:bg-slate-800"
+                        >
                           <summary className="cursor-pointer font-bold">
                             Priority experiments by persona
                           </summary>
@@ -1000,7 +1035,7 @@ export default function AudienceClient() {
                                   <p>{o.experiment}</p>
                                   {destinations[o.channel] && (
                                     <a
-                                      className="mt-2 inline-flex min-h-11 items-center gap-2 font-semibold text-blue-700 underline dark:text-blue-300"
+                                      className="mt-2 inline-flex min-h-11 items-center gap-2 font-semibold text-[#4058D0] underline dark:text-blue-300"
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       href={

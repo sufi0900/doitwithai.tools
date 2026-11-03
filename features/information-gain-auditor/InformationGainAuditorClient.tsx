@@ -9,6 +9,7 @@ import {
   FileText,
   Globe,
   Lightbulb,
+  Plus,
   RefreshCw,
   Sparkles,
 } from "lucide-react";
@@ -43,6 +44,14 @@ const primaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl bg-[#3452d1] px-5 py-3 text-sm font-bold text-white hover:bg-[#2943b5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff] disabled:opacity-50";
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
+
+function buildInitialSampleReport(): InformationGainReport {
+  return evaluateInformationGain({
+    yourContent: SAMPLE_YOUR_DRAFT,
+    competitorContents: [SAMPLE_COMPETITOR_DRAFT],
+    topic: "Google Disavow File Best Practices",
+  });
+}
 
 function CircularScoreGauge({
   score,
@@ -155,7 +164,8 @@ function MiniDimensionCircle({
   const strokeWidth = 5;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (Math.max(0, Math.min(100, score)) / 100) * circumference;
+  const offset =
+    circumference - (Math.max(0, Math.min(100, score)) / 100) * circumference;
   const strokeColor =
     status === "strong"
       ? "#10B981"
@@ -223,9 +233,13 @@ export default function InformationGainAuditorClient() {
   const [topic, setTopic] = useState("Google Disavow File Best Practices");
   const [yourUrl, setYourUrl] = useState("");
   const [compUrlsInput, setCompUrlsInput] = useState("");
-  const [yourContent, setYourContent] = useState("");
-  const [competitorContent, setCompetitorContent] = useState("");
-  const [report, setReport] = useState<InformationGainReport | null>(null);
+  const [yourContent, setYourContent] = useState(SAMPLE_YOUR_DRAFT);
+  const [competitorContent, setCompetitorContent] = useState(
+    SAMPLE_COMPETITOR_DRAFT,
+  );
+  const [report, setReport] = useState<InformationGainReport | null>(
+    buildInitialSampleReport,
+  );
   const [busy, setBusy] = useState(false);
   const [scanStage, setScanStage] = useState(0);
   const [error, setError] = useState("");
@@ -243,11 +257,11 @@ export default function InformationGainAuditorClient() {
 
   async function runMinimumScanAnimation() {
     setScanStage(0);
-    await new Promise((r) => setTimeout(r, 700));
+    await new Promise((r) => setTimeout(r, 450));
     setScanStage(1);
-    await new Promise((r) => setTimeout(r, 750));
+    await new Promise((r) => setTimeout(r, 450));
     setScanStage(2);
-    await new Promise((r) => setTimeout(r, 700));
+    await new Promise((r) => setTimeout(r, 400));
   }
 
   async function loadSample() {
@@ -276,6 +290,44 @@ export default function InformationGainAuditorClient() {
     }
   }
 
+  function updateSuggestedSection(
+    id: string,
+    field: "sectionTitle" | "readyToPasteContent",
+    value: string,
+  ) {
+    setReport((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        suggestedUpgrades: prev.suggestedUpgrades.map((upg) =>
+          upg.id === id ? { ...upg, [field]: value } : upg,
+        ),
+      };
+    });
+  }
+
+  function addCustomUpgradeSection() {
+    setReport((prev) => {
+      if (!prev) return prev;
+      const idx = prev.suggestedUpgrades.length + 1;
+      return {
+        ...prev,
+        suggestedUpgrades: [
+          ...prev.suggestedUpgrades,
+          {
+            id: `custom-upgrade-${Date.now()}`,
+            badge: `+15 Info Gain · Custom #${idx}`,
+            sectionTitle: `Practitioner Edge-Case & Benchmark Notes (${topic})`,
+            whyItAddsGain:
+              "Adds first-hand testing constraints, failure modes, and verifiable data points missing from commodity SERP pages.",
+            readyToPasteContent: `## Practitioner Edge-Case & Benchmark Notes\n\nIn our internal audit of ${topic}, we documented 3 edge cases where default recommendations fail:\n1. **Threshold Variance**: Measure baseline metrics over 14–28 days before applying site-wide changes.\n2. **Verification Step**: Validate output in Google Search Console before deployment.`,
+          },
+        ],
+      };
+    });
+    setFeedback("Added a new editable differentiation section.");
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
@@ -285,7 +337,7 @@ export default function InformationGainAuditorClient() {
     if (mode === "url") {
       if (!yourUrl.trim()) {
         setError(
-          "Enter your public article URL to audit (or switch to 'Paste Article Text / HTML' or click 'Load Sample Audit').",
+          "Enter your public article URL to audit (or switch to 'Paste Article Draft or HTML' or click 'Load Sample Information Gain Audit').",
         );
         return;
       }
@@ -316,10 +368,9 @@ export default function InformationGainAuditorClient() {
 
         const data = await res.json();
         if (!res.ok || !data.report) {
-          setReport(null);
           setError(
             data?.error?.message ||
-              "Could not fetch this URL. Switch to 'Paste Article Text / HTML' to audit directly.",
+              "Could not fetch this URL. Switch to 'Paste Article Draft or HTML' to audit directly.",
           );
           return;
         }
@@ -330,9 +381,8 @@ export default function InformationGainAuditorClient() {
         );
       } catch (err) {
         if ((err as Error)?.name !== "AbortError") {
-          setReport(null);
           setError(
-            "Could not fetch the live URL. Switch to 'Paste Article Text / HTML' mode instead.",
+            "Could not fetch the live URL. Switch to 'Paste Article Draft or HTML' mode instead.",
           );
         }
       } finally {
@@ -343,7 +393,7 @@ export default function InformationGainAuditorClient() {
 
     if (!yourContent.trim()) {
       setError(
-        "Paste your article draft or HTML (or switch to 'Fetch Live Article URL' or click 'Load Sample Audit').",
+        "Paste your article draft or HTML (or switch to 'Fetch Live Article URL' or click 'Load Sample Information Gain Audit').",
       );
       return;
     }
@@ -378,7 +428,7 @@ export default function InformationGainAuditorClient() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function handleDownload(format: "csv" | "docx") {
+  function handleDownload(format: "csv" | "docx" | "md") {
     if (!report) return;
     if (format === "csv") {
       triggerDownload(
@@ -388,7 +438,7 @@ export default function InformationGainAuditorClient() {
         "information-gain-scorecard.csv",
       );
       setFeedback("Downloaded Information Gain scorecard CSV.");
-    } else {
+    } else if (format === "docx") {
       const bytes = buildInfoGainDocx(report);
       triggerDownload(
         new Blob([bytes as unknown as BlobPart], {
@@ -397,6 +447,21 @@ export default function InformationGainAuditorClient() {
         "information-gain-differentiation-brief.docx",
       );
       setFeedback("Downloaded editable Word (.docx) differentiation brief.");
+    } else {
+      const md = [
+        `# Information Gain & Differentiation Pack: ${report.topic}`,
+        `Overall Information Gain Score: **${report.overallScore}/100** (${report.verdictLabel})`,
+        "",
+        ...report.suggestedUpgrades.map(
+          (u, idx) =>
+            `## ${idx + 1}. ${u.sectionTitle} (${u.badge})\n_${u.whyItAddsGain}_\n\n${u.readyToPasteContent}\n`,
+        ),
+      ].join("\n");
+      triggerDownload(
+        new Blob([md], { type: "text/markdown;charset=utf-8" }),
+        "information-gain-differentiation-sections.md",
+      );
+      setFeedback("Downloaded Markdown (.md) differentiation sections.");
     }
   }
 
@@ -423,8 +488,8 @@ export default function InformationGainAuditorClient() {
             </h2>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Enter your live article URL or paste your draft to audit net-new
-              entities, quantitative proof, and unique subheadings—plus get
-              ready-to-insert differentiation sections.
+              entities, quantitative proof, and unique subheadings—plus edit and
+              export ready-to-insert differentiation sections.
             </p>
           </div>
           <button type="button" onClick={loadSample} className={secondaryBtn}>
@@ -661,6 +726,14 @@ export default function InformationGainAuditorClient() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => handleDownload("md")}
+                  className={secondaryBtn}
+                >
+                  <Download size={16} />
+                  Sections (.MD)
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleDownload("csv")}
                   className={secondaryBtn}
                 >
@@ -754,61 +827,98 @@ export default function InformationGainAuditorClient() {
             </div>
           </div>
 
-          {/* Ready-to-Insert Content Upgrades for Instant Differentiation */}
+          {/* Ready-to-Insert Content Upgrades for Instant Differentiation (Editable Inline) */}
           <div className={panel}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
-                  Actionable Content Improver
+                  Actionable Content Improver · Live Editable
                 </span>
                 <h3 className="mt-1 text-xl font-black">
-                  3 Ready-to-Insert Sections to Boost Your Information Gain Score
+                  {report.suggestedUpgrades.length} Ready-to-Insert Sections to Boost Your Information Gain Score
                 </h3>
                 <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                  Copy and customize any of these structured sections into your draft to add contrarian edge cases, benchmark tables, and practitioner methodology.
+                  Edit any section title or Markdown draft below before copying or downloading—your customizations sync directly into the Word (.DOCX) and Markdown (.MD) exports.
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={addCustomUpgradeSection}
+                className={secondaryBtn}
+              >
+                <Plus size={15} className="text-[#5271ff]" />
+                Add Custom Section
+              </button>
             </div>
 
             <div className="mt-5 grid gap-5 lg:grid-cols-3">
-              {report.suggestedUpgrades.map((upg) => (
-                <div
-                  key={upg.id}
-                  className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-700 dark:bg-slate-800/40"
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-                        {upg.badge}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          await navigator.clipboard.writeText(
-                            upg.readyToPasteContent,
-                          );
-                          setFeedback(
-                            `Copied "${upg.sectionTitle}" to clipboard.`,
-                          );
-                        }}
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900"
-                      >
-                        <Copy size={12} />
-                        Copy Section
-                      </button>
+              {report.suggestedUpgrades.map((upg) => {
+                const words = upg.readyToPasteContent.trim()
+                  ? upg.readyToPasteContent.trim().split(/\s+/).length
+                  : 0;
+                return (
+                  <div
+                    key={upg.id}
+                    className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-700 dark:bg-slate-800/40"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-extrabold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                          {upg.badge} · {words}w
+                        </span>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(
+                              upg.readyToPasteContent,
+                            );
+                            setFeedback(
+                              `Copied "${upg.sectionTitle}" to clipboard.`,
+                            );
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-900"
+                        >
+                          <Copy size={12} />
+                          Copy Section
+                        </button>
+                      </div>
+                      <label className="mt-3 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        Section Heading
+                        <input
+                          type="text"
+                          value={upg.sectionTitle}
+                          onChange={(e) =>
+                            updateSuggestedSection(
+                              upg.id,
+                              "sectionTitle",
+                              e.target.value,
+                            )
+                          }
+                          className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-extrabold text-slate-900 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                      </label>
+                      <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                        {upg.whyItAddsGain}
+                      </p>
                     </div>
-                    <h4 className="mt-3 text-sm font-extrabold">
-                      {upg.sectionTitle}
-                    </h4>
-                    <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
-                      {upg.whyItAddsGain}
-                    </p>
+                    <label className="mt-3 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      Editable Section Content (Markdown / HTML)
+                      <textarea
+                        rows={7}
+                        value={upg.readyToPasteContent}
+                        onChange={(e) =>
+                          updateSuggestedSection(
+                            upg.id,
+                            "readyToPasteContent",
+                            e.target.value,
+                          )
+                        }
+                        className="mt-1 w-full rounded-xl border border-slate-200 bg-white p-3 font-mono text-[11px] leading-5 text-slate-800 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                      />
+                    </label>
                   </div>
-                  <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-xl border border-slate-200 bg-white p-3 font-mono text-[11px] leading-5 text-slate-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
-                    {upg.readyToPasteContent}
-                  </pre>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>

@@ -5,6 +5,8 @@ import {
   AlertTriangle,
   Award,
   CheckCircle2,
+  Code2,
+  Copy,
   Download,
   FileText,
   Globe,
@@ -85,18 +87,46 @@ const primaryBtn =
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
 
+function buildDefaultSampleAudit(): EeatAuditReport {
+  return analyzeEeatHtml({
+    html: SAMPLE_EEAT_HTML,
+    url: "https://doitwithai.tools/research/cwv-benchmark-study",
+    strictness: "standard",
+    mode: "sample",
+  });
+}
+
 export default function EeatContentAuditorClient() {
   const [mode, setMode] = useState<"live" | "html">("live");
-  const [urlInput, setUrlInput] = useState("");
+  const [urlInput, setUrlInput] = useState(
+    "https://doitwithai.tools/research/cwv-benchmark-study",
+  );
   const [strictness, setStrictness] = useState<"standard" | "ymyl">("standard");
   const [htmlInput, setHtmlInput] = useState("");
   const [pillarFilter, setPillarFilter] = useState<EeatPillar | "all">("all");
 
-  const [report, setReport] = useState<EeatAuditReport | null>(null);
+  const [report, setReport] = useState<EeatAuditReport | null>(
+    buildDefaultSampleAudit,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [revision, setRevision] = useState(0);
+
+  // Live E-E-A-T Byline & Person / reviewedBy Schema Builder state
+  const [authorName, setAuthorName] = useState("Sufian Ahmad");
+  const [authorRole, setAuthorRole] = useState(
+    "Founder & Principal SEO Architect",
+  );
+  const [authorUrl, setAuthorUrl] = useState(
+    "https://doitwithai.tools/author/sufian",
+  );
+  const [authorSameAs, setAuthorSameAs] = useState(
+    "https://www.linkedin.com/in/sufian-seo, https://github.com/sufi0900",
+  );
+  const [reviewerName, setReviewerName] = useState(
+    "Dr. Ayesha Khan, Technical Systems Reviewer",
+  );
 
   const resultRef = useRef<HTMLElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -173,6 +203,18 @@ export default function EeatContentAuditorClient() {
           return;
         }
         setReport(data.report);
+        if (
+          data.report.detectedAuthor &&
+          data.report.detectedAuthor !== "Not detected"
+        ) {
+          setAuthorName(data.report.detectedAuthor);
+        }
+        if (
+          data.report.detectedReviewer &&
+          data.report.detectedReviewer !== "Not detected"
+        ) {
+          setReviewerName(data.report.detectedReviewer);
+        }
         setRevision((r) => r + 1);
       }
     } catch (err) {
@@ -218,6 +260,41 @@ export default function EeatContentAuditorClient() {
     if (pillarFilter === "all") return report.signals;
     return report.signals.filter((s) => s.pillar === pillarFilter);
   }, [report, pillarFilter]);
+
+  const eeatRemediationSnippet = useMemo(() => {
+    const sameAsList = authorSameAs
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: report?.pageTitle || "Article Headline",
+      datePublished:
+        report?.detectedDates.published &&
+        report.detectedDates.published !== "Not detected"
+          ? report.detectedDates.published
+          : new Date().toISOString().slice(0, 10),
+      dateModified: new Date().toISOString().slice(0, 10),
+      author: {
+        "@type": "Person",
+        name: authorName.trim() || "Author Name",
+        jobTitle: authorRole.trim() || undefined,
+        url: authorUrl.trim() || undefined,
+        sameAs: sameAsList.length ? sameAsList : undefined,
+      },
+      ...(reviewerName.trim()
+        ? {
+            reviewedBy: {
+              "@type": "Person",
+              name: reviewerName.trim(),
+            },
+          }
+        : {}),
+    };
+    const bylineHtml = `<div class="eeat-author-byline">\n  <p>Written by <a href="${authorUrl.trim() || "/about"}" rel="author">${authorName.trim() || "Author Name"}</a> (${authorRole.trim() || "Subject Matter Expert"})${reviewerName.trim() ? ` · Fact-checked & reviewed by <strong>${reviewerName.trim()}</strong>` : ""} · Updated <time datetime="${new Date().toISOString().slice(0, 10)}">${new Date().toISOString().slice(0, 10)}</time></p>\n</div>`;
+    return `${bylineHtml}\n<script type="application/ld+json">\n${JSON.stringify(jsonLd, null, 2)}\n</script>`;
+  }, [authorName, authorRole, authorUrl, authorSameAs, reviewerName, report]);
 
   return (
     <div className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-12 sm:px-6">
@@ -479,6 +556,112 @@ export default function EeatContentAuditorClient() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Interactive E-E-A-T Author Byline & Person / reviewedBy JSON-LD Generator */}
+          <div className={panel}>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
+                  Instant Remediation Builder
+                </span>
+                <h3 className="mt-1 flex items-center gap-2 text-xl font-extrabold">
+                  <Code2 size={20} className="text-[#5271ff]" />
+                  Live E-E-A-T Author Byline & JSON-LD Entity Disambiguation Builder
+                </h3>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                  Customize your author credentials, profile URL,{" "}
+                  <code>sameAs</code> entity links, and fact-checker below to
+                  generate compliant HTML + <code>Article</code> /{" "}
+                  <code>Person</code> / <code>reviewedBy</code> schema.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(eeatRemediationSnippet);
+                    setFeedback(
+                      "Copied E-E-A-T Author Byline HTML + JSON-LD schema snippet.",
+                    );
+                  }}
+                  className={primaryBtn}
+                >
+                  <Copy size={15} />
+                  Copy HTML + JSON-LD
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerDownload(
+                      new Blob([eeatRemediationSnippet], {
+                        type: "text/html;charset=utf-8",
+                      }),
+                      "eeat-author-byline-and-schema.html",
+                    );
+                    setFeedback(
+                      "Downloaded E-E-A-T Author Byline + JSON-LD HTML file.",
+                    );
+                  }}
+                  className={secondaryBtn}
+                >
+                  <Download size={15} />
+                  Download .HTML
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <label className="block text-xs font-bold">
+                Author Name
+                <input
+                  type="text"
+                  value={authorName}
+                  onChange={(e) => setAuthorName(e.target.value)}
+                  className={`${control} mt-1 text-xs`}
+                />
+              </label>
+              <label className="block text-xs font-bold">
+                Author Credentials / Job Title
+                <input
+                  type="text"
+                  value={authorRole}
+                  onChange={(e) => setAuthorRole(e.target.value)}
+                  className={`${control} mt-1 text-xs`}
+                />
+              </label>
+              <label className="block text-xs font-bold">
+                Author Bio URL (rel=&quot;author&quot;)
+                <input
+                  type="url"
+                  value={authorUrl}
+                  onChange={(e) => setAuthorUrl(e.target.value)}
+                  className={`${control} mt-1 text-xs`}
+                />
+              </label>
+              <label className="block text-xs font-bold lg:col-span-2">
+                Author sameAs Profile URLs (comma-separated LinkedIn, GitHub, Wikidata)
+                <input
+                  type="text"
+                  value={authorSameAs}
+                  onChange={(e) => setAuthorSameAs(e.target.value)}
+                  className={`${control} mt-1 text-xs`}
+                />
+              </label>
+              <label className="block text-xs font-bold">
+                Fact-Checker / Reviewer Name (reviewedBy)
+                <input
+                  type="text"
+                  value={reviewerName}
+                  onChange={(e) => setReviewerName(e.target.value)}
+                  className={`${control} mt-1 text-xs`}
+                />
+              </label>
+            </div>
+
+            <pre className="mt-4 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-emerald-300 dark:border-slate-700">
+              {eeatRemediationSnippet}
+            </pre>
           </div>
 
           {/* Priority Fixes */}

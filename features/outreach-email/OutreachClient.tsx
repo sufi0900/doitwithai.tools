@@ -78,13 +78,13 @@ const fields: {
   },
 ];
 export default function OutreachClient() {
-  const [input, setInput] = useState<Input>(defaults),
+  const [input, setInput] = useState<Input>(() => ({ ...example })),
     [errors, setErrors] = useState<Partial<Record<Field, string>>>({}),
-    [draft, setDraft] = useState<Draft | null>(null),
+    [draft, setDraft] = useState<Draft | null>(() => buildDraft(example)),
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0),
-    [builtFrom, setBuiltFrom] = useState(""),
-    [hasFollowUp, setHasFollowUp] = useState(false),
+    [builtFrom, setBuiltFrom] = useState(() => JSON.stringify(example)),
+    [hasFollowUp, setHasFollowUp] = useState(() => example.followUp),
     [message, setMessage] = useState("");
   const result = useRef<HTMLElement>(null),
     abort = useRef(false),
@@ -364,7 +364,10 @@ export default function OutreachClient() {
             </div>
           )}
         </div>
-        <details className="group mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+        <details
+          open
+          className="group mt-6 rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+        >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold">
             Optional names, tone, and follow-up
             <ChevronDown
@@ -445,6 +448,9 @@ export default function OutreachClient() {
             className={secondary}
             onClick={() => {
               setInput({ ...example });
+              setDraft(buildDraft(example));
+              setBuiltFrom(JSON.stringify(example));
+              setHasFollowUp(example.followUp);
               setErrors({});
               setMessage(
                 "Fictional example inputs loaded. Replace them before sending any draft.",
@@ -452,6 +458,19 @@ export default function OutreachClient() {
             }}
           >
             Load fictional example
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            className={secondary}
+            onClick={() => {
+              setInput({ ...defaults });
+              setDraft(null);
+              setErrors({});
+              setMessage("Cleared form.");
+            }}
+          >
+            Clear form
           </button>
         </div>
         <p className="mt-4 text-xs leading-6 text-slate-500 dark:text-slate-400">
@@ -504,7 +523,11 @@ export default function OutreachClient() {
                 type="button"
                 key={subject}
                 onClick={() => setDraft((d) => (d ? { ...d, subject } : d))}
-                className="max-w-full break-words rounded-xl border border-slate-300 px-3 py-2 text-left text-xs focus-visible:outline-[#5271ff] dark:border-slate-600"
+                className={`max-w-full break-words rounded-xl border px-3 py-2 text-left text-xs font-semibold focus-visible:outline-[#5271ff] ${
+                  draft.subject === subject
+                    ? "border-[#3452d1] bg-[#3452d1] text-white"
+                    : "border-slate-300 dark:border-slate-600"
+                }`}
               >
                 {subject}
               </button>

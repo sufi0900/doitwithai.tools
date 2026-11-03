@@ -20,7 +20,7 @@ import SchemaDynamicForm from "./SchemaDynamicForm";
 
 export default function SchemaGeneratorClient() {
   const [state, setState] = useState<SchemaFormState>(() =>
-    createSchemaState("article"),
+    createSchemaState("article", true),
   );
   const [analysis, setAnalysis] = useState<SchemaAnalysisResponse | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -28,11 +28,11 @@ export default function SchemaGeneratorClient() {
   const evaluation = useMemo(() => evaluateSchema(state), [state]);
 
   function changeType(type: SchemaTypeId) {
-    const next = createSchemaState(type);
+    const next = createSchemaState(type, true);
     setState({
       ...next,
-      pageUrl: state.pageUrl,
-      pageContext: state.pageContext,
+      pageUrl: state.pageUrl || next.pageUrl,
+      pageContext: state.pageContext || next.pageContext,
     });
     setAnalysis(null);
     setAnalysisError("");

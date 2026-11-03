@@ -6,6 +6,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Copy,
+  Download,
+  RotateCcw,
   Sparkles,
   Type,
 } from "lucide-react";
@@ -21,6 +23,12 @@ import {
   type UnicodeStyleId,
 } from "./model";
 
+function stripUnicodeFormatting(text: string): string {
+  return text
+    .normalize("NFKD")
+    .replace(/[\u0332\u0336]/g, "");
+}
+
 export default function LinkedinPostFormatterClient() {
   const [postText, setPostText] = useState<string>(
     LINKEDIN_HOOK_TEMPLATES[0].template,
@@ -35,7 +43,7 @@ export default function LinkedinPostFormatterClient() {
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2600);
+    setTimeout(() => setToast(""), 2800);
   }
 
   function formatSelection(style: UnicodeStyleId) {
@@ -46,7 +54,7 @@ export default function LinkedinPostFormatterClient() {
 
     if (start === end) {
       const lines = postText.split("\n");
-      lines[0] = applyUnicodeStyle(lines[0], style);
+      lines[0] = applyUnicodeStyle(stripUnicodeFormatting(lines[0]), style);
       setPostText(lines.join("\n"));
       notify(
         "Formatted opening hook line! (Highlight any words to style selection)",
@@ -55,10 +63,29 @@ export default function LinkedinPostFormatterClient() {
     }
 
     const selected = postText.slice(start, end);
-    const converted = applyUnicodeStyle(selected, style);
+    const converted = applyUnicodeStyle(stripUnicodeFormatting(selected), style);
     const updated = postText.slice(0, start) + converted + postText.slice(end);
     setPostText(updated);
     notify("Applied Unicode formatting to selected text!");
+  }
+
+  function clearUnicodeSelection() {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    if (start === end) {
+      setPostText(stripUnicodeFormatting(postText));
+      notify("Reset entire post to clean plain text.");
+      return;
+    }
+    const selected = postText.slice(start, end);
+    const updated =
+      postText.slice(0, start) +
+      stripUnicodeFormatting(selected) +
+      postText.slice(end);
+    setPostText(updated);
+    notify("Reset selected text to plain text.");
   }
 
   function insertBulletSymbol(symbol: string) {
@@ -71,6 +98,17 @@ export default function LinkedinPostFormatterClient() {
     const updated =
       postText.slice(0, start) + `${symbol} ` + postText.slice(start);
     setPostText(updated);
+  }
+
+  function downloadPostTxt() {
+    const blob = new Blob([postText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "linkedin-formatted-post.txt";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify("Downloaded formatted LinkedIn post (.TXT)!");
   }
 
   const firstLines = postText
@@ -122,20 +160,20 @@ export default function LinkedinPostFormatterClient() {
         }}
       />
 
-      {toast && (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
-        >
-          <CheckCircle2 size={15} />
-          <span>{toast}</span>
-        </div>
-      )}
-
       {/* CLEAN 2-PANEL STUDIO: LEFT = UNICODE POST EDITOR + HOOK SCORECARD, RIGHT = FULL-WIDTH FEED PREVIEW & ATTACHED IMAGE */}
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1.2fr)]">
         {/* LEFT PANEL: UNICODE POST EDITOR + FRAMEWORKS + HOOK QUALITY CHECK */}
         <div className="shadow-xs space-y-4 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6">
+          {toast && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+            >
+              <CheckCircle2 size={15} />
+              <span>{toast}</span>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3.5 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
               <PlatformBrandIcon brand="linkedin" size={34} />
@@ -197,6 +235,15 @@ export default function LinkedinPostFormatterClient() {
               </button>
             ))}
 
+            <button
+              type="button"
+              onClick={clearUnicodeSelection}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:border-rose-500 hover:text-rose-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              title="Strip Unicode styling back to plain text"
+            >
+              <RotateCcw size={12} /> Plain
+            </button>
+
             <span className="mx-1 h-4 w-px bg-slate-300 dark:bg-slate-700" />
 
             {["✅", "👉", "💡", "📌", "•", "→"].map((sym) => (
@@ -222,8 +269,16 @@ export default function LinkedinPostFormatterClient() {
           />
 
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-            <div className="flex flex-wrap gap-2.5 font-semibold">
-              <span>{analysis.totalChars.toLocaleString()} / 3,000 chars</span>
+            <div className="flex flex-wrap gap-2 font-semibold">
+              <span
+                className={
+                  analysis.totalChars > 3000
+                    ? "font-extrabold text-rose-600"
+                    : ""
+                }
+              >
+                {analysis.totalChars.toLocaleString()} / 3,000 chars
+              </span>
               <span>·</span>
               <span>{analysis.wordCount} words</span>
               <span>·</span>
@@ -232,29 +287,38 @@ export default function LinkedinPostFormatterClient() {
               <span>{analysis.hashtagCount} hashtags</span>
             </div>
 
-            <button
-              type="button"
-              onClick={async () => {
-                await navigator.clipboard.writeText(postText);
-                notify("Copied formatted LinkedIn post to clipboard!");
-              }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5]"
-            >
-              <Copy size={14} />
-              Copy Formatted Post
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={downloadPostTxt}
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              >
+                <Download size={13} /> .TXT
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(postText);
+                  notify("Copied formatted LinkedIn post to clipboard!");
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5]"
+              >
+                <Copy size={14} />
+                Copy Formatted Post
+              </button>
+            </div>
           </div>
 
-          <details>
-            <summary className="font-semibold">
-              Writing checks · {analysis.hookScore}/100
-            </summary>{" "}
-            {/* COMPACT INLINE LINKEDIN HOOK & READABILITY SCORECARD */}
-            <div className="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-800">
+          {/* OPEN BY DEFAULT SO LINKEDIN HOOK & READABILITY CHECKS ARE IMMEDIATELY VISIBLE */}
+          <details open className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
+            <summary className="cursor-pointer font-extrabold text-slate-900 dark:text-white">
+              LinkedIn Feed Hook &amp; Readability Scorecard · {analysis.hookScore}/100
+            </summary>
+            <div className="mt-3 space-y-3 border-t border-slate-200 pt-3 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200">
                   <Sparkles size={15} className="text-[#4058d0]" />
-                  LinkedIn Feed Hook &amp; Readability Score
+                  Above-the-Fold &amp; Formatting Diagnostics
                 </span>
                 <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300">
                   {analysis.hookScore} / 100
@@ -289,7 +353,7 @@ export default function LinkedinPostFormatterClient() {
                   </div>
                 ))}
               </div>
-            </div>{" "}
+            </div>
           </details>
         </div>
 
@@ -297,10 +361,12 @@ export default function LinkedinPostFormatterClient() {
         <div>
           <SocialVisualCardBuilder
             platformLabel="LinkedIn Post"
-            defaultHeadline={firstLines[0] || "Key LinkedIn Insight"}
-            defaultBody={
-              firstLines.slice(1, 4).join("\n") || postText.slice(0, 220)
+            defaultHeadline={
+              stripUnicodeFormatting(firstLines[0] || "Key LinkedIn Insight")
             }
+            defaultBody={stripUnicodeFormatting(
+              firstLines.slice(1, 4).join("\n") || postText.slice(0, 220),
+            )}
             defaultSublabel="LINKEDIN PLAYBOOK"
             postTextToShare={postText}
             extractedImages={extractedImages}

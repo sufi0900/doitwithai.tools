@@ -395,14 +395,37 @@ function DatasetCard({
     </fieldset>
   );
 }
+
+function createInitialExampleInputs(): DatasetInput[] {
+  return exampleInputs.map((d) => ({
+    ...newDataset(d.id),
+    ...d,
+    table: parseTable(d.text),
+  }));
+}
+
+function createInitialExampleReport(): GapReport | null {
+  try {
+    const parsed = createInitialExampleInputs();
+    return buildGap(
+      parsed.map((item) => ingest(item)),
+      "domain",
+      false,
+    );
+  } catch {
+    return null;
+  }
+}
+
 export default function GapClient() {
-  const [inputs, setInputs] = useState<DatasetInput[]>([
-    newDataset("own"),
-    newDataset("competitor-one"),
-  ]);
+  const [inputs, setInputs] = useState<DatasetInput[]>(() =>
+    createInitialExampleInputs(),
+  );
   const [grouping, setGrouping] = useState<GapReport["grouping"]>("domain"),
     [includeInactive, setIncludeInactive] = useState(false);
-  const [report, setReport] = useState<GapReport | null>(null),
+  const [report, setReport] = useState<GapReport | null>(() =>
+      createInitialExampleReport(),
+    ),
     [filters, setFilters] = useState<Filters>(defaultFilters);
   const [reviews, setReviews] = useState<Record<string, Review>>({}),
     [open, setOpen] = useState<string | null>(null),
@@ -538,11 +561,7 @@ export default function GapClient() {
     }
   }
   function example() {
-    const source = exampleInputs.map((d) => ({
-      ...newDataset(d.id),
-      ...d,
-      table: parseTable(d.text),
-    }));
+    const source = createInitialExampleInputs();
     setReviews({});
     void compare(source, true);
   }
@@ -745,7 +764,7 @@ export default function GapClient() {
         >
           Try a worked example
         </button>
-        <details className={styles.toolbox}>
+        <details open className={styles.toolbox}>
           <summary>Templates and saved projects</summary>
           <div className={styles.actions}>
             <button

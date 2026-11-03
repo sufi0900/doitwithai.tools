@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MessageSquarePlus, Trash2, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  Download,
+  MessageSquarePlus,
+  Sparkles,
+  Trash2,
+  Users,
+} from "lucide-react";
 import {
   UrlArticleExtractorBar,
   type UniversalExtractResponse,
@@ -47,11 +56,18 @@ export function LinkedinCommentGeneratorClient() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState("");
   const [result, setResult] = useState<LinkedinCommentOutput>(
     DEFAULT_LINKEDIN_COMMENT_OUTPUT,
   );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
+
+  function notify(msg: string) {
+    setError(null);
+    setToast(msg);
+    setTimeout(() => setToast(""), 2800);
+  }
 
   async function runGenerate(overrides?: {
     mode?: LinkedinCommentMode;
@@ -64,6 +80,7 @@ export function LinkedinCommentGeneratorClient() {
 
     if (!activePost) {
       setError("Please paste the LinkedIn post or fetch an article URL first.");
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
     if (activeMode === "reply-to-comments-on-my-post") {
@@ -72,6 +89,7 @@ export function LinkedinCommentGeneratorClient() {
         setError(
           "Please paste at least one comment you received on your post so we can craft tailored replies.",
         );
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         return;
       }
     }
@@ -96,11 +114,17 @@ export function LinkedinCommentGeneratorClient() {
         throw new Error(data.error || "Failed to generate LinkedIn comments.");
       }
       setResult(data as LinkedinCommentOutput);
+      notify(
+        activeMode === "reply-to-comments-on-my-post"
+          ? "Generated tailored LinkedIn comment replies!"
+          : "Generated 5 strategic LinkedIn comments!",
+      );
       focusToolSection(resultsRef.current);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to generate comments.",
       );
+      focusToolSection(resultsRef.current);
     } finally {
       setLoading(false);
     }
@@ -144,9 +168,8 @@ export function LinkedinCommentGeneratorClient() {
   }
 
   function removeIncomingCommentSlot(id: string) {
-    setIncomingComments((prev) =>
-      prev.length > 1 ? prev.filter((item) => item.id !== id) : prev,
-    );
+    if (incomingComments.length <= 1) return;
+    setIncomingComments((prev) => prev.filter((item) => item.id !== id));
   }
 
   function updateIncomingComment(
@@ -159,14 +182,72 @@ export function LinkedinCommentGeneratorClient() {
     );
   }
 
-  function handleCopy(text: string, key: string) {
+  function updateCommentText(idx: number, newText: string) {
+    setResult((prev) => ({
+      ...prev,
+      comments: prev.comments.map((c, i) =>
+        i === idx ? { ...c, commentText: newText, charCount: newText.length } : c,
+      ),
+    }));
+  }
+
+  function updateReplyText(packIdx: number, replyIdx: number, newText: string) {
+    setResult((prev) => ({
+      ...prev,
+      replyPacks: prev.replyPacks?.map((p, pi) =>
+        pi === packIdx
+          ? {
+              ...p,
+              replies: p.replies.map((r, ri) =>
+                ri === replyIdx
+                  ? { ...r, replyText: newText, charCount: newText.length }
+                  : r,
+              ),
+            }
+          : p,
+      ),
+    }));
+  }
+
+  function handleCopy(text: string, key: string, label: string) {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
+    notify(`Copied ${label} to clipboard!`);
     setTimeout(() => setCopiedKey(null), 2000);
   }
 
+  function downloadCommentsTxt() {
+    const content =
+      result.replyPacks && result.replyPacks.length > 0
+        ? result.replyPacks
+            .map(
+              (p) =>
+                `=== REPLYING TO ${p.commenterName.toUpperCase()} ===\nOriginal: "${p.originalComment}"\n\n` +
+                p.replies
+                  .map((r) => `[${r.angleLabel}]\n${r.replyText}`)
+                  .join("\n\n"),
+            )
+            .join("\n\n----------------------------------------\n\n")
+        : result.comments
+            .map(
+              (c, i) =>
+                `=== COMMENT #${i + 1}: ${c.styleLabel} (${c.badge}) ===\n${c.commentText}\nWhy it works: ${c.whyItWorks}`,
+            )
+            .join("\n\n");
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "linkedin-comments-pack.txt";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify("Downloaded LinkedIn Comments Pack (.TXT)!");
+  }
+
+  const canRemoveIncoming = incomingComments.length > 1;
+
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
+    <section className="mx-auto max-w-6xl space-y-6 overflow-x-clip px-4 py-10 sm:px-6">
       <ToolRunOverlay
         active={loading}
         title={
@@ -178,7 +259,7 @@ export function LinkedinCommentGeneratorClient() {
       />
 
       {/* Mode Switcher Banner */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs dark:border-slate-800 dark:bg-[#111827]">
+      <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-[#111827]">
         <div className="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
@@ -186,7 +267,7 @@ export function LinkedinCommentGeneratorClient() {
               setMode("comment-on-others-post");
               void runGenerate({ mode: "comment-on-others-post" });
             }}
-            className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs sm:text-sm font-extrabold transition ${
+            className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-extrabold transition sm:text-sm ${
               mode === "comment-on-others-post"
                 ? "bg-[#0A66C2] text-white shadow-sm"
                 : "bg-slate-50 text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300"
@@ -200,7 +281,7 @@ export function LinkedinCommentGeneratorClient() {
               setMode("reply-to-comments-on-my-post");
               void runGenerate({ mode: "reply-to-comments-on-my-post" });
             }}
-            className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs sm:text-sm font-extrabold transition ${
+            className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-extrabold transition sm:text-sm ${
               mode === "reply-to-comments-on-my-post"
                 ? "bg-[#4058d0] text-white shadow-sm"
                 : "bg-slate-50 text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300"
@@ -223,8 +304,8 @@ export function LinkedinCommentGeneratorClient() {
         placeholder="Paste a LinkedIn post URL, blog article URL, or YouTube URL..."
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] items-start">
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+        <div className="shadow-xs space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
               <PlatformBrandIcon
@@ -280,25 +361,28 @@ export function LinkedinCommentGeneratorClient() {
                 </button>
               </div>
 
-              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+              <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
                 {incomingComments.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-2 dark:border-slate-800 dark:bg-slate-900"
+                    className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-900"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
                         Incoming Comment #{idx + 1}
                       </span>
-                      {incomingComments.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeIncomingCommentSlot(item.id)}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:underline"
-                        >
-                          <Trash2 size={12} /> Remove
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeIncomingCommentSlot(item.id)}
+                        disabled={!canRemoveIncoming}
+                        style={{
+                          backgroundColor: "#e11d48",
+                          cursor: canRemoveIncoming ? "pointer" : "not-allowed",
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold text-white disabled:opacity-45"
+                      >
+                        <Trash2 size={11} /> Remove
+                      </button>
                     </div>
                     <input
                       type="text"
@@ -404,18 +488,13 @@ export function LinkedinCommentGeneratorClient() {
             </>
           )}
 
-          {error && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700">
-              {error}
-            </div>
-          )}
-
           <button
             type="button"
             onClick={() => void runGenerate()}
             disabled={loading}
-            className="w-full rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
           >
+            <Sparkles size={16} />
             {loading
               ? "Generating LinkedIn Responses..."
               : mode === "reply-to-comments-on-my-post"
@@ -429,13 +508,52 @@ export function LinkedinCommentGeneratorClient() {
           tabIndex={-1}
           className="space-y-4 focus:outline-none"
         >
-          <div className="rounded-2xl border border-slate-200 bg-slate-900 p-4 text-white">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#8094ff]">
-              Detected Post Context
-            </span>
-            <p className="mt-1 text-xs sm:text-sm font-medium text-slate-100">
-              {result.postCoreThesis}
-            </p>
+          {/* Contextual In-View Alerts */}
+          {error && (
+            <div
+              role="alert"
+              className="flex items-center justify-between gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-700 dark:text-rose-300"
+            >
+              <span className="inline-flex items-center gap-2">
+                <AlertTriangle size={15} />
+                {error}
+              </span>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {toast && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+            >
+              <CheckCircle2 size={15} />
+              <span>{toast}</span>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-900 p-4 text-white">
+            <div className="min-w-0 flex-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#8094ff]">
+                Detected Post Context · Click Any Response Below to Edit Live
+              </span>
+              <p className="mt-1 text-xs font-medium text-slate-100 sm:text-sm">
+                {result.postCoreThesis}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={downloadCommentsTxt}
+              className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/20"
+            >
+              <Download size={13} /> Download .TXT
+            </button>
           </div>
 
           {result.replyPacks && result.replyPacks.length > 0 ? (
@@ -443,7 +561,7 @@ export function LinkedinCommentGeneratorClient() {
               {result.replyPacks.map((pack, pIdx) => (
                 <div
                   key={pIdx}
-                  className="rounded-2xl border-2 border-[#0A66C2]/25 bg-white p-5 shadow-xs space-y-3.5 dark:border-[#0A66C2]/40 dark:bg-[#111827]"
+                  className="shadow-xs space-y-3.5 rounded-2xl border-2 border-[#0A66C2]/25 bg-white p-5 dark:border-[#0A66C2]/40 dark:bg-[#111827]"
                 >
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#0A66C2]">
@@ -460,7 +578,7 @@ export function LinkedinCommentGeneratorClient() {
                       return (
                         <div
                           key={rIdx}
-                          className="flex flex-col justify-between rounded-xl border border-slate-200/90 bg-slate-50/60 p-3.5 space-y-2.5 dark:border-slate-800 dark:bg-slate-900/60"
+                          className="flex flex-col justify-between space-y-2.5 rounded-xl border border-slate-200/90 bg-slate-50/60 p-3.5 dark:border-slate-800 dark:bg-slate-900/60"
                         >
                           <div className="space-y-2">
                             <div className="flex items-center justify-between gap-1">
@@ -471,22 +589,32 @@ export function LinkedinCommentGeneratorClient() {
                                 {reply.badge}
                               </span>
                             </div>
-                            <p className="text-xs leading-relaxed text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
-                              {reply.replyText}
-                            </p>
+                            <textarea
+                              rows={3}
+                              value={reply.replyText}
+                              onChange={(e) =>
+                                updateReplyText(pIdx, rIdx, e.target.value)
+                              }
+                              className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-xs leading-relaxed text-slate-800 focus:border-[#4058d0] focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                            />
                           </div>
 
-                          <div className="flex items-center justify-between pt-1 border-t border-slate-200/70 dark:border-slate-800">
+                          <div className="flex items-center justify-between border-t border-slate-200/70 pt-1 dark:border-slate-800">
                             <span className="text-[10px] text-slate-400">
                               {reply.charCount} chars
                             </span>
                             <button
                               type="button"
                               onClick={() =>
-                                handleCopy(reply.replyText, copyId)
+                                handleCopy(
+                                  reply.replyText,
+                                  copyId,
+                                  reply.angleLabel,
+                                )
                               }
-                              className="rounded-lg bg-slate-900 px-3 py-1 text-[11px] font-bold text-white hover:bg-slate-800"
+                              className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-3 py-1 text-[11px] font-bold text-white hover:bg-[#3452d1]"
                             >
+                              <Copy size={11} />
                               {copiedKey === copyId
                                 ? "Copied Reply!"
                                 : "Copy Reply"}
@@ -506,7 +634,7 @@ export function LinkedinCommentGeneratorClient() {
                 return (
                   <div
                     key={idx}
-                    className="rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-xs space-y-3 dark:border-slate-800 dark:bg-[#111827]"
+                    className="shadow-xs space-y-3 rounded-2xl border border-slate-200/90 bg-white p-4 dark:border-slate-800 dark:bg-[#111827] sm:p-5"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -525,29 +653,35 @@ export function LinkedinCommentGeneratorClient() {
                         <button
                           type="button"
                           onClick={() =>
-                            handleCopy(comment.commentText, copyId)
+                            handleCopy(
+                              comment.commentText,
+                              copyId,
+                              comment.styleLabel,
+                            )
                           }
-                          className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#3452d1]"
                         >
-                          {copiedKey === copyId
-                            ? "Copied!"
-                            : "Copy Comment"}
+                          <Copy size={12} />
+                          {copiedKey === copyId ? "Copied!" : "Copy Comment"}
                         </button>
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-                      {comment.commentText}
-                    </div>
+                    <textarea
+                      rows={3}
+                      value={comment.commentText}
+                      onChange={(e) => updateCommentText(idx, e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 text-sm leading-relaxed text-slate-800 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                    />
 
-                    <div className="grid gap-2 sm:grid-cols-2 text-xs">
-                      <div className="rounded-lg bg-emerald-50/70 border border-emerald-200/60 p-2.5 text-emerald-950">
+                    <div className="grid gap-2 text-xs sm:grid-cols-2">
+                      <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/70 p-2.5 text-emerald-950">
                         <strong className="font-semibold">
                           Why it works:{" "}
                         </strong>
                         {comment.whyItWorks}
                       </div>
-                      <div className="rounded-lg bg-sky-50/70 border border-sky-200/60 p-2.5 text-sky-950">
+                      <div className="rounded-lg border border-sky-200/60 bg-sky-50/70 p-2.5 text-sky-950">
                         <strong className="font-semibold">
                           Predicted author reply:{" "}
                         </strong>
@@ -565,7 +699,7 @@ export function LinkedinCommentGeneratorClient() {
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                 LinkedIn Comment Algorithm Best Practices
               </h3>
-              <ul className="mt-2 space-y-1.5 text-xs text-slate-600 dark:text-slate-300 list-disc pl-4">
+              <ul className="mt-2 list-disc space-y-1.5 pl-4 text-xs text-slate-600 dark:text-slate-300">
                 {result.engagementTips.map((tip, i) => (
                   <li key={i}>{tip}</li>
                 ))}

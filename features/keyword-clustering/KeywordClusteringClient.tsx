@@ -41,6 +41,7 @@ import {
   type Planning,
   type Project,
 } from "./project";
+
 const field =
   "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-7 text-slate-900 outline-none focus:border-[#5271ff] focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-blue-900";
 const button =
@@ -49,10 +50,98 @@ const card =
   "rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-7";
 const example =
   "how to write meta titles\nmeta title examples\nmeta title generator\nAI title generator\narticle outline generator\nhow to outline an article\nimage alt text generator\nhow to write alt text\nalt text examples\nmeta title examples\napple";
+
+const SAMPLE_CLUSTER_INPUT: ClusterInput = {
+  keywords: [
+    { id: "k1", text: "how to write meta titles" },
+    { id: "k2", text: "meta title examples" },
+    { id: "k3", text: "meta title generator" },
+    { id: "k4", text: "AI title generator" },
+    { id: "k5", text: "article outline generator" },
+    { id: "k6", text: "how to outline an article" },
+    { id: "k7", text: "image alt text generator" },
+    { id: "k8", text: "how to write alt text" },
+    { id: "k9", text: "alt text examples" },
+    { id: "k10", text: "apple" },
+  ],
+  context:
+    "A website with SEO and content-writing utilities and educational articles.",
+  audience: "Writers and website owners",
+  mode: "page-intent",
+};
+
+const SAMPLE_CLUSTER_OUTPUT: ClusterOutput = {
+  clusters: [
+    {
+      label: "Meta Title Writing & Examples Guide",
+      primaryId: "k1",
+      keywordIds: ["k1", "k2"],
+      intent: "informational",
+      pageType: "guide",
+      focus:
+        "Teach writers how to write concise, high-clarity meta titles with real before-and-after examples.",
+      rationale:
+        "Both queries seek educational guidance and examples for crafting page titles.",
+      review:
+        "Check if your audience prefers one complete guide covering both writing rules and examples.",
+    },
+    {
+      label: "Interactive Meta & AI Title Generator Tool",
+      primaryId: "k3",
+      keywordIds: ["k3", "k4"],
+      intent: "transactional",
+      pageType: "product or service",
+      focus:
+        "Provide an interactive browser tool that generates and measures meta titles by pixel width.",
+      rationale:
+        "Users searching for a generator expect an interactive utility rather than a long-form essay.",
+      review:
+        "Verify whether AI title generator and meta title generator map to the same tool landing page.",
+    },
+    {
+      label: "Article Outline Builder & Structuring Workflow",
+      primaryId: "k5",
+      keywordIds: ["k5", "k6"],
+      intent: "mixed",
+      pageType: "tutorial",
+      focus:
+        "Combine an interactive outline builder with step-by-step instructions on structuring H2 and H3 headings.",
+      rationale:
+        "Pairs the outline tool query with the closely related how-to structuring task.",
+      review:
+        "Decide whether how to outline an article should be a tutorial section on the tool page or a separate guide.",
+    },
+    {
+      label: "Image Alt Text Writing & Generator",
+      primaryId: "k8",
+      keywordIds: ["k7", "k8", "k9"],
+      intent: "informational",
+      pageType: "guide",
+      focus:
+        "Explain accessible alt text rules with examples and an embedded alt text generator.",
+      rationale:
+        "Groups alt text rules, examples, and tool intent for accessibility and image SEO.",
+      review:
+        "Confirm whether the alt text generator has its own dedicated tool URL on your site.",
+    },
+  ],
+  unassigned: [
+    {
+      keywordId: "k10",
+      reason:
+        "Ambiguous single-word term unrelated to the SEO and content-writing site context.",
+    },
+  ],
+  review: [
+    "Inspect live search results to confirm whether tool queries and how-to guides deserve separate URLs.",
+    "Check your existing tool catalog before creating new landing pages.",
+  ],
+};
+
 export default function KeywordClusteringClient() {
-  const [text, setText] = useState("");
-  const [context, setContext] = useState("");
-  const [audience, setAudience] = useState("");
+  const [text, setText] = useState(example);
+  const [context, setContext] = useState(SAMPLE_CLUSTER_INPUT.context);
+  const [audience, setAudience] = useState(SAMPLE_CLUSTER_INPUT.audience);
   const [mode, setMode] = useState<ClusterInput["mode"]>("page-intent");
   const [imported, setImported] = useState<string[][] | null>(null);
   const [column, setColumn] = useState(0);
@@ -60,11 +149,19 @@ export default function KeywordClusteringClient() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
-  const [source, setSource] = useState<ClusterInput | null>(null);
-  const [result, setResult] = useState<ClusterOutput | null>(null);
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [source, setSource] = useState<ClusterInput | null>(
+    SAMPLE_CLUSTER_INPUT,
+  );
+  const [result, setResult] = useState<ClusterOutput | null>(
+    SAMPLE_CLUSTER_OUTPUT,
+  );
+  const [workspace, setWorkspace] = useState<Workspace | null>(() =>
+    createWorkspace(SAMPLE_CLUSTER_OUTPUT),
+  );
   const [history, setHistory] = useState<Workspace[]>([]);
-  const [active, setActive] = useState("review");
+  const [active, setActive] = useState(
+    () => createWorkspace(SAMPLE_CLUSTER_OUTPUT).groups[0]?.id || "review",
+  );
   const [selected, setSelected] = useState<string[]>([]);
   const [target, setTarget] = useState("review");
   const [newLabel, setNewLabel] = useState("");
@@ -92,6 +189,26 @@ export default function KeywordClusteringClient() {
             : reviewIssues(g, workspace).length === 0))
       );
     }) || [];
+
+  function loadInteractiveExample() {
+    setText(example);
+    setContext(SAMPLE_CLUSTER_INPUT.context);
+    setAudience(SAMPLE_CLUSTER_INPUT.audience);
+    setMode("page-intent");
+    const nextWs = createWorkspace(SAMPLE_CLUSTER_OUTPUT);
+    setSource(SAMPLE_CLUSTER_INPUT);
+    setResult(SAMPLE_CLUSTER_OUTPUT);
+    setWorkspace(nextWs);
+    setHistory([]);
+    setSelected([]);
+    setTarget("review");
+    setActive(nextWs.groups[0]?.id || "review");
+    setError("");
+    setStatus(
+      "Loaded interactive 4-group sample keyword plan. Click any cluster on the left to edit, move, split, or export.",
+    );
+  }
+
   function project(): Project {
     if (!source || !result || !workspace)
       throw Error("Generate a draft first.");
@@ -291,7 +408,6 @@ export default function KeywordClusteringClient() {
         "Draft groups ready. Review their intent and membership before planning pages.",
       );
       setTimeout(() => {
-        // Do not take focus from someone already editing the newly rendered results.
         if (
           !resultRef.current ||
           resultRef.current.contains(document.activeElement)
@@ -436,15 +552,10 @@ export default function KeywordClusteringClient() {
           <button
             type="button"
             className={button}
-            onClick={() => {
-              setText(example);
-              setContext(
-                "A website with SEO and content-writing utilities and educational articles.",
-              );
-              setAudience("Writers and website owners");
-            }}
+            onClick={loadInteractiveExample}
           >
-            Try an example
+            <Sparkles size={15} className="text-[#5271ff]" />
+            Load interactive sample clusters
           </button>
         </div>
         <div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_1fr]">
@@ -494,9 +605,9 @@ export default function KeywordClusteringClient() {
               </ul>
             )}
             {parsed.duplicates.length > 0 && (
-              <details className="mt-3 text-xs leading-6">
-                <summary className="cursor-pointer">
-                  Review removed duplicates
+              <details open className="mt-3 text-xs leading-6">
+                <summary className="cursor-pointer font-semibold">
+                  Review removed duplicates ({parsed.duplicates.length})
                 </summary>
                 <ul>
                   {parsed.duplicates.map((d) => (
@@ -635,7 +746,7 @@ export default function KeywordClusteringClient() {
             disabled={
               busy || parsed.errors.length > 0 || parsed.keywords.length < 2
             }
-            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#4662df] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/15 hover:bg-blue-700 focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-50"
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#3452d1] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/15 hover:bg-[#2943b5] focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-50"
           >
             <Sparkles size={18} aria-hidden />
             {busy
@@ -687,27 +798,47 @@ export default function KeywordClusteringClient() {
                 need review
               </p>
             </div>
-            <button
-              className={button}
-              disabled={!history.length}
-              onClick={() => {
-                const previous = history[history.length - 1];
-                if (previous) {
-                  setWorkspace(previous);
-                  setHistory(history.slice(0, -1));
-                  setActive(
-                    previous.groups.some((g) => g.id === active)
-                      ? active
-                      : "review",
-                  );
-                  setSelected([]);
-                  setStatus("Last edit undone.");
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={button}
+                onClick={() =>
+                  download(exportCsv(workspace, source.keywords), "csv")
                 }
-              }}
-            >
-              <Undo2 size={15} aria-hidden />
-              Undo last edit
-            </button>
+              >
+                <Download size={15} aria-hidden />
+                Export CSV
+              </button>
+              <button
+                className={button}
+                onClick={() =>
+                  download(exportPlan(workspace, source.keywords), "md")
+                }
+              >
+                <Download size={15} aria-hidden />
+                Export Markdown
+              </button>
+              <button
+                className={button}
+                disabled={!history.length}
+                onClick={() => {
+                  const previous = history[history.length - 1];
+                  if (previous) {
+                    setWorkspace(previous);
+                    setHistory(history.slice(0, -1));
+                    setActive(
+                      previous.groups.some((g) => g.id === active)
+                        ? active
+                        : "review",
+                    );
+                    setSelected([]);
+                    setStatus("Last edit undone.");
+                  }
+                }}
+              >
+                <Undo2 size={15} aria-hidden />
+                Undo last edit
+              </button>
+            </div>
           </div>
           <div className="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950 sm:grid-cols-3">
             <div>
@@ -743,7 +874,7 @@ export default function KeywordClusteringClient() {
             Progress reflects your recorded checks. It does not verify research,
             certify quality, or predict rankings.
           </p>
-          <div className="mt-6 grid gap-6 lg:grid-cols-[250px_1fr]">
+          <div className="mt-6 grid gap-6 lg:grid-cols-[260px_1fr]">
             <nav aria-label="Keyword groups" className="space-y-2">
               <label
                 className="block text-xs font-bold"
@@ -756,6 +887,7 @@ export default function KeywordClusteringClient() {
                 className={field}
                 value={groupSearch}
                 onChange={(e) => setGroupSearch(e.target.value)}
+                placeholder="Search clusters..."
               />
               <label
                 className="block pt-2 text-xs font-bold"
@@ -781,7 +913,7 @@ export default function KeywordClusteringClient() {
               {visibleGroups.map((g) => (
                 <button
                   key={g.id}
-                  className={`flex min-h-14 w-full items-start gap-3 rounded-xl border p-3 text-left ${active === g.id ? "border-[#5271ff] bg-blue-50 dark:bg-blue-950" : "border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"}`}
+                  className={`flex min-h-14 w-full items-start gap-3 rounded-xl border p-3 text-left ${active === g.id ? "border-[#4058D0] bg-blue-50 ring-2 ring-[#4058D0]/20 dark:bg-blue-950" : "border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"}`}
                   aria-pressed={active === g.id}
                   onClick={() => {
                     setActive(g.id);
@@ -1231,11 +1363,6 @@ export default function KeywordClusteringClient() {
                   >
                     Open Article Outline Generator
                   </Link>
-                  <p className="w-full text-xs leading-6 text-slate-500 dark:text-slate-400">
-                    Copy the reviewed brief, then paste its focus and keywords
-                    into the outline tool. No information transfers
-                    automatically.
-                  </p>
                 </div>
               )}
             </div>
@@ -1275,11 +1402,6 @@ export default function KeywordClusteringClient() {
               Download Markdown
             </button>
           </div>
-          <p className="mt-3 text-xs leading-6 text-slate-500 dark:text-slate-400">
-            Unsaved drafts are lost on refresh. Save in this browser or download
-            a project to continue later. CSV cells starting with formula-like
-            characters receive an apostrophe for spreadsheet safety.
-          </p>
         </section>
       )}
     </div>

@@ -10,12 +10,14 @@ import {
   type ReviewRow,
 } from "./review";
 import styles from "../content-evidence/evidence.module.css";
+
 const labels: Record<ReviewState, string> = {
   restriction: "Restriction detected",
   review: "Editorial review",
   observed: "Evidence observed",
   unknown: "Not established",
 };
+
 const colors: Record<ReviewState, string> = {
   restriction:
     "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-200",
@@ -26,6 +28,7 @@ const colors: Record<ReviewState, string> = {
   unknown:
     "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
+
 const tools: Record<string, string> = {
   "on-page-ai-seo-analyzer": "On-page AI SEO Analyzer",
   "robots-txt-generator": "Robots.txt Generator & AI Crawler Checker",
@@ -34,6 +37,7 @@ const tools: Record<string, string> = {
   "structured-data-validator": "Structured Data Validator",
   "heading-structure-analyzer": "Heading Structure Analyzer",
 };
+
 function download(body: string, format: "json" | "csv") {
   const url = URL.createObjectURL(
     new Blob([body], {
@@ -46,6 +50,7 @@ function download(body: string, format: "json" | "csv") {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
 function ReviewCard({ row }: { row: ReviewRow }) {
   return (
     <article className="min-w-0 rounded-xl border border-slate-200 p-5 dark:border-slate-700">
@@ -57,7 +62,7 @@ function ReviewCard({ row }: { row: ReviewRow }) {
       <h3 className="mt-3 text-lg font-bold">{row.label}</h3>
       <p className="mt-3 break-words text-sm leading-7">{row.evidence}</p>
       <p className={styles.small}>{row.action}</p>
-      <details className="mt-4 text-sm leading-7">
+      <details open className="mt-4 text-sm leading-7">
         <summary className="cursor-pointer font-semibold">
           Basis: {row.basis.label}
         </summary>
@@ -84,6 +89,7 @@ function ReviewCard({ row }: { row: ReviewRow }) {
     </article>
   );
 }
+
 export default function ReviewWorkspace({ page }: { page: PageSnapshot }) {
   const report = useMemo(() => citationReview(page), [page]);
   return (
@@ -141,7 +147,7 @@ export default function ReviewWorkspace({ page }: { page: PageSnapshot }) {
             </div>
           ))}
         </div>
-        <details className={styles.scope} open={page.partial}>
+        <details open className={styles.scope}>
           <summary>What this report can and cannot establish</summary>
           <p>
             {page.scope}; {page.blocks.length} retained blocks. {report.limits}
@@ -176,7 +182,10 @@ export default function ReviewWorkspace({ page }: { page: PageSnapshot }) {
               <ReviewCard key={row.id} row={row} />
             ))}
         </div>
-        <details className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700">
+        <details
+          open
+          className="mt-6 rounded-xl border border-slate-200 p-5 dark:border-slate-700"
+        >
           <summary className="cursor-pointer font-bold">
             Optional writing context, with no citation verdict
           </summary>
@@ -206,13 +215,14 @@ export default function ReviewWorkspace({ page }: { page: PageSnapshot }) {
           </p>
           {report.claims.slice(0, 5).map((claim) => (
             <details
+              open
               key={claim.id}
               className="mt-4 border-t border-slate-200 pt-4 dark:border-slate-700"
             >
               <summary className="cursor-pointer text-sm font-semibold">
                 {claim.section} · {claim.cues.join(", ")}
               </summary>
-              <blockquote className="mt-3 break-words border-l-2 border-[#5271ff] pl-4 text-sm leading-7">
+              <blockquote className="mt-3 break-words border-l-2 border-[#4058D0] pl-4 text-sm leading-7">
                 {claim.text}
               </blockquote>
               <p className={styles.small}>

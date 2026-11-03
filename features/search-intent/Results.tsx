@@ -3,8 +3,10 @@ import Link from "next/link";
 import { ArrowRight, Copy, Download, Search } from "lucide-react";
 import type { IntentReport } from "./schema";
 import { intentPresentation, reportBasis } from "./presentation";
+
 const action =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-300";
+
 export default function IntentResults({
   report,
   onCopy,
@@ -92,7 +94,7 @@ export default function IntentResults({
                   </dd>
                 </div>
               </dl>
-              <details className="mt-4 border-t border-white/10 pt-4">
+              <details open className="mt-4 border-t border-white/10 pt-4">
                 <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-blue-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-300">
                   Why this intent? See cues and writing advice
                 </summary>
@@ -144,7 +146,7 @@ export default function IntentResults({
       </div>
       <div className="mt-5 text-xs leading-6 text-slate-400">
         <p>{reportBasis(report)}. Confirm against current search results.</p>
-        <details className="mt-2">
+        <details open className="mt-2">
           <summary className="min-h-11 cursor-pointer py-2 font-semibold text-slate-300">
             How to interpret these results
           </summary>

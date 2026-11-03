@@ -6,6 +6,7 @@ import {
   Code2,
   Copy,
   Download,
+  Edit3,
   MapPin,
   Sparkles,
   AlertTriangle,
@@ -23,9 +24,14 @@ export default function LocalBusinessSchemaGeneratorClient() {
     DEFAULT_LOCAL_SCHEMA_INPUT,
   );
   const [outputMode, setOutputMode] = useState<"script" | "json">("script");
+  const [isEditingRaw, setIsEditingRaw] = useState(false);
+  const [rawOverride, setRawOverride] = useState<string | null>(null);
   const [toast, setToast] = useState("");
 
   const result = useMemo(() => buildLocalBusinessSchema(input), [input]);
+  const compiledText =
+    outputMode === "script" ? result.scriptTagHtml : result.jsonString;
+  const activeOutput = rawOverride !== null ? rawOverride : compiledText;
 
   function notify(msg: string) {
     setToast(msg);
@@ -36,11 +42,16 @@ export default function LocalBusinessSchemaGeneratorClient() {
     key: K,
     val: LocalBusinessSchemaInput[K],
   ) {
+    setRawOverride(null);
     setInput((prev) => ({ ...prev, [key]: val }));
   }
 
   function downloadJsonFile() {
-    const blob = new Blob([result.jsonString], {
+    const content =
+      outputMode === "json" && rawOverride !== null
+        ? rawOverride
+        : result.jsonString;
+    const blob = new Blob([content], {
       type: "application/ld+json;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
@@ -334,6 +345,46 @@ export default function LocalBusinessSchemaGeneratorClient() {
                 />
               </div>
 
+              <div className="flex items-end pb-1">
+                <label className="flex cursor-pointer items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+                  <input
+                    type="checkbox"
+                    checked={input.includeRating}
+                    onChange={(e) =>
+                      updateField("includeRating", e.target.checked)
+                    }
+                    className="h-4 w-4 accent-[#3452d1]"
+                  />
+                  Include AggregateRating
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                  Rating Value (1–5)
+                </label>
+                <input
+                  type="text"
+                  disabled={!input.includeRating}
+                  value={input.ratingValue}
+                  onChange={(e) => updateField("ratingValue", e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-xs disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                  Review Count
+                </label>
+                <input
+                  type="text"
+                  disabled={!input.includeRating}
+                  value={input.reviewCount}
+                  onChange={(e) => updateField("reviewCount", e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono text-xs disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900"
+                />
+              </div>
+
               <div className="sm:col-span-3">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
                   Entity Disambiguation Links (sameAs — 1 URL per line: GBP,
@@ -402,7 +453,10 @@ export default function LocalBusinessSchemaGeneratorClient() {
               <div className="flex gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setOutputMode("script")}
+                  onClick={() => {
+                    setOutputMode("script");
+                    setRawOverride(null);
+                  }}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
                     outputMode === "script"
                       ? "bg-[#3b63fb] text-white"
@@ -413,7 +467,10 @@ export default function LocalBusinessSchemaGeneratorClient() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setOutputMode("json")}
+                  onClick={() => {
+                    setOutputMode("json");
+                    setRawOverride(null);
+                  }}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
                     outputMode === "json"
                       ? "bg-[#3b63fb] text-white"
@@ -424,15 +481,24 @@ export default function LocalBusinessSchemaGeneratorClient() {
                 </button>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isEditingRaw && rawOverride === null) {
+                      setRawOverride(compiledText);
+                    }
+                    setIsEditingRaw((prev) => !prev);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-bold text-slate-200 hover:border-[#5271ff]"
+                >
+                  <Edit3 size={12} />
+                  {isEditingRaw ? "Compiled View" : "Edit Code"}
+                </button>
                 <button
                   type="button"
                   onClick={async () => {
-                    const text =
-                      outputMode === "script"
-                        ? result.scriptTagHtml
-                        : result.jsonString;
-                    await navigator.clipboard.writeText(text);
+                    await navigator.clipboard.writeText(activeOutput);
                     notify("Copied LocalBusiness JSON-LD markup!");
                   }}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[#3b63fb] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#294fe0]"
@@ -451,11 +517,20 @@ export default function LocalBusinessSchemaGeneratorClient() {
               </div>
             </div>
 
-            <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-6 text-emerald-300">
-              {outputMode === "script"
-                ? result.scriptTagHtml
-                : result.jsonString}
-            </pre>
+            {isEditingRaw ? (
+              <textarea
+                rows={16}
+                value={activeOutput}
+                onChange={(e) => setRawOverride(e.target.value)}
+                spellCheck={false}
+                aria-label="Direct LocalBusiness JSON-LD editor"
+                className="mt-4 w-full rounded-xl border border-[#5271ff] bg-slate-950 p-3 font-mono text-xs leading-6 text-emerald-300 focus:outline-none"
+              />
+            ) : (
+              <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-6 text-emerald-300">
+                {activeOutput}
+              </pre>
+            )}
 
             <div className="mt-4 flex items-center justify-between border-t border-slate-800 pt-3 text-xs text-slate-400">
               <span className="flex items-center gap-1.5">

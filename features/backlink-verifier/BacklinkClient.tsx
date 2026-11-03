@@ -22,6 +22,7 @@ import {
   settingsKey,
   sourceList,
 } from "./io";
+import { analyzeHtml } from "./analyze";
 import {
   defaultOptions,
   labels,
@@ -37,6 +38,29 @@ import ToolRunOverlay, {
 } from "../tool-ui/ToolRunOverlay";
 
 const key = "doitwithai.backlink-baseline.v1";
+const INITIAL_EXAMPLE_OPTIONS: Options = {
+  ...defaultOptions,
+  target: "https://example.com/guide",
+  mode: "page",
+  expectedAnchor: "Example guide",
+  expectedRel: "unqualified",
+};
+
+function createInitialExampleReports(): Report[] {
+  try {
+    return [
+      analyzeHtml(
+        exampleHtml,
+        "https://publisher.example/resources",
+        INITIAL_EXAMPLE_OPTIONS,
+        { method: "pasted", complete: true },
+      ),
+    ];
+  } catch {
+    return [];
+  }
+}
+
 function download(text: string, name: string, type: string) {
   const url = URL.createObjectURL(new Blob([text], { type }));
   const a = document.createElement("a");
@@ -46,20 +70,22 @@ function download(text: string, name: string, type: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 export default function BacklinkClient() {
-  const [options, setOptions] = useState<Options>(defaultOptions),
-    [sources, setSources] = useState("");
-  const [mode, setMode] = useState<"live" | "pasted">("live"),
-    [html, setHtml] = useState("");
-  const [reports, setReports] = useState<Report[]>([]),
-    [runOptions, setRunOptions] = useState<Options>(defaultOptions);
+  const [options, setOptions] = useState<Options>(INITIAL_EXAMPLE_OPTIONS),
+    [sources, setSources] = useState("https://publisher.example/resources");
+  const [mode, setMode] = useState<"live" | "pasted">("pasted"),
+    [html, setHtml] = useState(exampleHtml);
+  const [reports, setReports] = useState<Report[]>(() =>
+      createInitialExampleReports(),
+    ),
+    [runOptions, setRunOptions] = useState<Options>(INITIAL_EXAMPLE_OPTIONS);
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [error, setError] = useState("");
   const [filter, setFilter] = useState("all"),
     [search, setSearch] = useState(""),
-    [planned, setPlanned] = useState(0);
+    [planned, setPlanned] = useState(1);
   const [baseline, setBaseline] = useState<SavedRun | null>(null),
-    [isExample, setIsExample] = useState(false);
+    [isExample, setIsExample] = useState(true);
   const [navigation, setNavigation] = useState<{
     target: "results" | "error";
   } | null>(null);
@@ -113,13 +139,7 @@ export default function BacklinkClient() {
     const evidence = example ? "pasted" : mode;
     try {
       submitted = example
-        ? {
-            ...defaultOptions,
-            target: "https://example.com/guide",
-            mode: "page",
-            expectedAnchor: "Example guide",
-            expectedRel: "unqualified",
-          }
+        ? INITIAL_EXAMPLE_OPTIONS
         : { ...options, target: inputUrl(options.target) };
       urls = example
         ? ["https://publisher.example/resources"]
@@ -416,7 +436,7 @@ export default function BacklinkClient() {
                 </span>
               </label>
             )}
-            <details className={styles.advanced}>
+            <details open className={styles.advanced}>
               <summary>Optional link expectations</summary>
               <label className={styles.label}>
                 Expected anchor text
@@ -656,12 +676,8 @@ export default function BacklinkClient() {
               your search.
             </p>
           )}
-          {filtered.map((r, index) => (
-            <details
-              key={r.sourceUrl}
-              className={styles.source}
-              open={index === 0}
-            >
+          {filtered.map((r) => (
+            <details key={r.sourceUrl} className={styles.source} open>
               <summary>
                 <span className={styles.status} data-status={r.status}>
                   {labels[r.status]}

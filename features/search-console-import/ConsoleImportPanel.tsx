@@ -3,8 +3,10 @@ import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useMemo, useRef, useState } from "react";
 import { Dataset, readConsoleFile, reportInfo, csvCell } from "./import";
 import { parseGscCsv } from "@/features/gsc-striking-distance/gscAnalysis";
+
 const control =
   "min-w-0 w-full rounded-xl border border-white/15 bg-slate-950 p-3 text-sm text-white";
+
 export default function ConsoleImportPanel({
   onChange,
   sample,
@@ -110,7 +112,14 @@ export default function ConsoleImportPanel({
     onChange(rows.map((r) => r.map(csvCell).join(",")).join("\n"));
   }
   return (
-    <div onDragOver={event=>event.preventDefault()} onDrop={event=>{event.preventDefault();if(!busy)void load(event.dataTransfer.files);}} className="rounded-2xl border border-dashed border-blue-300/40 bg-slate-950/40 p-5">
+    <div
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        if (!busy) void load(event.dataTransfer.files);
+      }}
+      className="rounded-2xl border border-dashed border-blue-300/40 bg-slate-950/40 p-5"
+    >
       <p className="font-bold text-white">
         Upload CSV files or the original Search Console ZIP
       </p>
@@ -123,7 +132,7 @@ export default function ConsoleImportPanel({
           type="button"
           disabled={busy}
           onClick={() => input.current?.click()}
-          className="rounded-xl bg-[#5271ff] px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+          className="rounded-xl bg-[#4058D0] px-4 py-3 text-sm font-bold text-white hover:bg-[#3452D1] disabled:opacity-50"
         >
           {busy ? "Reading files…" : "Choose CSV or ZIP"}
         </button>
@@ -134,7 +143,7 @@ export default function ConsoleImportPanel({
             setError("");
             onChange(sample);
           }}
-          className="rounded-xl border border-white/20 px-4 py-3 text-sm text-white"
+          className="rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10"
         >
           Try sample data
         </button>
@@ -146,7 +155,7 @@ export default function ConsoleImportPanel({
             setError("");
             onChange("");
           }}
-          className="rounded-xl border border-white/20 px-4 py-3 text-sm text-white"
+          className="rounded-xl border border-white/20 px-4 py-3 text-sm font-semibold text-white hover:bg-white/10"
         >
           Clear
         </button>
@@ -181,7 +190,7 @@ export default function ConsoleImportPanel({
         </label>
       )}
       {cannibalization && reports.some((r) => r.kind === "queries") && (
-        <details className="mt-4 rounded-xl border border-white/15 p-3">
+        <details open className="mt-4 rounded-xl border border-white/15 p-3">
           <summary className="cursor-pointer text-sm font-bold text-blue-200">
             Compare query exports filtered to individual pages
           </summary>
@@ -213,7 +222,7 @@ export default function ConsoleImportPanel({
           <button
             type="button"
             onClick={combine}
-            className="mt-3 rounded-xl bg-[#5271ff] px-4 py-3 text-sm font-bold text-white"
+            className="mt-3 rounded-xl bg-[#4058D0] px-4 py-3 text-sm font-bold text-white hover:bg-[#3452D1]"
           >
             Compare assigned pages
           </button>

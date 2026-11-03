@@ -2,22 +2,29 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Check,
   Copy,
   Download,
   FileCode2,
   Image as ImageIcon,
+  Maximize2,
   Monitor,
   PackageCheck,
   Palette,
   Printer,
+  RotateCcw,
   SlidersHorizontal,
   Smartphone,
   Sparkles,
+  Type,
+  Upload,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { wrapVisualText, sourceMetric } from "./visualText";
 import { TemplateThumbnail } from "./InfographicArtwork";
-import { SocialCardArtwork } from "./SocialCardArtwork";
+import { SocialCardArtwork, type SocialEditableField } from "./SocialCardArtwork";
 import { prepareVisualSvg, visualSvgCanvas, saveVisualBlob } from "./svgExport";
 import styles from "./visual-studio.module.css";
 import type { ExtractedImageAsset } from "./UrlArticleExtractorBar";
@@ -84,16 +91,16 @@ const THEMES: Record<Exclude<CardThemeId, "custom-brand">, CardTheme> = {
     badgeText: "#ffffff",
   },
   "brand-orange": {
-    label: "Midnight & Electric Orange",
+    label: "Midnight & Royal Indigo",
     bgStart: "#0F172A",
     bgEnd: "#1E293B",
     cardSurface: "#1E293B",
-    accent: "#4058d0",
+    accent: "#5271ff",
     accentSecondary: "#FBBF24",
     textPrimary: "#FFFFFF",
     textSecondary: "#E2E8F0",
-    badgeBg: "rgba(82, 113, 255, 0.2)",
-    badgeText: "#8094ff",
+    badgeBg: "rgba(82, 113, 255, 0.22)",
+    badgeText: "#9aabff",
   },
   "midnight-slate": {
     label: "Executive Carbon & Cyan",
@@ -124,12 +131,12 @@ const THEMES: Record<Exclude<CardThemeId, "custom-brand">, CardTheme> = {
     bgStart: "#F8FAFC",
     bgEnd: "#EEF2FF",
     cardSurface: "#FFFFFF",
-    accent: "#4F46E5",
+    accent: "#4058D0",
     accentSecondary: "#EC4899",
     textPrimary: "#0F172A",
     textSecondary: "#475569",
     badgeBg: "#E0E7FF",
-    badgeText: "#3730A3",
+    badgeText: "#314bd6",
   },
   "cyber-violet": {
     label: "SaaS Violet & Magenta",
@@ -174,7 +181,24 @@ const CARD_TEMPLATES: { id: CardTemplateId; label: string; badge: string }[] = [
   },
 ];
 
-const wrapSvgLines = wrapVisualText;
+function hexToLum(hex: string): number {
+  const clean = hex.replace("#", "").trim();
+  if (clean.length < 6) return 0.5;
+  const r = parseInt(clean.slice(0, 2), 16) / 255;
+  const g = parseInt(clean.slice(2, 4), 16) / 255;
+  const b = parseInt(clean.slice(4, 6), 16) / 255;
+  const toLinear = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+}
+
+function getContrastRatio(hex1: string, hex2: string): number {
+  const l1 = hexToLum(hex1);
+  const l2 = hexToLum(hex2);
+  const brightest = Math.max(l1, l2);
+  const darkest = Math.min(l1, l2);
+  return (brightest + 0.05) / (darkest + 0.05);
+}
 
 export function SocialVisualCardBuilder({
   platformLabel = "LinkedIn Post",
@@ -200,17 +224,35 @@ export function SocialVisualCardBuilder({
   const [badgeLabel, setBadgeLabel] = useState(defaultSublabel);
   const [selectedImage, setSelectedImage] =
     useState<ExtractedImageAsset | null>(null);
+  const [customUploadedImage, setCustomUploadedImage] = useState<string>("");
+  const [imageFitMode, setImageFitMode] = useState<"contain" | "cover">(
+    "contain",
+  );
   const [feedDevice, setFeedDevice] = useState<"mobile" | "desktop">("mobile");
   const [feedExpanded, setFeedExpanded] = useState(false);
-  const [showCustomizer, setShowCustomizer] = useState(false);
+  // Open by default so users immediately see the 10 templates & color controls
+  const [showCustomizer, setShowCustomizer] = useState(true);
+  const [selectedField, setSelectedField] =
+    useState<SocialEditableField>("headline");
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [toastMsg, setToastMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const [copiedImg, setCopiedImg] = useState(false);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const directInputRef = useRef<HTMLInputElement | null>(null);
 
   function notify(msg: string) {
+    setErrorMsg("");
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(""), 3000);
+    setTimeout(() => setToastMsg(""), 3400);
+  }
+
+  function notifyError(msg: string) {
+    setToastMsg("");
+    setErrorMsg(msg);
+    stageRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   useEffect(() => {
@@ -220,7 +262,6 @@ export function SocialVisualCardBuilder({
   useEffect(() => {
     if (defaultBody) {
       setBodyCopy(defaultBody.slice(0, 260));
-      const m = defaultBody.match(/[+-]?\d+(?:\.\d+)?%|\b\d+(?:\.\d+)?x\b/i);
       setStatMetric(sourceMetric(defaultBody));
     }
   }, [defaultBody]);
@@ -233,6 +274,7 @@ export function SocialVisualCardBuilder({
 
   const theme: CardTheme = useMemo(() => {
     if (themeId === "custom-brand") {
+      const bgLum = hexToLum(customColors.bgStart);
       return {
         label: "Custom Brand Palette",
         bgStart: customColors.bgStart,
@@ -241,10 +283,7 @@ export function SocialVisualCardBuilder({
         accent: customColors.accent,
         accentSecondary: customColors.accent,
         textPrimary: customColors.textPrimary,
-        textSecondary:
-          customColors.textPrimary.toLowerCase() === "#ffffff"
-            ? "#CBD5E1"
-            : "#475569",
+        textSecondary: bgLum < 0.45 ? "#CBD5E1" : "#334155",
         badgeBg: `${customColors.accent}28`,
         badgeText: customColors.accent,
       };
@@ -255,19 +294,50 @@ export function SocialVisualCardBuilder({
     return THEMES[themeId] || THEMES["royal-indigo"];
   }, [themeId, customColors, template]);
 
+  const contrastRatio = useMemo(
+    () => getContrastRatio(theme.bgStart, theme.textPrimary),
+    [theme.bgStart, theme.textPrimary],
+  );
+  const isLowContrast = contrastRatio < 3.5;
+
+  function autoFixContrast() {
+    const bgLum = hexToLum(theme.bgStart);
+    const fixedText = bgLum > 0.45 ? "#0F172A" : "#FFFFFF";
+    const fixedAccent = bgLum > 0.45 ? "#3452D1" : "#60A5FA";
+    setThemeId("custom-brand");
+    setCustomColors({
+      bgStart: theme.bgStart,
+      accent: fixedAccent,
+      textPrimary: fixedText,
+    });
+    notify("Auto-adjusted text & accent colors for WCAG readability!");
+  }
+
   const W = aspectRatio === "16:9" ? 1200 : 1080;
   const H = aspectRatio === "1:1" ? 1080 : aspectRatio === "4:5" ? 1350 : 675;
   const pad = aspectRatio === "16:9" ? 64 : 76;
 
-  function serializeSvg(): string {
-    const svgEl = svgRef.current;
-    if (!svgEl) return "";
-    const clone = svgEl.cloneNode(true) as SVGSVGElement;
-    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-    clone.setAttribute("width", String(W));
-    clone.setAttribute("height", String(H));
-    return new XMLSerializer().serializeToString(clone);
+  // Never use paper-sculpture.png; only use custom uploaded or extracted article photo
+  const activePhotoSrc = customUploadedImage || selectedImage?.src || undefined;
+
+  function handleCustomImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      notifyError("Please choose a valid PNG, JPG, WebP, or SVG image file.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setCustomUploadedImage(reader.result);
+        if (template !== "article-photo-card" && template !== "carousel-slide") {
+          setTemplate("article-photo-card");
+        }
+        notify(`Attached "${file.name}" (${imageFitMode === "contain" ? "Fit Full Image" : "Fill Frame"})!`);
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   async function renderToCanvas(scale = 2): Promise<HTMLCanvasElement | null> {
@@ -275,7 +345,7 @@ export function SocialVisualCardBuilder({
     try {
       return await visualSvgCanvas(svgRef.current, W, H, scale);
     } catch (error) {
-      notify(
+      notifyError(
         error instanceof Error ? error.message : "Could not export this image.",
       );
       return null;
@@ -300,8 +370,11 @@ export function SocialVisualCardBuilder({
         new Blob([source], { type: "image/svg+xml;charset=utf-8" }),
         `social-${template}.svg`,
       );
+      notify("Downloaded Editable Vector Graphic (.SVG)!");
     } catch (error) {
-      notify(error instanceof Error ? error.message : "Could not export SVG.");
+      notifyError(
+        error instanceof Error ? error.message : "Could not export SVG.",
+      );
     }
   }
 
@@ -316,6 +389,7 @@ export function SocialVisualCardBuilder({
     });
     pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, W, H);
     pdf.save(`social-${template}.pdf`);
+    notify("Downloaded Print-Ready PDF Card!");
   }
 
   async function handleCopyCardImage() {
@@ -382,7 +456,6 @@ export function SocialVisualCardBuilder({
     }
   }
 
-  // Feed truncation preview logic (replaces the old disconnected "...see more" box)
   const fullPostPreview = (
     postTextToShare || `${headline}\n\n${bodyCopy}`
   ).trim();
@@ -390,43 +463,64 @@ export function SocialVisualCardBuilder({
   const shortPostPreview = fullPostPreview.slice(0, foldLimit);
   const isPostTruncated = fullPostPreview.length > foldLimit;
 
-  const headlineLines = wrapSvgLines(
-    headline || "Key Strategic Insight",
-    aspectRatio === "16:9" ? 36 : 28,
-    3,
+  // Direct In-Canvas Editor active value + optimal character budget (~80% fill)
+  const activeFieldMeta = useMemo(() => {
+    switch (selectedField) {
+      case "headline":
+        return {
+          label: "Card Headline",
+          value: headline,
+          maxOptimal: aspectRatio === "16:9" ? 68 : 78,
+          onChange: (v: string) => setHeadline(v),
+        };
+      case "body":
+        return {
+          label: "Supporting Copy / Steps",
+          value: bodyCopy,
+          maxOptimal: aspectRatio === "16:9" ? 150 : 185,
+          onChange: (v: string) => setBodyCopy(v),
+        };
+      case "metric":
+        return {
+          label: "KPI Stat Callout",
+          value: statMetric,
+          maxOptimal: 14,
+          onChange: (v: string) => setStatMetric(v),
+        };
+      case "badge":
+        return {
+          label: "Top Kicker Badge",
+          value: badgeLabel,
+          maxOptimal: 28,
+          onChange: (v: string) => setBadgeLabel(v),
+        };
+      case "handle":
+        return {
+          label: "Brand Handle Footer",
+          value: authorHandle,
+          maxOptimal: 28,
+          onChange: (v: string) => setAuthorHandle(v),
+        };
+    }
+  }, [
+    selectedField,
+    headline,
+    bodyCopy,
+    statMetric,
+    badgeLabel,
+    authorHandle,
+    aspectRatio,
+  ]);
+
+  const fillPct = Math.round(
+    (activeFieldMeta.value.length / activeFieldMeta.maxOptimal) * 100,
   );
-  const bodyLines = wrapSvgLines(
-    bodyCopy || "",
-    aspectRatio === "16:9" ? 56 : 42,
-    4,
-  );
-  const bulletSteps = bodyCopy
-    .split(/\n+|(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 8)
-    .slice(0, 3);
-  while (bulletSteps.length < 3) {
-    bulletSteps.push(
-      bulletSteps.length === 1
-        ? "Structure every section around measurable user outcomes."
-        : "Pair the post with a high-contrast visual takeaway card.",
-    );
-  }
 
   return (
     <div
+      ref={stageRef}
       className={`${styles.studio} space-y-5 rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6`}
     >
-      {toastMsg && (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
-        >
-          <Check size={14} />
-          <span>{toastMsg}</span>
-        </div>
-      )}
-
       {/* HEADER WITH INTEGRATED MOBILE / DESKTOP FOLD TOGGLE */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
         <div className="flex items-center gap-3">
@@ -436,12 +530,12 @@ export function SocialVisualCardBuilder({
           />
           <div>
             <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-              {platformLabel} preview &amp; image
+              {platformLabel} Live Feed &amp; Visual Studio
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              See your post text + attached visual together.{" "}
+              Click any text inside the graphic to edit live, zoom in/out, or{" "}
               <strong className="text-[#4058d0]">
-                Download your image, then attach it when publishing.
+                download high-DPI PNG, SVG &amp; PDF.
               </strong>
             </p>
           </div>
@@ -482,42 +576,132 @@ export function SocialVisualCardBuilder({
         </div>
       </div>
 
-      {/* EXTRACTED ARTICLE IMAGES QUICK STRIP (IF PRESENT) */}
-      {extractedImages.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-extrabold text-[#3452d1] dark:text-[#9aabff]">
-              Extracted Article Images ({extractedImages.length}) — Click Any
-              Photo to Attach It Below Your Post:
-            </span>
-            {template === "article-photo-card" && (
-              <button
-                type="button"
-                onClick={() => setTemplate("framework-steps")}
-                className="text-xs font-bold text-[#4058d0] hover:underline"
-              >
-                Switch Back to Vector Graphic Card
-              </button>
-            )}
+      {/* CONTEXTUAL IN-VIEW STATUS & ERROR ALERTS */}
+      {errorMsg && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-700 dark:text-rose-300"
+        >
+          <span className="inline-flex items-center gap-2">
+            <AlertTriangle size={15} />
+            {errorMsg}
+          </span>
+          <button
+            type="button"
+            onClick={() => setErrorMsg("")}
+            className="underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {toastMsg && (
+        <div
+          role="status"
+          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+        >
+          <Check size={14} />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {isLowContrast && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+          <span className="inline-flex items-center gap-2">
+            <AlertTriangle size={14} />
+            Low text contrast detected ({contrastRatio.toFixed(1)}:1). Text may
+            be hard to read on mobile feeds.
+          </span>
+          <button
+            type="button"
+            onClick={autoFixContrast}
+            className="rounded-lg bg-amber-600 px-3 py-1 text-white hover:bg-amber-500"
+          >
+            1-Click Auto-Fix Contrast
+          </button>
+        </div>
+      )}
+
+      {/* CUSTOM PHOTO UPLOAD + EXTRACTED ARTICLE IMAGES STRIP */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#4058d0] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#3452d1]">
+            <Upload size={14} />
+            Upload Custom Photo (Horiz / Vert)
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCustomImageUpload}
+              className="hidden"
+            />
+          </label>
+
+          {/* Fit Full Image vs Fill Frame Toggle */}
+          <div className="inline-flex items-center rounded-xl border border-slate-300 bg-white p-0.5 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-950">
+            <button
+              type="button"
+              onClick={() => setImageFitMode("contain")}
+              className={`rounded-lg px-2.5 py-1 transition ${
+                imageFitMode === "contain"
+                  ? "bg-[#3452d1] text-white"
+                  : "text-slate-600 dark:text-slate-300"
+              }`}
+              title="Fit full horizontal or vertical image without cropping"
+            >
+              Fit Full Image (No Crop)
+            </button>
+            <button
+              type="button"
+              onClick={() => setImageFitMode("cover")}
+              className={`rounded-lg px-2.5 py-1 transition ${
+                imageFitMode === "cover"
+                  ? "bg-[#3452d1] text-white"
+                  : "text-slate-600 dark:text-slate-300"
+              }`}
+              title="Fill the entire image frame"
+            >
+              Fill Frame (Cover)
+            </button>
           </div>
-          <div className="flex gap-2.5 overflow-x-auto pb-1">
-            {extractedImages.slice(0, 8).map((img, i) => {
+
+          {activePhotoSrc && (
+            <button
+              type="button"
+              onClick={() => {
+                setCustomUploadedImage("");
+                setSelectedImage(null);
+                if (template === "article-photo-card") {
+                  setTemplate("carousel-slide");
+                }
+                notify("Removed attached photo and switched to clean vector layout.");
+              }}
+              className="rounded-lg border border-rose-300 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400"
+            >
+              Clear Photo
+            </button>
+          )}
+        </div>
+
+        {extractedImages.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <span className="text-[11px] font-extrabold text-[#3452d1] dark:text-[#9aabff]">
+              Article Photos ({extractedImages.length}):
+            </span>
+            {extractedImages.slice(0, 6).map((img, i) => {
               const isSelected =
-                template === "article-photo-card" &&
-                selectedImage?.src === img.src;
+                !customUploadedImage && selectedImage?.src === img.src;
               return (
                 <button
                   key={`${img.src}-${i}`}
                   type="button"
                   onClick={() => {
+                    setCustomUploadedImage("");
                     setSelectedImage(img);
                     setTemplate("article-photo-card");
-                    if (img.alt && img.alt.length > 6) {
-                      setHeadline(img.alt.slice(0, 95));
-                    }
-                    notify(`Attached Article Image #${i + 1} below your post!`);
+                    notify(`Attached Article Image #${i + 1}!`);
                   }}
-                  className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-xl border-2 transition ${
+                  className={`relative h-11 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition ${
                     isSelected
                       ? "border-[#4058d0] ring-2 ring-[#4058d0]/30"
                       : "border-slate-200 hover:border-[#3452d1] dark:border-slate-700"
@@ -533,8 +717,8 @@ export function SocialVisualCardBuilder({
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* FULL-WIDTH REALISTIC LINKEDIN / SOCIAL FEED CARD (POST TEXT + ATTACHED IMAGE BELOW) */}
       <div className="overflow-hidden rounded-2xl border-2 border-slate-200 bg-white shadow-md dark:border-slate-800 dark:bg-[#161F32]">
@@ -592,199 +776,332 @@ export function SocialVisualCardBuilder({
           </div>
         )}
 
-        {/* CLEAR CONNECTOR BANNER EXPLAINING THAT THIS GRAPHIC ATTACHES BELOW THE POST */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-y border-slate-200 bg-slate-100/90 px-4 py-2 text-[11px] font-extrabold text-slate-700 dark:border-slate-800 dark:bg-slate-900/90 dark:text-slate-300">
-          <span className="inline-flex items-center gap-1.5">
-            <ImageIcon size={13} className="text-[#4058d0]" />
-            ATTACHED POST IMAGE ({aspectRatio} ·{" "}
-            {CARD_TEMPLATES.find((t) => t.id === template)?.label})
-          </span>
-          <span className="text-[#3452d1] dark:text-[#9aabff]">
-            Use the download actions below.
-          </span>
-        </div>
+        {/* PERSISTENT TOP DOWNLOAD & DIRECT IN-CANVAS EDITOR BAR */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-y border-slate-200 bg-slate-900 px-4 py-2.5 text-xs text-white dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 font-extrabold text-[#9aabff]">
+              <ImageIcon size={14} />
+              {aspectRatio} ({W}×{H}) ·{" "}
+              {CARD_TEMPLATES.find((t) => t.id === template)?.label}
+            </span>
+          </div>
 
-        {/* HOVERABLE VECTOR SVG POST GRAPHIC STAGE */}
-        <div className="group relative flex flex-col items-center justify-center bg-slate-950 p-3 sm:p-4">
-          {/* FLOATING HOVER DOWNLOAD BAR OVER THE ATTACHED IMAGE */}
           <div
             data-export-toolbar
-            className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+            className="flex flex-wrap items-center gap-1.5"
           >
-            <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-white/20 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-md">
-              <button
-                type="button"
-                onClick={handleDownloadPng}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#4058d0] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#3452d1]"
-              >
-                <Download size={14} />
-                Download PNG
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadSvg}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-3 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5]"
-              >
-                <FileCode2 size={14} />
-                SVG
-              </button>
-              <button
-                type="button"
-                onClick={handlePrintPdf}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white shadow-sm hover:bg-emerald-500"
-              >
-                <Printer size={14} />
-                PDF
-              </button>
-              <button
-                type="button"
-                onClick={handleCopyCardImage}
-                className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20"
-              >
-                <Copy size={13} />
-                {copiedImg ? "Copied!" : "Copy"}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleDownloadPng}
+              className="inline-flex items-center gap-1 rounded-xl bg-[#4058d0] px-3 py-1.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#3452d1]"
+            >
+              <Download size={13} />
+              Download PNG
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadSvg}
+              className="inline-flex items-center gap-1 rounded-xl bg-[#3452d1] px-2.5 py-1.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5]"
+            >
+              <FileCode2 size={13} />
+              SVG
+            </button>
+            <button
+              type="button"
+              onClick={handlePrintPdf}
+              className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-extrabold text-white shadow-sm hover:bg-emerald-500"
+            >
+              <Printer size={13} />
+              PDF
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyCardImage}
+              className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/20"
+            >
+              <Copy size={12} />
+              {copiedImg ? "Copied!" : "Copy"}
+            </button>
           </div>
-
-          {/* Persistent corner hint when not hovered on desktop */}
-          <div
-            data-export-hint
-            className="backdrop-blur-xs pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md transition-opacity sm:inline-flex sm:group-hover:opacity-0"
-          >
-            <Download size={12} className="text-[#4058d0]" />
-            <span>Hover to Download Image (PNG · SVG · PDF)</span>
-          </div>
-
-          {/* PURE VECTOR SVG SOCIAL GRAPHIC */}
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${W} ${H}`}
-            className="mx-auto block max-h-[700px] w-full rounded-xl object-contain shadow-lg"
-            fontFamily="Arial, Helvetica, sans-serif"
-            role="img"
-            aria-label={headline}
-          >
-            <defs>
-              <linearGradient id="scBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={theme.bgStart} />
-                <stop offset="100%" stopColor={theme.bgEnd} />
-              </linearGradient>
-              <linearGradient id="scAccGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor={theme.accent} />
-                <stop offset="100%" stopColor={theme.accentSecondary} />
-              </linearGradient>
-              <filter id="scShadow" x="-8%" y="-8%" width="116%" height="120%">
-                <feDropShadow
-                  dx="0"
-                  dy="10"
-                  stdDeviation="12"
-                  floodColor="#000000"
-                  floodOpacity="0.28"
-                />
-              </filter>
-            </defs>
-
-            {/* Card Background */}
-            <rect width={W} height={H} fill="url(#scBgGrad)" />
-            <circle
-              cx={W * 0.88}
-              cy={H * 0.14}
-              r={W * 0.24}
-              fill={theme.accent}
-              fillOpacity={0.14}
-            />
-            <circle
-              cx={W * 0.12}
-              cy={H * 0.86}
-              r={W * 0.2}
-              fill={theme.accentSecondary}
-              fillOpacity={0.12}
-            />
-            <rect x={0} y={0} width={W} height={14} fill="url(#scAccGrad)" />
-
-            {/* Top Kicker Badge */}
-            <rect
-              x={pad}
-              y={pad}
-              width={Math.min(
-                W - pad * 2,
-                Math.max(220, (badgeLabel || platformLabel).length * 14 + 48),
-              )}
-              height={46}
-              rx={23}
-              fill={theme.badgeBg}
-              stroke={theme.accent}
-              strokeWidth={1.8}
-            />
-            <text
-              x={pad + 24}
-              y={pad + 30}
-              fill={theme.badgeText}
-              fontSize={20}
-              fontWeight={900}
-              letterSpacing="1.2"
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              {(badgeLabel || platformLabel).toUpperCase()}
-            </text>
-
-            <SocialCardArtwork
-              kind={template}
-              headline={headline}
-              body={bodyCopy}
-              metric={statMetric}
-              width={W}
-              height={H}
-              palette={theme}
-              image={
-                template === "article-photo-card"
-                  ? selectedImage?.src
-                  : "/visual-studio/paper-sculpture.png"
-              }
-              imageStyle={template === "article-photo-card" ? "photo" : "paper"}
-            />
-
-            {/* Footer Attribution */}
-            <line
-              x1={pad}
-              y1={H - pad - 54}
-              x2={W - pad}
-              y2={H - pad - 54}
-              stroke={theme.textSecondary}
-              strokeOpacity={0.25}
-              strokeWidth={2}
-            />
-            <text
-              x={pad}
-              y={H - pad - 12}
-              fill={theme.textPrimary}
-              fontSize={24}
-              fontWeight={800}
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              {authorHandle || "@doitwithai.tools"}
-            </text>
-            <text
-              x={W - pad}
-              y={H - pad - 12}
-              textAnchor="end"
-              fill={theme.accent}
-              fontSize={22}
-              fontWeight={800}
-              fontFamily="system-ui, -apple-system, sans-serif"
-            >
-              {template === "carousel-slide"
-                ? "SWIPE FOR MORE →"
-                : "DOITWITHAI.TOOLS"}
-            </text>
-          </svg>
         </div>
 
-        {/* Realistic Social Feed Engagement Bar */}
-        <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400">
-          <span>Illustrative feed preview</span>
-          <span>Your image is downloaded separately</span>
+        {/* DIRECT IN-CANVAS KEYBOARD EDITOR BAR */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-slate-200">
+          <span className="inline-flex items-center gap-1 font-extrabold text-[#9aabff]">
+            <Type size={13} />
+            Direct Canvas Edit:
+          </span>
+          {(
+            [
+              { id: "headline", label: "Headline" },
+              { id: "body", label: "Body / Steps" },
+              { id: "badge", label: "Top Badge" },
+              { id: "handle", label: "Handle" },
+              ...(template === "stat-spotlight"
+                ? [{ id: "metric" as const, label: "Stat KPI" }]
+                : []),
+            ] as { id: SocialEditableField; label: string }[]
+          ).map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => {
+                setSelectedField(f.id);
+                setTimeout(() => directInputRef.current?.focus(), 20);
+              }}
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                selectedField === f.id
+                  ? "bg-[#4058d0] text-white"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+          <div className="flex min-w-[220px] flex-1 items-center gap-2">
+            <input
+              ref={directInputRef}
+              type="text"
+              value={activeFieldMeta.value}
+              onChange={(e) => activeFieldMeta.onChange(e.target.value)}
+              placeholder={`Type ${activeFieldMeta.label.toLowerCase()} directly on canvas...`}
+              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-white focus:border-[#5271ff] focus:outline-none"
+            />
+            <span
+              className={`shrink-0 rounded-md px-2 py-0.5 text-[10px] font-extrabold ${
+                fillPct > 105
+                  ? "bg-rose-500/20 text-rose-300"
+                  : "bg-emerald-500/20 text-emerald-300"
+              }`}
+            >
+              {activeFieldMeta.value.length}/{activeFieldMeta.maxOptimal}c (
+              {fillPct > 105
+                ? `Trim ~${activeFieldMeta.value.length - activeFieldMeta.maxOptimal}c`
+                : `${Math.min(100, fillPct)}% Optimal`}
+              )
+            </span>
+          </div>
+        </div>
+
+        {/* INTERACTIVE VECTOR SVG POST GRAPHIC STAGE WITH ZOOM */}
+        <div
+          onWheel={(e) => {
+            if (e.ctrlKey || e.metaKey) {
+              e.preventDefault();
+              setZoomLevel((z) =>
+                Math.min(
+                  2.25,
+                  Math.max(0.6, +(z + (e.deltaY < 0 ? 0.12 : -0.12)).toFixed(2)),
+                ),
+              );
+            }
+          }}
+          className="relative flex flex-col items-center justify-center overflow-auto bg-[#070b14] p-4 sm:p-6"
+        >
+          <div
+            style={{
+              width: zoomLevel === 1 ? "100%" : `${Math.round(zoomLevel * 100)}%`,
+              maxWidth: zoomLevel === 1 ? "660px" : "none",
+              transition: "width 0.16s ease-out",
+            }}
+            className="mx-auto"
+          >
+            {/* PURE VECTOR SVG SOCIAL GRAPHIC */}
+            <svg
+              ref={svgRef}
+              viewBox={`0 0 ${W} ${H}`}
+              className="mx-auto block h-auto w-full rounded-xl object-contain shadow-2xl"
+              fontFamily="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+              role="img"
+              aria-label={headline}
+            >
+              <defs>
+                <linearGradient id="scBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor={theme.bgStart} />
+                  <stop offset="100%" stopColor={theme.bgEnd} />
+                </linearGradient>
+                <linearGradient id="scAccGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor={theme.accent} />
+                  <stop offset="100%" stopColor={theme.accentSecondary} />
+                </linearGradient>
+              </defs>
+
+              {/* Card Background */}
+              <rect width={W} height={H} fill="url(#scBgGrad)" />
+              <circle
+                cx={W * 0.88}
+                cy={H * 0.14}
+                r={W * 0.24}
+                fill={theme.accent}
+                fillOpacity={0.12}
+              />
+              <circle
+                cx={W * 0.12}
+                cy={H * 0.86}
+                r={W * 0.2}
+                fill={theme.accentSecondary}
+                fillOpacity={0.1}
+              />
+              <rect x={0} y={0} width={W} height={14} fill="url(#scAccGrad)" />
+
+              {/* Top Kicker Badge (Interactive) */}
+              <g
+                style={{ cursor: "text" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedField("badge");
+                  setTimeout(() => directInputRef.current?.focus(), 20);
+                }}
+              >
+                <rect
+                  x={pad}
+                  y={pad - 6}
+                  width={Math.min(
+                    W - pad * 2,
+                    Math.max(220, (badgeLabel || platformLabel).length * 14 + 48),
+                  )}
+                  height={46}
+                  rx={23}
+                  fill={theme.badgeBg}
+                  stroke={theme.accent}
+                  strokeWidth={selectedField === "badge" ? 2.8 : 1.8}
+                />
+                <text
+                  x={pad + 24}
+                  y={pad + 24}
+                  fill={theme.badgeText}
+                  fontSize={20}
+                  fontWeight={900}
+                  letterSpacing="1.2"
+                  fontFamily="system-ui, -apple-system, sans-serif"
+                >
+                  {(badgeLabel || platformLabel).toUpperCase()}
+                </text>
+              </g>
+
+              <SocialCardArtwork
+                kind={template}
+                headline={headline}
+                body={bodyCopy}
+                metric={statMetric}
+                width={W}
+                height={H}
+                palette={theme}
+                image={activePhotoSrc}
+                imageStyle="photo"
+                imageFitMode={imageFitMode}
+                selectedField={selectedField}
+                onSelectField={(field) => {
+                  setSelectedField(field);
+                  setTimeout(() => directInputRef.current?.focus(), 20);
+                }}
+              />
+
+              {/* Footer Attribution */}
+              <line
+                x1={pad}
+                y1={H - pad - 54}
+                x2={W - pad}
+                y2={H - pad - 54}
+                stroke={theme.textSecondary}
+                strokeOpacity={0.25}
+                strokeWidth={2}
+              />
+              <text
+                x={pad}
+                y={H - pad - 12}
+                fill={theme.textPrimary}
+                fontSize={24}
+                fontWeight={800}
+                fontFamily="system-ui, -apple-system, sans-serif"
+                style={{ cursor: "text" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedField("handle");
+                  setTimeout(() => directInputRef.current?.focus(), 20);
+                }}
+              >
+                {authorHandle || "@doitwithai.tools"}
+              </text>
+              <text
+                x={W - pad}
+                y={H - pad - 12}
+                textAnchor="end"
+                fill={theme.accent}
+                fontSize={22}
+                fontWeight={800}
+                fontFamily="system-ui, -apple-system, sans-serif"
+              >
+                {template === "carousel-slide"
+                  ? "SWIPE FOR MORE →"
+                  : "DOITWITHAI.TOOLS"}
+              </text>
+            </svg>
+          </div>
+        </div>
+
+        {/* BOTTOM ZOOM & CANVAS INSPECTOR BAR */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-slate-300">
+          <span className="text-[11px] font-semibold text-slate-400">
+            Tip: Click any headline, body, or badge on the card to type live ·{" "}
+            <strong className="text-slate-200">Ctrl + Scroll</strong> to zoom
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() =>
+                setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
+              }
+              className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+              title="Zoom Out"
+            >
+              <ZoomOut size={12} /> -
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoomLevel(1)}
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold ${
+                zoomLevel === 1
+                  ? "bg-[#4058d0] text-white"
+                  : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+              }`}
+            >
+              Auto Fit ({Math.round(zoomLevel * 100)}%)
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setZoomLevel((z) => Math.min(2.25, +(z + 0.15).toFixed(2)))
+              }
+              className="inline-flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+              title="Zoom In"
+            >
+              <ZoomIn size={12} /> +
+            </button>
+            {[1, 1.35, 1.75].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setZoomLevel(preset)}
+                className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                  Math.abs(zoomLevel - preset) < 0.04
+                    ? "bg-[#3452d1] text-white"
+                    : "bg-slate-800/80 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                {Math.round(preset * 100)}%
+              </button>
+            ))}
+            {zoomLevel !== 1 && (
+              <button
+                type="button"
+                onClick={() => setZoomLevel(1)}
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-300 hover:bg-slate-800"
+              >
+                <RotateCcw size={11} /> Reset Fit
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -806,12 +1123,12 @@ export function SocialVisualCardBuilder({
           >
             <SlidersHorizontal size={14} className="text-[#3452d1]" />
             {showCustomizer
-              ? "Hide Image Customizer"
-              : "Customize Attached Image"}
+              ? "Hide Template & Color Studio"
+              : "Show 10 Templates & Color Studio"}
           </button>
         </div>
 
-        {/* Prominent 3D Social Share Buttons */}
+        {/* Prominent Social Share Buttons */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -840,7 +1157,7 @@ export function SocialVisualCardBuilder({
         </div>
       </div>
 
-      {/* SPACIOUS, FULL-WIDTH ATTACHED IMAGE CUSTOMIZER (NO CRAMPED COLUMNS!) */}
+      {/* SPACIOUS, FULL-WIDTH ATTACHED IMAGE CUSTOMIZER (OPEN BY DEFAULT) */}
       {showCustomizer && (
         <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/50">
           <div className="flex items-center justify-between">
@@ -851,7 +1168,7 @@ export function SocialVisualCardBuilder({
           </div>
 
           {/* 10 Template Pills */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
             {CARD_TEMPLATES.map((tpl) => (
               <button
                 key={tpl.id}
@@ -864,7 +1181,7 @@ export function SocialVisualCardBuilder({
                 }`}
               >
                 <TemplateThumbnail id={tpl.id} />
-                <span className="block text-xs font-extrabold text-slate-900 dark:text-white">
+                <span className="mt-1 block text-xs font-extrabold text-slate-900 dark:text-white">
                   {tpl.label}
                 </span>
               </button>
@@ -982,8 +1299,11 @@ export function SocialVisualCardBuilder({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                Image Headline
+              <label className="mb-1 flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                <span>Image Headline</span>
+                <span className="text-[10px] text-[#4058d0]">
+                  {headline.length} chars (Optimal ≤78c)
+                </span>
               </label>
               <input
                 type="text"
@@ -1019,19 +1339,22 @@ export function SocialVisualCardBuilder({
           </div>
 
           {template === "stat-spotlight" && (
-            <label className="block text-sm">
-              Statistic from your source (optional)
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
+              Statistic / KPI Callout (Rendered in Giant Type)
               <input
                 value={statMetric}
                 onChange={(e) => setStatMetric(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-400/50 bg-transparent p-3"
-                placeholder="Use a value you can verify"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                placeholder="e.g. +142%, 3.4x, 10 Mins"
               />
             </label>
           )}
           <div>
-            <label className="mb-1 block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-              Supporting Takeaway / Steps Shown on Image
+            <label className="mb-1 flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
+              <span>Supporting Takeaway / Steps Shown on Image</span>
+              <span className="text-[10px] text-[#4058d0]">
+                {bodyCopy.length} chars (Optimal ≤185c)
+              </span>
             </label>
             <textarea
               rows={2}

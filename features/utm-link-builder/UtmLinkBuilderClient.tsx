@@ -18,9 +18,14 @@ import {
 
 export default function UtmLinkBuilderClient() {
   const [input, setInput] = useState<UtmBuilderInput>(DEFAULT_UTM_INPUT);
+  const [customUrlOverride, setCustomUrlOverride] = useState<string | null>(
+    null,
+  );
   const [toast, setToast] = useState("");
 
   const result = useMemo(() => buildUtmTrackingPack(input), [input]);
+  const activeUrl =
+    customUrlOverride !== null ? customUrlOverride : result.finalTrackedUrl;
 
   function notify(msg: string) {
     setToast(msg);
@@ -31,6 +36,7 @@ export default function UtmLinkBuilderClient() {
     key: K,
     val: UtmBuilderInput[K],
   ) {
+    setCustomUrlOverride(null);
     setInput((prev) => ({ ...prev, [key]: val }));
   }
 
@@ -82,6 +88,7 @@ export default function UtmLinkBuilderClient() {
               key={p.label}
               type="button"
               onClick={() => {
+                setCustomUrlOverride(null);
                 setInput((prev) => ({
                   ...prev,
                   utmSource: p.utmSource,
@@ -198,6 +205,19 @@ export default function UtmLinkBuilderClient() {
                   className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 font-mono text-xs dark:border-slate-700 dark:bg-slate-900"
                 />
               </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                  Paid Keyword / Audience Term (<code>utm_term</code> — Optional)
+                </label>
+                <input
+                  type="text"
+                  value={input.utmTerm}
+                  onChange={(e) => updateField("utmTerm", e.target.value)}
+                  placeholder="ai_seo_tools, technical_seo_audit"
+                  className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 font-mono text-xs dark:border-slate-700 dark:bg-slate-900"
+                />
+              </div>
             </div>
           </div>
 
@@ -257,27 +277,32 @@ export default function UtmLinkBuilderClient() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: GENERATED URL, GA4 AUDIT & QR CODE */}
+        {/* RIGHT COLUMN: GENERATED URL (INLINE EDITABLE), GA4 AUDIT & QR CODE */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-[#0D1322] p-5 text-white shadow-xl sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-extrabold uppercase tracking-wider text-sky-300">
-                Generated Campaign Tracking URL
+                Generated Campaign Tracking URL (Editable)
               </span>
               <span className="rounded-full bg-emerald-500/20 px-3 py-0.5 text-xs font-extrabold text-emerald-300">
                 GA4 Bucket: {result.predictedGa4Channel}
               </span>
             </div>
 
-            <p className="mt-3 rounded-xl border border-slate-800 bg-[#141C2E] p-3.5 font-mono text-xs break-all leading-6 text-emerald-300">
-              {result.finalTrackedUrl}
-            </p>
+            <textarea
+              rows={3}
+              value={activeUrl}
+              onChange={(e) => setCustomUrlOverride(e.target.value)}
+              spellCheck={false}
+              aria-label="Edit generated UTM tracking URL"
+              className="mt-3 w-full rounded-xl border border-slate-800 bg-[#141C2E] p-3.5 font-mono text-xs leading-6 text-emerald-300 focus:border-[#5271ff] focus:outline-none"
+            />
 
             <div className="mt-4 flex flex-wrap gap-2.5">
               <button
                 type="button"
                 onClick={async () => {
-                  await navigator.clipboard.writeText(result.finalTrackedUrl);
+                  await navigator.clipboard.writeText(activeUrl);
                   notify("Copied tracked UTM URL to clipboard!");
                 }}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-[#3b63fb] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#294fe0]"

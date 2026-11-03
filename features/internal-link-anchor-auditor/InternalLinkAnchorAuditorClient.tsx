@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   AlertTriangle,
+  Copy,
   Download,
   FileText,
   GitFork,
   Globe,
   RefreshCw,
+  Search,
   Sparkles,
 } from "lucide-react";
 import ToolRunOverlay, {
@@ -38,19 +40,34 @@ const primaryBtn =
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
 
+function buildInitialSampleInternalAudit(): InternalLinkAuditReport {
+  return auditInternalLinksFromPages(
+    [
+      {
+        url: "https://doitwithai.tools/guides/on-page-seo",
+        html: SAMPLE_INTERNAL_HTML,
+      },
+    ],
+    false,
+  );
+}
+
 export default function InternalLinkAnchorAuditorClient() {
   const [mode, setMode] = useState<"live" | "html">("live");
   const [urlsInput, setUrlsInput] = useState("");
   const [htmlUrl, setHtmlUrl] = useState(
     "https://doitwithai.tools/guides/on-page-seo",
   );
-  const [htmlInput, setHtmlInput] = useState("");
+  const [htmlInput, setHtmlInput] = useState(SAMPLE_INTERNAL_HTML);
   const [includeNavAndFooter, setIncludeNavAndFooter] = useState(false);
   const [issueFilter, setIssueFilter] = useState<
     InternalLinkIssueType | "all"
   >("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [report, setReport] = useState<InternalLinkAuditReport | null>(null);
+  const [report, setReport] = useState<InternalLinkAuditReport | null>(
+    buildInitialSampleInternalAudit,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -82,8 +99,21 @@ export default function InternalLinkAnchorAuditorClient() {
     setReport(built);
     setRevision((r) => r + 1);
     setFeedback(
-      "Loaded sample internal link audit — detected anchor cannibalization, generic CTA, nofollow leak, and duplicate destination.",
+      "Loaded sample internal link audit — edit any anchor text or rel attribute inline below and copy the fixed HTML tag.",
     );
+  }
+
+  function updateLinkRowInline(
+    rowId: string,
+    patch: { anchorText?: string; rel?: string },
+  ) {
+    setReport((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        rows: prev.rows.map((r) => (r.id === rowId ? { ...r, ...patch } : r)),
+      };
+    });
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -166,9 +196,20 @@ export default function InternalLinkAnchorAuditorClient() {
 
   const filteredRows = useMemo(() => {
     if (!report) return [];
-    if (issueFilter === "all") return report.rows;
-    return report.rows.filter((r) => r.issues.includes(issueFilter));
-  }, [report, issueFilter]);
+    return report.rows.filter((r) => {
+      if (issueFilter !== "all" && !r.issues.includes(issueFilter))
+        return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        return (
+          r.anchorText.toLowerCase().includes(q) ||
+          r.targetPath.toLowerCase().includes(q) ||
+          r.issueNote.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [report, issueFilter, searchQuery]);
 
   function triggerDownload(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
@@ -218,7 +259,7 @@ export default function InternalLinkAnchorAuditorClient() {
           <div>
             <h2 className="flex items-center gap-2.5 text-2xl font-extrabold">
               <GitFork aria-hidden className="text-[#5271ff]" />
-              Audit Internal Link Anchors & Cannibalization
+              Audit Internal Link Anchors &amp; Cannibalization
             </h2>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Catch internal anchor text cannibalization (same keyword anchor
@@ -404,11 +445,14 @@ export default function InternalLinkAnchorAuditorClient() {
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-700">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
-                  Internal Link Architecture · {report.domain}
+                  Internal Link Architecture · {report.domain} · Live Editable
                 </span>
                 <h3 className="mt-1 text-2xl font-black">
-                  Internal Anchor & Cannibalization Report
+                  Internal Anchor &amp; Cannibalization Report
                 </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Edit any anchor text or rel attribute below to generate clean, copy-ready internal link HTML.
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -509,60 +553,113 @@ export default function InternalLinkAnchorAuditorClient() {
               </div>
             )}
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              {(
-                [
-                  ["all", "All Internal Links"],
-                  ["anchor-cannibalization", "Cannibalized"],
-                  ["generic-anchor", "Generic CTAs"],
-                  ["empty-anchor", "Empty / Missing Alt"],
-                  ["internal-nofollow-leak", "Nofollow Leaks"],
-                  ["duplicate-destination", "Duplicate Target"],
-                  ["healthy", "Healthy"],
-                ] as const
-              ).map(([val, label]) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => setIssueFilter(val)}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
-                    issueFilter === val
-                      ? "border-[#3452d1] bg-[#3452d1] text-white"
-                      : "border-slate-300 dark:border-slate-600"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    ["all", "All Internal Links"],
+                    ["anchor-cannibalization", "Cannibalized"],
+                    ["generic-anchor", "Generic CTAs"],
+                    ["empty-anchor", "Empty / Missing Alt"],
+                    ["internal-nofollow-leak", "Nofollow Leaks"],
+                    ["duplicate-destination", "Duplicate Target"],
+                    ["healthy", "Healthy"],
+                  ] as const
+                ).map(([val, label]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setIssueFilter(val)}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
+                      issueFilter === val
+                        ? "border-[#3452d1] bg-[#3452d1] text-white"
+                        : "border-slate-300 dark:border-slate-600"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="relative">
+                <Search
+                  size={14}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Filter anchor or path..."
+                  aria-label="Filter internal link rows"
+                  className="rounded-xl border border-slate-300 bg-transparent py-1.5 pl-8 pr-3 text-xs dark:border-slate-600"
+                />
+              </div>
             </div>
 
             <div className="mt-4 overflow-x-auto">
               <table className="w-full border-collapse text-left text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 uppercase text-slate-500 dark:border-slate-700">
-                    <th className="py-3 pr-3">Anchor Text</th>
+                    <th className="py-3 pr-3">Editable Anchor Text</th>
                     <th className="px-3 py-3">Target Path</th>
-                    <th className="px-3 py-3">Rel</th>
-                    <th className="py-3 pl-3">Diagnostic</th>
+                    <th className="px-3 py-3">Rel Policy</th>
+                    <th className="px-3 py-3">Diagnostic</th>
+                    <th className="py-3 pl-3">Copy HTML</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {filteredRows.map((r) => (
-                    <tr key={r.id}>
-                      <td className="py-3 pr-3 font-mono font-bold">
-                        {r.anchorText}
-                      </td>
-                      <td className="px-3 py-3 font-mono text-slate-600 dark:text-slate-300">
-                        {r.targetPath}
-                      </td>
-                      <td className="px-3 py-3 uppercase font-semibold">
-                        {r.rel}
-                      </td>
-                      <td className="py-3 pl-3 text-slate-600 dark:text-slate-300">
-                        {r.issueNote}
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredRows.map((r) => {
+                    const cleanHtml = `<a href="${r.targetPath}"${r.rel && r.rel !== "dofollow" ? ` rel="${r.rel}"` : ""}>${r.anchorText}</a>`;
+                    return (
+                      <tr key={r.id}>
+                        <td className="min-w-[200px] py-3 pr-3">
+                          <input
+                            type="text"
+                            value={r.anchorText}
+                            onChange={(e) =>
+                              updateLinkRowInline(r.id, {
+                                anchorText: e.target.value,
+                              })
+                            }
+                            aria-label={`Anchor text for ${r.targetPath}`}
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-bold text-slate-900 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                          />
+                        </td>
+                        <td className="px-3 py-3 font-mono text-slate-600 dark:text-slate-300">
+                          {r.targetPath}
+                        </td>
+                        <td className="px-3 py-3">
+                          <select
+                            aria-label={`Rel attribute for ${r.targetPath}`}
+                            value={r.rel}
+                            onChange={(e) =>
+                              updateLinkRowInline(r.id, { rel: e.target.value })
+                            }
+                            className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold uppercase dark:border-slate-700 dark:bg-slate-800"
+                          >
+                            <option value="dofollow">dofollow</option>
+                            <option value="nofollow">nofollow</option>
+                          </select>
+                        </td>
+                        <td className="px-3 py-3 text-slate-600 dark:text-slate-300">
+                          {r.issueNote}
+                        </td>
+                        <td className="py-3 pl-3">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await navigator.clipboard.writeText(cleanHtml);
+                              setFeedback(`Copied ${cleanHtml} to clipboard.`);
+                            }}
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-bold hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
+                          >
+                            <Copy size={12} />
+                            Copy &lt;a&gt;
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

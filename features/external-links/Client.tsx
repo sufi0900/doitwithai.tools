@@ -13,8 +13,70 @@ import {
   type LinkRow,
 } from "./analyze";
 import styles from "../content-evidence/evidence.module.css";
+
 const example =
   '<main><h1>Illustrative source review</h1><p>Read <a href="https://developers.google.com/search/docs/crawling-indexing/links-crawlable">Google’s link guidance</a> for anchor examples.</p><h2>Compare the context</h2><p>For a second reference, <a href="https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links" rel="nofollow,ugc">click here</a>.</p><p>This example placement needs a relationship decision: <a href="https://example.org/product">View the example product</a>.</p></main>';
+
+const INITIAL_EVIDENCE_PAGE: EvidenceInput = {
+  url: "https://example.com/article",
+  title: "Illustrative source review",
+  checkedAt: "2026-04-01T00:00:00.000Z",
+  scope: "main",
+  partial: false,
+  warnings: [],
+  blocks: [
+    {
+      kind: "heading",
+      tag: "h1",
+      text: "Illustrative source review",
+    },
+    {
+      kind: "paragraph",
+      tag: "p",
+      text: "Read Google’s link guidance for anchor examples.",
+    },
+    {
+      kind: "heading",
+      tag: "h2",
+      text: "Compare the context",
+    },
+    {
+      kind: "paragraph",
+      tag: "p",
+      text: "For a second reference, click here.",
+    },
+    {
+      kind: "paragraph",
+      tag: "p",
+      text: "This example placement needs a relationship decision: View the example product.",
+    },
+  ],
+  links: [
+    {
+      href: "https://developers.google.com/search/docs/crawling-indexing/links-crawlable",
+      text: "Google’s link guidance",
+      rel: "",
+      context: "Read Google’s link guidance for anchor examples.",
+      section: "Illustrative source review",
+    },
+    {
+      href: "https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links",
+      text: "click here",
+      rel: "nofollow,ugc",
+      context: "For a second reference, click here.",
+      section: "Compare the context",
+    },
+    {
+      href: "https://example.org/product",
+      text: "View the example product",
+      rel: "",
+      context:
+        "This example placement needs a relationship decision: View the example product.",
+      section: "Compare the context",
+    },
+  ],
+};
+
 function Row({
   row,
   saved,
@@ -75,7 +137,7 @@ function Row({
       {row.context ? (
         <blockquote>
           {row.context.length > 1500 ? (
-            <details>
+            <details open>
               <summary>{row.context.slice(0, 300)}… Show full context</summary>
               {row.context}
             </details>
@@ -149,21 +211,27 @@ function Row({
     </article>
   );
 }
+
 export default function Client() {
   const [mode, setMode] = useState<"url" | "html">("url"),
     [url, setUrl] = useState(""),
-    [html, setHtml] = useState(""),
-    [page, setPage] = useState<EvidenceInput | null>(null),
-    [rows, setRows] = useState<LinkRow[]>([]),
+    [html, setHtml] = useState(example),
+    [page, setPage] = useState<EvidenceInput | null>(INITIAL_EVIDENCE_PAGE),
+    [rows, setRows] = useState<LinkRow[]>(() =>
+      inspectLinks(INITIAL_EVIDENCE_PAGE),
+    ),
     [decisions, setDecisions] = useState<Record<string, Decision>>({}),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState(""),
+    [notice, setNotice] = useState(
+      "Illustrative example pre-loaded. Inspect outbound link relationships on the right or import your own URL / HTML.",
+    ),
     [filter, setFilter] = useState("all"),
     [visible, setVisible] = useState(20),
     [version, setVersion] = useState(0);
   const active = useRef<AbortController | null>(null),
     sequence = useRef(0);
+
   useEffect(
     () => () => {
       sequence.current++;
@@ -171,8 +239,22 @@ export default function Client() {
     },
     [],
   );
+
   async function run(event?: FormEvent, useExample = false) {
     event?.preventDefault();
+    if (useExample) {
+      setPage(INITIAL_EVIDENCE_PAGE);
+      setRows(inspectLinks(INITIAL_EVIDENCE_PAGE));
+      setDecisions({});
+      setFilter("all");
+      setVisible(20);
+      setVersion((v) => v + 1);
+      setError("");
+      setNotice(
+        "Illustrative example loaded. Link relationships are left for your review.",
+      );
+      return;
+    }
     const token = ++sequence.current;
     active.current?.abort();
     const controller = new AbortController();
@@ -186,8 +268,8 @@ export default function Client() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          url: useExample ? "https://example.com/article" : url.trim(),
-          html: useExample ? example : mode === "html" ? html : "",
+          url: url.trim(),
+          html: mode === "html" ? html : "",
         }),
         signal: controller.signal,
       });
@@ -211,9 +293,7 @@ export default function Client() {
       setVisible(20);
       setVersion((v) => v + 1);
       setNotice(
-        useExample
-          ? "Illustrative example. Link relationships are left for your review."
-          : "Report ready. Open destinations and review their relevance before saving decisions.",
+        "Report ready. Open destinations and review their relevance before saving decisions.",
       );
     } catch (e) {
       if (token === sequence.current)
@@ -229,6 +309,7 @@ export default function Client() {
       if (token === sequence.current) setBusy(false);
     }
   }
+
   function download(format: "csv" | "json") {
     if (!page) return;
     const body =
@@ -268,6 +349,7 @@ export default function Client() {
       "Report exported with saved decisions. Unsaved changes are not included.",
     );
   }
+
   const filtered = rows.filter(
     (row) =>
       filter === "all" ||
@@ -279,6 +361,7 @@ export default function Client() {
           ["nofollow", "sponsored", "ugc"].includes(value),
         )),
   );
+
   return (
     <div className={styles.workspace} id="external-link-workspace">
       <section className={styles.inputPanel}>

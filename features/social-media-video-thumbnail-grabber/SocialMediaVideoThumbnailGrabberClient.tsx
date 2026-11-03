@@ -1,13 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Copy, Download, ExternalLink } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  Download,
+  ExternalLink,
+  Maximize2,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import ToolRunOverlay, {
   focusToolSection,
 } from "@/features/tool-ui/ToolRunOverlay";
 import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import Link from "next/link";
-import type { VideoInspectResult } from "./model";
+import type { VideoInspectResult, VideoThumbnailAsset } from "./model";
 
 const DEFAULT_DEMO_RESULT: VideoInspectResult = {
   isYoutube: true,
@@ -126,12 +136,22 @@ export function SocialMediaVideoThumbnailGrabberClient() {
   const [loading, setLoading] = useState(false);
   const [zipLoading, setZipLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState("");
   const [result, setResult] = useState<VideoInspectResult>(DEFAULT_DEMO_RESULT);
   const [selectedIds, setSelectedIds] = useState<string[]>(
     DEFAULT_DEMO_RESULT.thumbnails.map((t) => t.id),
   );
+  const [inspectedThumb, setInspectedThumb] =
+    useState<VideoThumbnailAsset | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  function notify(msg: string) {
+    setError(null);
+    setToast(msg);
+    setTimeout(() => setToast(""), 2800);
+  }
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -172,6 +192,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
       const typed = data as VideoInspectResult;
       setResult(typed);
       setSelectedIds(typed.thumbnails.map((t) => t.id));
+      notify(`Extracted ${typed.thumbnails.length} thumbnails & storyboard frames!`);
       setTimeout(() => focusToolSection(resultsRef.current), 120);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to inspect URL.");
@@ -199,6 +220,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
       a.download = filename;
       a.click();
       setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+      notify(`Downloaded ${filename}!`);
     } catch {
       window.open(imageUrl, "_blank", "noopener,noreferrer");
     }
@@ -247,6 +269,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
       a.download = `${result.videoId || "video"}-thumbnails-bundle.zip`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+      notify(`Downloaded ${chosen.length} thumbnails in .ZIP bundle!`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to bundle .ZIP archive.",
@@ -256,14 +279,17 @@ export function SocialMediaVideoThumbnailGrabberClient() {
     }
   }
 
-  function handleCopy(text: string, key: string) {
+  function handleCopy(text: string, key: string, label: string) {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
+    notify(`Copied ${label} to clipboard!`);
     setTimeout(() => setCopiedKey(null), 2000);
   }
 
+  const allSelected = selectedIds.length === result.thumbnails.length;
+
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
+    <section className="mx-auto max-w-6xl space-y-6 overflow-x-clip px-4 py-10 sm:px-6">
       <ToolRunOverlay
         active={loading || zipLoading}
         title={
@@ -277,8 +303,9 @@ export function SocialMediaVideoThumbnailGrabberClient() {
             : "Inspecting MaxRes 1080p/4K covers, SD/HQ fallbacks, and in-video storyboard stills…"
         }
       />
+
       {/* Top URL Inspector Bar */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
+      <div className="shadow-xs space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <PlatformBrandIcon
@@ -328,8 +355,31 @@ export function SocialMediaVideoThumbnailGrabberClient() {
         </form>
 
         {error && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700">
-            {error}
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-700 dark:text-rose-300"
+          >
+            <span className="inline-flex items-center gap-2">
+              <AlertTriangle size={15} />
+              {error}
+            </span>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {toast && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          >
+            <CheckCircle2 size={15} />
+            <span>{toast}</span>
           </div>
         )}
 
@@ -345,9 +395,21 @@ export function SocialMediaVideoThumbnailGrabberClient() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() =>
+                setSelectedIds(
+                  allSelected ? [] : result.thumbnails.map((t) => t.id),
+                )
+              }
+              className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#4058d0] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            >
+              {allSelected ? "Deselect All" : "Select All"}
+            </button>
+
+            <button
+              type="button"
               onClick={handleDownloadAllZip}
               disabled={zipLoading}
-              className="rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-60 dark:bg-[#5271ff]"
+              className="rounded-xl bg-[#4058d0] px-3.5 py-2 text-xs font-bold text-white transition hover:bg-[#3452d1] disabled:opacity-60"
             >
               {zipLoading
                 ? "Bundling .ZIP..."
@@ -374,11 +436,96 @@ export function SocialMediaVideoThumbnailGrabberClient() {
         </div>
       </div>
 
-      {/* Thumbnail & Storyboard Grid with Hover Quick-Download Overlay */}
+      {/* ZOOMABLE HD INSPECTOR STAGE WHEN A THUMBNAIL IS SELECTED FOR DETAIL VIEW */}
+      {inspectedThumb && (
+        <div className="overflow-hidden rounded-2xl border-2 border-[#4058d0] bg-[#070b14] text-white shadow-2xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
+            <div>
+              <span className="text-xs font-extrabold text-[#9aabff]">
+                HD Zoom Inspector · {inspectedThumb.label} (
+                {inspectedThumb.resolution})
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() =>
+                  setZoomLevel((z) => Math.max(0.6, +(z - 0.2).toFixed(2)))
+                }
+                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-white hover:bg-slate-700"
+              >
+                <ZoomOut size={13} />
+              </button>
+              {[1, 1.5, 2].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setZoomLevel(preset)}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-bold ${
+                    Math.abs(zoomLevel - preset) < 0.05
+                      ? "bg-[#4058d0] text-white"
+                      : "bg-slate-800 text-slate-300"
+                  }`}
+                >
+                  {Math.round(preset * 100)}%
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() =>
+                  setZoomLevel((z) => Math.min(2.5, +(z + 0.2).toFixed(2)))
+                }
+                className="rounded-lg bg-slate-800 px-2 py-1 text-xs font-bold text-white hover:bg-slate-700"
+              >
+                <ZoomIn size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  void handleDownloadSingleImage(
+                    inspectedThumb.url,
+                    `${result.videoId || "video"}-${inspectedThumb.id}.jpg`,
+                  )
+                }
+                className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-3 py-1 text-xs font-extrabold text-white hover:bg-[#3452d1]"
+              >
+                <Download size={12} /> Download JPG
+              </button>
+              <button
+                type="button"
+                onClick={() => setInspectedThumb(null)}
+                className="inline-flex items-center gap-1 rounded-lg bg-rose-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-rose-500"
+              >
+                <X size={13} /> Close
+              </button>
+            </div>
+          </div>
+          <div className="max-h-[580px] overflow-auto p-4">
+            <div
+              style={{
+                width:
+                  zoomLevel === 1 ? "100%" : `${Math.round(zoomLevel * 100)}%`,
+                maxWidth: zoomLevel === 1 ? "780px" : "none",
+                transition: "width 0.16s ease-out",
+              }}
+              className="mx-auto"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={inspectedThumb.url}
+                alt={inspectedThumb.label}
+                className="mx-auto block h-auto w-full rounded-xl shadow-2xl"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thumbnail & Storyboard Grid with Persistent Action Buttons */}
       <div
         ref={resultsRef}
         tabIndex={-1}
-        className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 focus:outline-none"
+        className="grid gap-5 focus:outline-none md:grid-cols-2 lg:grid-cols-3"
       >
         {result.thumbnails.map((thumb, idx) => {
           const isSelected = selectedIds.includes(thumb.id);
@@ -386,7 +533,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
           return (
             <div
               key={thumb.id}
-              className={`flex flex-col justify-between rounded-2xl border bg-white p-4 shadow-xs transition dark:bg-[#111827] ${
+              className={`shadow-xs flex flex-col justify-between rounded-2xl border bg-white p-4 transition dark:bg-[#111827] ${
                 isSelected
                   ? "border-[#4058d0]/70 dark:border-[#4058d0]/70"
                   : "border-slate-200 dark:border-slate-800"
@@ -410,38 +557,14 @@ export function SocialMediaVideoThumbnailGrabberClient() {
                   </span>
                 </div>
 
-                <div className="group relative flex aspect-video items-center justify-center overflow-hidden rounded-xl border border-slate-200/70 bg-slate-950/5 dark:border-slate-800">
-                  {/* Hover Download Overlay */}
-                  <div className="pointer-events-none absolute inset-x-2.5 top-2.5 z-20 flex items-center justify-between gap-1.5 rounded-xl border border-white/15 bg-slate-950/90 px-2.5 py-1.5 opacity-0 shadow-xl backdrop-blur-md transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void handleDownloadSingleImage(thumb.url, filename)
-                      }
-                      className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[11px] font-extrabold text-white hover:bg-[#3452d1]"
-                    >
-                      <Download size={12} /> Download JPG
-                    </button>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(thumb.url, thumb.id)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-[11px] font-bold text-white hover:bg-white/25"
-                      >
-                        <Copy size={11} />{" "}
-                        {copiedKey === thumb.id ? "Copied" : "URL"}
-                      </button>
-                      <a
-                        href={thumb.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2 py-1 text-[11px] font-bold text-white hover:bg-white/25"
-                      >
-                        <ExternalLink size={11} /> HD
-                      </a>
-                    </div>
-                  </div>
-
+                <div
+                  onClick={() => {
+                    setInspectedThumb(thumb);
+                    setZoomLevel(1.25);
+                  }}
+                  className="group relative flex aspect-video cursor-zoom-in items-center justify-center overflow-hidden rounded-xl border border-slate-200/70 bg-slate-950/5 dark:border-slate-800"
+                  title="Click to zoom and inspect thumbnail"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={thumb.url}
@@ -459,23 +582,44 @@ export function SocialMediaVideoThumbnailGrabberClient() {
                 </p>
               </div>
 
-              <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+              <div className="mt-3.5 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() =>
                     void handleDownloadSingleImage(thumb.url, filename)
                   }
-                  className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800 dark:bg-[#5271ff]"
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1.5 text-xs font-bold text-white hover:bg-[#3452d1]"
                 >
-                  <Download size={12} /> Download Cover
+                  <Download size={12} /> Download JPG
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleCopy(thumb.url, thumb.id)}
-                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  onClick={() => {
+                    setInspectedThumb(thumb);
+                    setZoomLevel(1.25);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                 >
-                  {copiedKey === thumb.id ? "Copied URL!" : "Copy Image URL"}
+                  <Maximize2 size={11} /> Zoom
                 </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleCopy(thumb.url, thumb.id, "Thumbnail Image URL")
+                  }
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                >
+                  {copiedKey === thumb.id ? "Copied URL!" : "Copy URL"}
+                </button>
+                <a
+                  href={thumb.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  title="Open raw image in new tab"
+                >
+                  <ExternalLink size={11} />
+                </a>
               </div>
             </div>
           );
@@ -484,7 +628,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
 
       {/* Bottom Row: SEO Audit & Privacy-Enhanced Embed Code */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3 dark:border-slate-800 dark:bg-[#111827]">
+        <div className="shadow-xs space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             Video Thumbnail &amp; SERP Readiness Checklist
           </h3>
@@ -513,7 +657,7 @@ export function SocialMediaVideoThumbnailGrabberClient() {
         </div>
 
         {result.embedHtml && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3 dark:border-slate-800 dark:bg-[#111827]">
+          <div className="shadow-xs space-y-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -526,8 +670,14 @@ export function SocialMediaVideoThumbnailGrabberClient() {
               </div>
               <button
                 type="button"
-                onClick={() => handleCopy(result.embedHtml || "", "embed-code")}
-                className="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
+                onClick={() =>
+                  handleCopy(
+                    result.embedHtml || "",
+                    "embed-code",
+                    "Privacy-Enhanced Embed Code",
+                  )
+                }
+                className="rounded-xl bg-[#4058d0] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#3452d1]"
               >
                 {copiedKey === "embed-code"
                   ? "Copied Iframe!"

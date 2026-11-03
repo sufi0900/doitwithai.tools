@@ -37,26 +37,11 @@ const primaryBtn =
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
 
-const emptyInput: JournalistPitchInput = {
-  platform: "haro-email",
-  publicationOrOutlet: "",
-  journalistName: "",
-  queryTopic: "",
-  journalistQuery: "",
-  expertName: "",
-  expertRole: "",
-  brandName: "",
-  brandUrl: "",
-  linkedinUrl: "",
-  headshotUrl: "",
-  coreThesis: "",
-  proofOrMetric: "",
-  practicalTakeaway: "",
-};
-
 export default function JournalistPitchBuilderClient() {
-  const [input, setInput] = useState<JournalistPitchInput>(emptyInput);
-  const [variations, setVariations] = useState<PitchVariation[]>([]);
+  const [input, setInput] = useState<JournalistPitchInput>(SAMPLE_PITCH_INPUT);
+  const [variations, setVariations] = useState<PitchVariation[]>(() =>
+    buildDeterministicPitchVariations(SAMPLE_PITCH_INPUT),
+  );
   const [activeAngle, setActiveAngle] =
     useState<PitchAngleId>("direct-soundbite");
   const [busy, setBusy] = useState(false);
@@ -278,11 +263,9 @@ export default function JournalistPitchBuilderClient() {
         {/* Journalist Query & Outlet Info */}
         <div className="mt-6 grid gap-5 sm:grid-cols-3">
           <div>
-            <label
-              htmlFor="pitch-topic"
-              className="block text-sm font-bold"
-            >
-              Query Topic / Headline <span className="font-normal">(required)</span>
+            <label htmlFor="pitch-topic" className="block text-sm font-bold">
+              Query Topic / Headline{" "}
+              <span className="font-normal">(required)</span>
             </label>
             <input
               id="pitch-topic"
@@ -730,7 +713,8 @@ export default function JournalistPitchBuilderClient() {
               <div className="mt-6 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/50 dark:bg-indigo-950/30">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-indigo-800 dark:text-indigo-200">
-                    Standalone Copy-Paste Soundbite ({scannability.soundbiteWordCount} words)
+                    Standalone Copy-Paste Soundbite (Editable ·{" "}
+                    {scannability.soundbiteWordCount} words)
                   </span>
                   <button
                     type="button"
@@ -745,9 +729,17 @@ export default function JournalistPitchBuilderClient() {
                     Copy Quote Only
                   </button>
                 </div>
-                <p className="mt-2 text-sm italic leading-6 text-slate-800 dark:text-slate-200">
-                  &ldquo;{currentVariation.quotableSoundbite}&rdquo;
-                </p>
+                <textarea
+                  rows={3}
+                  value={currentVariation.quotableSoundbite}
+                  onChange={(e) =>
+                    updateCurrentVariation({
+                      quotableSoundbite: e.target.value,
+                    })
+                  }
+                  aria-label="Edit standalone quotable soundbite"
+                  className="mt-2 w-full rounded-xl border border-indigo-200 bg-white/90 p-2.5 text-sm italic leading-6 text-slate-800 focus:border-[#3452d1] focus:outline-none dark:border-indigo-900/50 dark:bg-slate-900 dark:text-slate-200"
+                />
               </div>
             </div>
 
@@ -755,7 +747,8 @@ export default function JournalistPitchBuilderClient() {
             <div className="space-y-6">
               <div className={panel}>
                 <h3 className="text-lg font-extrabold">
-                  Journalist Scannability Scorecard ({scannability.readinessScore}
+                  Journalist Scannability Scorecard (
+                  {scannability.readinessScore}
                   /100)
                 </h3>
                 <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
@@ -800,7 +793,7 @@ export default function JournalistPitchBuilderClient() {
               <div className={panel}>
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-base font-extrabold">
-                    Polite 1-Touch Follow-Up Draft
+                    Polite 1-Touch Follow-Up Draft (Editable)
                   </h3>
                   <button
                     type="button"
@@ -820,9 +813,17 @@ export default function JournalistPitchBuilderClient() {
                   Send only once, 3–4 business days after pitching, if the
                   article is still in progress:
                 </p>
-                <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3.5 font-sans text-xs leading-6 text-slate-700 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200">
-                  {currentVariation.followUpDraft}
-                </pre>
+                <textarea
+                  rows={5}
+                  value={currentVariation.followUpDraft}
+                  onChange={(e) =>
+                    updateCurrentVariation({
+                      followUpDraft: e.target.value,
+                    })
+                  }
+                  aria-label="Edit polite 1-touch follow-up draft"
+                  className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs leading-6 text-slate-700 focus:border-[#3452d1] focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200"
+                />
               </div>
             </div>
           </div>

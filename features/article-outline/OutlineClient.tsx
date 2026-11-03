@@ -25,6 +25,7 @@ import {
   type DraftSection,
   type OutlineDraft,
 } from "./workspace";
+
 const empty: OutlineInput = {
   title: "",
   context: "",
@@ -36,6 +37,7 @@ const empty: OutlineInput = {
   questions: "",
   evidence: "",
 };
+
 const example: OutlineInput = {
   ...empty,
   title: "How to write a blog post with AI",
@@ -50,10 +52,123 @@ const example: OutlineInput = {
   evidence:
     "I can supply screenshots of my own workflow and a tested planning prompt. No traffic results or benchmarks are available.",
 };
+
+const INITIAL_OUTLINE_DRAFT: OutlineDraft = {
+  title: "How to Write a Useful Blog Post with AI (Step-by-Step Editorial Workflow)",
+  titleOptions: [
+    "How to Write a Useful Blog Post with AI (Step-by-Step Editorial Workflow)",
+    "A Practical Human-Led Workflow for Writing Blog Posts with AI",
+    "How to Plan, Draft, and Fact-Check a Blog Post Using AI",
+  ],
+  angle:
+    "A hands-on editorial tutorial showing creators how to brief AI with real experience, draft section by section, and verify every claim before publishing.",
+  introduction: {
+    heading: "Why a Human-Led Brief Beats One-Click AI Article Generation",
+    options: [
+      "Why a Human-Led Brief Beats One-Click AI Article Generation",
+      "Start with Reader Intent and First-Hand Notes Before Prompting",
+      "How to Combine AI Drafting Speed with Editorial Judgment",
+    ],
+    purpose:
+      "Show readers why supplying original context and boundaries upfront prevents generic filler.",
+    starter:
+      "Open with the contrast between a vague one-line prompt and a structured section brief.",
+    points: [
+      "Define the single reader question the article answers",
+      "List the original examples and boundaries before prompting",
+    ],
+    evidenceNeeded:
+      "Screenshot or side-by-side snippet of your tested planning prompt.",
+  },
+  sections: [
+    {
+      heading: "Step 1: Build a Focused Article Brief and Reader Task",
+      options: [
+        "Step 1: Build a Focused Article Brief and Reader Task",
+        "Define Your Audience, Search Intent, and Scope Boundaries",
+        "How to Brief AI with Real Examples and Constraints",
+      ],
+      purpose:
+        "Help the reader assemble the inputs AI needs to stay specific and accurate.",
+      starter:
+        "Walk through the four core brief fields: reader task, audience level, proof points, and exclusions.",
+      points: [
+        "State who the reader is and what they want to accomplish",
+        "Supply real workflow observations AI cannot invent",
+        "Specify claims or promises the draft must avoid",
+      ],
+      evidenceNeeded:
+        "Your actual planning prompt template and sample brief inputs.",
+      subheadings: [
+        {
+          heading: "What to Include in Your Context and Evidence Notes",
+          options: [
+            "What to Include in Your Context and Evidence Notes",
+            "How to Feed First-Hand Experience Into Your Prompt",
+            "Checklist of Source Notes to Gather Before Writing",
+          ],
+          purpose:
+            "Give a concrete checklist of notes to paste into the prompt.",
+          starter:
+            "Show how three bullet points of real experience change the output.",
+          points: [
+            "Include tool names, steps tested, and common mistakes",
+            "Flag any facts or numbers that require manual verification",
+          ],
+          evidenceNeeded: "Example of raw notes vs. structured brief.",
+        },
+      ],
+    },
+    {
+      heading: "Step 2: Draft and Review One Section at a Time",
+      options: [
+        "Step 2: Draft and Review One Section at a Time",
+        "How to Guide AI Through Each H2 and H3 Without Losing Voice",
+        "Section-by-Section Drafting vs. Full-Page Generation",
+      ],
+      purpose:
+        "Demonstrate how iterative section drafting keeps structure tight and tone natural.",
+      starter:
+        "Explain why reviewing each H2 before generating the next prevents repetition.",
+      points: [
+        "Generate and edit one H2 section before moving to the next",
+        "Trim repetitive transitions and unsupported superlatives",
+        "Verify every factual claim, quote, and outbound link",
+      ],
+      evidenceNeeded:
+        "Before-and-after example of an edited paragraph from your workflow.",
+      subheadings: [],
+    },
+  ],
+  closing: {
+    heading: "Pre-Publish Fact-Checking and Readability Review Checklist",
+    options: [
+      "Pre-Publish Fact-Checking and Readability Review Checklist",
+      "How to Audit Your AI-Assisted Draft Before Publishing",
+      "Final Editorial Checklist for Accuracy, Voice, and Clarity",
+    ],
+    purpose:
+      "Give readers a repeatable final verification pass before hitting publish.",
+    starter:
+      "Close with a 4-point editorial audit covering facts, headings, links, and tone.",
+    points: [
+      "Confirm every claim matches your supplied evidence",
+      "Read aloud to catch stiff phrasing or repeated transitions",
+    ],
+    evidenceNeeded: "Your final pre-publish review checklist.",
+  },
+  review: [
+    "Confirm every H2 and H3 promise matches the screenshots and prompt examples you plan to include.",
+    "Keep unsupported traffic or ranking guarantees out of the introduction and closing.",
+    "Adjust subheadings once you see where readers need visual examples.",
+  ],
+};
+
 const field =
   "mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-[#5271ff] focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:ring-blue-900";
 const button =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 focus-visible:ring-4 focus-visible:ring-blue-200 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 disabled:opacity-40";
+
 function HeadingEditor({
   value,
   onChange,
@@ -112,7 +227,7 @@ function HeadingEditor({
               key={i}
               aria-pressed={value.heading === option}
               onClick={() => onChange({ ...value, heading: option })}
-              className={`flex min-h-11 items-start gap-2 rounded-xl border px-3 py-3 text-left text-xs leading-5 transition focus-visible:ring-4 focus-visible:ring-blue-200 ${value.heading === option ? "border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-200" : "border-slate-200 text-slate-600 hover:border-blue-300 dark:border-slate-700 dark:text-slate-300"}`}
+              className={`flex min-h-11 items-start gap-2 rounded-xl border px-3 py-3 text-left text-xs leading-5 transition focus-visible:ring-4 focus-visible:ring-blue-200 ${value.heading === option ? "border-[#4058D0] bg-blue-50 text-[#4058D0] dark:border-blue-700 dark:bg-blue-950 dark:text-blue-200" : "border-slate-200 text-slate-600 hover:border-blue-300 dark:border-slate-700 dark:text-slate-300"}`}
             >
               <span className="font-bold">0{i + 1}</span>
               <span>{option}</span>
@@ -123,7 +238,7 @@ function HeadingEditor({
           ))}
         </div>
       </fieldset>
-      <details className="rounded-xl bg-slate-50 p-4 dark:bg-slate-950/60">
+      <details open className="rounded-xl bg-slate-50 p-4 dark:bg-slate-950/60">
         <summary className="cursor-pointer text-xs font-bold text-slate-800 dark:text-slate-200">
           Writing plan and evidence
         </summary>
@@ -168,17 +283,21 @@ function HeadingEditor({
     </div>
   );
 }
+
 export default function OutlineClient() {
-  const [brief, setBrief] = useState<OutlineInput>(empty);
-  const [draft, setDraft] = useState<OutlineDraft | null>(null);
+  const [brief, setBrief] = useState<OutlineInput>(example);
+  const [draft, setDraft] = useState<OutlineDraft | null>(INITIAL_OUTLINE_DRAFT);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(
+    "Sample article outline loaded. Edit any H1, H2, or H3 below or generate a fresh outline from your brief.",
+  );
   const [preview, setPreview] = useState(false);
   const [notes, setNotes] = useState(true);
   const resultRef = useRef<HTMLElement>(null);
   const change = (key: keyof OutlineInput, value: string) =>
     setBrief((b) => ({ ...b, [key]: value }));
+
   async function generate(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -238,6 +357,7 @@ export default function OutlineClient() {
       setBusy(false);
     }
   }
+
   async function copy(text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -248,11 +368,13 @@ export default function OutlineClient() {
       );
     }
   }
+
   const update = (fn: (d: OutlineDraft) => OutlineDraft) =>
     setDraft((d) => (d ? fn(d) : d));
   const stats = draft && outlineObservations(draft);
   const sectionCard =
     "rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 sm:p-7";
+
   return (
     <div className="text-slate-900 dark:text-white">
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
@@ -272,7 +394,9 @@ export default function OutlineClient() {
               className={button}
               onClick={() => {
                 setBrief(example);
+                setDraft(INITIAL_OUTLINE_DRAFT);
                 setError("");
+                setStatus("Restored sample brief and interactive outline.");
               }}
             >
               Try an example
@@ -362,7 +486,10 @@ export default function OutlineClient() {
               </label>
             ))}
           </div>
-          <details className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+          <details
+            open
+            className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-700"
+          >
             <summary className="cursor-pointer text-sm font-bold">
               Reader questions and source notes
             </summary>
@@ -392,7 +519,7 @@ export default function OutlineClient() {
           <div className="mt-6 flex flex-wrap gap-3">
             <button
               disabled={busy}
-              className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#4662df] px-5 py-3 text-sm font-bold text-white hover:bg-blue-700 focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-60"
+              className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#4058D0] px-5 py-3 text-sm font-bold text-white hover:bg-[#3452D1] focus-visible:ring-4 focus-visible:ring-blue-300 disabled:opacity-60"
             >
               <Sparkles aria-hidden className="h-4 w-4" />
               {busy
@@ -470,7 +597,7 @@ export default function OutlineClient() {
           <div className="rounded-3xl bg-white p-6 dark:bg-slate-900 sm:p-8">
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-[#4662df] dark:text-blue-300">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#4058D0] dark:text-blue-300">
                   Your article blueprint
                 </p>
                 <h2 className="mt-2 text-3xl font-black">

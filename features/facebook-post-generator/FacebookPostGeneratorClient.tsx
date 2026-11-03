@@ -2,6 +2,13 @@
 
 import { useRef, useState } from "react";
 import {
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  Download,
+  Sparkles,
+} from "lucide-react";
+import {
   UrlArticleExtractorBar,
   type ExtractedImageAsset,
   type UniversalExtractResponse,
@@ -36,11 +43,18 @@ export function FacebookPostGeneratorClient() {
   const [selectedVariationIdx, setSelectedVariationIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState("");
   const [result, setResult] = useState<FacebookPostOutput>(
     DEFAULT_FACEBOOK_POST_OUTPUT,
   );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
+
+  function notify(msg: string) {
+    setError(null);
+    setToast(msg);
+    setTimeout(() => setToast(""), 3000);
+  }
 
   async function runGenerate(overrides?: {
     topicOrContent?: string;
@@ -52,6 +66,7 @@ export function FacebookPostGeneratorClient() {
       setError(
         "Please enter a topic or extract content from an article URL first.",
       );
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
     setLoading(true);
@@ -74,6 +89,7 @@ export function FacebookPostGeneratorClient() {
       }
       setResult(data as FacebookPostOutput);
       setSelectedVariationIdx(0);
+      notify("Generated 3 zero-click Facebook posts & First-Comment links!");
       focusToolSection(resultsRef.current);
     } catch (err) {
       setError(
@@ -81,6 +97,7 @@ export function FacebookPostGeneratorClient() {
           ? err.message
           : "Failed to generate Facebook posts.",
       );
+      focusToolSection(resultsRef.current);
     } finally {
       setLoading(false);
     }
@@ -105,17 +122,52 @@ export function FacebookPostGeneratorClient() {
     });
   }
 
-  function handleCopy(text: string, key: string) {
+  function updateActiveVariationField(
+    field: "fullPostText" | "firstCommentText" | "visualHeadline" | "visualSubtext",
+    value: string,
+  ) {
+    setResult((prev) => ({
+      ...prev,
+      variations: prev.variations.map((v, idx) =>
+        idx === selectedVariationIdx ? { ...v, [field]: value } : v,
+      ),
+    }));
+  }
+
+  function handleCopy(text: string, key: string, label: string) {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
+    notify(`Copied ${label} to clipboard!`);
     setTimeout(() => setCopiedKey(null), 2000);
+  }
+
+  function downloadActiveFacebookPackage() {
+    if (!activeVariation) return;
+    const content = [
+      `=== FACEBOOK MAIN POST (${activeVariation.styleName}) ===`,
+      activeVariation.fullPostText,
+      "",
+      `=== FIRST COMMENT LINK (POST IMMEDIATELY AFTER PUBLISHING) ===`,
+      activeVariation.firstCommentText,
+      "",
+      `=== HASHTAGS ===`,
+      activeVariation.hashtags.join(" "),
+    ].join("\n");
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `facebook-post-variation-${selectedVariationIdx + 1}.txt`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    notify("Downloaded Facebook Post + First-Comment Package (.TXT)!");
   }
 
   const activeVariation =
     result?.variations?.[selectedVariationIdx] || result?.variations?.[0];
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 space-y-6 overflow-x-clip">
+    <section className="mx-auto max-w-6xl space-y-6 overflow-x-clip px-4 py-10 sm:px-6">
       <ToolRunOverlay
         active={loading}
         title="Generating Facebook Posts & Companion Visual Card..."
@@ -136,8 +188,8 @@ export function FacebookPostGeneratorClient() {
         label="Option 1: Fetch Content, Sub-Topics & Images from Any Article or YouTube URL"
       />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] items-start">
-        <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+        <div className="shadow-xs space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
               <PlatformBrandIcon
@@ -237,18 +289,13 @@ export function FacebookPostGeneratorClient() {
             </div>
           </div>
 
-          {error && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-xs font-medium text-rose-700">
-              {error}
-            </div>
-          )}
-
           <button
             type="button"
             onClick={() => void runGenerate()}
             disabled={loading}
-            className="w-full rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
           >
+            <Sparkles size={16} />
             {loading
               ? "Generating Facebook Posts & Graphic Cards..."
               : "Generate Facebook Posts + Visual Card"}
@@ -258,8 +305,38 @@ export function FacebookPostGeneratorClient() {
         <div
           ref={resultsRef}
           tabIndex={-1}
-          className="space-y-5 focus:outline-none"
+          className="space-y-4 focus:outline-none"
         >
+          {/* Contextual In-View Alerts */}
+          {error && (
+            <div
+              role="alert"
+              className="flex items-center justify-between gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-xs font-bold text-rose-700 dark:text-rose-300"
+            >
+              <span className="inline-flex items-center gap-2">
+                <AlertTriangle size={15} />
+                {error}
+              </span>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                className="underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {toast && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+            >
+              <CheckCircle2 size={15} />
+              <span>{toast}</span>
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2">
             {result.variations.map((v, idx) => (
               <button
@@ -268,7 +345,7 @@ export function FacebookPostGeneratorClient() {
                 onClick={() => setSelectedVariationIdx(idx)}
                 className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${
                   selectedVariationIdx === idx
-                    ? "bg-slate-900 text-white shadow-xs dark:bg-[#5271ff]"
+                    ? "shadow-xs bg-[#4058d0] text-white"
                     : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                 }`}
               >
@@ -278,56 +355,86 @@ export function FacebookPostGeneratorClient() {
           </div>
 
           {activeVariation && (
-            <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-4 dark:border-slate-800 dark:bg-[#111827]">
+            <div className="shadow-xs space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[#1877F2]">
-                    Main Facebook Feed Post
+                    Live Editable Facebook Feed Post ({activeVariation.fullPostText.length} chars)
                   </span>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                     {activeVariation.styleName}
                   </h3>
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleCopy(activeVariation.fullPostText, "main-post")
-                  }
-                  className="rounded-xl bg-slate-900 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-slate-800"
-                >
-                  {copiedKey === "main-post"
-                    ? "Copied Post!"
-                    : "Copy Main Post"}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={downloadActiveFacebookPackage}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-[#4058d0] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    <Download size={13} /> .TXT
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleCopy(
+                        activeVariation.fullPostText,
+                        "main-post",
+                        "Main Facebook Post",
+                      )
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#4058d0] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#3452d1]"
+                  >
+                    <Copy size={13} />
+                    {copiedKey === "main-post"
+                      ? "Copied Post!"
+                      : "Copy Main Post"}
+                  </button>
+                </div>
               </div>
 
-              <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 whitespace-pre-wrap text-sm text-slate-800 leading-relaxed dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
-                {activeVariation.fullPostText}
-              </div>
+              {/* Editable Main Facebook Post Textarea */}
+              <textarea
+                rows={8}
+                value={activeVariation.fullPostText}
+                onChange={(e) =>
+                  updateActiveVariationField("fullPostText", e.target.value)
+                }
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-sm leading-relaxed text-slate-800 focus:border-[#4058d0] focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+              />
 
-              <div className="rounded-xl border border-amber-200/80 bg-amber-50/70 p-3.5 flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900">
+              {/* Editable First Comment Link Box */}
+              <div className="space-y-2 rounded-xl border border-amber-200/80 bg-amber-50/70 p-3.5 dark:border-amber-700/40 dark:bg-amber-950/30">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
                     First Comment Link (Protects Organic Feed Reach)
                   </span>
-                  <p className="mt-0.5 text-xs font-medium text-amber-950 break-all">
-                    {activeVariation.firstCommentText}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleCopy(
+                        activeVariation.firstCommentText,
+                        "first-comment",
+                        "First-Comment Link",
+                      )
+                    }
+                    className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1 text-xs font-bold text-amber-900 hover:bg-amber-100"
+                  >
+                    {copiedKey === "first-comment"
+                      ? "Copied!"
+                      : "Copy First Comment"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleCopy(
-                      activeVariation.firstCommentText,
-                      "first-comment",
+                <input
+                  type="text"
+                  value={activeVariation.firstCommentText}
+                  onChange={(e) =>
+                    updateActiveVariationField(
+                      "firstCommentText",
+                      e.target.value,
                     )
                   }
-                  className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100"
-                >
-                  {copiedKey === "first-comment"
-                    ? "Copied!"
-                    : "Copy First Comment"}
-                </button>
+                  className="w-full rounded-lg border border-amber-300/80 bg-white px-3 py-1.5 text-xs font-medium text-slate-900 dark:border-amber-700/60 dark:bg-slate-900 dark:text-white"
+                />
               </div>
 
               <div className="flex flex-wrap gap-1.5">

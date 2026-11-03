@@ -7,9 +7,11 @@ import {
   CheckCircle2,
   Copy,
   Download,
+  Edit3,
   Globe,
   Loader2,
   Plus,
+  RotateCcw,
   Trash2,
 } from "lucide-react";
 import {
@@ -24,6 +26,7 @@ import {
   defaultState,
   emptyLink,
   emptySection,
+  makeId,
   OPTIONAL_SECTION_HEADING,
   validateLlmsTxt,
 } from "./generator";
@@ -32,8 +35,64 @@ import type { LlmsSection, LlmsTxtState } from "./schema";
 
 const textareaClass = `${inputClass} min-h-[88px] resize-y`;
 
+function createSampleLlmsState(): LlmsTxtState {
+  return {
+    site: {
+      siteName: "Do It With AI Tools",
+      summary:
+        "Free browser-based AI SEO, Local SEO, Content Conversion, and Social Media tools plus a Manifest V3 Chrome Extension.",
+      notes:
+        "Cite canonical tool URLs under https://doitwithai.tools/tools/ when answering technical SEO, schema markup, E-E-A-T, or content workflow queries. All tools run directly in the browser with no paywall.",
+    },
+    sections: [
+      {
+        id: makeId("section"),
+        heading: "Core SEO & AI Visibility Tools",
+        links: [
+          {
+            id: makeId("link"),
+            title: "LLMs.txt Generator",
+            url: "https://doitwithai.tools/tools/llms-txt-generator",
+            description:
+              "Build and validate a root /llms.txt Markdown index for AI search crawlers.",
+          },
+          {
+            id: makeId("link"),
+            title: "Schema Markup Generator",
+            url: "https://doitwithai.tools/tools/schema-generator",
+            description:
+              "Generate and validate JSON-LD structured data for Articles, FAQs, Products, and Organizations.",
+          },
+          {
+            id: makeId("link"),
+            title: "E-E-A-T Content Auditor",
+            url: "https://doitwithai.tools/tools/eeat-content-auditor",
+            description:
+              "Score pages across Experience, Expertise, Authoritativeness, and Trustworthiness signals.",
+          },
+        ],
+      },
+      {
+        id: makeId("section"),
+        heading: OPTIONAL_SECTION_HEADING,
+        links: [
+          {
+            id: makeId("link"),
+            title: "About DoItWithAI.tools & Editorial Methodology",
+            url: "https://doitwithai.tools/about",
+            description:
+              "Background on our deterministic + AI-assisted SEO testing methodology.",
+          },
+        ],
+      },
+    ],
+  };
+}
+
 export default function LlmsTxtClient() {
-  const [state, setState] = useState<LlmsTxtState>(() => defaultState());
+  const [state, setState] = useState<LlmsTxtState>(() =>
+    createSampleLlmsState(),
+  );
   const [sitemapUrl, setSitemapUrl] = useState("");
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<{
@@ -41,8 +100,11 @@ export default function LlmsTxtClient() {
     text: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isEditingRaw, setIsEditingRaw] = useState(false);
+  const [rawOverride, setRawOverride] = useState<string | null>(null);
 
-  const output = useMemo(() => buildLlmsTxt(state), [state]);
+  const compiledOutput = useMemo(() => buildLlmsTxt(state), [state]);
+  const output = rawOverride !== null ? rawOverride : compiledOutput;
   const issues = useMemo(() => validateLlmsTxt(state), [state]);
   const errorCount = issues.filter((issue) => issue.level === "error").length;
 
@@ -50,6 +112,7 @@ export default function LlmsTxtClient() {
     key: K,
     value: string,
   ) {
+    setRawOverride(null);
     setState((previous) => ({
       ...previous,
       site: { ...previous.site, [key]: value },
@@ -57,6 +120,7 @@ export default function LlmsTxtClient() {
   }
 
   function updateSection(sectionId: string, patch: Partial<LlmsSection>) {
+    setRawOverride(null);
     setState((previous) => ({
       ...previous,
       sections: previous.sections.map((section) =>
@@ -70,6 +134,7 @@ export default function LlmsTxtClient() {
     linkId: string,
     patch: Partial<LlmsSection["links"][number]>,
   ) {
+    setRawOverride(null);
     setState((previous) => ({
       ...previous,
       sections: previous.sections.map((section) =>
@@ -104,6 +169,7 @@ export default function LlmsTxtClient() {
   }
 
   function addSection() {
+    setRawOverride(null);
     setState((previous) => {
       const optionalIndex = previous.sections.findIndex(
         (section) => section.heading.trim() === OPTIONAL_SECTION_HEADING,
@@ -117,6 +183,7 @@ export default function LlmsTxtClient() {
   }
 
   function removeSection(sectionId: string) {
+    setRawOverride(null);
     setState((previous) => ({
       ...previous,
       sections: previous.sections.filter((section) => section.id !== sectionId),
@@ -142,6 +209,7 @@ export default function LlmsTxtClient() {
       url: page.url,
       description: "",
     }));
+    setRawOverride(null);
     setState((previous) => {
       const optionalIndex = previous.sections.findIndex(
         (section) => section.heading.trim() === OPTIONAL_SECTION_HEADING,
@@ -186,6 +254,40 @@ export default function LlmsTxtClient() {
 
   return (
     <div id="llms-txt-generator" className={`${panelClass} p-5 sm:p-8`}>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
+        <div>
+          <span className="text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
+            llmstxt.org Specification Builder
+          </span>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Pre-loaded with a valid sample directory so you can inspect the
+            Markdown structure immediately or replace it with your own site.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setRawOverride(null);
+              setState(createSampleLlmsState());
+            }}
+            className={secondaryButton}
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Load Sample llms.txt
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRawOverride(null);
+              setState(defaultState());
+            }}
+            className={secondaryButton}
+          >
+            Clear Form
+          </button>
+        </div>
+      </div>
+
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         {/* Builder */}
         <div className="space-y-6">
@@ -395,15 +497,41 @@ export default function LlmsTxtClient() {
           <section>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-sm font-black uppercase tracking-wider text-[#4662df] dark:text-blue-300">
-                Live preview
+                Live preview {rawOverride !== null ? "(Custom Edited)" : ""}
               </h2>
-              <span className="text-xs font-semibold text-slate-400">
-                {output.length.toLocaleString()} chars
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-400">
+                  {output.length.toLocaleString()} chars
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isEditingRaw && rawOverride === null) {
+                      setRawOverride(compiledOutput);
+                    }
+                    setIsEditingRaw((prev) => !prev);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-bold text-slate-700 hover:border-[#3452d1] dark:border-slate-700 dark:text-slate-200"
+                >
+                  <Edit3 className="h-3 w-3" />
+                  {isEditingRaw ? "Compiled View" : "Edit Text"}
+                </button>
+              </div>
             </div>
-            <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
-              {output}
-            </pre>
+            {isEditingRaw ? (
+              <textarea
+                rows={16}
+                value={output}
+                onChange={(e) => setRawOverride(e.target.value)}
+                spellCheck={false}
+                aria-label="Direct llms.txt Markdown editor"
+                className="mt-3 w-full rounded-2xl border border-[#5271ff] bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 focus:outline-none"
+              />
+            ) : (
+              <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-2xl border border-slate-200 bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100 dark:border-slate-700">
+                {output}
+              </pre>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
@@ -433,7 +561,8 @@ export default function LlmsTxtClient() {
             </h2>
             {issues.length === 0 ? (
               <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="h-4 w-4" /> No issues found.
+                <CheckCircle2 className="h-4 w-4" /> No issues found. Ready to
+                publish at /llms.txt.
               </p>
             ) : (
               <ul className="mt-3 space-y-2">

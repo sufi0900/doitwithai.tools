@@ -62,7 +62,9 @@ const allVisible = Object.fromEntries(issueTypes.map((t) => [t, true])) as Recor
 >;
 
 export default function ReadabilityClient() {
-  const [document, setDocument] = useState<RichDocument>(() => plainDocument(""));
+  const [document, setDocument] = useState<RichDocument>(() =>
+    plainDocument(exampleText),
+  );
   const projection = useMemo(() => projectDocument(document), [document]);
   const text = projection.text;
   const [expanded, setExpanded] = useState(false);
@@ -72,7 +74,9 @@ export default function ReadabilityClient() {
   const [longThreshold, setLongThreshold] = useState(25);
   const [history, setHistory] = useState<RichDocument[]>([]);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(
+    "Sample article pre-loaded with live readability highlights. Click any highlighted sentence to inspect or fix it.",
+  );
   const [reviewOpen, setReviewOpen] = useState(false);
   const [context, setContext] = useState<{ x: number; y: number; issue: Annotation } | null>(null);
   const contextDialog = useRef<HTMLDialogElement>(null);
@@ -311,7 +315,7 @@ export default function ReadabilityClient() {
                   title={m.hint}
                   data-readability-mode={m.id}
                   onClick={() => setMode(m.id)}
-                  className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-4 text-xs font-bold focus-visible:ring-4 focus-visible:ring-blue-300 ${mode === m.id ? "bg-[#4662df] text-white shadow" : "text-slate-600 hover:text-[#4662df] dark:text-slate-300"}`}
+                  className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-4 text-xs font-bold focus-visible:ring-4 focus-visible:ring-blue-300 ${mode === m.id ? "bg-[#4058D0] text-white shadow" : "text-slate-600 hover:text-[#4058D0] dark:text-slate-300"}`}
                 >
                   <Icon aria-hidden className="h-4 w-4" />
                   {m.label}
@@ -447,7 +451,7 @@ export default function ReadabilityClient() {
                 ))}
               </ul>
             )}
-            <p role="status" className="mt-3 min-h-5 text-xs font-bold text-[#4662df] dark:text-blue-300">
+            <p role="status" className="mt-3 min-h-5 text-xs font-bold text-[#4058D0] dark:text-blue-300">
               {status}
             </p>
             <p className="mt-2 text-xs leading-6 text-slate-500 dark:text-slate-400">

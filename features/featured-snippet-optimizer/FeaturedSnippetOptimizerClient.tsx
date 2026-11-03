@@ -3,20 +3,21 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   AlertTriangle,
-  CheckCircle2,
-  Code2,
   Copy,
   Download,
   ListOrdered,
+  Plus,
   RefreshCw,
   Sparkles,
   Table2,
   Target,
+  Trash2,
 } from "lucide-react";
 import ToolRunOverlay, {
   focusToolSection,
   paintToolFeedback,
 } from "@/features/tool-ui/ToolRunOverlay";
+import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import {
   buildDeterministicSnippetCandidates,
   buildSnippetDocx,
@@ -43,14 +44,32 @@ const primaryBtn =
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-100 focus-visible:outline-[#5271ff] dark:border-slate-600 dark:hover:bg-slate-800";
 
+function buildInitialSampleReport(): SnippetAuditReport {
+  const passages = inspectHtmlPassagesForSnippets(SAMPLE_HTML, SAMPLE_QUERY);
+  const candidates = buildDeterministicSnippetCandidates({
+    targetQuery: SAMPLE_QUERY,
+    coreFacts: SAMPLE_FACTS,
+    audienceOrNiche: "SEO & Content Teams",
+  });
+  return {
+    targetQuery: SAMPLE_QUERY,
+    coreFacts: SAMPLE_FACTS,
+    passages,
+    candidates,
+    overallReadinessScore: 92,
+  };
+}
+
 export default function FeaturedSnippetOptimizerClient() {
-  const [targetQuery, setTargetQuery] = useState("");
-  const [coreFacts, setCoreFacts] = useState("");
+  const [targetQuery, setTargetQuery] = useState(SAMPLE_QUERY);
+  const [coreFacts, setCoreFacts] = useState(SAMPLE_FACTS);
   const [audienceOrNiche, setAudienceOrNiche] = useState("SEO & Content Teams");
   const [urlInput, setUrlInput] = useState("");
-  const [contentOrHtml, setContentOrHtml] = useState("");
+  const [contentOrHtml, setContentOrHtml] = useState(SAMPLE_HTML);
 
-  const [report, setReport] = useState<SnippetAuditReport | null>(null);
+  const [report, setReport] = useState<SnippetAuditReport | null>(
+    buildInitialSampleReport,
+  );
   const [activeCodeTab, setActiveCodeTab] = useState<"preview" | "html" | "md">(
     "preview",
   );
@@ -73,23 +92,93 @@ export default function FeaturedSnippetOptimizerClient() {
     setCoreFacts(SAMPLE_FACTS);
     setContentOrHtml(SAMPLE_HTML);
     setError("");
-    const passages = inspectHtmlPassagesForSnippets(SAMPLE_HTML, SAMPLE_QUERY);
-    const candidates = buildDeterministicSnippetCandidates({
-      targetQuery: SAMPLE_QUERY,
-      coreFacts: SAMPLE_FACTS,
-      audienceOrNiche: "SEO & Content Teams",
-    });
-    setReport({
-      targetQuery: SAMPLE_QUERY,
-      coreFacts: SAMPLE_FACTS,
-      passages,
-      candidates,
-      overallReadinessScore: 92,
-    });
+    setReport(buildInitialSampleReport());
     setRevision((r) => r + 1);
     setFeedback(
-      "Loaded sample query, audited 2 existing H2 passages, and generated 3 Position Zero snippet blocks.",
+      "Loaded sample query, audited 2 existing H2 passages, and generated 3 editable Position Zero snippet blocks.",
     );
+  }
+
+  function updateHeading(nextHeading: string) {
+    setReport((prev) =>
+      prev
+        ? {
+            ...prev,
+            candidates: {
+              ...prev.candidates,
+              recommendedHeading: nextHeading,
+            },
+          }
+        : prev,
+    );
+  }
+
+  function updateParagraphSnippet(nextText: string) {
+    const words = nextText.trim() ? nextText.trim().split(/\s+/).length : 0;
+    setReport((prev) =>
+      prev
+        ? {
+            ...prev,
+            candidates: {
+              ...prev.candidates,
+              paragraphSnippet: nextText,
+              paragraphWordCount: words,
+            },
+          }
+        : prev,
+    );
+  }
+
+  function updateListItem(
+    index: number,
+    field: "lead" | "detail",
+    value: string,
+  ) {
+    setReport((prev) => {
+      if (!prev) return prev;
+      const nextItems = prev.candidates.listItems.map((it, idx) =>
+        idx === index ? { ...it, [field]: value } : it,
+      );
+      return {
+        ...prev,
+        candidates: {
+          ...prev.candidates,
+          listItems: nextItems,
+        },
+      };
+    });
+  }
+
+  function addListItem() {
+    setReport((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        candidates: {
+          ...prev.candidates,
+          listItems: [
+            ...prev.candidates.listItems,
+            {
+              lead: `Step ${prev.candidates.listItems.length + 1}`,
+              detail: "Add a concise action and verifiable threshold.",
+            },
+          ],
+        },
+      };
+    });
+  }
+
+  function removeListItem(index: number) {
+    setReport((prev) => {
+      if (!prev || prev.candidates.listItems.length <= 2) return prev;
+      return {
+        ...prev,
+        candidates: {
+          ...prev.candidates,
+          listItems: prev.candidates.listItems.filter((_, i) => i !== index),
+        },
+      };
+    });
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -255,7 +344,31 @@ export default function FeaturedSnippetOptimizerClient() {
           </button>
         </div>
 
-        <div className="mt-6 grid gap-5 md:grid-cols-2">
+        <div className="mt-6">
+          <UrlArticleExtractorBar
+            label="Optional: Import a live URL to populate query, facts & article content"
+            placeholder="https://example.com/blog/seo-guide"
+            onExtracted={(res) => {
+              setUrlInput(res.url);
+              if (res.title && !targetQuery.trim()) {
+                setTargetQuery(res.title);
+              }
+              if (res.description) {
+                setCoreFacts(res.description);
+              } else if (res.text) {
+                setCoreFacts(res.text.slice(0, 480));
+              }
+              if (res.text) {
+                setContentOrHtml(res.text.slice(0, 4000));
+              }
+              setFeedback(
+                `Extracted content from ${res.siteName || res.url}. Click "Audit Passages & Generate 3 Snippet Formats" to refresh.`,
+              );
+            }}
+          />
+        </div>
+
+        <div className="mt-5 grid gap-5 md:grid-cols-2">
           <div>
             <label
               htmlFor="snippet-target-query"
@@ -288,12 +401,17 @@ export default function FeaturedSnippetOptimizerClient() {
         </div>
 
         <div className="mt-5">
-          <label
-            htmlFor="snippet-core-facts"
-            className="block text-sm font-bold"
-          >
-            Core Facts, Thresholds, or Key Points to Include (required)
-          </label>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label
+              htmlFor="snippet-core-facts"
+              className="block text-sm font-bold"
+            >
+              Core Facts, Thresholds, or Key Points to Include (required)
+            </label>
+            <span className="text-xs font-semibold text-slate-500">
+              {coreFacts.trim() ? coreFacts.trim().split(/\s+/).length : 0} words
+            </span>
+          </div>
           <p className="mb-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
             Provide the key definition, numbers, or steps you want synthesized
             into the 45–58 word answer box.
@@ -392,13 +510,15 @@ export default function FeaturedSnippetOptimizerClient() {
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-700">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
-                  Position Zero & AI Overview Ready
+                  Position Zero & AI Overview Studio · Live Editable
                 </span>
                 <h3 className="mt-1 text-2xl font-black">
                   3 Optimized Snippet Formats for &ldquo;{report.targetQuery}&rdquo;
                 </h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  {report.candidates.aiOverviewCitationTip}
+                  {report.candidates.aiOverviewCitationTip} Edit any heading,
+                  definition, or step below — your changes automatically sync
+                  with the HTML, Markdown, and Word exports.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -430,12 +550,19 @@ export default function FeaturedSnippetOptimizerClient() {
             </div>
 
             <div className="mt-6 grid gap-6 lg:grid-cols-3">
-              {/* Format 1: Paragraph Snippet */}
+              {/* Format 1: Paragraph Snippet (Editable) */}
               <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-700">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200">
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                      report.candidates.paragraphWordCount >= 40 &&
+                      report.candidates.paragraphWordCount <= 60
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200"
+                    }`}
+                  >
                     1. Definition Box ({report.candidates.paragraphWordCount}{" "}
-                    words)
+                    words · 45–58w optimal)
                   </span>
                   <button
                     type="button"
@@ -450,50 +577,101 @@ export default function FeaturedSnippetOptimizerClient() {
                     Copy
                   </button>
                 </div>
-                <p className="mt-3 text-sm font-extrabold text-slate-900 dark:text-white">
-                  H2: {report.candidates.recommendedHeading}
-                </p>
-                <p className="mt-2 text-sm leading-7 text-slate-700 dark:text-slate-300">
-                  {report.candidates.paragraphSnippet}
-                </p>
+                <label className="mt-3 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  H2 Question Heading
+                  <input
+                    type="text"
+                    value={report.candidates.recommendedHeading}
+                    onChange={(e) => updateHeading(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50/70 px-2.5 py-1.5 text-xs font-extrabold text-slate-900 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </label>
+                <label className="mt-3 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  Is-Statement Definition Paragraph
+                  <textarea
+                    rows={5}
+                    value={report.candidates.paragraphSnippet}
+                    onChange={(e) => updateParagraphSnippet(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-xs leading-6 text-slate-700 focus:border-[#4058D0] focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  />
+                </label>
               </div>
 
-              {/* Format 2: Ordered Step List */}
+              {/* Format 2: Ordered Step List (Editable) */}
               <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-700">
                 <div className="flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-bold text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-200">
                     <ListOrdered size={13} />
-                    2. Ordered Step List Snippet
+                    2. Ordered Step List ({report.candidates.listItems.length})
                   </span>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const text = report.candidates.listItems
-                        .map((it, i) => `${i + 1}. ${it.lead}: ${it.detail}`)
-                        .join("\n");
-                      await navigator.clipboard.writeText(text);
-                      setFeedback("Copied ordered list snippet.");
-                    }}
-                    className="text-xs font-bold text-[#3452d1] underline dark:text-[#9aabff]"
-                  >
-                    Copy
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={addListItem}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-[#3452d1] hover:underline dark:text-[#9aabff]"
+                    >
+                      <Plus size={12} />
+                      Step
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const text = report.candidates.listItems
+                          .map((it, i) => `${i + 1}. ${it.lead}: ${it.detail}`)
+                          .join("\n");
+                        await navigator.clipboard.writeText(text);
+                        setFeedback("Copied ordered list snippet.");
+                      }}
+                      className="text-xs font-bold text-[#3452d1] underline dark:text-[#9aabff]"
+                    >
+                      Copy
+                    </button>
+                  </div>
                 </div>
                 <p className="mt-3 text-xs font-semibold text-slate-500">
                   {report.candidates.listIntro}
                 </p>
-                <ol className="mt-2.5 space-y-2 text-xs leading-5">
-                  {report.candidates.listItems.map((it) => (
-                    <li key={it.lead}>
-                      <strong className="text-slate-900 dark:text-white">
-                        {it.lead}:
-                      </strong>{" "}
-                      <span className="text-slate-600 dark:text-slate-300">
-                        {it.detail}
-                      </span>
-                    </li>
+                <div className="mt-2.5 space-y-2">
+                  {report.candidates.listItems.map((it, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-lg border border-slate-200/80 bg-slate-50/60 p-2 dark:border-slate-700 dark:bg-slate-800/50"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-black text-[#4058D0]">
+                          {idx + 1}.
+                        </span>
+                        <input
+                          type="text"
+                          value={it.lead}
+                          onChange={(e) =>
+                            updateListItem(idx, "lead", e.target.value)
+                          }
+                          aria-label={`Step ${idx + 1} bold lead`}
+                          className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-2 py-0.5 text-xs font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        />
+                        <button
+                          type="button"
+                          disabled={report.candidates.listItems.length <= 2}
+                          onClick={() => removeListItem(idx)}
+                          title="Remove step"
+                          className="rounded p-1 text-rose-600 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-rose-950/40"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={it.detail}
+                        onChange={(e) =>
+                          updateListItem(idx, "detail", e.target.value)
+                        }
+                        aria-label={`Step ${idx + 1} detail`}
+                        className="mt-1 w-full rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                      />
+                    </div>
                   ))}
-                </ol>
+                </div>
               </div>
 
               {/* Format 3: Comparison Table */}
@@ -503,6 +681,23 @@ export default function FeaturedSnippetOptimizerClient() {
                     <Table2 size={13} />
                     3. Table Snippet Block
                   </span>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const headerLine = `| ${report.candidates.tableHeaders.join(" | ")} |`;
+                      const divider = `| ${report.candidates.tableHeaders.map(() => "---").join(" | ")} |`;
+                      const rows = report.candidates.tableRows
+                        .map((r) => `| ${r.join(" | ")} |`)
+                        .join("\n");
+                      await navigator.clipboard.writeText(
+                        `${headerLine}\n${divider}\n${rows}`,
+                      );
+                      setFeedback("Copied Markdown comparison table.");
+                    }}
+                    className="text-xs font-bold text-[#3452d1] underline dark:text-[#9aabff]"
+                  >
+                    Copy Table
+                  </button>
                 </div>
                 <div className="mt-3 overflow-x-auto">
                   <table className="w-full border-collapse text-left text-[11px]">

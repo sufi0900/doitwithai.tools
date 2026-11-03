@@ -2,7 +2,7 @@
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, RotateCcw } from "lucide-react";
 import type { Review } from "../content-evidence/analyze";
 import Dashboard from "./Dashboard";
 import { passageFlags } from "./workspace";
@@ -25,15 +25,19 @@ export const exampleDraft =
 export default function CitationReadinessClient() {
   const [mode, setMode] = useState<Mode>("url"),
     [input, setInput] = useState("");
-  const [page, setPage] = useState<PageSnapshot | null>(null),
-    [editorBase, setEditorBase] = useState<PageSnapshot | null>(null);
+  const [page, setPage] = useState<PageSnapshot | null>(() =>
+      draftPage(exampleDraft),
+    ),
+    [editorBase, setEditorBase] = useState<PageSnapshot | null>(() =>
+      draftPage(exampleDraft),
+    );
   const [editorKey, setEditorKey] = useState(0),
     [loading, setLoading] = useState(false);
   const [error, setError] = useState(""),
     [sourceError, setSourceError] = useState(false),
     [dirty, setDirty] = useState(false);
   const [view, setView] = useState<"results" | "article">("results"),
-    [editorOpened, setEditorOpened] = useState(false);
+    [editorOpened, setEditorOpened] = useState(true);
   const [navigation, setNavigation] = useState(0),
     [reportVersion, setReportVersion] = useState(0);
   const [reviews, setReviews] = useState<Record<string, Review>>({});
@@ -85,7 +89,7 @@ export default function CitationReadinessClient() {
     setDirty(false);
     setReviews({});
     setReportVersion((n) => n + 1);
-    setEditorOpened(!showReport);
+    setEditorOpened(true);
     setFocusRequest(null);
     setFlagLimit(20);
     go(showReport ? "results" : "article");
@@ -94,7 +98,7 @@ export default function CitationReadinessClient() {
     invalidate();
     setMode(value);
     setInput("");
-    if (value === "text") setDocument(draftPage(""), false);
+    if (value === "text") setDocument(draftPage(exampleDraft), false);
   }
   function example() {
     invalidate();
@@ -135,9 +139,19 @@ export default function CitationReadinessClient() {
   return (
     <div id="ai-citation-readiness-checker" className={styles.workspace}>
       <div className={styles.inputPanel}>
-        <span className={styles.eyebrow}>
-          Access evidence and transparent editorial review
-        </span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className={styles.eyebrow}>
+            Access evidence and transparent editorial review
+          </span>
+          <button
+            type="button"
+            onClick={example}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#3452d1]/30 bg-[#3452d1]/10 px-3 py-1.5 text-xs font-extrabold text-[#3452d1] hover:bg-[#3452d1]/20 dark:border-[#5271ff]/40 dark:text-[#b4c3ff]"
+          >
+            <RotateCcw size={13} />
+            Load Sample Article Review
+          </button>
+        </div>
         <h2>Review a page or unpublished article</h2>
         <p className={styles.small}>
           Analyze a URL to see your readiness review first. Open the article

@@ -7,6 +7,7 @@ import {
   Copy,
   Download,
   MapPin,
+  Wand2,
   XCircle,
 } from "lucide-react";
 import {
@@ -17,9 +18,20 @@ import {
 
 export default function NapConsistencyCheckerClient() {
   const [input, setInput] = useState<NapMasterInput>(DEFAULT_NAP_INPUT);
+  const [rowFilter, setRowFilter] = useState<"all" | "issues" | "exact">("all");
   const [toast, setToast] = useState("");
 
   const result = useMemo(() => auditNapConsistency(input), [input]);
+
+  const filteredRows = useMemo(
+    () =>
+      rowFilter === "all"
+        ? result.auditedRows
+        : rowFilter === "exact"
+          ? result.auditedRows.filter((r) => r.issues.length === 0)
+          : result.auditedRows.filter((r) => r.issues.length > 0),
+    [result.auditedRows, rowFilter],
+  );
 
   function notify(msg: string) {
     setToast(msg);
@@ -31,6 +43,17 @@ export default function NapConsistencyCheckerClient() {
     val: NapMasterInput[K],
   ) {
     setInput((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function handleAutoNormalizeCitations() {
+    const normalizedLines = result.auditedRows
+      .map(
+        (r) =>
+          `${r.source} | ${input.masterName} | ${result.standardizedUspsLine} | ${result.standardizedPhoneLocal}`,
+      )
+      .join("\n");
+    updateField("citationLines", normalizedLines);
+    notify("Normalized all directory citations to match Master USPS NAP!");
   }
 
   function downloadMasterCsv() {
@@ -210,9 +233,19 @@ export default function NapConsistencyCheckerClient() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
-            <h3 className="text-base font-extrabold">
-              2. Paste Existing Directory Citations to Audit
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-extrabold">
+                2. Paste Existing Directory Citations to Audit
+              </h3>
+              <button
+                type="button"
+                onClick={handleAutoNormalizeCitations}
+                className="inline-flex items-center gap-1 rounded-xl border border-[#3452d1]/30 bg-[#3452d1]/5 px-2.5 py-1 text-xs font-extrabold text-[#3452d1] hover:bg-[#3452d1]/10 dark:border-[#5271ff]/40 dark:text-[#b4c3ff]"
+              >
+                <Wand2 size={12} />
+                Auto-Normalize All to Master NAP
+              </button>
+            </div>
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
               Format: <code>Directory | Business Name | Address | Phone</code>{" "}
               (one directory per line).
@@ -229,13 +262,43 @@ export default function NapConsistencyCheckerClient() {
         {/* RIGHT COLUMN: LINE-BY-LINE AUDIT RESULTS & CITATION DIRECTORY SHEET */}
         <div className="space-y-6">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
-            <h3 className="text-base font-extrabold">
-              Line-by-Line Citation Consistency Audit ({result.auditedRows.length}{" "}
-              Listings)
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-extrabold">
+                Line-by-Line Citation Audit ({filteredRows.length} of{" "}
+                {result.auditedRows.length})
+              </h3>
+              <div className="flex gap-1.5">
+                {(
+                  [
+                    ["all", "All"],
+                    [
+                      "issues",
+                      `Issues (${result.auditedRows.filter((r) => r.issues.length > 0).length})`,
+                    ],
+                    [
+                      "exact",
+                      `Exact (${result.auditedRows.filter((r) => r.issues.length === 0).length})`,
+                    ],
+                  ] as const
+                ).map(([val, lbl]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setRowFilter(val)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold ${
+                      rowFilter === val
+                        ? "bg-[#3452d1] text-white"
+                        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                  >
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="mt-4 space-y-3">
-              {result.auditedRows.map((row, idx) => (
+              {filteredRows.map((row, idx) => (
                 <div
                   key={idx}
                   className="rounded-xl border border-slate-200/90 bg-slate-50/70 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-900/60"
@@ -244,7 +307,7 @@ export default function NapConsistencyCheckerClient() {
                     <strong className="text-sm font-black text-slate-900 dark:text-white">
                       {row.source}
                     </strong>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {(
                         [
                           ["Name", row.nameMatch],
@@ -272,6 +335,19 @@ export default function NapConsistencyCheckerClient() {
                           {lbl}: {status}
                         </span>
                       ))}
+                      {row.issues.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const fixText = `Directory Update for ${row.source}:\nUpdate from: ${row.rawName} | ${row.rawAddress} | ${row.rawPhone}\nUpdate to Master NAP: ${input.masterName} | ${result.standardizedUspsLine} | ${result.standardizedPhoneLocal}`;
+                            await navigator.clipboard.writeText(fixText);
+                            notify(`Copied NAP fix instructions for ${row.source}!`);
+                          }}
+                          className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-bold text-slate-700 hover:border-[#3452d1] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                        >
+                          <Copy size={10} /> Copy Fix
+                        </button>
+                      )}
                     </div>
                   </div>
 

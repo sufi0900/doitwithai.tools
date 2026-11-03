@@ -69,6 +69,11 @@ export default function BlogToInfographicGeneratorClient() {
   );
   const [extractedImages, setExtractedImages] = useState<string[]>([]);
   const [aiPack, setAiPack] = useState<BlogToInfographicPack | null>(null);
+  const [customNotes, setCustomNotes] = useState<string | null>(null);
+  const [customAltText, setCustomAltText] = useState<string | null>(null);
+  const [customSocialCaption, setCustomSocialCaption] = useState<string | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
   const studioRef = useRef<HTMLDivElement | null>(null);
@@ -78,6 +83,15 @@ export default function BlogToInfographicGeneratorClient() {
     [input],
   );
   const pack = aiPack || fallbackPack;
+  const activeNotes = customNotes ?? (pack.evidenceSummary || []).join("\n");
+  const activeAltText = customAltText ?? pack.seoAltText;
+  const activeSocialCaption = customSocialCaption ?? pack.socialCaption;
+
+  function resetCompanionEdits() {
+    setCustomNotes(null);
+    setCustomAltText(null);
+    setCustomSocialCaption(null);
+  }
 
   function notify(msg: string) {
     setToast(msg);
@@ -90,6 +104,7 @@ export default function BlogToInfographicGeneratorClient() {
     const activeInput = overrideInput || input;
     setLoading(true);
     setAiPack(null);
+    resetCompanionEdits();
     try {
       const res = await fetch("/api/ai-tools/blog-to-infographic-generator", {
         method: "POST",
@@ -185,6 +200,7 @@ export default function BlogToInfographicGeneratorClient() {
               placeholder="https://example.com/your-article-slug..."
               onExtracted={(data) => {
                 setAiPack(null);
+                resetCompanionEdits();
                 const firstSub = data.subTopics?.[0];
                 const cleanTitle = (
                   firstSub?.title ||
@@ -234,6 +250,7 @@ export default function BlogToInfographicGeneratorClient() {
               }}
               onSelectSubTopic={(sub, data) => {
                 setAiPack(null);
+                resetCompanionEdits();
                 const autoTpl = detectBestTemplateForTopic(
                   sub.title,
                   sub.content,
@@ -266,6 +283,7 @@ export default function BlogToInfographicGeneratorClient() {
                     type="button"
                     onClick={() => {
                       setAiPack(null);
+                      resetCompanionEdits();
                       const nextInput: BlogToInfographicInput = {
                         ...input,
                         title: preset.title,
@@ -298,6 +316,7 @@ export default function BlogToInfographicGeneratorClient() {
                     placeholder="e.g. 7 Local SEO Ranking Signals for 2026..."
                     onChange={(e) => {
                       setAiPack(null);
+                      resetCompanionEdits();
                       const newTitle = e.target.value;
                       setInput((prev) => ({
                         ...prev,
@@ -372,6 +391,7 @@ export default function BlogToInfographicGeneratorClient() {
                       type="button"
                       onClick={() => {
                         setAiPack(null);
+                        resetCompanionEdits();
                         setInput((prev) => ({ ...prev, sourceContent: "" }));
                       }}
                       className="text-[11px] font-bold text-[#3452d1] hover:underline dark:text-[#9aabff]"
@@ -386,6 +406,7 @@ export default function BlogToInfographicGeneratorClient() {
                   placeholder="Paste your article paragraphs, bullet points, or leave empty and let our AI synthesize 6 benchmark-backed points from your headline alone..."
                   onChange={(e) => {
                     setAiPack(null);
+                    resetCompanionEdits();
                     setInput((prev) => ({
                       ...prev,
                       sourceContent: e.target.value,
@@ -414,7 +435,7 @@ export default function BlogToInfographicGeneratorClient() {
         />
       </div>
 
-      {/* COMPANION RESEARCHED EVIDENCE BRIEF, SEO ALT TEXT & SOCIAL CAPTION */}
+      {/* COMPANION RESEARCHED EVIDENCE BRIEF, SEO ALT TEXT & SOCIAL CAPTION (INLINE EDITABLE) */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
           <div className="flex items-center justify-between">
@@ -425,9 +446,7 @@ export default function BlogToInfographicGeneratorClient() {
             <button
               type="button"
               onClick={async () => {
-                await navigator.clipboard.writeText(
-                  (pack.evidenceSummary || []).join("\n"),
-                );
+                await navigator.clipboard.writeText(activeNotes);
                 notify("Copied source notes.");
               }}
               className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
@@ -435,11 +454,13 @@ export default function BlogToInfographicGeneratorClient() {
               <Copy size={12} /> Copy Brief
             </button>
           </div>
-          <ul className="mt-2.5 max-h-36 space-y-1.5 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-            {(pack.evidenceSummary || []).map((item, idx) => (
-              <li key={idx}>• {item}</li>
-            ))}
-          </ul>
+          <textarea
+            aria-label="Editable source notes and key points"
+            rows={5}
+            value={activeNotes}
+            onChange={(e) => setCustomNotes(e.target.value)}
+            className="mt-2.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700 focus:border-[#4058D0] focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+          />
         </div>
 
         <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
@@ -450,7 +471,7 @@ export default function BlogToInfographicGeneratorClient() {
             <button
               type="button"
               onClick={async () => {
-                await navigator.clipboard.writeText(pack.seoAltText);
+                await navigator.clipboard.writeText(activeAltText);
                 notify("Copied Infographic SEO Alt Text!");
               }}
               className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
@@ -458,8 +479,15 @@ export default function BlogToInfographicGeneratorClient() {
               <Copy size={12} /> Copy Alt Text
             </button>
           </div>
-          <p className="mt-2.5 max-h-36 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-            {pack.seoAltText}
+          <textarea
+            aria-label="Editable Infographic SEO Alt Text"
+            rows={5}
+            value={activeAltText}
+            onChange={(e) => setCustomAltText(e.target.value)}
+            className="mt-2.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-700 focus:border-[#4058D0] focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+          />
+          <p className="mt-1.5 text-[11px] text-slate-500">
+            {activeAltText.length} characters · Edit before embedding
           </p>
         </div>
 
@@ -471,7 +499,7 @@ export default function BlogToInfographicGeneratorClient() {
             <button
               type="button"
               onClick={async () => {
-                await navigator.clipboard.writeText(pack.socialCaption);
+                await navigator.clipboard.writeText(activeSocialCaption);
                 notify("Copied Companion Social Caption!");
               }}
               className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-slate-50 px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
@@ -479,9 +507,17 @@ export default function BlogToInfographicGeneratorClient() {
               <Copy size={12} /> Copy Caption
             </button>
           </div>
-          <pre className="mt-2.5 max-h-36 overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-3 font-sans text-xs leading-5 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-            {pack.socialCaption}
-          </pre>
+          <textarea
+            aria-label="Editable Companion Social Post Caption"
+            rows={5}
+            value={activeSocialCaption}
+            onChange={(e) => setCustomSocialCaption(e.target.value)}
+            className="mt-2.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3 font-sans text-xs leading-5 text-slate-700 focus:border-[#4058D0] focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+          />
+          <p className="mt-1.5 text-[11px] text-slate-500">
+            {activeSocialCaption.length} characters · Ready for LinkedIn, X, or
+            Instagram
+          </p>
         </div>
       </div>
     </section>

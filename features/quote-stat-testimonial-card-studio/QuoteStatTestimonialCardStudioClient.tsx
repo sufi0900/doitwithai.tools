@@ -13,7 +13,13 @@ import {
   MessageSquareQuote,
   PackageCheck,
   Palette,
+  Plus,
+  RotateCcw,
   Sparkles,
+  Trash2,
+  Type,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import ToolRunOverlay, {
@@ -132,6 +138,9 @@ function wrapQuoteLines(
   return lines;
 }
 
+const MIN_QUOTE_CARDS = 2;
+const MAX_QUOTE_CARDS = 8;
+
 export default function QuoteStatTestimonialCardStudioClient() {
   const [input, setInput] = useState<QuoteStudioInput>(
     DEFAULT_QUOTE_STUDIO_INPUT,
@@ -145,6 +154,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
   const [customColors, setCustomColors] = useState<CustomStudioColorOverrides>(
     {},
   );
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -168,10 +178,37 @@ export default function QuoteStatTestimonialCardStudioClient() {
   }, [pack]);
 
   const activeCard = cards[activeCardIdx] || cards[0];
+  const canAddCard = cards.length < MAX_QUOTE_CARDS;
+  const canRemoveCard = cards.length > MIN_QUOTE_CARDS;
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2600);
+    setTimeout(() => setToast(""), 3000);
+  }
+
+  function handleAddQuoteCard() {
+    if (!canAddCard) return;
+    const nextIdx = cards.length + 1;
+    const newCard: QuoteCardItem = {
+      id: `quote-custom-${Date.now()}`,
+      badgeLabel: `INSIGHT #0${nextIdx}`,
+      highlightPhrase: "Clarity compounds faster than volume.",
+      quoteText:
+        "Every high-performing visual card focuses on a single verifiable takeaway that your audience can apply immediately.",
+      subContextOrReality:
+        "Pair every post with a clean, high-contrast visual card.",
+    };
+    setCards((prev) => [...prev, newCard]);
+    setActiveCardIdx(cards.length);
+    notify(`Added Quote Card #0${nextIdx}!`);
+  }
+
+  function handleRemoveQuoteCard() {
+    if (!canRemoveCard) return;
+    const nextCards = cards.filter((_, idx) => idx !== activeCardIdx);
+    setCards(nextCards);
+    setActiveCardIdx(Math.max(0, activeCardIdx - 1));
+    notify(`Removed quote card (${nextCards.length} cards remaining).`);
   }
 
   async function runGenerateAiQuotes(overrideInput?: QuoteStudioInput) {
@@ -268,12 +305,14 @@ export default function QuoteStatTestimonialCardStudioClient() {
 
     const innerX = cardX + 64;
     const innerW = cardW - 128;
+    const bodyRegionTop = cardY + 150;
+    const bodyRegionBottom = cardY + cardH - 76;
+    const bodyRegionMid = (bodyRegionTop + bodyRegionBottom) / 2;
 
     if (input.template === "verified-post-screenshot") {
-      // Avatar Circle + Author Name + Verified Check + Post Text + Metrics Bar
       ctx.fillStyle = activeTheme.accentSecondary;
       ctx.beginPath();
-      ctx.arc(innerX + 42, cardY + 100, 42, 0, Math.PI * 2);
+      ctx.arc(innerX + 42, cardY + 96, 42, 0, Math.PI * 2);
       ctx.fill();
 
       const initials = (input.authorName || "SM")
@@ -284,89 +323,95 @@ export default function QuoteStatTestimonialCardStudioClient() {
         .toUpperCase();
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "900 28px system-ui, -apple-system, sans-serif";
-      ctx.fillText(initials, innerX + 22, cardY + 110);
+      ctx.fillText(initials, innerX + 22, cardY + 106);
 
       ctx.fillStyle = activeTheme.textMain;
       ctx.font = "800 28px system-ui, -apple-system, sans-serif";
-      ctx.fillText(input.authorName, innerX + 104, cardY + 92);
+      ctx.fillText(input.authorName, innerX + 104, cardY + 88);
 
       const nameW = ctx.measureText(input.authorName).width;
       ctx.fillStyle = "#1D9BF0";
       ctx.beginPath();
-      ctx.arc(innerX + 124 + nameW, cardY + 83, 13, 0, Math.PI * 2);
+      ctx.arc(innerX + 124 + nameW, cardY + 79, 13, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "900 16px system-ui, -apple-system, sans-serif";
-      ctx.fillText("✓", innerX + 118 + nameW, cardY + 89);
+      ctx.fillText("✓", innerX + 118 + nameW, cardY + 85);
 
       ctx.fillStyle = activeTheme.textSub;
       ctx.font = "500 21px system-ui, -apple-system, sans-serif";
-      ctx.fillText(input.authorHandleOrRole, innerX + 104, cardY + 124);
+      ctx.fillText(input.authorHandleOrRole, innerX + 104, cardY + 120);
+
+      // Vertically center quote + callout box inside bodyRegion
+      ctx.font = "600 37px system-ui, -apple-system, sans-serif";
+      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 6);
+      const qH = qLines.length * 50;
+      const calloutH = 88;
+      const totalH = qH + 28 + calloutH;
+      let qy = Math.max(bodyRegionTop + 34, bodyRegionMid - totalH / 2 + 34);
 
       ctx.fillStyle = activeTheme.textMain;
-      ctx.font = "600 37px system-ui, -apple-system, sans-serif";
-      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 7);
-      let qy = cardY + 210;
       for (const l of qLines) {
         ctx.fillText(l, innerX, qy);
         qy += 50;
       }
 
-      qy += 20;
-      if (qy < cardY + cardH - 150) {
-        ctx.fillStyle = `${activeTheme.accent}20`;
-        ctx.strokeStyle = activeTheme.accent;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(innerX, qy, innerW, 88, 18);
-        ctx.fill();
-        ctx.stroke();
+      const boxY = qy - 16;
+      ctx.fillStyle = `${activeTheme.accent}20`;
+      ctx.strokeStyle = activeTheme.accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(innerX, boxY, innerW, calloutH, 18);
+      ctx.fill();
+      ctx.stroke();
 
-        ctx.fillStyle = activeTheme.accent;
-        ctx.font = "800 22px system-ui, -apple-system, sans-serif";
-        ctx.fillText(
-          `💡 ${activeCard.subContextOrReality.slice(0, 62)}`,
-          innerX + 24,
-          qy + 52,
-        );
-      }
+      ctx.fillStyle = activeTheme.accent;
+      ctx.font = "800 22px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        `💡 ${activeCard.subContextOrReality.slice(0, 62)}`,
+        innerX + 24,
+        boxY + 52,
+      );
     } else if (input.template === "testimonial-5-star") {
       ctx.fillStyle = "#F59E0B";
       ctx.font = "900 44px system-ui, -apple-system, sans-serif";
-      ctx.fillText("★ ★ ★ ★ ★", innerX, cardY + 108);
+      ctx.fillText("★ ★ ★ ★ ★", innerX, cardY + 102);
 
       ctx.fillStyle = activeTheme.accent;
       ctx.font = "800 20px system-ui, -apple-system, sans-serif";
       ctx.fillText(
         activeCard.badgeLabel.toUpperCase(),
         innerX + 275,
-        cardY + 102,
+        cardY + 96,
       );
 
-      ctx.fillStyle = activeTheme.textMain;
+      // Vertically center the testimonial quote & author signature
       ctx.font = "700 39px Georgia, serif";
       const qLines = wrapQuoteLines(
         ctx,
         `"${activeCard.quoteText}"`,
         innerW,
-        7,
+        6,
       );
-      let qy = cardY + 190;
+      const totalH = qLines.length * 52 + 110;
+      let qy = Math.max(bodyRegionTop + 36, bodyRegionMid - totalH / 2 + 36);
+
+      ctx.fillStyle = activeTheme.textMain;
       for (const l of qLines) {
         ctx.fillText(l, innerX, qy);
         qy += 52;
       }
 
       ctx.fillStyle = activeTheme.accent;
-      ctx.fillRect(innerX, cardY + cardH - 165, 90, 6);
+      ctx.fillRect(innerX, qy + 4, 90, 6);
 
       ctx.fillStyle = activeTheme.textMain;
       ctx.font = "800 28px system-ui, -apple-system, sans-serif";
-      ctx.fillText(input.authorName, innerX, cardY + cardH - 115);
+      ctx.fillText(input.authorName, innerX, qy + 52);
 
       ctx.fillStyle = activeTheme.textSub;
       ctx.font = "500 22px system-ui, -apple-system, sans-serif";
-      ctx.fillText(input.authorHandleOrRole, innerX, cardY + cardH - 80);
+      ctx.fillText(input.authorHandleOrRole, innerX, qy + 84);
     } else if (
       input.template === "myth-vs-reality" ||
       input.template === "before-after-proof"
@@ -393,7 +438,12 @@ export default function QuoteStatTestimonialCardStudioClient() {
       ctx.fillStyle = activeTheme.textMain;
       ctx.font = "700 29px system-ui, -apple-system, sans-serif";
       const mLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW - 56, 4);
-      let my = cardY + 150;
+      const mBlockH = mLines.length * 39;
+      let my =
+        cardY +
+        118 +
+        Math.max(0, (boxH - 76 - mBlockH) / 2) +
+        28;
       for (const l of mLines) {
         ctx.fillText(l, innerX + 28, my);
         my += 39;
@@ -426,29 +476,38 @@ export default function QuoteStatTestimonialCardStudioClient() {
         innerW - 56,
         4,
       );
-      let ry = ryTop + 96;
+      const rBlockH = rLines.length * 39;
+      let ry =
+        ryTop +
+        62 +
+        Math.max(0, (boxH - 76 - rBlockH) / 2) +
+        28;
       for (const l of rLines) {
         ctx.fillText(l, innerX + 28, ry);
         ry += 39;
       }
     } else if (input.template === "oversized-kpi-stat") {
-      // Giant KPI Metric Badge + Quote Callout
       const statMatch =
         activeCard.quoteText.match(/\d+(?:\.\d+)?(?:\s*%|\s*x|\+)/i)?.[0] ||
         "2.4x";
+
+      ctx.font = "700 36px system-ui, -apple-system, sans-serif";
+      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 5);
+      const totalH = 148 + 44 + qLines.length * 48;
+      const startY = Math.max(cardY + 64, bodyRegionMid - totalH / 2);
 
       ctx.fillStyle = `${activeTheme.accent}20`;
       ctx.strokeStyle = activeTheme.accent;
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.roundRect(innerX, cardY + 64, 280, 148, 26);
+      ctx.roundRect(innerX, startY, 280, 148, 26);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = activeTheme.accent;
       ctx.font = "900 76px system-ui, -apple-system, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(statMatch, innerX + 140, cardY + 162);
+      ctx.fillText(statMatch, innerX + 140, startY + 98);
       ctx.textAlign = "left";
 
       ctx.fillStyle = activeTheme.textMain;
@@ -456,7 +515,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
       ctx.fillText(
         activeCard.badgeLabel.toUpperCase(),
         innerX + 310,
-        cardY + 114,
+        startY + 50,
       );
       ctx.fillStyle = activeTheme.textSub;
       ctx.font = "600 24px system-ui, -apple-system, sans-serif";
@@ -467,19 +526,17 @@ export default function QuoteStatTestimonialCardStudioClient() {
         2,
       );
       hlLines.forEach((l, li) =>
-        ctx.fillText(l, innerX + 310, cardY + 154 + li * 32),
+        ctx.fillText(l, innerX + 310, startY + 90 + li * 32),
       );
 
       ctx.fillStyle = activeTheme.textMain;
       ctx.font = "700 36px system-ui, -apple-system, sans-serif";
-      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 6);
-      let qy = cardY + 290;
+      let qy = startY + 148 + 44 + 30;
       for (const l of qLines) {
         ctx.fillText(l, innerX, qy);
         qy += 48;
       }
     } else if (input.template === "podcast-clip-quote") {
-      // Podcast Clip / Audio Waveform Soundbite Card
       ctx.fillStyle = activeTheme.accent;
       ctx.beginPath();
       ctx.roundRect(innerX, cardY + 62, 260, 44, 22);
@@ -488,21 +545,23 @@ export default function QuoteStatTestimonialCardStudioClient() {
       ctx.font = "900 18px system-ui, -apple-system, sans-serif";
       ctx.fillText("🎙️ AUDIO CLIP HIGHLIGHT", innerX + 20, cardY + 90);
 
-      ctx.fillStyle = activeTheme.textMain;
       ctx.font = "800 36px system-ui, -apple-system, sans-serif";
       const qLines = wrapQuoteLines(
         ctx,
         `"${activeCard.quoteText}"`,
         innerW,
-        6,
+        5,
       );
-      let qy = cardY + 175;
+      const qH = qLines.length * 48;
+      const availMid = (cardY + 125 + (cardY + cardH - 185)) / 2;
+      let qy = availMid - qH / 2 + 32;
+
+      ctx.fillStyle = activeTheme.textMain;
       for (const l of qLines) {
         ctx.fillText(l, innerX, qy);
         qy += 48;
       }
 
-      // Audio Waveform Bars at Bottom
       const waveY = cardY + cardH - 175;
       const barCount = 38;
       const barGap = 8;
@@ -522,64 +581,52 @@ export default function QuoteStatTestimonialCardStudioClient() {
         ctx.fill();
       }
     } else if (input.template === "checklist-takeaway-card") {
-      ctx.fillStyle = activeTheme.accent;
-      ctx.font = "900 22px system-ui, -apple-system, sans-serif";
-      ctx.fillText(
-        `⚡ ${activeCard.badgeLabel.toUpperCase()}`,
-        innerX,
-        cardY + 86,
-      );
-
-      ctx.fillStyle = activeTheme.textMain;
       ctx.font = "800 34px system-ui, -apple-system, sans-serif";
-      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 5);
-      let qy = cardY + 146;
-      for (const l of qLines) {
-        ctx.fillText(l, innerX, qy);
-        qy += 45;
-      }
-
+      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 4);
       const bullets = [
         activeCard.highlightPhrase,
         activeCard.subContextOrReality,
         `Full breakdown at ${input.brandDomain}`,
       ];
-      qy += 24;
+      const totalH = 44 + qLines.length * 45 + 24 + bullets.length * 76;
+      const startY = Math.max(cardY + 60, bodyRegionMid - totalH / 2);
+
+      ctx.fillStyle = activeTheme.accent;
+      ctx.font = "900 22px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        `⚡ ${activeCard.badgeLabel.toUpperCase()}`,
+        innerX,
+        startY + 24,
+      );
+
+      ctx.fillStyle = activeTheme.textMain;
+      ctx.font = "800 34px system-ui, -apple-system, sans-serif";
+      let qy = startY + 76;
+      for (const l of qLines) {
+        ctx.fillText(l, innerX, qy);
+        qy += 45;
+      }
+
+      qy += 16;
       bullets.forEach((b) => {
         ctx.fillStyle = `${activeTheme.accentSecondary}22`;
         ctx.beginPath();
-        ctx.roundRect(innerX, qy, innerW, 64, 16);
+        ctx.roundRect(innerX, qy, innerW, 62, 16);
         ctx.fill();
         ctx.fillStyle = activeTheme.accentSecondary;
         ctx.font = "900 24px system-ui, -apple-system, sans-serif";
-        ctx.fillText("✓", innerX + 20, qy + 40);
+        ctx.fillText("✓", innerX + 20, qy + 39);
         ctx.fillStyle = activeTheme.textMain;
         ctx.font = "700 22px system-ui, -apple-system, sans-serif";
-        ctx.fillText(b.slice(0, 56), innerX + 56, qy + 40);
-        qy += 78;
+        ctx.fillText(b.slice(0, 56), innerX + 56, qy + 39);
+        qy += 76;
       });
     } else if (input.template === "founder-memo-note") {
       ctx.fillStyle = "#F59E0B";
       ctx.fillRect(cardX, cardY, cardW, 18);
 
-      ctx.fillStyle = "#D97706";
-      ctx.font = "800 21px system-ui, -apple-system, sans-serif";
-      ctx.fillText(
-        `📝 FOUNDER MEMO · ${activeCard.badgeLabel.toUpperCase()}`,
-        innerX,
-        cardY + 84,
-      );
-
-      ctx.fillStyle = activeTheme.textMain;
       ctx.font = "800 38px system-ui, -apple-system, sans-serif";
-      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 6);
-      let qy = cardY + 156;
-      for (const l of qLines) {
-        ctx.fillText(l, innerX, qy);
-        qy += 52;
-      }
-
-      ctx.fillStyle = activeTheme.textSub;
+      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 5);
       ctx.font = "500 25px system-ui, -apple-system, sans-serif";
       const subLines = wrapQuoteLines(
         ctx,
@@ -587,27 +634,56 @@ export default function QuoteStatTestimonialCardStudioClient() {
         innerW,
         3,
       );
-      qy += 18;
+      const totalH = 54 + qLines.length * 52 + 24 + subLines.length * 36;
+      const startY = Math.max(cardY + 64, bodyRegionMid - totalH / 2);
+
+      ctx.fillStyle = "#D97706";
+      ctx.font = "800 21px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        `📝 FOUNDER MEMO · ${activeCard.badgeLabel.toUpperCase()}`,
+        innerX,
+        startY + 24,
+      );
+
+      ctx.fillStyle = activeTheme.textMain;
+      ctx.font = "800 38px system-ui, -apple-system, sans-serif";
+      let qy = startY + 84;
+      for (const l of qLines) {
+        ctx.fillText(l, innerX, qy);
+        qy += 52;
+      }
+
+      ctx.fillStyle = activeTheme.textSub;
+      ctx.font = "500 25px system-ui, -apple-system, sans-serif";
+      qy += 14;
       for (const l of subLines) {
         ctx.fillText(l, innerX, qy);
         qy += 36;
       }
     } else {
-      // Highlighter Quote, Executive Pull-Quote, Glassmorphic, or Boardroom Frame
+      // Highlighter Quote, Executive Pull-Quote, Glassmorphic, or Boardroom Frame — Vertically Centered!
+      ctx.font =
+        input.template === "executive-pull-quote"
+          ? "700 38px Georgia, serif"
+          : "800 37px system-ui, -apple-system, sans-serif";
+      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 6);
+      const totalH = 140 + qLines.length * 50;
+      const startY = Math.max(cardY + 64, bodyRegionMid - totalH / 2);
+
       ctx.fillStyle = activeTheme.accent;
-      ctx.font = "900 120px Georgia, serif";
-      ctx.fillText("“", innerX - 10, cardY + 135);
+      ctx.font = "900 110px Georgia, serif";
+      ctx.fillText("“", innerX - 10, startY + 62);
 
       ctx.fillStyle = activeTheme.accent;
       ctx.beginPath();
-      ctx.roundRect(innerX, cardY + 150, innerW, 56, 14);
+      ctx.roundRect(innerX, startY + 74, innerW, 56, 14);
       ctx.fill();
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "900 25px system-ui, -apple-system, sans-serif";
       ctx.fillText(
         activeCard.highlightPhrase.slice(0, 48),
         innerX + 22,
-        cardY + 186,
+        startY + 110,
       );
 
       ctx.fillStyle = activeTheme.textMain;
@@ -615,8 +691,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
         input.template === "executive-pull-quote"
           ? "700 38px Georgia, serif"
           : "800 37px system-ui, -apple-system, sans-serif";
-      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 6);
-      let qy = cardY + 268;
+      let qy = startY + 186;
       for (const l of qLines) {
         ctx.fillText(l, innerX, qy);
         qy += 50;
@@ -699,21 +774,21 @@ export default function QuoteStatTestimonialCardStudioClient() {
         }}
       />
 
-      {toast && (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
-        >
-          <CheckCircle2 size={15} />
-          <span>{toast}</span>
-        </div>
-      )}
-
       <div
         ref={resultsRef}
         tabIndex={-1}
         className="shadow-xs space-y-6 rounded-2xl border-2 border-[#4058d0]/25 bg-white p-5 focus:outline-none dark:border-[#4058d0]/35 dark:bg-[#111827] sm:p-6"
       >
+        {toast && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          >
+            <CheckCircle2 size={15} />
+            <span>{toast}</span>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <PlatformBrandIcon
@@ -753,10 +828,12 @@ export default function QuoteStatTestimonialCardStudioClient() {
           </div>
         </div>
 
-        <details className="rounded-2xl border border-slate-400/30 p-4">
-          <summary className="font-semibold">Choose a template</summary>
+        {/* OPEN BY DEFAULT SO ALL 12 QUOTE TEMPLATES ARE IMMEDIATELY VISIBLE */}
+        <details open className="rounded-2xl border border-slate-400/30 p-4">
+          <summary className="cursor-pointer font-extrabold text-slate-900 dark:text-white">
+            Choose a Quote, Stat or Testimonial Card Template (12 Layouts)
+          </summary>
           <div className="mt-4">
-            {/* 12 Template Selector */}
             <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {QUOTE_TEMPLATES.map((tpl) => (
                 <button
@@ -772,7 +849,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   }`}
                 >
                   <TemplateThumbnail id={tpl.id} category="viral-list" />
-                  <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+                  <strong className="mt-1 block text-xs font-extrabold text-slate-900 dark:text-white">
                     {tpl.label}
                   </strong>
                   <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
@@ -783,6 +860,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
             </div>
           </div>
         </details>
+
         {/* 10 Color Themes + Custom Brand Color Pickers */}
         <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -893,21 +971,46 @@ export default function QuoteStatTestimonialCardStudioClient() {
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
           {/* LEFT: QUOTE SWITCHER & INLINE EDITOR */}
           <div className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {cards.map((c, idx) => (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap gap-1.5">
+                {cards.map((c, idx) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setActiveCardIdx(idx)}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-extrabold transition ${
+                      activeCardIdx === idx
+                        ? "bg-[#4058d0] text-white"
+                        : "border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                    }`}
+                  >
+                    Card #{idx + 1}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5">
                 <button
-                  key={c.id}
                   type="button"
-                  onClick={() => setActiveCardIdx(idx)}
-                  className={`rounded-xl px-3.5 py-2 text-xs font-extrabold transition ${
-                    activeCardIdx === idx
-                      ? "bg-slate-900 text-white dark:bg-[#5271ff]"
-                      : "border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                  }`}
+                  onClick={handleAddQuoteCard}
+                  disabled={!canAddCard}
+                  style={{ cursor: canAddCard ? "pointer" : "not-allowed" }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[11px] font-extrabold text-white disabled:opacity-45"
                 >
-                  Quote Card #{idx + 1}
+                  <Plus size={12} /> Add Card
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={handleRemoveQuoteCard}
+                  disabled={!canRemoveCard}
+                  style={{
+                    backgroundColor: "#e11d48",
+                    cursor: canRemoveCard ? "pointer" : "not-allowed",
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-extrabold text-white disabled:opacity-45"
+                >
+                  <Trash2 size={12} /> Remove
+                </button>
+              </div>
             </div>
 
             {activeCard && (
@@ -980,8 +1083,11 @@ export default function QuoteStatTestimonialCardStudioClient() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                    Main Quote / Testimonial Text
+                  <label className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
+                    <span>Main Quote / Testimonial Text</span>
+                    <span className="text-[10px] text-[#4058d0]">
+                      {activeCard.quoteText.length}/210c (~80% optimal)
+                    </span>
                   </label>
                   <textarea
                     rows={4}
@@ -1010,11 +1116,11 @@ export default function QuoteStatTestimonialCardStudioClient() {
             )}
           </div>
 
-          {/* RIGHT: LIVE 1080x1080 QUOTE CARD CANVAS WITH HOVER DOWNLOAD BAR */}
+          {/* RIGHT: LIVE 1080x1080 QUOTE CARD CANVAS WITH PERSISTENT TOP BAR & BOTTOM ZOOM */}
           <div className="space-y-4">
-            <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
-              {/* Floating Hover Download Bar */}
-              <div className="pointer-events-none absolute inset-x-4 top-4 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/15 bg-slate-950/90 px-3.5 py-2.5 opacity-0 shadow-2xl backdrop-blur-md transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+            <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-[#070b14] shadow-lg dark:border-slate-700">
+              {/* Persistent Top Export Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
                   Quote Card #{activeCardIdx + 1} (1080×1080)
                 </span>
@@ -1072,17 +1178,128 @@ export default function QuoteStatTestimonialCardStudioClient() {
                 </div>
               </div>
 
-              <canvas
-                ref={canvasRef}
-                className="mx-auto block aspect-square h-auto w-full rounded-xl"
-              />
+              {/* Direct In-Canvas Quote Editor Bar */}
+              {activeCard && (
+                <div className="flex items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-white">
+                  <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-[#9aabff]">
+                    <Type size={13} /> Live Quote:
+                  </span>
+                  <input
+                    type="text"
+                    value={activeCard.quoteText}
+                    onChange={(e) =>
+                      updateActiveCard("quoteText", e.target.value)
+                    }
+                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white focus:border-[#5271ff] focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {/* Zoomable Canvas Viewport */}
+              <div
+                onWheel={(e) => {
+                  if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    setZoomLevel((z) =>
+                      Math.min(
+                        2.25,
+                        Math.max(
+                          0.6,
+                          +(z + (e.deltaY < 0 ? 0.12 : -0.12)).toFixed(2),
+                        ),
+                      ),
+                    );
+                  }
+                }}
+                className="overflow-auto p-3 sm:p-4"
+              >
+                <div
+                  style={{
+                    width:
+                      zoomLevel === 1
+                        ? "100%"
+                        : `${Math.round(zoomLevel * 100)}%`,
+                    maxWidth: zoomLevel === 1 ? "560px" : "none",
+                    transition: "width 0.16s ease-out",
+                  }}
+                  className="mx-auto"
+                >
+                  <canvas
+                    ref={canvasRef}
+                    className="mx-auto block aspect-square h-auto w-full rounded-xl shadow-2xl"
+                  />
+                </div>
+              </div>
+
+              {/* Bottom Zoom Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-300">
+                <span className="text-[11px] text-slate-400">
+                  Ctrl + Scroll to zoom
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
+                    }
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomOut size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel(1)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold ${
+                      zoomLevel === 1
+                        ? "bg-[#4058d0] text-white"
+                        : "bg-slate-800 text-slate-200"
+                    }`}
+                  >
+                    Auto Fit ({Math.round(zoomLevel * 100)}%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) =>
+                        Math.min(2.25, +(z + 0.15).toFixed(2)),
+                      )
+                    }
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomIn size={12} />
+                  </button>
+                  {[1.35, 1.75].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setZoomLevel(preset)}
+                      className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                        Math.abs(zoomLevel - preset) < 0.04
+                          ? "bg-[#3452d1] text-white"
+                          : "bg-slate-800 text-slate-300"
+                      }`}
+                    >
+                      {Math.round(preset * 100)}%
+                    </button>
+                  ))}
+                  {zoomLevel !== 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel(1)}
+                      className="rounded-lg border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-300"
+                    >
+                      <RotateCcw size={11} />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={downloadActiveQuotePng}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-slate-800 dark:bg-slate-800"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#3452d1]"
               >
                 <Download size={14} />
                 Download Quote Card #0{activeCardIdx + 1} (.PNG)

@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Layers,
   Loader2,
+  RotateCcw,
   Search,
   Sparkles,
   Target,
@@ -498,6 +499,22 @@ export default function KeywordResearchClient() {
             <button type="button" className={button} onClick={example}>
               Load Sample Report
             </button>
+            <button
+              type="button"
+              className={button}
+              disabled={busy}
+              onClick={() => {
+                setSeeds("");
+                setUrl("");
+                setContext("");
+                setCoverage("");
+                setError("");
+                setStatus("Cleared seed inputs. Sample intelligence table remains below.");
+              }}
+            >
+              <RotateCcw size={14} />
+              Clear Seeds
+            </button>
           </div>
         </div>
 
@@ -570,7 +587,10 @@ export default function KeywordResearchClient() {
           </fieldset>
         </form>
 
-        <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 dark:border-slate-700 dark:bg-slate-800/40">
+        <details
+          open
+          className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 dark:border-slate-700 dark:bg-slate-800/40"
+        >
           <summary className="cursor-pointer text-xs sm:text-sm font-bold">
             Optional: Import Google Keyword Planner / Ahrefs / Semrush CSV to Overlay Custom Volumes
           </summary>
@@ -688,15 +708,19 @@ export default function KeywordResearchClient() {
             </button>
           </div>
 
-          {/* HEADER ACTIONS & SUMMARY */}
+          {/* HEADER ACTIONS & EDITABLE EXECUTIVE SUMMARY */}
           <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-800/40">
-            <div className="max-w-2xl">
+            <div className="min-w-0 flex-1 max-w-2xl">
               <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
                 Executive Market Summary ({reportMarket})
               </h3>
-              <p className="mt-1 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                {summary}
-              </p>
+              <textarea
+                aria-label="Editable Executive Market Summary"
+                rows={2}
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-transparent bg-transparent p-1 text-xs sm:text-sm leading-relaxed text-slate-600 focus:border-[#5271FF] focus:bg-white focus:outline-none dark:text-slate-300 dark:focus:bg-slate-900"
+              />
             </div>
             <div className="flex flex-wrap gap-2">
               <button

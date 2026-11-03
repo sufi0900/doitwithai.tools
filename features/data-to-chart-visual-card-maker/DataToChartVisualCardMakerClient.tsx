@@ -13,8 +13,12 @@ import {
   Palette,
   Plus,
   Printer,
+  RotateCcw,
   Sparkles,
   Trash2,
+  Type,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import ToolRunOverlay, {
@@ -141,6 +145,9 @@ function wrapChartText(
   return lines;
 }
 
+const MIN_CHART_POINTS = 2;
+const MAX_CHART_POINTS = 6;
+
 export default function DataToChartVisualCardMakerClient() {
   const [input, setInput] = useState<DataToChartInput>(
     DEFAULT_DATA_TO_CHART_INPUT,
@@ -156,6 +163,7 @@ export default function DataToChartVisualCardMakerClient() {
     accent: "#4058d0",
     textMain: "#FFFFFF",
   });
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -176,9 +184,12 @@ export default function DataToChartVisualCardMakerClient() {
     setPoints(pack.points);
   }, [pack]);
 
+  const canAddPoint = points.length < MAX_CHART_POINTS;
+  const canRemovePoint = points.length > MIN_CHART_POINTS;
+
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2800);
+    setTimeout(() => setToast(""), 3000);
   }
 
   async function handleGenerateAiChart(overrideInput?: DataToChartInput) {
@@ -216,7 +227,7 @@ export default function DataToChartVisualCardMakerClient() {
   }
 
   function addPoint() {
-    if (points.length >= 6) {
+    if (!canAddPoint) {
       notify("Maximum 6 data bars/cards per chart for crisp readability.");
       return;
     }
@@ -231,11 +242,16 @@ export default function DataToChartVisualCardMakerClient() {
         note: "Key performance driver measured in study",
       },
     ]);
+    notify(`Added Metric #${idx} to chart!`);
   }
 
   function removePoint(id: string) {
-    if (points.length <= 2) return;
+    if (!canRemovePoint) {
+      notify("Charts require at least 2 metrics for comparison.");
+      return;
+    }
     setPoints((prev) => prev.filter((p) => p.id !== id));
+    notify("Removed metric row.");
   }
 
   useEffect(() => {
@@ -326,10 +342,20 @@ export default function DataToChartVisualCardMakerClient() {
         ctx.fill();
         ctx.stroke();
 
+        // Vertically center content inside each Bento card
+        ctx.font = "800 25px system-ui, -apple-system, sans-serif";
+        const lblLines = wrapChartText(ctx, pt.label, cardW - 64, 2);
+        ctx.font = "500 19px system-ui, -apple-system, sans-serif";
+        const nLines = wrapChartText(ctx, pt.note, cardW - 64, 2);
+        const topGraphicH = input.template === "radial-gauge-rings" ? 100 : 78;
+        const totalBlockH =
+          topGraphicH + 18 + lblLines.length * 30 + 8 + nLines.length * 25;
+        const startCardY = y + Math.max(24, (cardH - totalBlockH) / 2);
+
         if (input.template === "radial-gauge-rings") {
-          const r = 46;
-          const cx = x + 74;
-          const cy = y + 76;
+          const r = 44;
+          const cx = x + 32 + r;
+          const cy = startCardY + r;
           ctx.beginPath();
           ctx.arc(cx, cy, r, 0, Math.PI * 2);
           ctx.strokeStyle = "rgba(148,163,184,0.22)";
@@ -349,18 +375,19 @@ export default function DataToChartVisualCardMakerClient() {
           ctx.stroke();
 
           ctx.fillStyle = theme.textMain;
-          ctx.font = "900 22px system-ui, -apple-system, sans-serif";
-          ctx.fillText(pt.displayValue.slice(0, 6), cx - 24, cy + 8);
+          ctx.font = "900 21px system-ui, -apple-system, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(pt.displayValue.slice(0, 6), cx, cy + 7);
+          ctx.textAlign = "left";
         } else {
           ctx.fillStyle = barCol;
-          ctx.font = "900 66px system-ui, -apple-system, sans-serif";
-          ctx.fillText(pt.displayValue, x + 32, y + 94);
+          ctx.font = "900 64px system-ui, -apple-system, sans-serif";
+          ctx.fillText(pt.displayValue, x + 32, startCardY + 62);
         }
 
         ctx.fillStyle = theme.textMain;
         ctx.font = "800 25px system-ui, -apple-system, sans-serif";
-        const lblLines = wrapChartText(ctx, pt.label, cardW - 64, 2);
-        let ly = y + 150;
+        let ly = startCardY + topGraphicH + 34;
         for (const l of lblLines) {
           ctx.fillText(l, x + 32, ly);
           ly += 30;
@@ -368,8 +395,7 @@ export default function DataToChartVisualCardMakerClient() {
 
         ctx.fillStyle = theme.textMuted;
         ctx.font = "500 19px system-ui, -apple-system, sans-serif";
-        const nLines = wrapChartText(ctx, pt.note, cardW - 64, 2);
-        ly += 6;
+        ly += 4;
         for (const l of nLines) {
           ctx.fillText(l, x + 32, ly);
           ly += 25;
@@ -433,10 +459,16 @@ export default function DataToChartVisualCardMakerClient() {
 
       const legX = padX + 450;
       const legW = W - padX - legX;
-      const rowH = Math.min(100, Math.floor(availH / activePts.length) - 10);
+      const rowGap = 12;
+      const rowH = Math.min(
+        104,
+        Math.floor((availH - rowGap * (activePts.length - 1)) / activePts.length),
+      );
+      const totalLegH = activePts.length * rowH + (activePts.length - 1) * rowGap;
+      const legStartY = bodyTop + Math.max(0, (availH - totalLegH) / 2);
 
       activePts.forEach((pt, i) => {
-        const y = bodyTop + i * (rowH + 10);
+        const y = legStartY + i * (rowH + rowGap);
         const col = i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
         ctx.fillStyle = theme.cardBg;
         ctx.strokeStyle = col;
@@ -479,7 +511,7 @@ export default function DataToChartVisualCardMakerClient() {
       ctx.fillStyle = theme.accent;
       ctx.font = "900 84px system-ui, -apple-system, sans-serif";
       const heroVal = activePts[0]?.displayValue || "+142%";
-      ctx.fillText(heroVal, padX + 36, bodyTop + 118);
+      ctx.fillText(heroVal, padX + 36, bodyTop + 128);
 
       const valW = ctx.measureText(heroVal).width;
       ctx.fillStyle = theme.textMain;
@@ -487,7 +519,7 @@ export default function DataToChartVisualCardMakerClient() {
       ctx.fillText(
         (activePts[0]?.label || "Primary Benchmark Lift").slice(0, 34),
         padX + valW + 64,
-        bodyTop + 88,
+        bodyTop + 92,
       );
 
       ctx.fillStyle = theme.textMuted;
@@ -495,7 +527,7 @@ export default function DataToChartVisualCardMakerClient() {
       ctx.fillText(
         (activePts[0]?.note || "").slice(0, 52),
         padX + valW + 64,
-        bodyTop + 128,
+        bodyTop + 132,
       );
 
       const rest = activePts.slice(1, 5);
@@ -527,7 +559,7 @@ export default function DataToChartVisualCardMakerClient() {
         ctx.fillText(pt.note.slice(0, 58), padX + 170, y + rowH / 2 + 24);
       });
     } else {
-      // Horizontal Ranking Bars, Lollipop, Funnel, Waterfall, Dual Versus, or Scorecard
+      // Horizontal Ranking Bars, Lollipop, Funnel, Waterfall, Dual Versus, or Scorecard — Vertically Centered in availH!
       const rowGap = 14;
       const rowH = Math.min(
         118,
@@ -535,9 +567,12 @@ export default function DataToChartVisualCardMakerClient() {
           (availH - rowGap * (activePts.length - 1)) / activePts.length,
         ),
       );
+      const totalRowsH =
+        activePts.length * rowH + (activePts.length - 1) * rowGap;
+      const startRowsY = bodyTop + Math.max(0, (availH - totalRowsH) / 2);
 
       activePts.forEach((pt, i) => {
-        const y = bodyTop + i * (rowH + rowGap);
+        const y = startRowsY + i * (rowH + rowGap);
         const barCol =
           i === 0 ? theme.accent : BAR_COLORS[i % BAR_COLORS.length];
         const cardW =
@@ -566,7 +601,6 @@ export default function DataToChartVisualCardMakerClient() {
         const vw = ctx.measureText(pt.displayValue).width;
         ctx.fillText(pt.displayValue, cardX + cardW - 26 - vw, y + 38);
 
-        // Progress Bar or Lollipop Stem
         const barMaxW = cardW - 52;
         const fillW = Math.max(
           42,
@@ -613,7 +647,7 @@ export default function DataToChartVisualCardMakerClient() {
       <ToolRunOverlay
         active={loading}
         title="Extracting Metrics & Rendering Visual Data Chart..."
-        description="Building high-contrast chart cards across 12 templates with hover PNG, SVG, and PDF export."
+        description="Building high-contrast chart cards across 12 templates with PNG, SVG, and PDF export."
       />
 
       {/* 1-CLICK ARTICLE URL EXTRACTION */}
@@ -643,7 +677,7 @@ export default function DataToChartVisualCardMakerClient() {
           setInput(nextInput);
           void handleGenerateAiChart(nextInput);
         }}
-        onSelectSubTopic={(sub, data) => {
+        onSelectSubTopic={(sub) => {
           setAiPack(null);
           const nextInput: DataToChartInput = {
             ...input,
@@ -656,21 +690,21 @@ export default function DataToChartVisualCardMakerClient() {
         }}
       />
 
-      {toast && (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
-        >
-          <CheckCircle2 size={15} />
-          <span>{toast}</span>
-        </div>
-      )}
-
       <div
         ref={resultsRef}
         tabIndex={-1}
         className="shadow-xs space-y-5 rounded-3xl border border-slate-200 bg-white p-5 focus:outline-none dark:border-slate-800 dark:bg-[#111827] sm:p-6"
       >
+        {toast && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          >
+            <CheckCircle2 size={15} />
+            <span>{toast}</span>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <PlatformBrandIcon brand="data-chart" size={36} />
@@ -680,7 +714,7 @@ export default function DataToChartVisualCardMakerClient() {
                 Custom Pickers
               </span>
               <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                Interactive Data-to-Chart Studio (Hover Over Chart to Download)
+                Interactive Data-to-Chart Visual Studio (1080×1080 HD)
               </h2>
             </div>
           </div>
@@ -696,10 +730,12 @@ export default function DataToChartVisualCardMakerClient() {
           </button>
         </div>
 
-        <details className="rounded-2xl border border-slate-400/30 p-4">
-          <summary className="font-semibold">Choose a template</summary>
+        {/* OPEN BY DEFAULT SO ALL 12 CHART TEMPLATES ARE IMMEDIATELY VISIBLE */}
+        <details open className="rounded-2xl border border-slate-400/30 p-4">
+          <summary className="cursor-pointer font-extrabold text-slate-900 dark:text-white">
+            Choose a Data Chart Template (12 Executive Layouts)
+          </summary>
           <div className="mt-4">
-            {/* 12 Chart Template Selector Grid */}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {CHART_TEMPLATES.map((tpl) => (
                 <button
@@ -715,7 +751,7 @@ export default function DataToChartVisualCardMakerClient() {
                   }`}
                 >
                   <TemplateThumbnail id={tpl.id} category="statistical" />
-                  <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+                  <strong className="mt-1 block text-xs font-extrabold text-slate-900 dark:text-white">
                     {tpl.label}
                   </strong>
                   <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
@@ -726,6 +762,7 @@ export default function DataToChartVisualCardMakerClient() {
             </div>
           </div>
         </details>
+
         {/* 10 Color Themes + Custom Brand Color Pickers */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
@@ -813,13 +850,16 @@ export default function DataToChartVisualCardMakerClient() {
           </div>
         </div>
 
-        {/* 2-COLUMN WORKSPACE: LEFT = DATA POINTS EDITOR, RIGHT = HOVERABLE CHART CANVAS */}
+        {/* 2-COLUMN WORKSPACE: LEFT = DATA POINTS EDITOR, RIGHT = ZOOMABLE CHART CANVAS */}
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
           <div className="space-y-4">
             <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                  Chart Headline
+                <label className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
+                  <span>Chart Headline</span>
+                  <span className="text-[10px] text-[#4058d0]">
+                    {input.chartTitle.length}/72c (~80% optimal)
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -873,12 +913,14 @@ export default function DataToChartVisualCardMakerClient() {
             <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
-                  Edit Data Bars / Metrics ({points.length} / 6)
+                  Edit Data Bars / Metrics ({points.length} / {MAX_CHART_POINTS})
                 </h3>
                 <button
                   type="button"
                   onClick={addPoint}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#3452d1] px-2.5 py-1 text-xs font-extrabold text-white"
+                  disabled={!canAddPoint}
+                  style={{ cursor: canAddPoint ? "pointer" : "not-allowed" }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#3452d1] px-2.5 py-1 text-xs font-extrabold text-white disabled:opacity-45"
                 >
                   <Plus size={12} /> Add Metric
                 </button>
@@ -897,9 +939,19 @@ export default function DataToChartVisualCardMakerClient() {
                       <button
                         type="button"
                         onClick={() => removePoint(pt.id)}
-                        className="text-[11px] font-semibold text-rose-600 hover:underline"
+                        disabled={!canRemovePoint}
+                        style={{
+                          backgroundColor: "#e11d48",
+                          cursor: canRemovePoint ? "pointer" : "not-allowed",
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold text-white disabled:opacity-45"
+                        title={
+                          canRemovePoint
+                            ? "Remove this metric"
+                            : "Minimum 2 metrics required"
+                        }
                       >
-                        <Trash2 size={12} className="inline" /> Remove
+                        <Trash2 size={11} /> Remove
                       </button>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-3">
@@ -950,15 +1002,18 @@ export default function DataToChartVisualCardMakerClient() {
             </div>
           </div>
 
-          {/* RIGHT: HOVERABLE 1080x1080 CHART CANVAS WITH PNG / SVG / PDF OVERLAY */}
+          {/* RIGHT: 1080x1080 CHART CANVAS WITH PERSISTENT TOP BAR + DIRECT INPUT + BOTTOM ZOOM */}
           <div className="space-y-4">
-            <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2.5 shadow-xl dark:border-slate-700">
-              {/* FLOATING HOVER DOWNLOAD BAR */}
+            <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-[#070b14] shadow-xl dark:border-slate-700">
+              {/* Persistent Top Export Bar */}
               <div
                 data-export-toolbar
-                className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+                className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5"
               >
-                <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/20 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-md">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
+                  1080×1080 Data Chart Export
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() =>
@@ -968,7 +1023,7 @@ export default function DataToChartVisualCardMakerClient() {
                         () => notify("Downloaded High-Res Chart (.PNG)!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl bg-[#4058d0] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#3452d1]"
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#4058d0] px-3 py-1.5 text-xs font-extrabold text-white hover:bg-[#3452d1]"
                   >
                     <Download size={13} />
                     Download PNG
@@ -983,7 +1038,7 @@ export default function DataToChartVisualCardMakerClient() {
                         () => notify("Downloaded Chart (.SVG)!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl bg-[#3452d1] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#2842b5]"
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#3452d1] px-2.5 py-1.5 text-xs font-extrabold text-white hover:bg-[#2842b5]"
                   >
                     <FileCode2 size={13} />
                     SVG
@@ -997,7 +1052,7 @@ export default function DataToChartVisualCardMakerClient() {
                         () => notify("Opened PDF Export Dialog!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-emerald-500"
+                    className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-extrabold text-white hover:bg-emerald-500"
                   >
                     <Printer size={13} />
                     PDF
@@ -1009,7 +1064,7 @@ export default function DataToChartVisualCardMakerClient() {
                         notify("Copied Chart Image to Clipboard!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-2 text-xs font-bold text-white hover:bg-white/20"
+                    className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/20"
                   >
                     <Copy size={12} />
                     Copy
@@ -1017,18 +1072,122 @@ export default function DataToChartVisualCardMakerClient() {
                 </div>
               </div>
 
-              <div
-                data-export-hint
-                className="backdrop-blur-xs pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md transition-opacity sm:inline-flex sm:group-hover:opacity-0"
-              >
-                <Download size={12} className="text-[#4058d0]" />
-                <span>Hover to Download (PNG · SVG · PDF)</span>
+              {/* Direct In-Canvas Headline Editor Bar */}
+              <div className="flex items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-white">
+                <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-[#9aabff]">
+                  <Type size={13} /> Chart Title:
+                </span>
+                <input
+                  type="text"
+                  value={input.chartTitle}
+                  onChange={(e) =>
+                    setInput((prev) => ({
+                      ...prev,
+                      chartTitle: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-white focus:border-[#5271ff] focus:outline-none"
+                />
               </div>
 
-              <canvas
-                ref={canvasRef}
-                className="mx-auto block aspect-square h-auto w-full rounded-xl"
-              />
+              {/* Zoomable Canvas Viewport */}
+              <div
+                onWheel={(e) => {
+                  if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    setZoomLevel((z) =>
+                      Math.min(
+                        2.25,
+                        Math.max(
+                          0.6,
+                          +(z + (e.deltaY < 0 ? 0.12 : -0.12)).toFixed(2),
+                        ),
+                      ),
+                    );
+                  }
+                }}
+                className="overflow-auto p-3 sm:p-5"
+              >
+                <div
+                  style={{
+                    width:
+                      zoomLevel === 1
+                        ? "100%"
+                        : `${Math.round(zoomLevel * 100)}%`,
+                    maxWidth: zoomLevel === 1 ? "620px" : "none",
+                    transition: "width 0.16s ease-out",
+                  }}
+                  className="mx-auto"
+                >
+                  <canvas
+                    ref={canvasRef}
+                    className="mx-auto block aspect-square h-auto w-full rounded-xl shadow-2xl"
+                  />
+                </div>
+              </div>
+
+              {/* Bottom Zoom Toolbar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-slate-300">
+                <span className="text-[11px] text-slate-400">
+                  Ctrl + Scroll to zoom
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
+                    }
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomOut size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel(1)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold ${
+                      zoomLevel === 1
+                        ? "bg-[#4058d0] text-white"
+                        : "bg-slate-800 text-slate-200"
+                    }`}
+                  >
+                    Auto Fit ({Math.round(zoomLevel * 100)}%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) =>
+                        Math.min(2.25, +(z + 0.15).toFixed(2)),
+                      )
+                    }
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomIn size={12} />
+                  </button>
+                  {[1.35, 1.75].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setZoomLevel(preset)}
+                      className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                        Math.abs(zoomLevel - preset) < 0.04
+                          ? "bg-[#3452d1] text-white"
+                          : "bg-slate-800 text-slate-300"
+                      }`}
+                    >
+                      {Math.round(preset * 100)}%
+                    </button>
+                  ))}
+                  {zoomLevel !== 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel(1)}
+                      className="rounded-lg border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-300"
+                    >
+                      <RotateCcw size={11} />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   Clock,
@@ -8,6 +8,8 @@ import {
   Download,
   FileText,
   Sparkles,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import UrlArticleExtractorBar, {
   type ExtractedImageAsset,
@@ -22,6 +24,7 @@ import {
   DEFAULT_SHORT_SCRIPT_INPUT,
   type ShortFormScriptInput,
   type ShortFormScriptPack,
+  type ShortScriptSegment,
   type ShortVideoDuration,
   type ShortVideoPlatform,
 } from "./model";
@@ -38,6 +41,12 @@ export default function ShortFormVideoScriptGeneratorClient() {
   const [scriptViewMode, setScriptViewMode] = useState<"teleprompter" | "beats">(
     "teleprompter",
   );
+  const [teleprompterFontPx, setTeleprompterFontPx] = useState<number>(17);
+  const [editableVoiceover, setEditableVoiceover] = useState<string>("");
+  const [editableSegments, setEditableSegments] = useState<
+    ShortScriptSegment[]
+  >([]);
+  const [editableCaption, setEditableCaption] = useState<string>("");
   const [toast, setToast] = useState("");
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
@@ -47,14 +56,28 @@ export default function ShortFormVideoScriptGeneratorClient() {
   );
   const pack = aiPack || fallbackPack;
 
-  const cleanConnectedScript = useMemo(() => {
-    if (pack.connectedVoiceoverScript) return pack.connectedVoiceoverScript;
-    return pack.segments.map((s) => s.spokenLine.trim()).join("\n\n");
+  useEffect(() => {
+    const connected =
+      pack.connectedVoiceoverScript ||
+      pack.segments.map((s) => s.spokenLine.trim()).join("\n\n");
+    setEditableVoiceover(connected);
+    setEditableSegments(pack.segments);
+    setEditableCaption(pack.captionWithHashtags);
   }, [pack]);
+
+  const wordCount = useMemo(
+    () =>
+      editableVoiceover
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean).length,
+    [editableVoiceover],
+  );
+  const estSeconds = Math.max(5, Math.round((wordCount / 150) * 60));
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2600);
+    setTimeout(() => setToast(""), 2800);
   }
 
   function updateField<K extends keyof ShortFormScriptInput>(
@@ -63,6 +86,20 @@ export default function ShortFormVideoScriptGeneratorClient() {
   ) {
     setAiPack(null);
     setInput((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function updateSegmentField(
+    idx: number,
+    field: keyof ShortScriptSegment,
+    value: string,
+  ) {
+    setEditableSegments((prev) => {
+      const next = prev.map((s, i) =>
+        i === idx ? { ...s, [field]: value } : s,
+      );
+      setEditableVoiceover(next.map((s) => s.spokenLine.trim()).join("\n\n"));
+      return next;
+    });
   }
 
   async function runGenerateAiScript(overrideInput?: ShortFormScriptInput) {
@@ -95,10 +132,10 @@ export default function ShortFormVideoScriptGeneratorClient() {
     const cleanTitle = input.topic.replace(/\s*\|\s*[^|]+$/g, "").trim();
     const md = [
       `# ${input.platform} Script (${input.durationSeconds}s) — ${cleanTitle}`,
-      `- **Spoken Word Count:** ${pack.totalSpokenWords} words (~${pack.estimatedSecondsAt150Wpm}s at 150 WPM)`,
+      `- **Spoken Word Count:** ${wordCount} words (~${estSeconds}s at 150 WPM)`,
       "",
       "## Full Connected Teleprompter Voiceover Script",
-      cleanConnectedScript,
+      editableVoiceover,
       "",
       "## 3 Opening Hook Variations (0:00 – 0:03)",
       ...pack.hookVariations.map(
@@ -107,12 +144,12 @@ export default function ShortFormVideoScriptGeneratorClient() {
       ),
       "",
       "## Beat-by-Beat Director Timeline & B-Roll Cues",
-      ...pack.segments.map(
+      ...editableSegments.map(
         (s) =>
           `### [${s.timeRange}] ${s.beatLabel}\n- **Spoken Audio:** "${s.spokenLine}"\n- **On-Screen Text:** ${s.onScreenTextCaption}\n- **Visual / B-Roll Cue:** ${s.visualBRollCue}\n`,
       ),
       "## Post Caption & Hashtags",
-      pack.captionWithHashtags,
+      editableCaption,
     ].join("\n");
 
     const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
@@ -128,7 +165,7 @@ export default function ShortFormVideoScriptGeneratorClient() {
   return (
     <section
       aria-label="Short-Form Video Hook and Script Builder Workspace"
-      className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6 space-y-6"
+      className="mx-auto w-full max-w-6xl space-y-6 overflow-x-clip px-4 py-10 sm:px-6"
     >
       <ToolRunOverlay
         active={loadingAi}
@@ -173,20 +210,10 @@ export default function ShortFormVideoScriptGeneratorClient() {
         }}
       />
 
-      {toast && (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
-        >
-          <CheckCircle2 size={15} />
-          <span>{toast}</span>
-        </div>
-      )}
-
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
         {/* LEFT COLUMN: VIDEO BRIEF & 3 OPENING HOOK VARIATIONS */}
         <div className="space-y-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
+          <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2.5">
                 <PlatformBrandIcon
@@ -293,13 +320,13 @@ export default function ShortFormVideoScriptGeneratorClient() {
           </div>
 
           {/* 3 Interchangeable 0-3s Hooks */}
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
+          <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <h3 className="text-base font-extrabold">
-              2. 0–3s Scroll-Stopper Hook Options (Record All 3!)
+              2. 0–3s Scroll-Stopper Hook Options (Click to Use)
             </h3>
             <p className="mt-1 text-xs text-slate-500">
-              Pro tip: Record all 3 opening sentences in 30 seconds so you can
-              A/B test which 3-second hook retains the most viewers.
+              Pro tip: Click &ldquo;Use as Opening Beat&rdquo; to swap any hook
+              into your live teleprompter script.
             </p>
 
             <div className="mt-3.5 space-y-2.5">
@@ -312,16 +339,35 @@ export default function ShortFormVideoScriptGeneratorClient() {
                     <span className="rounded-full bg-[#3452d1]/15 px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-[#3452d1] dark:bg-[#5271ff]/20 dark:text-[#b4c3ff]">
                       {h.angle}
                     </span>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await navigator.clipboard.writeText(h.spokenHook);
-                        notify(`Copied "${h.angle}" spoken hook!`);
-                      }}
-                      className="rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-800"
-                    >
-                      Copy
-                    </button>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (editableSegments.length > 0) {
+                            updateSegmentField(0, "spokenLine", h.spokenHook);
+                            updateSegmentField(
+                              0,
+                              "onScreenTextCaption",
+                              h.onScreenHook,
+                            );
+                            notify(`Swapped "${h.angle}" into Beat #1!`);
+                          }
+                        }}
+                        className="rounded border border-[#4058d0] bg-[#4058d0]/10 px-2 py-0.5 text-[11px] font-bold text-[#4058d0] hover:bg-[#4058d0] hover:text-white"
+                      >
+                        Use as Beat #1
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(h.spokenHook);
+                          notify(`Copied "${h.angle}" spoken hook!`);
+                        }}
+                        className="rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-800"
+                      >
+                        Copy
+                      </button>
+                    </div>
                   </div>
                   <p className="mt-2 font-bold text-slate-900 dark:text-white">
                     &ldquo;{h.spokenHook}&rdquo;
@@ -335,22 +381,31 @@ export default function ShortFormVideoScriptGeneratorClient() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: CONNECTED VOICEOVER SCRIPT & BEAT-BY-BEAT TIMELINE */}
+        {/* RIGHT COLUMN: LIVE EDITABLE TELEPROMPTER SCRIPT & BEAT-BY-BEAT TIMELINE */}
         <div
           ref={resultsRef}
           tabIndex={-1}
           className="space-y-6 focus:outline-none"
         >
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827] sm:p-6">
+          {toast && (
+            <div
+              role="status"
+              className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+            >
+              <CheckCircle2 size={15} />
+              <span>{toast}</span>
+            </div>
+          )}
+
+          <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827] sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3.5 dark:border-slate-800">
               <div>
                 <span className="inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                   <Clock size={13} />
-                  {pack.totalSpokenWords} Spoken Words · ~
-                  {pack.estimatedSecondsAt150Wpm}s at 150 WPM
+                  {wordCount} Spoken Words · ~{estSeconds}s at 150 WPM
                 </span>
                 <h3 className="mt-0.5 text-lg font-black">
-                  Connected Teleprompter Script &amp; Director Timeline
+                  Live Editable Teleprompter Script &amp; Director Timeline
                 </h3>
               </div>
 
@@ -358,7 +413,7 @@ export default function ShortFormVideoScriptGeneratorClient() {
                 <button
                   type="button"
                   onClick={async () => {
-                    await navigator.clipboard.writeText(cleanConnectedScript);
+                    await navigator.clipboard.writeText(editableVoiceover);
                     notify("Copied connected teleprompter script!");
                   }}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2842b5]"
@@ -376,30 +431,57 @@ export default function ShortFormVideoScriptGeneratorClient() {
               </div>
             </div>
 
-            {/* View Toggle: Continuous Teleprompter vs Beat-by-Beat Director Cards */}
-            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 dark:border-slate-800 dark:bg-slate-900">
-              <button
-                type="button"
-                onClick={() => setScriptViewMode("teleprompter")}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs font-extrabold transition ${
-                  scriptViewMode === "teleprompter"
-                    ? "bg-[#3452d1] text-white shadow-xs"
-                    : "text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                }`}
-              >
-                📜 Full Connected Voiceover Script (Teleprompter View)
-              </button>
-              <button
-                type="button"
-                onClick={() => setScriptViewMode("beats")}
-                className={`flex-1 rounded-lg px-3 py-2 text-xs font-extrabold transition ${
-                  scriptViewMode === "beats"
-                    ? "bg-[#3452d1] text-white shadow-xs"
-                    : "text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
-                }`}
-              >
-                🎬 Beat-by-Beat Director &amp; B-Roll View
-              </button>
+            {/* View Toggle + Teleprompter Font Size Zoom */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex flex-1 flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setScriptViewMode("teleprompter")}
+                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-extrabold transition ${
+                    scriptViewMode === "teleprompter"
+                      ? "shadow-xs bg-[#3452d1] text-white"
+                      : "text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  📜 Editable Teleprompter View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScriptViewMode("beats")}
+                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-extrabold transition ${
+                    scriptViewMode === "beats"
+                      ? "shadow-xs bg-[#3452d1] text-white"
+                      : "text-slate-700 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  🎬 Editable Beat-by-Beat Director View
+                </button>
+              </div>
+
+              {scriptViewMode === "teleprompter" && (
+                <div className="flex items-center gap-1 pr-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTeleprompterFontPx((s) => Math.max(14, s - 2))
+                    }
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
+                    title="Decrease Teleprompter Font Size"
+                  >
+                    <ZoomOut size={12} /> A-
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTeleprompterFontPx((s) => Math.min(28, s + 2))
+                    }
+                    className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
+                    title="Increase Teleprompter Font Size"
+                  >
+                    <ZoomIn size={12} /> A+
+                  </button>
+                </div>
+              )}
             </div>
 
             {scriptViewMode === "teleprompter" ? (
@@ -407,22 +489,26 @@ export default function ShortFormVideoScriptGeneratorClient() {
                 <div className="mb-3 flex items-center justify-between border-b border-slate-200 pb-2.5 dark:border-slate-800">
                   <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
                     <FileText size={14} />
-                    Continuous Spoken Voiceover (Read Top-to-Bottom)
+                    Continuous Spoken Voiceover (Click to Edit Live)
                   </span>
                   <span className="text-[11px] font-semibold text-slate-500">
-                    Clean prose · Zero mid-word cuts · Ready to record
+                    Font: {teleprompterFontPx}px · Ready to record
                   </span>
                 </div>
-                <div className="whitespace-pre-wrap font-sans text-base font-medium leading-8 text-slate-900 dark:text-slate-100">
-                  {cleanConnectedScript}
-                </div>
+                <textarea
+                  rows={10}
+                  value={editableVoiceover}
+                  onChange={(e) => setEditableVoiceover(e.target.value)}
+                  style={{ fontSize: `${teleprompterFontPx}px` }}
+                  className="w-full rounded-xl border border-slate-200 bg-white p-4 font-sans font-medium leading-relaxed text-slate-900 focus:border-[#4058d0] focus:outline-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                />
               </div>
             ) : (
               <div className="mt-4 space-y-3.5">
-                {pack.segments.map((seg, idx) => (
+                {editableSegments.map((seg, idx) => (
                   <div
                     key={idx}
-                    className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/60"
+                    className="space-y-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/60"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <strong className="text-sm font-black text-slate-900 dark:text-white">
@@ -433,17 +519,50 @@ export default function ShortFormVideoScriptGeneratorClient() {
                       </span>
                     </div>
 
-                    <p className="mt-2.5 rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold leading-6 text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                      &ldquo;{seg.spokenLine}&rdquo;
-                    </p>
+                    <textarea
+                      rows={2}
+                      value={seg.spokenLine}
+                      onChange={(e) =>
+                        updateSegmentField(idx, "spokenLine", e.target.value)
+                      }
+                      className="w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm font-semibold leading-6 text-slate-900 focus:border-[#4058d0] focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                    />
 
-                    <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                      <span className="rounded bg-amber-400 px-2 py-0.5 font-mono font-black text-slate-950">
-                        TEXT OVERLAY: {seg.onScreenTextCaption}
-                      </span>
-                      <span className="text-slate-600 dark:text-slate-300">
-                        🎥 <strong>B-Roll / Cut:</strong> {seg.visualBRollCue}
-                      </span>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-[10px] font-extrabold uppercase text-amber-700 dark:text-amber-400">
+                          On-Screen Text Overlay
+                        </label>
+                        <input
+                          type="text"
+                          value={seg.onScreenTextCaption}
+                          onChange={(e) =>
+                            updateSegmentField(
+                              idx,
+                              "onScreenTextCaption",
+                              e.target.value,
+                            )
+                          }
+                          className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-extrabold uppercase text-slate-500">
+                          🎥 B-Roll / Visual Cue
+                        </label>
+                        <input
+                          type="text"
+                          value={seg.visualBRollCue}
+                          onChange={(e) =>
+                            updateSegmentField(
+                              idx,
+                              "visualBRollCue",
+                              e.target.value,
+                            )
+                          }
+                          className="mt-0.5 w-full rounded border border-slate-300 bg-white px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-950"
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -451,15 +570,15 @@ export default function ShortFormVideoScriptGeneratorClient() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-[#111827]">
+          <div className="shadow-xs rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-extrabold">
-                Ready-to-Paste {input.platform} Description &amp; Hashtags
+                Editable {input.platform} Description &amp; Hashtags
               </h4>
               <button
                 type="button"
                 onClick={async () => {
-                  await navigator.clipboard.writeText(pack.captionWithHashtags);
+                  await navigator.clipboard.writeText(editableCaption);
                   notify("Copied video caption & hashtags!");
                 }}
                 className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
@@ -467,9 +586,12 @@ export default function ShortFormVideoScriptGeneratorClient() {
                 <Copy size={12} /> Copy Caption
               </button>
             </div>
-            <pre className="mt-2.5 whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 p-3.5 font-sans text-xs leading-5 dark:border-slate-800 dark:bg-slate-900">
-              {pack.captionWithHashtags}
-            </pre>
+            <textarea
+              rows={4}
+              value={editableCaption}
+              onChange={(e) => setEditableCaption(e.target.value)}
+              className="mt-2.5 w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 font-sans text-xs leading-5 dark:border-slate-800 dark:bg-slate-900"
+            />
           </div>
         </div>
       </div>
@@ -480,7 +602,7 @@ export default function ShortFormVideoScriptGeneratorClient() {
         defaultHeadline={input.topic}
         defaultBody={input.coreTakeawayOrProof}
         defaultSublabel={`${input.platform.toUpperCase()} BREAKDOWN`}
-        postTextToShare={pack.captionWithHashtags}
+        postTextToShare={editableCaption}
         extractedImages={extractedImages}
       />
     </section>

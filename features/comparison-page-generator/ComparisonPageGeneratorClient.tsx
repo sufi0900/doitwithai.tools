@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Copy,
   Download,
+  Edit3,
   Scale,
   Sparkles,
   Trophy,
@@ -13,12 +14,19 @@ import {
   buildDeterministicComparisonPage,
   DEFAULT_COMPARISON_INPUT,
   type ComparisonInput,
+  type ComparisonMatrixRow,
   type ComparisonPagePack,
 } from "./model";
 
 export default function ComparisonPageGeneratorClient() {
   const [input, setInput] = useState<ComparisonInput>(DEFAULT_COMPARISON_INPUT);
   const [aiPack, setAiPack] = useState<ComparisonPagePack | null>(null);
+  const [verdictOverride, setVerdictOverride] = useState<string | null>(null);
+  const [rowOverrides, setRowOverrides] = useState<
+    Record<number, Partial<ComparisonMatrixRow>>
+  >({});
+  const [rawCodeOverride, setRawCodeOverride] = useState<string | null>(null);
+  const [isEditingRaw, setIsEditingRaw] = useState(false);
   const [activeTab, setActiveTab] = useState<"preview" | "markdown" | "schema">(
     "preview",
   );
@@ -29,7 +37,20 @@ export default function ComparisonPageGeneratorClient() {
     () => buildDeterministicComparisonPage(input),
     [input],
   );
-  const pack = aiPack || deterministicPack;
+  const basePack = aiPack || deterministicPack;
+
+  const pack = useMemo<ComparisonPagePack>(() => {
+    const verdict = verdictOverride ?? basePack.verdictSummarySnippet;
+    const rows = basePack.matrixRows.map((r, idx) => ({
+      ...r,
+      ...(rowOverrides[idx] || {}),
+    }));
+    return {
+      ...basePack,
+      verdictSummarySnippet: verdict,
+      matrixRows: rows,
+    };
+  }, [basePack, verdictOverride, rowOverrides]);
 
   function notify(msg: string) {
     setToast(msg);
@@ -41,7 +62,21 @@ export default function ComparisonPageGeneratorClient() {
     val: ComparisonInput[K],
   ) {
     setAiPack(null);
+    setVerdictOverride(null);
+    setRowOverrides({});
+    setRawCodeOverride(null);
     setInput((prev) => ({ ...prev, [key]: val }));
+  }
+
+  function updateMatrixRow(
+    idx: number,
+    patch: Partial<ComparisonMatrixRow>,
+  ) {
+    setRawCodeOverride(null);
+    setRowOverrides((prev) => ({
+      ...prev,
+      [idx]: { ...(prev[idx] || {}), ...patch },
+    }));
   }
 
   async function handleGenerateAiComparison() {
@@ -55,6 +90,9 @@ export default function ComparisonPageGeneratorClient() {
       const data = await res.json();
       if (data?.comparison) {
         setAiPack(data.comparison);
+        setVerdictOverride(null);
+        setRowOverrides({});
+        setRawCodeOverride(null);
         notify("Generated AI 'X vs. Y' Comparison Matrix & Verdict!");
       }
     } catch {
@@ -64,8 +102,19 @@ export default function ComparisonPageGeneratorClient() {
     }
   }
 
+  const activeTextOutput =
+    rawCodeOverride !== null
+      ? rawCodeOverride
+      : activeTab === "schema"
+        ? pack.jsonLdSchemaString
+        : pack.markdownOutput;
+
   function downloadMarkdownFile() {
-    const blob = new Blob([pack.markdownOutput], {
+    const content =
+      activeTab === "markdown" && rawCodeOverride !== null
+        ? rawCodeOverride
+        : pack.markdownOutput;
+    const blob = new Blob([content], {
       type: "text/markdown;charset=utf-8",
     });
     const url = URL.createObjectURL(blob);
@@ -221,7 +270,11 @@ export default function ComparisonPageGeneratorClient() {
                   <button
                     key={tab}
                     type="button"
-                    onClick={() => setActiveTab(tab)}
+                    onClick={() => {
+                      setActiveTab(tab);
+                      setRawCodeOverride(null);
+                      setIsEditingRaw(false);
+                    }}
                     className={`rounded-lg px-3 py-1.5 text-xs font-extrabold uppercase ${
                       activeTab === tab
                         ? "bg-[#3452d1] text-white"
@@ -233,16 +286,33 @@ export default function ComparisonPageGeneratorClient() {
                 ))}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                {activeTab !== "preview" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isEditingRaw && rawCodeOverride === null) {
+                        setRawCodeOverride(
+                          activeTab === "schema"
+                            ? pack.jsonLdSchemaString
+                            : pack.markdownOutput,
+                        );
+                      }
+                      setIsEditingRaw((prev) => !prev);
+                    }}
+                    className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    <Edit3 size={12} />
+                    {isEditingRaw ? "Compiled View" : "Edit Text"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={async () => {
                     const out =
-                      activeTab === "schema"
-                        ? pack.jsonLdSchemaString
-                        : activeTab === "markdown"
-                          ? pack.markdownOutput
-                          : pack.htmlTableMarkup;
+                      activeTab === "preview"
+                        ? pack.htmlTableMarkup
+                        : activeTextOutput;
                     await navigator.clipboard.writeText(out);
                     notify(`Copied ${activeTab.toUpperCase()} output!`);
                   }}
@@ -263,17 +333,32 @@ export default function ComparisonPageGeneratorClient() {
 
             {activeTab === "preview" ? (
               <div className="mt-4 space-y-5 text-xs">
-                {/* Executive Verdict Box */}
+                {/* Executive Verdict Box (Inline Editable) */}
                 <div className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 p-4">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
-                    <Trophy size={13} /> 50-Word Featured Snippet Verdict
-                  </span>
-                  <p className="mt-1.5 leading-6 font-medium text-slate-900 dark:text-slate-100">
-                    {pack.verdictSummarySnippet}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">
+                      <Trophy size={13} /> 50-Word Featured Snippet Verdict (Editable)
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      {
+                        pack.verdictSummarySnippet
+                          .trim()
+                          .split(/\s+/)
+                          .filter(Boolean).length
+                      }{" "}
+                      words
+                    </span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={pack.verdictSummarySnippet}
+                    onChange={(e) => setVerdictOverride(e.target.value)}
+                    aria-label="Edit 50-Word Featured Snippet Verdict"
+                    className="mt-2 w-full rounded-xl border border-indigo-500/30 bg-white/90 p-2.5 text-xs leading-6 font-medium text-slate-900 focus:border-[#3452d1] focus:outline-none dark:bg-slate-900/80 dark:text-slate-100"
+                  />
                 </div>
 
-                {/* Side-by-Side Feature Matrix */}
+                {/* Side-by-Side Feature Matrix (Inline Editable Cells) */}
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
                   <table className="w-full border-collapse text-left text-xs">
                     <thead>
@@ -291,29 +376,54 @@ export default function ComparisonPageGeneratorClient() {
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                       {pack.matrixRows.map((row, idx) => (
                         <tr key={idx}>
-                          <td className="p-3 font-bold">{row.criterion}</td>
-                          <td className="p-3 text-slate-800 dark:text-slate-200">
-                            {row.optionAValue}
+                          <td className="p-2.5 font-bold">{row.criterion}</td>
+                          <td className="p-2">
+                            <input
+                              type="text"
+                              value={row.optionAValue}
+                              onChange={(e) =>
+                                updateMatrixRow(idx, {
+                                  optionAValue: e.target.value,
+                                })
+                              }
+                              aria-label={`${row.criterion} value for ${input.optionAName}`}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                            />
                           </td>
-                          <td className="p-3 text-slate-600 dark:text-slate-400">
-                            {row.optionBValue}
+                          <td className="p-2">
+                            <input
+                              type="text"
+                              value={row.optionBValue}
+                              onChange={(e) =>
+                                updateMatrixRow(idx, {
+                                  optionBValue: e.target.value,
+                                })
+                              }
+                              aria-label={`${row.criterion} value for ${input.optionBName}`}
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600 focus:border-[#3452d1] focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                            />
                           </td>
-                          <td className="p-3">
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                          <td className="p-2">
+                            <select
+                              value={row.winner}
+                              onChange={(e) =>
+                                updateMatrixRow(idx, {
+                                  winner: e.target.value as "A" | "B" | "tie",
+                                })
+                              }
+                              aria-label={`Winner for ${row.criterion}`}
+                              className={`rounded-lg border px-2 py-1 text-[10px] font-extrabold ${
                                 row.winner === "A"
-                                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                  ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
                                   : row.winner === "B"
-                                    ? "bg-blue-500/15 text-blue-700 dark:text-blue-300"
-                                    : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                                    ? "border-blue-500/30 bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                                    : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
                               }`}
                             >
-                              {row.winner === "A"
-                                ? input.optionAName
-                                : row.winner === "B"
-                                  ? input.optionBName
-                                  : "Tie"}
-                            </span>
+                              <option value="A">{input.optionAName}</option>
+                              <option value="B">{input.optionBName}</option>
+                              <option value="tie">Tie</option>
+                            </select>
                           </td>
                         </tr>
                       ))}
@@ -346,11 +456,18 @@ export default function ComparisonPageGeneratorClient() {
                   </div>
                 </div>
               </div>
+            ) : isEditingRaw ? (
+              <textarea
+                rows={18}
+                value={activeTextOutput}
+                onChange={(e) => setRawCodeOverride(e.target.value)}
+                spellCheck={false}
+                aria-label="Direct comparison code editor"
+                className="mt-4 w-full rounded-xl border border-[#5271ff] bg-[#0D1322] p-4 font-mono text-xs leading-6 text-emerald-300 focus:outline-none"
+              />
             ) : (
               <pre className="mt-4 max-h-[500px] overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-800 bg-[#0D1322] p-4 font-mono text-xs leading-6 text-emerald-300">
-                {activeTab === "schema"
-                  ? pack.jsonLdSchemaString
-                  : pack.markdownOutput}
+                {activeTextOutput}
               </pre>
             )}
           </div>

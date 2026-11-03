@@ -3,7 +3,7 @@
 import { TemplateThumbnail } from "@/features/tool-ui/InfographicArtwork";
 import studioStyles from "@/features/tool-ui/visual-studio.module.css";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   Copy,
@@ -14,7 +14,12 @@ import {
   Layers,
   PackageCheck,
   Palette,
+  RotateCcw,
   Sparkles,
+  Type,
+  Upload,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import UrlArticleExtractorBar, {
   type ExtractedImageAsset,
@@ -151,6 +156,10 @@ export default function PinterestPinVisualGeneratorClient() {
   const [loadedPhotoEl, setLoadedPhotoEl] = useState<HTMLImageElement | null>(
     null,
   );
+  const [imageFitMode, setImageFitMode] = useState<"contain" | "cover">(
+    "contain",
+  );
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -197,7 +206,26 @@ export default function PinterestPinVisualGeneratorClient() {
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2600);
+    setTimeout(() => setToast(""), 3000);
+  }
+
+  function handleCustomPinPhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setSelectedPhotoUrl(reader.result);
+        if (
+          input.template !== "editorial-cover-pin" &&
+          input.template !== "split-photo-headline"
+        ) {
+          setInput((prev) => ({ ...prev, template: "editorial-cover-pin" }));
+        }
+        notify(`Attached custom photo ("${file.name}") to your 1000×1500 Pin!`);
+      }
+    };
+    reader.readAsDataURL(file);
   }
 
   async function runGenerateAiPins(overrideInput?: PinterestVisualInput) {
@@ -262,20 +290,27 @@ export default function PinterestPinVisualGeneratorClient() {
         input.template === "split-photo-headline");
 
     if (hasTopPhoto && loadedPhotoEl) {
-      const imgH = 480;
+      const imgH = 460;
+      const frameW = W - padX * 2;
       ctx.save();
+      ctx.fillStyle = "rgba(15, 23, 42, 0.55)";
+      ctx.strokeStyle = activeTheme.accent;
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.roundRect(padX, 52, W - padX * 2, imgH, 32);
+      ctx.roundRect(padX, 52, frameW, imgH, 32);
+      ctx.fill();
+      ctx.stroke();
       ctx.clip();
-      const scale = Math.max(
-        (W - padX * 2) / loadedPhotoEl.width,
-        imgH / loadedPhotoEl.height,
-      );
+
+      const scale =
+        imageFitMode === "cover"
+          ? Math.max(frameW / loadedPhotoEl.width, imgH / loadedPhotoEl.height)
+          : Math.min(frameW / loadedPhotoEl.width, imgH / loadedPhotoEl.height);
       const dw = loadedPhotoEl.width * scale;
       const dh = loadedPhotoEl.height * scale;
       ctx.drawImage(
         loadedPhotoEl,
-        padX + (W - padX * 2 - dw) / 2,
+        padX + (frameW - dw) / 2,
         52 + (imgH - dh) / 2,
         dw,
         dh,
@@ -283,7 +318,7 @@ export default function PinterestPinVisualGeneratorClient() {
       ctx.restore();
     }
 
-    let curY = hasTopPhoto ? 560 : 68;
+    let curY = hasTopPhoto ? 544 : 68;
 
     // Top Badge Pill
     ctx.fillStyle = activeTheme.accent;
@@ -299,7 +334,6 @@ export default function PinterestPinVisualGeneratorClient() {
     );
 
     if (input.template === "listicle-number-pin") {
-      // Giant listicle number badge on top-right
       ctx.fillStyle = activeTheme.accentSecondary;
       ctx.beginPath();
       ctx.arc(W - padX - 66, curY + 58, 66, 0, Math.PI * 2);
@@ -351,7 +385,6 @@ export default function PinterestPinVisualGeneratorClient() {
     ];
 
     if (input.template === "pyramid-hierarchy-pin") {
-      // 5-Tier Pyramid Hierarchy
       const count = Math.max(3, steps.length);
       const gap = 14;
       const tierH = Math.floor((availH - gap * (count - 1)) / count);
@@ -370,15 +403,20 @@ export default function PinterestPinVisualGeneratorClient() {
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = col;
-        ctx.font = "900 20px system-ui, -apple-system, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(`LEVEL 0${idx + 1}`, W / 2, y + 32);
-
         ctx.fillStyle = activeTheme.textMain;
         ctx.font = "800 23px system-ui, -apple-system, sans-serif";
         const sLines = wrapPinText(ctx, stepText, w - 48, 2);
-        let sy = y + 64;
+        const blockH = 26 + sLines.length * 28;
+        const blockTop = y + (tierH - blockH) / 2;
+
+        ctx.fillStyle = col;
+        ctx.font = "900 19px system-ui, -apple-system, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`LEVEL 0${idx + 1}`, W / 2, blockTop + 18);
+
+        ctx.fillStyle = activeTheme.textMain;
+        ctx.font = "800 23px system-ui, -apple-system, sans-serif";
+        let sy = blockTop + 48;
         for (const l of sLines) {
           ctx.fillText(l, W / 2, sy);
           sy += 28;
@@ -389,11 +427,9 @@ export default function PinterestPinVisualGeneratorClient() {
       input.template === "comparison-pin" ||
       input.template === "before-after-pin"
     ) {
-      // 2-Column or Top/Bottom Mistake vs Solution
       const colW = Math.floor((W - padX * 2 - 24) / 2);
       const colH = availH;
 
-      // Left Column: Common Mistakes
       ctx.fillStyle = "rgba(244, 63, 94, 0.14)";
       ctx.strokeStyle = "#F43F5E";
       ctx.lineWidth = 3;
@@ -406,7 +442,6 @@ export default function PinterestPinVisualGeneratorClient() {
       ctx.font = "900 24px system-ui, -apple-system, sans-serif";
       ctx.fillText("✗ STOP DOING THIS", padX + 24, curY + 46);
 
-      // Right Column: Proven System
       const rightX = padX + colW + 24;
       ctx.fillStyle = "rgba(16, 185, 129, 0.14)";
       ctx.strokeStyle = "#10B981";
@@ -439,7 +474,6 @@ export default function PinterestPinVisualGeneratorClient() {
         sLines.forEach((l, li) => ctx.fillText(l, rightX + 24, iy + li * 26));
       });
     } else if (input.template === "bento-grid-pin") {
-      // 2x3 Bento Grid Cheat Sheet
       const cols = 2;
       const rows = Math.ceil(Math.max(4, steps.length) / cols);
       const gap = 18;
@@ -474,14 +508,16 @@ export default function PinterestPinVisualGeneratorClient() {
         ctx.fillStyle = activeTheme.textMain;
         ctx.font = "800 24px system-ui, -apple-system, sans-serif";
         const sLines = wrapPinText(ctx, stepText, w - 44, 4);
-        let sy = y + 92;
+        const textBlockH = sLines.length * 31;
+        const bodyTop = y + 66;
+        const bodyH = cardH - 76;
+        let sy = bodyTop + Math.max(0, (bodyH - textBlockH) / 2) + 22;
         for (const l of sLines) {
           ctx.fillText(l, x + 22, sy);
           sy += 31;
         }
       });
     } else if (input.template === "stat-donut-pin") {
-      // Hero Stat Donut Ring + 4 Takeaway Cards
       const ringBoxH = 230;
       ctx.fillStyle = activeTheme.cardBg;
       ctx.strokeStyle = activeTheme.accent;
@@ -561,7 +597,6 @@ export default function PinterestPinVisualGeneratorClient() {
         );
       });
     } else if (input.template === "quote-tip-poster-pin") {
-      // Authority Quote & Golden Rule Poster
       const quoteBoxH = Math.floor(availH * 0.46);
       ctx.fillStyle = activeTheme.cardBg;
       ctx.strokeStyle = activeTheme.accent;
@@ -571,10 +606,6 @@ export default function PinterestPinVisualGeneratorClient() {
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = activeTheme.accent;
-      ctx.font = "900 96px Georgia, serif";
-      ctx.fillText("“", padX + 28, curY + 92);
-
       ctx.fillStyle = activeTheme.textMain;
       ctx.font = "800 32px Georgia, serif";
       const qLines = wrapPinText(
@@ -583,8 +614,17 @@ export default function PinterestPinVisualGeneratorClient() {
         W - padX * 2 - 80,
         4,
       );
+      const qBlockH = qLines.length * 42;
+      const qStartY = curY + Math.max(76, (quoteBoxH - qBlockH) / 2 + 24);
+
+      ctx.fillStyle = activeTheme.accent;
+      ctx.font = "900 84px Georgia, serif";
+      ctx.fillText("“", padX + 28, qStartY - 12);
+
+      ctx.fillStyle = activeTheme.textMain;
+      ctx.font = "800 32px Georgia, serif";
       qLines.forEach((l, li) =>
-        ctx.fillText(l, padX + 44, curY + 120 + li * 42),
+        ctx.fillText(l, padX + 44, qStartY + li * 42),
       );
 
       const lowerTop = curY + quoteBoxH + 22;
@@ -599,41 +639,50 @@ export default function PinterestPinVisualGeneratorClient() {
         ctx.beginPath();
         ctx.roundRect(padX, y, W - padX * 2, rH, 18);
         ctx.fill();
-        ctx.fillStyle = activeTheme.accentSecondary;
-        ctx.font = "900 22px system-ui, -apple-system, sans-serif";
-        ctx.fillText(`★ RULE #${idx + 1}`, padX + 24, y + 36);
+
         ctx.fillStyle = activeTheme.textMain;
         ctx.font = "700 24px system-ui, -apple-system, sans-serif";
         const lines = wrapPinText(ctx, st, W - padX * 2 - 48, 2);
-        lines.forEach((l, li) => ctx.fillText(l, padX + 24, y + 70 + li * 28));
+        const totalRuleH = 26 + lines.length * 28;
+        const ruleStartY = y + (rH - totalRuleH) / 2;
+
+        ctx.fillStyle = activeTheme.accentSecondary;
+        ctx.font = "900 21px system-ui, -apple-system, sans-serif";
+        ctx.fillText(`★ RULE #${idx + 1}`, padX + 24, ruleStartY + 18);
+        ctx.fillStyle = activeTheme.textMain;
+        ctx.font = "700 24px system-ui, -apple-system, sans-serif";
+        lines.forEach((l, li) =>
+          ctx.fillText(l, padX + 24, ruleStartY + 50 + li * 28),
+        );
       });
     } else {
-      // Standard & Step Roadmap / Checklist / Ribbon Templates
+      // Standard & Step Roadmap / Checklist / Ribbon Templates — Vertically Centered in availH!
       const stepCount = Math.max(1, steps.length);
       const rowGap = 16;
       const rowH = Math.min(
-        136,
+        142,
         Math.max(
-          82,
+          86,
           Math.floor((availH - rowGap * (stepCount - 1)) / stepCount),
         ),
       );
+      const totalStepsH = stepCount * rowH + (stepCount - 1) * rowGap;
+      const startStepsY = curY + Math.max(0, (availH - totalStepsH) / 2);
 
       if (input.template === "step-mini-infographic") {
-        // Draw vertical timeline spine connecting all step badges
         ctx.strokeStyle = activeTheme.accent;
         ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.moveTo(padX + 50, curY + 30);
+        ctx.moveTo(padX + 50, startStepsY + 30);
         ctx.lineTo(
           padX + 50,
-          curY + (stepCount - 1) * (rowH + rowGap) + rowH - 30,
+          startStepsY + (stepCount - 1) * (rowH + rowGap) + rowH - 30,
         );
         ctx.stroke();
       }
 
       steps.forEach((stepText, idx) => {
-        const y = curY + idx * (rowH + rowGap);
+        const y = startStepsY + idx * (rowH + rowGap);
         const col =
           input.template === "ribbon-banner-pin"
             ? palette[idx % palette.length]
@@ -697,6 +746,7 @@ export default function PinterestPinVisualGeneratorClient() {
     customSubtext,
     pack.bulletSteps,
     loadedPhotoEl,
+    imageFitMode,
   ]);
 
   function downloadTallPinPng() {
@@ -775,21 +825,21 @@ export default function PinterestPinVisualGeneratorClient() {
         }}
       />
 
-      {toast && (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
-        >
-          <CheckCircle2 size={15} />
-          <span>{toast}</span>
-        </div>
-      )}
-
       <div
         ref={resultsRef}
         tabIndex={-1}
         className="shadow-xs space-y-6 rounded-2xl border-2 border-[#E60023]/25 bg-white p-5 focus:outline-none dark:border-[#E60023]/35 dark:bg-[#111827] sm:p-6"
       >
+        {toast && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          >
+            <CheckCircle2 size={15} />
+            <span>{toast}</span>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <PlatformBrandIcon
@@ -829,10 +879,12 @@ export default function PinterestPinVisualGeneratorClient() {
           </div>
         </div>
 
-        <details className="rounded-2xl border border-slate-400/30 p-4">
-          <summary className="font-semibold">Choose a template</summary>
+        {/* OPEN BY DEFAULT SO ALL 12 PIN TEMPLATES ARE IMMEDIATELY VISIBLE */}
+        <details open className="rounded-2xl border border-slate-400/30 p-4">
+          <summary className="cursor-pointer font-extrabold text-slate-900 dark:text-white">
+            Choose a 2:3 Tall Pin Template (12 Layouts)
+          </summary>
           <div className="mt-4">
-            {/* 12 Template Selector */}
             <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {PIN_TEMPLATES.map((tpl) => (
                 <button
@@ -848,7 +900,7 @@ export default function PinterestPinVisualGeneratorClient() {
                   }`}
                 >
                   <TemplateThumbnail id={tpl.id} category="side-image" />
-                  <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+                  <strong className="mt-1 block text-xs font-extrabold text-slate-900 dark:text-white">
                     {tpl.label}
                   </strong>
                   <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
@@ -859,22 +911,59 @@ export default function PinterestPinVisualGeneratorClient() {
             </div>
           </div>
         </details>
-        {/* 10 Color Themes + Custom Brand Color Pickers */}
+
+        {/* 10 Color Themes + Custom Brand Color Pickers + Custom Photo Upload */}
         <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-200">
               <Palette size={14} className="text-[#E60023]" />
-              10 Pin Color Palettes &amp; Live Custom Brand Color Pickers
+              10 Pin Color Palettes, Custom Brand Pickers &amp; Photo Framing
             </span>
-            {Object.keys(customColors).length > 0 && (
-              <button
-                type="button"
-                onClick={() => setCustomColors({})}
-                className="text-[11px] font-bold text-[#E60023] hover:underline"
-              >
-                Reset Custom Colors
-              </button>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#E60023] px-3 py-1 text-xs font-extrabold text-white hover:bg-[#c8001e]">
+                <Upload size={13} />
+                Upload Custom Pin Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCustomPinPhotoUpload}
+                  className="hidden"
+                />
+              </label>
+              <div className="inline-flex items-center rounded-lg border border-slate-300 bg-white p-0.5 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-950">
+                <button
+                  type="button"
+                  onClick={() => setImageFitMode("contain")}
+                  className={`rounded-md px-2 py-0.5 ${
+                    imageFitMode === "contain"
+                      ? "bg-[#E60023] text-white"
+                      : "text-slate-600 dark:text-slate-300"
+                  }`}
+                >
+                  Fit Full Image
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageFitMode("cover")}
+                  className={`rounded-md px-2 py-0.5 ${
+                    imageFitMode === "cover"
+                      ? "bg-[#E60023] text-white"
+                      : "text-slate-600 dark:text-slate-300"
+                  }`}
+                >
+                  Fill Frame
+                </button>
+              </div>
+              {Object.keys(customColors).length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setCustomColors({})}
+                  className="text-[11px] font-bold text-[#E60023] hover:underline"
+                >
+                  Reset Custom Colors
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-1.5">
@@ -1067,8 +1156,11 @@ export default function PinterestPinVisualGeneratorClient() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                  Pin Canvas Headline Overlay
+                <label className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
+                  <span>Pin Canvas Headline Overlay</span>
+                  <span className="text-[10px] text-[#E60023]">
+                    {customHeadline.length}/68c (~80% optimal)
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -1152,13 +1244,13 @@ export default function PinterestPinVisualGeneratorClient() {
             </div>
           </div>
 
-          {/* RIGHT: LIVE 1000x1500 (2:3) TALL PINTEREST PIN CANVAS WITH HOVER EXPORT BAR */}
+          {/* RIGHT: LIVE 1000x1500 (2:3) TALL PINTEREST PIN CANVAS WITH PERSISTENT TOP BAR + BOTTOM ZOOM */}
           <div className="space-y-3">
-            <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2 shadow-lg dark:border-slate-700">
-              {/* Floating Hover Download Bar */}
-              <div className="pointer-events-none absolute inset-x-4 top-4 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/15 bg-slate-950/90 px-3.5 py-2.5 opacity-0 shadow-2xl backdrop-blur-md transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+            <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-[#070b14] shadow-lg dark:border-slate-700">
+              {/* Persistent Top Export Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
-                  1000×1500 Tall Pin Export
+                  1000×1500 Tall Pin Studio
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
@@ -1214,10 +1306,117 @@ export default function PinterestPinVisualGeneratorClient() {
                 </div>
               </div>
 
-              <canvas
-                ref={canvasRef}
-                className="mx-auto block h-auto max-h-[680px] w-full rounded-xl object-contain"
-              />
+              {/* Direct In-Canvas Headline Bar */}
+              <div className="flex items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-white">
+                <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-rose-400">
+                  <Type size={13} /> Pin Hook:
+                </span>
+                <input
+                  type="text"
+                  value={customHeadline}
+                  onChange={(e) => setCustomHeadline(e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white focus:border-[#E60023] focus:outline-none"
+                />
+              </div>
+
+              {/* Zoomable Canvas Viewport */}
+              <div
+                onWheel={(e) => {
+                  if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    setZoomLevel((z) =>
+                      Math.min(
+                        2.25,
+                        Math.max(
+                          0.6,
+                          +(z + (e.deltaY < 0 ? 0.12 : -0.12)).toFixed(2),
+                        ),
+                      ),
+                    );
+                  }
+                }}
+                className="overflow-auto p-3 sm:p-4"
+              >
+                <div
+                  style={{
+                    width:
+                      zoomLevel === 1
+                        ? "100%"
+                        : `${Math.round(zoomLevel * 100)}%`,
+                    maxWidth: zoomLevel === 1 ? "460px" : "none",
+                    transition: "width 0.16s ease-out",
+                  }}
+                  className="mx-auto"
+                >
+                  <canvas
+                    ref={canvasRef}
+                    className="mx-auto block h-auto w-full rounded-xl object-contain shadow-2xl"
+                  />
+                </div>
+              </div>
+
+              {/* Bottom Zoom Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-300">
+                <span className="text-[11px] text-slate-400">
+                  Ctrl + Scroll to zoom
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
+                    }
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomOut size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel(1)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold ${
+                      zoomLevel === 1
+                        ? "bg-[#E60023] text-white"
+                        : "bg-slate-800 text-slate-200"
+                    }`}
+                  >
+                    Auto Fit ({Math.round(zoomLevel * 100)}%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) =>
+                        Math.min(2.25, +(z + 0.15).toFixed(2)),
+                      )
+                    }
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomIn size={12} />
+                  </button>
+                  {[1.35, 1.75].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setZoomLevel(preset)}
+                      className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                        Math.abs(zoomLevel - preset) < 0.04
+                          ? "bg-[#E60023] text-white"
+                          : "bg-slate-800 text-slate-300"
+                      }`}
+                    >
+                      {Math.round(preset * 100)}%
+                    </button>
+                  ))}
+                  {zoomLevel !== 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel(1)}
+                      className="rounded-lg border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-300"
+                    >
+                      <RotateCcw size={11} />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-2">

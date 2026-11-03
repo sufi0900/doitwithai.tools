@@ -13,17 +13,21 @@ import {
   targetWords,
   type Phrase,
 } from "./analyze";
+
 const field =
   "mt-2 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm leading-7 text-slate-950 outline-none focus:ring-2 focus:ring-[#5271FF] dark:border-slate-600 dark:bg-slate-950 dark:text-white";
 const button =
   "min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold hover:border-[#5271FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5271FF] dark:border-slate-600";
+
 export default function KeywordDensityClient() {
-  const [text, setText] = useState("");
-  const [rawTargets, setRawTargets] = useState("");
+  const [text, setText] = useState(example);
+  const [rawTargets, setRawTargets] = useState("AI writing tools\nhuman review");
   const [exclude, setExclude] = useState(true);
   const [size, setSize] = useState(1);
-  const [selected, setSelected] = useState("");
-  const [status, setStatus] = useState("");
+  const [selected, setSelected] = useState("AI writing tools");
+  const [status, setStatus] = useState(
+    "Sample article pre-loaded. Select any phrase in the tables to inspect its matches in context.",
+  );
   const deferred = useDeferredValue(text);
   const report = useMemo(() => analyze(deferred, exclude), [deferred, exclude]);
   const targets = useMemo(() => {
@@ -61,6 +65,7 @@ export default function KeywordDensityClient() {
   );
   const rows = report.phrases[size - 1];
   const updating = deferred !== text;
+
   function download() {
     const combined = [...targetRows, ...report.phrases.flat()];
     const seen = new Set<string>();
@@ -84,6 +89,7 @@ export default function KeywordDensityClient() {
       "Report downloaded. Use it to compare phrase counts across your revisions.",
     );
   }
+
   function highlight() {
     if (!window.ranges.length) return deferred.slice(window.start, window.end);
     const parts: React.ReactNode[] = [];
@@ -100,6 +106,7 @@ export default function KeywordDensityClient() {
     parts.push(deferred.slice(cursor, window.end));
     return parts;
   }
+
   const table = (items: Phrase[], label: string) => (
     <div className="mt-4 max-h-96 overflow-auto rounded-xl border border-slate-200 dark:border-slate-600">
       <table className="w-full text-left text-xs">
@@ -129,7 +136,7 @@ export default function KeywordDensityClient() {
                 <button
                   type="button"
                   onClick={() => setSelected(p.phrase)}
-                  className="min-h-9 max-w-60 break-words text-left text-[#4662df] underline decoration-blue-300 dark:text-blue-200"
+                  className="min-h-9 max-w-60 break-words text-left text-[#4058D0] underline decoration-blue-300 dark:text-blue-200"
                   aria-pressed={selected === p.phrase}
                 >
                   {p.phrase}
@@ -148,6 +155,7 @@ export default function KeywordDensityClient() {
       )}
     </div>
   );
+
   return (
     <div id="keyword-checker" className="grid items-start gap-6 lg:grid-cols-2">
       <section className="min-w-0 rounded-[28px] border border-white/20 bg-white p-5 text-slate-950 dark:border-slate-700 dark:bg-[#1D2430] dark:text-white sm:p-7">
@@ -217,7 +225,7 @@ export default function KeywordDensityClient() {
         <label className="mt-5 flex items-start gap-3 text-sm leading-7">
           <input
             type="checkbox"
-            className="mt-1 h-4 w-4 accent-[#5271FF]"
+            className="mt-1 h-4 w-4 accent-[#4058D0]"
             checked={exclude}
             onChange={(e) => setExclude(e.target.checked)}
           />
@@ -249,7 +257,7 @@ export default function KeywordDensityClient() {
         <p
           role="status"
           aria-live="polite"
-          className="mt-4 text-sm leading-7 text-[#4662df] dark:text-blue-200"
+          className="mt-4 text-sm leading-7 text-[#4058D0] dark:text-blue-200"
         >
           {updating ? "Updating counts…" : status}
         </p>

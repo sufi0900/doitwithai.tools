@@ -11,8 +11,14 @@ import {
   FileCode2,
   GitBranch,
   Palette,
+  Plus,
   Printer,
+  RotateCcw,
   Sparkles,
+  Trash2,
+  Type,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import ToolRunOverlay, {
@@ -139,6 +145,9 @@ function wrapDiagramText(
   return lines;
 }
 
+const MIN_DIAGRAM_NODES = 3;
+const MAX_DIAGRAM_NODES = 6;
+
 export default function FrameworkMatrixDiagramBuilderClient() {
   const [input, setInput] = useState<FrameworkDiagramInput>(
     DEFAULT_FRAMEWORK_DIAGRAM_INPUT,
@@ -148,13 +157,14 @@ export default function FrameworkMatrixDiagramBuilderClient() {
     () =>
       buildDeterministicFrameworkDiagram(DEFAULT_FRAMEWORK_DIAGRAM_INPUT).nodes,
   );
-  const [themeId, setThemeId] = useState<SharedVisualThemeId>("cyber-violet");
+  const [themeId, setThemeId] = useState<SharedVisualThemeId>("royal-cobalt");
   const [customColors, setCustomColors] = useState({
-    bgStart: "#130924",
-    cardBg: "#241042",
-    accent: "#E879F9",
+    bgStart: "#0B1120",
+    cardBg: "#1E293B",
+    accent: "#4058d0",
     textMain: "#FFFFFF",
   });
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -175,9 +185,12 @@ export default function FrameworkMatrixDiagramBuilderClient() {
     setNodes(pack.nodes);
   }, [pack]);
 
+  const canAddNode = nodes.length < MAX_DIAGRAM_NODES;
+  const canRemoveNode = nodes.length > MIN_DIAGRAM_NODES;
+
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2800);
+    setTimeout(() => setToast(""), 3000);
   }
 
   async function handleGenerateAiDiagram(
@@ -213,6 +226,33 @@ export default function FrameworkMatrixDiagramBuilderClient() {
     setNodes((prev) =>
       prev.map((n) => (n.id === id ? { ...n, [field]: value } : n)),
     );
+  }
+
+  function addNode() {
+    if (!canAddNode) {
+      notify("Maximum 6 framework stages/quadrants reached.");
+      return;
+    }
+    const idx = nodes.length + 1;
+    setNodes((prev) => [
+      ...prev,
+      {
+        id: `node-${Date.now()}`,
+        tag: `STAGE 0${idx}`,
+        title: `Strategic Pillar #${idx}`,
+        detail: "Compound repeatable execution across every distribution channel.",
+      },
+    ]);
+    notify(`Added Stage #${idx} to diagram!`);
+  }
+
+  function removeNode(id: string) {
+    if (!canRemoveNode) {
+      notify("Framework diagrams require at least 3 stages/quadrants.");
+      return;
+    }
+    setNodes((prev) => prev.filter((n) => n.id !== id));
+    notify("Removed diagram stage.");
   }
 
   useEffect(() => {
@@ -333,18 +373,26 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         ctx.fill();
         ctx.stroke();
 
+        // Vertically center tag + title + detail inside each quadrant
+        ctx.font = "800 28px system-ui, -apple-system, sans-serif";
+        const ntLines = wrapDiagramText(ctx, node.title, qW - 52, 2);
+        ctx.font = "500 21px system-ui, -apple-system, sans-serif";
+        const ndLines = wrapDiagramText(ctx, node.detail, qW - 52, 4);
+        const totalBlockH =
+          38 + 18 + ntLines.length * 34 + 10 + ndLines.length * 28;
+        const startBlockY = y + Math.max(22, (qH - totalBlockH) / 2);
+
         ctx.fillStyle = accent;
         ctx.beginPath();
-        ctx.roundRect(x + 26, y + 24, 230, 38, 12);
+        ctx.roundRect(x + 26, startBlockY, 230, 38, 12);
         ctx.fill();
         ctx.fillStyle = "#FFFFFF";
         ctx.font = "900 17px system-ui, -apple-system, sans-serif";
-        ctx.fillText(node.tag.slice(0, 22), x + 42, y + 49);
+        ctx.fillText(node.tag.slice(0, 22), x + 42, startBlockY + 25);
 
         ctx.fillStyle = theme.textMain;
         ctx.font = "800 28px system-ui, -apple-system, sans-serif";
-        const ntLines = wrapDiagramText(ctx, node.title, qW - 52, 2);
-        let ty = y + 102;
+        let ty = startBlockY + 38 + 38;
         for (const l of ntLines) {
           ctx.fillText(l, x + 26, ty);
           ty += 34;
@@ -352,10 +400,9 @@ export default function FrameworkMatrixDiagramBuilderClient() {
 
         ctx.fillStyle = theme.textMuted;
         ctx.font = "500 21px system-ui, -apple-system, sans-serif";
-        const ndLines = wrapDiagramText(ctx, node.detail, qW - 52, 5);
-        ty += 8;
+        ty += 4;
         for (const l of ndLines) {
-          if (ty < y + qH - 18) {
+          if (ty < y + qH - 16) {
             ctx.fillText(l, x + 26, ty);
             ty += 28;
           }
@@ -379,7 +426,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       ctx.ellipse(cx, cy, radiusX, radiusY, 0, 0, Math.PI * 2);
       ctx.stroke();
 
-      activeNodes.forEach((node, idx) => {
+      activeNodes.forEach((_, idx) => {
         const angle = -Math.PI / 2 + (idx * (Math.PI * 2)) / activeNodes.length;
         const nx = cx + Math.cos(angle) * radiusX;
         const ny = cy + Math.sin(angle) * radiusY;
@@ -431,17 +478,17 @@ export default function FrameworkMatrixDiagramBuilderClient() {
 
         ctx.fillStyle = accent;
         ctx.font = "900 15px system-ui, -apple-system, sans-serif";
-        ctx.fillText(node.tag.slice(0, 20), nx + 18, ny + 28);
+        ctx.fillText(node.tag.slice(0, 20), nx + 18, ny + 30);
 
         ctx.fillStyle = theme.textMain;
         ctx.font = "800 21px system-ui, -apple-system, sans-serif";
         const tL = wrapDiagramText(ctx, node.title, cardW - 36, 1);
-        ctx.fillText(tL[0] || node.title, nx + 18, ny + 56);
+        ctx.fillText(tL[0] || node.title, nx + 18, ny + 58);
 
         ctx.fillStyle = theme.textMuted;
         ctx.font = "500 17px system-ui, -apple-system, sans-serif";
         const dL = wrapDiagramText(ctx, node.detail, cardW - 36, 3);
-        let dy = ny + 84;
+        let dy = ny + 86;
         for (const l of dL) {
           if (dy < ny + cardH - 12) {
             ctx.fillText(l, nx + 18, dy);
@@ -458,7 +505,6 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       const gap = 22;
       const pW = Math.floor((totalW - gap * 2) / 3);
 
-      // Roof Banner
       ctx.fillStyle = theme.accent;
       ctx.beginPath();
       ctx.roundRect(padX, bodyTop, totalW, roofH, 22);
@@ -482,14 +528,21 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         ctx.fill();
         ctx.stroke();
 
+        ctx.font = "800 26px system-ui, -apple-system, sans-serif";
+        const tL = wrapDiagramText(ctx, node.title, pW - 48, 2);
+        ctx.font = "500 20px system-ui, -apple-system, sans-serif";
+        const dL = wrapDiagramText(ctx, node.detail, pW - 48, 6);
+        const blockH = 30 + tL.length * 32 + 14 + dL.length * 28;
+        const startPillarY =
+          pillarTop + Math.max(28, (pillarH - blockH) / 2);
+
         ctx.fillStyle = col;
         ctx.font = "900 18px system-ui, -apple-system, sans-serif";
-        ctx.fillText(node.tag, x + 24, pillarTop + 42);
+        ctx.fillText(node.tag, x + 24, startPillarY + 18);
 
         ctx.fillStyle = theme.textMain;
         ctx.font = "800 26px system-ui, -apple-system, sans-serif";
-        const tL = wrapDiagramText(ctx, node.title, pW - 48, 2);
-        let ty = pillarTop + 84;
+        let ty = startPillarY + 56;
         for (const l of tL) {
           ctx.fillText(l, x + 24, ty);
           ty += 32;
@@ -497,15 +550,13 @@ export default function FrameworkMatrixDiagramBuilderClient() {
 
         ctx.fillStyle = theme.textMuted;
         ctx.font = "500 20px system-ui, -apple-system, sans-serif";
-        const dL = wrapDiagramText(ctx, node.detail, pW - 48, 7);
-        ty += 12;
+        ty += 8;
         for (const l of dL) {
           ctx.fillText(l, x + 24, ty);
           ty += 28;
         }
       });
 
-      // Foundation Bar
       const fNode = activeNodes[3] || activeNodes[0];
       const fTop = pillarTop + pillarH + 22;
       ctx.fillStyle = theme.cardBg;
@@ -523,14 +574,19 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         fTop + 64,
       );
     } else {
-      // Layered Pyramid, Iceberg, Staircase, Bow-Tie, or Process Workflow Chain
+      // Layered Pyramid, Iceberg, Staircase, Bow-Tie, or Process Workflow Chain — Vertically Centered
       const count = activeNodes.length;
       const rowGap = 16;
-      const rowH = Math.floor((availH - rowGap * (count - 1)) / count);
+      const rowH = Math.min(
+        136,
+        Math.floor((availH - rowGap * (count - 1)) / count),
+      );
+      const totalRowsH = count * rowH + (count - 1) * rowGap;
+      const startRowsY = bodyTop + Math.max(0, (availH - totalRowsH) / 2);
       const maxW = W - padX * 2;
 
       activeNodes.forEach((node, idx) => {
-        const y = bodyTop + idx * (rowH + rowGap);
+        const y = startRowsY + idx * (rowH + rowGap);
         let barW = maxW;
         let x = padX;
         if (input.template === "layered-pyramid") {
@@ -599,7 +655,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
       <ToolRunOverlay
         active={loading}
         title="Synthesizing Strategic Framework & Rendering Diagram..."
-        description="Mapping your content into 12 executive diagram layouts with hover PNG, SVG, and PDF export."
+        description="Mapping your content into 12 executive diagram layouts with PNG, SVG, and PDF export."
       />
 
       {/* 1-CLICK ARTICLE URL EXTRACTION */}
@@ -644,32 +700,31 @@ export default function FrameworkMatrixDiagramBuilderClient() {
         }}
       />
 
-      {toast && (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
-        >
-          <CheckCircle2 size={15} />
-          <span>{toast}</span>
-        </div>
-      )}
-
       <div
         ref={resultsRef}
         tabIndex={-1}
         className="shadow-xs space-y-5 rounded-3xl border border-slate-200 bg-white p-5 focus:outline-none dark:border-slate-800 dark:bg-[#111827] sm:p-6"
       >
+        {toast && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+          >
+            <CheckCircle2 size={15} />
+            <span>{toast}</span>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <PlatformBrandIcon brand="matrix-diagram" size={36} />
             <div>
-              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
                 <GitBranch size={14} /> 12 Framework &amp; Matrix Templates · 10
                 Themes + Custom Pickers
               </span>
               <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                Strategic Framework &amp; Diagram Studio (Hover Over Diagram to
-                Download)
+                Strategic Framework &amp; Diagram Studio (1200×1200 HD)
               </h2>
             </div>
           </div>
@@ -685,10 +740,12 @@ export default function FrameworkMatrixDiagramBuilderClient() {
           </button>
         </div>
 
-        <details className="rounded-2xl border border-slate-400/30 p-4">
-          <summary className="font-semibold">Choose a template</summary>
+        {/* OPEN BY DEFAULT SO ALL 12 DIAGRAM TEMPLATES ARE IMMEDIATELY VISIBLE */}
+        <details open className="rounded-2xl border border-slate-400/30 p-4">
+          <summary className="cursor-pointer font-extrabold text-slate-900 dark:text-white">
+            Choose a Framework or Matrix Template (12 Executive Layouts)
+          </summary>
           <div className="mt-4">
-            {/* 12 Diagram Template Selector Grid */}
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
               {DIAGRAM_TEMPLATES.map((tpl) => (
                 <button
@@ -704,7 +761,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                   }`}
                 >
                   <TemplateThumbnail id={tpl.id} category="mindmap" />
-                  <strong className="block text-xs font-extrabold text-slate-900 dark:text-white">
+                  <strong className="mt-1 block text-xs font-extrabold text-slate-900 dark:text-white">
                     {tpl.label}
                   </strong>
                   <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
@@ -715,6 +772,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
             </div>
           </div>
         </details>
+
         {/* 10 Color Themes + Custom Brand Color Pickers */}
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
@@ -761,7 +819,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                 <input
                   type="color"
                   value={
-                    theme.cardBg.startsWith("#") ? theme.cardBg : "#241042"
+                    theme.cardBg.startsWith("#") ? theme.cardBg : "#1E293B"
                   }
                   onChange={(e) => {
                     setThemeId("custom-brand");
@@ -802,13 +860,16 @@ export default function FrameworkMatrixDiagramBuilderClient() {
           </div>
         </div>
 
-        {/* 2-COLUMN WORKSPACE: LEFT = QUADRANT / NODE EDITOR, RIGHT = HOVERABLE DIAGRAM CANVAS */}
+        {/* 2-COLUMN WORKSPACE: LEFT = QUADRANT / NODE EDITOR, RIGHT = ZOOMABLE DIAGRAM CANVAS */}
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.7fr)_minmax(0,1.3fr)]">
           <div className="space-y-4">
             <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                  Diagram Headline
+                <label className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
+                  <span>Diagram Headline</span>
+                  <span className="text-[10px] text-[#4058d0]">
+                    {input.diagramTitle.length}/72c (~80% optimal)
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -859,61 +920,100 @@ export default function FrameworkMatrixDiagramBuilderClient() {
               </div>
             </div>
 
-            <div className="max-h-[450px] space-y-2.5 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                Edit Quadrants / Stages ({nodes.length})
-              </h3>
-              {nodes.map((node, i) => (
-                <div
-                  key={node.id}
-                  className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950"
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
+                  Edit Quadrants / Stages ({nodes.length} / {MAX_DIAGRAM_NODES})
+                </h3>
+                <button
+                  type="button"
+                  onClick={addNode}
+                  disabled={!canAddNode}
+                  style={{ cursor: canAddNode ? "pointer" : "not-allowed" }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#3452d1] px-2.5 py-1 text-xs font-extrabold text-white disabled:opacity-45"
                 >
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    <div>
-                      <input
-                        type="text"
-                        value={node.tag}
-                        onChange={(e) =>
-                          updateNode(node.id, "tag", e.target.value)
+                  <Plus size={12} /> Add Stage
+                </button>
+              </div>
+
+              <div className="max-h-[450px] space-y-2.5 overflow-y-auto pr-1">
+                {nodes.map((node, i) => (
+                  <div
+                    key={node.id}
+                    className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">
+                        Stage / Quadrant #{i + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeNode(node.id)}
+                        disabled={!canRemoveNode}
+                        style={{
+                          backgroundColor: "#e11d48",
+                          cursor: canRemoveNode ? "pointer" : "not-allowed",
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold text-white disabled:opacity-45"
+                        title={
+                          canRemoveNode
+                            ? "Remove this stage"
+                            : "Minimum 3 stages required"
                         }
-                        placeholder={`Node #${i + 1} Tag`}
-                        className="w-full rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-extrabold text-purple-600 dark:border-slate-700 dark:bg-slate-900"
-                      />
+                      >
+                        <Trash2 size={11} /> Remove
+                      </button>
                     </div>
-                    <div className="sm:col-span-2">
-                      <input
-                        type="text"
-                        value={node.title}
-                        onChange={(e) =>
-                          updateNode(node.id, "title", e.target.value)
-                        }
-                        placeholder="Quadrant / Stage Title"
-                        className="w-full rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
-                      />
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div>
+                        <input
+                          type="text"
+                          value={node.tag}
+                          onChange={(e) =>
+                            updateNode(node.id, "tag", e.target.value)
+                          }
+                          placeholder={`Node #${i + 1} Tag`}
+                          className="w-full rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-extrabold text-[#4058d0] dark:border-slate-700 dark:bg-slate-900"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <input
+                          type="text"
+                          value={node.title}
+                          onChange={(e) =>
+                            updateNode(node.id, "title", e.target.value)
+                          }
+                          placeholder="Quadrant / Stage Title"
+                          className="w-full rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
+                        />
+                      </div>
                     </div>
+                    <textarea
+                      rows={2}
+                      value={node.detail}
+                      onChange={(e) =>
+                        updateNode(node.id, "detail", e.target.value)
+                      }
+                      className="w-full rounded border border-slate-200 bg-slate-50 p-2 text-xs dark:border-slate-700 dark:bg-slate-900"
+                    />
                   </div>
-                  <textarea
-                    rows={2}
-                    value={node.detail}
-                    onChange={(e) =>
-                      updateNode(node.id, "detail", e.target.value)
-                    }
-                    className="w-full rounded border border-slate-200 bg-slate-50 p-2 text-xs dark:border-slate-700 dark:bg-slate-900"
-                  />
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* RIGHT: HOVERABLE 1200x1200 DIAGRAM CANVAS WITH PNG / SVG / PDF OVERLAY */}
+          {/* RIGHT: 1200x1200 DIAGRAM CANVAS WITH PERSISTENT TOP BAR + DIRECT INPUT + BOTTOM ZOOM */}
           <div className="space-y-4">
-            <div className="group relative flex flex-col overflow-hidden rounded-2xl border-2 border-slate-300 bg-slate-950 p-2.5 shadow-xl dark:border-slate-700">
-              {/* FLOATING HOVER DOWNLOAD BAR */}
+            <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-[#070b14] shadow-xl dark:border-slate-700">
+              {/* Persistent Top Export Bar */}
               <div
                 data-export-toolbar
-                className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-end p-4 opacity-95 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100"
+                className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5"
               >
-                <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/20 bg-slate-900/90 p-2 shadow-2xl backdrop-blur-md">
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
+                  1200×1200 Diagram Export
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() =>
@@ -923,7 +1023,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                         () => notify("Downloaded 1200×1200 Diagram (.PNG)!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl bg-[#4058d0] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#3452d1]"
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#4058d0] px-3 py-1.5 text-xs font-extrabold text-white hover:bg-[#3452d1]"
                   >
                     <Download size={13} />
                     Download PNG
@@ -938,7 +1038,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                         () => notify("Downloaded Diagram (.SVG)!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl bg-[#3452d1] px-3 py-2 text-xs font-extrabold text-white hover:bg-[#2842b5]"
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#3452d1] px-2.5 py-1.5 text-xs font-extrabold text-white hover:bg-[#2842b5]"
                   >
                     <FileCode2 size={13} />
                     SVG
@@ -952,7 +1052,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                         () => notify("Opened PDF Export Dialog!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-emerald-500"
+                    className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-extrabold text-white hover:bg-emerald-500"
                   >
                     <Printer size={13} />
                     PDF
@@ -964,7 +1064,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                         notify("Copied Diagram Image to Clipboard!"),
                       )
                     }
-                    className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-2 text-xs font-bold text-white hover:bg-white/20"
+                    className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/20"
                   >
                     <Copy size={12} />
                     Copy
@@ -972,18 +1072,122 @@ export default function FrameworkMatrixDiagramBuilderClient() {
                 </div>
               </div>
 
-              <div
-                data-export-hint
-                className="backdrop-blur-xs pointer-events-none absolute right-5 top-5 z-10 hidden items-center gap-1.5 rounded-full border border-white/20 bg-slate-900/80 px-3 py-1 text-[11px] font-bold text-white shadow-md transition-opacity sm:inline-flex sm:group-hover:opacity-0"
-              >
-                <Download size={12} className="text-[#4058d0]" />
-                <span>Hover to Download (PNG · SVG · PDF)</span>
+              {/* Direct In-Canvas Headline Editor Bar */}
+              <div className="flex items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-white">
+                <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-[#9aabff]">
+                  <Type size={13} /> Diagram Title:
+                </span>
+                <input
+                  type="text"
+                  value={input.diagramTitle}
+                  onChange={(e) =>
+                    setInput((prev) => ({
+                      ...prev,
+                      diagramTitle: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1 text-xs font-semibold text-white focus:border-[#5271ff] focus:outline-none"
+                />
               </div>
 
-              <canvas
-                ref={canvasRef}
-                className="mx-auto block aspect-square h-auto w-full rounded-xl"
-              />
+              {/* Zoomable Canvas Viewport */}
+              <div
+                onWheel={(e) => {
+                  if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    setZoomLevel((z) =>
+                      Math.min(
+                        2.25,
+                        Math.max(
+                          0.6,
+                          +(z + (e.deltaY < 0 ? 0.12 : -0.12)).toFixed(2),
+                        ),
+                      ),
+                    );
+                  }
+                }}
+                className="overflow-auto p-3 sm:p-5"
+              >
+                <div
+                  style={{
+                    width:
+                      zoomLevel === 1
+                        ? "100%"
+                        : `${Math.round(zoomLevel * 100)}%`,
+                    maxWidth: zoomLevel === 1 ? "620px" : "none",
+                    transition: "width 0.16s ease-out",
+                  }}
+                  className="mx-auto"
+                >
+                  <canvas
+                    ref={canvasRef}
+                    className="mx-auto block aspect-square h-auto w-full rounded-xl shadow-2xl"
+                  />
+                </div>
+              </div>
+
+              {/* Bottom Zoom Toolbar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-4 py-2 text-xs text-slate-300">
+                <span className="text-[11px] text-slate-400">
+                  Ctrl + Scroll to zoom
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
+                    }
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomOut size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel(1)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold ${
+                      zoomLevel === 1
+                        ? "bg-[#4058d0] text-white"
+                        : "bg-slate-800 text-slate-200"
+                    }`}
+                  >
+                    Auto Fit ({Math.round(zoomLevel * 100)}%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setZoomLevel((z) =>
+                        Math.min(2.25, +(z + 0.15).toFixed(2)),
+                      )
+                    }
+                    className="rounded-lg bg-slate-800 px-2 py-1 text-[11px] font-bold text-white hover:bg-slate-700"
+                  >
+                    <ZoomIn size={12} />
+                  </button>
+                  {[1.35, 1.75].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setZoomLevel(preset)}
+                      className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                        Math.abs(zoomLevel - preset) < 0.04
+                          ? "bg-[#3452d1] text-white"
+                          : "bg-slate-800 text-slate-300"
+                      }`}
+                    >
+                      {Math.round(preset * 100)}%
+                    </button>
+                  ))}
+                  {zoomLevel !== 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel(1)}
+                      className="rounded-lg border border-slate-700 px-2 py-1 text-[11px] font-bold text-slate-300"
+                    >
+                      <RotateCcw size={11} />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <button

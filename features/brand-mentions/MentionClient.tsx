@@ -14,7 +14,6 @@ import ToolRunOverlay, {
   paintToolFeedback,
 } from "../tool-ui/ToolRunOverlay";
 import {
-  defaultSettings,
   labels,
   type Settings,
   type MentionReport,
@@ -28,26 +27,45 @@ import {
   exampleSettings,
   type Fields,
 } from "./io";
+import { analyzeMentions } from "./analyze";
 import shared from "../backlink-verifier/backlinks.module.css";
 import styles from "./mentions.module.css";
 
 type Filter = Status | "all" | "has-link" | "shortlist";
 const editable = new Set(["unlinked", "mixed", "elsewhere", "review"]);
+
+function createInitialMentionReports(): MentionReport[] {
+  try {
+    return [
+      analyzeMentions(
+        exampleHtml,
+        "https://publisher.example/resources",
+        exampleSettings,
+        { method: "pasted" },
+      ),
+    ];
+  } catch {
+    return [];
+  }
+}
+
 export default function MentionClient() {
-  const [settings, setSettings] = useState<Settings>(defaultSettings),
-    [sources, setSources] = useState(""),
-    [html, setHtml] = useState(""),
-    [aliases, setAliases] = useState("");
-  const [mode, setMode] = useState<"live" | "pasted">("live"),
-    [advanced, setAdvanced] = useState(false);
+  const [settings, setSettings] = useState<Settings>(exampleSettings),
+    [sources, setSources] = useState("https://publisher.example/resources"),
+    [html, setHtml] = useState(exampleHtml),
+    [aliases, setAliases] = useState(() => exampleSettings.aliases.join("\n"));
+  const [mode, setMode] = useState<"live" | "pasted">("pasted"),
+    [advanced, setAdvanced] = useState(true);
   const [errors, setErrors] = useState<Fields>({}),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
-  const [reports, setReports] = useState<MentionReport[]>([]),
-    [runSettings, setRunSettings] = useState<Settings>(defaultSettings),
+  const [reports, setReports] = useState<MentionReport[]>(() =>
+      createInitialMentionReports(),
+    ),
+    [runSettings, setRunSettings] = useState<Settings>(exampleSettings),
     [shortlist, setShortlist] = useState<string[]>([]);
   const [busy, setBusy] = useState(false),
-    [planned, setPlanned] = useState(0),
+    [planned, setPlanned] = useState(1),
     [filter, setFilter] = useState<Filter>("all"),
     [query, setQuery] = useState("");
   const [copy, setCopy] = useState(""),
@@ -646,12 +664,8 @@ export default function MentionClient() {
               the search.
             </p>
           )}
-          {visible.map((report, index) => (
-            <details
-              key={report.sourceUrl}
-              className={shared.source}
-              open={index === 0}
-            >
+          {visible.map((report) => (
+            <details key={report.sourceUrl} className={shared.source} open>
               <summary>
                 <span className={styles.status} data-status={report.status}>
                   {labels[report.status]}
