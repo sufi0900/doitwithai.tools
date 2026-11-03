@@ -20,9 +20,9 @@ import CitationReadinessEducation from "@/features/citation-readiness/CitationRe
 const pageUrl = "https://doitwithai.tools/tools/ai-citation-readiness-checker";
 
 export const metadata: Metadata = {
-  title: "AI Citation Readiness Checker | Free GEO Tool",
+  title: "Free GEO Audit Tool | AI Citation Readiness Checker",
   description:
-    "Review opening paragraphs, crawler rules, snippet controls, and sourcing cues. Export an evidence-based action plan without predicting AI citations.",
+    "Run a free GEO audit to check AI citation readiness. Review page access, content clarity, and sourcing from a URL, draft, or HTML. Export an action plan.",
   keywords: [
     "AI citation checker",
     "answer engine optimization",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: pageUrl,
-    title: "AI Citation Readiness Checker | Free GEO Tool",
+    title: "Free GEO Audit Tool | AI Citation Readiness Checker",
     description:
       "Review page structure, answer clarity, and evidence from a URL or pasted draft.",
     siteName: "Do It With AI Tools",
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Citation Readiness Checker | Free GEO Tool",
+    title: "Free GEO Audit Tool | AI Citation Readiness Checker",
     description:
       "Review page structure, answer clarity, and supporting evidence with an editable checklist.",
     images: ["https://doitwithai.tools/ogimage.png"],
@@ -70,6 +70,16 @@ export const metadata: Metadata = {
 };
 
 const faqs = [
+  {
+    question: "Is this a free GEO tool for checking AI citation readiness?",
+    answer:
+      "Yes. Review one public URL, a pasted draft, or supplied HTML without creating an account. The dashboard shows available access evidence, content structure, and source cues, with CSV and JSON exports. Optional AI passage review and performance tests may depend on service availability and usage limits.",
+  },
+  {
+    question: "What is a GEO audit compared with an SEO audit?",
+    answer:
+      "GEO means generative engine optimization. This page-level audit helps you review how accessible, clear, and supportable your content is for readers and AI search. It complements technical and on-page SEO checks; it does not crawl an entire website or monitor actual AI answers.",
+  },
   {
     question: "Does this tool detect actual AI citations?",
     answer:
@@ -177,7 +187,9 @@ export default function CitationReadinessPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+        }}
       />
 
       <div
@@ -197,7 +209,9 @@ export default function CitationReadinessPage() {
               Tools
             </Link>
             <span>/</span>
-            <span className="text-blue-200">AI Citation Readiness Checker</span>
+            <span aria-current="page" className="text-blue-200">
+              AI Citation Readiness Checker
+            </span>
           </nav>
 
           <div className="mx-auto max-w-5xl text-center">
@@ -206,20 +220,21 @@ export default function CitationReadinessPage() {
               readiness
             </div>
             <h1 className="mt-7 text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
-              AI Citation Readiness Checker for
+              AI Citation Readiness Checker
               <span className={`block ${toolHeroHeading}`}>
-                Clarity, Access, and Evidence
+                Free GEO Audit Tool
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-              Review crawler access, content structure, authorship, and source
-              cues in one dashboard. Open highlighted passages only when you
-              need article review.
+              Check one page’s AI citation readiness from a public URL, draft,
+              or HTML. Review available crawler rules, snippet controls, content
+              clarity, and source cues, then export an evidence-based action
+              plan.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
               {[
-                [ListChecks, "Evidence-based action plan"],
-                [ShieldCheck, "Review before publishing"],
+                [ListChecks, "Free page-level audit"],
+                [ShieldCheck, "No account required"],
               ].map(([Icon, label]) => {
                 const FeatureIcon = Icon as typeof ListChecks;
                 return (
@@ -233,6 +248,10 @@ export default function CitationReadinessPage() {
                 );
               })}
             </div>
+            <p className="mx-auto mt-5 max-w-3xl text-sm leading-7 text-slate-400">
+              Readiness findings help you review your content. They do not
+              predict citations, certify indexing, or measure AI rankings.
+            </p>
             <a
               href="#citation-methodology"
               className="mt-5 block text-sm font-semibold text-blue-200 underline"
@@ -243,7 +262,7 @@ export default function CitationReadinessPage() {
               href="#ai-citation-readiness-checker"
               className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
             >
-              Check readiness <ArrowRight className="h-4 w-4" />
+              Run your free GEO audit <ArrowRight className="h-4 w-4" />
             </a>
           </div>
 
@@ -253,8 +272,8 @@ export default function CitationReadinessPage() {
         </div>
       </div>
 
-      <Methodology />
       <CitationReadinessEducation />
+      <Methodology />
 
       <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">

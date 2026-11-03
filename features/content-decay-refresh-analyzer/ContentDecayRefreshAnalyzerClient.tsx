@@ -26,6 +26,9 @@ import ToolRunOverlay, {
 import {
   DIAGNOSIS_META,
   analyzeContentDecayCsv,
+  analyzeContentDecayPeriods,
+  refreshBriefText,
+  type RefreshBrief,
   buildContentDecayDocx,
   exportContentDecayCsv,
   type ContentDecayReport,
@@ -33,11 +36,11 @@ import {
 } from "./model";
 
 const SAMPLE_DECAY_CSV = `Page,Previous Clicks,Current Clicks,Previous Impressions,Current Impressions,Previous Position,Current Position
-https://doitwithai.tools/guides/best-ai-seo-tools-2024,940,410,18500,16900,2.3,6.8
-https://doitwithai.tools/ai-seo/what-is-semantic-seo,680,390,22400,23100,1.9,2.1
-https://doitwithai.tools/guides/link-building-checklist-2025,520,240,12200,11400,3.1,7.9
-https://doitwithai.tools/prompts/chatgpt-seo-prompts,490,310,19800,11200,2.8,3.0
-https://doitwithai.tools/tools/schema-markup-generator,610,790,15400,19200,3.4,2.2`;
+https://example.com/guides/tool-comparison-2024,940,410,18500,16900,2.3,6.8
+https://example.com/guides/semantic-seo,680,390,22400,23100,1.9,2.1
+https://example.com/guides/link-building-2025,520,240,12200,11400,3.1,7.9
+https://example.com/prompts/seo,490,310,19800,11200,2.8,3.0
+https://example.com/tools/schema,610,790,15400,19200,3.4,2.2`;
 
 const control =
   "w-full rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm leading-6 focus:outline-none focus:ring-2 focus:ring-[#5271ff] dark:border-slate-600";
@@ -57,6 +60,15 @@ export default function ContentDecayRefreshAnalyzerClient() {
   const [report, setReport] = useState<ContentDecayReport | null>(
     buildInitialSampleDecayReport,
   );
+  const [inputMode, setInputMode] = useState<"comparison" | "periods">(
+    "comparison",
+  );
+  const [previousInput, setPreviousInput] = useState("");
+  const [currentInput, setCurrentInput] = useState("");
+  const [isSample, setIsSample] = useState(true);
+  const [dirty, setDirty] = useState(false);
+  const [selectedId, setSelectedId] = useState("");
+  const uploadVersion = useRef(0);
   const [filter, setFilter] = useState<DecayDiagnosis | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [busy, setBusy] = useState(false);
@@ -73,13 +85,20 @@ export default function ContentDecayRefreshAnalyzerClient() {
   }, [busy, revision]);
 
   function loadSample() {
+    uploadVersion.current++;
+    setInputMode("comparison");
     setCsvInput(SAMPLE_DECAY_CSV);
+    setIsSample(true);
+    setDirty(false);
+    setFilter("all");
+    setSearchQuery("");
+    setSelectedId("");
     setError("");
     const built = analyzeContentDecayCsv(SAMPLE_DECAY_CSV);
     setReport(built);
     setRevision((r) => r + 1);
     setFeedback(
-      "Loaded 5-page GSC comparison dataset and separated true ranking decay from SERP CTR compression.",
+      "Illustrative five-page sample loaded. These are demonstration numbers, not measured website results.",
     );
   }
 
@@ -113,7 +132,7 @@ export default function ContentDecayRefreshAnalyzerClient() {
                 ...r,
                 refreshPlaybook: [
                   ...r.refreshPlaybook,
-                  "Add 2–3 contextual internal links from high-authority hub articles.",
+                  "Describe a specific improvement and the evidence needed before publishing.",
                 ],
               }
             : r,
@@ -122,13 +141,36 @@ export default function ContentDecayRefreshAnalyzerClient() {
     });
   }
 
-  async function handleFileUpload(e: ChangeEvent<HTMLInputElement>) {
+  async function handleFileUpload(
+    e: ChangeEvent<HTMLInputElement>,
+    target: "comparison" | "previous" | "current" = "comparison",
+  ) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const text = await file.text();
-    setCsvInput(text);
-    setError("");
-    setFeedback(`Loaded ${file.name}. Click Analyze Content Decay to run.`);
+    const version = ++uploadVersion.current;
+    try {
+      if (file.size > 2_000_000)
+        throw new Error("Choose a CSV smaller than 2 MB.");
+      const text = await file.text();
+      if (version !== uploadVersion.current) return;
+      if (target === "comparison") setCsvInput(text);
+      else if (target === "previous") setPreviousInput(text);
+      else setCurrentInput(text);
+      setDirty(true);
+      setError("");
+      setFeedback(
+        `Loaded ${file.name}. Build the refresh queue to update results.`,
+      );
+    } catch (err) {
+      if (version === uploadVersion.current)
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not read this file. Paste the CSV instead.",
+        );
+    } finally {
+      e.target.value = "";
+    }
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -137,9 +179,13 @@ export default function ContentDecayRefreshAnalyzerClient() {
     setError("");
     setFeedback("");
 
-    if (!csvInput.trim()) {
+    if (
+      inputMode === "comparison"
+        ? !csvInput.trim()
+        : !previousInput.trim() || !currentInput.trim()
+    ) {
       setError(
-        "Paste your GSC page comparison CSV rows or click 'Load Sample GSC Decay Audit'.",
+        "Paste your GSC page comparison CSV rows or click 'Try illustrative sample'.",
       );
       return;
     }
@@ -147,7 +193,10 @@ export default function ContentDecayRefreshAnalyzerClient() {
     setBusy(true);
     try {
       await paintToolFeedback();
-      const built = analyzeContentDecayCsv(csvInput);
+      const built =
+        inputMode === "comparison"
+          ? analyzeContentDecayCsv(csvInput)
+          : analyzeContentDecayPeriods(previousInput, currentInput);
       if (!built.rows.length) {
         setError(
           "Could not parse rows. Format as: Page, Previous Clicks, Current Clicks, Previous Impressions, Current Impressions, Previous Position, Current Position.",
@@ -155,9 +204,23 @@ export default function ContentDecayRefreshAnalyzerClient() {
         return;
       }
       setReport(built);
+      setIsSample(
+        inputMode === "comparison" &&
+          csvInput.trim() === SAMPLE_DECAY_CSV.trim(),
+      );
+      setDirty(false);
+      setFilter("all");
+      setSearchQuery("");
+      setSelectedId("");
       setRevision((r) => r + 1);
       setFeedback(
-        `Analyzed ${built.rows.length} URLs and prioritized refresh playbooks by recoverable clicks.`,
+        `Compared ${built.rows.length} matched items. Review the evidence and complete an editorial brief before publishing.`,
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not analyze this data. Check the CSV format.",
       );
     } finally {
       setBusy(false);
@@ -186,6 +249,32 @@ export default function ContentDecayRefreshAnalyzerClient() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  const selectedRow =
+    report?.rows.find((row) => row.id === selectedId) ?? report?.rows[0];
+  function updateBrief(field: keyof RefreshBrief, value: string) {
+    if (!selectedRow) return;
+    setReport((prev) =>
+      prev
+        ? {
+            ...prev,
+            rows: prev.rows.map((row) =>
+              row.id === selectedRow.id
+                ? { ...row, brief: { ...row.brief, [field]: value } }
+                : row,
+            ),
+          }
+        : prev,
+    );
+  }
+  async function copyBrief() {
+    if (!selectedRow) return;
+    try {
+      await navigator.clipboard.writeText(refreshBriefText(selectedRow));
+      setFeedback("Copied selected refresh brief.");
+    } catch {
+      setError("Clipboard unavailable. Download the Word brief instead.");
+    }
+  }
   function handleDownload(format: "csv" | "docx") {
     if (!report) return;
     if (format === "csv") {
@@ -213,53 +302,149 @@ export default function ContentDecayRefreshAnalyzerClient() {
       <ToolRunOverlay
         active={busy}
         title="Analyzing content decay & refresh priorities"
-        description="Comparing period-over-period clicks, impressions, and average positions to separate true ranking decay from SERP CTR compression."
+        description="Comparing supplied metrics and preparing evidence-led editing checklists."
       />
 
-      <form onSubmit={handleSubmit} noValidate className={panel}>
+      <form
+        id="content-refresh-tool"
+        aria-busy={busy}
+        onSubmit={handleSubmit}
+        noValidate
+        className={panel}
+      >
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="flex items-center gap-2.5 text-2xl font-extrabold">
               <TrendingDown aria-hidden className="text-[#5271ff]" />
-              Diagnose Content Decay & Build Your Refresh Queue
+              Find pages to refresh
             </h2>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              Import a Google Search Console period-comparison CSV to separate
-              true ranking decay from AI Overview CTR compression and seasonality.
+              Compare equal-length Search Console periods. Your CSV is processed
+              in this browser; no Google login or CMS connection is needed.
             </p>
           </div>
           <button type="button" onClick={loadSample} className={secondaryBtn}>
             <Sparkles size={16} className="text-[#5271ff]" />
-            Load Sample GSC Decay Audit
+            Try illustrative sample
           </button>
         </div>
 
-        <div className="mt-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <label htmlFor="decay-csv-input" className="block text-sm font-bold">
-              GSC Page Comparison CSV Rows (Page, Prev Clicks, Curr Clicks, Prev
-              Impr, Curr Impr, Prev Pos, Curr Pos)
-            </label>
-            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800">
-              <Upload size={14} />
-              Upload GSC .CSV
-              <input
-                type="file"
-                accept=".csv,.tsv,.txt"
-                onChange={handleFileUpload}
-                className="sr-only"
-              />
-            </label>
-          </div>
-          <textarea
-            id="decay-csv-input"
-            rows={7}
-            value={csvInput}
-            onChange={(e) => setCsvInput(e.target.value)}
-            placeholder={SAMPLE_DECAY_CSV}
-            className={`${control} mt-2 font-mono text-xs`}
-          />
+        <div
+          className="mt-5 flex flex-wrap gap-2"
+          role="group"
+          aria-label="CSV input format"
+        >
+          {(
+            [
+              ["comparison", "Comparison CSV"],
+              ["periods", "Two period exports"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              disabled={busy}
+              aria-pressed={inputMode === value}
+              className={inputMode === value ? primaryBtn : secondaryBtn}
+              onClick={() => {
+                uploadVersion.current++;
+                setInputMode(value);
+                setDirty(true);
+                setError("");
+              }}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+        <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+          Use the same Pages or Queries grouping, search type, country, and
+          device filters in both periods.{" "}
+          <a href="#prepare-refresh-data" className="font-bold underline">
+            See export instructions and column order
+          </a>
+          .
+        </p>
+        {inputMode === "periods" && (
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            {(
+              [
+                [
+                  "previous",
+                  "Previous period",
+                  previousInput,
+                  setPreviousInput,
+                ],
+                ["current", "Current period", currentInput, setCurrentInput],
+              ] as const
+            ).map(([target, label, value, setter]) => (
+              <div key={target}>
+                <label
+                  className="block text-sm font-bold"
+                  htmlFor={`refresh-${target}`}
+                >
+                  {label} Pages.csv or Queries.csv
+                </label>
+                <input
+                  type="file"
+                  aria-label={`Upload ${label} CSV`}
+                  accept=".csv,.tsv,.txt"
+                  disabled={busy}
+                  onChange={(event) => handleFileUpload(event, target)}
+                  className="my-2 block w-full text-xs"
+                />
+                <textarea
+                  id={`refresh-${target}`}
+                  rows={7}
+                  className={`${control} font-mono text-xs`}
+                  value={value}
+                  onChange={(event) => {
+                    uploadVersion.current++;
+                    setter(event.target.value);
+                    setDirty(true);
+                  }}
+                  placeholder="Top pages,Clicks,Impressions,CTR,Position"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+        {inputMode === "comparison" && (
+          <div className="mt-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label
+                htmlFor="decay-csv-input"
+                className="block text-sm font-bold"
+              >
+                GSC Page Comparison CSV Rows (Page, Prev Clicks, Curr Clicks,
+                Prev Impr, Curr Impr, Prev Pos, Curr Pos)
+              </label>
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800">
+                <Upload size={14} />
+                Upload GSC .CSV
+                <input
+                  type="file"
+                  accept=".csv,.tsv,.txt"
+                  onChange={(event) => handleFileUpload(event)}
+                  disabled={busy}
+                  className="sr-only"
+                />
+              </label>
+            </div>
+            <textarea
+              id="decay-csv-input"
+              rows={7}
+              value={csvInput}
+              onChange={(e) => {
+                uploadVersion.current++;
+                setCsvInput(e.target.value);
+                setDirty(true);
+              }}
+              placeholder={SAMPLE_DECAY_CSV}
+              className={`${control} mt-2 font-mono text-xs`}
+            />
+          </div>
+        )}
 
         {error && (
           <div
@@ -283,13 +468,19 @@ export default function ContentDecayRefreshAnalyzerClient() {
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <button type="submit" disabled={busy} className={primaryBtn}>
             <TrendingDown size={18} />
-            Analyze Content Decay & Refresh Priority
+            Build content refresh queue
           </button>
           {report && (
             <button
               type="button"
               onClick={() => {
+                uploadVersion.current++;
                 setReport(null);
+                setCsvInput("");
+                setPreviousInput("");
+                setCurrentInput("");
+                setDirty(false);
+                setError("");
                 setFeedback("");
               }}
               className={secondaryBtn}
@@ -301,6 +492,15 @@ export default function ContentDecayRefreshAnalyzerClient() {
         </div>
       </form>
 
+      {dirty && report && (
+        <p
+          role="status"
+          className="mt-5 rounded-xl border border-amber-300 p-4 text-sm"
+        >
+          Inputs changed. Results and exports below still describe the previous
+          analysis.
+        </p>
+      )}
       {report && (
         <section
           ref={resultRef}
@@ -309,16 +509,33 @@ export default function ContentDecayRefreshAnalyzerClient() {
           className="mt-10 space-y-8 focus:outline-none"
         >
           <div className={panel}>
+            {isSample && (
+              <p className="mb-4 rounded-xl bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100">
+                <strong>Illustrative sample:</strong> example.com URLs and
+                invented demonstration metrics. Replace them with your exports
+                for a real review.
+              </p>
+            )}
+            {report.warnings.map((note) => (
+              <p
+                key={note}
+                className="mb-3 text-sm leading-7 text-slate-600 dark:text-slate-300"
+              >
+                {note}
+              </p>
+            ))}
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-6 dark:border-slate-700">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#5271ff]">
-                  Root-Cause Decay Triage · {report.rows.length} URLs · Editable Playbooks
+                  Comparison signals · {report.rows.length} URLs · Editable
+                  Playbooks
                 </span>
                 <h3 className="mt-1 text-2xl font-black">
                   Content Refresh Priority Queue
                 </h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  Customize any URL&apos;s refresh checklist below before exporting your `.CSV` queue or `.DOCX` editorial brief.
+                  Customize any URL&apos;s refresh checklist below before
+                  exporting your `.CSV` queue or `.DOCX` editorial brief.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -350,12 +567,12 @@ export default function ContentDecayRefreshAnalyzerClient() {
                   -{report.totalLostClicks}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  Recoverable organic clicks
+                  Observed period difference
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-800/40">
                 <p className="text-xs font-bold uppercase text-slate-500">
-                  True Ranking Decay
+                  Ranking decline signal
                 </p>
                 <p className="mt-2 text-3xl font-black">
                   {report.rankingDecayCount}
@@ -366,7 +583,7 @@ export default function ContentDecayRefreshAnalyzerClient() {
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-800/40">
                 <p className="text-xs font-bold uppercase text-slate-500">
-                  SERP CTR Compression
+                  CTR decline signal
                 </p>
                 <p className="mt-2 text-3xl font-black">
                   {report.ctrCompressionCount}
@@ -377,13 +594,13 @@ export default function ContentDecayRefreshAnalyzerClient() {
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-800/40">
                 <p className="text-xs font-bold uppercase text-slate-500">
-                  Stale Year Tokens
+                  Year tokens to review
                 </p>
                 <p className="mt-2 text-3xl font-black">
                   {report.outdatedYearSlugCount}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  Contains 2021–2025 token
+                  Historical years may be intentional
                 </p>
               </div>
             </div>
@@ -393,15 +610,17 @@ export default function ContentDecayRefreshAnalyzerClient() {
                 {(
                   [
                     ["all", "All Pages"],
-                    ["ranking-decay", "True Ranking Decay"],
-                    ["serp-ctr-compression", "SERP CTR Compression"],
-                    ["demand-drop", "Demand Drop"],
-                    ["growing-or-stable", "Growing / Stable"],
+                    ["ranking-decay", "Ranking decline signal"],
+                    ["serp-ctr-compression", "CTR decline signal"],
+                    ["demand-drop", "Impression decline"],
+                    ["growing-or-stable", "No material click decline"],
+                    ["insufficient-evidence", "Further comparison needed"],
                   ] as const
                 ).map(([val, label]) => (
                   <button
                     key={val}
                     type="button"
+                    aria-pressed={filter === val}
                     onClick={() => setFilter(val)}
                     className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${
                       filter === val
@@ -429,6 +648,16 @@ export default function ContentDecayRefreshAnalyzerClient() {
               </div>
             </div>
 
+            <p className="mt-4 text-sm" role="status">
+              Showing {filteredRows.length} of {report.rows.length} items. CSV
+              and Word exports include the full queue.
+            </p>
+            {filteredRows.length === 0 && (
+              <p className="mt-5 rounded-xl border border-slate-300 p-5 text-sm">
+                No items match these filters. Choose All Pages or clear your
+                search.
+              </p>
+            )}
             <div className="mt-5 space-y-4">
               {filteredRows.map((r) => (
                 <div
@@ -445,7 +674,7 @@ export default function ContentDecayRefreshAnalyzerClient() {
                       >
                         {r.diagnosisLabel}
                       </span>
-                      <span className="font-mono text-xs font-bold">
+                      <span className="min-w-0 break-all font-mono text-xs font-bold">
                         {r.pageOrQuery}
                       </span>
                     </div>
@@ -460,22 +689,29 @@ export default function ContentDecayRefreshAnalyzerClient() {
                           }
                         >
                           {r.clickDelta > 0 ? `+${r.clickDelta}` : r.clickDelta}{" "}
-                          / {r.clickDeltaPct}%
+                          /{" "}
+                          {r.clickDeltaPct === null
+                            ? "no previous baseline"
+                            : `${r.clickDeltaPct}%`}
                         </span>
-                        ) · Pos: #{r.prevPosition} → #{r.currPosition}
+                        ) · Pos: {r.prevPosition ?? "unavailable"} →{" "}
+                        {r.currPosition ?? "unavailable"}
                       </span>
                       <button
                         type="button"
                         onClick={async () => {
-                          const text = [
-                            `URL: ${r.pageOrQuery}`,
-                            `Diagnosis: ${r.diagnosisLabel} (Priority ${r.priorityScore}/100)`,
-                            `Clicks: ${r.prevClicks} -> ${r.currClicks} (${r.clickDeltaPct}%) | Position: #${r.prevPosition} -> #${r.currPosition}`,
-                            "Refresh Playbook:",
-                            ...r.refreshPlaybook.map((s, i) => `${i + 1}. ${s}`),
-                          ].join("\n");
-                          await navigator.clipboard.writeText(text);
-                          setFeedback(`Copied refresh brief for ${r.pageOrQuery}.`);
+                          try {
+                            await navigator.clipboard.writeText(
+                              refreshBriefText(r),
+                            );
+                            setFeedback(
+                              `Copied refresh brief for ${r.pageOrQuery}.`,
+                            );
+                          } catch {
+                            setError(
+                              "Clipboard unavailable. Download the Word brief instead.",
+                            );
+                          }
                         }}
                         className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-bold hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
                       >
@@ -484,6 +720,19 @@ export default function ContentDecayRefreshAnalyzerClient() {
                       </button>
                     </div>
                   </div>
+                  <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                    {r.evidenceNotes.join(" ")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedId(r.id);
+                      document.getElementById("refresh-brief")?.focus();
+                    }}
+                    className={`${secondaryBtn} mt-3`}
+                  >
+                    Edit this page&apos;s refresh brief
+                  </button>
                   <div className="mt-3 space-y-2">
                     {r.refreshPlaybook.map((step, stepIdx) => (
                       <div key={stepIdx} className="flex items-center gap-2">
@@ -514,6 +763,131 @@ export default function ContentDecayRefreshAnalyzerClient() {
               ))}
             </div>
           </div>
+          {selectedRow && (
+            <div
+              id="refresh-brief"
+              tabIndex={-1}
+              className={`${panel} scroll-mt-8`}
+            >
+              <h3 className="text-2xl font-black">
+                Build an actionable content refresh brief
+              </h3>
+              <label
+                htmlFor="refresh-brief-page"
+                className="mt-5 block text-sm font-bold"
+              >
+                Page or query to brief
+              </label>
+              <select
+                id="refresh-brief-page"
+                className={`${control} mt-2`}
+                value={selectedRow.id}
+                onChange={(e) => setSelectedId(e.target.value)}
+              >
+                {report.rows.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.pageOrQuery}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                The checklist uses your supplied metrics. Fill in page-specific
+                decisions after reading the article and checking its search
+                queries. This tool does not fetch the article, inspect
+                competitors, or write verified replacement copy.
+              </p>
+              <div className="mt-5 grid gap-5 md:grid-cols-2">
+                {(
+                  [
+                    [
+                      "targetQuery",
+                      "Target query",
+                      "The question or task this page should satisfy",
+                    ],
+                    [
+                      "audience",
+                      "Reader and search intent",
+                      "Who needs this page and what they need to do",
+                    ],
+                    [
+                      "objective",
+                      "Refresh objective",
+                      "Example: make the setup instructions accurate and complete",
+                    ],
+                    [
+                      "keep",
+                      "Keep",
+                      "Useful sections, examples, and original findings to preserve",
+                    ],
+                    [
+                      "update",
+                      "Update or remove",
+                      "Exact section, stale claim, and the supported correction",
+                    ],
+                    [
+                      "add",
+                      "Add",
+                      "Missing steps, original examples, screenshots, or reader questions",
+                    ],
+                    [
+                      "sources",
+                      "Evidence and sources to verify",
+                      "Original source URLs, dates, and the claims they support",
+                    ],
+                    [
+                      "internalLinks",
+                      "Internal links",
+                      "Destination URL and helpful anchor/context",
+                    ],
+                    [
+                      "proposedTitle",
+                      "Proposed title",
+                      "An accurate, descriptive title for this page",
+                    ],
+                    [
+                      "proposedDescription",
+                      "Proposed meta description",
+                      "A specific summary of what readers can accomplish",
+                    ],
+                    [
+                      "successCheck",
+                      "Publish and measure",
+                      "What to record and when to compare matched results",
+                    ],
+                  ] as const
+                ).map(([key, label, placeholder]) => (
+                  <div key={key}>
+                    <label
+                      htmlFor={`brief-${key}`}
+                      className="text-sm font-bold"
+                    >
+                      {label}
+                    </label>
+                    <textarea
+                      id={`brief-${key}`}
+                      rows={3}
+                      value={selectedRow.brief[key]}
+                      placeholder={placeholder}
+                      onChange={(event) => updateBrief(key, event.target.value)}
+                      className={`${control} mt-2`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={`${primaryBtn} mt-5`}
+                onClick={copyBrief}
+              >
+                <Copy size={16} />
+                Copy selected brief
+              </button>
+              <p className="mt-3 text-xs text-slate-500">
+                Brief edits are included in both exports. Work stays in this tab
+                and is cleared on reload.
+              </p>
+            </div>
+          )}
         </section>
       )}
     </div>

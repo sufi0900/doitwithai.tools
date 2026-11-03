@@ -814,7 +814,7 @@
       "id": "ai-citation-readiness-checker",
       "slug": "ai-citation-readiness-checker",
       "name": "AI Citation Readiness Checker",
-      "description": "Review crawler access, article structure, claims, authorship, and markup in one dashboard. Locate highlighted passages and record evidence decisions.",
+      "description": "Run a free page-level GEO audit of access rules, content clarity, and source cues. Check AI citation readiness from a URL, draft, or HTML and export evidence-based actions.",
       "categories": [
         "ai-seo"
       ],
@@ -844,7 +844,8 @@
         "schema-markup-generator",
         "content-evidence-review",
         "external-link-source-review",
-        "keyword-density-checker"
+        "keyword-density-checker",
+        "content-decay-refresh-analyzer"
       ],
       "topics": [
         "ai-search"
@@ -1897,8 +1898,8 @@
     {
       "id": "content-decay-refresh-analyzer",
       "slug": "content-decay-refresh-analyzer",
-      "name": "Content Decay & GSC Refresh Priority Analyzer",
-      "description": "Analyze Google Search Console period comparisons to separate true ranking content decay from AI Overview CTR compression and seasonality. Export CSV and DOCX refresh plans.",
+      "name": "SEO Content Refresh Tool & Decay Analyzer",
+      "description": "Compare Search Console periods, review traffic decline signals, and build editable content refresh briefs. Export a prioritized CSV queue or Word action plan.",
       "categories": [
         "ai-seo"
       ],
@@ -1923,7 +1924,8 @@
         "gsc-ctr-optimizer",
         "gsc-striking-distance-finder",
         "keyword-cannibalization-finder",
-        "semantic-entity-gap-analyzer"
+        "semantic-entity-gap-analyzer",
+        "ai-citation-readiness-checker"
       ],
       "topics": [
         "on-page"
