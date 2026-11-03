@@ -1,0 +1,3 @@
+/** Shared by the interactive demo and the server-rendered worked example. */
+export const exampleDraft =
+  "# What is internal linking?\n\nInternal linking connects pages on the same website. It helps readers discover related information and understand a site's structure.\n\n## How do you choose an anchor?\n\nIn this guide, we explore the changing world of search.\n\nChoose descriptive wording that explains the destination. Avoid forcing keywords into every link.\n\n## What did our example test measure?\n\nWe tested three anchor labels in an illustrative exercise. These example results are not published research.\n\n- State the method.\n- Explain limitations.\n- Record supporting evidence.";

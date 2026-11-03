@@ -82,7 +82,7 @@ test("On-Page Batch Tools 1-8 execute deterministically and produce valid export
   );
   assert.equal(decay.rows[0].diagnosis, "ranking-decay");
   assert.equal(decay.rows[0].outdatedYearToken, "2024");
-  assert.ok(exportContentDecayCsv(decay).includes("True Ranking"));
+  assert.ok(exportContentDecayCsv(decay).includes("Ranking decline signal"));
 
   // 5. GSC CTR Optimizer
   const ctr = analyzeGscCtrCsv(

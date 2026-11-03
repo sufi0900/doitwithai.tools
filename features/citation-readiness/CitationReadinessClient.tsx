@@ -20,9 +20,10 @@ const ContentEditor = dynamic(() => import("./ContentEditor"), {
   ),
 });
 type Mode = "url" | "text" | "html";
-export const exampleDraft =
-  "# What is internal linking?\n\nInternal linking connects pages on the same website. It helps readers discover related information and understand a site's structure.\n\n## How do you choose an anchor?\n\nIn this guide, we explore the changing world of search.\n\nChoose descriptive wording that explains the destination. Avoid forcing keywords into every link.\n\n## What did our example test measure?\n\nWe tested three anchor labels in an illustrative exercise. These example results are not published research.\n\n- State the method.\n- Explain limitations.\n- Record supporting evidence.";
+import { exampleDraft } from "./example";
+export { exampleDraft } from "./example";
 export default function CitationReadinessClient() {
+  const [isSample, setIsSample] = useState(true);
   const [mode, setMode] = useState<Mode>("url"),
     [input, setInput] = useState("");
   const [page, setPage] = useState<PageSnapshot | null>(() =>
@@ -37,7 +38,7 @@ export default function CitationReadinessClient() {
     [sourceError, setSourceError] = useState(false),
     [dirty, setDirty] = useState(false);
   const [view, setView] = useState<"results" | "article">("results"),
-    [editorOpened, setEditorOpened] = useState(true);
+    [editorOpened, setEditorOpened] = useState(false);
   const [navigation, setNavigation] = useState(0),
     [reportVersion, setReportVersion] = useState(0);
   const [reviews, setReviews] = useState<Record<string, Review>>({});
@@ -82,14 +83,19 @@ export default function CitationReadinessClient() {
     setDirty(true);
     setNavigation(0);
   };
-  const setDocument = (value: PageSnapshot, showReport = true) => {
+  const setDocument = (
+    value: PageSnapshot,
+    showReport = true,
+    sample = false,
+  ) => {
+    setIsSample(sample);
     setEditorBase(value);
     setEditorKey((old) => old + 1);
     setPage(showReport ? value : null);
     setDirty(false);
     setReviews({});
     setReportVersion((n) => n + 1);
-    setEditorOpened(true);
+    setEditorOpened(!showReport);
     setFocusRequest(null);
     setFlagLimit(20);
     go(showReport ? "results" : "article");
@@ -98,13 +104,13 @@ export default function CitationReadinessClient() {
     invalidate();
     setMode(value);
     setInput("");
-    if (value === "text") setDocument(draftPage(exampleDraft), false);
+    if (value === "text") setDocument(draftPage(exampleDraft), false, true);
   }
   function example() {
     invalidate();
     setMode("text");
     setInput("");
-    setDocument(draftPage(exampleDraft));
+    setDocument(draftPage(exampleDraft), true, true);
   }
   async function analyze(event: FormEvent) {
     event.preventDefault();
@@ -137,11 +143,14 @@ export default function CitationReadinessClient() {
     setDocument(outcome.page);
   }
   return (
-    <div id="ai-citation-readiness-checker" className={styles.workspace}>
+    <div
+      id="ai-citation-readiness-checker"
+      className={`${styles.workspace} scroll-mt-6`}
+    >
       <div className={styles.inputPanel}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className={styles.eyebrow}>
-            Access evidence and transparent editorial review
+            Free GEO audit · One page at a time
           </span>
           <button
             type="button"
@@ -158,8 +167,8 @@ export default function CitationReadinessClient() {
           review separately to inspect or edit highlighted passages.
         </p>
         <p className={styles.small}>
-          No universal H1 count, paragraph length, or first-sentence formula
-          proves AI citation readiness.
+          Review available access directives, page structure, and evidence cues.
+          Export a checklist of findings to inspect before publishing.
         </p>
         <div className={styles.modes} aria-label="Input type">
           {(
@@ -284,7 +293,9 @@ export default function CitationReadinessClient() {
           {loading
             ? "Importing retained text and available metadata. You can cancel without losing the previous report."
             : page && !dirty
-              ? "Review ready. Your results dashboard is available below."
+              ? isSample
+                ? "Illustrative draft loaded. This example has no live URL: crawler access, headers, and indexing are unassessed."
+                : "Review ready. Your results dashboard is available below."
               : ""}
         </p>
         {error && (
@@ -379,6 +390,13 @@ export default function CitationReadinessClient() {
           aria-label="Citation readiness results"
           aria-busy={loading}
         >
+          {isSample && (
+            <p className={styles.notice}>
+              <strong>Illustrative draft review:</strong> these findings
+              describe the sample article, not your website. Import your URL or
+              HTML to run your own GEO audit.
+            </p>
+          )}
           {page.contentEdited && (
             <p className={styles.warning}>
               Content findings describe your local draft. Imported metadata and
