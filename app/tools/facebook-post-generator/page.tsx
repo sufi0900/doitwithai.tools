@@ -15,7 +15,7 @@ const pageUrl = "https://doitwithai.tools/tools/facebook-post-generator";
 const title =
   "Free Facebook Post Generator — Zero-Click Posts, First-Comment Links & Visual Cards";
 const description =
-  "Turn any topic or article URL into high-reach Facebook posts with a First-Comment Link strategy and downloadable 1080p visual cards.";
+  "Turn any topic or article URL into editable Facebook posts with a First-Comment Link strategy and downloadable 1080p visual cards.";
 
 export const metadata: Metadata = {
   title,
@@ -38,9 +38,10 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
-    question: "Why does this tool separate the main Facebook post from the First-Comment link?",
+    question:
+      "Why does this tool separate the main Facebook post from the First-Comment link?",
     answer:
-      "Facebook's feed algorithm heavily throttles organic reach on posts that contain outbound links in the main body. Delivering standalone value + a 1080p visual graphic in the main post and pasting the URL in the First Comment protects your reach while driving high-intent clicks.",
+      "The tool keeps your post and optional source link separately editable so you can choose how to share them. Preview the main post, image, and comment before publishing. Putting a link in a comment does not guarantee more reach.",
   },
   {
     question: "Can I generate an image to attach to my Facebook post?",
@@ -117,18 +118,19 @@ export default function FacebookPostGeneratorPage() {
 
           <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-xs">
-                <PlatformBrandIcon slugOrText="facebook-post-generator" size={18} />
-                <span>Official Platform Studio</span>
+              <div className="backdrop-blur-xs mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white">
+                <PlatformBrandIcon
+                  slugOrText="facebook-post-generator"
+                  size={18}
+                />
+                <span>Facebook Content Studio</span>
               </div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
                 Social Media Studio · Zero-Click Feed + Visual Graphic
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Facebook Post &amp;{" "}
-                <span className={toolHeroHeading}>
-                  Visual Card Studio
-                </span>
+                <span className={toolHeroHeading}>Visual Card Studio</span>
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
                 Convert any article URL or topic into 3 organic Facebook post

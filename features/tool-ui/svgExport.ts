@@ -25,11 +25,7 @@ export async function prepareVisualSvg(
     if (!href) continue;
     if (href.startsWith("data:image/")) {
       image.setAttribute("href", href);
-      image.setAttributeNS(
-        "http://www.w3.org/1999/xlink",
-        "xlink:href",
-        href,
-      );
+      image.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", href);
       continue;
     }
 
@@ -72,10 +68,7 @@ export async function prepareVisualSvg(
         });
         if (response.ok) {
           const blob = await response.blob();
-          if (
-            blob.type.startsWith("image/") &&
-            blob.size <= 15 * 1024 * 1024
-          ) {
+          if (blob.type.startsWith("image/") && blob.size <= 15 * 1024 * 1024) {
             dataUrl = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => resolve(String(reader.result));
@@ -95,7 +88,9 @@ export async function prepareVisualSvg(
         dataUrl,
       );
     } else {
-      image.remove();
+      throw new Error(
+        "The selected photo could not be included in this export. Upload a saved copy or choose another image, then try again.",
+      );
     }
   }
 

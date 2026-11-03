@@ -1,6 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import ToolUrlInput from "../tool-ui/ToolUrlInput";
+import {
+  facebookPostPackage,
+  facebookSourceContent,
+  readFacebookResponse,
+} from "./client-state";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -24,7 +30,7 @@ import {
 
 export function FacebookPostGeneratorClient() {
   const [topicOrContent, setTopicOrContent] = useState(
-    "We analyzed 100+ organic social campaigns and discovered that placing external links directly in the main Facebook post body reduces feed reach by up to 60%. Instead, turning your blog article into a native 3-point story post—paired with a 1080x1080 visual takeaway card and placing the full article link in the First Comment—consistently triples engagement and click-throughs.",
+    "Turn a long article into a useful Facebook post. Choose one takeaway, explain it in plain language, and give readers a practical next step. Pair it with an image from the article or a simple visual card. Invite a relevant discussion and share the source link where it makes sense for your audience.",
   );
   const [targetAudience, setTargetAudience] = useState(
     "Digital Marketers, Creators & Founders",
@@ -49,11 +55,23 @@ export function FacebookPostGeneratorClient() {
   );
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
+  const activeRequest = useRef<AbortController | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
+  const copyTimer = useRef<ReturnType<typeof setTimeout>>();
+  const [hasGenerated, setHasGenerated] = useState(false);
+  useEffect(
+    () => () => {
+      activeRequest.current?.abort();
+      clearTimeout(toastTimer.current);
+      clearTimeout(copyTimer.current);
+    },
+    [],
+  );
 
   function notify(msg: string) {
-    setError(null);
+    clearTimeout(toastTimer.current);
     setToast(msg);
-    setTimeout(() => setToast(""), 3000);
+    toastTimer.current = setTimeout(() => setToast(""), 3000);
   }
 
   async function runGenerate(overrides?: {
@@ -66,14 +84,35 @@ export function FacebookPostGeneratorClient() {
       setError(
         "Please enter a topic or extract content from an article URL first.",
       );
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
       return;
     }
+    if (activeUrl.trim()) {
+      try {
+        const url = new URL(activeUrl.trim());
+        if (!/^https?:$/.test(url.protocol)) throw new Error();
+      } catch {
+        setError(
+          "Enter a full http:// or https:// source link, or leave it blank.",
+        );
+        return;
+      }
+    }
+    activeRequest.current?.abort();
+    const controller = new AbortController();
+    activeRequest.current = controller;
     setLoading(true);
     setError(null);
     try {
       const response = await fetch("/api/ai-tools/facebook-post-generator", {
         method: "POST",
+        signal: AbortSignal.any([
+          controller.signal,
+          AbortSignal.timeout(45000),
+        ]),
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           topicOrContent: activeTopic,
@@ -83,15 +122,20 @@ export function FacebookPostGeneratorClient() {
           brandTone,
         }),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate Facebook posts.");
-      }
-      setResult(data as FacebookPostOutput);
+      const data = await readFacebookResponse(response);
+      if (controller.signal.aborted || activeRequest.current !== controller)
+        return;
+      setResult(data);
+      setHasGenerated(true);
+      setCopiedKey(null);
       setSelectedVariationIdx(0);
-      notify("Generated 3 zero-click Facebook posts & First-Comment links!");
+      notify(
+        "Your 3 editable Facebook drafts are ready. Review the copy and choose an image below.",
+      );
       focusToolSection(resultsRef.current);
     } catch (err) {
+      if (controller.signal.aborted || activeRequest.current !== controller)
+        return;
       setError(
         err instanceof Error
           ? err.message
@@ -99,22 +143,20 @@ export function FacebookPostGeneratorClient() {
       );
       focusToolSection(resultsRef.current);
     } finally {
-      setLoading(false);
+      if (activeRequest.current === controller) {
+        activeRequest.current = null;
+        setLoading(false);
+      }
     }
   }
 
   function handleUrlExtracted(payload: UniversalExtractResponse) {
-    const firstSub = payload.subTopics?.[0];
-    const nextTopic = firstSub
-      ? `${firstSub.title}\n\n${firstSub.content}`
-      : payload.cleanText || payload.description || payload.title;
+    const nextTopic = facebookSourceContent(payload);
     setTopicOrContent(nextTopic);
     if (payload.url) {
       setDestinationUrl(payload.url);
     }
-    if (payload.images?.length) {
-      setExtractedImages(payload.images);
-    }
+    setExtractedImages(payload.images || []);
     setError(null);
     void runGenerate({
       topicOrContent: nextTopic,
@@ -123,9 +165,11 @@ export function FacebookPostGeneratorClient() {
   }
 
   function updateActiveVariationField(
-    field: "fullPostText" | "firstCommentText" | "visualHeadline" | "visualSubtext",
+    field:
+      "fullPostText" | "firstCommentText" | "visualHeadline" | "visualSubtext",
     value: string,
   ) {
+    setCopiedKey(null);
     setResult((prev) => ({
       ...prev,
       variations: prev.variations.map((v, idx) =>
@@ -134,25 +178,23 @@ export function FacebookPostGeneratorClient() {
     }));
   }
 
-  function handleCopy(text: string, key: string, label: string) {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    notify(`Copied ${label} to clipboard!`);
-    setTimeout(() => setCopiedKey(null), 2000);
+  async function handleCopy(text: string, key: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      notify(`Copied ${label}.`);
+      clearTimeout(copyTimer.current);
+      copyTimer.current = setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      setError(
+        "Clipboard access is unavailable. Select and copy the text, or download the TXT package.",
+      );
+    }
   }
 
   function downloadActiveFacebookPackage() {
     if (!activeVariation) return;
-    const content = [
-      `=== FACEBOOK MAIN POST (${activeVariation.styleName}) ===`,
-      activeVariation.fullPostText,
-      "",
-      `=== FIRST COMMENT LINK (POST IMMEDIATELY AFTER PUBLISHING) ===`,
-      activeVariation.firstCommentText,
-      "",
-      `=== HASHTAGS ===`,
-      activeVariation.hashtags.join(" "),
-    ].join("\n");
+    const content = facebookPostPackage(activeVariation);
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -171,10 +213,18 @@ export function FacebookPostGeneratorClient() {
       <ToolRunOverlay
         active={loading}
         title="Generating Facebook Posts & Companion Visual Card..."
-        description="Creating 3 zero-click post variations, a First-Comment Link Box, and a connected post + image package."
+        description="Creating 3 editable drafts from your content. Your previous draft stays available if this request fails."
+        onCancel={() => {
+          activeRequest.current?.abort();
+          activeRequest.current = null;
+          setLoading(false);
+          notify("Generation stopped. Your previous draft is preserved.");
+        }}
+        cancelLabel="Cancel generation"
       />
 
       <UrlArticleExtractorBar
+        buttonLabel="Import article & create drafts"
         onExtracted={handleUrlExtracted}
         onSelectSubTopic={(sub, data) => {
           const nextTopic = `${sub.title}\n\n${sub.content}`;
@@ -189,7 +239,14 @@ export function FacebookPostGeneratorClient() {
       />
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-        <div className="shadow-xs space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void runGenerate();
+          }}
+          aria-label="Facebook post settings"
+          className="shadow-xs space-y-4 rounded-2xl border border-slate-200/90 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]"
+        >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
               <PlatformBrandIcon
@@ -207,15 +264,19 @@ export function FacebookPostGeneratorClient() {
               </div>
             </div>
             <span className="rounded-full bg-[#1877F2]/10 px-2.5 py-0.5 text-xs font-bold text-[#1877F2]">
-              Zero-Click + Visual
+              {hasGenerated ? "Drafts ready" : "Example workspace"}
             </span>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+            <label
+              htmlFor="facebook-topic"
+              className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-200"
+            >
               Option 2: Article Excerpt, Topic, or Key Notes
             </label>
             <textarea
+              id="facebook-topic"
               rows={6}
               value={topicOrContent}
               onChange={(e) => setTopicOrContent(e.target.value)}
@@ -226,10 +287,14 @@ export function FacebookPostGeneratorClient() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <label
+                htmlFor="facebook-audience"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200"
+              >
                 Target Audience
               </label>
               <input
+                id="facebook-audience"
                 type="text"
                 value={targetAudience}
                 onChange={(e) => setTargetAudience(e.target.value)}
@@ -237,10 +302,14 @@ export function FacebookPostGeneratorClient() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <label
+                htmlFor="facebook-url"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200"
+              >
                 First-Comment Link URL (Optional)
               </label>
-              <input
+              <ToolUrlInput
+                id="facebook-url"
                 type="url"
                 value={destinationUrl}
                 onChange={(e) => setDestinationUrl(e.target.value)}
@@ -252,10 +321,14 @@ export function FacebookPostGeneratorClient() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <label
+                htmlFor="facebook-format"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200"
+              >
                 Facebook Post Format
               </label>
               <select
+                id="facebook-format"
                 value={postFormat}
                 onChange={(e) =>
                   setPostFormat(e.target.value as FacebookPostFormat)
@@ -277,10 +350,14 @@ export function FacebookPostGeneratorClient() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <label
+                htmlFor="facebook-tone"
+                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-200"
+              >
                 Tone of Voice
               </label>
               <input
+                id="facebook-tone"
                 type="text"
                 value={brandTone}
                 onChange={(e) => setBrandTone(e.target.value)}
@@ -290,8 +367,7 @@ export function FacebookPostGeneratorClient() {
           </div>
 
           <button
-            type="button"
-            onClick={() => void runGenerate()}
+            type="submit"
             disabled={loading}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3452d1] disabled:opacity-60"
           >
@@ -300,7 +376,7 @@ export function FacebookPostGeneratorClient() {
               ? "Generating Facebook Posts & Graphic Cards..."
               : "Generate Facebook Posts + Visual Card"}
           </button>
-        </div>
+        </form>
 
         <div
           ref={resultsRef}
@@ -337,12 +413,38 @@ export function FacebookPostGeneratorClient() {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-xs leading-6 text-indigo-950 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-100">
+            <strong>
+              {hasGenerated
+                ? "Drafts ready for review"
+                : "Example drafts — generate to use your own content"}
+            </strong>
+            <p>{result.strategySummary}</p>
+            {hasGenerated && result.provider === "deterministic" && (
+              <p className="mt-1">
+                Created with the built-in drafting template. Review and
+                personalize before publishing.
+              </p>
+            )}
+            <p className="mt-1 text-slate-600 dark:text-slate-300">
+              Edit the copy, choose an image below, then copy or download.
+              Nothing is published automatically.
+            </p>
+          </div>
+          <div
+            role="group"
+            aria-label="Post variations"
+            className="flex flex-wrap gap-2"
+          >
             {result.variations.map((v, idx) => (
               <button
                 key={idx}
                 type="button"
-                onClick={() => setSelectedVariationIdx(idx)}
+                aria-pressed={selectedVariationIdx === idx}
+                onClick={() => {
+                  setSelectedVariationIdx(idx);
+                  setCopiedKey(null);
+                }}
                 className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${
                   selectedVariationIdx === idx
                     ? "shadow-xs bg-[#4058d0] text-white"
@@ -359,7 +461,8 @@ export function FacebookPostGeneratorClient() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-[#1877F2]">
-                    Live Editable Facebook Feed Post ({activeVariation.fullPostText.length} chars)
+                    Live Editable Facebook Feed Post (
+                    {activeVariation.fullPostText.length} chars)
                   </span>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                     {activeVariation.styleName}
@@ -395,6 +498,8 @@ export function FacebookPostGeneratorClient() {
               {/* Editable Main Facebook Post Textarea */}
               <textarea
                 rows={8}
+                id="facebook-main-post"
+                aria-label="Edit main Facebook post"
                 value={activeVariation.fullPostText}
                 onChange={(e) =>
                   updateActiveVariationField("fullPostText", e.target.value)
@@ -406,7 +511,7 @@ export function FacebookPostGeneratorClient() {
               <div className="space-y-2 rounded-xl border border-amber-200/80 bg-amber-50/70 p-3.5 dark:border-amber-700/40 dark:bg-amber-950/30">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                    First Comment Link (Protects Organic Feed Reach)
+                    First comment (optional source link)
                   </span>
                   <button
                     type="button"
@@ -424,8 +529,10 @@ export function FacebookPostGeneratorClient() {
                       : "Copy First Comment"}
                   </button>
                 </div>
-                <input
-                  type="text"
+                <textarea
+                  rows={3}
+                  id="facebook-first-comment"
+                  aria-label="Edit first comment"
                   value={activeVariation.firstCommentText}
                   onChange={(e) =>
                     updateActiveVariationField(
@@ -438,6 +545,19 @@ export function FacebookPostGeneratorClient() {
               </div>
 
               <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    void handleCopy(
+                      activeVariation.hashtags.join(" "),
+                      "hashtags",
+                      "hashtags",
+                    )
+                  }
+                  className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold dark:border-slate-700"
+                >
+                  {copiedKey === "hashtags" ? "Copied!" : "Copy hashtags"}
+                </button>
                 {activeVariation.hashtags.map((tag, i) => (
                   <span
                     key={i}
@@ -464,6 +584,7 @@ export function FacebookPostGeneratorClient() {
           }
           defaultSublabel="FACEBOOK INSIGHT"
           postTextToShare={activeVariation.fullPostText}
+          postPackageText={facebookPostPackage(activeVariation)}
           extractedImages={extractedImages}
         />
       )}
