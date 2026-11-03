@@ -15,6 +15,7 @@ import {
   readFacebookResponse,
 } from "../../features/facebook-post-generator/client-state";
 import type { UniversalExtractResponse } from "../../features/tool-ui/UrlArticleExtractorBar";
+import { prepareVisualSvg } from "../../features/tool-ui/svgExport";
 
 const base = "https://example.com/blog/guide";
 function images(html: string) {
@@ -88,6 +89,51 @@ test("empty image gallery explains how to add a photo instead of disappearing", 
     React.createElement(ArticleImageGallery, { images: [], onSelect() {} }),
   );
   assert.match(html, /upload your own photo/);
+});
+
+test("an unavailable selected photo stops export instead of silently producing an image-free graphic", async () => {
+  const { document } = parseHTML(
+    '<html><body><svg xmlns="http://www.w3.org/2000/svg"><image href="https://cdn.example.com/missing.jpg" /></svg></body></html>',
+  );
+  const previousDocument = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "document",
+  );
+  const previousLocation = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "location",
+  );
+  const previousFetch = globalThis.fetch;
+  Object.defineProperty(document, "fonts", {
+    value: { ready: Promise.resolve() },
+  });
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: document,
+  });
+  Object.defineProperty(globalThis, "location", {
+    configurable: true,
+    value: new URL("https://example.com"),
+  });
+  globalThis.fetch = async () => new Response(null, { status: 404 });
+  try {
+    await assert.rejects(
+      prepareVisualSvg(
+        document.querySelector("svg") as unknown as SVGSVGElement,
+        1080,
+        1080,
+      ),
+      /Upload a saved copy or choose another image/,
+    );
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousDocument)
+      Object.defineProperty(globalThis, "document", previousDocument);
+    else Reflect.deleteProperty(globalThis, "document");
+    if (previousLocation)
+      Object.defineProperty(globalThis, "location", previousLocation);
+    else Reflect.deleteProperty(globalThis, "location");
+  }
 });
 
 test("full article overview respects the extractor selection instead of reverting to subtopic one", () => {

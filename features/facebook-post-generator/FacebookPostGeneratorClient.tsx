@@ -59,6 +59,10 @@ export function FacebookPostGeneratorClient() {
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
   const copyTimer = useRef<ReturnType<typeof setTimeout>>();
   const [hasGenerated, setHasGenerated] = useState(false);
+  const [resultRevision, setResultRevision] = useState(0);
+  useEffect(() => {
+    if (!loading && resultRevision > 0) focusToolSection(resultsRef.current);
+  }, [loading, resultRevision]);
   useEffect(
     () => () => {
       activeRequest.current?.abort();
@@ -132,16 +136,18 @@ export function FacebookPostGeneratorClient() {
       notify(
         "Your 3 editable Facebook drafts are ready. Review the copy and choose an image below.",
       );
-      focusToolSection(resultsRef.current);
+      setResultRevision((revision) => revision + 1);
     } catch (err) {
       if (controller.signal.aborted || activeRequest.current !== controller)
         return;
       setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to generate Facebook posts.",
+        err instanceof Error && err.name === "TimeoutError"
+          ? "This request took too long. Your previous draft is preserved; please try again."
+          : err instanceof Error
+            ? err.message
+            : "Failed to generate Facebook posts.",
       );
-      focusToolSection(resultsRef.current);
+      setResultRevision((revision) => revision + 1);
     } finally {
       if (activeRequest.current === controller) {
         activeRequest.current = null;
