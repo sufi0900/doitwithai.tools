@@ -24,73 +24,101 @@ export interface FacebookPostVariation {
 }
 
 export interface FacebookPostOutput {
+  provider?: "ai" | "deterministic";
   strategySummary: string;
   variations: FacebookPostVariation[];
   bestPostingTip: string;
 }
 
-export const DEFAULT_FACEBOOK_POST_OUTPUT: FacebookPostOutput = {
-  strategySummary:
-    "Zero-click native Facebook storytelling paired with a 1080×1080 visual takeaway card and a First-Comment Link Box to avoid external link reach throttling.",
-  variations: [
-    {
-      styleName: "Story Lesson + Engagement Question",
-      hookLine:
-        "We audited 100+ organic Facebook posts and found one mistake killing 60% of reach:",
-      fullPostText: `We audited 100+ organic Facebook posts and found one mistake killing 60% of reach:\n\nDropping bare external links inside the main post body.\n\nWhen we switched to a 3-part native workflow, reach and link clicks tripled:\n\n1. Deliver the complete 3-step takeaway natively inside the post body so readers get immediate value.\n2. Attach a high-contrast 1080×1080 visual summary card to stop the scroll and boost dwell time.\n3. Place the full guide URL in the First Comment below the post.\n\nAre you still putting links in the main post body, or have you tested the First-Comment workflow? 👇`,
-      firstCommentText:
-        "📖 Read the full step-by-step breakdown and grab the templates here → https://doitwithai.tools",
-      engagementQuestion:
-        "Are you still putting links in the main post body, or have you tested the First-Comment workflow?",
-      visualHeadline: "Why Native Zero-Click Posts Triple Organic Reach",
-      visualSubtext:
-        "1. Share 3 native takeaways in the post • 2. Attach a 1080p visual card • 3. Put the link in Comment #1",
-      hashtags: [
-        "#ContentMarketing",
-        "#SocialMediaStrategy",
-        "#OrganicReach",
-        "#DigitalMarketing",
-      ],
-    },
-    {
-      styleName: "Zero-Click Value Breakdown (1-2-3 List)",
-      hookLine:
-        "Here is the exact 3-step content repurposing system we use to turn 1 article into 7 days of reach:",
-      fullPostText: `Here is the exact 3-step content repurposing system we use to turn 1 article into 7 days of reach:\n\n✅ Step 1: Slice every H2 heading into a standalone sub-topic angle instead of sharing the generic article title.\n✅ Step 2: Pair each post with a clean visual framework or checklist card.\n✅ Step 3: Ask a low-friction A/B question at the end to spark early comment velocity.\n\nWhich of these 3 steps would save your team the most time this week?`,
-      firstCommentText:
-        "⚡ Try the free AI Content Repurposing Studio here → https://doitwithai.tools",
-      engagementQuestion:
-        "Which of these 3 steps would save your team the most time this week?",
-      visualHeadline: "The 3-Step Content Repurposing System",
-      visualSubtext:
-        "Slice H2 sub-topics • Attach a visual summary card • Spark comment velocity",
-      hashtags: [
-        "#CreatorEconomy",
-        "#BloggingTips",
-        "#GrowthStrategy",
-        "#MarketingTools",
-      ],
-    },
-    {
-      styleName: "A vs. B Community Debate",
-      hookLine:
-        "Unpopular opinion: Publishing 1 deep-dive guide per week beats publishing 5 unedited AI articles every single time.",
-      fullPostText: `Unpopular opinion: Publishing 1 deep-dive guide per week beats publishing 5 unedited AI articles every single time.\n\nWhy? Because distribution compounds authority:\n• Option A: Publish 5 thin posts that nobody bookmarks or shares.\n• Option B: Publish 1 authoritative pillar guide and repurpose it into native social stories, carousels, and visual cards.\n\nWhere do you stand—Team Volume (A) or Team Repurposed Depth (B)? Drop your vote below! 👇`,
-      firstCommentText:
-        "🔗 Full benchmark study and free visual tools → https://doitwithai.tools",
-      engagementQuestion:
-        "Where do you stand—Team Volume (A) or Team Repurposed Depth (B)?",
-      visualHeadline: "1 Repurposed Pillar Guide > 5 Thin Posts",
-      visualSubtext:
-        "Distribution + Visual Packaging = 3x Higher Bookmark Saves & Organic Reach",
-      hashtags: [
-        "#SEOStrategy",
-        "#ContentCreation",
-        "#FounderLessons",
-        "#SocialMediaTips",
-      ],
-    },
-  ],
-  bestPostingTip:
-    "Publish your main post with the downloaded 1080×1080 visual card attached, then immediately paste the First Comment text within 30 seconds.",
-};
+export function buildFallbackFacebookPosts(
+  input: FacebookPostInput,
+): FacebookPostOutput {
+  const sentences = input.topicOrContent
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 20);
+  const coreHook =
+    sentences[0]?.slice(0, 110) ||
+    `Why most ${input.targetAudience} overlook the simplest lever in their workflow`;
+  const point1 =
+    sentences[1]?.slice(0, 120) ||
+    "Focus on high-intent fundamentals before scaling volume.";
+  const point2 =
+    sentences[2]?.slice(0, 120) ||
+    "Turn every long-form asset into native, zero-click social value.";
+  const point3 =
+    sentences[3]?.slice(0, 120) ||
+    "Invite a useful discussion and make the source easy to find.";
+  const linkUrl = input.destinationUrl?.trim() || "";
+
+  const output: FacebookPostOutput = {
+    provider: "deterministic",
+    strategySummary: `Three editable, source-based Facebook drafts for ${input.targetAudience}, with a ${input.brandTone} tone. Review the wording and source details before publishing.`,
+    variations: [
+      {
+        styleName: "Zero-Click Value Breakdown + First-Comment Link",
+        hookLine: `Unpopular truth for ${input.targetAudience}: ${coreHook}`,
+        fullPostText: `Unpopular truth for ${input.targetAudience}:\n${coreHook}\n\nHere are 3 ideas to consider from this topic:\n\n1️⃣ ${point1}\n\n2️⃣ ${point2}\n\n3️⃣ ${point3}\n\nChoose one action to try, then review the result before changing your wider workflow.\n\n👇 Which of these 3 points hits closest to home for your current workflow? Drop a 1, 2, or 3 below.`,
+        firstCommentText: linkUrl ? `🔗 Full resource: ${linkUrl}` : "",
+        engagementQuestion:
+          "Which of these 3 points hits closest to home for your current workflow? Drop a 1, 2, or 3 below!",
+        visualHeadline: coreHook.slice(0, 85),
+        visualSubtext: `1. ${point1.slice(0, 65)}\n2. ${point2.slice(0, 65)}`,
+        hashtags: [
+          "#DigitalStrategy",
+          "#ContentMarketing",
+          "#GrowthTips",
+          "#CreatorEconomy",
+        ],
+      },
+      {
+        styleName: "Story-Driven Lesson & Community Discussion",
+        hookLine: `A useful workflow starts with one clear takeaway.`,
+        fullPostText: `A useful workflow starts with one clear takeaway.\n\nFor ${input.targetAudience}, here is one idea to explore:\n"${coreHook}"\n\nTwo practical steps to consider:\n✅ ${point1}\n✅ ${point2}\n\nTry one step in your own workflow and check whether it helps your audience.\n\nHow are you currently handling this in your day-to-day? Would love to hear what's working for you right now! 💬`,
+        firstCommentText: linkUrl ? `📌 Explore the source: ${linkUrl}` : "",
+        engagementQuestion:
+          "How are you currently handling this in your day-to-day?",
+        visualHeadline: "Stop Overcomplicating Your Workflow",
+        visualSubtext: point1,
+        hashtags: [
+          "#BusinessGrowth",
+          "#MarketingStrategy",
+          "#Productivity",
+          "#SocialMediaTips",
+        ],
+      },
+      {
+        styleName: "Quick Poll / Debate Starter",
+        hookLine: `Quick question for ${input.targetAudience}: If you could only keep ONE priority this quarter, which wins?`,
+        fullPostText: `Quick question for ${input.targetAudience} 👇\n\nWhen it comes to "${coreHook.slice(0, 80)}":\n\n🅰️ Doubling down on ${point1.slice(0, 75)}\n🅱️ Focusing entirely on ${point2.slice(0, 75)}\n\nVote A or B in the comments and tell me why!`,
+        firstCommentText: linkUrl ? `Read the full article: ${linkUrl}` : "",
+        engagementQuestion: "Vote A or B in the comments and tell me why!",
+        visualHeadline: "Team A vs. Team B: Which Wins?",
+        visualSubtext: `A: ${point1.slice(0, 65)} | B: ${point2.slice(0, 65)}`,
+        hashtags: ["#CommunityPoll", "#MarketingDebate", "#Strategy"],
+      },
+    ],
+    bestPostingTip:
+      "Preview the post and image together. Check readability on mobile, verify any claims, and decide where the source link is most useful. Link placement does not guarantee reach.",
+  };
+  const preferred =
+    input.postFormat === "community-debate"
+      ? 2
+      : input.postFormat === "story-engagement"
+        ? 1
+        : 0;
+  output.variations = [
+    output.variations[preferred],
+    ...output.variations.filter((_, index) => index !== preferred),
+  ];
+  return output;
+}
+
+export const DEFAULT_FACEBOOK_POST_OUTPUT = buildFallbackFacebookPosts({
+  topicOrContent:
+    "Turn an article into a useful Facebook post. Choose one takeaway and explain it in plain language. Add a practical next step readers can try. Pair the post with a relevant article image or a simple visual card.",
+  targetAudience: "Digital Marketers, Creators & Founders",
+  postFormat: "story-engagement",
+  destinationUrl: "https://doitwithai.tools",
+  brandTone: "Conversational, Warm & High-Value",
+});

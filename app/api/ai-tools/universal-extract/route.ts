@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseHTML } from "linkedom";
 import { Readability } from "@mozilla/readability";
+import { extractArticleImages } from "@/features/tool-ui/article-images";
 import { z } from "zod";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
@@ -740,7 +741,12 @@ function parsePlainTimestampedLines(
     if (m) {
       let sec = parseTimestampStrToSeconds(m[1]);
       // If Gemini returned relative timestamps starting at 0:00 for a later window, offset them cleanly
-      if (windowStartSec > 0 && sec < windowStartSec && out.length === 0 && sec < 30) {
+      if (
+        windowStartSec > 0 &&
+        sec < windowStartSec &&
+        out.length === 0 &&
+        sec < 30
+      ) {
         sec += windowStartSec;
       }
       const spoken = clean(m[2]);
@@ -955,7 +961,9 @@ async function extractYoutubeUrlData(
             const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
             if (titleMatch) {
               title = cleanArticleTitle(
-                decodeXmlEntities(titleMatch[1].replace(/\s*-\s*YouTube$/i, "")),
+                decodeXmlEntities(
+                  titleMatch[1].replace(/\s*-\s*YouTube$/i, ""),
+                ),
               );
             }
           }
@@ -1319,7 +1327,8 @@ async function extractYoutubeUrlData(
  * so browser SVG/PNG/PDF exports in EditableInfographicStudio never fail on CORS.
  */
 export async function GET(request: NextRequest) {
-  const rawImgUrl = request.nextUrl.searchParams.get("proxyImage")?.trim() || "";
+  const rawImgUrl =
+    request.nextUrl.searchParams.get("proxyImage")?.trim() || "";
   if (!rawImgUrl) {
     return NextResponse.json(
       { error: "Missing proxyImage query parameter." },
@@ -1332,7 +1341,8 @@ export async function GET(request: NextRequest) {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/132.0.0.0 Safari/537.36",
-        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        Accept:
+          "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
       },
       signal: AbortSignal.timeout(9000),
     });
@@ -1506,62 +1516,17 @@ export async function POST(request: NextRequest) {
     } catch {}
 
     if (paragraphs.length === 0) {
-      paragraphs = Array.from(
-        document.querySelectorAll("article p, main p, p"),
-      )
+      paragraphs = Array.from(document.querySelectorAll("article p, main p, p"))
         .map((p: unknown) => clean((p as Element).textContent))
         .filter((t) => t.length >= 40 && !/^table of contents/i.test(t))
         .slice(0, 35);
     }
 
-    const seenImgs = new Set<string>();
-    const images: ExtractedImageAsset[] = [];
-
-    const ogImg =
-      document
-        .querySelector('meta[property="og:image"], meta[name="twitter:image"]')
-        ?.getAttribute("content") || "";
-    if (ogImg) {
-      try {
-        const absOg = new URL(ogImg, finalUrl).href;
-        seenImgs.add(absOg);
-        images.push({
-          src: absOg,
-          alt: `${title} — Featured Social Cover`,
-          width: 1200,
-          height: 630,
-          format: detectImageFormat(absOg),
-          role: "Open Graph / Social",
-        });
-      } catch {}
-    }
-
-    Array.from(document.querySelectorAll("img")).forEach((imgObj: unknown) => {
-      const img = imgObj as Element;
-      const rawSrc =
-        img.getAttribute("src") ||
-        img.getAttribute("data-src") ||
-        img.getAttribute("data-lazy-src") ||
-        "";
-      if (!rawSrc || rawSrc.startsWith("data:")) return;
-      try {
-        const abs = new URL(rawSrc, finalUrl).href;
-        if (!/^https?:/i.test(abs) || seenImgs.has(abs)) return;
-        seenImgs.add(abs);
-        const w = Number(img.getAttribute("width")) || 800;
-        const h = Number(img.getAttribute("height")) || 500;
-        const alt = clean(img.getAttribute("alt")) || title;
-        const isLogo = /logo|icon|avatar/i.test(abs + " " + alt);
-        images.push({
-          src: abs,
-          alt,
-          width: w,
-          height: h,
-          format: detectImageFormat(abs),
-          role: isLogo ? "Logo / Icon" : "Article Content",
-        });
-      } catch {}
-    });
+    const images = extractArticleImages(
+      document as unknown as Document,
+      finalUrl,
+      title,
+    );
 
     const h1Text =
       headings.find((h) => h.level === 1)?.text ||
@@ -1624,7 +1589,7 @@ export async function POST(request: NextRequest) {
       cleanText: paragraphs.join("\n\n"),
       keyTakeaways,
       subTopics,
-      images: images.slice(0, 25),
+      images,
     };
 
     return NextResponse.json(resPayload);

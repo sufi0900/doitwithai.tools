@@ -24,9 +24,13 @@ import {
 } from "lucide-react";
 import { wrapVisualText, sourceMetric } from "./visualText";
 import { TemplateThumbnail } from "./InfographicArtwork";
-import { SocialCardArtwork, type SocialEditableField } from "./SocialCardArtwork";
+import {
+  SocialCardArtwork,
+  type SocialEditableField,
+} from "./SocialCardArtwork";
 import { prepareVisualSvg, visualSvgCanvas, saveVisualBlob } from "./svgExport";
 import styles from "./visual-studio.module.css";
+import { ArticleImageGallery } from "./ArticleImageGallery";
 import type { ExtractedImageAsset } from "./UrlArticleExtractorBar";
 import { PlatformBrandIcon } from "./PlatformBrandIcon";
 
@@ -36,6 +40,7 @@ export interface SocialVisualCardBuilderProps {
   defaultBody: string;
   defaultSublabel?: string;
   postTextToShare?: string;
+  postPackageText?: string;
   extractedImages?: ExtractedImageAsset[];
   showIntegratedFeedPreview?: boolean;
 }
@@ -206,6 +211,7 @@ export function SocialVisualCardBuilder({
   defaultBody,
   defaultSublabel = "LINKEDIN PLAYBOOK",
   postTextToShare = "",
+  postPackageText,
   extractedImages = [],
   showIntegratedFeedPreview = true,
 }: SocialVisualCardBuilderProps) {
@@ -238,6 +244,25 @@ export function SocialVisualCardBuilder({
   const [toastMsg, setToastMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [copiedImg, setCopiedImg] = useState(false);
+  const [exporting, setExporting] = useState("");
+  const exportLock = useRef(false);
+  async function exportAsset(label: string, action: () => Promise<unknown>) {
+    if (exportLock.current) return;
+    exportLock.current = true;
+    setExporting(label);
+    try {
+      await action();
+    } catch (error) {
+      notifyError(
+        error instanceof Error
+          ? error.message
+          : "Export failed. Please try again.",
+      );
+    } finally {
+      exportLock.current = false;
+      setExporting("");
+    }
+  }
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -256,21 +281,21 @@ export function SocialVisualCardBuilder({
   }
 
   useEffect(() => {
-    if (defaultHeadline) setHeadline(defaultHeadline.slice(0, 120));
+    setHeadline(defaultHeadline.slice(0, 120));
   }, [defaultHeadline]);
 
   useEffect(() => {
-    if (defaultBody) {
-      setBodyCopy(defaultBody.slice(0, 260));
-      setStatMetric(sourceMetric(defaultBody));
-    }
+    setBodyCopy(defaultBody.slice(0, 260));
+    setStatMetric(sourceMetric(defaultBody));
   }, [defaultBody]);
 
+  const imageCollectionKey = JSON.stringify(
+    extractedImages.map((image) => image.src),
+  );
   useEffect(() => {
-    if (extractedImages.length > 0 && !selectedImage) {
-      setSelectedImage(extractedImages[0]);
-    }
-  }, [extractedImages, selectedImage]);
+    setSelectedImage(null);
+    setCustomUploadedImage("");
+  }, [imageCollectionKey]);
 
   const theme: CardTheme = useMemo(() => {
     if (themeId === "custom-brand") {
@@ -323,7 +348,12 @@ export function SocialVisualCardBuilder({
   function handleCustomImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
+    e.target.value = "";
+    if (file.size > 10 * 1024 * 1024) {
+      notifyError("Choose an image smaller than 10 MB.");
+      return;
+    }
+    if (!/^(image\/(png|jpeg|webp|gif|svg\+xml|avif))$/i.test(file.type)) {
       notifyError("Please choose a valid PNG, JPG, WebP, or SVG image file.");
       return;
     }
@@ -331,12 +361,19 @@ export function SocialVisualCardBuilder({
     reader.onload = () => {
       if (typeof reader.result === "string") {
         setCustomUploadedImage(reader.result);
-        if (template !== "article-photo-card" && template !== "carousel-slide") {
+        if (
+          template !== "article-photo-card" &&
+          template !== "carousel-slide"
+        ) {
           setTemplate("article-photo-card");
         }
-        notify(`Attached "${file.name}" (${imageFitMode === "contain" ? "Fit Full Image" : "Fill Frame"})!`);
+        notify(
+          `Attached "${file.name}" (${imageFitMode === "contain" ? "Fit Full Image" : "Fill Frame"})!`,
+        );
       }
     };
+    reader.onerror = () =>
+      notifyError("Could not read that photo. Please choose it again.");
     reader.readAsDataURL(file);
   }
 
@@ -354,12 +391,13 @@ export function SocialVisualCardBuilder({
 
   async function handleDownloadPng() {
     const canvas = await renderToCanvas(2);
-    if (!canvas) return;
+    if (!canvas) return false;
     const a = document.createElement("a");
     a.href = canvas.toDataURL("image/png");
     a.download = `${platformLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${template}-${aspectRatio.replace(":", "x")}.png`;
     a.click();
     notify("Downloaded 2x Retina Post Image (.PNG)!");
+    return true;
   }
 
   async function handleDownloadSvg() {
@@ -393,42 +431,56 @@ export function SocialVisualCardBuilder({
   }
 
   async function handleCopyCardImage() {
+    const canvas = await renderToCanvas(2);
+    if (!canvas) return;
     try {
-      const canvas = await renderToCanvas(2);
-      if (!canvas) return;
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        await navigator.clipboard.write([
-          new ClipboardItem({ "image/png": blob }),
-        ]);
-        setCopiedImg(true);
-        notify("Copied Post Graphic to Clipboard!");
-        setTimeout(() => setCopiedImg(false), 2200);
-      });
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (value) =>
+            value
+              ? resolve(value)
+              : reject(new Error("Could not prepare image.")),
+          "image/png",
+        ),
+      );
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob }),
+      ]);
+      setCopiedImg(true);
+      notify("Copied post graphic to clipboard.");
+      setTimeout(() => setCopiedImg(false), 2200);
     } catch {
-      void handleDownloadPng();
+      if (await handleDownloadPng())
+        notify(
+          "Image clipboard access is unavailable. Downloaded a PNG instead.",
+        );
     }
   }
 
   async function handleDownloadPostAndImagePackage() {
-    const text = (postTextToShare || `${headline}\n\n${bodyCopy}`).trim();
-    if (navigator.clipboard && text) {
-      await navigator.clipboard.writeText(text).catch(() => {});
-    }
-    const textBlob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const textUrl = URL.createObjectURL(textBlob);
-    const textLink = document.createElement("a");
-    textLink.href = textUrl;
-    textLink.download = `${platformLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-post.txt`;
-    textLink.click();
-    setTimeout(() => URL.revokeObjectURL(textUrl), 1000);
-
-    setTimeout(() => {
-      void handleDownloadPng();
-    }, 250);
-
+    // Prepare the image before downloading anything, so failures cannot produce a partial package.
+    const canvas = await renderToCanvas(2);
+    if (!canvas) return;
+    const png = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(
+        (blob) =>
+          blob ? resolve(blob) : reject(new Error("Could not prepare image.")),
+        "image/png",
+      ),
+    );
+    const text = (
+      postPackageText ||
+      postTextToShare ||
+      `${headline}\n\n${bodyCopy}`
+    ).trim();
+    const filename = platformLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    saveVisualBlob(
+      new Blob([text], { type: "text/plain;charset=utf-8" }),
+      `${filename}-post.txt`,
+    );
+    saveVisualBlob(png, `${filename}-visual.png`);
     notify(
-      "Copied Post Text to clipboard & downloaded Post (.TXT) + Attached Image (.PNG)!",
+      "Prepared TXT + PNG downloads. Allow multiple downloads if your browser asks.",
     );
   }
 
@@ -436,23 +488,26 @@ export function SocialVisualCardBuilder({
     target: "linkedin" | "twitter" | "facebook" | "whatsapp",
   ) {
     const text = (postTextToShare || `${headline}\n\n${bodyCopy}`).trim();
-    if (navigator.clipboard && text) {
-      await navigator.clipboard.writeText(text).catch(() => {});
-    }
     const encodedText = encodeURIComponent(text.slice(0, 1400));
-    let shareUrl = "";
-    if (target === "twitter") {
-      shareUrl = `https://twitter.com/intent/tweet?text=${encodedText}`;
-    } else if (target === "linkedin") {
-      shareUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodedText}`;
-    } else if (target === "facebook") {
-      shareUrl = `https://www.facebook.com/sharer/sharer.php?quote=${encodedText}`;
-    } else if (target === "whatsapp") {
-      shareUrl = `https://api.whatsapp.com/send?text=${encodedText}`;
-    }
-    notify("Post text copied! Opening social composer…");
-    if (shareUrl) {
-      window.open(shareUrl, "_blank", "noopener,noreferrer");
+    const shareUrl =
+      target === "facebook"
+        ? "https://www.facebook.com/"
+        : target === "linkedin"
+          ? `https://www.linkedin.com/feed/?shareActive=true&text=${encodedText}`
+          : target === "twitter"
+            ? `https://twitter.com/intent/tweet?text=${encodedText}`
+            : `https://api.whatsapp.com/send?text=${encodedText}`;
+    // Open synchronously from the click so awaiting clipboard permission cannot block the popup.
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+    try {
+      await navigator.clipboard.writeText(text);
+      notify(
+        "Post copied. Paste it in the composer and attach your downloaded image; review before publishing.",
+      );
+    } catch {
+      notifyError(
+        "The composer was opened, but clipboard access was blocked. Copy the text manually from the editor or TXT download.",
+      );
     }
   }
 
@@ -606,6 +661,15 @@ export function SocialVisualCardBuilder({
         </div>
       )}
 
+      {exporting && (
+        <p
+          role="status"
+          className="rounded-xl bg-indigo-50 px-4 py-3 text-xs font-semibold text-indigo-900 dark:bg-indigo-950 dark:text-indigo-200"
+        >
+          Preparing {exporting}… Please wait for the download or confirmation.
+        </p>
+      )}
+
       {isLowContrast && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-800 dark:text-amber-300">
           <span className="inline-flex items-center gap-2">
@@ -626,14 +690,15 @@ export function SocialVisualCardBuilder({
       {/* CUSTOM PHOTO UPLOAD + EXTRACTED ARTICLE IMAGES STRIP */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
         <div className="flex flex-wrap items-center gap-2.5">
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#4058d0] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#3452d1]">
+          <label className="relative inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#4058d0] px-3.5 py-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#3452d1]">
             <Upload size={14} />
             Upload Custom Photo (Horiz / Vert)
             <input
               type="file"
               accept="image/*"
               onChange={handleCustomImageUpload}
-              className="hidden"
+              aria-label="Upload custom photo"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0 focus-visible:opacity-20"
             />
           </label>
 
@@ -641,6 +706,7 @@ export function SocialVisualCardBuilder({
           <div className="inline-flex items-center rounded-xl border border-slate-300 bg-white p-0.5 text-[11px] font-bold dark:border-slate-700 dark:bg-slate-950">
             <button
               type="button"
+              aria-pressed={imageFitMode === "contain"}
               onClick={() => setImageFitMode("contain")}
               className={`rounded-lg px-2.5 py-1 transition ${
                 imageFitMode === "contain"
@@ -653,6 +719,7 @@ export function SocialVisualCardBuilder({
             </button>
             <button
               type="button"
+              aria-pressed={imageFitMode === "cover"}
               onClick={() => setImageFitMode("cover")}
               className={`rounded-lg px-2.5 py-1 transition ${
                 imageFitMode === "cover"
@@ -674,7 +741,9 @@ export function SocialVisualCardBuilder({
                 if (template === "article-photo-card") {
                   setTemplate("carousel-slide");
                 }
-                notify("Removed attached photo and switched to clean vector layout.");
+                notify(
+                  "Removed attached photo and switched to clean vector layout.",
+                );
               }}
               className="rounded-lg border border-rose-300 px-2.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400"
             >
@@ -683,41 +752,17 @@ export function SocialVisualCardBuilder({
           )}
         </div>
 
-        {extractedImages.length > 0 && (
-          <div className="flex items-center gap-2 overflow-x-auto">
-            <span className="text-[11px] font-extrabold text-[#3452d1] dark:text-[#9aabff]">
-              Article Photos ({extractedImages.length}):
-            </span>
-            {extractedImages.slice(0, 6).map((img, i) => {
-              const isSelected =
-                !customUploadedImage && selectedImage?.src === img.src;
-              return (
-                <button
-                  key={`${img.src}-${i}`}
-                  type="button"
-                  onClick={() => {
-                    setCustomUploadedImage("");
-                    setSelectedImage(img);
-                    setTemplate("article-photo-card");
-                    notify(`Attached Article Image #${i + 1}!`);
-                  }}
-                  className={`relative h-11 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                    isSelected
-                      ? "border-[#4058d0] ring-2 ring-[#4058d0]/30"
-                      : "border-slate-200 hover:border-[#3452d1] dark:border-slate-700"
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={img.src}
-                    alt={img.alt || `Article visual ${i + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <ArticleImageGallery
+          key={imageCollectionKey}
+          images={extractedImages}
+          selectedSrc={!customUploadedImage ? selectedImage?.src : undefined}
+          onSelect={(image, index) => {
+            setCustomUploadedImage("");
+            setSelectedImage(image);
+            setTemplate("article-photo-card");
+            notify(`Attached article image ${index + 1}.`);
+          }}
+        />
       </div>
 
       {/* FULL-WIDTH REALISTIC LINKEDIN / SOCIAL FEED CARD (POST TEXT + ATTACHED IMAGE BELOW) */}
@@ -731,7 +776,7 @@ export function SocialVisualCardBuilder({
                 </div>
                 <div>
                   <strong className="block text-sm font-extrabold text-slate-900 dark:text-white">
-                    Do It With AI Studio · 1st
+                    Do It With AI Studio
                   </strong>
                   <span className="block text-xs text-slate-500 dark:text-slate-400">
                     {authorHandle} · Just now · 🌐
@@ -792,7 +837,8 @@ export function SocialVisualCardBuilder({
           >
             <button
               type="button"
-              onClick={handleDownloadPng}
+              disabled={Boolean(exporting)}
+              onClick={() => void exportAsset("PNG", handleDownloadPng)}
               className="inline-flex items-center gap-1 rounded-xl bg-[#4058d0] px-3 py-1.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#3452d1]"
             >
               <Download size={13} />
@@ -800,7 +846,8 @@ export function SocialVisualCardBuilder({
             </button>
             <button
               type="button"
-              onClick={handleDownloadSvg}
+              disabled={Boolean(exporting)}
+              onClick={() => void exportAsset("SVG", handleDownloadSvg)}
               className="inline-flex items-center gap-1 rounded-xl bg-[#3452d1] px-2.5 py-1.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5]"
             >
               <FileCode2 size={13} />
@@ -808,7 +855,8 @@ export function SocialVisualCardBuilder({
             </button>
             <button
               type="button"
-              onClick={handlePrintPdf}
+              disabled={Boolean(exporting)}
+              onClick={() => void exportAsset("PDF", handlePrintPdf)}
               className="inline-flex items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-extrabold text-white shadow-sm hover:bg-emerald-500"
             >
               <Printer size={13} />
@@ -816,7 +864,10 @@ export function SocialVisualCardBuilder({
             </button>
             <button
               type="button"
-              onClick={handleCopyCardImage}
+              disabled={Boolean(exporting)}
+              onClick={() =>
+                void exportAsset("Copy image", handleCopyCardImage)
+              }
               className="inline-flex items-center gap-1 rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/20"
             >
               <Copy size={12} />
@@ -862,6 +913,7 @@ export function SocialVisualCardBuilder({
             <input
               ref={directInputRef}
               type="text"
+              aria-label={`Edit graphic ${activeFieldMeta.label.toLowerCase()}`}
               value={activeFieldMeta.value}
               onChange={(e) => activeFieldMeta.onChange(e.target.value)}
               placeholder={`Type ${activeFieldMeta.label.toLowerCase()} directly on canvas...`}
@@ -891,7 +943,10 @@ export function SocialVisualCardBuilder({
               setZoomLevel((z) =>
                 Math.min(
                   2.25,
-                  Math.max(0.6, +(z + (e.deltaY < 0 ? 0.12 : -0.12)).toFixed(2)),
+                  Math.max(
+                    0.6,
+                    +(z + (e.deltaY < 0 ? 0.12 : -0.12)).toFixed(2),
+                  ),
                 ),
               );
             }
@@ -900,7 +955,8 @@ export function SocialVisualCardBuilder({
         >
           <div
             style={{
-              width: zoomLevel === 1 ? "100%" : `${Math.round(zoomLevel * 100)}%`,
+              width:
+                zoomLevel === 1 ? "100%" : `${Math.round(zoomLevel * 100)}%`,
               maxWidth: zoomLevel === 1 ? "660px" : "none",
               transition: "width 0.16s ease-out",
             }}
@@ -916,11 +972,23 @@ export function SocialVisualCardBuilder({
               aria-label={headline}
             >
               <defs>
-                <linearGradient id="scBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <linearGradient
+                  id="scBgGrad"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="100%"
+                >
                   <stop offset="0%" stopColor={theme.bgStart} />
                   <stop offset="100%" stopColor={theme.bgEnd} />
                 </linearGradient>
-                <linearGradient id="scAccGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <linearGradient
+                  id="scAccGrad"
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
                   <stop offset="0%" stopColor={theme.accent} />
                   <stop offset="100%" stopColor={theme.accentSecondary} />
                 </linearGradient>
@@ -958,7 +1026,10 @@ export function SocialVisualCardBuilder({
                   y={pad - 6}
                   width={Math.min(
                     W - pad * 2,
-                    Math.max(220, (badgeLabel || platformLabel).length * 14 + 48),
+                    Math.max(
+                      220,
+                      (badgeLabel || platformLabel).length * 14 + 48,
+                    ),
                   )}
                   height={46}
                   rx={23}
@@ -1110,11 +1181,17 @@ export function SocialVisualCardBuilder({
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={handleDownloadPostAndImagePackage}
+            disabled={Boolean(exporting)}
+            onClick={() =>
+              void exportAsset(
+                "Post + image",
+                handleDownloadPostAndImagePackage,
+              )
+            }
             className="inline-flex items-center gap-2 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#3452d1]"
           >
             <PackageCheck size={16} />
-            Copy Post + Download Attached Image
+            Download post package (TXT + PNG)
           </button>
           <button
             type="button"
@@ -1149,10 +1226,10 @@ export function SocialVisualCardBuilder({
           <button
             type="button"
             onClick={() => handleSharePlatform("facebook")}
-            className="shadow-xs inline-flex items-center gap-2 rounded-xl bg-[#1877F2] px-3.5 py-2 text-xs font-extrabold text-white transition hover:opacity-95"
+            className={`${platformLabel.toLowerCase().includes("facebook") ? "order-first" : ""} shadow-xs inline-flex items-center gap-2 rounded-xl bg-[#1877F2] px-3.5 py-2 text-xs font-extrabold text-white transition hover:opacity-95`}
           >
             <PlatformBrandIcon brand="facebook" size={20} />
-            Facebook
+            Copy post &amp; open Facebook
           </button>
         </div>
       </div>
