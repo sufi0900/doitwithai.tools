@@ -216,6 +216,17 @@ export function toolPromo({
   };
 }
 
+export function articleImage({ localUrl, alt, caption }) {
+  return {
+    _type: "image",
+    _key: nextKey("img"),
+    localUrl,
+    alt,
+    caption,
+    imageDescription: caption,
+  };
+}
+
 export function imageSlot({
   label = "Visual Placeholder",
   title,
@@ -292,14 +303,12 @@ const afterKeywordResearchContent = [
     "Here is the exact 10-step workflow **Do It With AI Tools** used to turn that raw keyword research into an actionable content plan—and how you can apply the same system to your own keyword list."
   ),
 
-  imageSlot({
-    label: "Visual Placeholder #1 — Post-Research Workflow Overview",
-    title: "The 10-Step Workflow After Keyword Research (From Raw CSV to Measured Rankings)",
-    captureInstructions:
-      "Clean horizontal or 2-row workflow diagram showing: (1) Clean & Filter List → (2) Verify Search Intent → (3) Cluster by Reader Task → (4) Map to Existing or New URLs → (5) Prioritize Queue → (6) Build Content Brief → (7) Draft with Evidence & ChatGPT → (8) Place Keywords Naturally → (9) Add Internal Links & Publish → (10) Measure in GSC.",
-    recommendedFilename: "what-to-do-after-keyword-research-10-step-workflow.webp",
-    altText:
-      "Ten-step SEO workflow diagram showing what to do after keyword research from cleaning a raw keyword list to measuring rankings in Google Search Console",
+  articleImage({
+    localUrl:
+      "/images/articles/what-to-do-after-keyword-research/what-to-do-after-keyword-research-10-step-workflow.webp",
+    alt: "Ten-step SEO workflow diagram showing what to do after keyword research from cleaning a raw keyword list to measuring rankings in Google Search Console",
+    caption:
+      "The complete 10-step post-keyword-research roadmap: transform raw keyword lists into search-intent clusters, content briefs, and measured rankings.",
   }),
 
   h2("1. Clean your keyword research before choosing what to write"),
@@ -380,6 +389,13 @@ const afterKeywordResearchContent = [
   ),
 
   h2("2. Match search intent before deciding on a content format"),
+  articleImage({
+    localUrl:
+      "/images/articles/what-to-do-after-keyword-research/keyword-filtering-and-intent-funnel.webp",
+    alt: "Keyword filtering and search intent funnel diagram classifying queries into informational, transactional, and commercial page formats",
+    caption:
+      "Filter out irrelevant queries early and match every keyword to the exact search intent format Google rewards.",
+  }),
   p(
     "Once irrelevant rows are removed, work out what the searcher actually wants to accomplish. In SEO, this is **search intent**: the real-world job behind the words typed into Google."
   ),
@@ -539,14 +555,12 @@ const afterKeywordResearchContent = [
     "Be careful not to merge two pages just because both receive impressions for a broad term. Inspect their primary purpose and conversion role first. If you have a Google Search Console query-and-page export, run it through the free [Keyword Cannibalization Finder](/tools/keyword-cannibalization-finder) on **Do It With AI Tools** to spot genuine URL conflicts before consolidating or redirecting anything."
   ),
 
-  imageSlot({
-    label: "Visual Placeholder #2 — Keyword Mapping Spreadsheet",
-    title: "Annotated Keyword-to-Page Mapping Sheet (Improve vs. Create vs. Exclude)",
-    captureInstructions:
-      "Screenshot of the Do It With AI Tools keyword plan spreadsheet showing Cluster Name, Primary Keyword, Search Intent, Target URL, Action Badge (Improve Existing / Create New / Exclude), and Editorial Notes.",
-    recommendedFilename: "keyword-to-page-mapping-spreadsheet-example.webp",
-    altText:
-      "Keyword mapping spreadsheet assigning keyword clusters to existing tool pages and new SEO guides with action labels",
+  articleImage({
+    localUrl:
+      "/images/articles/what-to-do-after-keyword-research/keyword-to-page-mapping-spreadsheet-example.webp",
+    alt: "Real keyword-to-page mapping spreadsheet example assigning keyword clusters to existing tool pages and new SEO guides with action labels",
+    caption:
+      "Practical keyword-to-page mapping: assign topic clusters to existing URLs, new content briefs, or exclusion buckets before writing.",
   }),
 
   h2("5. Prioritize content you can make useful and distinctive"),
@@ -673,6 +687,13 @@ const afterKeywordResearchContent = [
   ),
 
   h2("8. Place your keywords naturally across your website and on-page elements"),
+  articleImage({
+    localUrl:
+      "/images/articles/what-to-do-after-keyword-research/on-page-keyword-placement-anatomy.webp",
+    alt: "On-page SEO keyword placement anatomy diagram highlighting title tag, visible H1, URL slug, opening direct answer block, and contextual internal links",
+    caption:
+      "Where to place keywords naturally on page: align your title tag, H1 heading, direct answer block, and internal links without keyword stuffing.",
+  }),
   p(
     "A common question after keyword research is *\"Where do I actually put these keywords?\"* Keyword placement starts at the website architecture level before you ever tweak a sentence."
   ),
@@ -832,14 +853,12 @@ const afterKeywordResearchContent = [
     "Avoid rewriting a newly published article after just a few days of impressions. Unless there is a technical indexing bug or factual error, give search engines 3 to 4 weeks of consistent impression data before running a targeted refresh."
   ),
 
-  imageSlot({
-    label: "Visual Placeholder #3 — Post-Publish GSC Measurement Loop",
-    title: "Google Search Console Page-Level Query Inspection After Publishing",
-    captureInstructions:
-      "Screenshot of Google Search Console Performance report filtered to a single article URL showing Impressions, Clicks, CTR, and Average Position across its mapped keyword cluster.",
-    recommendedFilename: "gsc-post-publish-keyword-cluster-measurement.webp",
-    altText:
-      "Google Search Console performance report filtered by page URL to measure impressions, clicks, and average position after keyword research implementation",
+  articleImage({
+    localUrl:
+      "/images/articles/what-to-do-after-keyword-research/gsc-post-publish-keyword-cluster-measurement.webp",
+    alt: "Google Search Console performance report filtered by page URL to measure impressions, clicks, and average position after keyword research implementation",
+    caption:
+      "Close the feedback loop in Google Search Console by tracking page-level impression growth and striking-distance queries after publishing.",
   }),
 
   h2("11. Common mistakes to avoid after keyword research"),
@@ -1050,14 +1069,12 @@ const checkKeywordRankingsContent = [
     "**Step 5: Filter by a specific keyword, page, country, or device:** Click **`+ Add filter`** (or **`+ New`**) right above the chart: choose **Query → Queries containing** to check your ranking for one specific keyword cluster; choose **Page** and paste a single blog post URL to see every keyword that specific article ranks for; and choose **Country** and **Device** to see your true ranking in your target market (such as United States on Mobile vs. Desktop)."
   ),
 
-  imageSlot({
-    label: "Screenshot Placeholder #1 — GSC Performance Dashboard",
-    title: "Google Search Console Performance Report with Average Position Enabled",
-    captureInstructions:
-      "Open Google Search Console → Performance → Search results, enable all 4 metric cards (Total clicks, Total impressions, Average CTR, Average position), and highlight the orange Average position box and the Queries tab below.",
-    recommendedFilename: "gsc-average-position-queries-tab.webp",
-    altText:
-      "Google Search Console Performance report showing the orange Average position metric toggled on and the Queries ranking table below",
+  articleImage({
+    localUrl:
+      "/images/articles/check-google-keyword-rankings/01-how-to-check-keyword-rankings-hero.jpg",
+    alt: "Google Search Console Performance report dashboard showing the orange Average position metric toggled on and the Queries ranking table below",
+    caption:
+      "Monitor your true search visibility in Google Search Console with the Average Position card enabled alongside Impressions and Clicks.",
   }),
 
   h3("Why Unfiltered \"Average Position\" Can Mislead You (Real Data Example)"),
@@ -1113,14 +1130,12 @@ const checkKeywordRankingsContent = [
     "If you only look at the unfiltered global chart, you get a blended number around Position `38` that doesn't reflect **any** real searcher's screen. Always click **`+ Add filter → Country`** and select your primary target audience before judging your rankings."
   ),
 
-  imageSlot({
-    label: "Screenshot Placeholder #2 — GSC Country Filter Comparison",
-    title: "Google Search Console Countries Tab Showing Position Variance by Region",
-    captureInstructions:
-      "In Google Search Console → Performance → Search results, click the Countries tab below the chart (or show + Add filter → Country → United States) to visually illustrate how Average Position differs across India, Nigeria, the US, and the UK.",
-    recommendedFilename: "gsc-country-filter-average-position-comparison.webp",
-    altText:
-      "Google Search Console Countries tab showing how average keyword ranking position varies between India, the United States, and the United Kingdom",
+  articleImage({
+    localUrl:
+      "/images/articles/check-google-keyword-rankings/02-why-your-ranking-looks-different-infographic.jpg",
+    alt: "Infographic explaining why your Google keyword ranking looks different across countries, devices, and personalized search results",
+    caption:
+      "Why rankings fluctuate: local data centers, country filters, and device types create wildly different search results for the same query.",
   }),
 
   h3("4 Google Search Console Ranking Traps to Avoid in 2026"),
@@ -1159,14 +1174,12 @@ const checkKeywordRankingsContent = [
     "**Local City-Level Spot-Checks:** Select a specific city or metropolitan area when testing localized queries or regional service pages."
   ),
 
-  imageSlot({
-    label: "Screenshot Placeholder #3 — Live Free Keyword Rank Checker",
-    title: "Live SERP Position Check Example Showing Depersonalized Results",
-    captureInstructions:
-      "Run a live check on doitwithai.tools (for a query like 'h1 length' or 'merlin chrome extension') inside a free live rank checker set to United States, showing the live position result and ranking URL.",
-    recommendedFilename: "live-keyword-rank-checker-google-serp.webp",
-    altText:
-      "Live keyword rank checker showing the exact organic Google search position and ranking URL for a target keyword",
+  articleImage({
+    localUrl:
+      "/images/articles/check-google-keyword-rankings/03-search-console-position-traps-infographic.jpg",
+    alt: "Four Google Search Console ranking traps infographic illustrating sitewide average drops, keyword cannibalization, and anonymized query limits",
+    caption:
+      "Avoid common Search Console traps like sitewide average dilution, competing internal URLs, and anonymized data limits.",
   }),
 
   h3("Why Manual Searching in Chrome Incognito Still Shows Biased Rankings"),
@@ -1228,14 +1241,12 @@ const checkKeywordRankingsContent = [
     "**Step 4: Sort by \"Estimated Extra Clicks\" or \"Lowest CTR First\":** Toggle between **Page 1 Bottom (Pos 8–10)** and **Page 2 (Pos 11–20)** to get an instant, prioritized action plan showing how many extra monthly clicks you could capture if you lift each query to a realistic target CTR (such as `10%`)."
   ),
 
-  imageSlot({
-    label: "Screenshot Placeholder #4 — GSC Striking Distance Finder Tool",
-    title: "Do It With AI Tools Free GSC Striking Distance Keyword Finder Interface",
-    captureInstructions:
-      "Open https://doitwithai.tools/tools/gsc-striking-distance-finder, load your exported GSC ZIP/CSV (or click 'Try sample data'), and capture the filtered table showing Positions 8–20, Impressions, Current CTR, Estimated Extra Clicks, and the recommended action badge for each row.",
-    recommendedFilename: "doitwithai-gsc-striking-distance-keyword-finder-tool.webp",
-    altText:
-      "Do It With AI Tools Free GSC Striking Distance Keyword Finder analyzing Google Search Console queries ranking in positions 8 to 20",
+  articleImage({
+    localUrl:
+      "/images/articles/check-google-keyword-rankings/04-striking-distance-keyword-workflow-infographic.jpg",
+    alt: "Striking distance keyword optimization workflow infographic showing how to turn Google Search Console positions 8 to 20 into quick clicks",
+    caption:
+      "The striking-distance formula: isolate queries ranking in Positions 8–20 and lift CTR to unlock immediate organic traffic gains.",
   }),
 
   h3("Real Worked Example: Diagnosing High-Impression, Zero-Click Keywords"),
@@ -1346,14 +1357,12 @@ const checkKeywordRankingsContent = [
     "When a user searches an informational or how-to query—including `\"how to check ranking for keywords in google\"`—Google generates a detailed AI summary right at the top of the page. If the user only needs a quick 3-step answer, they read the AI Overview and never scroll down to click the traditional organic results. Industry search performance studies show that median Google impressions more than doubled between late 2025 and 2026 while median CTR fell by up to **40%** due to zero-click SERP features and AI Overviews."
   ),
 
-  imageSlot({
-    label: "Screenshot Placeholder #5 — Live Google AI Overview at Position Zero",
-    title: "Live Google AI Overview for 'how to check ranking for keywords in google'",
-    captureInstructions:
-      "Use the screenshot of the Google search result for 'how to check ranking for keywords in google', highlighting two key details: (1) how the AI Overview takes up the entire first fold above organic results, and (2) how Google cited YouTube videos inside the numbered GSC steps while showing tool pages in the right-hand citation panel.",
-    recommendedFilename: "google-ai-overview-position-zero-keyword-ranking-citations.webp",
-    altText:
-      "Google AI Overview for how to check ranking for keywords in Google citing YouTube tutorials and free rank checker tools at Position Zero",
+  articleImage({
+    localUrl:
+      "/images/articles/check-google-keyword-rankings/05-win-google-ai-overviews-position-zero-infographic.jpg",
+    alt: "How to win Google AI Overviews and Position Zero citations infographic showing direct answer blocks, structured tables, and schema markup",
+    caption:
+      "Win Position Zero citations by pairing direct 45-word opening answer blocks with structured HTML tables and interactive utilities.",
   }),
 
   h3("How to Tell If an AI Overview Is Stealing Your Clicks"),
@@ -1366,9 +1375,9 @@ const checkKeywordRankingsContent = [
 
   toolPromo({
     badge: "UNDERSTAND THE AI SEARCH SHIFT",
-    title: "AI SEO explained through a practical, human-reviewed workflow",
+    title: "AI SEO: Optimize for Google AI Overviews",
     description:
-      "Learn how generative search engines and Google AI Overviews extract answers, index entities, and select citation links from Top 10 content.",
+      "Learn how AI search engines extract answers and select citation links from Top 10 content.",
     ctaText: "Read the AI SEO guide",
     link: "/ai-seo/what-is-ai-seo",
     image: "https://cdn.sanity.io/images/qyshio4a/production/71f4396b9759402ea2249cf2103164ece7f2c773-1278x733.png",
@@ -1427,9 +1436,9 @@ const checkKeywordRankingsContent = [
 
   toolPromo({
     badge: "CLICK-THROUGH RATE OPTIMIZATION",
-    title: "Create better meta titles with AI and a clear page brief",
+    title: "Create High-CTR Meta Titles with AI",
     description:
-      "Learn how to craft high-CTR title tags within pixel limits that stand out under Google AI Overviews and search carousels.",
+      "Craft title tags within pixel limits that win search clicks under AI Overviews.",
     ctaText: "Read the meta title guide",
     link: "/ai-seo/meta-title",
     image: "https://cdn.sanity.io/images/qyshio4a/production/d8df7ab08b12fb08b726a72649576b3828d2b3e6-2257x1261.webp",
@@ -1486,17 +1495,22 @@ const checkKeywordRankingsContent = [
     "**Issue B: Content Decay or Keyword Cannibalization:** Either an older article has lost freshness over the last 6 months, or two of your pages are splitting impressions for the same topic. Diagnose declining traffic with the [Content Decay & Refresh Analyzer](/tools/content-decay-refresh-analyzer) and spot duplicate targeting with the [Keyword Cannibalization Finder](/tools/keyword-cannibalization-finder)."
   ),
 
-  imageSlot({
-    label: "Screenshot Placeholder #6 — The 4-Zone Keyword Ranking Action Matrix",
-    title: "4-Quadrant SEO Action Matrix (Positions 1–10, 8–10, 11–15, and 16–30+)",
-    captureInstructions:
-      "Clean 4-quadrant visual flowchart showing Zone 1 (Pos 1–10 Low CTR → Snippet Rewrite), Zone 2 (Pos 8–10 Healthy CTR → Internal Links + Evidence), Zone 3 (Pos 11–15 → Direct Answer H2 + Schema), and Zone 4 (Pos 16–30+ → Intent Check or New Dedicated Page).",
-    recommendedFilename: "keyword-ranking-4-zone-optimization-matrix.webp",
-    altText:
-      "Four-zone SEO action matrix showing how to optimize Google keyword rankings for positions 1 to 10, 8 to 10, 11 to 15, and 16 to 30",
+  articleImage({
+    localUrl:
+      "/images/articles/check-google-keyword-rankings/06-keyword-ranking-action-matrix-infographic.jpg",
+    alt: "Four-zone keyword ranking optimization action matrix infographic categorizing Positions 1-10, 8-10, 11-15, and 16-30+",
+    caption:
+      "The 4-Zone SEO action matrix: match every ranking position to the exact fix—from title tag CTR tweaks to internal link equity.",
   }),
 
   h2("Your 15-Minute Weekly Google Rank Tracking Routine"),
+  articleImage({
+    localUrl:
+      "/images/articles/check-google-keyword-rankings/07-15-minute-weekly-ranking-routine-infographic.jpg",
+    alt: "15-minute weekly Google rank tracking routine infographic showing 28-day comparison, striking-distance queries, and snippet CTR fixes",
+    caption:
+      "A streamlined 15-minute Monday rank-tracking routine to spot 28-day trends, striking opportunities, and snippet wins without daily noise.",
+  }),
   p(
     "Even Google's official Search Console documentation notes that you do not need to check your rankings every single day. Daily positions bounce up and down naturally as Google tests SERP layouts, and reacting to 24-hour noise often hurts pages that were already climbing."
   ),

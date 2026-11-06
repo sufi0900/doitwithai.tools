@@ -188,7 +188,7 @@ const PortableTextComponents = () => {
     const renderInlineMarkdown = (text) => {
       if (!text || typeof text !== "string") return text;
       const tokenRegex =
-        /(\**\[([^\]]+)\]\(([^)]+)\)\**|\[\**([^*]+)\**\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|\**`([^`]+)`\**|\**([^*]+)\**|\*([^*]+)\*|`([^`]+)`)/g;
+        /(\*{2}\[([^\]]+)\]\(([^)]+)\)\*{2}|\[\*{2}([^*]+)\*{2}\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|\*{2}`([^`]+)`\*{2}|\*{2}([^*]+)\*{2}|\*([^*]+)\*|`([^`]+)`)/g;
       if (!tokenRegex.test(text)) {
         return <span className="whitespace-pre-line">{text}</span>;
       }
@@ -530,9 +530,14 @@ const PortableTextComponents = () => {
       gif: VideoComponent,
 
       image: ({ value, index }) => {
-        const imageUrl = value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png";
-        const isPriority = index < 3;
-        const blurDataURL = value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined;
+        const imageUrl =
+          value?.localUrl ||
+          (value?.asset ? urlForImage(value.asset).url() : value?.url || "/fallback-image-url.png");
+        const isPriority = index < 2;
+        const blurDataURL = value?.localUrl
+          ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjMTgyNDNlIi8+PC9zdmc+"
+          : (value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined);
+        const captionText = value?.caption || value?.imageDescription;
 
         return (
           <div className="relative w-full my-8 sm:my-10 md:my-12">
@@ -545,20 +550,20 @@ const PortableTextComponents = () => {
                       <div className="relative overflow-hidden rounded-lg">
                         <OptimizedImage
                           src={imageUrl}
-                          alt={value.alt || "Article image"}
+                          alt={value.alt || value.altText || "Article illustration"}
                           className="w-full h-auto object-cover rounded-lg shadow-lg"
                           priority={isPriority}
                           blurDataURL={blurDataURL}
                           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
-                          width={800}
-                          height={600}
+                          width={1200}
+                          height={675}
                           quality={85}
                           enableModal={true}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg" />
                       </div>
 
-                      {value.imageDescription && (
+                      {captionText && (
                         <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                           <div className="flex items-start gap-2 sm:gap-3">
                             <div className="flex-shrink-0">
@@ -580,7 +585,13 @@ const PortableTextComponents = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div>
-                                <PortableText value={value.imageDescription} components={imgdesc} />
+                                {typeof captionText === "string" ? (
+                                  <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
+                                    {captionText}
+                                  </p>
+                                ) : Array.isArray(captionText) ? (
+                                  <PortableText value={captionText} components={imgdesc} />
+                                ) : null}
                               </div>
                             </div>
                           </div>
@@ -635,57 +646,57 @@ const PortableTextComponents = () => {
         if (image) {
           return (
             <aside
-              className="my-8 sm:my-10 grid min-w-0 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50 min-[768px]:grid-cols-[0.95fr_1.05fr]"
+              className="my-10 grid min-w-0 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50 min-[768px]:grid-cols-[0.95fr_1.05fr]"
               aria-label={badge || title}
             >
-              <div className="relative flex min-w-0 items-center justify-center bg-[#e6ebff] p-3 sm:p-4 dark:bg-[#12203c]">
+              <div className="flex min-w-0 items-center justify-center bg-[#e6ebff] p-3 sm:p-5 dark:bg-[#12203c]">
                 <Image
                   src={image}
                   alt={imageAlt || title || "Featured guide graphic"}
                   width={800}
                   height={450}
                   sizes="(max-width: 767px) 100vw, 480px"
-                  className="block aspect-video h-auto w-full rounded-xl object-cover shadow-sm"
+                  className="block aspect-video h-auto w-full min-[768px]:h-full min-[768px]:aspect-auto rounded-xl object-cover shadow-sm"
                   unoptimized={typeof image === "string" && image.startsWith("http")}
                 />
               </div>
-              <div className="flex min-w-0 flex-col justify-center p-4 sm:p-5 md:p-6 lg:p-7">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <div className="flex min-w-0 flex-col justify-center p-5 sm:p-7 lg:p-9">
+                <div className="flex items-center gap-2.5 text-xs font-semibold">
                   <Image
                     src="/doitwithai-logo-square.png"
-                    width={28}
-                    height={28}
+                    width={32}
+                    height={32}
                     alt=""
-                    className="!h-7 !w-7 shrink-0 rounded-lg object-contain"
+                    className="!h-8 !w-8 shrink-0 rounded-lg object-contain"
                   />
                   <span>Do It With AI Tools</span>
                 </div>
                 {badge && (
-                  <p className="mb-1.5 mt-2.5 text-[11px] font-bold uppercase tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
+                  <p className="mb-2 mt-4 text-xs font-bold uppercase leading-6 tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
                     {badge}
                   </p>
                 )}
                 {title && (
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold leading-snug text-gray-900 dark:text-white">
+                  <h3 className="text-xl font-extrabold leading-snug sm:text-2xl lg:text-3xl">
                     {title}
                   </h3>
                 )}
                 {description && (
-                  <p className="mb-4 mt-1.5 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  <p className="mb-6 mt-3 text-base leading-7 text-slate-600 dark:text-slate-300 sm:leading-8">
                     {description}
                   </p>
                 )}
                 <div className="flex flex-wrap items-center gap-3">
                   <Link
                     href={link}
-                    className="inline-flex min-h-10 sm:min-h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs sm:text-sm font-bold leading-5 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
+                    className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-3 text-sm font-bold leading-6 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
                   >
                     {ctaText} <span aria-hidden="true">↗</span>
                   </Link>
                   {secondaryText && secondaryLink && (
                     <Link
                       href={secondaryLink}
-                      className="text-xs sm:text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
+                      className="text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
                     >
                       {secondaryText} →
                     </Link>
