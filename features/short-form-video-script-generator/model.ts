@@ -9,6 +9,8 @@ export type ShortFormScriptInput = {
   ctaGoal: string;
 };
 
+export type ShortScriptSegment = ScriptTimelineSegment;
+
 export type ScriptTimelineSegment = {
   timeRange: string;
   beatLabel: string;

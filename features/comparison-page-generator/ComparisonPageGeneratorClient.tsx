@@ -408,7 +408,7 @@ export default function ComparisonPageGeneratorClient() {
                               value={row.winner}
                               onChange={(e) =>
                                 updateMatrixRow(idx, {
-                                  winner: e.target.value as "A" | "B" | "tie",
+                                  winner: e.target.value as "A" | "B" | "Tie",
                                 })
                               }
                               aria-label={`Winner for ${row.criterion}`}
@@ -422,7 +422,7 @@ export default function ComparisonPageGeneratorClient() {
                             >
                               <option value="A">{input.optionAName}</option>
                               <option value="B">{input.optionBName}</option>
-                              <option value="tie">Tie</option>
+                              <option value="Tie">Tie</option>
                             </select>
                           </td>
                         </tr>

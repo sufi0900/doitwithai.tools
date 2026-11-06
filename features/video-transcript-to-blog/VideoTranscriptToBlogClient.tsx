@@ -133,6 +133,8 @@ export default function VideoTranscriptToBlogClient() {
             paragraphs: [
               "Add your supporting breakdown, practitioner examples, or action steps here.",
             ],
+            keyTakeawayBullet:
+              "Core actionable takeaway and implementation step for this chapter.",
           },
         ],
       }),

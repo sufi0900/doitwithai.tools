@@ -157,72 +157,58 @@ export default function SeoAndSchemaWrapper({
   }
 
   function generateAnchorSlug(text) {
-    if (!text) return "";
+    if (!text) return '';
     return String(text)
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-+|-+$/g, "");
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 
-  function resolveSchemaTocItems(data) {
-    if (!data) return [];
-    const content = Array.isArray(data.content) ? data.content : [];
-    const manualToc = Array.isArray(data.tableOfContents)
-      ? data.tableOfContents.filter((item) => item && typeof item.heading === "string" && item.heading.trim())
-      : [];
-
-    const derivedToc = [];
+  function resolveTocForSchema(data) {
+    const content = Array.isArray(data?.content) ? data.content : [];
+    const bodyToc = [];
     let currentH2 = null;
-    const bodyAnchors = new Set();
-
-    content.forEach((block) => {
-      if (!block || block._type !== "block") return;
-      const style = block.style || "";
-      if (/^h[1-6]$/.test(style)) {
-        const text = Array.isArray(block.children)
-          ? block.children.map((s) => (typeof s?.text === "string" ? s.text : "")).join("").trim()
-          : "";
-        const slug = generateAnchorSlug(text);
-        if (slug) bodyAnchors.add(slug);
-
-        if (style === "h2" && text) {
-          currentH2 = { heading: text, subheadings: [] };
-          derivedToc.push(currentH2);
-        } else if (style === "h3" && text) {
-          if (currentH2) {
-            currentH2.subheadings.push({ subheading: text });
-          } else {
-            derivedToc.push({ heading: text, subheadings: [] });
-          }
-        }
+    for (const block of content) {
+      if (!block || block._type !== 'block') continue;
+      if (block.style !== 'h2' && block.style !== 'h3') continue;
+      const text = Array.isArray(block.children)
+        ? block.children.map((s) => (typeof s?.text === 'string' ? s.text : '')).join('').trim()
+        : '';
+      if (!text) continue;
+      if (block.style === 'h2') {
+        currentH2 = { heading: text, subheadings: [] };
+        bodyToc.push(currentH2);
+      } else if (block.style === 'h3') {
+        if (currentH2) currentH2.subheadings.push({ subheading: text });
+        else bodyToc.push({ heading: text, subheadings: [] });
       }
+    }
+    const manualToc = Array.isArray(data?.tableOfContents)
+      ? data.tableOfContents.filter((i) => i && i.heading)
+      : [];
+    if (!bodyToc.length) return manualToc;
+    if (!manualToc.length) return bodyToc;
+    const validAnchors = new Set();
+    bodyToc.forEach((item) => {
+      validAnchors.add(generateAnchorSlug(item.heading));
+      (item.subheadings || []).forEach((s) => validAnchors.add(generateAnchorSlug(s.subheading)));
     });
-
-    if (derivedToc.length === 0) return manualToc;
-    if (manualToc.length === 0) return derivedToc;
-
-    const allManualExist =
-      manualToc.length === derivedToc.length &&
-      manualToc.every((item) => {
-        const hSlug = generateAnchorSlug(item.heading);
-        if (!hSlug || !bodyAnchors.has(hSlug)) return false;
-        if (Array.isArray(item.subheadings) && item.subheadings.length > 0) {
-          return item.subheadings.every((sub) => {
-            const sSlug = generateAnchorSlug(sub?.subheading);
-            return Boolean(sSlug && bodyAnchors.has(sSlug));
-          });
-        }
-        return true;
+    const allMatch = manualToc.every((item) => {
+      const h = generateAnchorSlug(item.heading);
+      if (!h || !validAnchors.has(h)) return false;
+      return (item.subheadings || []).every((s) => {
+        const sub = generateAnchorSlug(s?.subheading);
+        return !sub || validAnchors.has(sub);
       });
-
-    return allManualExist ? manualToc : derivedToc;
+    });
+    return allMatch ? manualToc : bodyToc;
   }
 
   function generateCorrectTableOfContentsSchema(data, canonicalUrl) {
-    const resolvedToc = resolveSchemaTocItems(data);
+    const resolvedToc = resolveTocForSchema(data);
     if (!resolvedToc || resolvedToc.length === 0) {
       return null;
     }
@@ -232,41 +218,39 @@ export default function SeoAndSchemaWrapper({
 
     resolvedToc.forEach((item) => {
       const headingSlug = generateAnchorSlug(item.heading);
-      if (headingSlug) {
-        tocItems.push({
-          "@type": "ListItem",
-          "position": position++,
+      if (!headingSlug) return;
+      // Add main heading
+      tocItems.push({
+        "@type": "ListItem",
+        "position": position++,
+        "name": item.heading,
+        "url": `${canonicalUrl}#${headingSlug}`,
+        "item": {
+          "@type": "WebPageElement",
           "name": item.heading,
-          "url": `${canonicalUrl}#${headingSlug}`,
-          "item": {
-            "@type": "WebPageElement",
-            "name": item.heading,
-            "url": `${canonicalUrl}#${headingSlug}`
-          }
-        });
-      }
+          "url": `${canonicalUrl}#${headingSlug}`
+        }
+      });
 
+      // Add subheadings if they exist
       if (item.subheadings && item.subheadings.length > 0) {
         item.subheadings.forEach((sub) => {
-          const subSlug = generateAnchorSlug(sub?.subheading);
-          if (subSlug) {
-            tocItems.push({
-              "@type": "ListItem",
-              "position": position++,
+          const subSlug = generateAnchorSlug(sub.subheading);
+          if (!subSlug) return;
+          tocItems.push({
+            "@type": "ListItem",
+            "position": position++,
+            "name": sub.subheading,
+            "url": `${canonicalUrl}#${subSlug}`,
+            "item": {
+              "@type": "WebPageElement",
               "name": sub.subheading,
-              "url": `${canonicalUrl}#${subSlug}`,
-              "item": {
-                "@type": "WebPageElement",
-                "name": sub.subheading,
-                "url": `${canonicalUrl}#${subSlug}`
-              }
-            });
-          }
+              "url": `${canonicalUrl}#${subSlug}`
+            }
+          });
         });
       }
     });
-
-    if (tocItems.length === 0) return null;
 
     return {
       __html: JSON.stringify({
@@ -274,7 +258,7 @@ export default function SeoAndSchemaWrapper({
         "@type": "ItemList",
         "@id": `${canonicalUrl}#table-of-contents`,
         "name": "Table of Contents",
-        "description": `Table of contents for ${data.metatitle || data.title || ""}`,
+        "description": `Table of contents for ${data.metatitle}`,
         "numberOfItems": tocItems.length,
         "itemListOrder": "https://schema.org/ItemListOrderAscending",
         "itemListElement": tocItems

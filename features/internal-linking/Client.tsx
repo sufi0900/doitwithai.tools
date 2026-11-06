@@ -45,7 +45,7 @@ const example: Report = {
       anchor: "group related search terms",
       reason:
         "Links the clustering step directly to the dedicated keyword grouping workflow.",
-      method: "Semantic match",
+      method: "AI reviewed",
     },
   ],
   pages: [

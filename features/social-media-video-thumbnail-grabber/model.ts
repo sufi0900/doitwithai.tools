@@ -1,3 +1,5 @@
+export type VideoThumbnailAsset = ThumbnailVariant;
+
 export interface ThumbnailVariant {
   id: string;
   label: string;
