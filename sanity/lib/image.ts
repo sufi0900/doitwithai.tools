@@ -10,6 +10,24 @@ const imageBuilder = createImageUrlBuilder({
 });
 
 export const urlForImage = (source: any) => {
+  if (typeof source === "string" || source?.localUrl) {
+    const resolvedUrl =
+      typeof source === "string"
+        ? source
+        : source.localUrl || "https://doitwithai.tools/logoForHeader.png";
+    const mockBuilder: any = {
+      url: () => resolvedUrl,
+      width: () => mockBuilder,
+      height: () => mockBuilder,
+      quality: () => mockBuilder,
+      format: () => mockBuilder,
+      auto: () => mockBuilder,
+      blur: () => mockBuilder,
+      fit: () => mockBuilder,
+      crop: () => mockBuilder,
+    };
+    return mockBuilder;
+  }
   return imageBuilder?.image(source);
 };
 

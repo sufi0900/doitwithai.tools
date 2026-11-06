@@ -10,6 +10,7 @@ import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem';
 import { CacheStatusIndicator } from '@/React_Query_Caching/CacheStatusIndicator';
+import { getStaticArticlesByType } from '@/features/articles/legacy/staticArticles';
 
 const ReusableCachedAllBlogs = ({
   currentPage = 1,
@@ -204,7 +205,22 @@ const {
     );
   }
 
-  const postsToDisplay = (pageData && Array.isArray(pageData)) ? pageData.slice(0, limit) : [];
+  const postsToDisplay = useMemo(() => {
+    const rawPosts = (pageData && Array.isArray(pageData)) ? pageData : [];
+    if (currentPage === 1 && !isSearchMode && !customQuery) {
+      const staticPosts = getStaticArticlesByType(documentType);
+      const seenSlugs = new Set();
+      return [...staticPosts, ...rawPosts]
+        .filter((post) => {
+          const s = post?.slug?.current || post?.slug;
+          if (!s || seenSlugs.has(s)) return false;
+          seenSlugs.add(s);
+          return true;
+        })
+        .slice(0, limit);
+    }
+    return rawPosts.slice(0, limit);
+  }, [pageData, currentPage, isSearchMode, customQuery, documentType, limit]);
 
   return (
     <div className="space-y-4" style={{ position: 'relative' }}>

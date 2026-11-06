@@ -4,23 +4,38 @@ import { redisHelpers } from '@/app/lib/redis'; // Adjust path as needed
 import { urlForImage } from "@/sanity/lib/image";
 import { articleMetrics } from "./content-metrics.mjs";
 import { applySeoOverrides } from "./seoArticleOverrides";
+import { getStaticArticle, getStaticArticleSlugs } from "./staticArticles";
 
 
 
 
 export async function getAllArticleSlugs(schemaTypeName) {
+  const staticSlugs = getStaticArticleSlugs(schemaTypeName);
   const query = `*[_type == $type && defined(slug.current)]{ "slug": slug.current }`;
   try {
     const slugs = await client.fetch(query, { type: schemaTypeName }, { perspective: "published" });
     console.log(`[SanityFetch] Fetched ${slugs.length} slugs for type "${schemaTypeName}".`);
-    return slugs;
+    const seen = new Set();
+    return [...staticSlugs, ...(Array.isArray(slugs) ? slugs : [])].filter((item) => {
+      if (!item?.slug || seen.has(item.slug)) return false;
+      seen.add(item.slug);
+      return true;
+    });
   } catch (error) {
     console.error(`Failed to fetch slugs for schema type ${schemaTypeName}:`, error.message);
-    return []; // Return an empty array on error to prevent build failure
+    return staticSlugs; // Return static slugs on error to prevent build failure
   }
 }
 
 export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeName) {
+  const staticDoc = getStaticArticle(slug, schemaTypeName);
+  if (staticDoc) {
+    return applySeoOverrides(
+      { ...staticDoc, ...articleMetrics(staticDoc.content), __source: "code-static" },
+      schemaTypeName
+    );
+  }
+
   const cacheKey = `article:${schemaTypeName}:${slug}`;
   const startTime = Date.now();
   let data = null;

@@ -14,14 +14,16 @@ import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 // Dynamic imports with better loading strategy
 import BlogLayout from "@/features/articles/legacy/components/BlogLayout";
 import { applySeoOverrides } from "@/features/articles/legacy/seoArticleOverrides";
+import { getStaticArticle } from "@/features/articles/legacy/staticArticles";
 
 
 export default function ArticleChildComp({ serverData, params, schemaType }) {
   const currentSlug = params.slug;
+  const staticArticle = useMemo(() => getStaticArticle(currentSlug, schemaType), [currentSlug, schemaType]);
 
 
   // REPLACED with immediate skeleton logic:
-  const [showSkeleton, setShowSkeleton] = useState(!serverData); // Show skeleton immediately if no serverData
+  const [showSkeleton, setShowSkeleton] = useState(!(serverData || staticArticle)); // Show skeleton immediately if no serverData
   const [initialMount, setInitialMount] = useState(true);
 
   // Memoized configurations (same as before)
@@ -55,10 +57,11 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
   const articleCacheOptions = useMemo(() => ({
     componentName: `${schemaType}ArticleContent`,
     enableOffline: true,
-    initialData: serverData,
+    initialData: serverData || staticArticle,
+    enabled: !staticArticle,
     forceRefresh: false,
     staleTime: 2 * 60 * 60 * 1000,
-  }), [serverData, schemaType]);
+  }), [serverData, staticArticle, schemaType]);
 
   const articleQuery = useMemo(() => 
     `*[_type == $schemaType && slug.current == $currentSlug][0]`, 
@@ -85,8 +88,8 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
 
   // Determine final article data (code-first SEO overrides re-applied after client refetch)
   const finalArticleData = useMemo(
-    () => applySeoOverrides(cachedArticleData || serverData, schemaType),
-    [cachedArticleData, serverData, schemaType]
+    () => applySeoOverrides(staticArticle || cachedArticleData || serverData, schemaType),
+    [staticArticle, cachedArticleData, serverData, schemaType]
   );
   const currentPostId = finalArticleData?._id;
 

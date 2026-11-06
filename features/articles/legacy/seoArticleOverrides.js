@@ -149,6 +149,10 @@ export const seoArticleOverrides = {
       { slug: "keyword-clustering-tool", name: "Keyword Grouping Tool" },
       { slug: "search-intent-checker", name: "Keyword Intent Checker" },
     ],
+    hubLink: {
+      href: "/ai-seo/what-to-do-after-keyword-research",
+      label: "Next Step: What to Do After Keyword Research",
+    },
   },
 
   "seo:ai-vs-traditional-keyword-research": {
@@ -166,6 +170,10 @@ export const seoArticleOverrides = {
       { slug: "search-intent-checker", name: "Keyword Intent Checker" },
       { slug: "keyword-research-tool", name: "Keyword Research Tool" },
     ],
+    hubLink: {
+      href: "/ai-seo/what-to-do-after-keyword-research",
+      label: "Next Step: What to Do After Keyword Research",
+    },
   },
 
   "seo:blog-introduction": {
@@ -231,6 +239,10 @@ export const seoArticleOverrides = {
       { slug: "keyword-clustering-tool", name: "Keyword Grouping Tool" },
       { slug: "search-intent-checker", name: "Keyword Intent Checker" },
     ],
+    hubLink: {
+      href: "/ai-seo/what-to-do-after-keyword-research",
+      label: "Next Step: What to Do After Keyword Research",
+    },
   },
 
   "makemoney:ai-video-script-generators": {
@@ -331,6 +343,62 @@ export const seoArticleOverrides = {
       { slug: "image-alt-text-generator", name: "Image Alt Text Generator", primary: true },
       { slug: "on-page-ai-seo-analyzer", name: "On-page AI SEO Analyzer" },
     ],
+  },
+
+  "seo:what-to-do-after-keyword-research": {
+    metatitle: "What to Do After Keyword Research: 10-Step SEO Content Plan",
+    metadesc:
+      "Learn what to do after keyword research: clean your list, match search intent, cluster keywords, map URLs, write briefs, and track rankings with a real audit.",
+    relatedToolSlugs: [
+      "keyword-clustering-tool",
+      "search-intent-checker",
+      "seo-content-brief-generator",
+      "keyword-cannibalization-finder",
+      "gsc-striking-distance-finder",
+      "internal-link-opportunity-finder",
+    ],
+    quickAnswer: {
+      question: "What should you do right after completing keyword research?",
+      answer:
+        "Clean out irrelevant or outdated terms, verify the search intent behind each query, and group related keywords into clusters around a shared reader task. Next, map each cluster to an existing URL you can improve or a new page to create, build a content brief, write and optimize the page with natural keyword placement and internal links, and measure results in Google Search Console.",
+    },
+    tools: [
+      { slug: "keyword-clustering-tool", name: "Keyword Clustering Tool", primary: true },
+      { slug: "search-intent-checker", name: "Search Intent Checker" },
+      { slug: "seo-content-brief-generator", name: "SEO Content Brief Generator" },
+    ],
+    hubLink: {
+      href: "/ai-seo/check-google-keyword-rankings",
+      label: "Next Step: How to Check Keyword Rankings in Google",
+    },
+  },
+
+  "seo:check-google-keyword-rankings": {
+    metatitle: "How to Check Keyword Rankings in Google (Free GSC & Tools)",
+    metadesc:
+      "Learn how to check ranking for keywords in Google using Search Console, live rank checkers, and our free Pos 8–20 finder—plus how to win AI Overviews.",
+    relatedToolSlugs: [
+      "gsc-striking-distance-finder",
+      "gsc-ctr-optimizer",
+      "keyword-cannibalization-finder",
+      "ai-citation-readiness-checker",
+      "internal-link-opportunity-finder",
+      "serp-rich-result-preview-generator",
+    ],
+    quickAnswer: {
+      question: "How do you check where your website ranks for keywords in Google?",
+      answer:
+        "For your own website, open Google Search Console → Performance → Search results, enable Average position, and filter the Queries table by country and page. For a live public lookup on any domain, use a depersonalized SERP checker. To turn Positions 8–20 into immediate clicks, upload your Search Console CSV into the free GSC Striking Distance Keyword Finder.",
+    },
+    tools: [
+      { slug: "gsc-striking-distance-finder", name: "GSC Striking Distance Finder", primary: true },
+      { slug: "gsc-ctr-optimizer", name: "GSC CTR Optimizer" },
+      { slug: "ai-citation-readiness-checker", name: "AI Citation Readiness Checker" },
+    ],
+    hubLink: {
+      href: "/ai-seo/what-to-do-after-keyword-research",
+      label: "Companion Guide: What to Do After Keyword Research",
+    },
   },
 };
 

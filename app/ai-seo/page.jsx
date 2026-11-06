@@ -10,6 +10,7 @@ import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from "@/app/lib/redis";
 import AISEOHeroSection from "@/features/content-listing/SeoListingHero";
+import { getStaticArticlesByType } from "@/features/articles/legacy/staticArticles";
 export const revalidate = 300;
 const SUBCATEGORIES_LIMIT = 2;
 const BLOGS_PAGE_LIMIT = 12;
@@ -33,6 +34,24 @@ function generateOGImageURL(params) {
 async function getData(schemaType, pageSlugPrefix) {
   const cacheKey = `blogList:${schemaType}:main`;
   const startTime = Date.now();
+  const staticPosts = getStaticArticlesByType(schemaType);
+
+  const mergeStaticFirstPage = (payload) => {
+    if (!payload) return payload;
+    const raw = Array.isArray(payload.firstPageBlogs) ? payload.firstPageBlogs : [];
+    const seen = new Set();
+    const merged = [...staticPosts, ...raw].filter((p) => {
+      const s = p?.slug?.current || p?.slug;
+      if (!s || seen.has(s)) return false;
+      seen.add(s);
+      return true;
+    });
+    return {
+      ...payload,
+      firstPageBlogs: merged.slice(0, BLOGS_PAGE_LIMIT + 1),
+      totalCountBlogs: (Number(payload.totalCountBlogs) || 0) + staticPosts.length,
+    };
+  };
 
   try {
     const cachedData = await redisHelpers.get(cacheKey);
@@ -40,7 +59,7 @@ async function getData(schemaType, pageSlugPrefix) {
       console.log(
         `[RedisCacheHit] for ${cacheKey} in ${Date.now() - startTime}ms`,
       );
-      return { ...cachedData, __source: "server-redis" };
+      return mergeStaticFirstPage({ ...cachedData, __source: "server-redis" });
     }
   } catch (redisError) {
     console.error(`Redis error for ${cacheKey}:`, redisError.message);
@@ -111,7 +130,7 @@ async function getData(schemaType, pageSlugPrefix) {
         );
       }
     }
-    return { ...data, __source: "server-network" };
+    return mergeStaticFirstPage({ ...data, __source: "server-network" });
   } catch (error) {
     console.error(`Server-side fetch for AI SEO page failed:`, error.message);
     return null;

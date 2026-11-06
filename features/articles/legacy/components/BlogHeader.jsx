@@ -124,7 +124,45 @@ const ArticleHeader = ({ data }) => {
         <figure className="relative">
           {/* REMOVED aspect-[16/9] wrapper - Container now scales with image */}
           <div className="relative overflow-hidden rounded-xl shadow-lg">
-
+            {data.mainImage?.isPlaceholder ? (
+              <div className="relative flex min-h-[260px] sm:min-h-[340px] flex-col justify-between overflow-hidden rounded-xl border border-blue-200/80 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 p-6 sm:p-8 md:p-10 text-white">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 border border-blue-400/30 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-200">
+                    {data.mainImage.badge || "Do It With AI Tools • Practical SEO Workflow"}
+                  </span>
+                  <span className="inline-flex items-center rounded-md bg-amber-500/20 border border-amber-400/30 px-2.5 py-1 text-[11px] font-medium text-amber-200">
+                    Featured Image Placeholder ({data.mainImage.recommendedFilename || "hero-infographic.webp"})
+                  </span>
+                </div>
+                <div className="my-6 max-w-3xl">
+                  <p className="text-lg sm:text-2xl md:text-3xl font-extrabold leading-snug text-white">
+                    {data.mainImage.placeholderTitle || data.title}
+                  </p>
+                  {data.mainImage.placeholderSubtitle && (
+                    <p className="mt-2.5 text-sm sm:text-base text-blue-100/90 leading-relaxed">
+                      {data.mainImage.placeholderSubtitle}
+                    </p>
+                  )}
+                </div>
+                {Array.isArray(data.mainImage.placeholderSteps) && data.mainImage.placeholderSteps.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+                    {data.mainImage.placeholderSteps.map((stepItem, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur-sm"
+                      >
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-blue-300">
+                          Step {idx + 1}
+                        </div>
+                        <div className="mt-0.5 text-xs sm:text-sm font-semibold text-white">
+                          {stepItem}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
                   <Image
                     className="h-auto w-full object-contain transition-transform duration-700 ease-out will-change-transform"
                     src={imageUrls.main}
@@ -139,6 +177,7 @@ const ArticleHeader = ({ data }) => {
                     blurDataURL={imageUrls.blur}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, (max-width: 1280px) 80vw, 70vw"
                   />
+            )}
             
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
           </div>

@@ -1,6 +1,7 @@
 // ../app/lib/sanity - UPDATED VERSION
 import { createClient } from "next-sanity";
 import { groq } from 'next-sanity';
+import { getAllStaticArticleSitemapEntries } from "@/features/articles/legacy/staticArticles";
 
 export const revalidate = false;
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export const client = createClient({
 
 // Updated function to include _updatedAt for better sitemap lastModified dates
 export async function fetchURLs() {
+  const staticEntries = getAllStaticArticleSitemapEntries();
   const query = `*[_type in ["makemoney", "aitool", "seo", "coding", "blogPost", "guide"] && defined(slug.current) && (_type != "guide" || (defined(publishedAt) && publishedAt <= now()))] {
     "slug": slug.current,
     "title": title, 
@@ -26,11 +28,18 @@ export async function fetchURLs() {
   try {
     const posts = await client.fetch(query);
     
-    // Filter out posts without slugs to avoid broken URLs
-    return posts.filter(post => post.slug && post.slug.trim() !== '');
+    // Filter out posts without slugs to avoid broken URLs and merge code-published articles
+    const validSanityPosts = (Array.isArray(posts) ? posts : []).filter(post => post.slug && post.slug.trim() !== '');
+    const seen = new Set();
+    return [...staticEntries, ...validSanityPosts].filter((post) => {
+      const key = `${post._type}:${post.slug}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   } catch (error) {
     console.error('Error fetching URLs from Sanity:', error);
-    return [];
+    return staticEntries;
   }
 }
 

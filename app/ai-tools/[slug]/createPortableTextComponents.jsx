@@ -509,6 +509,117 @@ const PortableTextComponents = () => {
       richTable: RichTableComponent,
       complexTable: RichTableComponent,
       customTable: RichTableComponent,
+
+      button: ({ value }) => {
+        const { text, link } = value || {};
+        return (
+          <div className="flex justify-center mb-4 sm:mb-6 mt-4 sm:mt-6 px-2 sm:px-0">
+            <a
+              href={link}
+              className="press-button w-full sm:w-auto inline-flex items-center justify-center min-h-[48px] sm:min-h-[52px] px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white text-base sm:text-lg md:text-xl font-semibold tracking-wide rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:scale-[1.02] no-shift"
+              aria-label={text}
+              itemProp="url"
+            >
+              <span className="truncate">{text}</span>
+              <Rocket className="ml-2 flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
+            </a>
+          </div>
+        );
+      },
+
+      toolPromoCard: ({ value }) => {
+        const {
+          badge = "Free Interactive SEO Utility",
+          title,
+          description,
+          ctaText = "Open Free Tool",
+          link = "/tools",
+          secondaryText,
+          secondaryLink,
+        } = value || {};
+        return (
+          <aside
+            aria-label={title || "Related interactive tool"}
+            className="my-6 sm:my-8 rounded-2xl border border-blue-200 dark:border-blue-800/80 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/70 dark:from-slate-800/95 dark:via-slate-900 dark:to-blue-950/50 p-5 sm:p-6 shadow-md"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1.5 flex-1">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-900/50 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
+                  {badge}
+                </span>
+                {title && (
+                  <h4 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white leading-snug">
+                    {title}
+                  </h4>
+                )}
+                {description && (
+                  <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                    {description}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-col sm:items-end gap-2 flex-shrink-0">
+                <Link
+                  href={link}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-3 text-sm sm:text-base font-semibold text-white shadow-sm transition-all duration-200"
+                >
+                  <span>{ctaText}</span>
+                  <Rocket className="w-4 h-4 flex-shrink-0" />
+                </Link>
+                {secondaryText && secondaryLink && (
+                  <Link
+                    href={secondaryLink}
+                    className="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    {secondaryText} →
+                  </Link>
+                )}
+              </div>
+            </div>
+          </aside>
+        );
+      },
+
+      imagePlaceholder: ({ value }) => {
+        const {
+          label = "Visual Placeholder",
+          title,
+          captureInstructions,
+          recommendedFilename,
+          altText,
+        } = value || {};
+        return (
+          <figure className="my-6 sm:my-8 rounded-2xl border-2 border-dashed border-blue-300 dark:border-blue-700/80 bg-slate-50/90 dark:bg-slate-800/60 p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-900/40 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                {label}
+              </span>
+              {recommendedFilename && (
+                <code className="rounded bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  {recommendedFilename}
+                </code>
+              )}
+            </div>
+            {title && (
+              <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
+                {title}
+              </div>
+            )}
+            {captureInstructions && (
+              <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
+                <strong className="font-semibold text-slate-900 dark:text-white">Visual Specification: </strong>
+                {captureInstructions}
+              </p>
+            )}
+            {altText && (
+              <figcaption className="rounded-lg bg-white/90 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-700/80 px-3.5 py-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+                <strong className="font-semibold text-slate-800 dark:text-slate-200">Prepared Image Alt Text: </strong>
+                {altText}
+              </figcaption>
+            )}
+          </figure>
+        );
+      },
     },
 
     block: {
