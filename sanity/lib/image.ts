@@ -15,6 +15,8 @@ export const urlForImage = (source: any) => {
       typeof source === "string"
         ? source
         : source.localUrl || "https://doitwithai.tools/logoForHeader.png";
+    const placeholderDataUrl =
+      "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjMTgyNDNlIi8+PC9zdmc+";
     const mockBuilder: any = {
       url: () => resolvedUrl,
       width: () => mockBuilder,
@@ -22,7 +24,18 @@ export const urlForImage = (source: any) => {
       quality: () => mockBuilder,
       format: () => mockBuilder,
       auto: () => mockBuilder,
-      blur: () => mockBuilder,
+      blur: () => ({
+        url: () => placeholderDataUrl,
+        quality: () => ({
+          url: () => placeholderDataUrl,
+          format: () => ({
+            url: () => placeholderDataUrl,
+          }),
+        }),
+        format: () => ({
+          url: () => placeholderDataUrl,
+        }),
+      }),
       fit: () => mockBuilder,
       crop: () => mockBuilder,
     };

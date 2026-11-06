@@ -16,7 +16,16 @@ function nextKey(prefix = "k") {
 export function parseInlineSpans(text = "") {
   const children = [];
   const markDefs = [];
-  const pattern = /(\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\))/g;
+  const pattern =
+    /(\*\*\[([^\]]+)\]\(([^)]+)\)\*\*|\[\*\*([^*]+)\*\*\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|\*\*`([^`]+)`\*\*|\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`)/g;
+
+  const normalizeHref = (href) => {
+    const trimmed = String(href || "").trim();
+    if (trimmed.startsWith("https://doitwithai.tools/")) {
+      return trimmed.replace("https://doitwithai.tools", "");
+    }
+    return trimmed;
+  };
 
   let lastIndex = 0;
   let match;
@@ -31,51 +40,57 @@ export function parseInlineSpans(text = "") {
       });
     }
 
-    if (match[2] !== undefined) {
-      // **bold**
+    if (match[2] !== undefined && match[3] !== undefined) {
+      // **[label](href)** — bold link
+      const linkKey = nextKey("link");
+      markDefs.push({
+        _type: "link",
+        _key: linkKey,
+        href: normalizeHref(match[3]),
+      });
       children.push({
         _type: "span",
         _key: nextKey("s"),
         text: match[2],
-        marks: ["strong"],
+        marks: ["strong", linkKey],
       });
-    } else if (match[3] !== undefined) {
-      // *italic*
-      children.push({
-        _type: "span",
-        _key: nextKey("s"),
-        text: match[3],
-        marks: ["em"],
+    } else if (match[4] !== undefined && match[5] !== undefined) {
+      // [**label**](href) — link with bold label
+      const linkKey = nextKey("link");
+      markDefs.push({
+        _type: "link",
+        _key: linkKey,
+        href: normalizeHref(match[5]),
       });
-    } else if (match[4] !== undefined) {
-      // `code`
       children.push({
         _type: "span",
         _key: nextKey("s"),
         text: match[4],
-        marks: ["code"],
+        marks: ["strong", linkKey],
       });
-    } else if (match[5] !== undefined && match[6] !== undefined) {
-      // [label](href) — also parse nested **bold** or `code` inside link label
+    } else if (match[6] !== undefined && match[7] !== undefined) {
+      // [label](href)
       const linkKey = nextKey("link");
-      const rawHref = match[6].trim();
-      const normalizedHref = rawHref.startsWith("https://doitwithai.tools/")
-        ? rawHref.replace("https://doitwithai.tools", "")
-        : rawHref;
-
       markDefs.push({
         _type: "link",
         _key: linkKey,
-        href: normalizedHref,
+        href: normalizeHref(match[7]),
       });
 
-      const rawLabel = match[5];
+      const rawLabel = match[6];
       if (rawLabel.startsWith("**") && rawLabel.endsWith("**") && rawLabel.length > 4) {
         children.push({
           _type: "span",
           _key: nextKey("s"),
           text: rawLabel.slice(2, -2),
           marks: ["strong", linkKey],
+        });
+      } else if (rawLabel.startsWith("`") && rawLabel.endsWith("`") && rawLabel.length > 2) {
+        children.push({
+          _type: "span",
+          _key: nextKey("s"),
+          text: rawLabel.slice(1, -1),
+          marks: ["code", linkKey],
         });
       } else {
         children.push({
@@ -85,6 +100,38 @@ export function parseInlineSpans(text = "") {
           marks: [linkKey],
         });
       }
+    } else if (match[8] !== undefined) {
+      // **`code`** — bold inline code
+      children.push({
+        _type: "span",
+        _key: nextKey("s"),
+        text: match[8],
+        marks: ["strong", "code"],
+      });
+    } else if (match[9] !== undefined) {
+      // **bold**
+      children.push({
+        _type: "span",
+        _key: nextKey("s"),
+        text: match[9],
+        marks: ["strong"],
+      });
+    } else if (match[10] !== undefined) {
+      // *italic*
+      children.push({
+        _type: "span",
+        _key: nextKey("s"),
+        text: match[10],
+        marks: ["em"],
+      });
+    } else if (match[11] !== undefined) {
+      // `code`
+      children.push({
+        _type: "span",
+        _key: nextKey("s"),
+        text: match[11],
+        marks: ["code"],
+      });
     }
 
     lastIndex = pattern.lastIndex;
@@ -429,25 +476,25 @@ const afterKeywordResearchContent = [
       ],
       [
         "Organize and group a supplied keyword list",
-        "[/tools/keyword-clustering-tool](/tools/keyword-clustering-tool)",
+        "**[Keyword Clustering Tool](/tools/keyword-clustering-tool)**",
         "**Improve existing tool page**",
         "The site already offers a working clustering utility that serves this exact task",
       ],
       [
         "Turn completed keyword research into a content plan",
-        "[/ai-seo/what-to-do-after-keyword-research](/ai-seo/what-to-do-after-keyword-research)",
+        "**[What to Do After Keyword Research](/ai-seo/what-to-do-after-keyword-research)**",
         "**Create new supporting guide**",
         "Readers need the complete 10-step post-research workflow, not only a grouping box",
       ],
       [
         "Generate and validate seed keyword ideas with ChatGPT",
-        "[/ai-seo/chatgpt-keyword-research](/ai-seo/chatgpt-keyword-research)",
+        "**[ChatGPT Keyword Research Guide](/ai-seo/chatgpt-keyword-research)**",
         "**Retain & cross-link**",
         "Keyword discovery precedes post-research planning; cross-linking connects both stages",
       ],
       [
         "Check where existing pages rank in Google",
-        "[/ai-seo/check-google-keyword-rankings](/ai-seo/check-google-keyword-rankings)",
+        "**[How to Check Keyword Rankings](/ai-seo/check-google-keyword-rankings)**",
         "**Create companion measurement guide**",
         "Measuring post-publish rankings is the natural follow-up after publishing mapped pages",
       ],
@@ -1539,21 +1586,8 @@ export const STATIC_ARTICLES = {
       "After completing keyword research, turn your raw list into a structured content plan: filter out irrelevant terms, verify search intent, cluster related keywords around shared tasks, map groups to existing or new URLs, build content briefs, and measure results in Search Console.",
     readTime: { minutes: 12 },
     mainImage: {
-      isPlaceholder: true,
-      localUrl: "https://doitwithai.tools/logoForHeader.png",
-      badge: "Do It With AI Tools • Post-Research SEO Playbook",
-      recommendedFilename: "what-to-do-after-keyword-research-hero.webp",
-      placeholderTitle:
-        "What to Do After Keyword Research: The 10-Step Content & Page Mapping Workflow",
-      placeholderSubtitle:
-        "From raw keyword exports to intent-checked clusters, page decisions, briefs, and post-publish measurement.",
-      placeholderSteps: [
-        "Filter & Verify Intent",
-        "Cluster by Reader Task",
-        "Map Existing vs. New URLs",
-        "Brief, Publish & Measure in GSC",
-      ],
-      alt: "Workflow diagram showing what to do after keyword research: clean list, check search intent, cluster keywords, map to pages, write content brief, and measure in Search Console",
+      localUrl: "/images/articles/what-to-do-after-keyword-research.jpg",
+      alt: "What to Do After Keyword Research: From keyword list to content plan - doitwithai.tools",
     },
     tags: [
       { name: "Keyword Research", slug: { current: "keyword-research" } },
@@ -1599,21 +1633,8 @@ export const STATIC_ARTICLES = {
       "To check where a website ranks for specific keywords on Google, use three main approaches depending on whether you need a free internal audit in Google Search Console, a quick public SERP lookup, or daily competitor tracking—and then turn Positions 8 to 20 into real clicks.",
     readTime: { minutes: 14 },
     mainImage: {
-      isPlaceholder: true,
-      localUrl: "https://doitwithai.tools/logoForHeader.png",
-      badge: "Do It With AI Tools • Google Rank Tracking & Position Zero Guide",
-      recommendedFilename: "how-to-check-keyword-rankings-in-google-hero.webp",
-      placeholderTitle:
-        "How to Check Keyword Rankings in Google (And Turn Positions 8–20 Into Clicks)",
-      placeholderSubtitle:
-        "Compare Google Search Console, public live SERP checkers, and Striking Distance audits—plus how to get cited in Google AI Overviews.",
-      placeholderSteps: [
-        "GSC Average Position Audit",
-        "Depersonalized Live SERP Check",
-        "Positions 8–20 Quick-Win Filter",
-        "4-Zone Action Playbook + AI Overviews",
-      ],
-      alt: "Step-by-step guide showing how to check ranking for keywords in Google using Search Console, live SERP rank checkers, and the GSC Striking Distance Keyword Finder",
+      localUrl: "/images/articles/check-google-keyword-rankings.jpg",
+      alt: "How to Check Keyword Rankings: From Google search results to Search Console - doitwithai.tools",
     },
     tags: [
       { name: "Google Search Console", slug: { current: "google-search-console" } },

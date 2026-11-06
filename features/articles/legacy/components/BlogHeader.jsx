@@ -173,8 +173,8 @@ const ArticleHeader = ({ data }) => {
                       quality={100}  // Changed from 85 to 100
 
                     unoptimized // <-- ADD THIS to stop Next.js from re-compressing
-                    placeholder="blur"
-                    blurDataURL={imageUrls.blur}
+                    placeholder={imageUrls?.blur?.startsWith("data:") ? "blur" : "empty"}
+                    blurDataURL={imageUrls?.blur?.startsWith("data:") ? imageUrls.blur : undefined}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, (max-width: 1280px) 80vw, 70vw"
                   />
             )}

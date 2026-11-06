@@ -126,8 +126,9 @@ const PortableTextComponents = () => {
         </code>
       ),
       link: ({ value, children }) => {
-        const target = value?.blank ? "_blank" : "_self";
-        const rel = value?.blank ? "noopener noreferrer" : undefined;
+        const isExternal = typeof value?.href === "string" && value.href.startsWith("http");
+        const target = value?.blank || isExternal ? "_blank" : "_self";
+        const rel = value?.blank || isExternal ? "noopener noreferrer" : undefined;
         return (
           <Link
             href={value?.href || "#"}
@@ -184,12 +185,102 @@ const PortableTextComponents = () => {
     const theadRows = headerRowCount > 0 ? rows.slice(0, headerRowCount) : [];
     const tbodyRows = headerRowCount > 0 ? rows.slice(headerRowCount) : rows;
 
+    const renderInlineMarkdown = (text) => {
+      if (!text || typeof text !== "string") return text;
+      const tokenRegex =
+        /(\**\[([^\]]+)\]\(([^)]+)\)\**|\[\**([^*]+)\**\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|\**`([^`]+)`\**|\**([^*]+)\**|\*([^*]+)\*|`([^`]+)`)/g;
+      if (!tokenRegex.test(text)) {
+        return <span className="whitespace-pre-line">{text}</span>;
+      }
+      tokenRegex.lastIndex = 0;
+      const parts = [];
+      let lastIdx = 0;
+      let m;
+      let k = 0;
+      while ((m = tokenRegex.exec(text)) !== null) {
+        if (m.index > lastIdx) {
+          parts.push(text.slice(lastIdx, m.index));
+        }
+        if (m[2] && m[3]) {
+          const isExt = m[3].startsWith("http");
+          parts.push(
+            <Link
+              key={k++}
+              href={m[3]}
+              {...(isExt ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {m[2]}
+            </Link>
+          );
+        } else if (m[4] && m[5]) {
+          const isExt = m[5].startsWith("http");
+          parts.push(
+            <Link
+              key={k++}
+              href={m[5]}
+              {...(isExt ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              {m[4]}
+            </Link>
+          );
+        } else if (m[6] && m[7]) {
+          const isExt = m[7].startsWith("http");
+          parts.push(
+            <Link
+              key={k++}
+              href={m[7]}
+              {...(isExt ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+            >
+              {m[6]}
+            </Link>
+          );
+        } else if (m[8]) {
+          parts.push(
+            <strong key={k++} className="font-bold text-gray-900 dark:text-white">
+              <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-blue-600 dark:text-blue-400">
+                {m[8]}
+              </code>
+            </strong>
+          );
+        } else if (m[9]) {
+          parts.push(
+            <strong key={k++} className="font-bold text-gray-900 dark:text-white">
+              {m[9]}
+            </strong>
+          );
+        } else if (m[10]) {
+          parts.push(
+            <em key={k++} className="italic">
+              {m[10]}
+            </em>
+          );
+        } else if (m[11]) {
+          parts.push(
+            <code
+              key={k++}
+              className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-blue-600 dark:text-blue-400"
+            >
+              {m[11]}
+            </code>
+          );
+        }
+        lastIdx = tokenRegex.lastIndex;
+      }
+      if (lastIdx < text.length) {
+        parts.push(text.slice(lastIdx));
+      }
+      return <span className="whitespace-pre-line">{parts}</span>;
+    };
+
     const renderCellValue = (cell) => {
       if (cell === null || cell === undefined || cell === "") {
         return <span className="text-gray-400 dark:text-gray-500">—</span>;
       }
       if (typeof cell === "string" || typeof cell === "number") {
-        return <span className="whitespace-pre-line">{String(cell)}</span>;
+        return renderInlineMarkdown(String(cell));
       }
       if (Array.isArray(cell)) {
         return <PortableText value={cell} components={inlineCellComponents} />;
@@ -197,7 +288,7 @@ const PortableTextComponents = () => {
       if (typeof cell === "object") {
         if (cell.content) {
           if (typeof cell.content === "string" || typeof cell.content === "number") {
-            return <span className="whitespace-pre-line">{String(cell.content)}</span>;
+            return renderInlineMarkdown(String(cell.content));
           }
           if (Array.isArray(cell.content)) {
             return <PortableText value={cell.content} components={inlineCellComponents} />;
@@ -207,7 +298,7 @@ const PortableTextComponents = () => {
           return <PortableText value={[cell]} components={inlineCellComponents} />;
         }
         if (typeof cell.text === "string" || typeof cell.value === "string") {
-          return <span className="whitespace-pre-line">{cell.text || cell.value}</span>;
+          return renderInlineMarkdown(cell.text || cell.value);
         }
       }
       return <span className="text-gray-400 dark:text-gray-500">—</span>;
@@ -547,7 +638,7 @@ const PortableTextComponents = () => {
               className="my-8 sm:my-10 grid min-w-0 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50 min-[768px]:grid-cols-[0.95fr_1.05fr]"
               aria-label={badge || title}
             >
-              <div className="flex min-w-0 items-center justify-center bg-[#e6ebff] p-3 sm:p-5 dark:bg-[#12203c]">
+              <div className="relative flex min-w-0 items-center justify-center bg-[#e6ebff] p-3 sm:p-4 dark:bg-[#12203c]">
                 <Image
                   src={image}
                   alt={imageAlt || title || "Featured guide graphic"}
@@ -558,43 +649,43 @@ const PortableTextComponents = () => {
                   unoptimized={typeof image === "string" && image.startsWith("http")}
                 />
               </div>
-              <div className="flex min-w-0 flex-col justify-center p-5 sm:p-7 lg:p-9">
-                <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <div className="flex min-w-0 flex-col justify-center p-4 sm:p-5 md:p-6 lg:p-7">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
                   <Image
                     src="/doitwithai-logo-square.png"
-                    width={32}
-                    height={32}
+                    width={28}
+                    height={28}
                     alt=""
-                    className="!h-8 !w-8 shrink-0 rounded-lg object-contain"
+                    className="!h-7 !w-7 shrink-0 rounded-lg object-contain"
                   />
                   <span>Do It With AI Tools</span>
                 </div>
                 {badge && (
-                  <p className="mb-2 mt-4 text-xs font-bold uppercase leading-6 tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
+                  <p className="mb-1.5 mt-2.5 text-[11px] font-bold uppercase tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
                     {badge}
                   </p>
                 )}
                 {title && (
-                  <h3 className="text-xl font-extrabold leading-snug sm:text-2xl lg:text-3xl text-gray-900 dark:text-white">
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold leading-snug text-gray-900 dark:text-white">
                     {title}
                   </h3>
                 )}
                 {description && (
-                  <p className="mb-6 mt-3 text-base leading-7 text-slate-600 dark:text-slate-300 sm:leading-8">
+                  <p className="mb-4 mt-1.5 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                     {description}
                   </p>
                 )}
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3">
                   <Link
                     href={link}
-                    className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-3 text-sm font-bold leading-6 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
+                    className="inline-flex min-h-10 sm:min-h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs sm:text-sm font-bold leading-5 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
                   >
                     {ctaText} <span aria-hidden="true">↗</span>
                   </Link>
                   {secondaryText && secondaryLink && (
                     <Link
                       href={secondaryLink}
-                      className="text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
+                      className="text-xs sm:text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
                     >
                       {secondaryText} →
                     </Link>
@@ -607,45 +698,45 @@ const PortableTextComponents = () => {
 
         return (
           <aside
-            className="my-8 sm:my-10 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] p-6 sm:p-8 md:p-9 text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50"
+            className="my-8 sm:my-10 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] p-5 sm:p-6 md:p-7 text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50"
             aria-label={badge || title}
           >
-            <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
               <Image
                 src="/doitwithai-logo-square.png"
-                width={32}
-                height={32}
+                width={28}
+                height={28}
                 alt=""
-                className="!h-8 !w-8 shrink-0 rounded-lg object-contain"
+                className="!h-7 !w-7 shrink-0 rounded-lg object-contain"
               />
               <span>Do It With AI Tools</span>
             </div>
             {badge && (
-              <p className="mb-2 mt-4 text-xs font-bold uppercase leading-6 tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
+              <p className="mb-1.5 mt-2.5 text-[11px] font-bold uppercase tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
                 {badge}
               </p>
             )}
             {title && (
-              <h3 className="text-xl font-extrabold leading-snug sm:text-2xl lg:text-3xl text-gray-900 dark:text-white">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold leading-snug text-gray-900 dark:text-white">
                 {title}
               </h3>
             )}
             {description && (
-              <p className="mb-6 mt-3 text-base leading-7 text-slate-600 dark:text-slate-300 sm:leading-8 max-w-3xl">
+              <p className="mb-4 mt-1.5 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300 max-w-3xl">
                 {description}
               </p>
             )}
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               <Link
                 href={link}
-                className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-6 py-3 text-sm sm:text-base font-bold leading-6 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
+                className="inline-flex min-h-10 sm:min-h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs sm:text-sm font-bold leading-5 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
               >
                 {ctaText} <span aria-hidden="true">↗</span>
               </Link>
               {secondaryText && secondaryLink && (
                 <Link
                   href={secondaryLink}
-                  className="text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
+                  className="text-xs sm:text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
                 >
                   {secondaryText} →
                 </Link>

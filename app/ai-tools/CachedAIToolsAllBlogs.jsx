@@ -246,7 +246,7 @@ const {
             overview={post.overview}
             title={post.title}
             tags={post.tags}
-            mainImage={post.mainImage ? urlForImage(post.mainImage).url() : "https://placehold.co/600x400/cccccc/000000?text=No+Image"} 
+            mainImage={post.mainImage?.localUrl || (post.mainImage ? urlForImage(post.mainImage).url() : "https://placehold.co/600x400/cccccc/000000?text=No+Image")} 
             slug={
               post._type === "seo"
                 ? `/ai-seo/${post.slug.current}`
