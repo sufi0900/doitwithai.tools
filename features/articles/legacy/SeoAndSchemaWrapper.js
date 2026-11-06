@@ -156,45 +156,117 @@ export default function SeoAndSchemaWrapper({
     };
   }
 
+  function generateAnchorSlug(text) {
+    if (!text) return "";
+    return String(text)
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function resolveSchemaTocItems(data) {
+    if (!data) return [];
+    const content = Array.isArray(data.content) ? data.content : [];
+    const manualToc = Array.isArray(data.tableOfContents)
+      ? data.tableOfContents.filter((item) => item && typeof item.heading === "string" && item.heading.trim())
+      : [];
+
+    const derivedToc = [];
+    let currentH2 = null;
+    const bodyAnchors = new Set();
+
+    content.forEach((block) => {
+      if (!block || block._type !== "block") return;
+      const style = block.style || "";
+      if (/^h[1-6]$/.test(style)) {
+        const text = Array.isArray(block.children)
+          ? block.children.map((s) => (typeof s?.text === "string" ? s.text : "")).join("").trim()
+          : "";
+        const slug = generateAnchorSlug(text);
+        if (slug) bodyAnchors.add(slug);
+
+        if (style === "h2" && text) {
+          currentH2 = { heading: text, subheadings: [] };
+          derivedToc.push(currentH2);
+        } else if (style === "h3" && text) {
+          if (currentH2) {
+            currentH2.subheadings.push({ subheading: text });
+          } else {
+            derivedToc.push({ heading: text, subheadings: [] });
+          }
+        }
+      }
+    });
+
+    if (derivedToc.length === 0) return manualToc;
+    if (manualToc.length === 0) return derivedToc;
+
+    const allManualExist =
+      manualToc.length === derivedToc.length &&
+      manualToc.every((item) => {
+        const hSlug = generateAnchorSlug(item.heading);
+        if (!hSlug || !bodyAnchors.has(hSlug)) return false;
+        if (Array.isArray(item.subheadings) && item.subheadings.length > 0) {
+          return item.subheadings.every((sub) => {
+            const sSlug = generateAnchorSlug(sub?.subheading);
+            return Boolean(sSlug && bodyAnchors.has(sSlug));
+          });
+        }
+        return true;
+      });
+
+    return allManualExist ? manualToc : derivedToc;
+  }
+
   function generateCorrectTableOfContentsSchema(data, canonicalUrl) {
-    if (!data || !data.tableOfContents || data.tableOfContents.length === 0) {
+    const resolvedToc = resolveSchemaTocItems(data);
+    if (!resolvedToc || resolvedToc.length === 0) {
       return null;
     }
 
     const tocItems = [];
     let position = 1;
 
-    data.tableOfContents.forEach((item) => {
-      // Add main heading
-      tocItems.push({
-        "@type": "ListItem",
-        "position": position++,
-        "name": item.heading,
-        "url": `${canonicalUrl}#${item.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`,
-        "item": {
-          "@type": "WebPageElement",
+    resolvedToc.forEach((item) => {
+      const headingSlug = generateAnchorSlug(item.heading);
+      if (headingSlug) {
+        tocItems.push({
+          "@type": "ListItem",
+          "position": position++,
           "name": item.heading,
-          "url": `${canonicalUrl}#${item.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`
-        }
-      });
+          "url": `${canonicalUrl}#${headingSlug}`,
+          "item": {
+            "@type": "WebPageElement",
+            "name": item.heading,
+            "url": `${canonicalUrl}#${headingSlug}`
+          }
+        });
+      }
 
-      // Add subheadings if they exist
       if (item.subheadings && item.subheadings.length > 0) {
         item.subheadings.forEach((sub) => {
-          tocItems.push({
-            "@type": "ListItem",
-            "position": position++,
-            "name": sub.subheading,
-            "url": `${canonicalUrl}#${sub.subheading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`,
-            "item": {
-              "@type": "WebPageElement",
+          const subSlug = generateAnchorSlug(sub?.subheading);
+          if (subSlug) {
+            tocItems.push({
+              "@type": "ListItem",
+              "position": position++,
               "name": sub.subheading,
-              "url": `${canonicalUrl}#${sub.subheading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`
-            }
-          });
+              "url": `${canonicalUrl}#${subSlug}`,
+              "item": {
+                "@type": "WebPageElement",
+                "name": sub.subheading,
+                "url": `${canonicalUrl}#${subSlug}`
+              }
+            });
+          }
         });
       }
     });
+
+    if (tocItems.length === 0) return null;
 
     return {
       __html: JSON.stringify({
@@ -202,7 +274,7 @@ export default function SeoAndSchemaWrapper({
         "@type": "ItemList",
         "@id": `${canonicalUrl}#table-of-contents`,
         "name": "Table of Contents",
-        "description": `Table of contents for ${data.metatitle}`,
+        "description": `Table of contents for ${data.metatitle || data.title || ""}`,
         "numberOfItems": tocItems.length,
         "itemListOrder": "https://schema.org/ItemListOrderAscending",
         "itemListElement": tocItems

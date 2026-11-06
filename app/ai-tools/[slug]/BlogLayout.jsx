@@ -306,7 +306,7 @@ if (!data && loading) {
                 {/* Main Content - Critical for FCP */}
                 <div className="relative w-full">
                   <div className="opacity-100"> {/* Always show content if we have data */}
-                    <TableOfContents tableOfContents={data.tableOfContents} />
+                    <TableOfContents tableOfContents={data.tableOfContents} content={data.content} />
                     
                     <div className="mb-4  mt-4 border-b-2  border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                       <PortableText value={data.content} components={portableTextComponents} />
