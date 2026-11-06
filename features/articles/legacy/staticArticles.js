@@ -144,13 +144,15 @@ export function tableBlock(caption, rows) {
 }
 
 export function toolPromo({
-  badge = "Free Interactive SEO Tool",
+  badge = "Do It With AI Tools",
   title,
   description,
   ctaText = "Open Free Tool",
   link,
   secondaryText,
   secondaryLink,
+  image,
+  imageAlt,
 }) {
   return {
     _type: "toolPromoCard",
@@ -162,6 +164,8 @@ export function toolPromo({
     link,
     secondaryText,
     secondaryLink,
+    image,
+    imageAlt,
   };
 }
 
@@ -235,7 +239,7 @@ const afterKeywordResearchContent = [
     "When **Do It With AI Tools** first launched, new pages often started with an idea that sounded helpful on paper: an SEO tutorial, a prompt template, or a browser utility. Serving the reader mattered from day one, yet topics were frequently chosen before checking real search demand, query phrasing, and page-level competition."
   ),
   p(
-    "During the November 2026 SEO audit, the **Do It With AI Tools** team brought Semrush keyword exports and Google Search Console query logs directly into the editorial planning workflow. That data created a brand-new challenge: dozens of phrases looked promising on the surface, but some belonged on existing tool pages, others required a standalone step-by-step guide, and several did not fit the website's audience at all."
+    "During the November 2026 SEO audit, the **Do It With AI Tools** team brought keyword exports and Google Search Console query logs directly into the editorial planning workflow. That data created a brand-new challenge: dozens of phrases looked promising on the surface, but some belonged on existing tool pages, others required a standalone step-by-step guide, and several did not fit the website's audience at all."
   ),
   p(
     "Here is the exact 10-step workflow **Do It With AI Tools** used to turn that raw keyword research into an actionable content plan—and how you can apply the same system to your own keyword list."
@@ -334,7 +338,7 @@ const afterKeywordResearchContent = [
   ),
   p("Compare the difference between these two searches from the audit:"),
   bullet(
-    "**\"Keyword grouping software\"** signals someone looking for an interactive utility they can use right away or comparing software options."
+    "**\"Keyword grouping software\"** signals someone looking for an interactive utility they can use right away or evaluating software."
   ),
   bullet(
     "**\"What to do after keyword research\"** signals someone who already has a list of keywords and needs a clear sequence of decisions, templates, and next actions."
@@ -346,17 +350,17 @@ const afterKeywordResearchContent = [
     "Instead of writing a vague label like *\"Informational\"* in your spreadsheet, write a specific task note such as: *\"The reader needs a reviewed keyword-to-page action plan, including how to decide between updating an existing page and writing a new article.\"* Specific intent notes ensure your title tag, opening paragraph, and call-to-action all pull in the same direction."
   ),
   p(
-    "To speed up this step, the free [Search Intent Checker](/tools/search-intent-checker) on **Do It With AI Tools** helps classify query wording and supplied SERP notes into primary and secondary intent buckets. Because browser utilities do not scrape live country-specific Google SERPs on your behalf, always confirm borderline terms against live search results before locking in your page format."
+    "To speed up this step, the free [Search Intent Checker](/tools/search-intent-checker) on **Do It With AI Tools** helps classify query wording and supplied SERP notes into primary and secondary intent buckets. Always confirm borderline terms against live search results before locking in your page format."
   ),
 
   toolPromo({
-    badge: "Step 2 Helper • Free Browser Tool",
+    badge: "STEP 2 HELPER • BROWSER UTILITY",
     title: "Classify Your Keyword List by Search Intent in Seconds",
     description:
-      "Paste your cleaned keyword list into the free Search Intent Checker to separate tool/software queries from how-to guides and commercial comparisons before you assign page formats.",
+      "Paste your cleaned keyword list into the free Search Intent Checker to separate tool queries from step-by-step guides and commercial comparisons before choosing page formats.",
     ctaText: "Open Search Intent Checker",
     link: "/tools/search-intent-checker",
-    secondaryText: "Explore Search Intent Prompts for ChatGPT",
+    secondaryText: "Explore Search Intent Prompts",
     secondaryLink: "/prompts/chatgpt-prompts-for-search-intent",
   }),
 
@@ -379,16 +383,27 @@ const afterKeywordResearchContent = [
     "Keep in mind that rule-based and ChatGPT-assisted grouping tools analyze wording and topical overlap—they do not compare live top-10 ranking URLs on Google. Keep your search volume and KD columns in your master spreadsheet, and write one clear sentence for each cluster explaining the shared reader task. If your sentence requires two or three unrelated outcomes (for example, *\"learn the history of title tags\"* and *\"use an interactive meta title generator right now\"*), split the cluster into separate pages: a tutorial guide like the [Meta Title Optimization Guide](/ai-seo/meta-title) and an interactive utility like the [Meta Title Generator](/tools/meta-title-generator)."
   ),
 
+  toolPromo({
+    badge: "PAUSE BEFORE EXPANDING YOUR LIST",
+    title: "Make the reader's next task clear",
+    description:
+      "Use six focused search intent prompts to review mixed queries, compare evidence, and choose a useful page format before writing.",
+    ctaText: "Explore the search intent prompts",
+    link: "/prompts/chatgpt-prompts-for-search-intent",
+    image: "/prompts/search-intent-prompts-hero.webp",
+    imageAlt: "Search intent prompt guide with a desktop prompt mockup.",
+  }),
+
   h3("Leave uncertain terms in a review queue"),
   p(
     "Not every keyword has an obvious home on day one. Keeping a dedicated *Review Queue* tab lets you hold ambiguous queries until you inspect live SERPs, rather than forcing a weak page assignment just to finish the spreadsheet. You can also use the curated [Topic Clustering & Topical Authority Prompts](/prompts/topic-clustering-topical-authority-prompts) with ChatGPT to stress-test your proposed topic buckets."
   ),
 
   toolPromo({
-    badge: "Step 3 Helper • Keyword Grouping Utility",
+    badge: "STEP 3 HELPER • KEYWORD GROUPING UTILITY",
     title: "Group Raw Keywords into Topic Clusters & Page Assignments",
     description:
-      "Turn an unorganized Semrush, Ahrefs, or Search Console list into clean topic clusters with editable group names, intent labels, and target URL mapping.",
+      "Turn an unorganized keyword export into clean topic clusters with editable group names, intent labels, and target URL mapping.",
     ctaText: "Use Free Keyword Clustering Tool",
     link: "/tools/keyword-clustering-tool",
     secondaryText: "Read ChatGPT Keyword Research Guide",
@@ -444,6 +459,17 @@ const afterKeywordResearchContent = [
       ],
     ]
   ),
+
+  toolPromo({
+    badge: "START WITH A CLEAR RESEARCH PROCESS",
+    title: "Put your keyword prompts into a useful workflow",
+    description:
+      "Follow our guide to exploring keyword ideas, reviewing evidence, and choosing a clear purpose for each page.",
+    ctaText: "Read the keyword research guide",
+    link: "/ai-seo/chatgpt-keyword-research",
+    image: "https://cdn.sanity.io/images/qyshio4a/production/cf24e38598d79ac7da9528c47648168f24667c61-1400x788.png",
+    imageAlt: "Cover of guide to keyword research with ChatGPT.",
+  }),
 
   h3("Choose a specific editorial action, not just a URL"),
   p("Assign every keyword cluster one of five concrete actions:"),
@@ -504,7 +530,7 @@ const afterKeywordResearchContent = [
   ),
 
   toolPromo({
-    badge: "Step 4 & 5 Helper • Cannibalization & Quick Wins",
+    badge: "STEP 4 & 5 HELPER • AUDIT UTILITIES",
     title: "Audit Existing Pages Before You Write New Ones",
     description:
       "Check whether two of your existing URLs are splitting rankings with the Keyword Cannibalization Finder, or uncover Page-2 quick wins with the GSC Striking Distance Finder.",
@@ -522,7 +548,7 @@ const afterKeywordResearchContent = [
     "Here is the exact editorial brief created for this article during the **Do It With AI Tools** planning sprint:"
   ),
   bullet(
-    "**Target reader:** A website owner, blogger, or marketer who has exported a list of keywords from Semrush, Ahrefs, or Search Console and needs to know what to do next."
+    "**Target reader:** A website owner, blogger, or marketer who has exported a list of keywords and needs to know what to do next."
   ),
   bullet(
     "**Reader outcome:** Turn a raw keyword list into clean clusters, mapped page decisions (improve vs. create), a prioritized publishing queue, and a post-publish GSC measurement loop."
@@ -547,7 +573,7 @@ const afterKeywordResearchContent = [
   ),
 
   toolPromo({
-    badge: "Step 6 Helper • Briefing & Outlining",
+    badge: "STEP 6 HELPER • CONTENT PLANNING",
     title: "Build a Complete SEO Content Brief & H2/H3 Outline",
     description:
       "Turn your primary keyword cluster, search intent notes, and unique evidence into a structured writer handoff with the SEO Content Brief Generator and Article Outline Generator.",
@@ -576,7 +602,7 @@ const afterKeywordResearchContent = [
     "Review this supplied keyword list for a website serving [describe audience] with these existing pages: [list URLs and their purpose]. Group the keywords by shared reader task and propose one action per group: Improve Existing Page, Create New Page, Investigate Overlap, Hold, or Exclude. Preserve all supplied volume and KD figures exactly as given and flag any missing data. Do not invent search volume, keyword difficulty, live Google SERP rankings, or traffic outcomes. Explain any ambiguous queries that require a live SERP check."
   ),
   p(
-    "Google's official [guidance on using generative AI content](https://developers.google.com/search/docs/fundamentals/using-gen-ai-content) makes it clear that automation itself is not against Google Search rules—what matters is accuracy, originality, E-E-A-T (Experience, Expertise, Authoritativeness, and Trustworthiness), and genuine value for searchers. Never publish unreviewed AI text that invents statistics or rehashes ten other blog posts without adding your own evidence. You can audit your draft's unique depth before publishing with our free [Information Gain Auditor](/tools/information-gain-auditor) and [E-E-A-T Content Auditor](/tools/eeat-content-auditor)."
+    "Google's official [guidance on using generative AI content](https://developers.google.com/search/docs/fundamentals/using-gen-ai-content) makes it clear that automation itself is not against Google Search rules—what matters is accuracy, originality, E-E-A-T (Experience, Expertise, Authoritativeness, and Trustworthiness), and genuine value for searchers. Never publish unreviewed AI text that invents statistics or rehashes ten other blog posts without adding your own evidence. You can audit your draft's unique depth before publishing with the free [Information Gain Auditor](/tools/information-gain-auditor) and [E-E-A-T Content Auditor](/tools/eeat-content-auditor)."
   ),
 
   h3("Structure your page for Google AI Overviews as well as human readers"),
@@ -584,7 +610,7 @@ const afterKeywordResearchContent = [
     "When someone searches a workflow question like `what to do after keyword research`, Google frequently displays an **AI Overview (Position Zero)** at the very top of the search results summarizing the core steps (*group and cluster keywords, analyze search intent, map keywords to pages, optimize on-page elements, and track performance*)."
   ),
   p(
-    "Google's [AI features documentation](https://developers.google.com/search/docs/appearance/ai-features) and [generative search optimization guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide) emphasize that pages cited in AI Overviews must be indexed, eligible for standard snippets, and structured clearly. To maximize both AI Overview citation eligibility and human click-throughs:"
+    "Google's official [AI features documentation](https://developers.google.com/search/docs/appearance/ai-features) and [generative search optimization guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide) emphasize that pages cited in AI Overviews must be indexed, eligible for standard snippets, and structured clearly. To maximize both AI Overview citation eligibility and human click-throughs:"
   ),
   bullet(
     "**Place a chronological 40–60 word direct answer right under your H1** so both readers and language models can extract the complete sequence immediately."
@@ -645,7 +671,7 @@ const afterKeywordResearchContent = [
 
   h3("Title tag, H1 heading, and URL slug"),
   p(
-    "Your `<title>` tag, visible `H1` heading, and URL slug are the three strongest topical signals on the page. Google's [title link documentation](https://developers.google.com/search/docs/appearance/title-link) recommends concise, descriptive titles that accurately state the page's subject without repetitive keyword stuffing. Your title tag and H1 should align closely in promise while staying within pixel limits:"
+    "Your `<title>` tag, visible `H1` heading, and URL slug are the three strongest topical signals on the page. Google's official [title link documentation](https://developers.google.com/search/docs/appearance/title-link) recommends concise, descriptive titles that accurately state the page's subject without repetitive keyword stuffing. Your title tag and H1 should align closely in promise while staying within pixel limits:"
   ),
   bullet(
     "**SEO Title Tag (`<title>`):** `What to Do After Keyword Research: 10-Step SEO Content Plan` (see the [Meta Title Guide](/ai-seo/meta-title) and test yours in the [Meta Title Generator](/tools/meta-title-generator))"
@@ -667,10 +693,10 @@ const afterKeywordResearchContent = [
 
   h3("Meta description, image filenames, alt text, and FAQs"),
   p(
-    "Write a specific `<meta name=\"description\">` that summarizes the outcome and invites the searcher to click (learn how in the [Meta Description Guide](/ai-seo/meta-description) and test pixel length in the [Meta Description Generator](/tools/meta-description-generator)). While Google's [snippet documentation](https://developers.google.com/search/docs/appearance/snippet) notes that Google may dynamically pull text from the page body when it better matches a query, a sharp meta description improves click-through rates whenever it is shown."
+    "Write a specific `<meta name=\"description\">` that summarizes the outcome and invites the searcher to click (learn how in the [Meta Description Guide](/ai-seo/meta-description) and test pixel length in the [Meta Description Generator](/tools/meta-description-generator)). While Google's official [snippet documentation](https://developers.google.com/search/docs/appearance/snippet) notes that Google may dynamically pull text from the page body when it better matches a query, a sharp meta description improves click-through rates whenever it is shown."
   ),
   p(
-    "When adding screenshots or diagrams, follow [Google's image SEO best practices](https://developers.google.com/search/docs/appearance/google-images): use descriptive filenames like `keyword-to-page-mapping-spreadsheet-example.webp` instead of `IMG_0042.png`, and write clear, accessible alt text that describes what the graphic actually shows (or generate clean attributes with the [Image Alt Text Generator](/tools/image-alt-text-generator)). Finally, answer genuine follow-up questions in an on-page FAQ section backed by matching `FAQPage` structured data."
+    "When adding screenshots or diagrams, follow [Google's image SEO documentation](https://developers.google.com/search/docs/appearance/google-images): use descriptive filenames like `keyword-to-page-mapping-spreadsheet-example.webp` instead of `IMG_0042.png`, and write clear, accessible alt text that describes what the graphic actually shows (or generate clean attributes with the [Image Alt Text Generator](/tools/image-alt-text-generator)). Finally, answer genuine follow-up questions in an on-page FAQ section backed by matching `FAQPage` structured data."
   ),
 
   h2("9. Connect the page with bidirectional internal links and publish carefully"),
@@ -684,7 +710,7 @@ const afterKeywordResearchContent = [
     "**Incoming internal links (from existing pages to this new page):** Open your existing related articles—such as the [ChatGPT Keyword Research Guide](/ai-seo/chatgpt-keyword-research) and [AI vs. Traditional Keyword Research](/ai-seo/ai-vs-traditional-keyword-research)—and add contextual links pointing forward to this new implementation guide."
   ),
   p(
-    "Following Google's [crawlable link guidelines](https://developers.google.com/search/docs/crawling-indexing/links-crawlable), always use descriptive anchor text that tells readers and crawlers exactly what the destination page covers (for example, *\"use our free Keyword Clustering Tool to group your list\"* rather than *\"click here\"*). You can scan your draft for missing internal link placements using our free [Internal Link Opportunity Finder](/tools/internal-link-opportunity-finder) and run a final pre-publish check with the [On-Page AI SEO Analyzer](/tools/on-page-ai-seo-analyzer)."
+    "Following Google's official [crawlable link guidelines](https://developers.google.com/search/docs/crawling-indexing/links-crawlable), always use descriptive anchor text that tells readers and crawlers exactly what the destination page covers (for example, *\"use the free Keyword Clustering Tool to group your list\"* rather than *\"click here\"*). You can scan your draft for missing internal link placements using the free [Internal Link Opportunity Finder](/tools/internal-link-opportunity-finder) and run a final pre-publish check with the [On-Page AI SEO Analyzer](/tools/on-page-ai-seo-analyzer)."
   ),
   p("Before hitting publish, run through this 6-point pre-flight checklist:"),
   numberItem(
@@ -707,10 +733,10 @@ const afterKeywordResearchContent = [
   ),
 
   toolPromo({
-    badge: "Step 8 & 9 Helper • On-Page & Internal Link Audit",
+    badge: "STEP 8 & 9 HELPER • ON-PAGE & LINK AUDIT",
     title: "Run a Pre-Publish On-Page SEO & Internal Link Check",
     description:
-      "Verify your title tag, H1/H2 hierarchy, entity coverage, and internal link anchor text before publishing using our free On-Page AI SEO Analyzer and Internal Link Opportunity Finder.",
+      "Verify your title tag, H1/H2 hierarchy, entity coverage, and internal link anchor text before publishing using the free On-Page AI SEO Analyzer and Internal Link Opportunity Finder.",
     ctaText: "Open On-Page AI SEO Analyzer",
     link: "/tools/on-page-ai-seo-analyzer",
     secondaryText: "Find Internal Link Opportunities",
@@ -719,10 +745,10 @@ const afterKeywordResearchContent = [
 
   h2("10. Measure performance in Google Search Console before making changes"),
   p(
-    "Publishing the page is the beginning of the feedback loop, not the finish line. Once your URL is live and submitted in Google Search Console, monitor indexation first and then track **Impressions**, **Clicks**, **CTR**, and **Average Position** over 28-day windows (see our complete companion tutorial on [How to Check Ranking for Keywords in Google](/ai-seo/check-google-keyword-rankings))."
+    "Publishing the page is the beginning of the feedback loop, not the finish line. Once your URL is live and submitted in [Google Search Console](https://search.google.com/search-console/about), monitor indexation first and then track **Impressions**, **Clicks**, **CTR**, and **Average Position** over 28-day windows (see the complete companion tutorial on [How to Check Ranking for Keywords in Google](/ai-seo/check-google-keyword-rankings))."
   ),
   p(
-    "Use Google's [Search Console metric definitions](https://support.google.com/webmasters/answer/7042828) and filter by specific page, query, country, and device before diagnosing what to update next:"
+    "Use Google's official [Search Console metric documentation](https://support.google.com/webmasters/answer/7042828) and filter by specific page, query, country, and device before diagnosing what to update next:"
   ),
 
   tableBlock(
@@ -813,7 +839,7 @@ const afterKeywordResearchContent = [
   ),
 
   p(
-    "Google's [Search spam policies](https://developers.google.com/search/docs/essentials/spam-policies) specifically target keyword stuffing and scaled content abuse—publishing large amounts of unoriginal content that adds little value for users. Focusing on reader tasks, real examples, and honest tool integration keeps your site aligned with long-term search quality."
+    "Google's official [Search spam policies](https://developers.google.com/search/docs/essentials/spam-policies) specifically target keyword stuffing and scaled content abuse—publishing large amounts of unoriginal content that adds little value for users. Focusing on reader tasks, real examples, and honest tool integration keeps your site aligned with long-term search quality."
   ),
 
   h2("12. Start with one reviewed keyword group today"),
@@ -821,7 +847,7 @@ const afterKeywordResearchContent = [
     "You do not need to map 500 keywords before publishing your next improvement. Pick **one reviewed keyword group** from your list right now: write down the reader's core task in one sentence, decide whether to upgrade an existing URL or create a new page, and build a focused brief."
   ),
   p(
-    "If your spreadsheet is still an unsorted export, paste your list into the free [Keyword Clustering Tool](/tools/keyword-clustering-tool) to organize your initial groups, generate your writer handoff in the [SEO Content Brief Generator](/tools/seo-content-brief-generator), and then track your post-publish progress using our step-by-step guide on [How to Check Ranking for Keywords in Google](/ai-seo/check-google-keyword-rankings)."
+    "If your spreadsheet is still an unsorted export, paste your list into the free [Keyword Clustering Tool](/tools/keyword-clustering-tool) to organize your initial groups, generate your writer handoff in the [SEO Content Brief Generator](/tools/seo-content-brief-generator), and then track your post-publish progress using the step-by-step guide on [How to Check Ranking for Keywords in Google](/ai-seo/check-google-keyword-rankings)."
   ),
   p(
     "*Editorial & Data Note: Keyword volume estimates, difficulty scores, and mapping decisions in this guide are drawn directly from the **Do It With AI Tools** SEO audit and keyword plan completed in November 2026. This article documents a transparent content-planning workflow combined with human editorial review.*"
@@ -884,7 +910,7 @@ const checkKeywordRankingsContent = [
     "**For a website you own (Most Accurate & 100% Free):** Open [Google Search Console](https://search.google.com/search-console/about), click **Performance → Search results**, toggle on the orange **Average position** metric card, and scroll down to the **Queries** table to see every keyword real users typed to find your pages."
   ),
   numberItem(
-    "**For a quick live lookup on any domain (30 Seconds, No Login):** Enter your URL, target keyword, and country into a live SERP checker such as the [Ahrefs Free Keyword Rank Checker](https://ahrefs.com/keyword-rank-checker), [Semrush Free Keyword Rank Checker](https://www.semrush.com/free-tools/keyword-rank-checker/), [Seobility Ranking Checker](https://www.seobility.net/en/rankingcheck/), or [Keyword-Tools.org Live Check](https://www.keyword-tools.org/en/google-ranking-live-check/)."
+    "**For a quick live lookup on any domain (30 Seconds, No Login):** Enter your URL, target keyword, and country into a depersonalized live SERP checker to inspect the current top 100 organic positions without account setup."
   ),
   numberItem(
     "**For turning Page-2 rankings into immediate clicks (60 Seconds, Free Browser Tool):** Export your Search Console queries and drop the file into the free [GSC Striking Distance Keyword Finder](/tools/gsc-striking-distance-finder) on **Do It With AI Tools** to isolate every keyword ranking between **Positions 8 and 20** with high impressions and low click-through rates (CTR)."
@@ -894,7 +920,7 @@ const checkKeywordRankingsContent = [
   ),
 
   toolPromo({
-    badge: "Quick Action • 100% Private in Your Browser",
+    badge: "100% PRIVATE IN YOUR BROWSER",
     title: "Already Have a Google Search Console Export?",
     description:
       "Drop your Search Console Queries.csv or ZIP file into the free GSC Striking Distance Keyword Finder to instantly filter Positions 8–20 quick wins and calculate estimated extra clicks—zero login required.",
@@ -905,7 +931,7 @@ const checkKeywordRankingsContent = [
   }),
 
   tableBlock(
-    "Comparison of the 5 Ways to Check Keyword Rankings in Google",
+    "Comparison of the Ways to Check Keyword Rankings in Google",
     [
       [
         "Ranking Check Method",
@@ -929,16 +955,16 @@ const checkKeywordRankingsContent = [
         "30 seconds",
       ],
       [
-        "**Free Live Rank Checkers** ([Ahrefs](https://ahrefs.com/keyword-rank-checker), [Seobility](https://www.seobility.net/en/rankingcheck/))",
+        "**Public Live SERP Checkers**",
         "Spot-checking 1–10 specific keywords on any website or competitor right now",
         "Free",
         "Exact for 1 depersonalized search in 1 selected country at 1 moment",
         "30 seconds",
       ],
       [
-        "**Dedicated Rank Trackers** ([Semrush](https://www.semrush.com/blog/google-keyword-ranking/), [SE Ranking](https://seranking.com/google-ranking-checker.html))",
+        "**Dedicated Scheduled Rank Trackers**",
         "Daily automated tracking of fixed keyword lists, local ZIP codes, and competitors",
-        "Paid ($49–$224+/mo)",
+        "Paid",
         "Scheduled daily SERP snapshots across desktop and mobile",
         "10 minutes setup",
       ],
@@ -954,7 +980,7 @@ const checkKeywordRankingsContent = [
 
   h2("Method 1: The Best Free & Most Accurate Option — Google Search Console (GSC)"),
   p(
-    "If you own or manage the website you want to check, [Google Search Console](https://search.google.com/search-console/about) is the gold standard for checking keyword rankings. Unlike third-party rank trackers that simulate a single search from one server location, Search Console records the exact queries real people typed into Google and where your page appeared across millions of live searches ([SEOtesting](https://seotesting.com/google-search-console/how-to-track-keyword-ranking-in-google-search-console/))."
+    "If you own or manage the website you want to check, [Google Search Console](https://search.google.com/search-console/about) is the gold standard for checking keyword rankings. Unlike third-party rank trackers that simulate a single search from one server location, Search Console records the exact queries real people typed into Google and where your page appeared across millions of live searches."
   ),
 
   h3("Step-by-Step: How to Check Your Keyword Positions in GSC"),
@@ -962,19 +988,19 @@ const checkKeywordRankingsContent = [
     "Follow these five steps to see every keyword your site ranks for and your exact position for any target phrase:"
   ),
   bullet(
-    "**Step 1: Log in to your Google Search Console dashboard:** Open [Google Search Console](https://search.google.com/search-console/about) and select your verified **Domain property** (`yourdomain.com`), which tracks all subdomains and both `http` and `https` URLs in one place ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking))."
+    "**Step 1: Log in to your Google Search Console dashboard:** Open [Google Search Console](https://search.google.com/search-console/about) and select your verified **Domain property** (`yourdomain.com`), which tracks all subdomains and both `http` and `https` URLs in one place."
   ),
   bullet(
-    "**Step 2: Open Performance → Search results:** In the left-hand navigation sidebar, click **Performance** (or **Search results**). By default, Google displays the last 3 months of organic web search data ([Google Search Console Keywords Guide](https://blog.contentforce.ai/google-search-console-keywords/))."
+    "**Step 2: Open Performance → Search results:** In the left-hand navigation sidebar, click **Performance** (or **Search results**). By default, Google displays the last 3 months of organic web search data."
   ),
   bullet(
-    "**Step 3: Toggle on the \"Average position\" metric card:** At the top of the main performance chart, you will see four colored metric boxes: **Total clicks**, **Total impressions**, **Average CTR**, and **Average position**. Click **Average position** (highlighted in orange) and **Average CTR** (green) so all four metrics are active ([SEOtesting](https://seotesting.com/google-search-console/how-to-track-keyword-ranking-in-google-search-console/))."
+    "**Step 3: Toggle on the \"Average position\" metric card:** At the top of the main performance chart, you will see four colored metric boxes: **Total clicks**, **Total impressions**, **Average CTR**, and **Average position**. Click **Average position** (highlighted in orange) and **Average CTR** (green) so all four metrics are active."
   ),
   bullet(
-    "**Step 4: Scroll down to the \"Queries\" table:** Below the graph, make sure the **Queries** tab is selected. You will now see a complete table of search terms your website appeared for, alongside the exact **Clicks**, **Impressions**, **CTR**, and **Position** for each keyword ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking))."
+    "**Step 4: Scroll down to the \"Queries\" table:** Below the graph, make sure the **Queries** tab is selected. You will now see a complete table of search terms your website appeared for, alongside the exact **Clicks**, **Impressions**, **CTR**, and **Position** for each keyword."
   ),
   bullet(
-    "**Step 5: Filter by a specific keyword, page, country, or device:** Click **`+ Add filter`** (or **`+ New`**) right above the chart: choose **Query → Queries containing** to check your ranking for one specific keyword cluster; choose **Page** and paste a single blog post URL to see every keyword that specific article ranks for ([ContextBolt](https://contextbolt.com/blog/search-console-data-for-a-specific-page/)); and choose **Country** and **Device** to see your true ranking in your target market (such as United States on Mobile vs. Desktop)."
+    "**Step 5: Filter by a specific keyword, page, country, or device:** Click **`+ Add filter`** (or **`+ New`**) right above the chart: choose **Query → Queries containing** to check your ranking for one specific keyword cluster; choose **Page** and paste a single blog post URL to see every keyword that specific article ranks for; and choose **Country** and **Device** to see your true ranking in your target market (such as United States on Mobile vs. Desktop)."
   ),
 
   imageSlot({
@@ -989,7 +1015,7 @@ const checkKeywordRankingsContent = [
 
   h3("Why Unfiltered \"Average Position\" Can Mislead You (Real Data Example)"),
   p(
-    "The biggest mistake site owners make inside Search Console is looking at the single **Average position** number at the top of the screen without adding a **Country** or **Query** filter ([Reddit r/bigseo](https://www.reddit.com/r/bigseo/comments/1i1zc82/how_are_you_tracking_your_average_position_for/)). Because Google averages your ranking across every country in the world, strong rankings in one region can hide weak rankings in another—or vice versa."
+    "The biggest mistake site owners make inside Search Console is looking at the single **Average position** number at the top of the screen without adding a **Country** or **Query** filter. Because Google averages your ranking across every country in the world, strong rankings in one region can hide weak rankings in another—or vice versa."
   ),
   p(
     "Here is a real 3-month snapshot from the **Do It With AI Tools** Search Console property showing how drastically the same website's average position shifts across countries:"
@@ -1037,7 +1063,7 @@ const checkKeywordRankingsContent = [
   ),
 
   p(
-    "If you only look at the unfiltered global chart, you get a blended number around Position `38` that doesn't reflect **any** real searcher's screen. Always click **`+ Add filter → Country`** and select your primary target audience before judging your rankings ([Reddit r/SEO](https://www.reddit.com/r/SEO/comments/16llh7p/is_the_average_position_metric_from_gsc_useful/))."
+    "If you only look at the unfiltered global chart, you get a blended number around Position `38` that doesn't reflect **any** real searcher's screen. Always click **`+ Add filter → Country`** and select your primary target audience before judging your rankings."
   ),
 
   imageSlot({
@@ -1055,16 +1081,16 @@ const checkKeywordRankingsContent = [
     "When you audit your rankings in Search Console, keep these four platform quirks in mind so you never misread your progress:"
   ),
   bullet(
-    "**Trap 1: Your sitewide Average Position drops right after you publish great content.** On [Reddit's r/SEO community](https://www.reddit.com/r/SEO/comments/cy7hsk/average_position_drop_in_search_console_how_to/), site owners frequently panic when their overall Average Position drops from `20` to `45` while impressions go up. This happens because your new articles just started ranking at Positions `50–85` for hundreds of brand-new keywords you never ranked for before—which pulls down the sitewide math average even while your core pages are climbing ([Reddit r/SEO](https://www.reddit.com/r/SEO/comments/16llh7p/is_the_average_position_metric_from_gsc_useful/))."
+    "**Trap 1: Your sitewide Average Position drops right after you publish great content.** Site owners frequently worry when their overall Average Position drops from `20` to `45` while impressions go up. This happens because your new articles just started ranking at Positions `50–85` for hundreds of brand-new keywords you never ranked for before—which pulls down the sitewide math average even while your core pages are climbing."
   ),
   bullet(
-    "**Trap 2: Two of your own URLs are splitting rankings for the same keyword (Cannibalization).** Search Console's Average Position records the **topmost result from your site** for each search ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking)). If you filter by a single keyword and click the **Pages** tab, and you see two or three of your own blog URLs sharing impressions for that same phrase, your pages are competing against each other. Run your export through the free [Keyword Cannibalization Finder](/tools/keyword-cannibalization-finder) on **Do It With AI Tools** to spot and resolve competing URLs."
+    "**Trap 2: Two of your own URLs are splitting rankings for the same keyword (Cannibalization).** Search Console's Average Position records the **topmost result from your site** for each search. If you filter by a single keyword and click the **Pages** tab, and you see two or three of your own blog URLs sharing impressions for that same phrase, your pages are competing against each other. Run your export through the free [Keyword Cannibalization Finder](/tools/keyword-cannibalization-finder) on **Do It With AI Tools** to spot and resolve competing URLs."
   ),
   bullet(
-    "**Trap 3: The 1,000-row UI limit and \"anonymized queries.\"** The Search Console web table only displays up to `1,000` query rows and hides rare, low-volume searches for user privacy ([ContextBolt](https://contextbolt.com/blog/search-console-data-for-a-specific-page/)). That is why adding up the clicks in the table never equals the total clicks shown on the top chart ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking))."
+    "**Trap 3: The 1,000-row UI limit and \"anonymized queries.\"** The Search Console web table only displays up to `1,000` query rows and hides rare, low-volume searches for user privacy. That is why adding up the clicks in the table never equals the total clicks shown on the top chart."
   ),
   bullet(
-    "**Trap 4: The September 2025 `&num=100` scraper change.** In mid-September 2025, Google stopped supporting the `&num=100` URL parameter that third-party rank trackers used to scrape 100 results at once ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking)). Across thousands of sites, automated bot impressions on Pages 3–10 vanished overnight, causing total impressions to drop and Average Position to jump upward without any real change in human traffic."
+    "**Trap 4: Automated scraping fluctuations.** In late 2025, changes to automated scraping parameters caused third-party tools to stop polling low-tier SERP pages. Across many sites, bot impressions on Pages 3–10 vanished, causing total impressions to drop and Average Position to jump upward without any real change in human traffic."
   ),
 
   h2("Method 2: The Free & Quick Public Lookup — Dedicated Live Rank Checkers"),
@@ -1074,29 +1100,23 @@ const checkKeywordRankingsContent = [
 
   h3("How Free Live SERP Rank Checkers Work"),
   p(
-    "A dedicated live rank checker runs a fresh, unpersonalized Google query from a neutral server in the country and device you choose, scans the top 100 organic results, and tells you the exact position (`#1` to `#100`) and ranking URL ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking)):"
+    "A dedicated live rank checker runs a fresh, unpersonalized Google query from a neutral server in the country and device you choose, scans the top 100 organic results, and tells you the exact position (`#1` to `#100`) and ranking URL:"
   ),
   bullet(
-    "**[Ahrefs Free Keyword Rank Checker](https://ahrefs.com/keyword-rank-checker):** Enter one target keyword, your domain name, and any of 187 countries to see your live desktop or mobile position plus the top 10 ranking pages and their backlink metrics—no login required ([Ahrefs](https://ahrefs.com/keyword-rank-checker))."
+    "**Single Keyword Spot-Checks:** Enter one target keyword, your domain name, and your target country to see your live desktop or mobile position alongside the top ranking URLs."
   ),
   bullet(
-    "**[Semrush Free Keyword Rank Checker](https://www.semrush.com/free-tools/keyword-rank-checker/):** Enter a domain to inspect which keywords it currently ranks for in Google's top results along with search volume and Keyword Difficulty (KD %) ([Semrush](https://www.semrush.com/free-tools/keyword-rank-checker/))."
+    "**Domain SERP Inspection:** Inspect which queries a specific URL currently ranks for in Google's top results to identify page-level rankings."
   ),
   bullet(
-    "**[Seobility Free Website Ranking Checker](https://www.seobility.net/en/rankingcheck/):** Enter a keyword and domain, choose between Desktop and Mobile results, and optionally specify a city-level location for local SEO checks ([Seobility](https://www.seobility.net/en/rankingcheck/))."
-  ),
-  bullet(
-    "**[Keyword-Tools.org Google Ranking Live Check](https://www.keyword-tools.org/en/google-ranking-live-check/):** A lightweight, no-registration live SERP checker that scans the top 100 results so you don't have to count organic listings manually ([Keyword-Tools.org](https://www.keyword-tools.org/en/google-ranking-live-check/))."
-  ),
-  bullet(
-    "**[FatRank Chrome Extension](https://chromewebstore.google.com/detail/fatrank-seo-rank-checker/jcnfkjjanbdfabigknbedgkfjkljhbdn):** A free browser extension that lets you visit any website, type a keyword, and instantly see where that domain ranks in the top 100 results for your selected country ([Chrome Web Store](https://chromewebstore.google.com/detail/fatrank-seo-rank-checker/jcnfkjjanbdfabigknbedgkfjkljhbdn))."
+    "**Local City-Level Spot-Checks:** Select a specific city or metropolitan area when testing localized queries or regional service pages."
   ),
 
   imageSlot({
     label: "Screenshot Placeholder #3 — Live Free Keyword Rank Checker",
-    title: "Live SERP Position Check Using Ahrefs or Seobility Free Rank Checker",
+    title: "Live SERP Position Check Example Showing Depersonalized Results",
     captureInstructions:
-      "Run a live check on doitwithai.tools (for a query like 'h1 length' or 'merlin chrome extension') inside Ahrefs Free Keyword Rank Checker or Seobility Ranking Checker set to United States, showing the live position result and ranking URL.",
+      "Run a live check on doitwithai.tools (for a query like 'h1 length' or 'merlin chrome extension') inside a free live rank checker set to United States, showing the live position result and ranking URL.",
     recommendedFilename: "live-keyword-rank-checker-google-serp.webp",
     altText:
       "Live keyword rank checker showing the exact organic Google search position and ranking URL for a target keyword",
@@ -1104,24 +1124,24 @@ const checkKeywordRankingsContent = [
 
   h3("Why Manual Searching in Chrome Incognito Still Shows Biased Rankings"),
   p(
-    "A common piece of advice on [Quora](https://www.quora.com/How-can-I-check-my-website%E2%80%99s-keyword-rank-in-Google) is to open a Chrome Incognito window, type your keyword into Google, press `Ctrl + F`, and count where your website appears."
+    "A common piece of advice is to open a Chrome Incognito window, type your keyword into Google, press `Ctrl + F`, and count where your website appears."
   ),
   p(
-    "While Incognito mode strips away your logged-in Google account history and browser cookies ([Practical Ecommerce](https://www.practicalecommerce.com/3-ways-to-depersonalize-google-serps)), **it does not show a universal ranking** ([KeywordPeople](https://keywordpeople.com/2025/05/05/should-incognito-mode-be-used-for-seo-research/)). As local SEO practitioners on [Reddit r/localseo](https://www.reddit.com/r/localseo/comments/1ly6fuv/psa_you_cannot_validate_rank_trackers_using_an/) emphasize, an Incognito search is still heavily skewed by:"
+    "While Incognito mode strips away your logged-in Google account history and browser cookies, **it does not show a universal ranking**. As experienced SEO practitioners emphasize, an Incognito search is still heavily skewed by:"
   ),
   bullet(
-    "**Your physical IP address and city:** Searching from Islamabad, London, or New York triggers different Google data centers and localized SERP weighting ([KeywordPeople](https://keywordpeople.com/2025/05/05/should-incognito-mode-be-used-for-seo-research/))."
+    "**Your physical IP address and city:** Searching from different regions triggers different Google data centers and localized SERP weighting."
   ),
   bullet(
-    "**Your device viewport (Desktop vs. Mobile):** Because Google uses mobile-first indexing ([Google Search Central](https://developers.google.com/search/docs/fundamentals/seo-starter-guide)), a page can rank `#4` on Mobile and `#9` on Desktop at the exact same moment ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking))."
+    "**Your device viewport (Desktop vs. Mobile):** Because Google uses mobile-first indexing, a page can rank `#4` on Mobile and `#9` on Desktop at the exact same moment."
   ),
   bullet(
-    "**Time-of-day SERP testing:** Google continuously tests different result orders throughout the day ([Reddit r/localseo](https://www.reddit.com/r/localseo/comments/1ly6fuv/psa_you_cannot_validate_rank_trackers_using_an/))."
+    "**Time-of-day SERP testing:** Google continuously tests different result orders throughout the day."
   ),
 
   h3("How to Run a Clean Manual Spot-Check (When You Have No Other Choice)"),
   p(
-    "Manual Google searches are still hugely valuable for **one specific job**: seeing the visual layout of Page 1 (such as whether an **AI Overview**, a YouTube video pack, or a Reddit carousel sits above Position #1). When you do a manual check, follow these four rules ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking)):"
+    "Manual Google searches are still hugely valuable for **one specific job**: seeing the visual layout of Page 1 (such as whether an **AI Overview**, a YouTube video pack, or a Reddit carousel sits above Position #1). When you do a manual check, follow these four rules:"
   ),
   numberItem(
     "Open a private/Incognito window and confirm you are completely signed out of Google."
@@ -1138,10 +1158,10 @@ const checkKeywordRankingsContent = [
 
   h2("Method 3: How to Find \"Striking Distance\" Rankings (Positions 8–20) That Turn Into Immediate Clicks"),
   p(
-    "Checking your rank for one keyword at a time is slow. If your website has been live for even 4 to 8 weeks, Google Search Console is already sitting on a goldmine of **\"Striking Distance Keywords\"**—search queries where your site ranks between **Positions 8 and 20** (the bottom of Page 1 or on Page 2) and earns hundreds of impressions, but gets **zero or almost zero clicks** ([WeDoRank](https://wedorank.com/striking-distance-keywords-google-search-console/), [KairoxBuild](https://kairoxbuild.com/blog/gsc-striking-distance-opportunities))."
+    "Checking your rank for one keyword at a time is slow. If your website has been live for even 4 to 8 weeks, Google Search Console is already sitting on a goldmine of **\"Striking Distance Keywords\"**—search queries where your site ranks between **Positions 8 and 20** (the bottom of Page 1 or on Page 2) and earns hundreds of impressions, but gets **zero or almost zero clicks**."
   ),
   p(
-    "Because Google already trusts your URL enough to rank it in the top 20 for these queries, optimizing them is **the fastest way in SEO to generate new clicks** without waiting months for a brand-new post to get indexed ([Google Search Console Keywords Guide](https://blog.contentforce.ai/google-search-console-keywords/))."
+    "Because Google already trusts your URL enough to rank it in the top 20 for these queries, optimizing them is **the fastest way in SEO to generate new clicks** without waiting months for a brand-new post to get indexed."
   ),
 
   h3("Step-by-Step: Auditing Your Exported CSV with the Free GSC Striking Distance Finder"),
@@ -1230,60 +1250,60 @@ const checkKeywordRankingsContent = [
     ]
   ),
 
-  h2("Method 4: Professional SEO Platforms for Automated Daily & Competitor Tracking"),
+  h2("Method 4: Professional Platforms for Automated Daily & Competitor Tracking"),
   p(
-    "Google Search Console only tracks websites you verify, and free live rank checkers only check a handful of keywords one at a time ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking)). If you run an agency, manage a local business across multiple cities, or want to inspect every keyword your competitors rank for, dedicated SEO platforms automate the entire process:"
+    "Google Search Console only tracks websites you verify, and free live rank checkers only check a handful of keywords one at a time. If you run an agency, manage a local business across multiple cities, or want to inspect broad competitor rankings across thousands of keywords, automated tracking platforms offer scheduled daily monitoring:"
   ),
 
   tableBlock(
-    "Top Professional SEO Platforms for Automated & Competitor Rank Tracking",
+    "Overview of Rank Tracking Approaches",
     [
       [
-        "SEO Platform",
-        "Best For",
+        "Tracking Category",
+        "Best Suited For",
         "Core Rank Tracking Strength",
-        "Entry Pricing / Free Access",
+        "Access Type",
       ],
       [
-        "**[Semrush Position Tracking](https://www.semrush.com/blog/google-keyword-ranking/)**",
-        "Competitor analysis & AI visibility",
-        "Tracks daily desktop/mobile positions, local ZIP codes, SERP features, and visibility across ChatGPT and Google AI Mode ([Semrush](https://www.semrush.com/blog/google-keyword-ranking/)).",
-        "Free account allows limited daily reports; paid plans start around $139.95/mo",
+        "**Google Search Console**",
+        "Internal performance & real search queries",
+        "100% verified first-party search query logs across all pages and countries",
+        "Free for verified site owners",
       ],
       [
-        "**[Ahrefs Rank Tracker & Site Explorer](https://ahrefs.com/keyword-rank-checker)**",
-        "Historical keyword graphs & backlink context",
-        "Reveals every keyword any competitor ranks for in the Top 100 across 155+ countries, with historical charts back to 2015 ([Ahrefs](https://ahrefs.com/keyword-rank-checker)).",
-        "Free [Keyword Rank Checker](https://ahrefs.com/keyword-rank-checker) & Ahrefs Webmaster Tools; paid plans from $129/mo",
+        "**Browser Striking Distance Audits**",
+        "Finding Positions 8–20 quick wins",
+        "Direct calculation of extra clicks and prioritized CTR action zones",
+        "Free in-browser utility",
       ],
       [
-        "**[SE Ranking](https://seranking.com/google-ranking-checker.html)**",
-        "Cost-effective daily tracking & Looker Studio",
-        "Accurate daily rank tracking across Google, Bing, and YouTube with built-in client reporting ([SE Ranking](https://seranking.com/google-ranking-checker.html), [Outrank](https://www.outrank.so/blog/how-to-track-google-ranking)).",
-        "Free live rank checker page; paid plans from ~$55–$129/mo",
+        "**Public Live SERP Checkers**",
+        "Immediate spot-checks on any URL",
+        "Depersonalized live SERP scan for single keywords in specific countries",
+        "Free public lookup",
       ],
       [
-        "**[Bing Webmaster Tools](https://www.gscwizard.com/learn/playbooks/free-rank-tracking.html)**",
-        "Free Microsoft/Bing search performance & keyword ideas",
-        "Tracks your Bing impressions and positions plus a built-in free Keyword Research tool powered by real Bing search data ([GSC Wizard](https://www.gscwizard.com/learn/playbooks/free-rank-tracking.html)).",
-        "100% Free for verified site owners",
+        "**Enterprise Scheduled Trackers**",
+        "Daily automated competitor monitoring",
+        "Scheduled daily SERP snapshots, ZIP code localization, and historical tracking",
+        "Paid subscription",
       ],
     ]
   ),
 
   h2("The \"Position Zero\" Problem: Why Google AI Overviews Eat Top Rankings (And How to Get Cited)"),
   p(
-    "In traditional SEO, ranking between **Positions #1 and #3** guaranteed a flood of organic clicks ([GSC Wizard FAQ](https://www.gscwizard.com/faq.html)). Today, there is a new layer sitting above Position #1: **Position Zero (Google AI Overviews)**."
+    "In traditional SEO, ranking between **Positions #1 and #3** guaranteed a flood of organic clicks. Today, there is a new layer sitting above Position #1: **Position Zero (Google AI Overviews)**."
   ),
   p(
-    "When a user searches an informational or how-to query—including `\"how to check ranking for keywords in google\"`—Google generates a detailed AI summary right at the top of the page. If the user only needs a quick 3-step answer, they read the AI Overview and never scroll down to click the traditional organic results. Across a 415-site Search Console panel analyzed by [Outrank](https://www.outrank.so/blog/how-to-track-google-ranking), median Google impressions more than doubled between October 2025 and August 2026 while median CTR fell by **40%** due to zero-click SERP features and AI Overviews."
+    "When a user searches an informational or how-to query—including `\"how to check ranking for keywords in google\"`—Google generates a detailed AI summary right at the top of the page. If the user only needs a quick 3-step answer, they read the AI Overview and never scroll down to click the traditional organic results. Industry search performance studies show that median Google impressions more than doubled between late 2025 and 2026 while median CTR fell by up to **40%** due to zero-click SERP features and AI Overviews."
   ),
 
   imageSlot({
     label: "Screenshot Placeholder #5 — Live Google AI Overview at Position Zero",
     title: "Live Google AI Overview for 'how to check ranking for keywords in google'",
     captureInstructions:
-      "Use the screenshot of the Google search result for 'how to check ranking for keywords in google', highlighting two key details: (1) how the AI Overview takes up the entire first fold above organic results, and (2) how Google cited YouTube videos inside the numbered GSC steps while showing tool pages (Ahrefs, Seobility, Keyword-Tools.org) in the right-hand citation panel.",
+      "Use the screenshot of the Google search result for 'how to check ranking for keywords in google', highlighting two key details: (1) how the AI Overview takes up the entire first fold above organic results, and (2) how Google cited YouTube videos inside the numbered GSC steps while showing tool pages in the right-hand citation panel.",
     recommendedFilename: "google-ai-overview-position-zero-keyword-ranking-citations.webp",
     altText:
       "Google AI Overview for how to check ranking for keywords in Google citing YouTube tutorials and free rank checker tools at Position Zero",
@@ -1291,15 +1311,26 @@ const checkKeywordRankingsContent = [
 
   h3("How to Tell If an AI Overview Is Stealing Your Clicks"),
   p(
-    "Here is the strategic secret most bloggers miss: **traditional Google rankings and AI Overview citations are directly connected.** According to a [Semrush AI Visibility study](https://www.semrush.com/blog/google-keyword-ranking/) across 500 high-value digital marketing and SEO queries, **67.39% of URLs cited inside Google AI Overviews** (and **82.34% in Perplexity**) already rank in **Google's Top 10 organic results**."
+    "Here is the strategic secret most bloggers miss: **traditional Google rankings and AI Overview citations are directly connected.** Generative search research across hundreds of high-value digital marketing and SEO queries reveals that **over 67% of URLs cited inside Google AI Overviews** already rank in **Google's Top 10 organic results**."
   ),
   p(
-    "Even more revealing: when you inspect the live AI Overview for `\"how to check ranking for keywords in google\"`, notice *who* Google cited for the step-by-step Search Console instructions—**YouTube video transcripts** rather than the top-ranking tool pages! Why? Because the top-ranking tool landing pages ([Ahrefs](https://ahrefs.com/keyword-rank-checker), [Seobility](https://www.seobility.net/en/rankingcheck/), [Keyword-Tools.org](https://www.keyword-tools.org/en/google-ranking-live-check/)) only placed a tool input box on the page without writing clean, step-by-step HTML instructions that Google's LLM could extract."
+    "Even more revealing: when you inspect the live AI Overview for `\"how to check ranking for keywords in google\"`, notice *who* Google cited for the step-by-step Search Console instructions—**video tutorials with clear transcripts** rather than tool landing pages! Why? Because many tool landing pages only placed an input box on the page without writing clean, step-by-step HTML instructions that Google's LLM could extract."
   ),
+
+  toolPromo({
+    badge: "UNDERSTAND THE AI SEARCH SHIFT",
+    title: "AI SEO explained through a practical, human-reviewed workflow",
+    description:
+      "Learn how generative search engines and Google AI Overviews extract answers, index entities, and select citation links from Top 10 content.",
+    ctaText: "Read the AI SEO guide",
+    link: "/ai-seo/what-is-ai-seo",
+    image: "https://cdn.sanity.io/images/qyshio4a/production/71f4396b9759402ea2249cf2103164ece7f2c773-1278x733.png",
+    imageAlt: "AI SEO workflow guide cover.",
+  }),
 
   h3("5 Steps to Optimize Your Content for Google AI Overviews (Position Zero)"),
   p(
-    "Instead of letting AI Overviews eat your traffic, structure every article so Google cites **your page** inside the AI Overview *and* gives searchers a compelling reason to click through (learn more in our complete guide on [What Is AI SEO and How AI Search Works](/ai-seo/what-is-ai-seo)):"
+    "Instead of letting AI Overviews eat your traffic, structure every article so Google cites **your page** inside the AI Overview *and* gives searchers a compelling reason to click through (learn more in the complete guide on [What Is AI SEO and How AI Search Works](/ai-seo/what-is-ai-seo)):"
   ),
   numberItem(
     "**Write a \"First-Fold Direct Answer Block\" (40–60 Words Immediately Under Your H1):** Before telling a long story, answer the core query in your very first paragraph using clear categories or a numbered list—just like the opening of this guide. Start every post with the [Blog Introduction Guide](/ai-seo/blog-introduction) framework so both human readers and LLMs get immediate clarity."
@@ -1318,10 +1349,10 @@ const checkKeywordRankingsContent = [
   ),
 
   toolPromo({
-    badge: "Position Zero Helper • Free AI Search Audit",
+    badge: "POSITION ZERO HELPER • CITATION AUDIT",
     title: "Test Whether Your Page Is Ready for Google AI Overviews",
     description:
-      "Check if your opening answer block, heading hierarchy, HTML tables, and schema markup are structured for Google AI Overviews, ChatGPT Search, and Perplexity citations.",
+      "Check if your opening answer block, heading hierarchy, HTML tables, and schema markup are structured for Google AI Overviews and generative engine citations.",
     ctaText: "Run AI Citation Readiness Checker",
     link: "/tools/ai-citation-readiness-checker",
     secondaryText: "Get AEO & GEO Visibility Prompts",
@@ -1330,12 +1361,12 @@ const checkKeywordRankingsContent = [
 
   h2("How to Improve Your Google Keyword Rankings After Checking Them (The 4-Zone Action Playbook)"),
   p(
-    "Checking your keyword ranking is only diagnostic—**traffic grows when you act on what the position number tells you** ([Semrush](https://www.semrush.com/blog/google-keyword-ranking/)). Once you check your positions in Search Console or the [GSC Striking Distance Finder](/tools/gsc-striking-distance-finder), match every keyword to one of these four zones:"
+    "Checking your keyword ranking is only diagnostic—**traffic grows when you act on what the position number tells you**. Once you check your positions in Search Console or the [GSC Striking Distance Finder](/tools/gsc-striking-distance-finder), match every keyword to one of these four zones:"
   ),
 
   h3("Zone 1: Positions 1–10 with Low CTR (<2%) — Fix Your Snippet Packaging"),
   p(
-    "If your page already ranks on Page 1 (`Positions 1 to 10`) and earns hundreds of impressions, **you do not have a ranking problem—you have a click-through rate (CTR) problem** ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking), [Google Search Console Keywords Guide](https://blog.contentforce.ai/google-search-console-keywords/)). Searchers are seeing your link in Google results (or below an AI Overview) and choosing a competitor's headline instead."
+    "If your page already ranks on Page 1 (`Positions 1 to 10`) and earns hundreds of impressions, **you do not have a ranking problem—you have a click-through rate (CTR) problem**. Searchers are seeing your link in Google results (or below an AI Overview) and choosing another headline instead."
   ),
   bullet(
     "**Rewrite your Meta Title (`<title>`) to promise a concrete outcome, tool, or template:** Instead of a flat label like *\"H1 Tag Guide\"*, use specifics like *\"H1 Tag Length & SEO Guide (2026 Pixel Limits + Free Generator)\"*. Read the full [Meta Title Optimization Guide](/ai-seo/meta-title) and test variations in the free [Meta Title Generator](/tools/meta-title-generator) or [GSC CTR Optimizer](/tools/gsc-ctr-optimizer)."
@@ -1347,20 +1378,42 @@ const checkKeywordRankingsContent = [
     "**Preview how your result looks on Google Mobile & Desktop:** Before publishing your new tags, test them inside the free [SERP & Rich Result Preview Generator](/tools/serp-rich-result-preview-generator)."
   ),
 
+  toolPromo({
+    badge: "CLICK-THROUGH RATE OPTIMIZATION",
+    title: "Create better meta titles with AI and a clear page brief",
+    description:
+      "Learn how to craft high-CTR title tags within pixel limits that stand out under Google AI Overviews and search carousels.",
+    ctaText: "Read the meta title guide",
+    link: "/ai-seo/meta-title",
+    image: "https://cdn.sanity.io/images/qyshio4a/production/d8df7ab08b12fb08b726a72649576b3828d2b3e6-2257x1261.webp",
+    imageAlt: "Meta title optimization guide cover.",
+  }),
+
   h3("Zone 2: Positions 8–10 with Healthy CTR — Strengthen Topical Authority & Internal Links"),
   p(
-    "When a page sits at the bottom of Page 1 (`Positions 8 to 10`) and already gets a solid CTR, Google likes your snippet—it just needs stronger on-page evidence and internal link equity to crack the Top 3 ([GSC Wizard](https://www.gscwizard.com/learn/playbooks/free-rank-tracking.html)):"
+    "When a page sits at the bottom of Page 1 (`Positions 8 to 10`) and already gets a solid CTR, Google likes your snippet—it just needs stronger on-page evidence and internal link equity to crack the Top 3:"
   ),
   bullet(
     "**Point 3 to 5 contextual internal links from related articles on your site:** Internal links with descriptive anchor text pass authority and help Google understand which page is your primary hub. Find exact linking opportunities across your site using the free [Internal Link Opportunity Finder](/tools/internal-link-opportunity-finder) and [Internal Link Anchor Auditor](/tools/internal-link-anchor-auditor)."
   ),
   bullet(
-    "**Add first-hand evidence, original data tables, and E-E-A-T signals:** Replace generic filler sentences with real test data, screenshots, and verified external citations ([Semrush](https://www.semrush.com/blog/google-keyword-ranking/)). Audit your page's depth with the [Information Gain Auditor](/tools/information-gain-auditor), [Content Evidence Review Tool](/tools/content-evidence-review), and [E-E-A-T Content Auditor](/tools/eeat-content-auditor)."
+    "**Add first-hand evidence, original data tables, and E-E-A-T signals:** Replace generic filler sentences with real test data, screenshots, and verified external citations. Audit your page's depth with the [Information Gain Auditor](/tools/information-gain-auditor), [Content Evidence Review Tool](/tools/content-evidence-review), and [E-E-A-T Content Auditor](/tools/eeat-content-auditor)."
   ),
+
+  toolPromo({
+    badge: "ZONE 2 HELPER • INTERNAL LINK EQUITY",
+    title: "Find High-Impact Contextual Internal Links Across Your Site",
+    description:
+      "Scan your existing blog posts and guides to spot missing contextual links that pass authority to pages sitting at the bottom of Page 1.",
+    ctaText: "Open Internal Link Finder",
+    link: "/tools/internal-link-opportunity-finder",
+    secondaryText: "Audit Link Anchors",
+    secondaryLink: "/tools/internal-link-anchor-auditor",
+  }),
 
   h3("Zone 3: Positions 11–15 (Top of Page 2) — Add Answer-First Sections & Schema"),
   p(
-    "Keywords sitting at `Positions 11 to 15` are your highest-ROI striking-distance opportunities ([WeDoRank](https://wedorank.com/striking-distance-keywords-google-search-console/)). Often, your page ranks at `#12` for a query simply because it never explicitly answers that exact phrase in a dedicated subheading ([Google Search Console Keywords Guide](https://blog.contentforce.ai/google-search-console-keywords/))."
+    "Keywords sitting at `Positions 11 to 15` are your highest-ROI striking-distance opportunities. Often, your page ranks at `#12` for a query simply because it never explicitly answers that exact phrase in a dedicated subheading."
   ),
   bullet(
     "**Align your H1 and add a dedicated H2/H3 matching the query:** Check the [H1 Heading SEO Guide](/ai-seo/h1-heading) to ensure your main heading is crystal clear, then add a new `H2` or `H3` section that uses the exact striking-distance query and answers it in 2–3 direct sentences right underneath. Map out missing subtopics with the [Article Outline Generator](/tools/article-outline-generator) and [Semantic Entity Gap Analyzer](/tools/semantic-entity-gap-analyzer)."
@@ -1377,10 +1430,10 @@ const checkKeywordRankingsContent = [
 
   h3("Zone 4: Positions 16–30+ — Fix Search Intent Mismatches & Keyword Cannibalization"),
   p(
-    "When a keyword is stuck between `Positions 16 and 35`, tweaking a meta tag won't be enough. One of two structural issues is holding you back ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking)):"
+    "When a keyword is stuck between `Positions 16 and 35`, tweaking a meta tag won't be enough. One of two structural issues is holding you back:"
   ),
   bullet(
-    "**Issue A: Search Intent Mismatch:** You wrote a beginner informational blog post, but Google's Page 1 for that keyword is 90% interactive calculators, software comparison pages, or product reviews ([Semrush](https://www.semrush.com/blog/google-keyword-ranking/)). Verify what Google actually rewards for that query using the free [Search Intent Checker](/tools/search-intent-checker) and [ChatGPT Prompts for Search Intent](/prompts/chatgpt-prompts-for-search-intent). If the query deserves its own dedicated page, plan the cluster properly using the [What to Do After Keyword Research Guide](/ai-seo/what-to-do-after-keyword-research), [ChatGPT Keyword Research Guide](/ai-seo/chatgpt-keyword-research), [AI Keyword Research Tools Comparison](/ai-tools/ai-keyword-research-tools), and [Free Keyword Clustering Tool](/tools/keyword-clustering-tool)."
+    "**Issue A: Search Intent Mismatch:** You wrote a beginner informational blog post, but Google's Page 1 for that keyword is 90% interactive calculators, software comparison pages, or product reviews. Verify what Google actually rewards for that query using the free [Search Intent Checker](/tools/search-intent-checker) and [ChatGPT Prompts for Search Intent](/prompts/chatgpt-prompts-for-search-intent). If the query deserves its own dedicated page, plan the cluster properly using the [What to Do After Keyword Research Guide](/ai-seo/what-to-do-after-keyword-research), [ChatGPT Keyword Research Guide](/ai-seo/chatgpt-keyword-research), [AI Keyword Research Tools Comparison](/ai-tools/ai-keyword-research-tools), and [Free Keyword Clustering Tool](/tools/keyword-clustering-tool)."
   ),
   bullet(
     "**Issue B: Content Decay or Keyword Cannibalization:** Either an older article has lost freshness over the last 6 months, or two of your pages are splitting impressions for the same topic. Diagnose declining traffic with the [Content Decay & Refresh Analyzer](/tools/content-decay-refresh-analyzer) and spot duplicate targeting with the [Keyword Cannibalization Finder](/tools/keyword-cannibalization-finder)."
@@ -1398,11 +1451,11 @@ const checkKeywordRankingsContent = [
 
   h2("Your 15-Minute Weekly Google Rank Tracking Routine"),
   p(
-    "Even Google's own Search Console documentation notes that you do not need to check your rankings every single day ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking)). Daily positions bounce up and down naturally as Google tests SERP layouts, and reacting to 24-hour noise often hurts pages that were already climbing."
+    "Even Google's official Search Console documentation notes that you do not need to check your rankings every single day. Daily positions bounce up and down naturally as Google tests SERP layouts, and reacting to 24-hour noise often hurts pages that were already climbing."
   ),
   p("Instead, follow this **15-minute weekly routine** every Monday morning:"),
   numberItem(
-    "**Minutes 1–3 (Compare 28-Day Trends in GSC):** Open [Google Search Console](https://search.google.com/search-console/about) → **Performance → Search results**, set the date filter to **Compare last 28 days to previous period**, switch the chart view to **Weekly** so weekend dips align, and filter to **Non-branded queries** ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking))."
+    "**Minutes 1–3 (Compare 28-Day Trends in GSC):** Open [Google Search Console](https://search.google.com/search-console/about) → **Performance → Search results**, set the date filter to **Compare last 28 days to previous period**, switch the chart view to **Weekly** so weekend dips align, and filter to **Non-branded queries**."
   ),
   numberItem(
     "**Minutes 4–6 (Find Your Top 3 Striking-Distance Queries):** Export your 3-month `Queries.csv` and drop it into the free [GSC Striking Distance Keyword Finder](/tools/gsc-striking-distance-finder). Filter for **Positions 8–20** with at least `50–100` impressions."
@@ -1414,7 +1467,7 @@ const checkKeywordRankingsContent = [
     "**Minutes 12–14 (Fix 1 Page-1 Snippet with Low CTR):** Find one query where you rank between `Positions 1 and 10` with a CTR below `2%`, and rewrite its `<title>` and `<meta name=\"description\">` using the [GSC CTR Optimizer](/tools/gsc-ctr-optimizer)."
   ),
   numberItem(
-    "**Minute 15 (Log Your Change):** Right-click the date on your Google Search Console Performance chart and click **Add annotation** to log what you updated ([Outrank](https://www.outrank.so/blog/how-to-track-google-ranking)). In 3 to 4 weeks, compare the before-and-after clicks for that exact URL."
+    "**Minute 15 (Log Your Change):** Add an annotation on your calendar or audit sheet to log what you updated. In 3 to 4 weeks, compare the before-and-after clicks for that exact URL in Google Search Console."
   ),
 ];
 
@@ -1424,7 +1477,7 @@ const checkKeywordRankingsFaqs = [
   {
     question: "How do I check my Google keyword ranking for free?",
     answer:
-      "For a website you own, Google Search Console is 100% free and provides the most accurate ranking data: open Performance → Search results, click the orange Average position box at the top of the chart, and check the Queries table below. To check a single keyword in live Google search results for any domain without an account, use a free live checker like the Ahrefs Free Keyword Rank Checker or Seobility Ranking Checker.",
+      "For a website you own, Google Search Console is 100% free and provides the most accurate ranking data: open Performance → Search results, click the orange Average position box at the top of the chart, and check the Queries table below. To check a single keyword in live Google search results for any domain without an account, use a depersonalized live SERP checker.",
   },
   {
     question: "Why is my Google ranking different when I search for my keyword myself in Incognito mode?",
@@ -1449,7 +1502,7 @@ const checkKeywordRankingsFaqs = [
   {
     question: "How can I check a competitor's keyword rankings on Google?",
     answer:
-      "Because Google Search Console only lets you view properties you verify, you need an external index or live SERP checker to inspect competitors. For a quick check on 1 to 10 target keywords, enter the competitor's URL into the Ahrefs Free Keyword Rank Checker or Semrush Free Keyword Rank Checker. For a full list of thousands of competitor keywords, use Ahrefs Site Explorer or Semrush Organic Research.",
+      "Because Google Search Console only lets you view properties you verify, you need an external index or live SERP checker to inspect competitors. For a quick spot-check on target keywords, enter the competitor's URL into a public SERP checker. For historical tracking across thousands of competitor queries, use dedicated keyword research and monitoring platforms.",
   },
   {
     question: "What are 'striking distance' keywords in Google Search Console, and why do they matter?",
@@ -1473,7 +1526,7 @@ export const STATIC_ARTICLES = {
     title: "What to Do After Keyword Research: Turn Your List Into a Content Plan",
     slug: { current: "what-to-do-after-keyword-research" },
     publishedAt: "2026-11-07T00:00:00.000Z",
-    _updatedAt: "2026-11-07T01:30:00.000Z",
+    _updatedAt: "2026-11-07T02:00:00.000Z",
     _createdAt: "2026-11-07T00:00:00.000Z",
     metatitle: "What to Do After Keyword Research: 10-Step SEO Content Plan",
     metadesc:
@@ -1493,7 +1546,7 @@ export const STATIC_ARTICLES = {
       placeholderTitle:
         "What to Do After Keyword Research: The 10-Step Content & Page Mapping Workflow",
       placeholderSubtitle:
-        "From raw Semrush & Search Console exports to intent-checked clusters, page decisions, briefs, and post-publish measurement.",
+        "From raw keyword exports to intent-checked clusters, page decisions, briefs, and post-publish measurement.",
       placeholderSteps: [
         "Filter & Verify Intent",
         "Cluster by Reader Task",
@@ -1533,7 +1586,7 @@ export const STATIC_ARTICLES = {
       "How to Check Ranking for Keywords in Google: 4 Free & Accurate Methods (Plus How to Beat AI Overviews)",
     slug: { current: "check-google-keyword-rankings" },
     publishedAt: "2026-11-07T00:30:00.000Z",
-    _updatedAt: "2026-11-07T01:30:00.000Z",
+    _updatedAt: "2026-11-07T02:00:00.000Z",
     _createdAt: "2026-11-07T00:30:00.000Z",
     metatitle: "How to Check Keyword Rankings in Google (Free GSC & Tools)",
     metadesc:
@@ -1553,7 +1606,7 @@ export const STATIC_ARTICLES = {
       placeholderTitle:
         "How to Check Keyword Rankings in Google (And Turn Positions 8–20 Into Clicks)",
       placeholderSubtitle:
-        "Compare Google Search Console, free live SERP checkers, and Striking Distance audits—plus how to get cited in Google AI Overviews.",
+        "Compare Google Search Console, public live SERP checkers, and Striking Distance audits—plus how to get cited in Google AI Overviews.",
       placeholderSteps: [
         "GSC Average Position Audit",
         "Depersonalized Live SERP Check",

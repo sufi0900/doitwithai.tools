@@ -7,6 +7,7 @@ import { Rocket, Clipboard, Check } from 'lucide-react';
 import { CopyBlock, dracula } from "react-code-blocks";
 import { getFileUrl } from "./sanityFileUrl";
 import Link from 'next/link';
+import Image from 'next/image';
 
 /**
  * Generates a deterministic URL-safe anchor ID from heading text.
@@ -529,52 +530,126 @@ const PortableTextComponents = () => {
 
       toolPromoCard: ({ value }) => {
         const {
-          badge = "Free Interactive SEO Utility",
+          badge = "Do It With AI Tools",
           title,
           description,
           ctaText = "Open Free Tool",
           link = "/tools",
           secondaryText,
           secondaryLink,
+          image,
+          imageAlt,
         } = value || {};
-        return (
-          <aside
-            aria-label={title || "Related interactive tool"}
-            className="my-6 sm:my-8 rounded-2xl border border-blue-200 dark:border-blue-800/80 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/70 dark:from-slate-800/95 dark:via-slate-900 dark:to-blue-950/50 p-5 sm:p-6 shadow-md"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="space-y-1.5 flex-1">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 dark:bg-blue-900/50 px-3 py-0.5 text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
-                  {badge}
-                </span>
+
+        if (image) {
+          return (
+            <aside
+              className="my-8 sm:my-10 grid min-w-0 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50 min-[768px]:grid-cols-[0.95fr_1.05fr]"
+              aria-label={badge || title}
+            >
+              <div className="flex min-w-0 items-center justify-center bg-[#e6ebff] p-3 sm:p-5 dark:bg-[#12203c]">
+                <Image
+                  src={image}
+                  alt={imageAlt || title || "Featured guide graphic"}
+                  width={800}
+                  height={450}
+                  sizes="(max-width: 767px) 100vw, 480px"
+                  className="block aspect-video h-auto w-full rounded-xl object-cover shadow-sm"
+                  unoptimized={typeof image === "string" && image.startsWith("http")}
+                />
+              </div>
+              <div className="flex min-w-0 flex-col justify-center p-5 sm:p-7 lg:p-9">
+                <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <Image
+                    src="/doitwithai-logo-square.png"
+                    width={32}
+                    height={32}
+                    alt=""
+                    className="!h-8 !w-8 shrink-0 rounded-lg object-contain"
+                  />
+                  <span>Do It With AI Tools</span>
+                </div>
+                {badge && (
+                  <p className="mb-2 mt-4 text-xs font-bold uppercase leading-6 tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
+                    {badge}
+                  </p>
+                )}
                 {title && (
-                  <h4 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white leading-snug">
+                  <h3 className="text-xl font-extrabold leading-snug sm:text-2xl lg:text-3xl text-gray-900 dark:text-white">
                     {title}
-                  </h4>
+                  </h3>
                 )}
                 {description && (
-                  <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+                  <p className="mb-6 mt-3 text-base leading-7 text-slate-600 dark:text-slate-300 sm:leading-8">
                     {description}
                   </p>
                 )}
-              </div>
-              <div className="flex flex-col sm:items-end gap-2 flex-shrink-0">
-                <Link
-                  href={link}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 px-5 py-3 text-sm sm:text-base font-semibold text-white shadow-sm transition-all duration-200"
-                >
-                  <span>{ctaText}</span>
-                  <Rocket className="w-4 h-4 flex-shrink-0" />
-                </Link>
-                {secondaryText && secondaryLink && (
+                <div className="flex flex-wrap items-center gap-4">
                   <Link
-                    href={secondaryLink}
-                    className="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                    href={link}
+                    className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-3 text-sm font-bold leading-6 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
                   >
-                    {secondaryText} →
+                    {ctaText} <span aria-hidden="true">↗</span>
                   </Link>
-                )}
+                  {secondaryText && secondaryLink && (
+                    <Link
+                      href={secondaryLink}
+                      className="text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
+                    >
+                      {secondaryText} →
+                    </Link>
+                  )}
+                </div>
               </div>
+            </aside>
+          );
+        }
+
+        return (
+          <aside
+            className="my-8 sm:my-10 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] p-6 sm:p-8 md:p-9 text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50"
+            aria-label={badge || title}
+          >
+            <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <Image
+                src="/doitwithai-logo-square.png"
+                width={32}
+                height={32}
+                alt=""
+                className="!h-8 !w-8 shrink-0 rounded-lg object-contain"
+              />
+              <span>Do It With AI Tools</span>
+            </div>
+            {badge && (
+              <p className="mb-2 mt-4 text-xs font-bold uppercase leading-6 tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
+                {badge}
+              </p>
+            )}
+            {title && (
+              <h3 className="text-xl font-extrabold leading-snug sm:text-2xl lg:text-3xl text-gray-900 dark:text-white">
+                {title}
+              </h3>
+            )}
+            {description && (
+              <p className="mb-6 mt-3 text-base leading-7 text-slate-600 dark:text-slate-300 sm:leading-8 max-w-3xl">
+                {description}
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                href={link}
+                className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-6 py-3 text-sm sm:text-base font-bold leading-6 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
+              >
+                {ctaText} <span aria-hidden="true">↗</span>
+              </Link>
+              {secondaryText && secondaryLink && (
+                <Link
+                  href={secondaryLink}
+                  className="text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
+                >
+                  {secondaryText} →
+                </Link>
+              )}
             </div>
           </aside>
         );
