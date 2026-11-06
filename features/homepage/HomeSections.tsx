@@ -145,6 +145,41 @@ export function HomeClosing() {
       className="home-section bg-white pt-0 dark:bg-[#111827]"
     >
       <div className="home-shell">
+        <div className="mb-12 rounded-3xl border border-slate-200/90 bg-slate-50/70 p-6 dark:border-slate-800 dark:bg-[#161F30] sm:p-8">
+          <p className="home-eyebrow">Practical AI across your workflow</p>
+          <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
+            Where AI helps in SEO, content writing, and social media—and what you still review
+          </h2>
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300">
+            AI can speed up repetitive marketing tasks, from grouping keyword lists and drafting metadata to repurposing blog posts for social channels. Your experience and verification turn those drafts into publishable work.
+          </p>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                SEO &amp; keyword research
+              </h3>
+              <p className="mt-2 text-xs leading-6 text-slate-600 dark:text-slate-300">
+                Use AI to group related keywords, classify search intent, inspect on-page headings, and draft JSON-LD schema—then verify live search results and real site facts.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Content writing &amp; editing
+              </h3>
+              <p className="mt-2 text-xs leading-6 text-slate-600 dark:text-slate-300">
+                Let AI help structure article outlines, compare title and meta description angles, and simplify dense sentences while you supply original examples and accuracy checks.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Social media &amp; visual assets
+              </h3>
+              <p className="mt-2 text-xs leading-6 text-slate-600 dark:text-slate-300">
+                Turn finished articles into LinkedIn posts, short-form video scripts, and visual infographics faster, keeping your brand tone and claims consistent across formats.
+              </p>
+            </div>
+          </div>
+        </div>
         <div className="home-closing-banner">
           <Sparkles
             aria-hidden

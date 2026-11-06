@@ -98,8 +98,13 @@ export default function MetaPromptArticle({
             <a href="#prompts" className={styles.primary}>
               Find your prompt <ArrowUpRight size={17} />
             </a>
+            <Link href="/tools/meta-title-generator">
+              Use Meta Title Generator
+            </Link>
+            <Link href="/tools/meta-description-generator">
+              Use Meta Description Generator
+            </Link>
             <a href="#prompt-customizer">Customize all {promptCount} prompts</a>
-            <a href="#worked-example">See the worked example</a>
           </div>
         </header>
         <figure className={styles.featured}>

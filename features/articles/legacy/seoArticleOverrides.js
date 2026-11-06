@@ -150,6 +150,188 @@ export const seoArticleOverrides = {
       { slug: "search-intent-checker", name: "Keyword Intent Checker" },
     ],
   },
+
+  "seo:ai-vs-traditional-keyword-research": {
+    metatitle: "AI vs Traditional Keyword Research: Workflow & Comparison",
+    metadesc:
+      "Compare AI keyword ideation with traditional SEO research data. Learn what AI can speed up, what metrics you still verify, and how to combine both.",
+    relatedToolSlugs: ["keyword-research-tool", "keyword-clustering-tool", "search-intent-checker"],
+    quickAnswer: {
+      question: "What is the difference between AI and traditional keyword research?",
+      answer:
+        "AI keyword research excels at fast topic brainstorming, phrasing variations, semantic grouping, and mapping reader tasks. Traditional keyword research relies on search-console and database metrics to verify actual search demand and ranking competition. The strongest SEO workflow uses AI for ideation and clustering, then validates priority topics with real search data.",
+    },
+    tools: [
+      { slug: "keyword-clustering-tool", name: "Keyword Grouping Tool", primary: true },
+      { slug: "search-intent-checker", name: "Keyword Intent Checker" },
+      { slug: "keyword-research-tool", name: "Keyword Research Tool" },
+    ],
+  },
+
+  "seo:blog-introduction": {
+    metatitle: "How to Write a Compelling Blog Introduction With AI",
+    metadesc:
+      "Write clearer blog introductions using AI prompts, before-and-after examples, and review checks that hook readers without overpromising.",
+    relatedToolSlugs: ["article-outline-generator", "readability-checker", "h1-heading-generator"],
+    quickAnswer: {
+      question: "How can AI help you write a better blog introduction?",
+      answer:
+        "AI can quickly draft several opening angles—such as a direct answer, a reader problem, or a concise roadmap of what the guide covers. To make the introduction compelling, trim generic throat-clearing sentences, confirm every claim matches your article, and tell readers what they will learn in the first three sentences.",
+    },
+    tools: [
+      { slug: "article-outline-generator", name: "Article Outline Generator", primary: true },
+      { slug: "readability-checker", name: "Readability Checker" },
+    ],
+  },
+
+  "makemoney:ai-infographic-generators": {
+    metatitle: "Can ChatGPT Make Infographics? Prompts & 5 AI Tools",
+    metadesc:
+      "Learn how to turn blog posts and data into infographics using ChatGPT prompts and visual AI tools. Compare free limits, design steps, and image SEO.",
+    relatedToolSlugs: ["blog-to-infographic-generator", "data-to-chart-visual-card-maker", "image-alt-text-generator"],
+    quickAnswer: {
+      question: "Can ChatGPT and AI tools create infographics from blog content?",
+      answer:
+        "ChatGPT can summarize an article into structured infographic sections, headline points, and visual layout briefs, while visual infographic studios turn that structure into an editable graphic. Always verify numbers and source facts before exporting your image.",
+    },
+    tools: [
+      { slug: "blog-to-infographic-generator", name: "Blog to Infographic Studio", primary: true },
+      { slug: "data-to-chart-visual-card-maker", name: "Data to Chart Card Maker" },
+    ],
+  },
+
+  "seo:ai-readability-tools": {
+    metatitle: "AI Readability Tools & ChatGPT Prompts to Edit Drafts",
+    metadesc:
+      "Improve AI-written and human drafts with readability tools, ChatGPT editing prompts, and before-and-after examples that keep your meaning intact.",
+    relatedToolSlugs: ["readability-checker", "on-page-ai-seo-analyzer", "content-evidence-review"],
+    quickAnswer: {
+      question: "How do AI readability tools help improve content?",
+      answer:
+        "Readability tools highlight long, winding sentences, dense paragraphs, and passive phrasing so you can make an article easier to scan. Use AI to suggest simpler phrasing, then review each edit yourself so technical accuracy and nuance are never lost.",
+    },
+    tools: [
+      { slug: "readability-checker", name: "Readability Checker & Improver", primary: true },
+      { slug: "on-page-ai-seo-analyzer", name: "On-page AI SEO Analyzer" },
+    ],
+  },
+
+  "seo:chatgpt-keyword-research": {
+    metatitle: "How to Do Keyword Research With ChatGPT (Prompts & Steps)",
+    metadesc:
+      "Use ChatGPT for keyword brainstorming, subtopic discovery, intent mapping, and clustering—plus see how to verify your list with real search data.",
+    relatedToolSlugs: ["keyword-research-tool", "keyword-clustering-tool", "search-intent-checker"],
+    quickAnswer: {
+      question: "How do you use ChatGPT for SEO keyword research?",
+      answer:
+        "Use ChatGPT to expand seed topics into reader questions, long-tail phrasing, and intent-based topic clusters. Because language models cannot see live search volumes, export or paste those ideas into a keyword grouping and intent workflow and cross-check with Search Console or a keyword database.",
+    },
+    tools: [
+      { slug: "keyword-research-tool", name: "Keyword Research Tool", primary: true },
+      { slug: "keyword-clustering-tool", name: "Keyword Grouping Tool" },
+      { slug: "search-intent-checker", name: "Keyword Intent Checker" },
+    ],
+  },
+
+  "makemoney:ai-video-script-generators": {
+    metatitle: "AI Video Script Generators & ChatGPT Prompts (2026)",
+    metadesc:
+      "Turn blog posts and ideas into YouTube, Shorts, and Reels scripts using ChatGPT prompts and AI script tools. Includes templates and pacing checks.",
+    relatedToolSlugs: ["short-form-video-script-generator", "blog-to-video-script", "youtube-title-thumbnail-optimizer"],
+    quickAnswer: {
+      question: "Can AI write video scripts from a blog post or brief?",
+      answer:
+        "Yes. AI script tools and ChatGPT prompts can structure a hook, timed talking points, visual cues, and a call to action for YouTube videos, Shorts, or Reels. Read the draft out loud to check natural speaking pace and verify every factual statement.",
+    },
+    tools: [
+      { slug: "short-form-video-script-generator", name: "Short-Form Video Script Studio", primary: true },
+      { slug: "blog-to-video-script", name: "Blog to Video Script Tool" },
+    ],
+  },
+
+  "seo:meta-title": {
+    metatitle: "How to Write SEO Meta Titles With AI: Examples & Checker",
+    metadesc:
+      "Write clear, click-worthy SEO title tags with AI prompts and examples. Check title length and pixel width, and avoid common Google title rewrites.",
+    relatedToolSlugs: ["meta-title-generator", "serp-rich-result-preview-generator", "h1-heading-generator"],
+    quickAnswer: {
+      question: "What makes a good SEO meta title?",
+      answer:
+        "A strong meta title clearly states the page's primary topic, matches search intent, and puts the most important words near the front so they stay visible in Google results (typically around 50-60 characters). Avoid stuffing repeated keywords or promising something the page does not deliver.",
+    },
+    checker: {
+      kind: "length",
+      label: "Check your meta title length",
+      placeholder: "Paste or type your meta title tag…",
+      min: 30,
+      max: 60,
+      tooShort: "Short title. Add specific topic context or your brand name.",
+      good: "Good length for a clear desktop and mobile search snippet.",
+      tooLong: "Longer than ~60 characters—Google may truncate the end on some screens.",
+    },
+    tools: [
+      { slug: "meta-title-generator", name: "Meta Title Generator", primary: true },
+      { slug: "serp-rich-result-preview-generator", name: "SERP Snippet Preview" },
+    ],
+  },
+
+  "seo:chatgpt-target-audience-research": {
+    metatitle: "AI Target Audience Research: ChatGPT Prompts & Workflow",
+    metadesc:
+      "Use AI and ChatGPT prompts to organize customer feedback, map buyer questions, and plan content for your target audience without invented demographics.",
+    relatedToolSlugs: ["target-audience-research-tool", "search-intent-checker", "seo-content-brief-generator"],
+    quickAnswer: {
+      question: "How can you use AI for target audience research?",
+      answer:
+        "Feed real customer questions, support notes, or product details into an AI audience workflow to summarize pain points, buying objections, and search questions by stage. Treat AI personas as hypotheses and ground them in real customer evidence.",
+    },
+    tools: [
+      { slug: "target-audience-research-tool", name: "Target Audience Research Tool", primary: true },
+      { slug: "seo-content-brief-generator", name: "SEO Content Brief Generator" },
+    ],
+  },
+
+  "seo:schema-markup-optimization": {
+    metatitle: "Schema Markup Optimization With AI: JSON-LD & Validator",
+    metadesc:
+      "Generate and validate clean JSON-LD schema markup with AI. Learn which schema types match your page and check every field against visible page content.",
+    relatedToolSlugs: ["schema-markup-generator", "structured-data-validator", "ai-faq-generator"],
+    quickAnswer: {
+      question: "How does AI help with schema markup optimization?",
+      answer:
+        "AI can draft JSON-LD structured data—such as Article, FAQPage, LocalBusiness, or Product schema—from your page details in seconds. Because structured data must match visible page content, always run your JSON-LD through a validator before publishing.",
+    },
+    tools: [
+      { slug: "schema-markup-generator", name: "Schema Markup Generator", primary: true },
+      { slug: "structured-data-validator", name: "Structured Data Validator" },
+    ],
+  },
+
+  "seo:ai-alt-text-generators": {
+    metatitle: "AI Image Alt Text Guide: Examples, Prompts & Free Tool",
+    metadesc:
+      "Write clear, accessible image alt text with AI. See good vs bad alt text examples, learn when to use empty alt attributes, and generate descriptions free.",
+    relatedToolSlugs: ["image-alt-text-generator", "on-page-ai-seo-analyzer", "webpage-image-extractor"],
+    quickAnswer: {
+      question: "How do you write good image alt text with AI?",
+      answer:
+        "Good alt text describes the information or function an image provides in its surrounding page context, usually in one concise sentence. Use empty alt text (alt=\"\") for purely decorative graphics, and never stuff keywords or invent visual details that are not in the image.",
+    },
+    checker: {
+      kind: "length",
+      label: "Check your image alt text length",
+      placeholder: "Type or paste your image alt text…",
+      min: 15,
+      max: 125,
+      tooShort: "Very brief. Describe the key visual detail that matters in this section.",
+      good: "Concise, screen-reader-friendly description length.",
+      tooLong: "Long for alt text. Move extended chart or diagram details into the caption or body text.",
+    },
+    tools: [
+      { slug: "image-alt-text-generator", name: "Image Alt Text Generator", primary: true },
+      { slug: "on-page-ai-seo-analyzer", name: "On-page AI SEO Analyzer" },
+    ],
+  },
 };
 
 function slugOf(data) {
