@@ -1,5 +1,9 @@
 # Search, Google AdSense & AI-search access
 
+User-agent: Google-adstxt
+Allow: /ads.txt
+Allow: /
+
 User-agent: Mediapartners-Google
 Allow: /
 

@@ -40,11 +40,24 @@ const nextConfig = {
   },
   
   trailingSlash: false, // Changed to false for cleaner URLs
-  
- 
 
-  // Add headers for cache control
- 
+  async headers() {
+    return [
+      {
+        source: '/ads.txt',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/plain; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
