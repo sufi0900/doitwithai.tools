@@ -205,8 +205,8 @@ const {
     );
   }
 
-  const postsToDisplay = useMemo(() => {
-    const rawPosts = (pageData && Array.isArray(pageData)) ? pageData : [];
+  const rawPosts = (pageData && Array.isArray(pageData)) ? pageData : [];
+  const postsToDisplay = (() => {
     if (currentPage === 1 && !isSearchMode && !customQuery) {
       const staticPosts = getStaticArticlesByType(documentType);
       const seenSlugs = new Set();
@@ -220,7 +220,7 @@ const {
         .slice(0, limit);
     }
     return rawPosts.slice(0, limit);
-  }, [pageData, currentPage, isSearchMode, customQuery, documentType, limit]);
+  })();
 
   return (
     <div className="space-y-4" style={{ position: 'relative' }}>
