@@ -19,8 +19,11 @@ import Link from 'next/link';
 import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
 import Image from 'next/image';
 
+  // FAQSection is imported statically so FAQs are present in server-rendered HTML.
+  import FAQSection from './FAQSection';
+  import ArticleQuickStart from './ArticleQuickStart';
+
   // Lazy load non-critical components
-  const FAQSection = lazy(() => import('./FAQSection'));
   const RelatedPostsSection = lazy(() => import('./RelatedPostsSection'));
   const RelatedResources = lazy(() => import("@/app/free-ai-resources/RelatedResources"));
   const BlogSidebar = lazy(() => import("./BlogSidebar"));
@@ -306,27 +309,17 @@ if (!data && loading) {
                 {/* Main Content - Critical for FCP */}
                 <div className="relative w-full">
                   <div className="opacity-100"> {/* Always show content if we have data */}
+                    <ArticleQuickStart enhancement={data.seoEnhancement} />
                     <TableOfContents tableOfContents={data.tableOfContents} content={data.content} />
                     
                     <div className="mb-4  mt-4 border-b-2  border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
                       <PortableText value={data.content} components={portableTextComponents} />
                     </div>
 
-                    {/* FAQ Section - Load after stage 4 */}
-                    <SmartShimmer
-                      isLoading={loadStage < 4}
-                      fallback={<ComponentSkeleton height="300px" />}
-                      delay={100} // Small delay to avoid flash if already loaded
-                    >
-
-
-
-                      <Suspense fallback={<ComponentSkeleton height="300px" />}>
-                        <FAQSection faqs={data.faqs} />
-                      </Suspense>
-                      {/* ADD AUTHOR BIO CARD HERE */}
-<AuthorBioCard />
-                    </SmartShimmer>
+                    {/* FAQ + author bio render in the initial server HTML (no loadStage gate)
+                        so search engines and AI crawlers can read them and match FAQPage schema. */}
+                    <FAQSection faqs={data.faqs} />
+                    <AuthorBioCard />
                   </div>
                   <SmartShimmer
   isLoading={loadStage < 4}

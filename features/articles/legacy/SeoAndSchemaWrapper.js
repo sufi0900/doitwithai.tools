@@ -4,9 +4,6 @@
 "use client"; 
 
 import React, { useMemo } from 'react';
-import Head from 'next/head';
-import Script from 'next/script';
-import { NextSeo } from 'next-seo';
 import { urlForImage } from '@/sanity/lib/image'; // Assuming this path is correct
 
 /**
@@ -89,10 +86,7 @@ export default function SeoAndSchemaWrapper({
           "url": "https://doitwithai.tools/author/sufian-mustafa",
           "jobTitle": "AI Technology Expert",
           "knowsAbout": ["Artificial Intelligence", "AI Tools", "SEO", "Content Marketing", "Digital Marketing"], // Expanded
-          "sameAs": [
-            "https://twitter.com/sufianmustafa", // Replace with actual Twitter
-            "https://linkedin.com/in/sufianmustafa" // Replace with actual LinkedIn
-          ]
+          "sameAs": ["https://doitwithai.tools/author/sufian-mustafa"]
         },
         "publisher": {
           "@type": "Organization",
@@ -391,10 +385,6 @@ export default function SeoAndSchemaWrapper({
         "alternateName": ["DoItWithAI.tools", "DIWAITools"],
         "description": "DoItWithAITools is an AI-focused content hub empowering creators, developers, marketers, and entrepreneurs with accessible, actionable AI knowledge and resources to boost productivity and SEO.",
         "inLanguage": "en-US",
-        "isPartOf": {
-          "@type": "WebSite",
-          "@id": "https://doitwithai.tools#website"
-        },
         "about": {
           "@type": "Thing",
           "name": "Artificial Intelligence",
@@ -407,17 +397,7 @@ export default function SeoAndSchemaWrapper({
         "publisher": {
           "@type": "Organization",
           "@id": "https://doitwithai.tools#organization"
-        },
-        "potentialAction": [{
-          "@type": "SearchAction",
-          "target": { "@type": "EntryPoint", "urlTemplate": "https://doitwithai.tools/search?q={search_term_string}" },
-          "query-input": "required name=search_term_string"
-        }],
-        "sameAs": [
-          "https://twitter.com/doitwithai", // Replace with actual Twitter
-          "https://facebook.com/doitwithai", // Replace with actual Facebook
-          "https://linkedin.com/company/doitwithai" // Replace with actual LinkedIn
-        ]
+        }
       })
     };
   }
@@ -453,11 +433,6 @@ export default function SeoAndSchemaWrapper({
           "email": "contact@doitwithai.tools",
           "availableLanguage": "English"
         }],
-        "sameAs": [
-          "https://twitter.com/doitwithai", // Replace with actual Twitter
-          "https://facebook.com/doitwithai", // Replace with actual Facebook
-          "https://linkedin.com/company/doitwithai" // Replace with actual LinkedIn
-        ],
         "knowsAbout": ["Artificial Intelligence", "AI Tools", "Machine Learning", "Productivity Software", "SEO Optimization", "Content Creation", "Automation"]
       })
     };
@@ -539,161 +514,17 @@ export default function SeoAndSchemaWrapper({
 
   return (
     <>
-      <Head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-
-        {/* ALWAYS provide a fallback title */}
-        <title>{data?.metatitle || 'Loading Content/Offline'} | DoItWithAI.tools</title>
-        <meta name="description" content={data?.metadesc || 'The content for this page is currently loading or you are offline. Attempting to retrieve cached data.'} />
-        <meta name="keywords" content={data?.tags?.map(tag => tag?.name).join(',') || ''} />
-        <meta name="author" content="Sufian Mustafa" />
-        <meta name="creator" content="Sufian Mustafa" />
-        <meta name="publisher" content="DoItWithAI.tools" />
-        <meta name="robots" content={data ? "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" : "noindex,nofollow"} />
-        <meta name="googlebot" content={data ? "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" : "noindex,nofollow"} />
-        <meta name="bingbot" content={data ? "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" : "noindex,nofollow"} />
-
-        {/* Use a conditional block for ALL data-dependent metatags */}
-        {data && (
-          <>
-            <meta name="article:published_time" content={data.publishedAt} />
-            <meta name="article:modified_time" content={data._updatedAt || data.publishedAt} />
-            <meta name="article:author" content="Sufian Mustafa" />
-            <meta name="article:section" content={articleSection} /> {/* Specific section */}
-            <meta name="article:tag" content={data.tags?.map(tag => tag?.name).join(',') || ''} />
-
-            {/* Content Classification */}
-            <meta name="classification" content="Technology, Marketing, SEO" /> {/* More specific */}
-            <meta name="category" content={category} /> {/* Specific category */}
-            <meta name="coverage" content="Worldwide" />
-            <meta name="distribution" content="Global" />
-            <meta name="rating" content="General" />
-            <meta name="subject" content={`AI in ${articleSection}`} /> {/* Specific subject */}
-            <meta name="topic" content={`AI Technology for ${category}`} /> {/* Specific topic */}
-
-            {/* Reading Time and Content Info */}
-            <meta name="reading-time" content={`${readingTime} minutes`} />
-            <meta name="word-count" content={data.wordCount || Math.round((readingTime || 0) * 250)} />
-
-            {/* Enhanced Open Graph Meta Tags */}
-            <meta property="og:type" content="article" />
-            <meta property="og:site_name" content="DoItWithAI.tools" />
-            <meta property="og:locale" content="en_US" />
-            <meta property="og:title" content={data.metatitle} />
-            <meta property="og:description" content={data.metadesc} />
-            <meta property="og:url" content={canonicalUrl} />
-            {imageUrl && (
-              <>
-                <meta property="og:image" content={imageUrl} />
-                <meta property="og:image:secure_url" content={imageUrl} />
-                <meta property="og:image:width" content="1200" />
-                <meta property="og:image:height" content="630" />
-                <meta property="og:image:alt" content={data.mainImage?.alt || data.metatitle} />
-                <meta property="og:image:type" content="image/jpeg" />
-              </>
-            )}
-            <meta property="article:published_time" content={data.publishedAt} />
-            <meta property="article:modified_time" content={data._updatedAt || data.publishedAt} />
-            <meta property="article:author" content="Sufian Mustafa" />
-            <meta property="article:section" content={articleSection} /> {/* Specific section */}
-            {data.tags?.map((tag, index) => (
-              <meta key={`og-tag-${index}`} property="article:tag" content={tag?.name} />
-            ))}
-
-            {/* Enhanced Twitter Card Meta Tags */}
-            <meta name="twitter:card" content="summary_large_image" />
-            <meta name="twitter:site" content="@doitwithai" />
-            <meta name="twitter:creator" content="@sufianmustafa" />
-            <meta name="twitter:title" content={data.metatitle} />
-            <meta name="twitter:description" content={data.metadesc} />
-            {imageUrl && <meta name="twitter:image" content={imageUrl} />}
-            <meta property="twitter:domain" content="doitwithai.tools" />
-            <meta property="twitter:url" content={canonicalUrl} />
-            <meta name="twitter:label1" content="Reading time" />
-            <meta name="twitter:data1" content={`${readingTime} minutes`} />
-            <meta name="twitter:label2" content="Written by" />
-            <meta name="twitter:data2" content="Sufian Mustafa" />
-
-            {/* Canonical and Alternate Links */}
-            <link rel="canonical" href={canonicalUrl} />
-            <link rel="alternate" type="application/rss+xml" title="DoItWithAI.tools RSS Feed" href="https://doitwithai.tools/rss.xml" />
-          </>
-        )}
-
-        {/* Theme and Performance - always present */}
-        <meta name="theme-color" content="#3b82f6" />
-        <meta name="color-scheme" content="light dark" />
-
-        {/* Preconnect for performance */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-        <link rel="dns-prefetch" href="//www.google-analytics.com" />
-
-        {/* Favicon */}
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-
-        {/* Additional SEO Meta Tags */}
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-
-        {/* Content Security and Cache Control */}
-        <meta httpEquiv="cache-control" content="public,max-age=31536000,immutable" />
-        <meta name="referrer" content="strict-origin-when-cross-origin" />
-
-        {/* NextSeo Component - Keep for comprehensive control. */}
-        <NextSeo
-          title={`${data?.metatitle || 'Loading Content/Offline'} | DoItWithAI.tools`}
-          description={data?.metadesc || 'The content for this page is currently loading or you are offline.'}
-          canonical={canonicalUrl}
-          openGraph={{
-            type: 'article',
-            title: data?.metatitle || 'Loading Content/Offline',
-            description: data?.metadesc || 'The content for this page is currently loading or you are offline.',
-            url: canonicalUrl,
-            siteName: 'DoItWithAI.tools',
-            locale: 'en_US',
-            images: imageUrl ? [{
-              url: imageUrl,
-              width: 1200,
-              height: 630,
-              alt: data?.mainImage?.alt || data?.metatitle || 'Article Image',
-              type: 'image/jpeg',
-            }] : [],
-            publishedTime: data?.publishedAt,
-            modifiedTime: data?._updatedAt || data?.publishedAt,
-            section: articleSection, // Specific section
-            tags: data?.tags?.map(tag => tag?.name) || [],
-          }}
-          twitter={{
-            card: 'summary_large_image',
-            site: '@doitwithai',
-            creator: '@sufianmustafa',
-            title: data?.metatitle || 'Loading Content/Offline',
-            description: data?.metadesc || 'The content for this page is currently loading or you are offline.',
-            images: imageUrl ? [imageUrl] : [],
-          }}
-          additionalMetaTags={[
-            { name: 'keywords', content: data?.tags?.map(tag => tag?.name).join(',') || '' },
-            { name: 'author', content: 'Sufian Mustafa' }
-          ]}
-        />
-      </Head>
 
       {/* Enhanced Schema Markup Scripts - Prioritizing Article Elements */}
-      {webSiteSchema && <Script id="WebSiteSchema" type="application/ld+json" dangerouslySetInnerHTML={webSiteSchema} strategy="beforeInteractive" />}
-      {organizationSchema && <Script id="OrganizationSchema" type="application/ld+json" dangerouslySetInnerHTML={organizationSchema} strategy="beforeInteractive" />}
-      {webPageSchema && <Script id="WebPageSchema" type="application/ld+json" dangerouslySetInnerHTML={webPageSchema} strategy="beforeInteractive" />}
-      {articleSchema && <Script id="ArticleSchema" type="application/ld+json" dangerouslySetInnerHTML={articleSchema} strategy="afterInteractive" />}
-      {breadcrumbSchema && <Script id="BreadcrumbListSchema" type="application/ld+json" dangerouslySetInnerHTML={breadcrumbSchema} strategy="afterInteractive" />}
-      {tocSchema && (<Script id="TableOfContentsSchema" type="application/ld+json" dangerouslySetInnerHTML={tocSchema} strategy="afterInteractive" />)}
-      {howToSchema && (<Script id="HowToSchema" type="application/ld+json" dangerouslySetInnerHTML={howToSchema} strategy="afterInteractive" />)}
-      {softwareApplicationSchema && (<Script id="SoftwareApplicationSchema" type="application/ld+json" dangerouslySetInnerHTML={softwareApplicationSchema} strategy="afterInteractive" />)}
-      {faqSchema && (<Script id="FAQSchema" type="application/ld+json" dangerouslySetInnerHTML={faqSchema} strategy="afterInteractive" />)}
+      {webSiteSchema && <script id="WebSiteSchema" type="application/ld+json" dangerouslySetInnerHTML={webSiteSchema} />}
+      {organizationSchema && <script id="OrganizationSchema" type="application/ld+json" dangerouslySetInnerHTML={organizationSchema} />}
+      {webPageSchema && <script id="WebPageSchema" type="application/ld+json" dangerouslySetInnerHTML={webPageSchema} />}
+      {articleSchema && <script id="ArticleSchema" type="application/ld+json" dangerouslySetInnerHTML={articleSchema} />}
+      {breadcrumbSchema && <script id="BreadcrumbListSchema" type="application/ld+json" dangerouslySetInnerHTML={breadcrumbSchema} />}
+      {tocSchema && (<script id="TableOfContentsSchema" type="application/ld+json" dangerouslySetInnerHTML={tocSchema} />)}
+      {howToSchema && (<script id="HowToSchema" type="application/ld+json" dangerouslySetInnerHTML={howToSchema} />)}
+      {softwareApplicationSchema && (<script id="SoftwareApplicationSchema" type="application/ld+json" dangerouslySetInnerHTML={softwareApplicationSchema} />)}
+      {faqSchema && (<script id="FAQSchema" type="application/ld+json" dangerouslySetInnerHTML={faqSchema} />)}
     </>
   );
 }

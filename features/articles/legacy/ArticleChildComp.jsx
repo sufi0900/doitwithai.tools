@@ -13,6 +13,7 @@ import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 
 // Dynamic imports with better loading strategy
 import BlogLayout from "@/features/articles/legacy/components/BlogLayout";
+import { applySeoOverrides } from "@/features/articles/legacy/seoArticleOverrides";
 
 
 export default function ArticleChildComp({ serverData, params, schemaType }) {
@@ -82,8 +83,11 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
     { ...articleCacheOptions, schemaType }
   );
 
-  // Determine final article data
-  const finalArticleData = cachedArticleData || serverData;
+  // Determine final article data (code-first SEO overrides re-applied after client refetch)
+  const finalArticleData = useMemo(
+    () => applySeoOverrides(cachedArticleData || serverData, schemaType),
+    [cachedArticleData, serverData, schemaType]
+  );
   const currentPostId = finalArticleData?._id;
 
   // --- REPLACED SKELETON LOGIC ---

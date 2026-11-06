@@ -3,6 +3,7 @@ import { client } from "@/sanity/lib/client";
 import { redisHelpers } from '@/app/lib/redis'; // Adjust path as needed
 import { urlForImage } from "@/sanity/lib/image";
 import { articleMetrics } from "./content-metrics.mjs";
+import { applySeoOverrides } from "./seoArticleOverrides";
 
 
 
@@ -28,7 +29,7 @@ export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeN
     const cachedData = await redisHelpers.get(cacheKey);
     if (cachedData) {
       console.log(`[RedisCacheHit] for ${cacheKey} in ${Date.now() - startTime}ms`);
-      return { ...cachedData, ...articleMetrics(cachedData.content), __source: 'server-redis' };
+      return applySeoOverrides({ ...cachedData, ...articleMetrics(cachedData.content), __source: 'server-redis' }, schemaTypeName);
     }
   } catch (redisError) {
     console.error(`Redis error for ${cacheKey}:`, redisError.message);
@@ -77,7 +78,7 @@ export async function getArticleData(slug, schemaTypeName, tagName = schemaTypeN
       } catch (redisSetError) {
         console.error(`Redis set error for ${cacheKey}:`, redisSetError.message);
       }
-      return { ...data, __source: 'server-network' };
+      return applySeoOverrides({ ...data, __source: 'server-network' }, schemaTypeName);
     }
     return null;
   } catch (error) {
@@ -144,11 +145,6 @@ export function generatePageMetadata(data, params, basePath, metadataCategory) {
       title: data.metatitle,
       description: data.metadesc,
       images: imageUrl ? [imageUrl] : [],
-    },
-    verification: {
-      google: 'your-google-verification-code',
-      yandex: 'your-yandex-verification-code',
-      yahoo: 'your-yahoo-verification-code',
     },
   };
 }

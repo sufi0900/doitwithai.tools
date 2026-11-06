@@ -10,14 +10,14 @@ import KeywordClusteringClient from "@/features/keyword-clustering/KeywordCluste
 import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl = "https://doitwithai.tools/tools/keyword-clustering-tool";
 const description =
-  "Group supplied keywords by reader task or topic. Edit memberships, choose primary keywords, split or merge groups, and export a reviewed content plan.";
+  "Free keyword grouping tool: paste or import a keyword list, cluster it by topic and search intent with AI, edit the groups, and export a reviewed content plan.";
 const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "AI Keyword Clustering Tool", category: "AI SEO · Content Writing", ctaText: "Group. Review. Plan.", features: "CSV Import,Editable Groups,Content Planning" })}`;
 export const metadata: Metadata = {
-  title: "AI Keyword Clustering Tool: Group, Review and Export",
+  title: "Free Keyword Grouping Tool | AI Keyword Clustering",
   description,
   alternates: { canonical: pageUrl },
   openGraph: {
-    title: "AI Keyword Clustering Tool",
+    title: "Free Keyword Grouping & Clustering Tool",
     description,
     url: pageUrl,
     type: "website",
@@ -25,11 +25,49 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Keyword Clustering Tool",
+    title: "Free Keyword Grouping & Clustering Tool",
     description,
     images: [image],
   },
 };
+const faqs = [
+  [
+    "Is this keyword grouping tool free?",
+    "Yes. You can paste or import a keyword list, group it, edit the groups, and export your plan without paying. A grouping is a planning aid you should review before publishing.",
+  ],
+  [
+    "Is this a search-result clustering tool?",
+    "No. It groups supplied keyword wording with AI assistance. It does not compare live ranking URLs or calculate search-result overlap.",
+  ],
+  [
+    "Can I import search volume and difficulty columns?",
+    "You can upload a CSV with multiple columns, but only the selected keyword column is used. Other metrics are neither imported nor evaluated.",
+  ],
+  [
+    "Why are duplicate keywords removed?",
+    "Repeated terms do not add a distinct planning item. Cleanup compares case, spacing, and Unicode compatibility forms while preserving meaningful punctuation.",
+  ],
+  [
+    "Does each group require its own page?",
+    "No. A topic group can contain several tasks, and a task group may belong on an existing page. Review coverage and reader needs first.",
+  ],
+  [
+    "Can I split or merge the AI suggestions?",
+    "Yes. Select keywords to move or create a group. Merge whole groups into a chosen destination. Undo restores recent edits without dropping keywords.",
+  ],
+  [
+    "What does primary keyword mean here?",
+    "It is a representative term for organizing the brief. The tool has no demand or difficulty data to establish the best ranking target.",
+  ],
+  [
+    "Where does my uploaded file go?",
+    "Import your CSV, review the cleaned keyword list, and add an optional brief before generating groups.",
+  ],
+  [
+    "Does the tool save my plan or guarantee rankings?",
+    "No. Unsaved drafts disappear on refresh. Save locally or export a project. Grouping is a planning aid and cannot guarantee search visibility, traffic, or business results.",
+  ],
+];
 const prose = "mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300";
 export default function Page() {
   const schema = {
@@ -37,12 +75,23 @@ export default function Page() {
     "@graph": [
       {
         "@type": "WebApplication",
-        name: "AI Keyword Clustering Tool",
+        name: "Keyword Grouping & Clustering Tool",
+        alternateName: ["Keyword Grouper", "AI Keyword Clustering Tool"],
         url: pageUrl,
         description,
         applicationCategory: "BusinessApplication",
         operatingSystem: "Any",
         browserRequirements: "Requires JavaScript",
+        isAccessibleForFree: true,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqs.map(([question, answer]) => ({
+          "@type": "Question",
+          name: question,
+          acceptedAnswer: { "@type": "Answer", text: answer },
+        })),
       },
       {
         "@type": "BreadcrumbList",
@@ -84,7 +133,7 @@ export default function Page() {
               AI SEO · Content Writing
             </p>
             <h1 className="mt-7 text-balance text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              AI Keyword Clustering Tool
+              Keyword Grouping &amp; Clustering Tool
               <span className={`mt-3 block text-balance ${toolHeroHeading}`}>
                 Turn Keyword Lists Into a Clearer Plan
               </span>
@@ -175,6 +224,41 @@ export default function Page() {
               page.
             </p>
           </aside>
+        </section>
+        <section className="rounded-3xl border border-slate-200 p-7 dark:border-slate-800">
+          <h2 className="text-3xl font-black">
+            Keyword grouper, keyword grouping and keyword clustering: same job
+          </h2>
+          <p className={prose}>
+            People call this a keyword grouper, a keyword grouping tool, or a
+            keyword clustering tool. All three describe the same task: taking a
+            long, messy keyword list and sorting it into groups that each map
+            to one page or one reader need.
+          </p>
+          <p className={prose}>
+            This free keyword grouping tool groups by meaning and search intent
+            rather than by shared words alone, so &quot;meta title
+            examples&quot; and &quot;meta title generator&quot; can land in
+            different groups even though they share a phrase.
+          </p>
+          <p className={prose}>
+            Not sure which intent a keyword has? Run it through the{" "}
+            <Link
+              href="/tools/search-intent-checker"
+              className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            >
+              Keyword Intent Checker
+            </Link>{" "}
+            first, then come back to group the list. Need ideas to group?
+            Start with the{" "}
+            <Link
+              href="/tools/keyword-research-tool"
+              className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            >
+              Keyword Research Tool
+            </Link>
+            .
+          </p>
         </section>
         <section>
           <h2 className="text-3xl font-black">
@@ -368,40 +452,7 @@ export default function Page() {
         <section>
           <h2 className="text-3xl font-black">Keyword clustering questions</h2>
           <div className="mt-7 divide-y divide-slate-200 rounded-3xl border border-slate-200 px-6 dark:divide-slate-800 dark:border-slate-800">
-            {[
-              [
-                "Is this a search-result clustering tool?",
-                "No. It groups supplied keyword wording with AI assistance. It does not compare live ranking URLs or calculate search-result overlap.",
-              ],
-              [
-                "Can I import search volume and difficulty columns?",
-                "You can upload a CSV with multiple columns, but only the selected keyword column is used. Other metrics are neither imported nor evaluated.",
-              ],
-              [
-                "Why are duplicate keywords removed?",
-                "Repeated terms do not add a distinct planning item. Cleanup compares case, spacing, and Unicode compatibility forms while preserving meaningful punctuation.",
-              ],
-              [
-                "Does each group require its own page?",
-                "No. A topic group can contain several tasks, and a task group may belong on an existing page. Review coverage and reader needs first.",
-              ],
-              [
-                "Can I split or merge the AI suggestions?",
-                "Yes. Select keywords to move or create a group. Merge whole groups into a chosen destination. Undo restores recent edits without dropping keywords.",
-              ],
-              [
-                "What does primary keyword mean here?",
-                "It is a representative term for organizing the brief. The tool has no demand or difficulty data to establish the best ranking target.",
-              ],
-              [
-                "Where does my uploaded file go?",
-                "Import your CSV, review the cleaned keyword list, and add an optional brief before generating groups.",
-              ],
-              [
-                "Does the tool save my plan or guarantee rankings?",
-                "No. Unsaved drafts disappear on refresh. Save locally or export a project. Grouping is a planning aid and cannot guarantee search visibility, traffic, or business results.",
-              ],
-            ].map(([q, a]) => (
+            {faqs.map(([q, a]) => (
               <details key={q} className="py-5">
                 <summary className="cursor-pointer text-base font-bold leading-7">
                   {q}
