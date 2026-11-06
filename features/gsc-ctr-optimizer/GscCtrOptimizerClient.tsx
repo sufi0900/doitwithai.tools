@@ -94,7 +94,7 @@ export default function GscCtrOptimizerClient() {
                 ...r,
                 titleVariants: r.titleVariants.map((tv, i) =>
                   i === idx ? value : tv,
-                ),
+                ) as [string, string, string],
               }
             : r,
         ),

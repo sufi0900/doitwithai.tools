@@ -44,37 +44,37 @@ const INITIAL_EVIDENCE_INPUT: EvidenceInput = {
   checkedAt: "2026-04-01T00:00:00.000Z",
   blocks: [
     {
-      kind: "heading",
+      id: "block:0",
       tag: "h1",
       text: "Illustrative content review",
     },
     {
-      kind: "paragraph",
+      id: "block:1",
       tag: "p",
       text: "Our team tested three writing workflows. This is an illustrative testing claim without supporting records.",
     },
     {
-      kind: "heading",
+      id: "block:2",
       tag: "h2",
       text: "Claims to check",
     },
     {
-      kind: "paragraph",
+      id: "block:3",
       tag: "p",
       text: "This workflow guarantees first-place rankings for every article.",
     },
     {
-      kind: "paragraph",
+      id: "block:4",
       tag: "p",
       text: "According to Google's content guidance, clear sourcing helps readers assess trust. Read the original guidance.",
     },
     {
-      kind: "heading",
+      id: "block:5",
       tag: "h2",
       text: "Measurements",
     },
     {
-      kind: "paragraph",
+      id: "block:6",
       tag: "p",
       text: "In this invented example, editing time fell by 42%. No real experiment was conducted.",
     },
@@ -84,9 +84,7 @@ const INITIAL_EVIDENCE_INPUT: EvidenceInput = {
       href: "https://developers.google.com/search/docs/fundamentals/creating-helpful-content",
       text: "Read the original guidance",
       rel: "",
-      context:
-        "According to Google's content guidance, clear sourcing helps readers assess trust. Read the original guidance.",
-      section: "Claims to check",
+      blockId: "block:4",
     },
   ],
 };

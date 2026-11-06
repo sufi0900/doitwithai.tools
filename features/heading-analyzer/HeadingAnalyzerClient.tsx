@@ -178,6 +178,8 @@ export default function HeadingAnalyzerClient() {
             level: 2,
             text: "New H2 Section Heading",
             hidden: false,
+            landmark: null,
+            line: null,
           },
         ],
       };

@@ -196,12 +196,12 @@ export default function MetaTitleForm({
                 ...prev,
                 pageUrl: res.url || prev.pageUrl,
                 currentTitle: res.title || prev.currentTitle,
-                brandName: res.siteName || prev.brandName,
+                brandName: res.domain || prev.brandName,
                 topicSummary:
                   res.description && res.description.length >= 40
                     ? res.description
-                    : res.text
-                      ? res.text.slice(0, 800)
+                    : res.cleanText
+                      ? res.cleanText.slice(0, 800)
                       : prev.topicSummary,
               }));
             }}
