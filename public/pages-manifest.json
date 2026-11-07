@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-11-06T23:15:35.694Z",
+  "generated": "2026-11-07T17:33:29.367Z",
   "static_pages": [
     {
       "url": "/",
@@ -633,6 +633,18 @@
       "type": "static"
     },
     {
+      "url": "/tools/ai-blog-article-writer",
+      "title": "AI Blog & Article Writer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/downloadable-ai-tools",
+      "title": "Downloadable & Embeddable AI Tools Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -649,7 +661,13 @@
       "title": "Content Conversion",
       "priority": "medium",
       "type": "static"
+    },
+    {
+      "url": "/tools/categories/productivity",
+      "title": "Productivity",
+      "priority": "medium",
+      "type": "static"
     }
   ],
-  "total_pages": 108
+  "total_pages": 111
 }
