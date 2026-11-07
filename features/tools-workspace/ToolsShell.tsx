@@ -53,7 +53,22 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
     workspace = useWorkspace()!;
   const [query, setQuery] = useState(""),
     [drawerOpen, setDrawerOpen] = useState(false),
-    [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+    [openSections, setOpenSections] = useState<Record<string, boolean>>({}),
+    [embedConfig, setEmbedConfig] = useState<{
+      active: boolean;
+      accent: string;
+      bg: string;
+      brand: string;
+      title: string;
+      subtitle: string;
+    }>({
+      active: false,
+      accent: "#3452D1",
+      bg: "#0B1120",
+      brand: "",
+      title: "",
+      subtitle: "",
+    });
   const triggerRef = useRef<HTMLButtonElement>(null),
     drawerRef = useRef<HTMLDivElement>(null),
     restoreRef = useRef<HTMLButtonElement>(null),
@@ -65,6 +80,34 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setDrawerOpen(false);
     if (current) workspace.visit(current.id);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const isEmbed =
+        params.get("embed") === "1" || params.get("app") === "1";
+      const accent = params.get("accent") || "#3452D1";
+      const bg = params.get("bg") || "#0B1120";
+      const brand = params.get("brand") || "";
+      const title = params.get("title") || "";
+      const subtitle = params.get("subtitle") || "";
+      setEmbedConfig({
+        active: isEmbed,
+        accent: accent.startsWith("#") ? accent : `#${accent}`,
+        bg: bg.startsWith("#") ? bg : `#${bg}`,
+        brand,
+        title,
+        subtitle,
+      });
+
+      if (isEmbed) {
+        const timer = window.setTimeout(() => {
+          const h1 = document.querySelector(".diwai-embedded-tool-root h1");
+          if (h1 && title) h1.textContent = title;
+          const desc = h1?.parentElement?.querySelector("p.mt-5");
+          if (desc && subtitle) desc.textContent = subtitle;
+        }, 120);
+        return () => window.clearTimeout(timer);
+      }
+    }
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!drawerOpen) return;
@@ -327,6 +370,40 @@ export default function ToolsShell({ children }: { children: ReactNode }) {
       )}
     </div>
   );
+  if (embedConfig.active) {
+    return (
+      <div
+        className="diwai-embedded-tool-root min-h-screen w-full"
+        style={
+          {
+            "--brand-accent": embedConfig.accent,
+            backgroundColor: embedConfig.bg,
+          } as React.CSSProperties
+        }
+      >
+        <style>{`
+          .diwai-embedded-tool-root nav[aria-label="Breadcrumb"],
+          .diwai-embedded-tool-root [data-portable-hero-bar="true"],
+          .diwai-embedded-tool-root > div > section,
+          .diwai-embedded-tool-root > div > div + div,
+          .diwai-embedded-tool-root > div > div + section {
+            display: none !important;
+          }
+          .diwai-embedded-tool-root button[type="submit"],
+          .diwai-embedded-tool-root .bg-\\[\\#3452d1\\],
+          .diwai-embedded-tool-root .bg-blue-600 {
+            background-color: ${embedConfig.accent} !important;
+          }
+          .diwai-embedded-tool-root .text-\\[\\#5271ff\\],
+          .diwai-embedded-tool-root .text-\\[\\#b4c3ff\\] {
+            color: ${embedConfig.accent} !important;
+          }
+        `}</style>
+        <div>{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`tools-shell ${isCatalog ? "is-catalog" : "is-tool"} ${collapsed ? "is-expanded" : ""}`}

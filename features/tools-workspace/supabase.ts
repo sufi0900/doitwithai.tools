@@ -26,13 +26,13 @@ export function safeReturnPath(value: string | null) {
     !value ||
     value.length > 4096 ||
     /[\\\u0000-\u0020]/.test(value) ||
-    !/^\/tools(?:\/|\?|#|$)/.test(value)
+    !/^\/(?:tools|do-it-ai)(?:\/|\?|#|$)/.test(value)
   )
     return "/tools";
   const target = new URL(value, "https://return.invalid");
   if (
     target.origin !== "https://return.invalid" ||
-    !/^\/tools(?:\/|$)/.test(target.pathname)
+    !/^\/(?:tools|do-it-ai)(?:\/|$)/.test(target.pathname)
   )
     return "/tools";
   return value;

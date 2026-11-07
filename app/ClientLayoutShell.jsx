@@ -100,6 +100,32 @@ export default function ClientLayoutShell({ children }) {
   }, [hydrated]);
 
   const isHomePage = pathname === "/";
+  const isDoItAiPage =
+    pathname === "/do-it-ai" || pathname.startsWith("/do-it-ai/");
+  const [isEmbeddedView, setIsEmbeddedView] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const embedMode =
+      params.get("embed") === "1" || params.get("app") === "1";
+    setIsEmbeddedView(embedMode);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (isDoItAiPage) {
+      const prevBodyOverflow = document.body.style.overflow;
+      const prevHtmlOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevBodyOverflow;
+        document.documentElement.style.overflow = prevHtmlOverflow;
+      };
+    }
+  }, [isDoItAiPage]);
+
   const isSlugPage =
     pathname.startsWith("/ai-tools/") ||
     pathname.startsWith("/ai-seo/") ||
@@ -149,14 +175,27 @@ export default function ClientLayoutShell({ children }) {
 
       <Providers>
         <WorkspaceProvider>
-          {isSlugPage ? <ConditionalGlobalHeader /> : <Header />}
+          {!isEmbeddedView &&
+            (isSlugPage ? <ConditionalGlobalHeader /> : <Header />)}
 
           <CacheProvider>
-            <main className={isHomePage ? "" : "pt-[80px]"}>{children}</main>
+            <main
+              className={
+                isEmbeddedView
+                  ? "min-h-screen"
+                  : isDoItAiPage
+                    ? "h-dvh pt-[80px] overflow-hidden"
+                    : isHomePage
+                      ? ""
+                      : "pt-[80px]"
+              }
+            >
+              {children}
+            </main>
 
-            <Footer />
-            <ScrollToTop />
-            <SiteAssistant />
+            {!isDoItAiPage && !isEmbeddedView && <Footer />}
+            {!isDoItAiPage && !isEmbeddedView && <ScrollToTop />}
+            {!isDoItAiPage && !isEmbeddedView && <SiteAssistant />}
           </CacheProvider>
 
           <Toaster position="bottom-center" />

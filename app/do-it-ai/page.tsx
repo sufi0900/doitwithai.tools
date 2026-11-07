@@ -52,7 +52,7 @@ export default function DoItAiPage() {
   };
 
   return (
-    <main className="bg-[#080E1C] text-white">
+    <div className="h-full w-full overflow-hidden bg-[#060B19] text-white">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -61,13 +61,13 @@ export default function DoItAiPage() {
       />
       <Suspense
         fallback={
-          <div className="flex min-h-[70vh] items-center justify-center bg-[#080E1C] text-sm font-bold text-slate-300">
+          <div className="flex h-full items-center justify-center bg-[#060B19] text-sm font-bold text-slate-300">
             Loading Do It AI Workspace...
           </div>
         }
       >
         <DoItAiDashboardClient />
       </Suspense>
-    </main>
+    </div>
   );
 }

@@ -641,6 +641,16 @@ Generate a deeply practical, copy-ready, specific tool output for the user's top
   };
 }
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
@@ -658,7 +668,10 @@ export async function POST(request: NextRequest) {
         input: body.toolInput || "",
         secondaryInput: body.toolSecondaryInput || "",
       });
-      return NextResponse.json({ ok: true, toolResult: result });
+      return NextResponse.json(
+        { ok: true, toolResult: result },
+        { headers: CORS_HEADERS },
+      );
     }
 
     // 2. Conversational Custom-GPT Mode (with 15-message memory)
@@ -914,29 +927,32 @@ Write a comprehensive, high-value, hyperlinked response answering "${lastUserMes
       });
     }
 
-    return NextResponse.json({
-      ok: true,
-      mode: wantsPrompts
-        ? "prompts"
-        : wantsImages
-          ? "visuals"
-          : wantsToolExecution
-            ? "tool_execution"
-            : "learning_dashboard",
-      reply: replyText,
-      followUpQuestions: followUps,
-      visuals: matchedVisuals,
-      prompts: matchedPrompts,
-      relatedTools: matchedTools,
-      mountedTool: primaryTool
-        ? {
-            slug: primaryTool.slug,
-            defaultInput: cleanedTopic,
-            autoResult: autoExecutedResult,
-          }
-        : null,
-      liveArticles: matchedArticles,
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        mode: wantsPrompts
+          ? "prompts"
+          : wantsImages
+            ? "visuals"
+            : wantsToolExecution
+              ? "tool_execution"
+              : "learning_dashboard",
+        reply: replyText,
+        followUpQuestions: followUps,
+        visuals: matchedVisuals,
+        prompts: matchedPrompts,
+        relatedTools: matchedTools,
+        mountedTool: primaryTool
+          ? {
+              slug: primaryTool.slug,
+              defaultInput: cleanedTopic,
+              autoResult: autoExecutedResult,
+            }
+          : null,
+        liveArticles: matchedArticles,
+      },
+      { headers: CORS_HEADERS },
+    );
   } catch (err) {
     return NextResponse.json(
       {
@@ -945,7 +961,7 @@ Write a comprehensive, high-value, hyperlinked response answering "${lastUserMes
             ? err.message
             : "Could not process Do It AI request.",
       },
-      { status: 500 },
+      { status: 500, headers: CORS_HEADERS },
     );
   }
 }

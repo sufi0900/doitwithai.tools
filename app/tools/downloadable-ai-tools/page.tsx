@@ -12,13 +12,23 @@ import {
 
 const pageUrl = "https://doitwithai.tools/tools/downloadable-ai-tools";
 const title =
-  "90+ Free Downloadable & Embeddable AI SEO Tools (HTML & React Code)";
+  "90+ Free Downloadable & Embeddable AI SEO Tools (PC App, HTML5 & React)";
 const description =
-  "Download standalone HTML5 and React (.tsx) versions of 90+ AI SEO, content, and marketing tools. Run them offline on your PC, embed them on WordPress, or customize them with AI prompts.";
+  "Download unified Next.js + HTML5 desktop and web app packages for 90+ AI SEO tools. Run on your PC with zero terminal setup, use our Default Cloud API or your own API key, customize any color, and embed on WordPress or Next.js.";
 
 export const metadata: Metadata = {
   title,
   description,
+  keywords: [
+    "downloadable AI SEO tools",
+    "embeddable SEO widgets",
+    "free HTML5 SEO tools",
+    "portable React SEO components",
+    "offline SEO tools for PC",
+    "white label SEO tools",
+    "vibe coding SEO tools",
+    "Do It With AI Tools",
+  ],
   alternates: { canonical: pageUrl },
   openGraph: {
     title,
@@ -37,24 +47,24 @@ export const metadata: Metadata = {
 
 const faqs = [
   {
-    question: "How do I run a downloaded .html tool on my Windows or Mac PC?",
+    question: "How do I run a downloaded tool on my Windows or Mac PC without terminal commands?",
     answer:
-      "Simply click '1-Click .HTML' on any tool card below to save the standalone .html file to your computer, then double-click it. It opens directly in Chrome, Edge, Brave, or Safari with zero installation, terminal commands, or coding required.",
+      "Click 'App + Manual' on any tool card below to save the unified .html app and User Manual (.md) to your PC. Simply double-click the .html file—it opens directly in Chrome, Edge, Brave, or Safari like a desktop app with zero terminal commands, npm installs, or coding required.",
   },
   {
-    question: "Can I embed these tools on my own WordPress, Webflow, or Next.js website?",
+    question: "Does the downloaded tool use your API key by default, or can I use my own API key?",
     answer:
-      "Yes. Click 'Customize & TSX' on any tool to copy a responsive <iframe> embed snippet for WordPress/Webflow, download the self-contained HTML file to host on Netlify Drop or Cloudflare Pages, or copy the React (.tsx) component for Next.js.",
+      "By default, when your PC is connected to the internet, every AI-powered downloaded tool connects to DoItWithAI.tools' built-in Cloud API automatically so you can use it immediately without entering an API key. For long-term local PC usage, we recommend clicking 'Use Your Own API Key' to enter your own Gemini or OpenAI key. Caution: Once you save your own API key, our default API key is permanently removed from that downloaded tool.",
   },
   {
-    question: "Do the downloaded tools require a paid API key to work?",
+    question: "Can I edit the tool's content, colors, and branding before or after downloading?",
     answer:
-      "No. Every downloaded tool includes a built-in deterministic JavaScript engine that runs 100% locally in the browser at zero cost. If you want optional live AI expansion, you can paste your own free Google Gemini API key into the local settings drawer (stored only in your browser's localStorage).",
+      "Yes. You can pick any custom brand color using the 'Custom Color' picker wheel, edit the tool's heading, subtitle, and brand label before downloading, or click 'Edit Content & Color' right inside the downloaded app. You can also click directly inside any generated result block to edit the text before exporting.",
   },
   {
-    question: "How can I customize a downloaded tool for my specific niche without coding?",
+    question: "How do I embed these tools on WordPress, Webflow, Shopify, or Next.js?",
     answer:
-      "Open the 'Customize & TSX' modal on any tool and select Tab 4 ('Vibe-Coding Prompts'). You will find 4 sequential copy-paste prompts you can feed into ChatGPT, Claude, or Cursor to adapt the tool's niche, scoring rules, and lead-capture CTA.",
+      "Click 'Edit & Embed' on any tool card and open Tab 2 ('Website Embed <iframe>') to copy a clean, chromeless iframe snippet styled with your exact accent and background colors, or open Tab 4 ('React .tsx') to download a ready-to-use Next.js component.",
   },
 ];
 

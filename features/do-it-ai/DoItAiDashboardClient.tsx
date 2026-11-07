@@ -4,8 +4,12 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   ALL_LIVE_TOOLS,
+  buildStandaloneHtmlCode,
   type DoItAiToolItem,
 } from "@/features/portable-tool-kit/PortableToolHeroBar";
+import { tools as catalogTools } from "@/features/tool-catalog/catalog";
+import { useWorkspace } from "@/features/tools-workspace/WorkspaceProvider";
+import { browserAccounts } from "@/features/tools-workspace/supabase";
 import type { RichToolExecutionResult } from "@/app/api/do-it-ai/route";
 
 type VisualCard = {
@@ -73,36 +77,40 @@ const STORAGE_KEY = "doitwithai_do_it_ai_sessions_v4";
 
 const STARTER_CARDS = [
   {
-    badge: "Learn + Visuals",
-    title: "Master Meta Titles & Descriptions",
-    desc: "Learn the 580px & 920px SERP rules with infographics, prompts, and live generators.",
+    icon: "🎯",
+    label: "Teach me high-CTR Meta Titles & Descriptions with visual infographics",
     prompt:
       "Teach me how to write high-CTR Meta Titles and Meta Descriptions with visual infographics and examples",
-    accent: "from-blue-600/20 to-indigo-600/10 border-blue-500/30",
   },
   {
-    badge: "Run Live Tool",
-    title: "Generate 6 Meta Descriptions Now",
-    desc: "Run the Meta Description Generator inline with live character & pixel-width meters.",
+    icon: "⚡",
+    label: "Write 6 meta descriptions for 'how to check google keyword rankings'",
     prompt:
       "Write meta descriptions for how to check google keyword rankings and optimize pages",
-    accent: "from-emerald-600/20 to-teal-600/10 border-emerald-500/30",
   },
   {
-    badge: "Local SEO Suite",
-    title: "How to Do Local SEO (Full Playbook)",
-    desc: "Get the GBP audit checklist, LocalBusiness JSON-LD schema, and all 5 Local SEO tools.",
+    icon: "🗺️",
+    label: "Show me the 10-step plan for What to Do After Keyword Research",
+    prompt:
+      "What should I do after keyword research? Show me the 10-step execution workflow, infographics, and tools",
+  },
+  {
+    icon: "📍",
+    label: "How can I rank in Google Map Pack? (Local SEO playbook + schema)",
     prompt:
       "How can I do Local SEO? Show me the playbook, schema markup, and all Local SEO tools",
-    accent: "from-purple-600/20 to-indigo-600/10 border-purple-500/30",
   },
   {
-    badge: "952+ Prompt Hub",
-    title: "Get 12 Copy-Paste SEO Prompts",
-    desc: "Pull ready-to-use prompts from our 952+ Prompt Library for keyword research & content.",
+    icon: "💡",
+    label: "Give me 12 copy-paste prompts for keyword research & on-page SEO",
     prompt:
       "Give me 12 copy-paste prompts for keyword research, on-page SEO, and blog writing",
-    accent: "from-amber-600/20 to-orange-600/10 border-amber-500/30",
+  },
+  {
+    icon: "🛠️",
+    label: "Help me build & download a portable AI SEO tool for my website",
+    prompt:
+      "How can I download or embed your free HTML5 and React AI SEO tools on my PC or website?",
   },
 ];
 
@@ -296,44 +304,18 @@ function estimatePixelsClient(text: string, perChar = 5.5): number {
 
 function generatePortableHtmlBundle(
   tool: DoItAiToolItem,
-  defaultTopic: string,
+  _defaultTopic: string,
 ): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${tool.name} — Portable Widget (DoItWithAI.tools)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-6 font-sans">
-  <div class="max-w-3xl mx-auto rounded-2xl border border-blue-500/30 bg-slate-900/90 p-6 shadow-2xl">
-    <span class="inline-flex items-center rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-400 border border-blue-500/20">
-      ${tool.category} · Portable AI Tool
-    </span>
-    <h1 class="mt-2 text-2xl font-bold text-white">${tool.name}</h1>
-    <p class="mt-1 text-sm text-slate-300">${tool.description}</p>
-    <div class="mt-5 space-y-4">
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Primary Topic, Keyword or URL</label>
-        <textarea id="tool-input" rows="3" class="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-white">${defaultTopic}</textarea>
-      </div>
-      <button onclick="runWidget()" class="rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-2.5 text-sm font-semibold text-white transition">
-        Run ${tool.name}
-      </button>
-      <div id="tool-output" class="hidden mt-4 rounded-xl border border-slate-800 bg-slate-950 p-4 text-sm text-slate-200 space-y-2"></div>
-    </div>
-  </div>
-  <script>
-    function runWidget() {
-      const val = document.getElementById('tool-input').value.trim() || '${defaultTopic}';
-      const out = document.getElementById('tool-output');
-      out.classList.remove('hidden');
-      out.innerHTML = '<div class="font-semibold text-blue-400">Generated Output for: ' + val + '</div><p class="text-slate-300">Customize this standalone HTML5 widget or connect it to your API endpoint. Powered by DoItWithAI.tools.</p>';
-    }
-  </script>
-</body>
-</html>`;
+  const matched =
+    catalogTools.find((t) => t.slug === tool.slug) || catalogTools[0];
+  return buildStandaloneHtmlCode(
+    matched,
+    tool.name,
+    "DoItWithAI.tools",
+    "#3452D1",
+    "dark",
+    tool.description,
+  );
 }
 
 function InlineToolWorkspaceCard({
@@ -758,6 +740,8 @@ function InlineToolWorkspaceCard({
 }
 
 export default function DoItAiDashboardClient() {
+  const workspace = useWorkspace();
+  const googleUser = workspace?.user || null;
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string>("");
   const [inputPrompt, setInputPrompt] = useState("");
@@ -767,21 +751,69 @@ export default function DoItAiDashboardClient() {
   const [toolSearchQuery, setToolSearchQuery] = useState("");
   const [lightboxVisual, setLightboxVisual] = useState<VisualCard | null>(null);
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
+  const [cloudSynced, setCloudSynced] = useState(false);
 
   const chatScrollContainerRef = useRef<HTMLDivElement>(null);
   const latestMessageRef = useRef<HTMLDivElement>(null);
+  const activeStorageKey = googleUser?.id
+    ? `${STORAGE_KEY}_user_${googleUser.id}`
+    : STORAGE_KEY;
 
-  // Load saved sessions from localStorage on mount
+  // Load saved sessions from localStorage + Google Account metadata
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as ChatSession[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setSessions(parsed);
-          setActiveSessionId(parsed[0].id);
+      const mergeSessions = (
+        primary: ChatSession[],
+        secondary: ChatSession[],
+      ): ChatSession[] => {
+        const map = new Map<string, ChatSession>();
+        for (const s of [...primary, ...secondary]) {
+          if (!s || !s.id) continue;
+          const existing = map.get(s.id);
+          if (
+            !existing ||
+            (s.messages?.length || 0) > (existing.messages?.length || 0)
+          ) {
+            map.set(s.id, s);
+          }
+        }
+        const merged = Array.from(map.values());
+        // Keep non-empty sessions first, or at least 1 default session
+        const nonEmpty = merged.filter((s) => s.messages && s.messages.length > 0);
+        return nonEmpty.length > 0 ? nonEmpty.slice(0, 25) : merged.slice(0, 5);
+      };
+
+      const rawGuest = localStorage.getItem(STORAGE_KEY);
+      const guestSessions: ChatSession[] = rawGuest ? JSON.parse(rawGuest) : [];
+
+      if (googleUser?.id) {
+        const rawUser = localStorage.getItem(
+          `${STORAGE_KEY}_user_${googleUser.id}`,
+        );
+        const userLocalSessions: ChatSession[] = rawUser
+          ? JSON.parse(rawUser)
+          : [];
+        const cloudMetaSessions: ChatSession[] = Array.isArray(
+          googleUser.user_metadata?.doitai_chat_sessions_v1,
+        )
+          ? (googleUser.user_metadata.doitai_chat_sessions_v1 as ChatSession[])
+          : [];
+
+        const combined = mergeSessions(
+          userLocalSessions,
+          mergeSessions(cloudMetaSessions, guestSessions),
+        );
+
+        if (combined.length > 0) {
+          setSessions(combined);
+          setActiveSessionId(combined[0].id);
+          setCloudSynced(true);
           return;
         }
+      } else if (Array.isArray(guestSessions) && guestSessions.length > 0) {
+        setSessions(guestSessions);
+        setActiveSessionId(guestSessions[0].id);
+        return;
       }
     } catch {
       // Ignore storage errors
@@ -794,21 +826,55 @@ export default function DoItAiDashboardClient() {
     };
     setSessions([initialSession]);
     setActiveSessionId(initialSession.id);
-  }, []);
+  }, [googleUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Save sessions to localStorage whenever updated
+  // Save sessions to localStorage AND sync to Google Account (Supabase user_metadata) whenever updated
   useEffect(() => {
-    if (sessions.length > 0) {
-      try {
+    if (sessions.length === 0) return;
+    try {
+      localStorage.setItem(
+        activeStorageKey,
+        JSON.stringify(sessions.slice(0, 25)),
+      );
+      if (googleUser?.id) {
+        // Also keep guest storage updated so history is never lost on sign-out
         localStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify(sessions.slice(0, 20)),
+          JSON.stringify(sessions.slice(0, 15)),
         );
-      } catch {
-        // Ignore quota errors
+        const compactForCloud = sessions
+          .filter((s) => s.messages.length > 0)
+          .slice(0, 12)
+          .map((s) => ({
+            id: s.id,
+            title: s.title,
+            updatedAt: s.updatedAt,
+            messages: s.messages.slice(-10).map((m) => ({
+              id: m.id,
+              role: m.role,
+              content: m.content.slice(0, 1800),
+              timestamp: m.timestamp,
+              followUpQuestions: m.followUpQuestions?.slice(0, 3),
+            })),
+          }));
+
+        const timer = window.setTimeout(() => {
+          browserAccounts()
+            .then((client) => {
+              if (!client) return;
+              return client.auth.updateUser({
+                data: { doitai_chat_sessions_v1: compactForCloud },
+              });
+            })
+            .then(() => setCloudSynced(true))
+            .catch(() => {});
+        }, 900);
+        return () => window.clearTimeout(timer);
       }
+    } catch {
+      // Ignore quota errors
     }
-  }, [sessions]);
+  }, [sessions, activeStorageKey, googleUser?.id]);
 
   const activeSession =
     sessions.find((s) => s.id === activeSessionId) || sessions[0];
@@ -994,7 +1060,7 @@ export default function DoItAiDashboardClient() {
   );
 
   return (
-    <div className="flex h-[calc(100dvh-76px)] w-full overflow-hidden bg-[#060B19] text-slate-100">
+    <div className="flex h-full w-full overflow-hidden bg-[#060B19] text-slate-100">
       {/* LEFT SIDEBAR — Clean ChatGPT Style */}
       <aside
         className={`${
@@ -1039,8 +1105,15 @@ export default function DoItAiDashboardClient() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-          <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Recent Conversations ({sessions.length})
+          <div className="flex items-center justify-between px-2 pb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Recent Conversations ({sessions.length})
+            </span>
+            {googleUser && (
+              <span className="text-[10px] font-semibold text-emerald-400">
+                {cloudSynced ? "☁️ Synced" : "Syncing..."}
+              </span>
+            )}
           </div>
           {sessions.map((session) => {
             const isActive = session.id === activeSession?.id;
@@ -1051,7 +1124,7 @@ export default function DoItAiDashboardClient() {
                   setActiveSessionId(session.id);
                   setShowMobileSidebar(false);
                 }}
-                className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-xs transition ${
+                className={`group flex cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-xs transition ${
                   isActive
                     ? "bg-blue-600/20 text-white border border-blue-500/40 font-semibold"
                     : "text-slate-300 hover:bg-slate-900/90 hover:text-white border border-transparent"
@@ -1078,7 +1151,57 @@ export default function DoItAiDashboardClient() {
           })}
         </div>
 
-        <div className="border-t border-slate-800/80 p-3 space-y-1.5 bg-slate-950/60">
+        {/* GOOGLE SIGN-IN CHAT HISTORY PERSISTENCE & QUICK LINKS */}
+        <div className="border-t border-slate-800/80 p-3 space-y-2 bg-slate-950/60">
+          {googleUser ? (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-bold text-white">
+                    {(
+                      googleUser.user_metadata?.full_name ||
+                      googleUser.email ||
+                      "U"
+                    )
+                      .charAt(0)
+                      .toUpperCase()}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-[11px] font-bold text-white">
+                      {googleUser.user_metadata?.full_name || googleUser.email}
+                    </div>
+                    <div className="text-[10px] font-medium text-emerald-400">
+                      ☁️ Google Chat History Saved
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => workspace?.signOut()}
+                  className="shrink-0 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[10px] font-semibold text-slate-300 hover:text-white"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => workspace?.signIn()}
+              disabled={workspace?.signingIn}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700/90 bg-slate-900/95 hover:border-blue-500/50 hover:bg-slate-900 px-3 py-2 text-xs font-bold text-white transition"
+            >
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] font-black text-blue-600">
+                G
+              </span>
+              <span>
+                {workspace?.signingIn
+                  ? "Connecting Google..."
+                  : "Sign in to Save Chat History"}
+              </span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setShowToolsModal(true)}
@@ -1108,7 +1231,7 @@ export default function DoItAiDashboardClient() {
 
       {/* MAIN WORKSPACE COLUMN */}
       <main className="flex flex-1 flex-col h-full overflow-hidden bg-[#060B19]">
-        <header className="flex shrink-0 items-center justify-between border-b border-slate-800/80 bg-[#080F23]/90 px-4 py-2.5 backdrop-blur">
+        <header className="flex shrink-0 items-center justify-between border-b border-slate-800/80 bg-[#080F23]/90 px-4 py-2 backdrop-blur">
           <div className="flex items-center gap-2.5">
             <button
               type="button"
@@ -1144,16 +1267,16 @@ export default function DoItAiDashboardClient() {
           </div>
         </header>
 
-        {/* CENTER SCROLLABLE CHAT STREAM */}
+        {/* CENTER SCROLLABLE CHAT STREAM (Single Scroller Only) */}
         <div
           ref={chatScrollContainerRef}
-          className="relative flex-1 overflow-y-auto px-4 py-6 sm:px-6"
+          className="relative flex-1 overflow-y-auto px-4 py-4 sm:px-6"
         >
-          <div className="mx-auto max-w-4xl space-y-6">
+          <div className="mx-auto max-w-4xl h-full">
             {!activeSession || activeSession.messages.length === 0 ? (
-              <div className="py-4 sm:py-8 space-y-6">
-                <div className="text-center max-w-2xl mx-auto space-y-3">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3.5 py-1 text-xs font-semibold text-blue-300">
+              <div className="flex h-full flex-col items-center justify-center py-2 space-y-5">
+                <div className="text-center max-w-2xl mx-auto space-y-2.5">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold text-blue-300">
                     <span>
                       ✨ Do It AI — Your Custom Website GPT & Execution Studio
                     </span>
@@ -1165,44 +1288,41 @@ export default function DoItAiDashboardClient() {
                     </span>{" "}
                     today?
                   </h1>
-                  <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                    Say <strong className="text-white">&quot;Hi&quot;</strong>{" "}
-                    for a guided tour, ask me to teach you any SEO or AI
-                    workflow with visual infographics, pull from{" "}
-                    <strong className="text-white">952+ prompts</strong>, or run
-                    any of our{" "}
-                    <strong className="text-white">92+ live AI tools</strong>{" "}
-                    directly inside chat.
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl mx-auto">
+                    Ask any SEO or AI question, pull from{" "}
+                    <strong className="text-white">952+ prompts</strong> &{" "}
+                    <strong className="text-white">530+ visual diagrams</strong>,
+                    or click a prompt below to send it directly to chat:
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Frontier-Model (ChatGPT-Style) Single-Line Starter Prompt Pills */}
+                <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {STARTER_CARDS.map((card, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => sendMessage(card.prompt)}
-                      className={`text-left rounded-2xl border bg-gradient-to-br ${card.accent} p-4 hover:scale-[1.01] transition shadow-lg`}
+                      className="group flex items-center justify-between gap-2.5 rounded-2xl border border-slate-800/90 bg-[#0B132B]/90 hover:border-blue-500/50 hover:bg-[#101C3D] px-3.5 py-2.5 text-left transition shadow-sm"
                     >
-                      <span className="inline-block rounded-full bg-slate-950/80 px-2.5 py-0.5 text-[11px] font-bold text-blue-300 border border-slate-800">
-                        {card.badge}
-                      </span>
-                      <h2 className="mt-2 text-base font-bold text-white">
-                        {card.title}
-                      </h2>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-300">
-                        {card.desc}
-                      </p>
-                      <div className="mt-3 text-xs font-semibold text-blue-400 flex items-center gap-1">
-                        <span>Try this prompt</span>
-                        <span>→</span>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-xs">
+                          {card.icon}
+                        </span>
+                        <span className="truncate text-xs sm:text-[13px] font-medium text-slate-200 group-hover:text-white">
+                          {card.label}
+                        </span>
                       </div>
+                      <span className="shrink-0 rounded-md bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.5 text-[10px] font-bold text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition">
+                        Send ↵
+                      </span>
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
-              activeSession.messages.map((msg, msgIdx) => {
+              <div className="space-y-6 pb-4">
+              {activeSession.messages.map((msg, msgIdx) => {
                 const isLatestMessage =
                   msgIdx === activeSession.messages.length - 1;
                 return (
@@ -1628,7 +1748,8 @@ export default function DoItAiDashboardClient() {
                     </div>
                   </div>
                 );
-              })
+              })}
+              </div>
             )}
 
             {isLoading && (
