@@ -8,13 +8,26 @@ import ThemeToggler from "./ThemeToggler";
 import menuData from "./menuData";
 import Avatar from "@mui/material/Avatar";
 import {
+  ArrowRight,
+  BookOpen,
   Bookmark,
+  Bot,
   ChevronDown,
   Clock,
+  Download,
+  ExternalLink,
+  FileCode2,
+  FileText,
+  KeyRound,
+  Layers,
   LayoutGrid,
   LogOut,
   RefreshCw,
+  Search,
+  Sparkles,
   UserRound,
+  Wand2,
+  X,
 } from "lucide-react";
 import {
   useWorkspace,
@@ -50,6 +63,8 @@ const Header = () => {
   };
 
   const [sticky, setSticky] = useState(false);
+  const [announcementDismissed, setAnnouncementDismissed] = useState(false);
+
   const handleStickyNavbar = () => {
     if (window.scrollY >= 80) {
       setSticky(true);
@@ -138,6 +153,45 @@ const Header = () => {
 
   return (
     <>
+      {/* Top Announcement Bar (Inspired by Neil Patel's Perplexity/GEO top bar) */}
+      {!announcementDismissed && (
+        <div className="relative z-50 w-full bg-gradient-to-r from-[#FF5E3A] via-[#FF7A45] to-[#5271FF] py-2 px-3 text-white text-xs font-bold shadow-md">
+          <div className="container mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                🔥 NEW
+              </span>
+              <span className="truncate">
+                Want your business cited on <strong>Perplexity &amp; AI Search</strong>? Try{" "}
+                <strong>Do It AI Workspace</strong> · Run 90+ Portable Tools!
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/do-it-ai"
+                className="rounded-lg bg-white px-3 py-1 text-xs font-black text-slate-900 shadow hover:bg-slate-100 transition"
+              >
+                Launch Do It AI →
+              </Link>
+              <Link
+                href="/download-and-embed"
+                className="hidden sm:inline-block rounded-lg bg-slate-950/40 px-2.5 py-1 text-xs font-bold text-white hover:bg-slate-950/60 transition"
+              >
+                📦 90+ Portable Tools
+              </Link>
+              <button
+                type="button"
+                onClick={() => setAnnouncementDismissed(true)}
+                aria-label="Dismiss announcement"
+                className="rounded-md p-1 text-white/80 hover:bg-white/20 hover:text-white transition"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header
         className={`header left-0 top-0 z-40 flex w-full items-center transition-all duration-500 ease-in-out ${
           sticky
@@ -186,6 +240,10 @@ const Header = () => {
                 <ul className="flex justify-center space-x-1.5 xl:space-x-2">
                   {menuData.map((menuItem, index) => {
                     const active = isMenuActive(menuItem.path);
+                    const isToolsItem = menuItem.id === 100;
+                    const isBlogsItem = menuItem.id === 43;
+                    const isDoItAiItem = menuItem.id === 101;
+
                     return (
                       <li key={index} className="group relative font-semibold">
                         {menuItem.path ? (
@@ -201,8 +259,13 @@ const Header = () => {
                               }
                             `}
                           >
-                            <span className="relative z-10">
+                            <span className="relative z-10 flex items-center">
                               {menuItem.title}
+                              {isDoItAiItem && (
+                                <span className="ml-1.5 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-950 shadow-sm animate-pulse">
+                                  AI AGENT
+                                </span>
+                              )}
                             </span>
                             <div
                               className={`absolute bottom-0 h-0.5 w-0 rounded-full bg-current transition-all duration-300 ease-in-out ${
@@ -211,54 +274,288 @@ const Header = () => {
                             ></div>
                           </Link>
                         ) : (
-                          <>
-                            <p
-                              onClick={() => handleSubmenu(index)}
-                              className="mt-5 flex cursor-pointer items-center justify-between rounded-xl px-3.5 py-2.5 text-base text-gray-700 transition-all duration-300 ease-in-out hover:bg-gray-100 group-hover:text-[#5271FF] dark:text-gray-300 dark:hover:bg-gray-800/50 dark:group-hover:text-[#5271FF] lg:inline-flex xl:px-4"
-                            >
-                              <span className="relative z-10">
-                                {menuItem.title}
-                              </span>
-                              <span className="transform pl-2 transition-transform duration-300 group-hover:rotate-180">
-                                <svg
-                                  width="20"
-                                  height="20"
-                                  viewBox="0 0 25 24"
-                                  className="text-current"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    clipRule="evenodd"
-                                    d="M6.29289 8.8427C6.68342 8.45217 7.31658 8.45217 7.70711 8.8427L12 13.1356L16.2929 8.8427C16.6834 8.45217 17.3166 8.45217 17.7071 8.8427C18.0976 9.23322 18.0976 9.86639 17.7071 10.2569L12 15.964L6.29289 10.2569C5.90237 9.86639 5.90237 9.23322 6.29289 8.8427Z"
-                                    fill="currentColor"
-                                  />
-                                </svg>
-                              </span>
-                            </p>
-                            <div
-                              className={`submenu relative left-0 top-full transform rounded-xl border border-gray-200/50 bg-white/95 shadow-xl backdrop-blur-xl transition-all duration-300 group-hover:opacity-100 dark:border-gray-700/50 dark:bg-gray-900/95 lg:invisible lg:absolute lg:top-[110%] lg:block lg:w-[280px] lg:scale-95 lg:p-6 lg:opacity-0 lg:shadow-2xl lg:group-hover:visible lg:group-hover:top-full lg:group-hover:scale-100 ${
-                                openIndex === index
-                                  ? "block scale-100 opacity-100"
-                                  : "hidden scale-95 opacity-0"
-                              }`}
-                            >
-                              {menuItem.submenu?.map(
-                                (submenuItem, submenuIndex) => (
+                          <p
+                            onClick={() => handleSubmenu(index)}
+                            className="mt-5 flex cursor-pointer items-center justify-between rounded-xl px-3.5 py-2.5 text-base text-gray-700 transition-all duration-300 ease-in-out hover:bg-gray-100 group-hover:text-[#5271FF] dark:text-gray-300 dark:hover:bg-gray-800/50 dark:group-hover:text-[#5271FF] lg:inline-flex xl:px-4"
+                          >
+                            <span className="relative z-10">
+                              {menuItem.title}
+                            </span>
+                            <span className="transform pl-2 transition-transform duration-300 group-hover:rotate-180">
+                              <ChevronDown size={16} />
+                            </span>
+                          </p>
+                        )}
+
+                        {/* MEGA-MENU 1: Tools Mega-Dropdown (Inspired by Neil Patel's Services Mega Menu) */}
+                        {isToolsItem && (
+                          <div className="invisible absolute left-1/2 top-[110%] z-50 w-[840px] -translate-x-1/2 transform rounded-3xl border border-gray-200/90 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl opacity-0 transition-all duration-300 group-hover:visible group-hover:top-full group-hover:opacity-100 dark:border-gray-800 dark:bg-[#0B1325]/95">
+                            <div className="grid grid-cols-12 gap-5">
+                              {/* Left Feature Column: Do It AI & Portable Tools */}
+                              <div className="col-span-4 rounded-2xl border border-[#5271FF]/25 bg-gradient-to-b from-[#5271FF]/10 to-indigo-950/20 p-4 flex flex-col justify-between">
+                                <div>
+                                  <div className="inline-flex items-center gap-1.5 rounded-full bg-[#5271FF]/20 px-2.5 py-0.5 text-[10px] font-black uppercase text-[#4361EE] dark:text-[#9aabff]">
+                                    <Sparkles size={11} />
+                                    <span>Brand Flagship</span>
+                                  </div>
+                                  <h4 className="mt-2 text-base font-extrabold text-slate-900 dark:text-white">
+                                    Do It AI Workspace
+                                  </h4>
+                                  <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                                    Execute 90+ specialized SEO engines in one unified chat agent. Run live audits, write meta tags, and export portable apps.
+                                  </p>
                                   <Link
-                                    href={submenuItem.path}
-                                    key={submenuIndex}
-                                    prefetch={true}
-                                    className="block rounded-lg border-l-2 border-transparent px-4 py-3 text-sm text-gray-700 transition-all duration-200 ease-in-out hover:border-[#5271FF]/50 hover:text-[#5271FF] dark:text-gray-300 dark:hover:text-[#5271FF] lg:px-4"
+                                    href="/do-it-ai"
+                                    className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#5271FF] hover:underline"
                                   >
-                                    <span className="flex items-center">
-                                      <span className="mr-3 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-[#5271FF] to-[#4361EE]"></span>
-                                      {submenuItem.title}
-                                    </span>
+                                    Open Do It AI Workspace →
                                   </Link>
-                                ),
-                              )}
+                                </div>
+
+                                <div className="mt-4 border-t border-[#5271FF]/20 pt-3">
+                                  <h5 className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+                                    <Download size={13} className="text-emerald-400" />
+                                    <span>90+ Portable Desktop Tools</span>
+                                  </h5>
+                                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                    1-Click .ZIP packs. Run offline on your PC with zero commands.
+                                  </p>
+                                  <Link
+                                    href="/download-and-embed"
+                                    className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-emerald-500 hover:underline"
+                                  >
+                                    Download 90+ Tools (.ZIP) →
+                                  </Link>
+                                </div>
+                              </div>
+
+                              {/* Middle Column: AI Search (GEO/AEO) & On-Page Tools */}
+                              <div className="col-span-4 space-y-2">
+                                <p className="px-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                  AI Search (GEO/AEO) &amp; On-Page
+                                </p>
+                                <div className="space-y-1">
+                                  <Link
+                                    href="/tools/on-page-ai-seo-analyzer"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    On-Page AI SEO Analyzer
+                                  </Link>
+                                  <Link
+                                    href="/tools/content-evidence-auditor"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Content Evidence Auditor
+                                  </Link>
+                                  <Link
+                                    href="/tools/information-gain-auditor"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Information Gain Auditor
+                                  </Link>
+                                  <Link
+                                    href="/tools/schema-inspector"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Schema Markup Inspector
+                                  </Link>
+                                  <Link
+                                    href="/tools/serp-rich-result-preview-generator"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    SERP Rich Result Preview
+                                  </Link>
+                                  <Link
+                                    href="/tools/meta-title-generator"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Meta Title &amp; Description Studio
+                                  </Link>
+                                </div>
+                              </div>
+
+                              {/* Right Column: Keyword, Local & Repurposing Tools */}
+                              <div className="col-span-4 space-y-2">
+                                <p className="px-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                  Keyword, Local &amp; Repurposing
+                                </p>
+                                <div className="space-y-1">
+                                  <Link
+                                    href="/tools/keyword-clustering-tool"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Keyword Clustering &amp; Intent Map
+                                  </Link>
+                                  <Link
+                                    href="/tools/keyword-cannibalization-checker"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Keyword Cannibalization Checker
+                                  </Link>
+                                  <Link
+                                    href="/tools/google-business-profile-auditor"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Google Business Profile Auditor
+                                  </Link>
+                                  <Link
+                                    href="/tools/blog-to-linkedin-carousel"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Blog to LinkedIn Carousel
+                                  </Link>
+                                  <Link
+                                    href="/tools/webpage-image-extractor"
+                                    className="block rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    Webpage Image &amp; Alt Extractor
+                                  </Link>
+                                  <Link
+                                    href="/tools"
+                                    className="mt-2 block rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-2 text-center text-xs font-bold text-[#5271FF] hover:bg-[#5271FF] hover:text-white transition dark:border-slate-800 dark:bg-slate-900"
+                                  >
+                                    Browse All 90+ Tools →
+                                  </Link>
+                                </div>
+                              </div>
                             </div>
-                          </>
+                          </div>
+                        )}
+
+                        {/* MEGA-MENU 2: Blogs & Guides Mega-Dropdown (Inspired by Neil Patel's Blog Mega Menu) */}
+                        {isBlogsItem && (
+                          <div className="invisible absolute left-1/2 top-[110%] z-50 w-[820px] -translate-x-1/2 transform rounded-3xl border border-gray-200/90 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl opacity-0 transition-all duration-300 group-hover:visible group-hover:top-full group-hover:opacity-100 dark:border-gray-800 dark:bg-[#0B1325]/95">
+                            <div className="grid grid-cols-12 gap-6">
+                              {/* Left Categories List */}
+                              <div className="col-span-5 border-r border-slate-200/70 pr-4 dark:border-slate-800">
+                                <p className="px-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                  Blog &amp; Knowledge Categories
+                                </p>
+                                <div className="mt-2.5 space-y-1">
+                                  <Link
+                                    href="/ai-seo"
+                                    className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    <span>› GEO &amp; AEO (AI Search)</span>
+                                    <span className="text-[10px] font-bold text-slate-400">Hub</span>
+                                  </Link>
+                                  <Link
+                                    href="/blogs"
+                                    className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    <span>› On-Page SEO &amp; Content</span>
+                                    <span className="text-[10px] font-bold text-slate-400">Guides</span>
+                                  </Link>
+                                  <Link
+                                    href="/blogs"
+                                    className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    <span>› Keyword Research &amp; Intent</span>
+                                    <span className="text-[10px] font-bold text-slate-400">Playbooks</span>
+                                  </Link>
+                                  <Link
+                                    href="/blogs"
+                                    className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    <span>› Structured Data &amp; Schema</span>
+                                    <span className="text-[10px] font-bold text-slate-400">Technical</span>
+                                  </Link>
+                                  <Link
+                                    href="/what-our-ai-tool-can-do"
+                                    className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                  >
+                                    <span>› What Our AI Tool Can Do</span>
+                                    <span className="text-[10px] font-bold text-[#5271FF]">Overview</span>
+                                  </Link>
+                                </div>
+                              </div>
+
+                              {/* Right Featured Articles Cards */}
+                              <div className="col-span-7 space-y-3">
+                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                                  Featured Content &amp; Evergreen Guides
+                                </p>
+                                <div className="space-y-2">
+                                  <Link
+                                    href="/blogs/how-to-check-keyword-rankings-in-google"
+                                    className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3 transition hover:border-[#5271FF]/40 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+                                  >
+                                    <span className="rounded bg-[#5271FF]/15 px-2 py-0.5 text-[9px] font-bold uppercase text-[#5271FF]">
+                                      Keyword Rankings
+                                    </span>
+                                    <h5 className="mt-1 text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
+                                      How to Check Keyword Rankings in Google (4 Free Accurate Methods)
+                                    </h5>
+                                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                                      Avoid incognito personalization skew with Search Console, live SERP proxies, and ranking tools.
+                                    </p>
+                                  </Link>
+
+                                  <Link
+                                    href="/blogs/what-to-do-after-keyword-research"
+                                    className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3 transition hover:border-[#5271FF]/40 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+                                  >
+                                    <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-400">
+                                      Strategy Playbook
+                                    </span>
+                                    <h5 className="mt-1 text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
+                                      What to Do After Keyword Research: The 10-Step Execution Plan
+                                    </h5>
+                                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                                      Intent mapping, content brief templates, on-page optimization, and internal links.
+                                    </p>
+                                  </Link>
+
+                                  <Link
+                                    href="/what-our-ai-tool-can-do"
+                                    className="block rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3 transition hover:border-[#5271FF]/40 hover:bg-white dark:border-slate-800 dark:bg-slate-900/60 dark:hover:bg-slate-900"
+                                  >
+                                    <span className="rounded bg-purple-500/15 px-2 py-0.5 text-[9px] font-bold uppercase text-purple-400">
+                                      Tool Capabilities
+                                    </span>
+                                    <h5 className="mt-1 text-xs font-bold text-slate-900 dark:text-white line-clamp-1">
+                                      What Our AI Tool Can Do: Complete Capabilities &amp; Architecture
+                                    </h5>
+                                    <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                                      Compare generic chatbots vs Do It AI and explore 90+ portable desktop apps.
+                                    </p>
+                                  </Link>
+                                </div>
+
+                                <Link
+                                  href="/blogs"
+                                  className="inline-flex items-center gap-1 text-xs font-bold text-[#5271FF] hover:underline pt-1"
+                                >
+                                  Browse All Guides &amp; Articles →
+                                </Link>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Standard Submenu for Pages (id: 6) */}
+                        {!isToolsItem && !isBlogsItem && menuItem.submenu && (
+                          <div
+                            className={`submenu relative left-0 top-full transform rounded-xl border border-gray-200/50 bg-white/95 shadow-xl backdrop-blur-xl transition-all duration-300 group-hover:opacity-100 dark:border-gray-700/50 dark:bg-gray-900/95 lg:invisible lg:absolute lg:top-[110%] lg:block lg:w-[280px] lg:scale-95 lg:p-4 lg:opacity-0 lg:shadow-2xl lg:group-hover:visible lg:group-hover:top-full lg:group-hover:scale-100 ${
+                              openIndex === index
+                                ? "block scale-100 opacity-100"
+                                : "hidden scale-95 opacity-0"
+                            }`}
+                          >
+                            {menuItem.submenu.map((submenuItem, submenuIndex) => (
+                              <Link
+                                href={submenuItem.path}
+                                key={submenuIndex}
+                                prefetch={true}
+                                className="block rounded-lg border-l-2 border-transparent px-3 py-2 text-xs font-medium text-gray-700 transition-all duration-200 ease-in-out hover:border-[#5271FF]/50 hover:text-[#5271FF] dark:text-gray-300 dark:hover:text-[#5271FF]"
+                              >
+                                <span className="flex items-center">
+                                  <span className="mr-2.5 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-[#5271FF] to-[#4361EE]"></span>
+                                  {submenuItem.title}
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
                         )}
                       </li>
                     );
@@ -525,8 +822,13 @@ const Header = () => {
                               }
                             `}
                           >
-                            <span className="relative z-10">
+                            <span className="relative z-10 flex items-center">
                               {menuItem.title}
+                              {menuItem.id === 101 && (
+                                <span className="ml-1.5 rounded-full bg-gradient-to-r from-amber-400 to-rose-500 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-950">
+                                  AI AGENT
+                                </span>
+                              )}
                             </span>
                             <div
                               className={`absolute bottom-0 h-0.5 w-0 rounded-full bg-current transition-all duration-300 ease-in-out ${
@@ -546,14 +848,7 @@ const Header = () => {
                                   openIndex === index ? "rotate-180" : ""
                                 }`}
                               >
-                                <svg width="20" height="20" viewBox="0 0 25 24">
-                                  <path
-                                    fillRule="evenodd"
-                                    clipRule="evenodd"
-                                    d="M6.29289 8.8427C6.68342 8.45217 7.31658 8.45217 7.70711 8.8427L12 13.1356L16.2929 8.8427C16.6834 8.45217 17.3166 8.45217 17.7071 8.8427C18.0976 9.23322 18.0976 9.86639 17.7071 10.2569L12 15.964L6.29289 10.2569C5.90237 9.86639 5.90237 9.23322 6.29289 8.8427Z"
-                                    fill="currentColor"
-                                  />
-                                </svg>
+                                <ChevronDown size={16} />
                               </span>
                             </p>
                             <div
@@ -570,7 +865,7 @@ const Header = () => {
                                     key={submenuIndex}
                                     prefetch={true}
                                     onClick={() => setNavbarOpen(false)}
-                                    className="block border-l-2 border-transparent py-3 pl-6 pr-4 text-sm text-gray-700 transition-all duration-200 ease-in-out hover:border-[#5271FF]/50 hover:text-[#5271FF] dark:text-gray-300 dark:hover:text-[#5271FF]"
+                                    className="block border-l-2 border-transparent py-2.5 pl-6 pr-4 text-xs font-medium text-gray-700 transition-all duration-200 ease-in-out hover:border-[#5271FF]/50 hover:text-[#5271FF] dark:text-gray-300 dark:hover:text-[#5271FF]"
                                   >
                                     <span className="flex items-center">
                                       <span className="mr-3 h-1.5 w-1.5 rounded-full bg-gradient-to-r from-[#5271FF] to-[#4361EE]"></span>

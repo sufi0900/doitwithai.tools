@@ -49,6 +49,18 @@ const menuData: Menu[] = [
     title: "Pages",
     newTab: false,
     submenu: [
+      {
+        id: 110,
+        title: "What Our AI Tool Can Do",
+        path: "/what-our-ai-tool-can-do",
+        newTab: false,
+      },
+      {
+        id: 111,
+        title: "Portable AI Tools (.ZIP)",
+        path: "/download-and-embed",
+        newTab: false,
+      },
       { id: 42, title: "Contact Us", path: "/contact", newTab: false },
       {
         id: 3,
@@ -68,10 +80,9 @@ const menuData: Menu[] = [
         path: "/tools/categories",
         newTab: false,
       },
-
       {
-        id: 3,
-        title: "AiTools",
+        id: 31,
+        title: "AiTools Hub",
         path: "/ai-tools",
         newTab: false,
       },
@@ -81,30 +92,16 @@ const menuData: Menu[] = [
         path: "/ai-learn-earn",
         newTab: false,
       },
-
-      {
-        id: 46,
-        title: "Category",
-        path: "/categories",
-        newTab: false,
-      },
       {
         id: 46,
         title: "FAQ",
         path: "/faq",
         newTab: false,
       },
-
       {
         id: 47,
-        title: "author",
+        title: "Author",
         path: "/author/sufian-mustafa",
-        newTab: false,
-      },
-      {
-        id: 46,
-        title: "Navigation",
-        path: "/navigation",
         newTab: false,
       },
     ],

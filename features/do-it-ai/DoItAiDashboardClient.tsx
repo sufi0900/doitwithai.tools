@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ALL_LIVE_TOOLS,
   buildStandaloneHtmlCode,
@@ -1031,6 +1032,26 @@ export default function DoItAiDashboardClient() {
       setIsLoading(false);
     }
   };
+
+  const searchParams = useSearchParams();
+  const searchParamHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (searchParamHandledRef.current || !activeSession || sessions.length === 0) return;
+    const promptParam = searchParams.get("prompt") || searchParams.get("q");
+    const toolParam = searchParams.get("tool");
+
+    if (promptParam) {
+      searchParamHandledRef.current = true;
+      void sendMessage(promptParam);
+    } else if (toolParam) {
+      searchParamHandledRef.current = true;
+      const matched = catalogTools.find((t) => t.slug === toolParam);
+      if (matched) {
+        void sendMessage(`Open and run ${matched.name} with actionable guidance`);
+      }
+    }
+  }, [searchParams, activeSession, sessions.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mountSpecificToolInChat = async (tool: DoItAiToolItem) => {
     setShowToolsModal(false);

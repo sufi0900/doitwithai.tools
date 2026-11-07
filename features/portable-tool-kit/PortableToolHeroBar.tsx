@@ -1028,6 +1028,39 @@ Official Tool URL: https://doitwithai.tools/tools/${tool.slug}
   } catch {
     realHtml = null;
   }
+
+  if (realHtml) {
+    // Inject custom accent override into the real tool head so all buttons & accents adopt user's selected color
+    const accentOverrideStyle = `
+<style id="custom-tool-accent-override">
+  :root {
+    --tool-accent: ${accentHex} !important;
+  }
+  /* Primary buttons & CTAs */
+  button.bg-blue-600, button.bg-blue-500,
+  button[class*="bg-[#5271FF]"], button[class*="bg-[#4361EE]"], button[class*="bg-[#3452D1]"],
+  a.bg-blue-600, a[class*="bg-[#5271FF]"], a[class*="bg-[#3452D1]"],
+  .bg-\\[\\#5271FF\\], .bg-\\[\\#4361EE\\], .bg-\\[\\#3452D1\\],
+  [data-accent-bg="true"] {
+    background-color: ${accentHex} !important;
+  }
+  /* Borders and focus rings */
+  .border-\\[\\#5271FF\\], .border-\\[\\#4361EE\\], .border-\\[\\#3452D1\\],
+  button.border-blue-500, input:focus, textarea:focus {
+    border-color: ${accentHex} !important;
+  }
+  /* Text accents & link hovers */
+  .text-\\[\\#5271FF\\], .text-\\[\\#4361EE\\], .text-\\[\\#3452D1\\],
+  .text-blue-500, .text-blue-400 {
+    color: ${accentHex} !important;
+  }
+</style>`;
+    realHtml = realHtml.replace("</head>", `${accentOverrideStyle}\n</head>`);
+    if (brandName && brandName !== "DoItWithAI.tools") {
+      realHtml = realHtml.replaceAll("DoItWithAI.tools", brandName);
+    }
+  }
+
   const appHtml = realHtml ?? html;
   zip.file("Run-Tool.html", appHtml);
   zip.file(`${tool.slug}-app.html`, appHtml);
@@ -1318,52 +1351,6 @@ export function PortableToolModal({
                       value={accentHex}
                       onChange={(e) => setAccentHex(e.target.value)}
                       aria-label="Open custom accent color panel"
-                      className="sr-only"
-                    />
-                  </div>
-                </div>
-
-                {/* App & Embed Background Color */}
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-slate-300">
-                      App &amp; Embed Background Color
-                    </label>
-                    <span className="font-mono text-[11px] text-slate-400">
-                      {bgHex}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                    {BG_PRESETS.map((bg) => (
-                      <button
-                        key={bg.hex}
-                        type="button"
-                        onClick={() => {
-                          setBgHex(bg.hex);
-                          setThemeMode(bg.mode);
-                        }}
-                        className={`rounded-lg border px-2 py-1 text-[11px] font-bold transition ${
-                          bgHex.toLowerCase() === bg.hex.toLowerCase()
-                            ? "border-white bg-slate-800 text-white"
-                            : "border-slate-800 bg-slate-950 text-slate-400 hover:text-white"
-                        }`}
-                      >
-                        {bg.label}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => bgPickerInputRef.current?.click()}
-                      className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] font-bold text-slate-200 hover:border-white"
-                    >
-                      🎨 Custom BG
-                    </button>
-                    <input
-                      ref={bgPickerInputRef}
-                      type="color"
-                      value={bgHex}
-                      onChange={(e) => setBgHex(e.target.value)}
-                      aria-label="Custom background color"
                       className="sr-only"
                     />
                   </div>
