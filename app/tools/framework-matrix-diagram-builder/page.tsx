@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GitBranch, Layers, Sparkles } from "lucide-react";
@@ -142,6 +143,7 @@ export default function FrameworkMatrixDiagramBuilderPage() {
                 consulting-grade 2×2 matrices, SWOT boards, circular growth
                 flywheels, and 3-pillar architecture visuals.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

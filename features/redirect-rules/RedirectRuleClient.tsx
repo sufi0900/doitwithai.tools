@@ -245,7 +245,7 @@ export default function RedirectRuleClient() {
           <p className="mt-2 text-xs leading-6 text-slate-400">
             One rule per line, separated by a comma, tab, or{" "}
             <span className="font-mono">-&gt;</span>. Use a trailing{" "}
-            <span className="font-mono">{"/*"}</span> on both sides to move a whole
+            <span className="font-mono">/*</span> on both sides to move a whole
             section, like <span className="font-mono">/old-blog/*, /blog/*</span>
             . A header row is fine.
           </p>

@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import BrokenLinksClient from "@/features/broken-links/BrokenLinksClient";
@@ -174,6 +175,7 @@ export default function Page() {
                   </span>
                 ))}
               </div>
+              <PortableToolHeroBar />
             </div>
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6">
               <p className="text-xs font-bold uppercase tracking-wide text-[#b4c3ff]">

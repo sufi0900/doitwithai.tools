@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import { ToolHeroBackground, toolHeroSurface, toolHeroHeading } from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -203,6 +204,7 @@ export default function IndexNowKeyGeneratorPage() {
                   Bulk URL ping submission
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
@@ -214,7 +216,7 @@ export default function IndexNowKeyGeneratorPage() {
                   <strong className="text-emerald-300">Generate Key:</strong> Creates a spec-compliant hexadecimal IndexNow key in your browser.
                 </li>
                 <li>
-                  <strong className="text-indigo-300">Host Key File:</strong> Download the [key].txt file and place it in your site&apos;s root folder.
+                  <strong className="text-indigo-300">Host Key File:</strong> Download the [key].txt file and place it in your site's root folder.
                 </li>
                 <li>
                   <strong className="text-sky-300">Verify Live URL:</strong> Confirm your key file returns HTTP 200 and matches your key.

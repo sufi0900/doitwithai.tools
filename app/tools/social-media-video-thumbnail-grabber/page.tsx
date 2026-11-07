@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Download, Film, Image as ImageIcon } from "lucide-react";
@@ -137,6 +138,7 @@ export default function SocialMediaVideoThumbnailGrabberPage() {
                 and privacy-enhanced embed code—or download all covers in a
                 single 1-click <code>.ZIP</code> bundle.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

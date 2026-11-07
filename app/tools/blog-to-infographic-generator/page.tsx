@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Code2, Layers, Sparkles } from "lucide-react";
@@ -140,6 +141,7 @@ export default function BlogToInfographicGeneratorPage() {
                 and 16:9 Horizontal Boards—with instant hover download for PNG,
                 SVG, and PDF.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

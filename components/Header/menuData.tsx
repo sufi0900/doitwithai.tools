@@ -14,6 +14,12 @@ const menuData: Menu[] = [
     newTab: false,
   },
   {
+    id: 101,
+    title: "Do It AI",
+    path: "/do-it-ai",
+    newTab: false,
+  },
+  {
     id: 105,
     title: "Extension",
     path: "/chrome-extension",

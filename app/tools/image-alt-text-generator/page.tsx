@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import {
   ToolHeroBackground,
   toolHeroSurface,
@@ -175,6 +176,7 @@ export default function Page() {
                   Character & keyword checks
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
@@ -189,7 +191,7 @@ export default function Page() {
                   <strong className="text-indigo-300">Context Alignment:</strong> Connects visual details naturally to the surrounding topic.
                 </li>
                 <li>
-                  <strong className="text-sky-300">Anti-Stuffing:</strong> Avoids robotic keyword lists and redundant &apos;image of&apos; prefixes.
+                  <strong className="text-sky-300">Anti-Stuffing:</strong> Avoids robotic keyword lists and redundant 'image of' prefixes.
                 </li>
                 <li>
                   <strong className="text-amber-300">Ready to Copy:</strong> Provides concise, medium, and detailed options with HTML code.

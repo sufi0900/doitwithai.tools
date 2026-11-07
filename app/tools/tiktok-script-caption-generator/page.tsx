@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Film, Search, Zap } from "lucide-react";
@@ -135,6 +136,7 @@ export default function TiktokScriptCaptionGeneratorPage() {
                 timestamped 15s/30s/60s TikTok script with 3-second pattern
                 interrupt hooks and TikTok Search SEO captions.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

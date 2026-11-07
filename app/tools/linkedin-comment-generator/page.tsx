@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MessageSquare, Sparkles, UserCheck } from "lucide-react";
@@ -135,6 +136,7 @@ export default function LinkedinCommentGeneratorPage() {
                 human-sounding comments that spark author replies and drive
                 qualified profile views.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarChart3, Layers, Sparkles } from "lucide-react";
@@ -139,6 +140,7 @@ export default function DataToChartVisualCardMakerPage() {
                 article URL or text and plot them onto 1080×1080 ranking bars,
                 donut rings, and 4-card KPI bento dashboards.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

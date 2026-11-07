@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import {
   ToolHeroBackground,
   toolHeroSurface,
@@ -206,6 +207,7 @@ export default function LlmsTxtGeneratorPage() {
                   Copy or download llms.txt
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
@@ -217,7 +219,7 @@ export default function LlmsTxtGeneratorPage() {
                   <strong className="text-emerald-300">H1 Project Title:</strong> Starts with a single H1 naming your site or documentation hub.
                 </li>
                 <li>
-                  <strong className="text-indigo-300">Blockquote Summary:</strong> Concise &gt; blockquote describing your product and core audience.
+                  <strong className="text-indigo-300">Blockquote Summary:</strong> Concise > blockquote describing your product and core audience.
                 </li>
                 <li>
                   <strong className="text-sky-300">Grouped H2 Sections:</strong> Organizes canonical URLs with 1-line descriptions by topic.

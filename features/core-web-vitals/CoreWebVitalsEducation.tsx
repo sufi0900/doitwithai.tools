@@ -23,7 +23,7 @@ export default function CoreWebVitalsEducation() {
             <p className="mt-3 text-sm font-bold text-slate-950 dark:text-white">Field data is what Google ranks on</p>
             <p className="mt-1.5 text-xs leading-6 text-slate-600 dark:text-slate-300">
               Field data comes from the Chrome User Experience Report ; real visitors, real devices,
-              real networks, over the past 28 days. It&apos;s what Search Console&apos;s Core Web Vitals
+              real networks, over the past 28 days. It's what Search Console's Core Web Vitals
               report is built from.
             </p>
           </div>
@@ -32,8 +32,8 @@ export default function CoreWebVitalsEducation() {
             <p className="mt-3 text-sm font-bold text-slate-950 dark:text-white">Lab data is one simulated run</p>
             <p className="mt-1.5 text-xs leading-6 text-slate-600 dark:text-slate-300">
               Lab data is a single Lighthouse test under controlled, simulated network conditions.
-              It&apos;s useful for debugging a specific page, but it can vary noticeably between runs and
-              doesn&apos;t reflect your real traffic.
+              It's useful for debugging a specific page, but it can vary noticeably between runs and
+              doesn't reflect your real traffic.
             </p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900">
@@ -41,7 +41,7 @@ export default function CoreWebVitalsEducation() {
             <p className="mt-3 text-sm font-bold text-slate-950 dark:text-white">New or low-traffic pages have no field data</p>
             <p className="mt-1.5 text-xs leading-6 text-slate-600 dark:text-slate-300">
               Google needs a minimum amount of real Chrome traffic before it publishes field data
-              for a URL. A brand-new page will often show lab data only ; that&apos;s expected, not a bug.
+              for a URL. A brand-new page will often show lab data only ; that's expected, not a bug.
             </p>
           </div>
         </div>

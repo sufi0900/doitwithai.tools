@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -167,6 +168,7 @@ export default function Page() {
                   </span>
                 ))}
               </div>
+              <PortableToolHeroBar />
             </div>
             <div className="rounded-2xl border border-orange-200/25 bg-[#352630] p-6">
               <p className="text-xs font-bold uppercase tracking-wide text-[#b4c3ff]">

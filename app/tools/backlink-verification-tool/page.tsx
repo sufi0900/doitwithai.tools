@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -182,6 +183,7 @@ export default function Page() {
                   Saved manual comparisons
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
             <div
               aria-label="Illustrative evidence preview"

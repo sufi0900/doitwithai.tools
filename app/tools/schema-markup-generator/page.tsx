@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import {
   ToolHeroBackground,
   toolHeroSurface,
@@ -225,6 +226,7 @@ export default function SchemaMarkupGeneratorPage() {
                   Deterministic JSON-LD compiler
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
@@ -242,7 +244,7 @@ export default function SchemaMarkupGeneratorPage() {
                   <strong className="text-sky-300">Field Validation:</strong> Verify required and recommended properties before exporting.
                 </li>
                 <li>
-                  <strong className="text-amber-300">Copy or Download:</strong> Export &lt;script type=&quot;application/ld+json&quot;&gt; or raw JSON.
+                  <strong className="text-amber-300">Copy or Download:</strong> Export &lt;script type="application/ld+json"&gt; or raw JSON.
                 </li>
               </ul>
             </div>

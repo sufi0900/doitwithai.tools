@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Image as ImageIcon, MessageCircle, Share2 } from "lucide-react";
@@ -135,6 +136,7 @@ export default function FacebookPostGeneratorPage() {
                 variations, a First-Comment Link snippet, and a downloadable
                 1080p visual card.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

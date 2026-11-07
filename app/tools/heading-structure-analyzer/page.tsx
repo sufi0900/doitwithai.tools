@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import type { Metadata } from "next";
@@ -202,6 +203,7 @@ export default function HeadingStructureAnalyzerPage() {
                   Visual outline & CSV export
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

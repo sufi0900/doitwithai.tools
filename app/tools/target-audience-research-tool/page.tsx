@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -172,6 +173,7 @@ export default function Page() {
                   Markdown & CSV report export
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
@@ -180,7 +182,7 @@ export default function Page() {
               </p>
               <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
                 <li>
-                  <strong className="text-emerald-300">Jobs to Be Done:</strong> Identifies the concrete problem or goal driving the buyer&apos;s search.
+                  <strong className="text-emerald-300">Jobs to Be Done:</strong> Identifies the concrete problem or goal driving the buyer's search.
                 </li>
                 <li>
                   <strong className="text-indigo-300">Objections & Hesitations:</strong> Surfaces trust barriers, pricing questions, and switching costs.

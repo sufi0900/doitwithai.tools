@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import { ToolHeroBackground, toolHeroSurface, toolHeroHeading } from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -204,6 +205,7 @@ export default function SitemapXmlGeneratorPage() {
                   Instant .xml & robots.txt snippet
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

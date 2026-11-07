@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import {
   ToolHeroBackground,
   toolHeroSurface,
@@ -215,6 +216,7 @@ export default function SlugUrlGeneratorPage() {
                   Full URL path preview
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
@@ -223,10 +225,10 @@ export default function SlugUrlGeneratorPage() {
               </p>
               <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
                 <li>
-                  <strong className="text-emerald-300">Primary Topic Focus:</strong> Retains the core 3–5 keyword tokens that define the page&apos;s topic.
+                  <strong className="text-emerald-300">Primary Topic Focus:</strong> Retains the core 3–5 keyword tokens that define the page's topic.
                 </li>
                 <li>
-                  <strong className="text-indigo-300">Zero Date Clutter:</strong> Strips years and numbers (&apos;2026&apos;, &apos;10-tips&apos;) so updates stay clean.
+                  <strong className="text-indigo-300">Zero Date Clutter:</strong> Strips years and numbers ('2026', '10-tips') so updates stay clean.
                 </li>
                 <li>
                   <strong className="text-sky-300">Hyphen & Case Rules:</strong> Enforces lowercase ASCII words separated by single hyphens.

@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Image as ImageIcon, Layers, Sparkles } from "lucide-react";
@@ -139,6 +140,7 @@ export default function PinterestPinVisualGeneratorPage() {
                 1-click article photo integration, and keyword-indexed Pin SEO
                 copy.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

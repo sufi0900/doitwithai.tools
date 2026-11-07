@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FileSpreadsheet, Layers, Search, Sparkles } from "lucide-react";
@@ -157,6 +158,7 @@ export default function SemanticEntityGapAnalyzerPage() {
                   CSV &amp; DOCX writer briefs
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             {/* High-Contrast Visual Hero Right-Side Card */}

@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Layers, MessageSquareQuote, Sparkles } from "lucide-react";
@@ -141,6 +142,7 @@ export default function QuoteStatTestimonialCardStudioPage() {
                 review and turn them into 1080×1080 verified social post cards,
                 highlighter quotes, founder notes, and 5-star testimonials.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

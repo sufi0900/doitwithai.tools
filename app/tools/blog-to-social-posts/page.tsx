@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -119,6 +120,7 @@ export default function Page() {
                 Facebook updates, and Instagram captions. Edit each draft and
                 download CSV or TXT.
               </p>
+              <PortableToolHeroBar />
             </div>
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 shadow-xl p-6">
               <h2 className="text-lg font-bold">Repurposing workflow</h2>

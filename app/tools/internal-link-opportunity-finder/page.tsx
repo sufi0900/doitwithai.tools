@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import {
   ToolHeroBackground,
   toolHeroSurface,
@@ -103,6 +104,7 @@ export default function Page() {
                   Exact passage & anchor export
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
@@ -114,7 +116,7 @@ export default function Page() {
                   <strong className="text-emerald-300">Passage Matching:</strong> Finds sentences in your draft that naturally mention target topics.
                 </li>
                 <li>
-                  <strong className="text-indigo-300">Anchor Clarity:</strong> Suggests descriptive multi-word anchors instead of &apos;click here&apos;.
+                  <strong className="text-indigo-300">Anchor Clarity:</strong> Suggests descriptive multi-word anchors instead of 'click here'.
                 </li>
                 <li>
                   <strong className="text-sky-300">Sitemap Discovery:</strong> Pulls candidate destination URLs straight from your sitemap.

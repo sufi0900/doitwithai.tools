@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Layers, Sparkles, Hash } from "lucide-react";
@@ -135,6 +136,7 @@ export default function InstagramCaptionGeneratorPage() {
                 deck across 10 color themes with hover PNG/SVG downloads,
                 multi-page PDF export, and 125-character hook previews.
               </p>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">

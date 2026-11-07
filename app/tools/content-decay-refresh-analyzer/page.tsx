@@ -1,3 +1,4 @@
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FileSpreadsheet, RefreshCw, Sparkles, TrendingDown } from "lucide-react";
@@ -151,6 +152,7 @@ export default function ContentDecayRefreshAnalyzerPage() {
                   CSV & DOCX refresh briefs
                 </span>
               </div>
+              <PortableToolHeroBar />
             </div>
 
             <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
