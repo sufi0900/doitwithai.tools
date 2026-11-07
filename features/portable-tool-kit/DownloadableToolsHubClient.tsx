@@ -25,6 +25,7 @@ import {
   buildStandaloneHtmlCode,
   buildUserManualMarkdown,
   doesToolUseAiApi,
+  downloadToolZipPackage,
 } from "./PortableToolHeroBar";
 import ToolRunOverlay, {
   paintToolFeedback,
@@ -111,47 +112,30 @@ export default function DownloadableToolsHubClient() {
     });
   }, [query, selectedCat]);
 
-  async function quickDownloadHtml(tool: CatalogTool, includeManual = false) {
+  async function quickDownloadZip(tool: CatalogTool) {
     setBusy(true);
-    await paintToolFeedback(420);
-    const html = buildStandaloneHtmlCode(
-      tool,
-      tool.name,
-      globalBrand,
-      globalAccent,
-      "dark",
-    );
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${tool.slug}-app.html`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-    if (includeManual) {
-      const manual = buildUserManualMarkdown(tool, tool.name, globalBrand);
-      setTimeout(() => {
-        const mBlob = new Blob([manual], {
-          type: "text/markdown;charset=utf-8",
-        });
-        const mUrl = URL.createObjectURL(mBlob);
-        const mLink = document.createElement("a");
-        mLink.href = mUrl;
-        mLink.download = `USER-MANUAL-${tool.slug}.md`;
-        mLink.click();
-        setTimeout(() => URL.revokeObjectURL(mUrl), 1000);
-      }, 300);
+    try {
+      await paintToolFeedback(350);
+      await downloadToolZipPackage(
+        tool,
+        tool.name,
+        globalBrand,
+        globalAccent,
+        "dark",
+      );
+    } catch (err) {
+      console.error("Failed to generate zip package:", err);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       <ToolRunOverlay
         active={busy}
-        title="Compiling Unified Next.js + Local PC App Package"
-        description="Bundling Full Next.js Studio view, Default DoItWithAI Cloud API connection, Personal BYOK API drawer, editable content canvas, and User Manual."
+        title="Generating Unified ZIP Package"
+        description="Bundling Standalone PC Desktop App, Offline & Online Cloud API support, User Manual, React Component, and Vibe-Coding Prompts into one single .zip file."
       />
 
       {/* Top Filter, Custom Color Picker & Global Branding Bar */}
@@ -407,12 +391,12 @@ export default function DownloadableToolsHubClient() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between pt-0.5 text-[9px] text-slate-400">
-                      <span>⚡ Full Next.js + Local Studio</span>
+                      <span>⚡ Standalone PC App (.html)</span>
                       <span
                         className="font-bold underline"
                         style={{ color: globalAccent }}
                       >
-                        Preview &amp; Edit →
+                        Customize &amp; Preview →
                       </span>
                     </div>
                   </div>
@@ -439,12 +423,12 @@ export default function DownloadableToolsHubClient() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => void quickDownloadHtml(tool, true)}
+                    onClick={() => void quickDownloadZip(tool)}
                     style={{ backgroundColor: globalAccent }}
                     className="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-extrabold text-white shadow transition hover:opacity-95"
                   >
                     <Download size={13} />
-                    App + Manual
+                    1-Click .ZIP Pack
                   </button>
 
                   <button
@@ -453,7 +437,7 @@ export default function DownloadableToolsHubClient() {
                     className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-xs font-extrabold text-slate-800 transition hover:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-white"
                   >
                     <Code2 size={13} style={{ color: globalAccent }} />
-                    Edit &amp; Embed
+                    Customize &amp; Embed
                   </button>
                 </div>
 

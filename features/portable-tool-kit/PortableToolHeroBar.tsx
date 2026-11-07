@@ -3,7 +3,9 @@
 import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import JSZip from "jszip";
 import {
+  Archive,
   BookOpen,
   Check,
   Code2,
@@ -99,58 +101,48 @@ export function buildUserManualMarkdown(
   const usesAi = doesToolUseAiApi(tool.slug);
 
   return `# 📖 Official User Manual & Setup Guide: ${title}
-**Package Version:** Unified Next.js + Local HTML5 Desktop & Web App (v3.0)
+**Package Version:** Unified Standalone PC & Web App (v3.0)
 **Prepared by:** ${brand} (Powered by https://doitwithai.tools/tools/${tool.slug})
 
 ---
 
 ## 1. Quick Start: How to Run This Tool on Your PC (Zero Terminal Commands!)
 You do **not** need Node.js, npm, Python, or any terminal commands to use this tool on your computer:
-1. Locate the downloaded file \`${tool.slug}-app.html\` on your Windows, Mac, or Linux computer.
-2. **Double-click \`${tool.slug}-app.html\`** to open it directly in Chrome, Edge, Brave, Firefox, or Safari.
-3. The full interactive dashboard opens immediately like a native desktop app.
+1. Extract the downloaded ZIP file (\`${tool.slug}-portable-pack.zip\`) anywhere on your Windows, Mac, or Linux computer.
+2. **Double-click \`Run-Tool.html\`** (or \`${tool.slug}-app.html\`) to open it directly in Chrome, Edge, Brave, Firefox, or Safari.
+3. The full interactive desktop dashboard opens immediately with zero installation required.
 
 ---
 
-## 2. Two Built-In Execution Modes (Live Next.js Studio vs. Local Offline Studio)
-This portable package combines **two synchronized engines** inside a single file:
-- **Mode A — ⚡ Original Next.js Full Studio (Default when Online):**
-  When your PC is connected to the internet and you have not replaced the default API key, the app renders the **100% original Next.js tool experience** with all multi-lens tabs, SERP pixel gauges, interactive checkers, and your custom brand colors.
-- **Mode B — 💻 Local / Custom API Key Studio (For Offline PC & Private API Usage):**
-  Click the **"💻 Local / Custom API Studio"** button in the top bar (or open the file while offline) to use the built-in local workspace with editable output canvas, live SERP pixel meters, and Markdown/CSV/HTML export.
-
----
-
-## 3. API Key Rules & Important Caution (${usesAi ? "AI-Powered Tool" : "100% Local Algorithmic Tool"})
+## 2. API Key Rules & Important Caution (${usesAi ? "AI-Powered Tool" : "100% Local Algorithmic Tool"})
 ${
   usesAi
     ? `### 🟢 Default Mode (Connected to Internet):
 - **By default, this tool uses DoItWithAI.tools' built-in Cloud API automatically** whenever you are connected to the internet. You do **not** need to enter an API key to test or use the tool right away.
 
 ### 🔑 Recommended for Long-Term Local PC Usage ("Use Your Own API Key"):
-- If you plan to use this tool heavily on your local PC or want private, direct LLM generations, we recommend clicking **"🔑 API Key Settings"** in the top bar and entering your own free **Google Gemini API Key** (\`AIzaSy...\`) or **OpenAI API Key** (\`sk-...\`).
+- If you plan to use this tool heavily on your local PC or want private, direct LLM generations, click **"🔑 Use Your Own API Key"** in the top bar and enter your own free **Google Gemini API Key** (\`AIzaSy...\`) or **OpenAI API Key** (\`sk-...\`).
 
 > ⚠️ **IMPORTANT CAUTION — PERMANENT REMOVAL OF DEFAULT API KEY:**
 > **Once you enter and save your own API key, DoItWithAI.tools' default built-in API key will be permanently removed and disabled for this downloaded tool.** From that moment onward, the tool will run exclusively using your personal API key (stored privately in your browser's \`localStorage\`) and the built-in offline engine.`
     : `### ⚡ 100% Local Algorithmic Engine (No API Key Required):
 - **${title}** runs 100% locally using deterministic SEO & validation algorithms.
-- It does **not** require an external AI API key to perform its core calculations, validations, or code generation, though you can optionally add your own Gemini key if you wish to generate extra AI recommendations.`
+- It does **not** require an external AI API key to perform its core calculations, validations, or code generation.`
 }
 
 ---
 
-## 4. How to Edit Content, Colors & Branding Inside the Tool
-1. Click the **"✏️ Edit Content & Colors"** button in the top navigation bar of the app.
-2. Change the **Tool Title**, **Subtitle / Instructions**, **Brand Name**, **Accent Color** (using the full color wheel picker), or **Background Color**.
-3. Inside the **Local Studio**, click directly inside any generated report block (marked **"✏️ Click to Edit Output"**) to modify the text before copying or downloading your report.
-4. Click **"💾 Save Customized .HTML Copy"** inside the app to download a fresh copy with your edits baked in!
+## 3. How to Edit Content, Colors & Output
+1. Click the **"✏️ Edit Content & Colors"** button in the top navigation bar of the app to change the Tool Title, Subtitle, Brand Name, or Theme Colors.
+2. Inside the results section, click directly inside any generated card (marked **"✏️ Click to Edit"**) to modify text before copying or downloading.
+3. Click **"⬇ Download .MD"** or **"⬇ Download .CSV"** to save your customized report.
 
 ---
 
-## 5. How to Deploy or Embed on Your Website (WordPress, Webflow, Next.js, Netlify)
-- **Option A (Upload Standalone HTML):** Upload your customized \`${tool.slug}-app.html\` to **Netlify Drop** (app.netlify.com/drop), **Cloudflare Pages**, **Vercel**, or your cPanel hosting.
-- **Option B (WordPress / Webflow / Shopify Embed):** Copy the responsive \`<iframe>\` snippet from the Customize modal on https://doitwithai.tools/tools/${tool.slug} and paste it into a Custom HTML block.
-- **Option C (Next.js / React Component):** Download the \`.tsx\` React widget from the Customize modal and drop it into your Next.js project.
+## 4. How to Deploy or Embed on Your Website (WordPress, Webflow, Next.js, Netlify)
+- **Option A (Upload Standalone HTML):** Upload \`Run-Tool.html\` to Netlify Drop, Cloudflare Pages, or your web hosting.
+- **Option B (WordPress / Webflow Embed):** Copy the responsive \`<iframe>\` snippet from https://doitwithai.tools/tools/${tool.slug}.
+- **Option C (Next.js / React Component):** Use the included \`React-Component.tsx\` file in your React or Next.js project.
 `;
 }
 
@@ -174,7 +166,6 @@ export function buildStandaloneHtmlCode(
   const isDark = themeMode === "dark";
   const resolvedBg = bgHex || (isDark ? "#0B1120" : "#F8FAFC");
   const usesAi = doesToolUseAiApi(tool.slug);
-  const liveEmbedUrl = `https://doitwithai.tools/tools/${tool.slug}?embed=1&app=1&accent=${encodeURIComponent(accentHex)}&bg=${encodeURIComponent(resolvedBg)}&brand=${encodeURIComponent(brandName || "DoItWithAI.tools")}&title=${encodeURIComponent(customTitle || tool.name)}&subtitle=${encodeURIComponent(customSubtitle || tool.shortDescription || tool.description)}`;
   const manualText = buildUserManualMarkdown(
     tool,
     customTitle || tool.name,
@@ -186,7 +177,7 @@ export function buildStandaloneHtmlCode(
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${safeTitle} — ${safeBrand} (Portable App Studio)</title>
+  <title>${safeTitle} — ${safeBrand} (Standalone Desktop App)</title>
   <meta name="description" content="${safeDesc}" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -211,7 +202,7 @@ export function buildStandaloneHtmlCode(
   </style>
 </head>
 <body class="min-h-screen antialiased flex flex-col">
-  <!-- TOP UNIFIED DESKTOP & WEB APP CONTROL BAR -->
+  <!-- TOP CONTROL BAR -->
   <header class="sticky top-0 z-40 border-b ${isDark ? "border-slate-800 bg-[#080F23]/95" : "border-slate-200 bg-white/95"} px-4 py-2.5 backdrop-blur">
     <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2.5">
       <div class="flex items-center gap-2.5">
@@ -235,17 +226,8 @@ export function buildStandaloneHtmlCode(
         </div>
       </div>
 
-      <!-- Mode Switcher & Controls -->
+      <!-- Controls & Drawers -->
       <div class="flex flex-wrap items-center gap-2">
-        <div class="inline-flex rounded-xl border ${isDark ? "border-slate-800 bg-slate-900/90" : "border-slate-200 bg-slate-100"} p-1">
-          <button id="modeLiveBtn" type="button" class="accent-bg rounded-lg px-3 py-1.5 text-xs font-extrabold text-white transition">
-            ⚡ Full Next.js Studio
-          </button>
-          <button id="modeLocalBtn" type="button" class="rounded-lg px-3 py-1.5 text-xs font-bold ${isDark ? "text-slate-300 hover:text-white" : "text-slate-700 hover:text-slate-900"} transition">
-            💻 Local / Custom API Studio
-          </button>
-        </div>
-
         <button id="toggleCustomizeBtn" type="button" class="rounded-xl border ${isDark ? "border-slate-700 bg-slate-800/80 text-slate-200" : "border-slate-300 bg-white text-slate-700"} px-3 py-1.5 text-xs font-bold hover:opacity-90">
           ✏️ Edit Content &amp; Color
         </button>
@@ -257,25 +239,29 @@ export function buildStandaloneHtmlCode(
         <button id="toggleManualBtn" type="button" class="rounded-xl border ${isDark ? "border-blue-500/40 bg-blue-500/10 text-blue-300" : "border-blue-600/40 bg-blue-50 text-blue-800"} px-3 py-1.5 text-xs font-bold hover:opacity-90">
           📖 User Manual
         </button>
+
+        <a href="${canonicalUrl}" target="_blank" rel="noopener" class="rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white">
+          Cloud Studio ↗
+        </a>
       </div>
     </div>
 
-    <!-- DRAWER 1: API KEY SETTINGS WITH PERMANENT DEFAULT API REMOVAL CAUTION -->
+    <!-- DRAWER 1: API KEY SETTINGS -->
     <div id="apiKeyDrawer" class="hidden mx-auto mt-3 max-w-5xl rounded-2xl border border-amber-500/40 ${isDark ? "bg-[#0F172A]" : "bg-amber-50/90"} p-4 shadow-xl">
       <div class="flex items-start justify-between gap-3">
         <div>
           <h3 class="text-xs font-black uppercase tracking-wider text-amber-400">
-            🔑 API Key Configuration — Default Cloud API vs. Your Own API Key (BYOK)
+            🔑 API Key Settings — Default Cloud API vs. Your Own API Key (BYOK)
           </h3>
           <p class="mt-1 text-xs leading-relaxed ${isDark ? "text-slate-300" : "text-slate-700"}">
             ${
               usesAi
-                ? "By default, when your PC is connected to the internet, this tool uses <strong>DoItWithAI.tools' built-in Cloud API</strong> automatically so you can use it with zero setup. For dedicated local PC usage, we recommend entering your own Google Gemini or OpenAI API key below."
-                : "This tool runs 100% locally using deterministic SEO rules and does not require an API key. However, you can optionally add your own Gemini or OpenAI key below to unlock extra AI expansion."
+                ? "By default, when your PC is online, this tool connects to <strong>DoItWithAI.tools' built-in Cloud API</strong> automatically so you can use it immediately without entering an API key. For dedicated local PC usage, you can enter your own free Google Gemini or OpenAI key."
+                : "This tool runs 100% locally using deterministic rules. Adding an API key is optional for supplementary LLM outputs."
             }
           </p>
           <div class="mt-2 rounded-xl border border-rose-500/40 bg-rose-950/30 px-3 py-2 text-xs text-rose-200">
-            ⚠️ <strong>Caution:</strong> Once you enter and save your own API key below, <strong>our default DoItWithAI API key will be permanently removed from this tool</strong>, and it will run exclusively in Local / Custom API Studio Mode.
+            ⚠️ <strong>Caution:</strong> Once you enter and save your own API key below, <strong>our default DoItWithAI API key will be permanently removed from this tool</strong>, and it will run exclusively on your key and the built-in offline engine.
           </div>
         </div>
         <button type="button" onclick="document.getElementById('apiKeyDrawer').classList.add('hidden')" class="text-xs font-bold opacity-70 hover:opacity-100">✕</button>
@@ -327,27 +313,15 @@ export function buildStandaloneHtmlCode(
     </div>
   </header>
 
-  <!-- VIEW 1: ORIGINAL NEXT.JS FULL STUDIO ENGINE (100% Identical Experience When Online & Default API Active) -->
-  <section id="liveNextjsView" class="flex-1 flex flex-col">
-    <iframe
-      id="liveToolIframe"
-      src="${liveEmbedUrl}"
-      title="${safeTitle}"
-      class="w-full flex-1 border-0"
-      style="min-height: calc(100vh - 64px);"
-      allow="clipboard-write; clipboard-read"
-    ></iframe>
-  </section>
-
-  <!-- VIEW 2: LOCAL / OFFLINE & CUSTOM API KEY STUDIO (With Editable Content Canvas & Multi-Lens Analysis) -->
-  <main id="localStudioView" class="hidden mx-auto w-full max-w-6xl flex-1 p-4 sm:p-8">
+  <!-- PURE STANDALONE DESKTOP WORKSPACE (ZERO IFRAMES — NEVER SHOWS 'REFUSED TO CONNECT') -->
+  <main class="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-8">
     <div class="rounded-3xl border ${isDark ? "border-slate-800 bg-[#111A2E]" : "border-slate-200 bg-white"} p-6 sm:p-8 shadow-xl">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <span id="localBrandPill" class="inline-flex items-center gap-2 rounded-full px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider" style="background:color-mix(in srgb, var(--brand-accent) 18%, transparent);color:var(--brand-accent);border:1px solid color-mix(in srgb, var(--brand-accent) 40%, transparent);">
-          Local &amp; Custom API Studio · ${safeBrand}
+          Standalone Desktop Studio · ${safeBrand}
         </span>
         <span class="text-xs font-semibold opacity-75">
-          ✏️ Tip: You can click and edit any generated output below before exporting!
+          ✏️ Tip: Click inside any generated card below to edit text before downloading!
         </span>
       </div>
       <h1 id="localMainTitle" contenteditable="true" class="mt-3 text-2xl sm:text-4xl font-black tracking-tight">${safeTitle}</h1>
@@ -360,7 +334,7 @@ export function buildStandaloneHtmlCode(
       <!-- Left Input Column -->
       <section class="lg:col-span-5 rounded-3xl border ${isDark ? "border-slate-800 bg-[#111A2E]" : "border-slate-200 bg-white"} p-6 shadow-lg">
         <div class="flex items-center justify-between gap-2">
-          <h2 class="text-base font-extrabold">1. Configure Tool Inputs</h2>
+          <h2 class="text-base font-extrabold">1. Configure Inputs</h2>
           <button id="loadSampleBtn" type="button" class="text-xs font-bold underline accent-text">
             Load Sample Data
           </button>
@@ -369,7 +343,7 @@ export function buildStandaloneHtmlCode(
         <form id="toolForm" class="mt-4 space-y-4">
           <div>
             <label for="primaryInput" class="block text-xs font-bold uppercase tracking-wider opacity-80">
-              Primary Keyword, Topic, URL, or Content Input
+              Primary Keyword, Topic, URL, or Draft Content
             </label>
             <textarea id="primaryInput" rows="5" required placeholder="Enter your primary keyword, URL, or draft content..." class="mt-1.5 w-full rounded-2xl border ${isDark ? "border-slate-700 bg-slate-950 text-white" : "border-slate-300 bg-slate-50 text-slate-900"} p-3.5 text-sm focus:outline-none">how to check google keyword rankings\nwhat to do after keyword research\nmeta title pixel width checker</textarea>
           </div>
@@ -383,12 +357,12 @@ export function buildStandaloneHtmlCode(
             </div>
             <div>
               <label for="modeSelect" class="block text-xs font-bold uppercase tracking-wider opacity-80">
-                Optimization Lens
+                Optimization Mode
               </label>
               <select id="modeSelect" class="mt-1.5 w-full rounded-xl border ${isDark ? "border-slate-700 bg-slate-950 text-white" : "border-slate-300 bg-white text-slate-900"} px-3 py-2 text-sm">
-                <option value="5-lens">Full 5-Lens SEO + AEO Breakdown</option>
-                <option value="deep">Deep Audit + E-E-A-T Checklist</option>
-                <option value="compact">Compact Copy-Paste Deliverables</option>
+                <option value="standard">Full SEO &amp; AEO Breakdown</option>
+                <option value="deep">Deep E-E-A-T Quality Audit</option>
+                <option value="compact">Quick Copy-Paste Deliverables</option>
               </select>
             </div>
           </div>
@@ -404,17 +378,17 @@ export function buildStandaloneHtmlCode(
         <div>
           <div class="flex flex-wrap items-center justify-between gap-2 border-b ${isDark ? "border-slate-800" : "border-slate-200"} pb-3">
             <div>
-              <h2 class="text-base font-extrabold">2. Interactive Results &amp; Editable Canvas</h2>
-              <p class="text-[11px] opacity-70">Click any card text below to edit it directly before copying or downloading.</p>
+              <h2 class="text-base font-extrabold">2. Generated Results &amp; Editable Canvas</h2>
+              <p class="text-[11px] opacity-70">Click directly into any card below to edit before exporting.</p>
             </div>
             <div class="flex flex-wrap gap-2">
-              <button id="copyOutputBtn" type="button" class="rounded-xl border ${isDark ? "border-slate-700 bg-slate-800 text-slate-200" : "border-slate-200 bg-slate-100 text-slate-700"} px-3 py-1.5 text-xs font-bold">
+              <button id="copyOutputBtn" type="button" class="rounded-xl border ${isDark ? "border-slate-700 bg-slate-800 text-slate-200" : "border-slate-200 bg-slate-100 text-slate-700"} px-3 py-1.5 text-xs font-bold hover:opacity-90">
                 Copy Report
               </button>
-              <button id="downloadMdBtn" type="button" class="rounded-xl border ${isDark ? "border-slate-700 bg-slate-800 text-slate-200" : "border-slate-200 bg-slate-100 text-slate-700"} px-3 py-1.5 text-xs font-bold">
+              <button id="downloadMdBtn" type="button" class="rounded-xl border ${isDark ? "border-slate-700 bg-slate-800 text-slate-200" : "border-slate-200 bg-slate-100 text-slate-700"} px-3 py-1.5 text-xs font-bold hover:opacity-90">
                 ⬇ .MD
               </button>
-              <button id="downloadCsvBtn" type="button" class="rounded-xl border ${isDark ? "border-slate-700 bg-slate-800 text-slate-200" : "border-slate-200 bg-slate-100 text-slate-700"} px-3 py-1.5 text-xs font-bold">
+              <button id="downloadCsvBtn" type="button" class="rounded-xl border ${isDark ? "border-slate-700 bg-slate-800 text-slate-200" : "border-slate-200 bg-slate-100 text-slate-700"} px-3 py-1.5 text-xs font-bold hover:opacity-90">
                 ⬇ .CSV
               </button>
             </div>
@@ -424,7 +398,7 @@ export function buildStandaloneHtmlCode(
         </div>
 
         <footer class="mt-6 border-t ${isDark ? "border-slate-800 text-slate-400" : "border-slate-200 text-slate-500"} pt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span id="footerEngineNote">Engine: Default DoItWithAI Cloud API + Local Deterministic Fallback</span>
+          <span id="footerEngineNote">Engine: Default DoItWithAI Cloud API (Online) + Local Deterministic Fallback</span>
           <a href="${canonicalUrl}" target="_blank" rel="noopener" class="font-bold underline accent-text">
             Powered by DoItWithAI.tools →
           </a>
@@ -469,10 +443,6 @@ export function buildStandaloneHtmlCode(
     const DEFAULT_REMOVED_FLAG = "diwai_default_api_permanently_removed_" + TOOL_SLUG;
     const MANUAL_MARKDOWN = ${JSON.stringify(manualText)};
 
-    const liveView = document.getElementById("liveNextjsView");
-    const localView = document.getElementById("localStudioView");
-    const modeLiveBtn = document.getElementById("modeLiveBtn");
-    const modeLocalBtn = document.getElementById("modeLocalBtn");
     const apiStatusBadge = document.getElementById("apiStatusBadge");
     const footerEngineNote = document.getElementById("footerEngineNote");
     const outputContainer = document.getElementById("outputContainer");
@@ -484,20 +454,6 @@ export function buildStandaloneHtmlCode(
       return localStorage.getItem(DEFAULT_REMOVED_FLAG) === "true";
     }
 
-    function switchView(mode) {
-      if (mode === "live" && !isDefaultApiPermanentlyRemoved() && navigator.onLine) {
-        liveView.classList.remove("hidden");
-        localView.classList.add("hidden");
-        modeLiveBtn.classList.add("accent-bg", "text-white");
-        modeLocalBtn.classList.remove("accent-bg", "text-white");
-      } else {
-        liveView.classList.add("hidden");
-        localView.classList.remove("hidden");
-        modeLocalBtn.classList.add("accent-bg", "text-white");
-        modeLiveBtn.classList.remove("accent-bg", "text-white");
-      }
-    }
-
     function updateApiStatusUI() {
       const removed = isDefaultApiPermanentlyRemoved();
       const customKey = localStorage.getItem(KEY_STORAGE) || "";
@@ -505,36 +461,25 @@ export function buildStandaloneHtmlCode(
       if (!USES_AI_API && !customKey) {
         apiStatusBadge.textContent = "⚡ 100% Local Algorithmic Engine Active · No API Key Required";
         apiStatusBadge.className = "text-[11px] font-semibold text-emerald-400";
+        footerEngineNote.textContent = "Engine: 100% Local Algorithmic SEO Engine";
         return;
       }
       if (removed) {
         apiStatusBadge.textContent = customKey
           ? "🔒 Custom " + provider.toUpperCase() + " API Key Active (Default DoItWithAI API Permanently Removed)"
-          : "🔒 Local Offline Mode Only (Default DoItWithAI API Permanently Removed)";
+          : "🔒 Local Offline Engine Only (Default DoItWithAI API Permanently Removed)";
         apiStatusBadge.className = "text-[11px] font-semibold text-amber-400";
-        footerEngineNote.textContent = "Engine: Personal BYOK API Key + Local Deterministic Engine (Default Cloud API Removed)";
-        modeLiveBtn.title = "Default DoItWithAI Cloud API was permanently removed when you saved your own API key.";
-        modeLiveBtn.classList.add("opacity-50");
-        switchView("local");
+        footerEngineNote.textContent = "Engine: Personal BYOK API Key + Local Engine (Default Cloud API Removed)";
       } else if (!navigator.onLine) {
-        apiStatusBadge.textContent = "📴 Offline PC Mode Active — Using Built-In Local Engine (Add your own API key for custom LLM)";
+        apiStatusBadge.textContent = "📴 Offline PC Mode Active — Using Built-In Local Engine";
         apiStatusBadge.className = "text-[11px] font-semibold text-amber-300";
-        switchView("local");
+        footerEngineNote.textContent = "Engine: Built-In Offline Local Engine (Zero Connection Needed)";
       } else {
-        apiStatusBadge.textContent = "🟢 Default DoItWithAI Cloud API Active (Online) · Or click 'Use Your Own API Key'";
+        apiStatusBadge.textContent = "🟢 Default DoItWithAI Cloud API Active (Online) · Zero Setup Required";
         apiStatusBadge.className = "text-[11px] font-semibold text-emerald-400";
+        footerEngineNote.textContent = "Engine: Default DoItWithAI Cloud API + Local Fallback";
       }
     }
-
-    modeLiveBtn.addEventListener("click", () => {
-      if (isDefaultApiPermanentlyRemoved()) {
-        alert("Caution Notice: Because you previously saved your own API key, DoItWithAI's default Cloud API has been permanently removed for this installation. Using Local / Custom API Studio.");
-        switchView("local");
-        return;
-      }
-      switchView("live");
-    });
-    modeLocalBtn.addEventListener("click", () => switchView("local"));
 
     document.getElementById("toggleApiKeyBtn").addEventListener("click", () => {
       document.getElementById("apiKeyDrawer").classList.toggle("hidden");
@@ -557,7 +502,6 @@ export function buildStandaloneHtmlCode(
       URL.revokeObjectURL(url);
     });
 
-    // Save custom API key & permanently remove Default DoItWithAI API
     document.getElementById("customApiKeyInput").value = localStorage.getItem(KEY_STORAGE) || "";
     document.getElementById("saveCustomKeyBtn").addEventListener("click", () => {
       const val = document.getElementById("customApiKeyInput").value.trim();
@@ -578,7 +522,6 @@ export function buildStandaloneHtmlCode(
       runToolExecution();
     });
 
-    // Live Content & Color Customizer
     document.getElementById("applyCustomizationBtn").addEventListener("click", () => {
       const newTitle = document.getElementById("editTitleInput").value.trim();
       const newBrand = document.getElementById("editBrandInput").value.trim();
@@ -591,18 +534,14 @@ export function buildStandaloneHtmlCode(
       if (newTitle) {
         document.getElementById("topBarTitle").textContent = newTitle;
         document.getElementById("localMainTitle").textContent = newTitle;
-        document.title = newTitle + " — " + (newBrand || "Portable App");
+        document.title = newTitle + " — " + (newBrand || "Desktop App");
       }
       if (newBrand) {
         document.getElementById("topBarBrand").textContent = newBrand;
-        document.getElementById("localBrandPill").textContent = "Local & Custom API Studio · " + newBrand;
+        document.getElementById("localBrandPill").textContent = "Standalone Desktop Studio · " + newBrand;
       }
       if (newDesc) {
         document.getElementById("localMainDesc").textContent = newDesc;
-      }
-      const iframe = document.getElementById("liveToolIframe");
-      if (iframe && !isDefaultApiPermanentlyRemoved()) {
-        iframe.src = "https://doitwithai.tools/tools/" + TOOL_SLUG + "?embed=1&app=1&accent=" + encodeURIComponent(newAccent) + "&bg=" + encodeURIComponent(newBg) + "&brand=" + encodeURIComponent(newBrand) + "&title=" + encodeURIComponent(newTitle) + "&subtitle=" + encodeURIComponent(newDesc);
       }
       document.getElementById("customizeDrawer").classList.add("hidden");
     });
@@ -612,11 +551,11 @@ export function buildStandaloneHtmlCode(
       const words = line.trim().split(/\\s+/).filter(Boolean).length;
       const chars = line.trim().length;
       const approxPx = Math.round(chars * 9.2);
-      let intent = "Informational (Guide / Tutorial)";
+      let intent = "Informational Guide / Tutorial";
       if (/\\b(buy|price|pricing|cost|hire|agency|service|tool|generator|checker)\\b/.test(lower)) {
         intent = "Transactional / Interactive Tool Intent";
       } else if (/\\b(best|top|vs|compare|review|alternatives)\\b/.test(lower)) {
-        intent = "Commercial Investigation (Comparison / List)";
+        intent = "Commercial Investigation";
       }
       return { line: line.trim(), words, chars, approxPx, intent };
     }
@@ -674,7 +613,7 @@ export function buildStandaloneHtmlCode(
       loadingModal.classList.add("flex");
 
       try {
-        // 1. If Default DoItWithAI Cloud API is still active and user is online, call our live Cloud API!
+        // 1. If Default DoItWithAI Cloud API is active and user is online, call Cloud API via fetch() (works cleanly from file:///)
         if (!defaultRemoved && navigator.onLine) {
           const res = await fetch(DEFAULT_API_ENDPOINT, {
             method: "POST",
@@ -787,7 +726,7 @@ export function buildStandaloneHtmlCode(
       const lines = rawText.split(/\\r?\\n/).map(s => s.trim()).filter(Boolean);
       const items = (lines.length ? lines : [rawText.trim()]).slice(0, 12).map(classifyLine);
       renderStructuredCards(
-        document.getElementById("localMainTitle").textContent + " — Local Studio Report",
+        document.getElementById("localMainTitle").textContent + " — Desktop Studio Report",
         "Executed locally in your browser with SERP pixel-width calibration and search intent classification.",
         [
           { label: "Items Analyzed", value: String(items.length) },
@@ -1023,6 +962,76 @@ export function buildVibeCodingPrompts(
   ];
 }
 
+export async function downloadToolZipPackage(
+  tool: CatalogTool,
+  customTitle: string,
+  brandName: string,
+  accentHex: string,
+  themeMode: "dark" | "light",
+  customSubtitle?: string,
+  bgHex?: string,
+) {
+  const zip = new JSZip();
+  const html = buildStandaloneHtmlCode(
+    tool,
+    customTitle,
+    brandName,
+    accentHex,
+    themeMode,
+    customSubtitle,
+    bgHex,
+  );
+  const manual = buildUserManualMarkdown(tool, customTitle, brandName);
+  const reactTsx = buildReactComponentCode(
+    tool,
+    customTitle,
+    brandName,
+    accentHex,
+    customSubtitle,
+  );
+  const vibePrompts = buildVibeCodingPrompts(tool, customTitle);
+  const promptsMd =
+    `# Vibe-Coding Prompts for ${customTitle || tool.name}\n\n` +
+    vibePrompts
+      .map(
+        (p) => `## ${p.title} (${p.stage})\n\n\`\`\`\n${p.prompt}\n\`\`\`\n`,
+      )
+      .join("\n");
+  const readme = `===================================================================
+DO IT WITH AI TOOLS — UNIFIED PORTABLE TOOL PACKAGE
+Tool: ${customTitle || tool.name}
+Brand: ${brandName || "DoItWithAI.tools"}
+===================================================================
+
+HOW TO RUN ON YOUR PC (ZERO INSTALLATION OR CODING REQUIRED):
+1. Double-click "Run-Tool.html" (or "${tool.slug}-app.html").
+   It opens immediately in Chrome, Edge, Brave, Firefox, or Safari!
+2. Zero iframes — runs 100% locally on your computer with no connection errors.
+3. When online, it connects to DoItWithAI.tools' Cloud API automatically.
+4. When offline, it automatically runs using the built-in local engine.
+5. To use your own Gemini or OpenAI API key, click "Use Your Own API Key".
+6. See "USER-MANUAL.md" for full documentation & API caution rules.
+7. Developers: Import "React-Component.tsx" in your Next.js project.
+
+Official Tool URL: https://doitwithai.tools/tools/${tool.slug}
+===================================================================`;
+
+  zip.file("Run-Tool.html", html);
+  zip.file(`${tool.slug}-app.html`, html);
+  zip.file("USER-MANUAL.md", manual);
+  zip.file("React-Component.tsx", reactTsx);
+  zip.file("Vibe-Coding-Prompts.md", promptsMd);
+  zip.file("README.txt", readme);
+
+  const content = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(content);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${tool.slug}-portable-pack.zip`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function PortableToolModal({
   tool,
   open,
@@ -1045,9 +1054,10 @@ export function PortableToolModal({
   const [bgHex, setBgHex] = useState("#0B1120");
   const [themeMode, setThemeMode] = useState<"dark" | "light">("dark");
   const [activeTab, setActiveTab] = useState<
-    "html" | "embed" | "react" | "manual" | "prompts"
+    "html" | "embed" | "manual" | "react" | "prompts"
   >("html");
   const [copiedLabel, setCopiedLabel] = useState("");
+  const [zipping, setZipping] = useState(false);
   const colorPickerInputRef = useRef<HTMLInputElement>(null);
   const bgPickerInputRef = useRef<HTMLInputElement>(null);
 
@@ -1113,15 +1123,21 @@ export function PortableToolModal({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function downloadAppAndManualBundle() {
-    triggerDownload(`${tool.slug}-app.html`, htmlCode, "text/html");
-    setTimeout(() => {
-      triggerDownload(
-        `USER-MANUAL-${tool.slug}.md`,
-        manualMarkdown,
-        "text/markdown",
+  async function handleDownloadZip() {
+    setZipping(true);
+    try {
+      await downloadToolZipPackage(
+        tool,
+        customTitle,
+        brandName,
+        accentHex,
+        themeMode,
+        customSubtitle,
+        bgHex,
       );
-    }, 350);
+    } finally {
+      setZipping(false);
+    }
   }
 
   async function copyText(label: string, value: string) {
@@ -1143,7 +1159,7 @@ export function PortableToolModal({
     >
       <div className="relative flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border border-[#9aabff]/30 bg-[#0D1526] text-white shadow-2xl">
         {/* Top Modal Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-[#111C33] px-5 py-4 sm:px-7">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-[#111C33] px-5 py-3.5 sm:px-7">
           <div className="flex items-center gap-3">
             <span
               className="flex h-10 w-10 items-center justify-center rounded-2xl text-white shadow"
@@ -1154,12 +1170,12 @@ export function PortableToolModal({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/30">
-                  Next.js + Portable HTML5 App Studio
+                  Standalone PC App &amp; Web Studio
                 </span>
                 <span className="rounded-full bg-blue-500/15 px-2.5 py-0.5 text-[11px] font-bold text-blue-300 ring-1 ring-blue-400/30">
                   {usesAi
-                    ? "🟢 Default DoItWithAI API Included + Optional BYOK"
-                    : "⚡ 100% Local Algorithmic Engine (No API Key Needed)"}
+                    ? "🟢 Default Cloud API Included + Optional BYOK"
+                    : "⚡ 100% Local Engine (No API Key Needed)"}
                 </span>
               </div>
               <h2 className="mt-0.5 text-lg font-black sm:text-xl">
@@ -1169,12 +1185,24 @@ export function PortableToolModal({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={zipping}
+              onClick={handleDownloadZip}
+              style={{ backgroundColor: accentHex }}
+              className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-black text-white shadow transition hover:opacity-90"
+            >
+              <Archive size={14} />
+              <span>
+                {zipping ? "Creating ZIP..." : "Download .ZIP Pack"}
+              </span>
+            </button>
             <Link
               href={`/do-it-ai?tool=${tool.slug}`}
               className="inline-flex items-center gap-1.5 rounded-xl border border-[#5271ff]/40 bg-[#3452d1]/20 px-3.5 py-2 text-xs font-extrabold text-[#b4c3ff] transition hover:bg-[#3452d1]/35"
             >
               <Sparkles size={14} />
-              Open in Do It AI
+              Do It AI
             </Link>
             <button
               type="button"
@@ -1194,7 +1222,7 @@ export function PortableToolModal({
             <div className="rounded-2xl border border-slate-800 bg-[#111C33]/90 p-4 sm:p-5">
               <h3 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#9aabff]">
                 <Palette size={15} />
-                1. Edit Tool Content, Colors &amp; Brand
+                1. Edit Content, Colors &amp; Brand
               </h3>
 
               <div className="mt-3.5 space-y-3">
@@ -1329,26 +1357,32 @@ export function PortableToolModal({
               </div>
             </div>
 
-            {/* Primary Download Actions + User Manual */}
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 sm:p-5">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-300">
-                2. Download PC App &amp; User Manual
+            {/* Primary Download Package Card */}
+            <div className="rounded-2xl border border-emerald-500/35 bg-emerald-950/20 p-4 sm:p-5">
+              <h3 className="text-xs font-black uppercase tracking-wider text-emerald-300">
+                2. Download Complete Tool Package
               </h3>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-300">
-                Double-click the downloaded <code>.html</code> app on your PC to
-                run the full Next.js studio (online with our Default API) or
-                switch to Local / Own API Key mode.
+                Downloads a single <strong>.ZIP file</strong> containing{" "}
+                <code>Run-Tool.html</code> (double-click to open on your PC
+                with zero terminal commands), full User Manual (.md), React (.tsx),
+                and vibe-coding prompts.
               </p>
 
               <div className="mt-3.5 space-y-2">
                 <button
                   type="button"
-                  onClick={downloadAppAndManualBundle}
+                  disabled={zipping}
+                  onClick={handleDownloadZip}
                   style={{ backgroundColor: accentHex }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-extrabold text-white shadow-lg transition hover:opacity-95"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-black text-white shadow-lg transition hover:opacity-95"
                 >
-                  <Download size={15} />
-                  Download PC App (.HTML) + User Manual (.MD)
+                  <Archive size={16} />
+                  <span>
+                    {zipping
+                      ? "Packaging ZIP File..."
+                      : "📦 Download Complete .ZIP Pack"}
+                  </span>
                 </button>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -1379,7 +1413,7 @@ export function PortableToolModal({
                     className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-[11px] font-bold text-emerald-300 transition hover:border-emerald-400"
                   >
                     <BookOpen size={13} />
-                    User Manual (.MD)
+                    Manual (.MD)
                   </button>
                 </div>
 
@@ -1395,19 +1429,19 @@ export function PortableToolModal({
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2 text-[11px] font-bold text-slate-300 transition hover:border-[#5271ff] hover:text-white"
                 >
                   <FileCode2 size={14} />
-                  Download Next.js / React Component (.tsx)
+                  Download Next.js / React (.tsx)
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Right Column: 5-Tab Studio (App HTML, Website Embed + Live Preview, User Manual, React TSX, Vibe Prompts) */}
+          {/* Right Column: 5 Tabs */}
           <div className="flex flex-col rounded-2xl border border-slate-800 bg-[#111C33]/70 p-4 sm:p-5 lg:col-span-8">
             <div className="flex flex-wrap gap-1.5 border-b border-slate-800 pb-3">
               {[
                 {
                   id: "html" as const,
-                  label: "1. Unified PC & Web App (.HTML)",
+                  label: "1. App Code Preview (.HTML)",
                   icon: Laptop,
                 },
                 {
@@ -1417,12 +1451,12 @@ export function PortableToolModal({
                 },
                 {
                   id: "manual" as const,
-                  label: "3. User Manual & API Caution",
+                  label: "3. User Manual & API Guide",
                   icon: BookOpen,
                 },
                 {
                   id: "react" as const,
-                  label: "4. React (.tsx)",
+                  label: "4. React Component (.tsx)",
                   icon: FileCode2,
                 },
                 {
@@ -1454,48 +1488,62 @@ export function PortableToolModal({
 
             {activeTab === "html" && (
               <div className="mt-4 flex flex-1 flex-col space-y-3">
-                <div className="rounded-2xl border border-blue-500/30 bg-blue-950/20 p-3.5 text-xs text-slate-200">
+                {/* Clear Action Bar so clicking here immediately downloads! */}
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-3.5 text-xs text-slate-200">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <strong className="text-blue-300">
-                      ⚡ How This Unified Desktop &amp; Web App Works:
+                    <strong className="text-emerald-300">
+                      ⚡ 100% Standalone Desktop Web App (Zero Iframes · Zero Connection Errors):
                     </strong>
-                    <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
-                      Zero Terminal Commands Needed
-                    </span>
+                    <button
+                      type="button"
+                      disabled={zipping}
+                      onClick={handleDownloadZip}
+                      style={{ backgroundColor: accentHex }}
+                      className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-black text-white shadow hover:opacity-90 transition"
+                    >
+                      <Archive size={14} />
+                      <span>{zipping ? "Packaging..." : "Download .ZIP Pack"}</span>
+                    </button>
                   </div>
                   <p className="mt-1 leading-relaxed text-slate-300">
-                    Double-click the downloaded <code>.html</code> file on your
-                    PC. By default, it connects to our live Next.js studio and{" "}
-                    <strong>Default DoItWithAI Cloud API</strong> when you are
-                    online. You can also switch to the built-in{" "}
-                    <strong>Local Studio</strong>, edit content inline, or add
-                    your own API key (which permanently removes the default API
-                    key).
+                    Extract the ZIP and double-click <code>Run-Tool.html</code> on your PC. It renders the full desktop tool directly in Chrome/Edge, uses our Cloud API when online, falls back seamlessly to the local engine when offline, and allows inline content editing.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xs text-slate-400">
-                    Self-contained HTML5 package with custom color ({accentHex})
-                    and built-in User Manual:
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => copyText("html", htmlCode)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-200 hover:border-[#5271ff]"
-                  >
-                    {copiedLabel === "html" ? (
-                      <>
-                        <Check size={13} className="text-emerald-400" />
-                        Copied App HTML!
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={13} />
-                        Copy Full HTML
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        triggerDownload(
+                          `${tool.slug}-app.html`,
+                          htmlCode,
+                          "text/html",
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:border-[#5271ff]"
+                    >
+                      <Download size={13} />
+                      Download .HTML Only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => copyText("html", htmlCode)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-bold text-slate-200 hover:border-[#5271ff]"
+                    >
+                      {copiedLabel === "html" ? (
+                        <>
+                          <Check size={13} className="text-emerald-400" />
+                          Copied HTML!
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={13} />
+                          Copy Code
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <pre className="max-h-[340px] flex-1 overflow-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 font-mono text-xs leading-relaxed text-slate-300">
                   {htmlCode}
@@ -1507,7 +1555,7 @@ export function PortableToolModal({
               <div className="mt-4 flex flex-1 flex-col space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-xs text-slate-300">
-                    Clean, chromeless website embed with your custom accent (
+                    Clean, chromeless website embed snippet with your custom accent (
                     <code>{accentHex}</code>), background (<code>{bgHex}</code>
                     ), and custom heading:
                   </p>
@@ -1575,8 +1623,7 @@ export function PortableToolModal({
                     </p>
                     <div className="mt-3 flex items-center gap-2">
                       <div className="h-8 flex-1 rounded-lg border border-slate-700/60 bg-slate-900/40 px-3 flex items-center text-[11px] text-slate-400">
-                        Interactive Next.js tool inputs &amp; live meters render
-                        here...
+                        Interactive tool inputs &amp; live meters render here...
                       </div>
                       <span
                         className="rounded-lg px-3 py-1.5 text-xs font-extrabold text-white"
@@ -1596,11 +1643,11 @@ export function PortableToolModal({
                   <KeyRound size={16} className="shrink-0 mt-0.5 text-amber-400" />
                   <div>
                     <strong>
-                      Default API Key vs. Personal API Key Policy:
+                      Default Cloud API vs. Personal BYOK API Key:
                     </strong>{" "}
                     When connected to the internet, the downloaded tool uses
                     DoItWithAI&apos;s default API key out of the box. For
-                    long-term local PC usage, we recommend entering your own
+                    offline or dedicated local PC usage, you can enter your own
                     Gemini/OpenAI API key.{" "}
                     <strong className="underline">
                       Once you enter and save your own API key, our default API
@@ -1610,8 +1657,7 @@ export function PortableToolModal({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-slate-400">
-                    Included inside the app and downloadable as{" "}
-                    <code>USER-MANUAL-{tool.slug}.md</code>:
+                    Included in the ZIP as <code>USER-MANUAL.md</code>:
                   </span>
                   <button
                     type="button"
@@ -1722,6 +1768,7 @@ export function PortableToolModal({
 export default function PortableToolHeroBar({ slug }: { slug?: string }) {
   const pathname = usePathname();
   const [modalOpen, setModalOpen] = useState(false);
+  const [downloadingZip, setDownloadingZip] = useState(false);
 
   const detectedSlug = useMemo(() => {
     if (slug) return slug;
@@ -1740,6 +1787,22 @@ export default function PortableToolHeroBar({ slug }: { slug?: string }) {
 
   if (!tool) return null;
 
+  async function handleDirectZipDownload() {
+    if (!tool) return;
+    setDownloadingZip(true);
+    try {
+      await downloadToolZipPackage(
+        tool,
+        tool.name,
+        "DoItWithAI.tools",
+        "#3452D1",
+        "dark",
+      );
+    } finally {
+      setDownloadingZip(false);
+    }
+  }
+
   return (
     <>
       <div
@@ -1748,11 +1811,21 @@ export default function PortableToolHeroBar({ slug }: { slug?: string }) {
       >
         <button
           type="button"
-          onClick={() => setModalOpen(true)}
+          disabled={downloadingZip}
+          onClick={handleDirectZipDownload}
           className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#3452d1] to-[#5271ff] px-4 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-[#3452d1]/25 transition hover:brightness-110"
         >
-          <Download size={14} />
-          Download PC App / Embed This Tool (Free)
+          <Archive size={14} />
+          {downloadingZip ? "Packaging .ZIP..." : "Download PC App (.ZIP Pack)"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setModalOpen(true)}
+          className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-white/20"
+        >
+          <Palette size={14} />
+          Customize &amp; Embed
         </button>
 
         <Link
@@ -1760,16 +1833,7 @@ export default function PortableToolHeroBar({ slug }: { slug?: string }) {
           className="inline-flex items-center gap-2 rounded-xl border border-[#9aabff]/35 bg-[#101b30]/90 px-4 py-2.5 text-xs font-extrabold text-[#b4c3ff] transition hover:border-[#9aabff] hover:bg-[#162440] hover:text-white"
         >
           <Sparkles size={14} />
-          Run in Do It AI Workspace →
-        </Link>
-
-        <Link
-          href="/tools/downloadable-ai-tools"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-bold text-slate-300 transition hover:border-white/25 hover:text-white"
-        >
-          <Terminal size={13} className="text-emerald-300" />
-          Browse 90+ Downloadable Tools
-          <ExternalLink size={11} />
+          Do It AI Workspace →
         </Link>
       </div>
 
