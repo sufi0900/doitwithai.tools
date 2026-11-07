@@ -25,6 +25,8 @@ export type PromptRecord = {
   toolHref?: string;
 };
 
+export type SitePromptItem = PromptRecord;
+
 export type VisualAssetRecord = {
   id: string;
   title: string;
@@ -35,15 +37,21 @@ export type VisualAssetRecord = {
   pageHref: string;
 };
 
+export type SiteVisualItem = VisualAssetRecord;
+
 export type ToolSummaryRecord = {
   slug: string;
   name: string;
   shortDescription: string;
   description: string;
+  category: string;
   categories: string[];
   tags: string[];
   href: string;
+  wing?: string;
 };
+
+export type DoItAiToolItem = ToolSummaryRecord;
 
 // 1. All 92 Live Tools
 export const ALL_LIVE_TOOLS: ToolSummaryRecord[] = registry.tools
@@ -51,8 +59,9 @@ export const ALL_LIVE_TOOLS: ToolSummaryRecord[] = registry.tools
   .map((t) => ({
     slug: t.slug,
     name: t.name,
-    shortDescription: t.shortDescription || t.description,
+    shortDescription: (t as any).shortDescription || t.description,
     description: t.description,
+    category: t.categories?.[0] || "AI SEO",
     categories: t.categories,
     tags: t.tags,
     href: `/tools/${t.slug}`,
@@ -517,6 +526,8 @@ export function getPromptHubSummaries() {
   return Object.values(promptDetails).map((d) => ({
     slug: d.slug,
     title: d.title,
+    category: d.title,
+    count: d.promptCount || 80,
     promptCount: d.promptCount || 80,
     overview: d.overview,
     href: `/prompts/${d.slug}`,

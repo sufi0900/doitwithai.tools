@@ -20,6 +20,28 @@ import {
 } from "lucide-react";
 import { tools, type CatalogTool } from "@/features/tool-catalog/catalog";
 
+export type DoItAiToolItem = {
+  slug: string;
+  name: string;
+  shortDescription?: string;
+  description: string;
+  category: string;
+  categories: string[];
+  tags: string[];
+  href: string;
+};
+
+export const ALL_LIVE_TOOLS: DoItAiToolItem[] = tools.map((t) => ({
+  slug: t.slug,
+  name: t.name,
+  shortDescription: t.description.slice(0, 110),
+  description: t.description,
+  category: t.categories?.[0] || "AI SEO",
+  categories: t.categories || ["AI SEO"],
+  tags: t.tags || [],
+  href: `/tools/${t.slug}`,
+}));
+
 const ACCENT_PRESETS = [
   { label: "Brand Blue", hex: "#3452D1" },
   { label: "Electric Indigo", hex: "#5271FF" },

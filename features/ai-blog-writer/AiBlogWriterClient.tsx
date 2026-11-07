@@ -165,17 +165,17 @@ export default function AiBlogWriterClient() {
         <UrlArticleExtractorBar
           label="Option 1: Paste Any Reference or Competitor Article URL to Pre-Fill Topic, Keywords & Outline"
           placeholder="https://example.com/blog/your-topic-guide"
-          buttonText="Extract Topic & Outline"
+          buttonLabel="Extract Topic & Outline"
           onExtracted={(data) => {
             const headings = (data.headings || [])
               .slice(0, 6)
-              .map((h, idx) => `${idx + 1}. ${h}`)
+              .map((h, idx) => `${idx + 1}. ${typeof h === "string" ? h : h.text}`)
               .join("\n");
             const nextInput: BlogWriterInput = {
               ...input,
               topicOrTitle: data.title || input.topicOrTitle,
               primaryKeyword:
-                data.primaryKeyword ||
+                data.focusKeyword ||
                 (data.title || "").toLowerCase().slice(0, 55) ||
                 input.primaryKeyword,
               customOutlineOrDraft: headings || input.customOutlineOrDraft,

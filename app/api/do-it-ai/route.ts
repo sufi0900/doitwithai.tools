@@ -185,7 +185,7 @@ function estimatePixels(text: string, perChar = 5.6): number {
   return Math.round(px);
 }
 
-export async function buildRichToolExecution(params: {
+async function buildRichToolExecution(params: {
   toolSlug: string;
   input: string;
   secondaryInput?: string;
@@ -593,7 +593,7 @@ Generate a deeply practical, copy-ready, specific tool output for the user's top
     summary: `Executed ${tool.name} (${tool.category}) on "${primaryKw}" for ${audience}. Copy the generated assets below or open the full studio for advanced controls.`,
     metrics: [
       { label: "Engine", value: tool.name.slice(0, 26), status: "optimal" },
-      { label: "Wing", value: tool.wing.toUpperCase(), status: "optimal" },
+      { label: "Wing", value: (tool.wing || tool.category).toUpperCase(), status: "optimal" },
       { label: "SEO & AEO Score", value: "94 / 100", status: "optimal" },
       { label: "Portable Code", value: "HTML5 + React Ready", status: "optimal" },
     ],
@@ -735,9 +735,9 @@ My boundary is strictly focused on helping solo founders, marketers, and creator
       ) && !/\b(give me.*prompts|show me.*images|show me.*infographics)\b/i.test(lowerQuery);
 
     // Retrieve live Sanity CMS knowledge + local knowledge
-    const liveKnowledge = await retrieveCurrentKnowledge(lastUserMessage).catch(
-      () => ({ items: [], usedSources: [], status: "empty" as const }),
-    );
+    const liveDocs = await retrieveCurrentKnowledge({
+      messages: [{ role: "user", content: lastUserMessage }],
+    }).catch(() => []);
 
     const requestedPromptCount = wantsPrompts
       ? extractRequestedCount(lastUserMessage, 10, 24)
@@ -775,11 +775,11 @@ My boundary is strictly focused on helping solo founders, marketers, and creator
     }
 
     // Build grounded context for Gemini synthesis
-    const sanityContext = liveKnowledge.items
+    const sanityContext = liveDocs
       .slice(0, 5)
       .map(
         (item, idx) =>
-          `${idx + 1}. [${item.type.toUpperCase()}] "${item.title}" (${item.url}): ${item.summary} ${item.WriteUp ? item.WriteUp.slice(0, 450) : ""}`,
+          `${idx + 1}. [${(item.kind || "article").toUpperCase()}] "${item.title}" (${item.url}): ${item.description || ""} ${item.content ? item.content.slice(0, 450) : ""}`,
       )
       .join("\n");
 
@@ -791,7 +791,7 @@ My boundary is strictly focused on helping solo founders, marketers, and creator
       .join("\n");
 
     const promptHubSummary = getPromptHubSummaries()
-      .map((h) => `${h.category} (${h.count} prompts)`)
+      .map((h) => `${h.title} (${h.promptCount} prompts)`)
       .join(", ");
 
     const historyTranscript = memoryWindow
@@ -874,7 +874,7 @@ Write a rich, structured response answering "${lastUserMessage}" directly. Expla
         matchedTools,
         matchedPrompts,
         matchedVisuals,
-        liveItems: liveKnowledge.items,
+        liveItems: liveDocs.map((d) => ({ title: d.title, url: d.url, summary: d.description || "", type: d.kind || "article" })),
       });
     }
 
@@ -899,11 +899,11 @@ Write a rich, structured response answering "${lastUserMessage}" directly. Expla
             autoResult: autoExecutedResult,
           }
         : null,
-      liveArticles: liveKnowledge.items.slice(0, 4).map((item) => ({
+      liveArticles: liveDocs.slice(0, 4).map((item) => ({
         title: item.title,
         url: item.url,
-        summary: item.summary,
-        type: item.type,
+        summary: item.description || "",
+        type: item.kind || "article",
       })),
     });
   } catch (err) {
@@ -968,7 +968,7 @@ A high-performing **Meta Title** does two jobs at once: it signals exact topical
 - **1. Stay Inside the 50–60 Character (~580px) Safe Zone**: Google truncates titles based on pixel width (~580px–600px on desktop), not just character count. Wide letters like *W, M, G* consume more pixels than *i, l, t*.
 - **2. Front-Load Your Primary Keyword in the First 3 Words**: Eye-tracking studies show searchers scan the first 2–4 words of each SERP line. Put your core keyword first, followed by a colon or em-dash and your outcome hook.
 - **3. Test Across 5 Strategic Lenses**: Never settle for the first title you write. Compare candidates across **Direct Relevance**, **Outcome/Benefit**, **Authority/Framework**, **Curiosity Hook**, and **Comparison/Decision** lenses.
-- **4. Match Your H1 Without Copying It Verbatim**: Keep your `<title>` tag optimized for SERP click-through rate (<580px) while letting your on-page ` + "`<h1>`" + ` breathe with natural, reader-first clarity.
+- **4. Match Your H1 Without Copying It Verbatim**: Keep your \`<title>\` tag optimized for SERP click-through rate (<580px) while letting your on-page \`<h1>\` breathe with natural, reader-first clarity.
 
 I've loaded our **Meta Title Generator**, visual infographics, and copy-paste prompts right below so you can generate and test pixel-safe titles immediately.`;
   }
