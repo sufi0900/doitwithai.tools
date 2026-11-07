@@ -12,25 +12,37 @@ type VisualCard = {
   id: string;
   title: string;
   category: string;
-  url: string;
+  url?: string;
+  src?: string;
+  alt?: string;
   articleSlug?: string;
-  caption: string;
+  pageHref?: string;
+  caption?: string;
 };
 
 type PromptCard = {
   id: string;
   title: string;
   category: string;
-  hubUrl: string;
-  prompt: string;
-  tags: string[];
+  task?: string;
+  hubUrl?: string;
+  prompt?: string;
+  template?: string;
+  tags?: string[];
+  toolName?: string;
+  toolHref?: string;
 };
 
 type LiveArticleCard = {
+  slug?: string;
   title: string;
   url: string;
+  category?: string;
+  badge?: string;
+  image?: string;
   summary: string;
-  type: string;
+  ctaLabel?: string;
+  type?: string;
 };
 
 type ChatMessage = {
@@ -57,7 +69,7 @@ type ChatSession = {
   messages: ChatMessage[];
 };
 
-const STORAGE_KEY = "doitwithai_do_it_ai_sessions_v3";
+const STORAGE_KEY = "doitwithai_do_it_ai_sessions_v4";
 
 const STARTER_CARDS = [
   {
@@ -79,7 +91,7 @@ const STARTER_CARDS = [
   {
     badge: "Local SEO Suite",
     title: "How to Do Local SEO (Full Playbook)",
-    desc: "Get the GBP audit checklist, LocalBusiness JSON-LD schema, and all 4 Local SEO tools.",
+    desc: "Get the GBP audit checklist, LocalBusiness JSON-LD schema, and all 5 Local SEO tools.",
     prompt:
       "How can I do Local SEO? Show me the playbook, schema markup, and all Local SEO tools",
     accent: "from-purple-600/20 to-indigo-600/10 border-purple-500/30",
@@ -95,59 +107,84 @@ const STARTER_CARDS = [
 ];
 
 function renderInlineMarkdown(text: string): React.ReactNode[] {
-  // Clean up any stray triple or unclosed asterisks while preserving valid **bold**, `code`, and [link](url)
   const parts: React.ReactNode[] = [];
+  // Matches: **[label](url)** | [**label**](url) | [label](url) | **bold** | `code`
   const tokenRegex =
-    /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
+    /(\*\*\[([^\]]+)\]\(([^)]+)\)\*\*|\[\*\*([^*]+)\*\*\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   let key = 0;
 
+  const renderAnchor = (label: string, rawHref: string) => {
+    const cleanLabel = label.replace(/\*\*/g, "").trim();
+    const href = rawHref.trim().replace(/^https?:\/\/doitwithai\.tools/i, "") || "/";
+    const isInternal = href.startsWith("/");
+    if (isInternal) {
+      return (
+        <Link
+          key={key++}
+          href={href}
+          className="inline-flex items-center gap-0.5 font-semibold text-blue-400 underline decoration-blue-400/60 underline-offset-4 hover:text-blue-300 transition"
+        >
+          <span>{cleanLabel}</span>
+          <span className="text-[11px] no-underline">↗</span>
+        </Link>
+      );
+    }
+    return (
+      <a
+        key={key++}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-0.5 font-semibold text-blue-400 underline decoration-blue-400/60 underline-offset-4 hover:text-blue-300 transition"
+      >
+        <span>{cleanLabel}</span>
+        <span className="text-[11px] no-underline">↗</span>
+      </a>
+    );
+  };
+
   while ((match = tokenRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      const plain = text
-        .slice(lastIndex, match.index)
-        .replace(/\*\*/g, "");
+      const plain = text.slice(lastIndex, match.index).replace(/\*\*/g, "");
       parts.push(<React.Fragment key={key++}>{plain}</React.Fragment>);
     }
-    const token = match[0];
-    if (token.startsWith("**") && token.endsWith("**")) {
-      const inner = token.slice(2, -2).replace(/\*\*/g, "");
-      parts.push(
-        <strong key={key++} className="font-semibold text-white">
-          {inner}
-        </strong>,
-      );
-    } else if (token.startsWith("`") && token.endsWith("`")) {
-      const inner = token.slice(1, -1);
+
+    if (match[2] !== undefined && match[3] !== undefined) {
+      // **[label](url)**
+      parts.push(renderAnchor(match[2], match[3]));
+    } else if (match[4] !== undefined && match[5] !== undefined) {
+      // [**label**](url)
+      parts.push(renderAnchor(match[4], match[5]));
+    } else if (match[6] !== undefined && match[7] !== undefined) {
+      // [label](url)
+      parts.push(renderAnchor(match[6], match[7]));
+    } else if (match[8] !== undefined) {
+      // **bold** — check if it contains a nested [label](url)
+      const inner = match[8];
+      const nestedLink = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(inner.trim());
+      if (nestedLink) {
+        parts.push(renderAnchor(nestedLink[1], nestedLink[2]));
+      } else {
+        parts.push(
+          <strong key={key++} className="font-semibold text-white">
+            {inner.replace(/\*\*/g, "")}
+          </strong>,
+        );
+      }
+    } else if (match[9] !== undefined) {
+      // `code`
       parts.push(
         <code
           key={key++}
           className="rounded bg-slate-800/90 px-1.5 py-0.5 font-mono text-xs text-blue-300 border border-slate-700/70"
         >
-          {inner}
+          {match[9]}
         </code>,
       );
-    } else if (token.startsWith("[")) {
-      const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token);
-      if (linkMatch) {
-        parts.push(
-          <Link
-            key={key++}
-            href={linkMatch[2]}
-            className="font-semibold text-blue-400 underline decoration-blue-500/50 underline-offset-2 hover:text-blue-300"
-          >
-            {linkMatch[1].replace(/\*\*/g, "")}
-          </Link>,
-        );
-      } else {
-        parts.push(
-          <React.Fragment key={key++}>
-            {token.replace(/\*\*/g, "")}
-          </React.Fragment>,
-        );
-      }
     }
+
     lastIndex = tokenRegex.lastIndex;
   }
 
@@ -173,13 +210,13 @@ function StructuredMessageContent({ content }: { content: string }) {
     const currentBullets = [...bulletBuffer];
     bulletBuffer = [];
     blocks.push(
-      <ul key={key++} className="my-2.5 space-y-2 pl-1">
+      <ul key={key++} className="my-2.5 space-y-2.5 pl-1">
         {currentBullets.map((item, idx) => (
           <li
             key={idx}
             className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-200"
           >
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />
             <span className="flex-1">{renderInlineMarkdown(item)}</span>
           </li>
         ))}
@@ -196,14 +233,14 @@ function StructuredMessageContent({ content }: { content: string }) {
 
     if (line.startsWith("### ")) {
       flushBullets();
-      const headingText = line.replace(/^###\s+/, "").replace(/\*\*/g, "");
+      const headingText = line.replace(/^###\s+/, "");
       blocks.push(
         <h3
           key={key++}
           className="mt-4 first:mt-0 text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2"
         >
-          <span className="h-4 w-1 rounded-full bg-blue-500 inline-block" />
-          <span>{headingText}</span>
+          <span className="h-4 w-1 rounded-full bg-blue-500 inline-block shrink-0" />
+          <span>{renderInlineMarkdown(headingText)}</span>
         </h3>,
       );
       continue;
@@ -211,13 +248,13 @@ function StructuredMessageContent({ content }: { content: string }) {
 
     if (line.startsWith("## ")) {
       flushBullets();
-      const headingText = line.replace(/^##\s+/, "").replace(/\*\*/g, "");
+      const headingText = line.replace(/^##\s+/, "");
       blocks.push(
         <h3
           key={key++}
           className="mt-4 first:mt-0 text-base sm:text-lg font-bold tracking-tight text-white"
         >
-          {headingText}
+          {renderInlineMarkdown(headingText)}
         </h3>,
       );
       continue;
@@ -233,7 +270,10 @@ function StructuredMessageContent({ content }: { content: string }) {
 
     flushBullets();
     blocks.push(
-      <p key={key++} className="text-sm sm:text-[15px] leading-7 text-slate-200">
+      <p
+        key={key++}
+        className="text-sm sm:text-[15px] leading-7 text-slate-200"
+      >
         {renderInlineMarkdown(line)}
       </p>,
     );
@@ -330,7 +370,6 @@ function InlineToolWorkspaceCard({
     const cleanTopic = input.trim() || "how to check google keyword rankings";
     setRunning(true);
     try {
-      // 1. Try specialized live tool API routes first for real Gemini generation when configured
       const expandedBrief =
         cleanTopic.length >= 45
           ? cleanTopic
@@ -491,7 +530,6 @@ function InlineToolWorkspaceCard({
         }
       }
 
-      // 2. Fallback / Universal Execution via /api/do-it-ai execute_tool engine
       const execRes = await fetch("/api/do-it-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -510,7 +548,7 @@ function InlineToolWorkspaceCard({
         setResult(execData.toolResult);
       }
     } catch {
-      // Keep existing or ignore
+      // Keep existing result
     } finally {
       setRunning(false);
     }
@@ -730,7 +768,8 @@ export default function DoItAiDashboardClient() {
   const [lightboxVisual, setLightboxVisual] = useState<VisualCard | null>(null);
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollContainerRef = useRef<HTMLDivElement>(null);
+  const latestMessageRef = useRef<HTMLDivElement>(null);
 
   // Load saved sessions from localStorage on mount
   useEffect(() => {
@@ -761,7 +800,10 @@ export default function DoItAiDashboardClient() {
   useEffect(() => {
     if (sessions.length > 0) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions.slice(0, 20)));
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(sessions.slice(0, 20)),
+        );
       } catch {
         // Ignore quota errors
       }
@@ -771,13 +813,18 @@ export default function DoItAiDashboardClient() {
   const activeSession =
     sessions.find((s) => s.id === activeSessionId) || sessions[0];
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
+  // Smart Scroll: Scroll to the TOP of the latest message inside the chat container (NEVER yank user to the bottom of a long reply!)
   useEffect(() => {
-    scrollToBottom();
-  }, [activeSession?.messages.length, isLoading]);
+    const container = chatScrollContainerRef.current;
+    const targetMsg = latestMessageRef.current;
+    if (!container || !targetMsg) return;
+
+    const topOffset = Math.max(0, targetMsg.offsetTop - 20);
+    container.scrollTo({
+      top: topOffset,
+      behavior: "smooth",
+    });
+  }, [activeSession?.messages.length]);
 
   const startNewChat = () => {
     const newSession: ChatSession = {
@@ -790,6 +837,7 @@ export default function DoItAiDashboardClient() {
     setActiveSessionId(newSession.id);
     setInputPrompt("");
     setShowMobileSidebar(false);
+    chatScrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const deleteChat = (id: string, e: React.MouseEvent) => {
@@ -821,7 +869,9 @@ export default function DoItAiDashboardClient() {
 
     const updatedHistory = [...activeSession.messages, userMsg].slice(-15);
     const updatedTitle =
-      activeSession.messages.length === 0 ? text.slice(0, 42) : activeSession.title;
+      activeSession.messages.length === 0
+        ? text.slice(0, 42)
+        : activeSession.title;
 
     setSessions((prev) =>
       prev.map((s) =>
@@ -923,6 +973,18 @@ export default function DoItAiDashboardClient() {
     );
   };
 
+  const downloadToolHtmlDirect = (tool: DoItAiToolItem, defaultTopic = "how to check google keyword rankings") => {
+    const blob = new Blob([generatePortableHtmlBundle(tool, defaultTopic)], {
+      type: "text/html",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${tool.slug}-widget.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filteredModalTools = ALL_LIVE_TOOLS.filter(
     (t) =>
       !toolSearchQuery.trim() ||
@@ -933,7 +995,7 @@ export default function DoItAiDashboardClient() {
 
   return (
     <div className="flex h-[calc(100dvh-76px)] w-full overflow-hidden bg-[#060B19] text-slate-100">
-      {/* LEFT SIDEBAR — Clean ChatGPT Style (ONLY New Chat + Chat History + Compact Footer Links) */}
+      {/* LEFT SIDEBAR — Clean ChatGPT Style */}
       <aside
         className={`${
           showMobileSidebar
@@ -941,7 +1003,6 @@ export default function DoItAiDashboardClient() {
             : "hidden lg:flex lg:w-72"
         } shrink-0 flex-col border-r border-slate-800/80 bg-[#080F23]`}
       >
-        {/* Top New Chat Button */}
         <div className="p-3.5 border-b border-slate-800/80">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -977,7 +1038,6 @@ export default function DoItAiDashboardClient() {
           </button>
         </div>
 
-        {/* Scrollable Chat History List ONLY (Never stretches viewport!) */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             Recent Conversations ({sessions.length})
@@ -1018,7 +1078,6 @@ export default function DoItAiDashboardClient() {
           })}
         </div>
 
-        {/* Compact Bottom Sidebar Footer */}
         <div className="border-t border-slate-800/80 p-3 space-y-1.5 bg-slate-950/60">
           <button
             type="button"
@@ -1047,9 +1106,8 @@ export default function DoItAiDashboardClient() {
         </div>
       </aside>
 
-      {/* MAIN WORKSPACE COLUMN — Locked Viewport Height with Pinned Bottom Input */}
+      {/* MAIN WORKSPACE COLUMN */}
       <main className="flex flex-1 flex-col h-full overflow-hidden bg-[#060B19]">
-        {/* Compact Top Workspace Header */}
         <header className="flex shrink-0 items-center justify-between border-b border-slate-800/80 bg-[#080F23]/90 px-4 py-2.5 backdrop-blur">
           <div className="flex items-center gap-2.5">
             <button
@@ -1064,7 +1122,7 @@ export default function DoItAiDashboardClient() {
               DoItWithAI Knowledge Base Active
             </span>
             <span className="hidden md:inline-block text-xs text-slate-400">
-              92 Live Tools · 952+ Prompts · 30+ Visual Infographics · Sufian Mustafa Playbooks
+              92 Live Tools · 952+ Prompts · 530+ Sanity & Site Visuals · Sufian Mustafa Playbooks
             </span>
           </div>
 
@@ -1087,14 +1145,18 @@ export default function DoItAiDashboardClient() {
         </header>
 
         {/* CENTER SCROLLABLE CHAT STREAM */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
+        <div
+          ref={chatScrollContainerRef}
+          className="relative flex-1 overflow-y-auto px-4 py-6 sm:px-6"
+        >
           <div className="mx-auto max-w-4xl space-y-6">
-            {(!activeSession || activeSession.messages.length === 0) ? (
-              /* ZERO-STATE WELCOME SCREEN */
+            {!activeSession || activeSession.messages.length === 0 ? (
               <div className="py-4 sm:py-8 space-y-6">
                 <div className="text-center max-w-2xl mx-auto space-y-3">
                   <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3.5 py-1 text-xs font-semibold text-blue-300">
-                    <span>✨ Do It AI — Your Custom Website GPT & Execution Studio</span>
+                    <span>
+                      ✨ Do It AI — Your Custom Website GPT & Execution Studio
+                    </span>
                   </div>
                   <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
                     What would you like to{" "}
@@ -1104,11 +1166,16 @@ export default function DoItAiDashboardClient() {
                     today?
                   </h1>
                   <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                    Say <strong className="text-white">&quot;Hi&quot;</strong> for a guided tour, ask me to teach you any SEO or AI workflow with visual infographics, pull from <strong className="text-white">952+ prompts</strong>, or run any of our <strong className="text-white">92+ live AI tools</strong> directly inside chat.
+                    Say <strong className="text-white">&quot;Hi&quot;</strong>{" "}
+                    for a guided tour, ask me to teach you any SEO or AI
+                    workflow with visual infographics, pull from{" "}
+                    <strong className="text-white">952+ prompts</strong>, or run
+                    any of our{" "}
+                    <strong className="text-white">92+ live AI tools</strong>{" "}
+                    directly inside chat.
                   </p>
                 </div>
 
-                {/* 4 Starter Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {STARTER_CARDS.map((card, idx) => (
                     <button
@@ -1135,252 +1202,448 @@ export default function DoItAiDashboardClient() {
                 </div>
               </div>
             ) : (
-              /* CONVERSATION MESSAGES STREAM */
-              activeSession.messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex gap-3.5 ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white shadow-md shadow-blue-600/30 mt-1">
-                      AI
-                    </div>
-                  )}
-
+              activeSession.messages.map((msg, msgIdx) => {
+                const isLatestMessage =
+                  msgIdx === activeSession.messages.length - 1;
+                return (
                   <div
-                    className={`max-w-3xl flex-1 rounded-2xl p-4 sm:p-5 ${
-                      msg.role === "user"
-                        ? "ml-auto max-w-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                        : "border border-slate-800/90 bg-[#0B132B]/95 text-slate-100 shadow-xl"
+                    key={msg.id}
+                    ref={isLatestMessage ? latestMessageRef : null}
+                    className={`flex gap-3.5 ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
                     }`}
                   >
-                    {msg.role === "user" ? (
-                      <p className="text-sm sm:text-[15px] leading-relaxed font-medium whitespace-pre-line">
-                        {msg.content}
-                      </p>
-                    ) : (
-                      <div className="space-y-5">
-                        {/* 1. Clean Structured Markdown Content (Zero Raw ** Asterisks!) */}
-                        <StructuredMessageContent content={msg.content} />
+                    {msg.role === "assistant" && (
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white shadow-md shadow-blue-600/30 mt-1">
+                        AI
+                      </div>
+                    )}
 
-                        {/* 2. Mounted Interactive Tool Runner */}
-                        {msg.mountedTool && (
-                          <InlineToolWorkspaceCard
-                            toolSlug={msg.mountedTool.slug}
-                            initialInput={msg.mountedTool.defaultInput}
-                            initialResult={msg.mountedTool.autoResult}
-                          />
-                        )}
+                    <div
+                      className={`max-w-3xl flex-1 rounded-2xl p-4 sm:p-5 ${
+                        msg.role === "user"
+                          ? "ml-auto max-w-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                          : "border border-slate-800/90 bg-[#0B132B]/95 text-slate-100 shadow-xl"
+                      }`}
+                    >
+                      {msg.role === "user" ? (
+                        <p className="text-sm sm:text-[15px] leading-relaxed font-medium whitespace-pre-line">
+                          {msg.content}
+                        </p>
+                      ) : (
+                        <div className="space-y-5">
+                          {/* 1. Clean Structured Markdown Content With Hyperlinks */}
+                          <StructuredMessageContent content={msg.content} />
 
-                        {/* 3. Related Tools Strip (Switch or Launch Any Matching Tool) */}
-                        {msg.relatedTools && msg.relatedTools.length > 0 && (
-                          <div className="rounded-xl border border-slate-800/90 bg-slate-950/70 p-3.5">
-                            <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
-                              Related Live Tools on DoItWithAI.tools ({msg.relatedTools.length})
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {msg.relatedTools.map((t) => (
-                                <div
-                                  key={t.slug}
-                                  className="flex items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/90 p-2.5 hover:border-blue-500/40 transition"
+                          {/* 2. Mounted Interactive Tool Runner */}
+                          {msg.mountedTool && (
+                            <InlineToolWorkspaceCard
+                              toolSlug={msg.mountedTool.slug}
+                              initialInput={msg.mountedTool.defaultInput}
+                              initialResult={msg.mountedTool.autoResult}
+                            />
+                          )}
+
+                          {/* 3. Featured DoItWithAI Promotional Guide Cards (Responsive Split Layout With Images!) */}
+                          {msg.liveArticles && msg.liveArticles.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold uppercase tracking-wider text-blue-300">
+                                  📚 Featured DoItWithAI Guides & Playbooks ({msg.liveArticles.length})
+                                </span>
+                                <Link
+                                  href="/ai-seo"
+                                  className="text-[11px] font-semibold text-blue-400 hover:underline"
                                 >
-                                  <div className="min-w-0">
-                                    <div className="truncate text-xs font-bold text-white">
-                                      {t.name}
-                                    </div>
-                                    <div className="truncate text-[11px] text-slate-400">
-                                      {t.category}
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        sendMessage(
-                                          `Run ${t.name} for ${
-                                            msg.mountedTool?.defaultInput ||
-                                            "my website topic"
-                                          }`,
-                                        )
-                                      }
-                                      className="rounded-lg bg-blue-600/20 border border-blue-500/40 px-2 py-1 text-[11px] font-semibold text-blue-300 hover:bg-blue-600 hover:text-white transition"
-                                    >
-                                      Run Here
-                                    </button>
-                                    <Link
-                                      href={`/tools/${t.slug}`}
-                                      className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[11px] font-semibold text-slate-300 hover:text-white"
-                                    >
-                                      Open ↗
-                                    </Link>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 4. Visual Infographic & Diagram Gallery */}
-                        {msg.visuals && msg.visuals.length > 0 && (
-                          <div className="rounded-xl border border-slate-800/90 bg-slate-950/75 p-3.5 space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold uppercase tracking-wider text-blue-300">
-                                📊 Visual Infographics & Workflow Diagrams ({msg.visuals.length})
-                              </span>
-                              <span className="text-[11px] text-slate-400">
-                                Click any visual to enlarge or download
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {msg.visuals.map((v) => (
-                                <div
-                                  key={v.id}
-                                  className="group overflow-hidden rounded-xl border border-slate-800 bg-slate-900/90 flex flex-col justify-between"
-                                >
-                                  <div
-                                    onClick={() => setLightboxVisual(v)}
-                                    className="relative cursor-pointer overflow-hidden bg-slate-950 aspect-[16/10]"
-                                  >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={v.url}
-                                      alt={v.title}
-                                      className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
-                                      loading="lazy"
-                                    />
-                                    <span className="absolute top-2 left-2 rounded-md bg-slate-950/85 px-2 py-0.5 text-[10px] font-semibold text-blue-300 border border-slate-800">
-                                      {v.category}
-                                    </span>
-                                  </div>
-                                  <div className="p-3 space-y-1.5">
-                                    <div className="text-xs font-bold text-white line-clamp-1">
-                                      {v.title}
-                                    </div>
-                                    <p className="text-[11px] text-slate-300 line-clamp-2">
-                                      {v.caption}
-                                    </p>
-                                    <div className="pt-1 flex items-center justify-between gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => setLightboxVisual(v)}
-                                        className="text-[11px] font-semibold text-blue-400 hover:text-blue-300"
-                                      >
-                                        🔍 Preview Full Size
-                                      </button>
-                                      <a
-                                        href={v.url}
-                                        download
-                                        className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-200 hover:bg-slate-700"
-                                      >
-                                        ⬇ Download
-                                      </a>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 5. Copy-Paste Prompts from the 952+ Prompt Library */}
-                        {msg.prompts && msg.prompts.length > 0 && (
-                          <div className="rounded-xl border border-amber-500/25 bg-slate-950/80 p-3.5 space-y-3">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                                💡 Copy-Paste Prompts from Our 952+ Library ({msg.prompts.length})
-                              </span>
-                              <Link
-                                href="/prompts"
-                                className="text-[11px] font-semibold text-amber-400 hover:underline"
-                              >
-                                Explore All 952+ Prompts ↗
-                              </Link>
-                            </div>
-                            <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
-                              {msg.prompts.map((p, pIdx) => (
-                                <div
-                                  key={p.id}
-                                  className="rounded-xl border border-slate-800 bg-slate-900/90 p-3 space-y-1.5"
-                                >
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <span className="text-xs font-bold text-white">
-                                      {pIdx + 1}. {p.title}
-                                    </span>
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-500/20">
-                                        {p.category}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          navigator.clipboard.writeText(p.prompt);
-                                          setCopiedPromptId(p.id);
-                                          setTimeout(
-                                            () => setCopiedPromptId(null),
-                                            2000,
-                                          );
-                                        }}
-                                        className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 text-[11px] font-semibold text-amber-200 hover:bg-amber-500 hover:text-slate-950 transition"
-                                      >
-                                        {copiedPromptId === p.id
-                                          ? "✓ Copied"
-                                          : "Copy Prompt"}
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <p className="text-xs leading-relaxed text-slate-300 font-mono bg-slate-950/90 p-2.5 rounded-lg border border-slate-800/80">
-                                    {p.prompt}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* 6. Clickable Follow-Up Question Chips */}
-                        {msg.followUpQuestions &&
-                          msg.followUpQuestions.length > 0 && (
-                            <div className="pt-2 border-t border-slate-800/80">
-                              <div className="text-[11px] font-semibold text-slate-400 mb-2">
-                                Suggested Next Steps & Follow-Ups:
+                                  Browse SEO Hub ↗
+                                </Link>
                               </div>
-                              <div className="flex flex-wrap gap-2">
-                                {msg.followUpQuestions.map((q, qIdx) => (
-                                  <button
-                                    key={qIdx}
-                                    type="button"
-                                    onClick={() => sendMessage(q)}
-                                    className="rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-600/25 px-3 py-1.5 text-left text-xs font-medium text-blue-200 hover:text-white transition"
+                              <div className="space-y-3">
+                                {msg.liveArticles.map((art, aIdx) => {
+                                  const imgSrc =
+                                    art.image ||
+                                    "/prompts/metadata-prompts-hero-v2.webp";
+                                  return (
+                                    <div
+                                      key={art.url || aIdx}
+                                      className="overflow-hidden rounded-2xl border border-slate-800/90 bg-[#0E1730] shadow-lg transition hover:border-blue-500/40"
+                                    >
+                                      <div className="grid grid-cols-1 sm:grid-cols-12 items-center">
+                                        <Link
+                                          href={art.url}
+                                          className="sm:col-span-5 p-3 sm:p-3.5 block"
+                                        >
+                                          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950 aspect-[16/10]">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                              src={imgSrc}
+                                              alt={art.title}
+                                              onError={(e) => {
+                                                e.currentTarget.src =
+                                                  "/prompts/metadata-prompts-hero-v2.webp";
+                                              }}
+                                              className="h-full w-full object-cover hover:scale-105 transition duration-300"
+                                              loading="lazy"
+                                            />
+                                          </div>
+                                        </Link>
+                                        <div className="sm:col-span-7 p-4 sm:p-5 sm:border-l border-slate-800/80 space-y-2">
+                                          <div className="flex items-center gap-2">
+                                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-blue-600 text-[10px] font-black text-white">
+                                              AI
+                                            </span>
+                                            <span className="text-[11px] font-bold text-slate-200">
+                                              Do It With AI Tools
+                                            </span>
+                                          </div>
+                                          <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-400">
+                                            {art.badge ||
+                                              art.category ||
+                                              "PRACTICAL AI SEO GUIDE"}
+                                          </div>
+                                          <h4 className="text-sm sm:text-base font-extrabold leading-snug text-white">
+                                            <Link
+                                              href={art.url}
+                                              className="hover:text-blue-300 transition"
+                                            >
+                                              {art.title}
+                                            </Link>
+                                          </h4>
+                                          <p className="text-xs leading-relaxed text-slate-300 line-clamp-2">
+                                            {art.summary}
+                                          </p>
+                                          <div className="pt-1">
+                                            <Link
+                                              href={art.url}
+                                              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-blue-600/25 transition"
+                                            >
+                                              <span>
+                                                {art.ctaLabel ||
+                                                  "Read the full guide ↗"}
+                                              </span>
+                                            </Link>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 4. Upgraded Related Tools Cards */}
+                          {msg.relatedTools && msg.relatedTools.length > 0 && (
+                            <div className="rounded-xl border border-slate-800/90 bg-slate-950/75 p-3.5 space-y-2.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+                                  ⚡ Connected Live Tools for This Workflow ({msg.relatedTools.length})
+                                </span>
+                                <Link
+                                  href="/tools"
+                                  className="text-[11px] font-semibold text-emerald-400 hover:underline"
+                                >
+                                  All 92 Tools ↗
+                                </Link>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {msg.relatedTools.map((t) => (
+                                  <div
+                                    key={t.slug}
+                                    className="flex flex-col justify-between gap-2.5 rounded-xl border border-slate-800 bg-slate-900/90 p-3 hover:border-blue-500/40 transition"
                                   >
-                                    → {q}
-                                  </button>
+                                    <div>
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="rounded bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-400 border border-blue-500/20">
+                                          {t.category}
+                                        </span>
+                                        <Link
+                                          href={`/tools/${t.slug}`}
+                                          className="text-[11px] font-semibold text-slate-300 hover:text-white"
+                                        >
+                                          Full Studio ↗
+                                        </Link>
+                                      </div>
+                                      <div className="mt-1.5 text-xs sm:text-sm font-bold text-white">
+                                        {t.name}
+                                      </div>
+                                      <p className="mt-0.5 text-[11px] leading-relaxed text-slate-300 line-clamp-2">
+                                        {t.description}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 pt-1 border-t border-slate-800/80">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          sendMessage(
+                                            `Run ${t.name} for ${
+                                              msg.mountedTool?.defaultInput ||
+                                              "how to check google keyword rankings"
+                                            }`,
+                                          )
+                                        }
+                                        className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-500 px-2.5 py-1.5 text-[11px] font-bold text-white transition"
+                                      >
+                                        ▷ Run Inline Here
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          downloadToolHtmlDirect(
+                                            t,
+                                            msg.mountedTool?.defaultInput ||
+                                              "how to check google keyword rankings",
+                                          )
+                                        }
+                                        title="Download standalone HTML5 tool widget"
+                                        className="rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/20 transition"
+                                      >
+                                        ⬇ HTML
+                                      </button>
+                                    </div>
+                                  </div>
                                 ))}
                               </div>
                             </div>
                           )}
-                      </div>
-                    )}
+
+                          {/* 5. Visual Infographic & Diagram Gallery (Supports Both v.url and v.src + Error Fallback!) */}
+                          {msg.visuals && msg.visuals.length > 0 && (
+                            <div className="rounded-xl border border-slate-800/90 bg-slate-950/75 p-3.5 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold uppercase tracking-wider text-blue-300">
+                                  📊 Visual Infographics & Sanity Diagrams ({msg.visuals.length})
+                                </span>
+                                <span className="text-[11px] text-slate-400">
+                                  Click any visual to enlarge or download
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {msg.visuals.map((v) => {
+                                  const imgSrc =
+                                    v.url ||
+                                    v.src ||
+                                    "/prompts/metadata-prompts-hero-v2.webp";
+                                  const captionText =
+                                    v.caption || v.alt || v.title;
+                                  const guideHref =
+                                    v.pageHref || v.articleSlug || "/ai-seo";
+                                  return (
+                                    <div
+                                      key={v.id}
+                                      className="group overflow-hidden rounded-xl border border-slate-800 bg-slate-900/90 flex flex-col justify-between"
+                                    >
+                                      <div
+                                        onClick={() =>
+                                          setLightboxVisual({
+                                            ...v,
+                                            url: imgSrc,
+                                            caption: captionText,
+                                          })
+                                        }
+                                        className="relative cursor-pointer overflow-hidden bg-slate-950 aspect-[16/10]"
+                                      >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          src={imgSrc}
+                                          alt={v.alt || v.title}
+                                          onError={(e) => {
+                                            e.currentTarget.src =
+                                              "/prompts/metadata-prompts-hero-v2.webp";
+                                          }}
+                                          className="h-full w-full object-cover group-hover:scale-105 transition duration-300"
+                                          loading="lazy"
+                                        />
+                                        <span className="absolute top-2 left-2 rounded-md bg-slate-950/85 px-2 py-0.5 text-[10px] font-semibold text-blue-300 border border-slate-800">
+                                          {v.category}
+                                        </span>
+                                      </div>
+                                      <div className="p-3 space-y-1.5">
+                                        <div className="text-xs font-bold text-white line-clamp-1">
+                                          {v.title}
+                                        </div>
+                                        <p className="text-[11px] text-slate-300 line-clamp-2">
+                                          {captionText}
+                                        </p>
+                                        <div className="pt-1 flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2.5">
+                                            <button
+                                              type="button"
+                                              onClick={() =>
+                                                setLightboxVisual({
+                                                  ...v,
+                                                  url: imgSrc,
+                                                  caption: captionText,
+                                                })
+                                              }
+                                              className="text-[11px] font-semibold text-blue-400 hover:text-blue-300"
+                                            >
+                                              🔍 Enlarge
+                                            </button>
+                                            <Link
+                                              href={guideHref}
+                                              className="text-[11px] font-semibold text-slate-300 hover:text-white underline decoration-slate-600"
+                                            >
+                                              Source Guide ↗
+                                            </Link>
+                                          </div>
+                                          <a
+                                            href={imgSrc}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            download
+                                            className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-slate-200 hover:bg-slate-700"
+                                          >
+                                            ⬇ Save
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 6. Copy-Paste Prompts from the 952+ Prompt Library (Supports Both p.prompt and p.template!) */}
+                          {msg.prompts && msg.prompts.length > 0 && (
+                            <div className="rounded-xl border border-amber-500/25 bg-slate-950/80 p-3.5 space-y-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                                  💡 Copy-Paste Prompts from Our 952+ Library ({msg.prompts.length})
+                                </span>
+                                <Link
+                                  href="/prompts"
+                                  className="text-[11px] font-semibold text-amber-400 hover:underline"
+                                >
+                                  Explore All 952+ Prompts ↗
+                                </Link>
+                              </div>
+                              <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-1">
+                                {msg.prompts.map((p, pIdx) => {
+                                  const promptText =
+                                    p.prompt || p.template || p.task || "";
+                                  return (
+                                    <div
+                                      key={p.id || pIdx}
+                                      className="rounded-xl border border-slate-800 bg-slate-900/90 p-3.5 space-y-2"
+                                    >
+                                      <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <span className="text-xs sm:text-sm font-bold text-white">
+                                          {pIdx + 1}. {p.title}
+                                        </span>
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                          <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-500/20">
+                                            {p.category}
+                                          </span>
+                                          {p.toolHref && (
+                                            <Link
+                                              href={p.toolHref}
+                                              className="rounded bg-blue-500/15 px-2 py-0.5 text-[10px] font-semibold text-blue-300 border border-blue-500/30 hover:bg-blue-600 hover:text-white transition"
+                                            >
+                                              ⚡ Open Tool ↗
+                                            </Link>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              navigator.clipboard.writeText(
+                                                promptText,
+                                              );
+                                              setCopiedPromptId(p.id);
+                                              setTimeout(
+                                                () => setCopiedPromptId(null),
+                                                2000,
+                                              );
+                                            }}
+                                            className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 text-[11px] font-semibold text-amber-200 hover:bg-amber-500 hover:text-slate-950 transition"
+                                          >
+                                            {copiedPromptId === p.id
+                                              ? "✓ Copied"
+                                              : "Copy Prompt"}
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const md = `# ${p.title}\n\n**Category:** ${p.category}\n**Task:** ${p.task || ""}\n\n## Prompt Template\n\n\`\`\`\n${promptText}\n\`\`\`\n`;
+                                              const blob = new Blob([md], {
+                                                type: "text/markdown",
+                                              });
+                                              const url =
+                                                URL.createObjectURL(blob);
+                                              const a =
+                                                document.createElement("a");
+                                              a.href = url;
+                                              a.download = `${p.id || "prompt"}.md`;
+                                              a.click();
+                                              URL.revokeObjectURL(url);
+                                            }}
+                                            className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-300 hover:text-white"
+                                          >
+                                            ⬇ .MD
+                                          </button>
+                                        </div>
+                                      </div>
+                                      {p.task && (
+                                        <p className="text-xs text-slate-300">
+                                          <strong className="text-slate-200">
+                                            Goal:
+                                          </strong>{" "}
+                                          {p.task}
+                                        </p>
+                                      )}
+                                      <pre className="whitespace-pre-wrap text-xs leading-relaxed text-slate-200 font-mono bg-slate-950/95 p-3 rounded-lg border border-slate-800/90 max-h-48 overflow-y-auto">
+                                        {promptText}
+                                      </pre>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* 7. Clickable Follow-Up Question Chips */}
+                          {msg.followUpQuestions &&
+                            msg.followUpQuestions.length > 0 && (
+                              <div className="pt-2 border-t border-slate-800/80">
+                                <div className="text-[11px] font-semibold text-slate-400 mb-2">
+                                  Suggested Next Steps & Follow-Ups:
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {msg.followUpQuestions.map((q, qIdx) => (
+                                    <button
+                                      key={qIdx}
+                                      type="button"
+                                      onClick={() => sendMessage(q)}
+                                      className="rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-600/25 px-3 py-1.5 text-left text-xs font-medium text-blue-200 hover:text-white transition"
+                                    >
+                                      → {q}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
 
             {isLoading && (
               <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-[#0B132B]/90 p-4 max-w-xl">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
                 <div className="text-xs sm:text-sm font-medium text-slate-300">
-                  Do It AI is analyzing your query, website playbooks, and connected tool engines...
+                  Do It AI is synthesizing your answer with live Sanity visuals,
+                  prompts, and connected tools...
                 </div>
               </div>
             )}
-
-            <div ref={messagesEndRef} />
           </div>
         </div>
 
-        {/* PINNED BOTTOM INPUT BAR — Always Visible Without Scrolling */}
+        {/* PINNED BOTTOM INPUT BAR */}
         <div className="shrink-0 border-t border-slate-800/80 bg-[#080F23]/95 px-4 py-3 sm:px-6">
           <form
             onSubmit={(e) => {
@@ -1407,7 +1670,7 @@ export default function DoItAiDashboardClient() {
         </div>
       </main>
 
-      {/* MODAL 1: 92-TOOL DIRECTORY DRAWER (On-Demand so it never stretches the sidebar!) */}
+      {/* MODAL 1: 92-TOOL DIRECTORY DRAWER */}
       {showToolsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
           <div className="flex max-h-[85vh] w-full max-w-4xl flex-col rounded-2xl border border-slate-800 bg-[#0B132B] shadow-2xl overflow-hidden">
@@ -1417,7 +1680,8 @@ export default function DoItAiDashboardClient() {
                   All 92 Live AI & SEO Tools
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Click &quot;Run in Chat&quot; to execute any tool inline or &quot;Full Studio&quot; to open its dedicated page.
+                  Click &quot;Run in Chat&quot; to execute any tool inline or
+                  &quot;Full Studio&quot; to open its dedicated page.
                 </p>
               </div>
               <button
@@ -1497,7 +1761,13 @@ export default function DoItAiDashboardClient() {
               </div>
               <div className="flex items-center gap-2">
                 <a
-                  href={lightboxVisual.url}
+                  href={
+                    lightboxVisual.url ||
+                    lightboxVisual.src ||
+                    "/prompts/metadata-prompts-hero-v2.webp"
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
                   download
                   className="rounded-xl bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-blue-500"
                 >
@@ -1515,12 +1785,21 @@ export default function DoItAiDashboardClient() {
             <div className="max-h-[70vh] overflow-auto rounded-xl bg-slate-950 p-2 flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={lightboxVisual.url}
-                alt={lightboxVisual.title}
+                src={
+                  lightboxVisual.url ||
+                  lightboxVisual.src ||
+                  "/prompts/metadata-prompts-hero-v2.webp"
+                }
+                alt={lightboxVisual.alt || lightboxVisual.title}
+                onError={(e) => {
+                  e.currentTarget.src = "/prompts/metadata-prompts-hero-v2.webp";
+                }}
                 className="max-h-[66vh] w-auto object-contain rounded-lg"
               />
             </div>
-            <p className="text-xs text-slate-300">{lightboxVisual.caption}</p>
+            <p className="text-xs text-slate-300">
+              {lightboxVisual.caption || lightboxVisual.alt}
+            </p>
           </div>
         </div>
       )}

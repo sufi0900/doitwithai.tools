@@ -9,13 +9,16 @@ import {
 import { retrieveCurrentKnowledge } from "@/features/site-assistant/server/live-knowledge";
 import {
   ALL_LIVE_TOOLS,
+  ALL_PUBLISHED_ARTICLES,
   ALL_SITE_PROMPTS,
   ALL_SITE_VISUALS,
   FOUNDER_MASTER_KNOWLEDGE,
+  findMatchingArticles,
   findMatchingPrompts,
   findMatchingTools,
-  findMatchingVisuals,
+  findMatchingVisualsWithSanity,
   getPromptHubSummaries,
+  type PublishedArticleRecord,
   type SitePromptItem,
   type SiteVisualItem,
 } from "@/features/do-it-ai/server-knowledge";
@@ -30,7 +33,7 @@ type ChatHistoryItem = {
 };
 
 const chatResponseSchema = z.object({
-  reply: z.string().trim().min(20).max(5000),
+  reply: z.string().trim().min(20).max(6000),
   followUpQuestions: z.array(z.string().trim().min(5).max(160)).min(2).max(4),
   recommendedToolSlugs: z.array(z.string().trim()).max(6).default([]),
   suggestedInputForPrimaryTool: z.string().trim().max(500).default(""),
@@ -142,7 +145,11 @@ function isOutOfDomainQuery(q: string): boolean {
   return outOfScopePatterns.some((pattern) => pattern.test(lower));
 }
 
-function extractRequestedCount(q: string, defaultCount: number, maxCount: number): number {
+function extractRequestedCount(
+  q: string,
+  defaultCount: number,
+  maxCount: number,
+): number {
   const match = q.match(/\b(\d{1,3})\b/);
   if (!match) return defaultCount;
   const parsed = parseInt(match[1], 10);
@@ -202,7 +209,6 @@ async function buildRichToolExecution(params: {
     (params.secondaryInput || "").trim() ||
     "Non-coder founders, SEO creators, and digital marketers";
 
-  // 1. Specialized deterministic + AI-grade engines for flagship tools so they ALWAYS return rich, accurate multi-lens outputs
   if (tool.slug === "meta-description-generator") {
     const d1 = `Learn ${primaryKw} step by step. Discover free Google Search Console workflows, SERP tracking tips, and proven fixes to grow organic clicks today.`;
     const d2 = `Struggling with ${primaryKw}? Use this practical no-code playbook for ${audience.toLowerCase()} to audit rankings, fix CTR drops, and win top SERP spots.`;
@@ -336,7 +342,7 @@ async function buildRichToolExecution(params: {
     tool.slug === "faq-schema-generator" ||
     tool.slug === "local-business-schema-generator" ||
     tool.slug === "breadcrumb-schema-generator" ||
-    tool.slug === "schema-markup-validator"
+    tool.slug === "structured-data-validator"
   ) {
     const articleSchema = JSON.stringify(
       {
@@ -356,7 +362,7 @@ async function buildRichToolExecution(params: {
         },
         mainEntityOfPage: {
           "@type": "WebPage",
-          "@id": `https://doitwithai.tools/blog/${primaryKw
+          "@id": `https://doitwithai.tools/ai-seo/${primaryKw
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-|-$/g, "")}`,
@@ -376,7 +382,7 @@ async function buildRichToolExecution(params: {
             name: `What is the fastest way to implement ${primaryKw}?`,
             acceptedAnswer: {
               "@type": "Answer",
-              text: `Start by matching search intent, optimizing your meta title (<580px) and meta description (140-155 chars), and validating your page with structured JSON-LD schema.`,
+              text: `Start by matching search intent, optimizing your meta title (<580px) and meta description (140-158 chars), and validating your page with structured JSON-LD schema.`,
             },
           },
           {
@@ -488,9 +494,9 @@ async function buildRichToolExecution(params: {
       summary:
         "Generated 4 human-first H1 headings that pair seamlessly with your meta title without duplicating it word-for-word.",
       metrics: [
-        { label: "H1 Count Rule", value: "Exactly 1 H1 per page", status: "optimal" },
+        { label: "H1 Count Rule", value: "1 H1 per page", status: "optimal" },
+        { label: "Target Length", value: "20–70 chars", status: "optimal" },
         { label: "Intent Match", value: "100% Aligned", status: "optimal" },
-        { label: "Readability", value: "Grade 7–8 Clear", status: "optimal" },
       ],
       sections: [
         {
@@ -511,12 +517,14 @@ async function buildRichToolExecution(params: {
     const list = keywords.length ? keywords : [primaryKw];
     const items = list.map((kw, idx) => {
       const lower = kw.toLowerCase();
-      const isCommercial = /\b(best|top|vs|compare|review|alternatives|tools|software)\b/.test(
-        lower,
-      );
-      const isTransactional = /\b(buy|price|pricing|download|hire|agency|service|near me|template)\b/.test(
-        lower,
-      );
+      const isCommercial =
+        /\b(best|top|vs|compare|review|alternatives|tools|software)\b/.test(
+          lower,
+        );
+      const isTransactional =
+        /\b(buy|price|pricing|download|hire|agency|service|near me|template)\b/.test(
+          lower,
+        );
       const primary = isTransactional
         ? "Transactional / Action"
         : isCommercial
@@ -529,7 +537,7 @@ async function buildRichToolExecution(params: {
           : "Step-by-Step Playbook + 50-Word Power Answer + Visual Infographics";
       return {
         label: `${idx + 1}. "${kw}" → ${primary}`,
-        content: `Recommended Page Format: ${format}. Open with a direct 45–55 word answer block, include comparison tables or visual checkpoints, and link to a matching interactive tool.`,
+        content: `Recommended Page Format: ${format}. Open with a direct 45–58 word answer block, include comparison tables or visual checkpoints, and link to a matching interactive tool.`,
         meta: `Primary Intent: ${primary} · Audience: ${audience.slice(0, 45)}`,
         code: "",
       };
@@ -542,7 +550,11 @@ async function buildRichToolExecution(params: {
       metrics: [
         { label: "Keywords Analyzed", value: `${items.length}`, status: "optimal" },
         { label: "SERP Format Match", value: "Verified", status: "optimal" },
-        { label: "AI Overview Readiness", value: "Power-Answer Ready", status: "optimal" },
+        {
+          label: "AI Overview Readiness",
+          value: "Power-Answer Ready",
+          status: "optimal",
+        },
       ],
       sections: [
         {
@@ -554,7 +566,6 @@ async function buildRichToolExecution(params: {
     };
   }
 
-  // Try Gemini for any other tool if configured, with a rich deterministic fallback
   const model = getGeminiModel();
   if (isAiConfigured(model)) {
     try {
@@ -584,7 +595,7 @@ Generate a deeply practical, copy-ready, specific tool output for the user's top
       );
       return res.output_parsed;
     } catch {
-      // Fall through to rich deterministic builder below
+      // Fall through to deterministic builder
     }
   }
 
@@ -593,7 +604,11 @@ Generate a deeply practical, copy-ready, specific tool output for the user's top
     summary: `Executed ${tool.name} (${tool.category}) on "${primaryKw}" for ${audience}. Copy the generated assets below or open the full studio for advanced controls.`,
     metrics: [
       { label: "Engine", value: tool.name.slice(0, 26), status: "optimal" },
-      { label: "Wing", value: (tool.wing || tool.category).toUpperCase(), status: "optimal" },
+      {
+        label: "Wing",
+        value: (tool.wing || tool.category).toUpperCase(),
+        status: "optimal",
+      },
       { label: "SEO & AEO Score", value: "94 / 100", status: "optimal" },
       { label: "Portable Code", value: "HTML5 + React Ready", status: "optimal" },
     ],
@@ -650,8 +665,10 @@ export async function POST(request: NextRequest) {
     const rawMessages = Array.isArray(body.messages) ? body.messages : [];
     const memoryWindow = rawMessages.slice(-15);
     const lastUserMessage =
-      [...memoryWindow].reverse().find((m) => m.role === "user")?.content?.trim() ||
-      "";
+      [...memoryWindow]
+        .reverse()
+        .find((m) => m.role === "user")
+        ?.content?.trim() || "";
 
     if (!lastUserMessage) {
       return NextResponse.json(
@@ -660,48 +677,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // INTENT A: Greeting / "Where to start?" -> Warm coaching response, NEVER mount "hi" into Search Intent Checker!
+    // INTENT A: Greeting / "Where to start?"
     if (isGreetingOrStarterQuery(lastUserMessage)) {
-      const welcomeReply = `### Welcome to Do It AI — Your Build & Sell with AI Workspace
+      const welcomeReply = `### Welcome to Do It AI — Your Custom Website GPT & Execution Studio
 
-Hi there! I'm **Do It AI**, trained on **DoItWithAI.tools**' entire library of **92+ live AI & SEO tools**, **952+ copy-paste prompts**, **30+ visual SEO infographics**, and founder **Sufian Mustafa's** playbooks.
+Hi there! I'm **Do It AI**, trained on **DoItWithAI.tools'** entire library of **[92+ Live AI & SEO Tools](/tools)**, **[952+ Copy-Paste Prompts](/prompts)**, **530+ Visual SEO Infographics & Diagrams**, and founder **Sufian Mustafa's** playbooks.
 
-To give you the exact dashboard, playbook, or live tool you need right now, **where would you like to start today?**
+To give you the exact guide, interactive tool, or visual blueprint you need right now, **where would you like to start today?**
 
-- **1. Learn SEO, AEO & AI Playbooks**: Ask me to teach you any topic step-by-step with visual infographics (e.g., *"Teach me how to write high-CTR Meta Titles"* or *"How can I do Local SEO?"*).
-- **2. Run Live SEO & Content Tools Here in Chat**: Tell me what you want to generate or audit (e.g., *"Write meta descriptions for how to check google keyword rankings"*, *"Generate JSON-LD schema markup"*, or *"Write a full SEO blog post"*).
-- **3. Grab Copy-Paste Prompts or Visual Infographics**: Ask for prompts or visuals from our library (e.g., *"Give me 15 prompts for SEO & keyword research"* or *"Show me visual infographics for keyword research"*).
-- **4. Build or Download Portable No-Code Tools**: Ask for standalone HTML5 or React tool code you can embed on your own website in one click.`;
+- **1. Learn SEO, AEO & AI Playbooks**: Start with our foundational guides like [What Is AI SEO?](/ai-seo/what-is-ai-seo), [What to Do After Keyword Research (10-Step Plan)](/ai-seo/what-to-do-after-keyword-research), [How to Check Keyword Rankings in Google](/ai-seo/check-google-keyword-rankings), or [How to Write SEO Meta Titles](/ai-seo/meta-title).
+- **2. Run Live SEO & Content Tools Right Here in Chat**: Tell me what you want to generate or audit—such as [Meta Description Generator](/tools/meta-description-generator), [Meta Title Generator](/tools/meta-title-generator), [Schema Markup Generator](/tools/schema-markup-generator), [GSC Striking Distance Finder](/tools/gsc-striking-distance-finder), or [AI Blog Article Writer](/tools/ai-blog-article-writer).
+- **3. Pull Copy-Paste Prompts or Visual Infographics**: Ask me for **10–20 prompts** from our [952+ Prompt Hub](/prompts) or ask to see our custom infographics and Sanity visual diagrams on any topic.
+- **4. Build & Download Portable No-Code Tools**: Grab standalone HTML5 or React tool widgets from our [Downloadable AI Tools Hub](/tools/downloadable-ai-tools) or learn [How to Build & Deploy a Website With ChatGPT](/ai-code/chatgpt-portfolio-website).`;
 
       return NextResponse.json({
         ok: true,
         mode: "greeting",
         reply: welcomeReply,
         followUpQuestions: [
-          "Teach me how to write Meta Titles & Meta Descriptions with examples",
+          "Teach me how to write Meta Titles & Meta Descriptions with visual infographics",
           "Write meta descriptions for 'how to check google keyword rankings'",
-          "How can I do Local SEO? Show me all Local SEO tools & schema",
-          "Give me 15 copy-paste prompts for SEO & Content Writing",
+          "What should I do after keyword research? Show me the 10-step plan & tools",
+          "How can I do Local SEO? Show me all Local SEO tools, prompts & schema",
         ],
         visuals: ALL_SITE_VISUALS.slice(0, 4),
         prompts: [],
-        relatedTools: findMatchingTools("meta title description blog schema", 4),
+        relatedTools: findMatchingTools(
+          "meta title description blog schema",
+          4,
+        ),
+        liveArticles: ALL_PUBLISHED_ARTICLES.slice(0, 3),
         mountedTool: null,
       });
     }
 
-    // INTENT B: Strict Out-of-Boundary Guard (e.g., "I am a pilot and I want to know how to fly a plane")
+    // INTENT B: Strict Out-of-Boundary Guard
     if (isOutOfDomainQuery(lastUserMessage)) {
       const boundaryReply = `### Outside My Specialty — I Focus Strictly on DoItWithAI.tools
 
-I appreciate your question! However, I am **Do It AI**, the specialized AI workspace built exclusively for **DoItWithAI.tools**. 
+I appreciate your question! However, I am **Do It AI**, the specialized AI assistant built exclusively for **DoItWithAI.tools**.
 
-My boundary is strictly focused on helping solo founders, marketers, and creators across three pillars:
-- **Learn with AI**: Mastering SEO, AEO/GEO (AI Overviews), Keyword Research, Meta Tags, Schema Markup, and Prompt Engineering.
-- **Build with AI (No-Code)**: Creating and downloading portable HTML5/React web tools, calculators, and workflows without writing code from scratch.
-- **Sell with AI**: Running our **92+ live SEO, Content Writing, Google Search Console, and Social Visual tools** to rank higher and grow organic traffic.
+My knowledge base is strictly focused on helping solo founders, marketers, bloggers, and creators across our core pillars:
+- **Learn with AI**: Mastering [AI SEO, AEO & GEO](/ai-seo/what-is-ai-seo), [Keyword Research & Clustering](/ai-seo/what-to-do-after-keyword-research), [Meta Titles](/ai-seo/meta-title), [Meta Descriptions](/ai-seo/meta-description), [H1 Headings](/ai-seo/h1-heading), [Schema Markup](/ai-seo/schema-markup-optimization), and [Prompt Engineering](/prompts).
+- **Build with AI (No-Code)**: Creating websites ([Build a Portfolio Website With ChatGPT](/ai-code/chatgpt-portfolio-website)) and embedding [Downloadable HTML5/React AI Tools](/tools/downloadable-ai-tools) without traditional coding.
+- **Sell with AI**: Running our **[92+ Free AI & SEO Tools](/tools)** to rank higher in Google Search Console, win AI Overviews, and repurpose content into infographics and videos.
 
-**How would you like to pivot into learning, building, or growing with AI today?** Click any starter below or tell me what website, business, or topic you are working on!`;
+**How would you like to start learning, building, or growing your traffic with AI today?**`;
 
       return NextResponse.json({
         ok: true,
@@ -716,6 +737,7 @@ My boundary is strictly focused on helping solo founders, marketers, and creator
         visuals: [],
         prompts: [],
         relatedTools: ALL_SITE_TOOLS_STARTERS(),
+        liveArticles: ALL_PUBLISHED_ARTICLES.slice(0, 2),
         mountedTool: null,
       });
     }
@@ -732,12 +754,10 @@ My boundary is strictly focused on helping solo founders, marketers, and creator
     const wantsToolExecution =
       /\b(run|open|launch|use|write|generate|create|check|audit|analyze|build|make|draft)\b/i.test(
         lowerQuery,
-      ) && !/\b(give me.*prompts|show me.*images|show me.*infographics)\b/i.test(lowerQuery);
-
-    // Retrieve live Sanity CMS knowledge + local knowledge
-    const liveDocs = await retrieveCurrentKnowledge({
-      messages: [{ role: "user", content: lastUserMessage }],
-    }).catch(() => []);
+      ) &&
+      !/\b(give me.*prompts|show me.*images|show me.*infographics)\b/i.test(
+        lowerQuery,
+      );
 
     const requestedPromptCount = wantsPrompts
       ? extractRequestedCount(lastUserMessage, 10, 24)
@@ -746,19 +766,23 @@ My boundary is strictly focused on helping solo founders, marketers, and creator
       ? extractRequestedCount(lastUserMessage, 8, 16)
       : 4;
 
+    // Fetch live Sanity knowledge + live Sanity visuals in parallel
+    const [liveDocs, matchedVisuals] = await Promise.all([
+      retrieveCurrentKnowledge({
+        messages: memoryWindow,
+      }).catch(() => []),
+      findMatchingVisualsWithSanity(lastUserMessage, requestedVisualCount),
+    ]);
+
     const matchedPrompts: SitePromptItem[] = findMatchingPrompts(
       lastUserMessage,
       requestedPromptCount,
     );
-    const matchedVisuals: SiteVisualItem[] = findMatchingVisuals(
-      lastUserMessage,
-      requestedVisualCount,
-    );
     const matchedTools = findMatchingTools(lastUserMessage, 6);
+    const matchedArticles = findMatchingArticles(lastUserMessage, 3);
     const primaryTool = matchedTools[0] || null;
     const cleanedTopic = cleanTargetTopic(lastUserMessage);
 
-    // Pre-execute the primary tool if the user explicitly asked to write/generate/run/check something (e.g., "I want to write meta description")
     let autoExecutedResult: RichToolExecutionResult | null = null;
     if (
       primaryTool &&
@@ -774,29 +798,38 @@ My boundary is strictly focused on helping solo founders, marketers, and creator
       });
     }
 
-    // Build grounded context for Gemini synthesis
     const sanityContext = liveDocs
-      .slice(0, 5)
+      .slice(0, 6)
       .map(
         (item, idx) =>
-          `${idx + 1}. [${(item.kind || "article").toUpperCase()}] "${item.title}" (${item.url}): ${item.description || ""} ${item.content ? item.content.slice(0, 450) : ""}`,
+          `${idx + 1}. [${(item.kind || "article").toUpperCase()}] "${item.title}" (${item.url}): ${item.description || ""} ${item.content ? item.content.slice(0, 500) : ""}`,
+      )
+      .join("\n");
+
+    const articlesContext = matchedArticles
+      .map(
+        (a) =>
+          `- [${a.title}](${a.url}) (${a.category}): ${a.summary}`,
       )
       .join("\n");
 
     const toolsContext = matchedTools
       .map(
         (t) =>
-          `- ${t.name} (/tools/${t.slug}) [${t.category}]: ${t.description}`,
+          `- [${t.name}](/tools/${t.slug}) [${t.category}]: ${t.description}`,
       )
       .join("\n");
 
     const promptHubSummary = getPromptHubSummaries()
-      .map((h) => `${h.title} (${h.promptCount} prompts)`)
+      .map((h) => `[${h.title}](${h.href}) (${h.promptCount} prompts)`)
       .join(", ");
 
     const historyTranscript = memoryWindow
       .slice(0, -1)
-      .map((m) => `${m.role === "user" ? "User" : "Do It AI"}: ${m.content.slice(0, 400)}`)
+      .map(
+        (m) =>
+          `${m.role === "user" ? "User" : "Do It AI"}: ${m.content.slice(0, 450)}`,
+      )
       .join("\n");
 
     let replyText = "";
@@ -804,8 +837,8 @@ My boundary is strictly focused on helping solo founders, marketers, and creator
       primaryTool
         ? `Run ${primaryTool.name} on my own keyword or URL`
         : "Show me the best AI SEO tool for this workflow",
-      "Give me 10 copy-paste prompts for this topic from the Prompt Hub",
-      "Show me visual infographics and step-by-step checklists for this topic",
+      `Give me 10 copy-paste prompts for ${cleanedTopic.slice(0, 40)}`,
+      `Show me 8 visual infographics and diagrams for ${cleanedTopic.slice(0, 40)}`,
     ];
 
     const model = getGeminiModel();
@@ -815,16 +848,16 @@ My boundary is strictly focused on helping solo founders, marketers, and creator
         const gen = await client.generate(
           {
             model,
-            max_output_tokens: 1800,
+            max_output_tokens: 2200,
             input: [
               {
                 role: "system",
                 content: `You are "Do It AI", the flagship Custom-GPT workspace for DoItWithAI.tools, created by founder Sufian Mustafa.
-Your role:
-1. Teach and guide users using Sufian Mustafa's practical, no-fluff, storytelling methodology across Learn with AI, Build with AI (no-code vibe coding & portable tools), and Sell with AI (SEO, AEO/GEO, Meta Tags, Schema, Local SEO, GSC, and Social Distribution).
-2. Format your response cleanly using Markdown headings (###), bullet points (- ), and bold lead-ins (**Term**: explanation). Make sure every **bold** tag is properly closed.
-3. Reference the matching live DoItWithAI.tools articles, prompts (${ALL_SITE_PROMPTS.length}+ prompts across ${promptHubSummary}), visual infographics, and tools provided in context.
-4. Keep the tone warm, authoritative, and structured so a beginner, marketer, or solo founder can execute immediately.
+STRICT RULES FOR EVERY RESPONSE:
+1. Teach and guide users using Sufian Mustafa's practical, no-fluff, storytelling methodology across Learn with AI, Build with AI (no-code vibe coding & portable tools), and Sell with AI (SEO, AEO/GEO, Meta Tags, H1, Slugs, Schema, Local SEO, GSC, Alt Text, Readability, and Social/Video Distribution).
+2. MANDATORY INTERNAL HYPERLINKING: You MUST include clickable Markdown hyperlinks — e.g. [Meta Title Generator](/tools/meta-title-generator), [How to Write SEO Meta Titles](/ai-seo/meta-title), [What to Do After Keyword Research](/ai-seo/what-to-do-after-keyword-research), [How to Check Keyword Rankings in Google](/ai-seo/check-google-keyword-rankings), [What Is AI SEO?](/ai-seo/what-is-ai-seo) — naturally inside your paragraphs and bullet points whenever you mention a concept, guide, prompt collection, or tool!
+3. Format your response cleanly using Markdown headings (###), bullet points (- ), and bold lead-ins. Make sure every **bold** tag is properly closed.
+4. If the user asks about an SEO or AI topic for which we don't yet have a dedicated standalone blog post, synthesize a unique, authoritative answer using Sufian Mustafa's 4-Node Kite Methodology (Intent → Entity Precision → Live Tool Execution → Human E-E-A-T Verification) and link to our closest live tools and prompt libraries (${promptHubSummary}).
 
 ${FOUNDER_MASTER_KNOWLEDGE}`,
               },
@@ -835,16 +868,19 @@ ${historyTranscript || "(Start of conversation)"}
 
 Current User Query: "${lastUserMessage}"
 
-Matched Live Website Articles & Resources:
+Matched Published DoItWithAI.tools Pillar Guides (Link to these in your reply!):
+${articlesContext}
+
+Additional Live Sanity CMS Context:
 ${sanityContext || "Use Founder Master Knowledge Playbooks."}
 
-Matched Live DoItWithAI.tools Interactive Tools:
+Matched Live Interactive Tools (Link to these in your reply!):
 ${toolsContext}
 
 Attached Visual Infographics Count: ${matchedVisuals.length}
 Attached Copy-Paste Prompts Count: ${matchedPrompts.length}
 
-Write a rich, structured response answering "${lastUserMessage}" directly. Explain the core strategy/methodology clearly, highlight how to use the attached tools/prompts/visuals below, and provide 3 natural follow-up questions.`,
+Write a comprehensive, high-value, hyperlinked response answering "${lastUserMessage}". Include at least 3–5 natural internal Markdown links ([Name](/path)) to our guides, tools, and prompt hubs, explain the exact step-by-step execution framework, and provide 3 natural follow-up questions.`,
               },
             ],
             text: {
@@ -874,7 +910,7 @@ Write a rich, structured response answering "${lastUserMessage}" directly. Expla
         matchedTools,
         matchedPrompts,
         matchedVisuals,
-        liveItems: liveDocs.map((d) => ({ title: d.title, url: d.url, summary: d.description || "", type: d.kind || "article" })),
+        matchedArticles,
       });
     }
 
@@ -899,12 +935,7 @@ Write a rich, structured response answering "${lastUserMessage}" directly. Expla
             autoResult: autoExecutedResult,
           }
         : null,
-      liveArticles: liveDocs.slice(0, 4).map((item) => ({
-        title: item.title,
-        url: item.url,
-        summary: item.description || "",
-        type: item.kind || "article",
-      })),
+      liveArticles: matchedArticles,
     });
   } catch (err) {
     return NextResponse.json(
@@ -934,93 +965,168 @@ function buildDeterministicExpertReply(params: {
   matchedTools: typeof ALL_LIVE_TOOLS;
   matchedPrompts: SitePromptItem[];
   matchedVisuals: SiteVisualItem[];
-  liveItems: Array<{ title: string; url: string; summary: string; type: string }>;
+  matchedArticles: PublishedArticleRecord[];
 }): string {
   const q = params.query.toLowerCase();
+  const topTool = params.matchedTools[0];
+  const topArticle = params.matchedArticles[0];
 
   if (params.wantsPrompts) {
-    return `### ${params.matchedPrompts.length} Copy-Paste Prompts from the DoItWithAI Prompt Hub
+    return `### ${params.matchedPrompts.length} Copy-Paste Prompts from the [DoItWithAI Prompt Hub](/prompts)
 
-I've pulled **${params.matchedPrompts.length} structured, copy-ready prompts** from our **${ALL_SITE_PROMPTS.length}+ Prompt Library** tailored to **${params.cleanedTopic}**.
+I've pulled **${params.matchedPrompts.length} structured, copy-ready prompts** from our **[${ALL_SITE_PROMPTS.length}+ Prompt Library](/prompts)** tailored to **${params.cleanedTopic}**.
 
-### How to Get the Best Output from These Prompts
-- **1. Replace Bracketed Variables First**: Swap any placeholder like \`[Topic]\`, \`[Target Audience]\`, or \`[Primary Keyword]\` with your exact niche details before running the prompt.
-- **2. Pair Prompts with Live Verification Tools**: After generating your draft in ChatGPT, Claude, or Gemini, run the output through our **${params.matchedTools[0]?.name || "On-Page AI SEO Analyzer"}** below to verify pixel widths, search intent, and E-E-A-T signals.
-- **3. Save or Download as Markdown**: Use the **Copy Prompt** or **Download .MD** buttons on any prompt card below to save your favorite templates.`;
+### How to Execute These Prompts Using Sufian Mustafa's Workflow
+- **1. Replace Bracketed Variables With Real Evidence**: Swap placeholders like \`{{Topic}}\`, \`{{Audience}}\`, or \`[Primary Keyword]\` with your exact page details before running the prompt—just as we teach in our [Search Intent Prompts Guide](/prompts/search-intent-prompts) and [Meta Title & Description Prompts](/prompts/chatgpt-prompts-for-meta-title-and-meta-description).
+- **2. Verify Output With Our Connected AI SEO Tools**: Never publish raw LLM output blindly. Run your generated copy through [${topTool?.name || "On-Page AI SEO Analyzer"}](/tools/${topTool?.slug || "on-page-ai-seo-analyzer"}), [Readability Checker](/tools/readability-checker), or [SERP Rich Result Preview Generator](/tools/serp-rich-result-preview-generator) to validate pixel widths and E-E-A-T signals.
+- **3. Copy or Download as Markdown Below**: Click **Copy Prompt** or **Download .MD** on any prompt card below, or explore our full [${topArticle?.title || "AI SEO Playbook"}](${topArticle?.url || "/ai-seo/what-is-ai-seo"}).`;
   }
 
   if (params.wantsImages) {
-    return `### Visual Infographic & Diagram Gallery (${params.matchedVisuals.length} Published Visuals)
+    return `### Visual Infographic & Sanity Diagram Gallery (${params.matchedVisuals.length} Verified Visuals)
 
-Here are **${params.matchedVisuals.length} custom-designed visual infographics and workflow diagrams** from **DoItWithAI.tools** covering **${params.cleanedTopic}**.
+Here are **${params.matchedVisuals.length} custom infographics, Sanity article diagrams, and visual workflows** from **DoItWithAI.tools** covering **${params.cleanedTopic}**.
 
-### How to Use These Visual Playbooks
-- **1. Inspect Full-Resolution Workflows**: Click any visual card below to preview the full-size diagram or download the high-resolution WebP/PNG asset for your notes or team deck.
-- **2. Turn Any Article Into New Visuals**: Want to generate custom infographics, stat cards, or 2x2 strategy matrices for your own blog post? Launch our **AI Blog to Visual Infographic Studio** or **AI Data & Stat to Visual Chart Card Maker** directly below.`;
+### How to Use & Create Visual Playbooks on DoItWithAI.tools
+- **1. Preview Full-Size or Download Below**: Click any visual card below to inspect the high-resolution diagram in our Lightbox viewer, download the image file, or jump directly to the source guide (such as [${topArticle?.title || "What Is AI SEO?"}](${topArticle?.url || "/ai-seo/what-is-ai-seo"})).
+- **2. Turn Any Article Into Custom Infographics**: Follow our step-by-step guide on [How to Create Infographics From Blog Content With AI](/ai-learn-earn/ai-infographic-generators) and run our live [Blog to Infographic Studio](/tools/blog-to-infographic-generator) or [Data & Stat to Chart Card Maker](/tools/data-to-chart-visual-card-maker).
+- **3. Optimize Image Alt Text for Google Images**: Before publishing any graphic, run it through our [Image Alt Text Generator](/tools/image-alt-text-generator) using the accessibility checklist in our [AI Image Alt Text Guide](/ai-seo/ai-alt-text-generators).`;
   }
 
   if (/\b(meta title|title tag)\b/i.test(q)) {
     return `### Mastering Meta Titles: Sufian Mustafa's 5-Lens & 580px SERP Framework
 
-A high-performing **Meta Title** does two jobs at once: it signals exact topical relevance to Google and convinces humans to click your result over higher-ranked competitors.
+As detailed in our flagship guide **[Create Better Meta Titles With AI and a Clear Page Brief](/ai-seo/meta-title)**, a high-performing \`<title>\` tag does two jobs simultaneously: it signals exact topical scope to search engines and earns the human click over competing results.
 
-### The 4 Non-Negotiable Rules for Meta Titles in 2026
-- **1. Stay Inside the 50–60 Character (~580px) Safe Zone**: Google truncates titles based on pixel width (~580px–600px on desktop), not just character count. Wide letters like *W, M, G* consume more pixels than *i, l, t*.
-- **2. Front-Load Your Primary Keyword in the First 3 Words**: Eye-tracking studies show searchers scan the first 2–4 words of each SERP line. Put your core keyword first, followed by a colon or em-dash and your outcome hook.
-- **3. Test Across 5 Strategic Lenses**: Never settle for the first title you write. Compare candidates across **Direct Relevance**, **Outcome/Benefit**, **Authority/Framework**, **Curiosity Hook**, and **Comparison/Decision** lenses.
-- **4. Match Your H1 Without Copying It Verbatim**: Keep your \`<title>\` tag optimized for SERP click-through rate (<580px) while letting your on-page \`<h1>\` breathe with natural, reader-first clarity.
+### The 5 Non-Negotiable Rules for Meta Titles
+- **1. Stay Inside the 50–60 Character (~580px) Desktop Safe Zone**: Google trims title tags by **rendered pixel width (~580px–600px)** rather than a rigid character count. Test your pixel width live in our [Meta Title Generator](/tools/meta-title-generator) and [SERP Rich Result Preview Generator](/tools/serp-rich-result-preview-generator).
+- **2. Front-Load Your Primary Keyword in the First 3 Words**: Eye-tracking studies show readers scan the first 2–4 words on the SERP. Place your core keyword near the front, followed by a colon or dash and your value hook.
+- **3. Compare Candidates Across 5 Strategic Lenses**: Never settle for a single generic AI title. Compare **Direct Relevance**, **Outcome/Benefit**, **Authority/Framework**, **Curiosity Hook**, and **Compact Mobile-Safe (<48 chars)** lenses using our [Meta Title & Description Prompt Pack](/prompts/chatgpt-prompts-for-meta-title-and-meta-description).
+- **4. Pair With a Complementary H1 & Meta Description**: Differentiate your SERP \`<title>\` from your on-page \`<h1>\` ([How to Write H1 Headings With AI](/ai-seo/h1-heading)) and pair it with a 140–158 character snippet ([Write Clearer Meta Descriptions With AI](/ai-seo/meta-description)) so Google has zero reason to rewrite your title.
 
-I've loaded our **Meta Title Generator**, visual infographics, and copy-paste prompts right below so you can generate and test pixel-safe titles immediately.`;
+I've mounted our live **[Meta Title Generator](/tools/meta-title-generator)**, visual infographics, and copy-paste prompts right below so you can generate pixel-safe titles immediately.`;
   }
 
   if (/\b(meta description)\b/i.test(q)) {
-    return `### How to Write High-CTR Meta Descriptions (140–160 Chars / ~920px Formula)
+    return `### How to Write High-CTR Meta Descriptions (140–158 Chars / ~920px Formula)
 
-While Google doesn't use the **Meta Description** as a direct keyword ranking signal, it is your **#1 organic ad copy on the SERP**—and a well-crafted description dramatically reduces the chance that Google rewrites your snippet.
+In our in-depth guide **[Write Clearer Meta Descriptions With AI Prompts and Examples](/ai-seo/meta-description)**, we show why the meta description is your **#1 organic ad copy on Google's SERP**—and how a page-specific description reduces unwanted Google snippet rewrites.
 
 ### Sufian Mustafa's 3-Part Meta Description Formula
-- **1. Calibrate for 140–158 Characters (~760px–920px)**: Descriptions shorter than 120 characters look thin; descriptions over 160 characters (~920px desktop / ~680px mobile) get cut off with an ellipsis (\`...\`).
-- **2. Include the Exact Primary Keyword + 1 Entity**: Google bolds words in your meta description that match the searcher's query, drawing immediate visual attention to your listing.
-- **3. State the Tangible Deliverable**: Tell the reader exactly what they will find on the page (*"Includes a free calculator, 6 copy-paste templates, and step-by-step GSC checklist"*).
+- **1. Calibrate for 140–158 Characters (~760px–920px Desktop / ~120 Chars Mobile)**: Put your core hook and primary keyword inside the first 120 characters so mobile searchers never miss the payoff. Preview both views in our [Meta Description Generator](/tools/meta-description-generator) and [SERP Snippet Preview Tool](/tools/serp-rich-result-preview-generator).
+- **2. Trigger Google's Bold Query Matching**: Google bolds words in your meta description that match the searcher's query. Including your primary keyword + 1 closely related entity draws immediate eye movement.
+- **3. State Tangible Page Deliverables (Never Repeat the Title Tag)**: Tell the searcher what they will actually use on the page (*"Includes a free calculator, 6 copy-paste prompts, and a 10-step GSC checklist"*). Grab more templates from our [Meta Title & Description Prompts](/prompts/chatgpt-prompts-for-meta-title-and-meta-description).
 
-I've executed the **Meta Description Generator** for **${params.cleanedTopic}** right below—giving you **6 pixel-calibrated options** you can copy in one click.`;
+I've executed the **[Meta Description Generator](/tools/meta-description-generator)** for **${params.cleanedTopic}** right below with **6 pixel-calibrated candidates** you can copy in one click.`;
   }
 
-  if (/\b(local seo|google business profile|gbp|map pack|near me)\b/i.test(q)) {
+  if (/\b(h1|heading|h2|h3|outline)\b/i.test(q)) {
+    return `### How to Write Clear H1 Headings & Build an AI-Ready Heading Hierarchy
+
+As covered in our guide **[How to Write H1 Headings With AI and Review Them](/ai-seo/h1-heading)**, Google does not enforce a strict character limit on \`<h1>\` tags, but clear, scannable H1s almost always land between **20 and 70 characters**.
+
+### 4 Core Rules for H1–H6 Structure
+- **1. Use One Descriptive H1 Per Page**: Your \`<h1>\` is the visible headline that confirms to the reader they landed on the right page. Generate intent-matched options in our [H1 Heading Generator](/tools/h1-heading-generator).
+- **2. Coordinate With Your Meta Title Without Duplicating It**: Keep your \`<title>\` tag tight (<580px) for the SERP ([How to Write SEO Meta Titles](/ai-seo/meta-title)), while allowing your on-page \`<h1>\` to breathe naturally for readers.
+- **3. Map H2 & H3 Subheadings to Sub-Intents & People Also Ask**: Structure logical \`<h2>\` and \`<h3>\` sections using our [Article Outline Generator](/tools/article-outline-generator) and audit your live hierarchy with our [Heading Structure Analyzer](/tools/heading-structure-analyzer).
+- **4. Follow Every H2 With a Direct Answer Lead**: Place a crisp 45–58 word answer passage right after key H2s so Google AI Overviews can extract citations ([Featured Snippet Optimizer](/tools/featured-snippet-optimizer)).`;
+  }
+
+  if (/\b(after keyword research|keyword cluster|keyword mapping|content plan)\b/i.test(q)) {
+    return `### What to Do After Keyword Research: Sufian Mustafa's 10-Step Execution Plan
+
+Having a spreadsheet of 500 keywords does nothing for your traffic until those terms are filtered, clustered by intent, and mapped to live URLs. Here is the exact 10-step system from our pillar guide **[What to Do After Keyword Research: 10-Step SEO Content Plan](/ai-seo/what-to-do-after-keyword-research)**:
+
+### The 10-Step Bridge From Raw Keywords to Ranking Pages
+- **Steps 1–2 (Clean List & Verify Search Intent)**: Strip irrelevant terms and classify every surviving query as Informational, Commercial, Transactional, or Navigational using our [Search Intent Checker](/tools/search-intent-checker) and [Search Intent Prompts](/prompts/search-intent-prompts).
+- **Steps 3–4 (Cluster by Shared Task & Map to 1 Canonical URL)**: Group keywords that share the same SERP intent into a single topic cluster ([Keyword Clustering Tool](/tools/keyword-clustering-tool) & [Topical Map Generator](/tools/topical-map-generator)). Check existing pages with our [Keyword Cannibalization Finder](/tools/keyword-cannibalization-finder) before creating a new URL.
+- **Steps 5–8 (Brief, On-Page Placement, Visuals & Internal Links)**: Build a writer brief ([SEO Content Brief Generator](/tools/seo-content-brief-generator)), place your primary keyword in the [URL Slug](/ai-seo/write-slug-urls), [Meta Title](/ai-seo/meta-title), [H1 Heading](/ai-seo/h1-heading), and first 100 words, add custom visuals ([Blog to Infographic Studio](/tools/blog-to-infographic-generator)), and wire bidirectional links ([Internal Link Opportunity Finder](/tools/internal-link-opportunity-finder)).
+- **Steps 9–10 (Index & Track GSC Striking Distance)**: Submit your URL and inspect Google Search Console 14–28 days later using our [How to Check Keyword Rankings Guide](/ai-seo/check-google-keyword-rankings) and [GSC Striking Distance Finder](/tools/gsc-striking-distance-finder).`;
+  }
+
+  if (/\b(check.*ranking|keyword ranking|search console|gsc|striking distance|average position)\b/i.test(q)) {
+    return `### How to Check Keyword Rankings in Google & Turn Positions 8–20 Into Top-3 Wins
+
+In our comprehensive guide **[How to Check Ranking for Keywords in Google: 4 Free & Accurate Methods](/ai-seo/check-google-keyword-rankings)**, we break down why manual browser searches mislead you (even in Incognito) and how to measure your true rankings.
+
+### The 4-Part Ranking & AI Overview Playbook
+- **1. Use Google Search Console With Country & Page Filters**: Open *GSC → Performance → Search results*, enable **Average position**, and always filter by a single target country and URL so blended global averages don't hide your real rank.
+- **2. Avoid the 3 GSC Average Position Traps**: A sudden drop in sitewide Average Position often means your page started ranking on Page 5–8 for **hundreds of brand-new keywords** (the "Sawtooth Impression Trap")—check impressions before panicking! Also check if two URLs are splitting clicks using our [Keyword Cannibalization Finder](/tools/keyword-cannibalization-finder).
+- **3. Run the 15-Minute Striking Distance Sprint (Positions 8–20)**: Queries ranking in Positions #8 to #20 already have Google's trust. Paste your GSC export into our [GSC Striking Distance Finder](/tools/gsc-striking-distance-finder) and [GSC CTR Optimizer](/tools/gsc-ctr-optimizer) to upgrade those exact sections and jump into the Top 3.
+- **4. Capture Google AI Overviews (Position Zero)**: Add a 45–58 word direct answer block below your main H2 and audit citation readiness with our [AI Citation Readiness Checker](/tools/ai-citation-readiness-checker) and [Featured Snippet Optimizer](/tools/featured-snippet-optimizer).`;
+  }
+
+  if (/\b(local seo|google business profile|gbp|map pack|near me|nap)\b/i.test(q)) {
     return `### Complete Local SEO Playbook: Rank in the Google Map Pack & Local Organic SERP
 
-To win **Local SEO** for service businesses, clinics, agencies, or regional brands, you need three synchronized signals: **Google Business Profile (GBP) completeness**, **hyper-local service pages**, and **validated LocalBusiness JSON-LD schema**.
+While we are expanding our dedicated Local SEO blog series, **DoItWithAI.tools** gives you a complete **5-Tool Local SEO Suite** and **[79 Local SEO & Google Business Profile Prompts](/prompts/local-seo-google-business-profile-prompts)** built on Sufian Mustafa's entity-first local methodology:
 
-### Step-by-Step Local SEO Execution Plan
-- **1. Audit Your Google Business Profile (GBP)**: Select the exact primary category, add 5–8 secondary categories, write a 750-character entity-rich description, and seed 10+ pre-answered Q&As.
-- **2. Build Dedicated City + Service Landing Pages**: Avoid thin doorway pages. Every local landing page needs local pricing/process context, neighborhood landmarks, localized FAQs, and embedded map coordinates.
-- **3. Deploy Validated LocalBusiness JSON-LD Schema**: Declare your exact **NAP (Name, Address, Phone)**, \`areaServed\`, \`openingHoursSpecification\`, and \`geo\` coordinates so Google and AI answer engines trust your local entity.
-- **4. Reply to Reviews with Keyword-Natural Responses**: Consistent, thoughtful replies to both 5-star and critical Google reviews boost local conversion and Map Pack engagement.
-
-Below you'll find all **4 of our live Local SEO tools** (**Local SEO Service Page Planner**, **Google Business Profile Auditor**, **LocalBusiness Schema Generator**, and **Google Review Response Generator**) ready to run inline!`;
+### 4-Step Local SEO Execution System
+- **1. Audit & Optimize Your Google Business Profile (GBP)**: Select the most specific Primary Category, add 3–5 Secondary Categories, write a compliant 750-character description (with your core service + city in the first 250 characters), and seed 10 owner Q&As using our live [Google Business Profile Auditor](/tools/google-business-profile-auditor).
+- **2. Build Anti-Doorway City & Service Landing Pages**: Never publish thin city-swapped pages. Each location page must include neighborhood landmarks, local pricing/process proof, and localized FAQs—plan yours with our [Local SEO Service Page Planner](/tools/local-seo-service-page-planner).
+- **3. Lock In 100% NAP Citation Consistency & LocalBusiness Schema**: Verify your Name, Address, and Phone formatting across directories with our [NAP Consistency Checker](/tools/nap-consistency-checker) and deploy validated geo-coordinate JSON-LD using our [LocalBusiness Schema Generator](/tools/local-business-schema-generator) (see our [Schema Markup Guide](/ai-seo/schema-markup-optimization)).
+- **4. Accelerate Review Velocity & Keyword-Natural Replies**: Generate direct review links with our [Google Review Link & QR Generator](/tools/google-review-link-generator) and craft thoughtful responses with our [Google Review Response Generator](/tools/google-review-response-generator).`;
   }
 
-  if (/\b(schema|json-ld|structured data)\b/i.test(q)) {
+  if (/\b(schema|json-ld|structured data|rich result)\b/i.test(q)) {
     return `### Schema Markup & JSON-LD Playbook for Google Rich Results & AI Overviews
 
-**Schema Markup (\`application/ld+json\`)** translates your human-readable webpage into explicit machine-readable entities (\`@type\`, \`headline\`, \`author\`, \`mainEntity\`, \`areaServed\`) that Google, Bing, ChatGPT, and Perplexity rely on for rich snippets and citations.
+As taught in our guide **[Build Accurate Schema Markup With AI and Validate the Result](/ai-seo/schema-markup-optimization)**, **JSON-LD (\`application/ld+json\`)** translates your webpage into explicit machine-readable entities (\`@type\`, \`headline\`, \`author\`, \`mainEntity\`, \`sameAs\`) that Google, ChatGPT Search, and Perplexity rely on for verification.
 
 ### Which Schema Types Should You Deploy?
-- **1. Article + Person/Author Schema**: Links your guide to a verified author profile with credentials and social \`sameAs\` links for strong E-E-A-T signals.
-- **2. FAQPage Schema**: Wraps your bottom-of-page Q&As in structured \`Question\` and \`Answer\` nodes for People Also Ask and AI Overview extraction.
-- **3. LocalBusiness / Organization Schema**: Declares official brand identity, logo, contact info, and geographic service areas.
-- **4. BreadcrumbList Schema**: Clarifies your site hierarchy (\`Home > Tools > SEO Tool\`) directly in Google SERP snippets.
-
-I've generated copy-ready **JSON-LD Schema blocks** below and linked all **5 of our Schema tools** so you can generate or validate any structured data in seconds.`;
+- **1. Article + Verified Author/Person Schema**: Links your content to a real author profile with credentials and social \`sameAs\` URLs—generate it in our [Schema Markup Generator](/tools/schema-markup-generator).
+- **2. FAQPage Schema**: Wraps your bottom-of-page Q&As in structured \`Question\` and \`Answer\` nodes using our [FAQ Schema Generator](/tools/faq-schema-generator).
+- **3. LocalBusiness & BreadcrumbList Schema**: Clarify regional NAP data ([LocalBusiness Schema Generator](/tools/local-business-schema-generator)) and site hierarchy ([Breadcrumb Schema Generator](/tools/breadcrumb-schema-generator)).
+- **4. Validate Against Visible Page Content**: Never include schema fields that aren't visible to human readers. Always test your code in our [Structured Data Validator](/tools/structured-data-validator) and grab prompts from our [Technical SEO & Schema Prompts](/prompts/technical-seo-audit-schema-prompts).`;
   }
 
-  const primaryToolName = params.matchedTools[0]?.name || "AI SEO Workspace";
-  return `### Strategic Playbook & Live Workspace for "${params.cleanedTopic}"
+  if (/\b(slug|url|permalink|redirect)\b/i.test(q)) {
+    return `### How to Write Clean, AI-Friendly URL Slugs & Protect Existing Rankings
 
-Here is how to execute **${params.cleanedTopic}** using **DoItWithAI.tools' Build & Sell with AI** methodology:
+In our guide **[Choose Clear URL Slugs With AI and Keep Published Links Stable](/ai-seo/write-slug-urls)**, we explain why your URL slug is the first structural signal read by both search crawlers and human searchers.
 
-### 3-Step Execution Blueprint
-- **1. Lock In Search Intent & SERP Format First**: Before drafting a single line, confirm whether Google rewards an informational guide (with a 50-word Power Answer block), a commercial comparison matrix, or an interactive calculator/tool.
-- **2. Optimize Your Above-the-Fold Metadata & Entities**: Pair a **50–60 character (~580px) Meta Title** with a **140–158 character (~920px) Meta Description**, a single clear **H1 heading**, and validated **JSON-LD Schema**.
-- **3. Execute Live with ${primaryToolName}**: I've loaded **${primaryToolName}** along with our related tools, visual infographics, and copy-paste prompts below so you can run or customize your output right now.`;
+### Sufian Mustafa's 4 Rules for URL Slugs
+- **1. Keep Slugs to 3–5 Lowercase, Hyphen-Separated Words**: Turn long titles into focused slugs like \`/check-google-keyword-rankings\` using our [Slug Generator](/tools/slug-generator).
+- **2. Strip Stop Words, Dates & Fragile Numbers**: Avoid putting \`2025\` or \`7-tips\` in your URL slug so you can update the article every year without breaking the URL.
+- **3. Never Change an Indexed URL Without a 301 Redirect**: If a page already has impressions or backlinks in Search Console, leave the slug alone—or generate exact server redirect rules with our [301 Redirect Rule Generator](/tools/redirect-rule-generator) and verify canonicals with our [Canonical Tag Checker](/tools/canonical-tag-checker).`;
+  }
+
+  if (/\b(alt text|image seo|infographic|visual)\b/i.test(q)) {
+    return `### Image SEO, Alt Text & Visual Infographic Playbook
+
+Visuals do double duty in modern SEO: they increase on-page dwell time and earn standalone traffic from **Google Images** and visual SERP packs. Combine our guides **[Write Useful Image Alt Text With AI](/ai-seo/ai-alt-text-generators)** and **[Create Infographics From Blog Content With AI](/ai-learn-earn/ai-infographic-generators)**:
+
+### 3-Step Visual SEO Workflow
+- **1. Write Context-Specific Alt Text (15–125 Characters)**: Describe what the diagram or screenshot actually shows in context without stuffing keywords. Run our [Image Alt Text Generator](/tools/image-alt-text-generator) or audit existing page images with our [Webpage Image Extractor](/tools/webpage-image-extractor).
+- **2. Convert Key Sections Into Custom Infographics & Chart Cards**: Summarize complex multi-step workflows into visual diagrams using our [Blog to Infographic Studio](/tools/blog-to-infographic-generator), [Data to Chart Card Maker](/tools/data-to-chart-visual-card-maker), and [Infographic & Data Visualization Prompts](/prompts/infographic-data-visualization-prompts).
+- **3. Pair Every Visual With an Engaging Figcaption**: Screen readers use \`alt\` attributes while human skimmers read captions—put your 1-sentence takeaway inside \`<figcaption>\`.`;
+  }
+
+  if (/\b(backlink|link building|digital pr|outreach|unlinked|internal link)\b/i.test(q)) {
+    return `### Authority Link Building & Internal Linking Playbook
+
+In Sufian Mustafa's **DoItWithAI** methodology, link authority comes from two synchronized engines: **airtight internal Pillar-and-Spoke architecture** and **value-first Digital PR & micro-tool link assets**.
+
+### How to Build Internal & External Link Authority
+- **1. Wire Bidirectional Internal Links Across Topic Clusters**: Every spoke article must link up to its Pillar page and across to 2–3 sibling articles using descriptive 3–6 word anchor text (see [What to Do After Keyword Research](/ai-seo/what-to-do-after-keyword-research)). Audit your site with our [Internal Link Opportunity Finder](/tools/internal-link-opportunity-finder) and [Internal Link Anchor Auditor](/tools/internal-link-anchor-auditor).
+- **2. Launch Free Interactive Micro-Tools as Link Magnets**: Pages with embedded calculators or checkers earn 3× more natural editorial links. Download standalone widgets from our [Downloadable AI Tools Hub](/tools/downloadable-ai-tools).
+- **3. Reclaim Unlinked Mentions & Pitch Journalists**: Find brand mentions missing a link with our [Unlinked Brand Mention Checker](/tools/unlinked-brand-mention-checker), replace dead competitor links with our [Broken Link Building Finder](/tools/broken-link-building-finder), and craft data-backed pitches using our [Journalist Pitch Builder](/tools/journalist-pitch-builder), [Outreach Email Builder](/tools/outreach-email-builder), and [80 Link Building & Digital PR Prompts](/prompts/link-building-digital-pr-outreach-prompts).`;
+  }
+
+  const primaryToolName =
+    params.matchedTools[0]?.name || "On-Page AI SEO Analyzer";
+  const primaryToolSlug =
+    params.matchedTools[0]?.slug || "on-page-ai-seo-analyzer";
+  const guide1 = params.matchedArticles[0] || ALL_PUBLISHED_ARTICLES[0];
+  const guide2 = params.matchedArticles[1] || ALL_PUBLISHED_ARTICLES[1];
+
+  return `### Strategic Playbook & Execution Workspace for "${params.cleanedTopic}"
+
+Here is how to master and execute **${params.cleanedTopic}** using founder **Sufian Mustafa's** 4-Node **DoItWithAI.tools** methodology (*Learn, Build, Sell, and Human Judgment*):
+
+### 4-Step Execution Blueprint
+- **1. Align With Search Intent & SERP Evidence First**: Before drafting content, verify whether Google rewards an answer-first informational guide, a comparison matrix, or an interactive calculator. Use our [Search Intent Checker](/tools/search-intent-checker) and read [${guide1.title}](${guide1.url}).
+- **2. Engineer Pixel-Safe Above-the-Fold Metadata**: Pair a **50–60 character (~580px) Meta Title** ([How to Write SEO Meta Titles](/ai-seo/meta-title) · [Meta Title Generator](/tools/meta-title-generator)) with a **140–158 character (~920px) Meta Description** ([Meta Description Guide](/ai-seo/meta-description) · [Meta Description Generator](/tools/meta-description-generator)) and one clear **H1 heading** ([H1 Heading Guide](/ai-seo/h1-heading)).
+- **3. Structure for AI Overviews (AEO/GEO) & E-E-A-T**: Open your first H2 with a direct **45–58 word Power Answer block**, add comparison tables and custom diagrams ([Blog to Infographic Studio](/tools/blog-to-infographic-generator)), validate JSON-LD with our [Schema Markup Generator](/tools/schema-markup-generator), and review [${guide2.title}](${guide2.url}).
+- **4. Execute Live With [${primaryToolName}](/tools/${primaryToolSlug})**: I've loaded **[${primaryToolName}](/tools/${primaryToolSlug})**, matching visual infographics from our Sanity & site library, promotional guide cards, and copy-paste prompts from our [952+ Prompt Hub](/prompts) right below!`;
 }
