@@ -20,7 +20,7 @@ export default function HreflangEducation() {
             <p className="mt-1.5 text-xs leading-6 text-slate-600 dark:text-slate-300">
               If your English page links to your Arabic page, the Arabic page must link back ; to
               the English page and to itself. A one-way link is commonly ignored entirely. This
-              tool's output is the same block for every version by design, so reciprocity isn't
+              tool&apos;s output is the same block for every version by design, so reciprocity isn&apos;t
               something you have to remember separately.
             </p>
           </div>
@@ -28,8 +28,8 @@ export default function HreflangEducation() {
             <Globe2 className="h-6 w-6 text-[#4662df] dark:text-blue-300" />
             <p className="mt-3 text-sm font-bold text-slate-950 dark:text-white">Codes are language-first, region-optional</p>
             <p className="mt-1.5 text-xs leading-6 text-slate-600 dark:text-slate-300">
-              A region code narrows a language, it doesn't replace it. "ar-AE" (Arabic, UAE) is
-              valid; "AE" alone is not. When in doubt, a bare language code like "en" or "ar" is
+              A region code narrows a language, it doesn&apos;t replace it. &quot;ar-AE&quot; (Arabic, UAE) is
+              valid; &quot;AE&quot; alone is not. When in doubt, a bare language code like &quot;en&quot; or &quot;ar&quot; is
               safer than guessing a region code.
             </p>
           </div>

@@ -114,7 +114,7 @@ export default function Page() {
                   <strong className="text-emerald-300">Passage Matching:</strong> Finds sentences in your draft that naturally mention target topics.
                 </li>
                 <li>
-                  <strong className="text-indigo-300">Anchor Clarity:</strong> Suggests descriptive multi-word anchors instead of 'click here'.
+                  <strong className="text-indigo-300">Anchor Clarity:</strong> Suggests descriptive multi-word anchors instead of &apos;click here&apos;.
                 </li>
                 <li>
                   <strong className="text-sky-300">Sitemap Discovery:</strong> Pulls candidate destination URLs straight from your sitemap.

@@ -493,7 +493,7 @@ export default function MentionClient() {
                     }))
                   }
                 />
-                Count links to your website's subdomains
+                Count links to your website&apos;s subdomains
               </label>
             </details>
             <div className={shared.actions}>

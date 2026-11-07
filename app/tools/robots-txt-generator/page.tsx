@@ -190,7 +190,7 @@ export default function RobotsTxtGeneratorPage() {
                 </span>
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Build a clean robots.txt file from scratch or fetch your live domain's rules. Control Googlebot alongside named AI training, search, and user-fetch bots in one click.
+                Build a clean robots.txt file from scratch or fetch your live domain&apos;s rules. Control Googlebot alongside named AI training, search, and user-fetch bots in one click.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
                 <span className="rounded-lg border border-white/15 px-3 py-2">

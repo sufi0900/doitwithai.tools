@@ -217,7 +217,7 @@ export default function LlmsTxtGeneratorPage() {
                   <strong className="text-emerald-300">H1 Project Title:</strong> Starts with a single H1 naming your site or documentation hub.
                 </li>
                 <li>
-                  <strong className="text-indigo-300">Blockquote Summary:</strong> Concise > blockquote describing your product and core audience.
+                  <strong className="text-indigo-300">Blockquote Summary:</strong> Concise &gt; blockquote describing your product and core audience.
                 </li>
                 <li>
                   <strong className="text-sky-300">Grouped H2 Sections:</strong> Organizes canonical URLs with 1-line descriptions by topic.

@@ -724,7 +724,7 @@ export default function GapClient() {
           <p className={styles.eyebrow}>COMPARE YOUR SUPPLIED DATA</p>
           <h2>Find the overlap. Keep the evidence.</h2>
           <p>
-            Start with your backlink list and one competitor's list. Add more
+            Start with your backlink list and one competitor&apos;s list. Add more
             competitors when needed.
           </p>
         </div>
@@ -748,7 +748,7 @@ export default function GapClient() {
         <summary>Where do I get backlink data?</summary>
         <p>
           Use a Search Console export for a website you manage. For competitors,
-          use a backlink provider's export or your own collected list.
+          use a backlink provider&apos;s export or your own collected list.
         </p>
         <p>
           Paste linking-page URLs or referring domains, one per line. A domain

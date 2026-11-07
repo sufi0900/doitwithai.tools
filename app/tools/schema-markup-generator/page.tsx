@@ -242,7 +242,7 @@ export default function SchemaMarkupGeneratorPage() {
                   <strong className="text-sky-300">Field Validation:</strong> Verify required and recommended properties before exporting.
                 </li>
                 <li>
-                  <strong className="text-amber-300">Copy or Download:</strong> Export &lt;script type="application/ld+json"&gt; or raw JSON.
+                  <strong className="text-amber-300">Copy or Download:</strong> Export &lt;script type=&quot;application/ld+json&quot;&gt; or raw JSON.
                 </li>
               </ul>
             </div>

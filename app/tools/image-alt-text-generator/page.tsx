@@ -189,7 +189,7 @@ export default function Page() {
                   <strong className="text-indigo-300">Context Alignment:</strong> Connects visual details naturally to the surrounding topic.
                 </li>
                 <li>
-                  <strong className="text-sky-300">Anti-Stuffing:</strong> Avoids robotic keyword lists and redundant 'image of' prefixes.
+                  <strong className="text-sky-300">Anti-Stuffing:</strong> Avoids robotic keyword lists and redundant &apos;image of&apos; prefixes.
                 </li>
                 <li>
                   <strong className="text-amber-300">Ready to Copy:</strong> Provides concise, medium, and detailed options with HTML code.

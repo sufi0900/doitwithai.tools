@@ -291,7 +291,7 @@ export default function WritingEducation({ kind }: { kind: WritingKind }) {
             What the writing checks can tell you
           </h3>
           <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            Counts describe the draft's length. Keyword checks look for literal
+            Counts describe the draft&apos;s length. Keyword checks look for literal
             words, and repetition checks flag repeated phrases for your review.
           </p>
           <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
@@ -338,7 +338,7 @@ export default function WritingEducation({ kind }: { kind: WritingKind }) {
           ))}
         </ol>
         <p className="mt-7 border-t border-slate-200 pt-5 text-sm leading-7 text-slate-600 dark:border-slate-800 dark:text-slate-400">
-          Review the page's title, main heading, and description together. Use
+          Review the page&apos;s title, main heading, and description together. Use
           the{" "}
           <Link
             href="/tools/meta-title-generator"

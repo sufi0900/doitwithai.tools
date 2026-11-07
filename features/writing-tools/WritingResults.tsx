@@ -554,7 +554,7 @@ export default function WritingResults({
               <ul className="mt-3 space-y-2 text-xs leading-6 text-slate-600 dark:text-slate-400">
                 <li>Does the page support every claim?</li>
                 <li>Will the wording make sense to your reader?</li>
-                <li>Does it match the page's actual purpose?</li>
+                <li>Does it match the page&apos;s actual purpose?</li>
               </ul>
             </div>
           </aside>
