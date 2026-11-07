@@ -110,7 +110,7 @@ export default function Page() {
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Article to EPUB{" "}
-                <span className="text-orange-300">for comfortable reading</span>
+                <span className={toolHeroHeading}>for comfortable reading</span>
               </h1>
               <p className="mt-5 text-base leading-8 text-orange-50/85">
                 Package long web articles into a reflowable EPUB 3 e-book with

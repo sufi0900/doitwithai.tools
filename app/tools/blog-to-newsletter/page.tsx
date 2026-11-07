@@ -110,7 +110,7 @@ export default function Page() {
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Blog to Newsletter{" "}
-                <span className="text-orange-300">in HTML and plain text</span>
+                <span className={toolHeroHeading}>in HTML and plain text</span>
               </h1>
               <p className="mt-5 text-base leading-8 text-orange-50/85">
                 Turn a reviewed blog post into a subscriber-ready email digest

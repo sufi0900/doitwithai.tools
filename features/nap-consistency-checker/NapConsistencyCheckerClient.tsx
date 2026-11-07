@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -17,6 +19,12 @@ import {
 } from "./model";
 
 export default function NapConsistencyCheckerClient() {
+  const [running, setRunning] = useState(false);
+  async function triggerRunFeedback() {
+    setRunning(true);
+    await paintToolFeedback();
+    setRunning(false);
+  }
   const [input, setInput] = useState<NapMasterInput>(DEFAULT_NAP_INPUT);
   const [rowFilter, setRowFilter] = useState<"all" | "issues" | "exact">("all");
   const [toast, setToast] = useState("");
@@ -46,6 +54,7 @@ export default function NapConsistencyCheckerClient() {
   }
 
   function handleAutoNormalizeCitations() {
+                void triggerRunFeedback();
     const normalizedLines = result.auditedRows
       .map(
         (r) =>
@@ -74,6 +83,11 @@ export default function NapConsistencyCheckerClient() {
       aria-label="NAP Consistency Checker and Citation Formatter Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={running}
+        title="Auditing NAP citation consistency across directories"
+        description="Comparing business name, street address, phone, and website against your canonical record."
+      />
       {toast && (
         <div
           role="status"

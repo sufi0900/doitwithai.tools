@@ -1,5 +1,6 @@
 import {
   ToolHeroBackground,
+  toolHeroHeading,
   toolHeroSurface,
 } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
@@ -13,8 +14,16 @@ const description =
   "Free keyword intent checker for search intent analysis. Identify informational, navigational, commercial, or transactional queries and choose a suitable page format.";
 const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Search Intent Checker", category: "AI SEO · Content Planning", ctaText: "Understand. Verify. Plan.", features: "Reader Tasks,Intent Cues,Content Angles" })}`;
 export const metadata: Metadata = {
-  title: "Keyword Intent Checker | Free Search Intent Analysis",
+  title: "Free Keyword Intent Checker & Search Intent Analyzer (Instant + AI)",
   description,
+  keywords: [
+    "keyword intent checker",
+    "search intent checker",
+    "free keyword intent tool",
+    "search intent analyzer",
+    "informational vs commercial intent",
+    "AI search intent checker",
+  ],
   alternates: { canonical: pageUrl },
   openGraph: {
     title: "Keyword Intent Checker | Search Intent Analysis",
@@ -143,13 +152,13 @@ export default function Page() {
         }}
       />
       <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-16 pt-10 sm:pt-16`}
+        className={`relative overflow-hidden ${toolHeroSurface} pb-12 pt-6 sm:pt-8`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-400"
           >
             <Link href="/" className="hover:text-white">
               Home
@@ -163,22 +172,20 @@ export default function Page() {
               Search intent checker
             </span>
           </nav>
-          <div className="mb-10 max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-300/20 bg-blue-400/10 px-4 py-2 text-xs font-semibold text-blue-200">
-              <Compass aria-hidden className="h-4 w-4" />
-              Free content planning tool
+          <div className="mb-6 max-w-4xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-300/20 bg-blue-400/10 px-3.5 py-1.5 text-xs font-semibold text-blue-200">
+              <Compass aria-hidden className="h-3.5 w-3.5" />
+              Free Keyword &amp; Search Intent Planning Tool
             </span>
-            <h1 className="mt-6 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Search Intent Checker
+            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Free Keyword &amp;{" "}
+              <span className={toolHeroHeading}>Search Intent Checker</span>
             </h1>
-            <p className="mt-5 text-lg leading-8 text-slate-300">
-              Use this free keyword intent checker to understand what readers
-              want. Check likely intent, inspect the wording, and choose a
-              suitable page format before writing.
-            </p>
-            <p className="mt-4 text-sm leading-7 text-slate-400">
-              Check one keyword or compare up to ten queries. See clear intent
-              labels, practical reader tasks, and suggested next steps.
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
+              Use this free keyword intent checker to understand what searchers
+              actually want—classify informational, commercial, transactional,
+              and navigational queries, inspect wording cues, and pick the right
+              page format before you write.
             </p>
           </div>
           <SearchIntentClient />

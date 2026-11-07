@@ -125,10 +125,10 @@ export default function Page() {
           aria-hidden
           className="pointer-events-none absolute -right-24 -top-28 h-96 w-96 rounded-full bg-[#5271ff]/100/20 blur-3xl"
         />
-        <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-7 flex flex-wrap gap-2 text-xs text-orange-100/80"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-orange-100/80"
           >
             <Link href="/tools">Tools</Link>
             <span>/</span>
@@ -145,7 +145,7 @@ export default function Page() {
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Article to PDF{" "}
-                <span className="text-orange-300">keep a readable copy</span>
+                <span className={toolHeroHeading}>keep a readable copy</span>
               </h1>
               <p className="mt-5 text-base leading-8 text-orange-50/80">
                 Turn an article URL or pasted content into a clean PDF. Review

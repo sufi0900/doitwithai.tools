@@ -100,13 +100,13 @@ export default function Page() {
         }}
       />
       <section
-        className={`relative overflow-hidden ${toolHeroSurface} px-5 py-14 text-white`}
+        className={`relative overflow-hidden ${toolHeroSurface} px-5 py-7 text-white`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-6xl">
           <nav
             aria-label="Breadcrumb"
-            className="mb-12 flex flex-wrap gap-2 text-xs text-blue-100"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-blue-100"
           >
             <Link href="/">Home</Link>
             <span aria-hidden="true">/</span>
@@ -114,23 +114,22 @@ export default function Page() {
             <span aria-hidden="true">/</span>
             <span aria-current="page">External Link and Source Review</span>
           </nav>
-          <header className="mx-auto max-w-4xl text-center">
+          <header className="mb-4 max-w-4xl text-left">
             <p className="text-xs font-bold uppercase tracking-widest text-blue-200">
               On-page SEO · Thoughtful source review
             </p>
-            <h1 className="mt-6 text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-              External Link and Source Review
-              <span className={`mt-4 block ${toolHeroHeading}`}>
+            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              External Link and Source Review{" "}<span className={toolHeroHeading}>
                 See what your links tell readers.
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-blue-100 sm:text-lg">
+            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-blue-100 sm:text-base sm:leading-7">
               Inspect outbound references in context. Review anchor wording and
               link relationships, then record the changes you want to make.
             </p>
             <a
               href="#external-link-workspace"
-              className="mt-8 inline-flex min-h-12 items-center rounded-xl bg-white px-6 py-3 text-sm font-bold text-[#3048bb]"
+              className="hidden min-h-12 items-center rounded-xl bg-white px-6 py-3 text-sm font-bold text-[#3048bb]"
             >
               Review your outbound links
             </a>

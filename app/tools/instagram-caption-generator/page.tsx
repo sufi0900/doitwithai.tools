@@ -103,10 +103,10 @@ export default function InstagramCaptionGeneratorPage() {
         className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-7 flex flex-wrap gap-2 text-xs text-slate-300"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>

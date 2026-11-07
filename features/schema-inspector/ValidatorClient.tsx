@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -111,6 +113,7 @@ export default function ValidatorClient() {
     const raw = example ? EXAMPLE : code.trim();
     try {
       if (example || (mode === "code" && !/^</.test(raw))) {
+        await paintToolFeedback();
         if (raw.length > 150000)
           throw new Error(
             "Paste JSON-LD up to 150,000 characters, or inspect a smaller source block.",
@@ -249,6 +252,11 @@ export default function ValidatorClient() {
 
   return (
     <div id="structured-data-validator" className={styles.validator}>
+      <ToolRunOverlay
+        active={busy}
+        title="Inspecting JSON-LD & structured data blocks"
+        description="Validating schema.org types, required fields, and rich result eligibility."
+      />
       <section className={styles.inputPanel}>
         <div className={styles.header}>
           <div>

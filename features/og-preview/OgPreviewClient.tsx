@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import React, { useMemo, useState } from "react";
@@ -263,6 +265,11 @@ export default function OgPreviewClient() {
 
   return (
     <div id="og-twitter-preview-generator" className={`${panelClass} p-5 sm:p-8`}>
+      <ToolRunOverlay
+        active={importing || checkingImage}
+        title="Inspecting Open Graph & social card metadata"
+        description="Fetching og:title, og:image, and social preview tags from the target URL."
+      />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-5">
           <div>

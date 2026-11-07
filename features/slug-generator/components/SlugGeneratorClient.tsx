@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { AlertCircle, ArrowDown, BrainCircuit, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { generateSlugs } from "@/features/slug-generator/api";
@@ -180,7 +182,12 @@ export default function SlugGeneratorClient() {
 
   return (
     <section id="slug-url-generator" className="scroll-mt-24">
-      <div className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <ToolRunOverlay
+        active={busy}
+        title="Generating clean, keyword-focused URL slugs"
+        description="Scoring readability, stop-words, length, and redirect safety for your URL candidates."
+      />
+      <div className="mb-4 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["1", "Required context field"],
           ["7", "Focused slug candidates"],
@@ -189,7 +196,7 @@ export default function SlugGeneratorClient() {
         ].map(([value, label]) => (
           <div
             key={label}
-            className="rounded-2xl border border-white/15 bg-white/10 p-4 text-white backdrop-blur-md"
+            className="rounded-xl border border-white/15 bg-white/10 px-3.5 py-2.5 text-white backdrop-blur-md"
           >
             <p className="text-2xl font-black">{value}</p>
             <p className="mt-1 text-xs font-semibold text-blue-100/80">

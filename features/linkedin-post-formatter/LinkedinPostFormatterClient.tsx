@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useRef, useState } from "react";
 import styles from "@/features/tool-ui/visual-studio.module.css";
 import {
@@ -30,6 +32,12 @@ function stripUnicodeFormatting(text: string): string {
 }
 
 export default function LinkedinPostFormatterClient() {
+  const [running, setRunning] = useState(false);
+  async function triggerRunFeedback() {
+    setRunning(true);
+    await paintToolFeedback();
+    setRunning(false);
+  }
   const [postText, setPostText] = useState<string>(
     LINKEDIN_HOOK_TEMPLATES[0].template,
   );
@@ -121,6 +129,11 @@ export default function LinkedinPostFormatterClient() {
       aria-label="LinkedIn Post Formatter and Visual Feed Studio"
       className={`${styles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
     >
+      <ToolRunOverlay
+        active={running}
+        title="Formatting LinkedIn post & see-more cutoff preview"
+        description="Applying Unicode typography, hook cutoff checks, and mobile/desktop feed preview."
+      />
       {/* 1-CLICK ARTICLE URL TO FORMATTED LINKEDIN POST + ATTACHED VISUAL */}
       <UrlArticleExtractorBar
         label="1-Click Article URL to Formatted LinkedIn Post + Attached Post Graphic"
@@ -202,6 +215,7 @@ export default function LinkedinPostFormatterClient() {
                   type="button"
                   onClick={() => {
                     setPostText(tpl.template);
+                void triggerRunFeedback();
                     notify(`Loaded "${tpl.label}" framework.`);
                   }}
                   className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700 transition hover:border-[#3452d1] hover:bg-[#3452d1]/10 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"

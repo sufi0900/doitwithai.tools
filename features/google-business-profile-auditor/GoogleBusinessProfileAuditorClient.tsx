@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -150,6 +152,11 @@ export default function GoogleBusinessProfileAuditorClient() {
       aria-label="Google Business Profile Completeness Auditor Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingAi}
+        title="Generating Google Business Profile optimization pack"
+        description="Drafting local business description, Q&A seeds, and Google Posts."
+      />
       {toast && (
         <div
           role="status"

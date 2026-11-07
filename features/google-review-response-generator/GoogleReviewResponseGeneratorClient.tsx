@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -114,6 +116,11 @@ export default function GoogleReviewResponseGeneratorClient() {
       aria-label="Google Review Response Generator Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingAi}
+        title="Drafting custom Google review replies"
+        description="Creating polite, brand-aligned owner responses tailored to the customer review."
+      />
       {toast && (
         <div
           role="status"

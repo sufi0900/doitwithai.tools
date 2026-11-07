@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import AudienceClient from "@/features/audience-research/Client";
 import {
   ToolHeroBackground,
+  toolHeroHeading,
   toolHeroSurface,
 } from "@/features/tool-ui/ToolHero";
 import ToolResources from "@/features/tool-catalog/ToolResources";
@@ -132,13 +133,13 @@ export default function Page() {
         }}
       />
       <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-14 pt-12`}
+        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-6 sm:pt-8`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           <nav
             aria-label="Breadcrumb"
-            className="mb-7 flex flex-wrap gap-2 text-sm text-blue-100"
+            className="mb-4 flex flex-wrap gap-2 text-sm text-blue-100"
           >
             <Link href="/">Home</Link>
             <span>/</span>
@@ -150,8 +151,9 @@ export default function Page() {
             <p className="text-sm font-semibold text-blue-200">
               AUDIENCE STRATEGY · BUSINESS AND CONTENT PLANNING
             </p>
-            <h1 className="mt-4 text-4xl font-black tracking-tight text-white sm:text-5xl">
-              Target Audience Research Tool
+            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+              AI{" "}
+              <span className={toolHeroHeading}>Target Audience Research Tool</span>
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-200">
               Turn a business idea or website brief into working buyer personas,

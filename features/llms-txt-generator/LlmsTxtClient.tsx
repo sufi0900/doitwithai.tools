@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
@@ -254,6 +256,11 @@ export default function LlmsTxtClient() {
 
   return (
     <div id="llms-txt-generator" className={`${panelClass} p-5 sm:p-8`}>
+      <ToolRunOverlay
+        active={importing}
+        title="Scanning site pages to build llms.txt"
+        description="Importing sitemap and navigation links to curate your Markdown AI documentation index."
+      />
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
         <div>
           <span className="text-xs font-extrabold uppercase tracking-wider text-[#3452d1] dark:text-[#9aabff]">

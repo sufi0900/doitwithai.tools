@@ -166,13 +166,13 @@ export default function MetaTitleGeneratorPage() {
       />
 
       <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}
+        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 text-white sm:pt-7 lg:pb-12`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
+            className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
           >
             <Link href="/" className="transition hover:text-white">
               Home
@@ -185,24 +185,23 @@ export default function MetaTitleGeneratorPage() {
             <span className="text-blue-200">Meta Title Generator</span>
           </nav>
 
-          <div className="mx-auto max-w-5xl text-center">
+          <div className="mb-5 max-w-4xl text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#5271FF]/40 bg-[#5271FF]/15 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#AEBBFF] backdrop-blur">
               <Sparkles className="h-4 w-4 text-[#5271FF]" />
               Free AI-assisted SEO tool
             </div>
-            <h1 className="mt-7 text-4xl font-black leading-[1.08] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
-              Free AI Meta Title Generator
-              <span className={`block ${toolHeroHeading}`}>
+            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              Free AI Meta Title Generator{" "}<span className={toolHeroHeading}>
                 Compare Ideas Before You Publish
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
+            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
               Generate multiple meta title ideas and compare how clearly they
               represent your page, target keyword, and intended audience. Refine
               your preferred option using measurable checks and mobile and
               desktop search previews.
             </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
+            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
               {[
                 [Search, "Page and keyword alignment"],
                 [UserRound, "Clear reader-focused wording"],
@@ -224,14 +223,14 @@ export default function MetaTitleGeneratorPage() {
 
             <a
               href="#meta-title-generator"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#5271FF] px-5 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-[#5271FF]/20 transition hover:-translate-y-0.5 hover:bg-[#4664E8]"
+              className="hidden items-center gap-2 rounded-xl bg-[#5271FF] px-5 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-[#5271FF]/20 transition hover:-translate-y-0.5 hover:bg-[#4664E8]"
             >
               Generate meta title ideas
               <ArrowRight className="h-4 w-4" />
             </a>
           </div>
 
-          <div className="mt-14">
+          <div className="mt-5">
             <MetaTitleGeneratorClient />
           </div>
         </div>

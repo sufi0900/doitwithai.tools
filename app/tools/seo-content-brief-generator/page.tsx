@@ -1,5 +1,6 @@
 import {
   ToolHeroBackground,
+  toolHeroHeading,
   toolHeroSurface,
 } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
@@ -87,13 +88,13 @@ export default function Page() {
         }}
       />
       <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-16 pt-12`}
+        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-6 sm:pt-8`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-400"
           >
             <Link href="/">Home</Link>
             <span>/</span>
@@ -101,12 +102,13 @@ export default function Page() {
             <span>/</span>
             <span aria-current="page">SEO content brief generator</span>
           </nav>
-          <div className="mb-10 max-w-3xl">
+          <div className="mb-6 max-w-4xl">
             <p className="text-sm font-bold text-blue-200">
               Free content planning tool
             </p>
-            <h1 className="mt-5 text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
-              SEO Content Brief Generator
+            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+              AI-Assisted{" "}
+              <span className={toolHeroHeading}>SEO Content Brief Generator</span>
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-300">
               Turn a topic into a clear writer handoff. Plan reader goals,

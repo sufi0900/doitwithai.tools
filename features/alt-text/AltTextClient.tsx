@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import {
@@ -301,6 +303,11 @@ export default function AltTextClient() {
 
   return (
     <div className="space-y-7">
+      <ToolRunOverlay
+        active={busy || preparing}
+        title="Generating accessible image alt text"
+        description="Analyzing visual context and page topic to craft descriptive alt text options."
+      />
       <form
         onSubmit={generate}
         className={card}

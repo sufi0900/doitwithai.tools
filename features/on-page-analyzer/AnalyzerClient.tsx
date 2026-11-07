@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -610,6 +612,11 @@ export default function AnalyzerClient() {
     );
   return (
     <div className={styles.app} id="on-page-analyzer">
+      <ToolRunOverlay
+        active={loading || suggesting || reviewBusy}
+        title="Running on-page SEO & content audit"
+        description="Inspecting metadata, headings, internal/external links, schema, and editorial signals."
+      />
       <section className={styles.inputCard} aria-label="Start a page audit">
         <div className={styles.panelTitle}>
           <div className="flex items-center gap-3">

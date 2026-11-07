@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useMemo, useRef, useState } from "react";
 import { Dataset, readConsoleFile, reportInfo, csvCell } from "./import";
@@ -120,6 +122,11 @@ export default function ConsoleImportPanel({
       }}
       className="rounded-2xl border border-dashed border-blue-300/40 bg-slate-950/40 p-5"
     >
+      <ToolRunOverlay
+        active={busy}
+        title="Importing Google Search Console export"
+        description="Parsing queries, pages, clicks, impressions, CTR, and average position rows."
+      />
       <p className="font-bold text-white">
         Upload CSV files or the original Search Console ZIP
       </p>

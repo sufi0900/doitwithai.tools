@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import {
   useCallback,
   useDeferredValue,
@@ -294,6 +296,11 @@ export default function ReadabilityClient() {
 
   return (
     <div className="min-w-0 text-slate-900 dark:text-white">
+      <ToolRunOverlay
+        active={rev.busy}
+        title="Drafting clearer sentence revisions"
+        description="Simplifying complex phrasing while preserving your original meaning and tone."
+      />
       <section className={card} aria-labelledby="readability-input-title">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

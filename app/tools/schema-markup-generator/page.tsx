@@ -185,14 +185,14 @@ export default function SchemaMarkupGeneratorPage() {
       />
 
       <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 text-white sm:pt-16 lg:pb-28`}
+        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 text-white sm:pt-7 lg:pb-12`}
       >
         <ToolHeroBackground />
 
         <div className="relative mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-10 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
+            className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
           >
             <Link href="/" className="transition hover:text-white">
               Home
@@ -205,24 +205,23 @@ export default function SchemaMarkupGeneratorPage() {
             <span className="text-blue-200">Schema Markup Generator</span>
           </nav>
 
-          <div className="mx-auto max-w-5xl text-center">
+          <div className="mb-5 max-w-4xl text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-100 backdrop-blur">
               <Sparkles className="h-4 w-4 text-cyan-300" /> AI-assisted,
               deterministically compiled
             </div>
-            <h1 className="mt-7 text-4xl font-black leading-[1.06] tracking-[-0.045em] sm:text-6xl lg:text-7xl">
-              Schema Markup Generator for
-              <span className={`block ${toolHeroHeading}`}>
+            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              Schema Markup Generator for{" "}<span className={toolHeroHeading}>
                 Complete, Connected JSON-LD
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
+            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
               Choose the page type, provide real context, optionally analyze a
               public URL, and complete only the fields that belong to that
               entity. The tool builds a clean graph you can copy, download,
               validate, and add to your website.
             </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
+            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
               {[
                 [Network, "Connected entity graph"],
                 [ScanSearch, "Type-specific checks"],
@@ -243,13 +242,13 @@ export default function SchemaMarkupGeneratorPage() {
             </div>
             <a
               href="#schema-markup-generator"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
+              className="hidden items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
             >
               Build schema markup <ArrowRight className="h-4 w-4" />
             </a>
           </div>
 
-          <div className="mt-14">
+          <div className="mt-5">
             <SchemaGeneratorClient />
           </div>
         </div>

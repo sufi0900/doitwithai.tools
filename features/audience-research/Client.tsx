@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import React, { useEffect, useRef, useState } from "react";
 import { Loader2, Users, Download, Copy, ArrowUpRight } from "lucide-react";
 import { inputErrors } from "./planning";
@@ -333,6 +335,11 @@ export default function AudienceClient() {
 
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:p-7">
+      <ToolRunOverlay
+        active={Boolean(busy)}
+        title="Building target audience & buyer persona research"
+        description="Mapping customer segments, search triggers, objections, and content touchpoints."
+      />
       <dialog
         ref={dialog}
         onCancel={(e) => {

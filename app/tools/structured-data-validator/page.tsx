@@ -105,12 +105,12 @@ export default function StructuredDataValidatorPage() {
         }}
       />
       <section
-        className={`relative overflow-hidden ${toolHeroSurface} px-5 py-14 text-white`}
+        className={`relative overflow-hidden ${toolHeroSurface} px-5 py-7 text-white`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-6xl">
           <nav
-            className="mb-10 flex flex-wrap gap-2 text-xs text-blue-100"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-blue-100"
             aria-label="Breadcrumb"
           >
             <Link href="/">Home</Link>
@@ -119,17 +119,16 @@ export default function StructuredDataValidatorPage() {
             <span>/</span>
             <span>Structured Data Validator</span>
           </nav>
-          <div className="mx-auto max-w-3xl text-center">
+          <div className="mb-4 max-w-4xl text-left">
             <p className="text-xs font-bold uppercase tracking-widest text-blue-200">
               Every entity, in view
             </p>
-            <h1 className="mt-5 text-4xl font-black leading-tight tracking-tight sm:text-6xl">
-              Structured Data Validator
-              <span className={`block ${toolHeroHeading}`}>
+            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              Structured Data Validator{" "}<span className={toolHeroHeading}>
                 Inspect. Understand. Correct.
               </span>
             </h1>
-            <p className="mt-6 text-base leading-8 text-blue-100">
+            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-blue-100 sm:text-base sm:leading-7">
               See your page’s JSON-LD entities, inspect field findings, and
               prepare source corrections in one focused workspace.
             </p>

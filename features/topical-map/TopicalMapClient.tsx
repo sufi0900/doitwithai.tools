@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
@@ -436,6 +438,11 @@ export default function TopicalMapClient() {
   }
   return (
     <div className="space-y-6 text-slate-900 dark:text-white">
+      <ToolRunOverlay
+        active={busy}
+        title="Building pillar & cluster topical map"
+        description="Mapping pillar hubs, supporting cluster articles, search intent, and internal link flow."
+      />
       <div className={card}>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

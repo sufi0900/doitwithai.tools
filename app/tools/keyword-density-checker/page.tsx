@@ -117,7 +117,7 @@ export default function Page() {
         }}
       />
       <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
+        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 sm:pt-7`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -137,13 +137,12 @@ export default function Page() {
             <p className="inline-flex rounded-full border border-[#5271FF]/40 bg-[#5271FF]/15 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#AEBBFF]">
               Free content editing tool
             </p>
-            <h1 className="mt-7 text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              Keyword Density Checker
-              <span className={`mt-3 block text-balance ${toolHeroHeading}`}>
+            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              Keyword Density Checker{" "}<span className={toolHeroHeading}>
                 Find Repetition. Keep Your Meaning.
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
+            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
               Count words and phrases, inspect repeated wording in context, and
               spot paragraphs worth reviewing.
             </p>

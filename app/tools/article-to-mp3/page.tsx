@@ -150,7 +150,7 @@ export default function Page() {
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Article to MP3{" "}
-                <span className="text-orange-300">and read aloud</span>
+                <span className={toolHeroHeading}>and read aloud</span>
               </h1>
               <p className="mt-5 text-base leading-8 text-orange-50/85">
                 Give a useful article a listening format. Review the text,

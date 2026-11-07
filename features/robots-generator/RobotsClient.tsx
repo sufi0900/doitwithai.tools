@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
@@ -282,6 +284,11 @@ export default function RobotsClient() {
 
   return (
     <div id="robots-txt-generator" className={`${panelClass} p-5 sm:p-8`}>
+      <ToolRunOverlay
+        active={fetching}
+        title="Fetching live robots.txt & sitemap directives"
+        description="Reading crawler rules, AI bot directives, and sitemap declarations from the domain."
+      />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           <button

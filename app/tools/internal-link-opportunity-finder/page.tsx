@@ -64,7 +64,7 @@ export default function Page() {
         }}
       />
       <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
+        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 sm:pt-7`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -80,22 +80,21 @@ export default function Page() {
               Internal Link Opportunity Finder
             </span>
           </nav>
-          <header className="mx-auto mb-14 mt-12 max-w-5xl text-center text-white">
+          <header className="mb-6 mt-3 max-w-4xl text-left text-white">
             <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-blue-100">
               AI SEO · Content Writing
             </p>
-            <h1 className="mt-7 text-balance text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              Internal Link Opportunity Finder
-              <span className={`mt-3 block text-balance ${toolHeroHeading}`}>
+            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              Internal Link Opportunity Finder{" "}<span className={toolHeroHeading}>
                 Connect Your Content Where It Helps
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
+            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
               Find relevant pages on your website and see exactly where an
               internal link could help your reader. Review every placement
               before publishing.
             </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
+            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
               {[
                 [Link2, "Article URL or pasted text"],
                 [Search, "Bounded sitemap discovery"],

@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -57,6 +59,12 @@ const SAMPLE_PRESETS: Array<{ label: string; data: ReviewLinkInput }> = [
 ];
 
 export default function GoogleReviewLinkGeneratorClient() {
+  const [running, setRunning] = useState(false);
+  async function triggerRunFeedback() {
+    setRunning(true);
+    await paintToolFeedback();
+    setRunning(false);
+  }
   const [input, setInput] = useState<ReviewLinkInput>(
     DEFAULT_REVIEW_LINK_INPUT,
   );
@@ -146,6 +154,11 @@ export default function GoogleReviewLinkGeneratorClient() {
       aria-label="Google Review Link and QR Code Generator Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={running}
+        title="Generating Google review link, QR kit & templates"
+        description="Building direct write-a-review URLs, printable QR code, and SMS/email outreach templates."
+      />
       {/* Preset Bar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-[#111827]">
         <div>
@@ -165,6 +178,7 @@ export default function GoogleReviewLinkGeneratorClient() {
               onClick={() => {
                 setTemplateOverrides({});
                 setInput(preset.data);
+                void triggerRunFeedback();
                 notify(`Loaded "${preset.label}" preset.`);
               }}
               className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 transition hover:border-[#5271ff] hover:text-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"

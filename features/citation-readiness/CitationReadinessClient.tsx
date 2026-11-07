@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
@@ -138,6 +140,11 @@ export default function CitationReadinessClient() {
   }
   return (
     <div id="ai-citation-readiness-checker" className={styles.workspace}>
+      <ToolRunOverlay
+        active={loading}
+        title="Checking AI citation readiness"
+        description="Inspecting page structure, answer passages, evidence blocks, and editorial signals."
+      />
       <div className={styles.inputPanel}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className={styles.eyebrow}>

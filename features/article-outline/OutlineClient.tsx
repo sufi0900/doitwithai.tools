@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
 import {
@@ -377,6 +379,11 @@ export default function OutlineClient() {
 
   return (
     <div className="text-slate-900 dark:text-white">
+      <ToolRunOverlay
+        active={busy}
+        title="Building SEO article outline & H2/H3 structure"
+        description="Organizing reader questions, section flow, and talking points for your topic."
+      />
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <form
           onSubmit={generate}

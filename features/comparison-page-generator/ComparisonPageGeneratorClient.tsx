@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -131,6 +133,11 @@ export default function ComparisonPageGeneratorClient() {
       aria-label="X vs Y Comparison Page and Feature Matrix Builder Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingAi}
+        title="Generating VS comparison matrix & verdict"
+        description="Structuring head-to-head evaluation criteria, trade-offs, and Markdown/JSON-LD output."
+      />
       {toast && (
         <div
           role="status"

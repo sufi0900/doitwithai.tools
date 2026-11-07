@@ -176,12 +176,12 @@ export default function OnPageAnalyzerPage() {
         }}
       />
       <section
-        className={`relative overflow-hidden ${toolHeroSurface} px-4 pb-16 pt-10 text-white sm:px-6 sm:pt-14`}
+        className={`relative overflow-hidden ${toolHeroSurface} px-4 pb-7 pt-5 text-white sm:px-6 sm:pt-7`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-[1500px]">
           <nav
-            className="mb-10 flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-100/80"
+            className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-100/80"
             aria-label="Breadcrumb"
           >
             <Link href="/">Home</Link>
@@ -190,23 +190,22 @@ export default function OnPageAnalyzerPage() {
             <span>/</span>
             <span>On-page AI SEO Analyzer</span>
           </nav>
-          <div className="mx-auto max-w-4xl text-center">
+          <div className="mb-4 max-w-4xl text-left">
             <span className="inline-flex items-center gap-2 rounded-full border border-blue-300/30 bg-blue-400/10 px-4 py-2 text-xs font-bold tracking-wide text-blue-100">
               <Layers3 size={15} />
               Your complete page review workspace
             </span>
-            <h1 className="mt-6 text-4xl font-black leading-[1.08] tracking-[-0.045em] sm:text-6xl">
-              On-page AI SEO Analyzer
-              <span className={`mt-2 block ${toolHeroHeading}`}>
+            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              On-page AI SEO Analyzer{" "}<span className={toolHeroHeading}>
                 Audit. Understand. Improve.
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-blue-100/85">
+            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-blue-100/85 sm:text-base sm:leading-7">
               See what needs attention, inspect the evidence, and prepare useful
               changes. Bring your page essentials together in one focused
               workspace.
             </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs text-blue-100">
+            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs text-blue-100">
               {[
                 [ScanLine, "Evidence behind every finding"],
                 [Sparkles, "Selected improvements"],

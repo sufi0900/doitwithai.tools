@@ -110,7 +110,7 @@ export default function Page() {
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Article to Podcast Script{" "}
-                <span className="text-orange-300">for solo or co-hosts</span>
+                <span className={toolHeroHeading}>for solo or co-hosts</span>
               </h1>
               <p className="mt-5 text-base leading-8 text-orange-50/85">
                 Turn a reviewed article into a structured podcast episode outline

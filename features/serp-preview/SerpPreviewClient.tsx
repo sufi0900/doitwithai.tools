@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -430,6 +432,11 @@ export default function SerpPreviewClient() {
       aria-label="SERP simulator workspace"
       className={`${panelClass} min-w-0 p-4 sm:p-7`}
     >
+      <ToolRunOverlay
+        active={importing || exporting}
+        title="Processing SERP snippet & pixel width check"
+        description="Measuring title and meta description pixel widths and preparing your SERP preview."
+      />
       <form
         onSubmit={handleImport}
         className="rounded-2xl border border-[#5271ff]/30 bg-[#5271ff]/5 p-4 sm:p-5"

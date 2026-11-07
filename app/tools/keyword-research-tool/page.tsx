@@ -5,6 +5,7 @@ import Client from "@/features/keyword-research/Client";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 import {
   ToolHeroBackground,
+  toolHeroHeading,
   toolHeroSurface,
 } from "@/features/tool-ui/ToolHero";
 const pageUrl = "https://doitwithai.tools/tools/keyword-research-tool";
@@ -99,7 +100,7 @@ export default function Page() {
         }}
       />
       <section
-        className={`relative overflow-hidden ${toolHeroSurface} px-4 py-12 sm:px-6`}
+        className={`relative overflow-hidden ${toolHeroSurface} px-4 pb-10 pt-6 sm:px-6 sm:pt-8`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl">
@@ -117,8 +118,9 @@ export default function Page() {
             <p className="text-sm font-semibold text-blue-200">
               DISCOVER · ORGANIZE · REVIEW
             </p>
-            <h1 className="mt-4 text-4xl font-extrabold text-white sm:text-5xl">
-              Keyword Research Tool
+            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+              Free AI{" "}
+              <span className={toolHeroHeading}>Keyword Research Tool</span>
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-200">
               Find relevant keyword ideas, explore reader questions, and build a

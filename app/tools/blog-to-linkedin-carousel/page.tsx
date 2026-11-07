@@ -110,7 +110,7 @@ export default function Page() {
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Blog to LinkedIn Carousel{" "}
-                <span className="text-orange-300">with PDF and PNG slides</span>
+                <span className={toolHeroHeading}>with PDF and PNG slides</span>
               </h1>
               <p className="mt-5 text-base leading-8 text-orange-50/85">
                 Transform your reviewed article into a swipeable 6-to-10 slide

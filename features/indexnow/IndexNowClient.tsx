@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useEffect, useMemo, useState } from "react";
@@ -263,6 +265,11 @@ export default function IndexNowClient() {
       id="indexnow-key-generator"
       className="mx-auto max-w-6xl scroll-mt-24 rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-left backdrop-blur sm:p-8"
     >
+      <ToolRunOverlay
+        active={verifying || submitting}
+        title="Processing IndexNow key & URL submission"
+        description="Checking key file accessibility and submitting URLs to participating search engines."
+      />
       <div className="mb-6 rounded-2xl border border-blue-300/20 bg-blue-300/5 p-5">
         <p className="font-bold text-white">
           Generate → Publish → Verify → Submit

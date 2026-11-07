@@ -112,7 +112,7 @@ export default function Page() {
         }}
       />
       <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-20 pt-10 sm:pt-16`}
+        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 sm:pt-7`}
       >
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -133,18 +133,17 @@ export default function Page() {
               <Sparkles className="h-4 w-4" aria-hidden />
               Source-first content writing
             </p>
-            <h1 className="mt-7 text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
-              AI FAQ Generator
-              <span className={`mt-3 block text-balance ${toolHeroHeading}`}>
+            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              AI FAQ Generator{" "}<span className={toolHeroHeading}>
                 Trace Every Answer Back to Your Text
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
+            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
               Turn your article into useful questions and answer drafts. Inspect
               the source quotes, resolve missing information, and export only
               what you have reviewed.
             </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3 text-xs font-bold text-slate-300">
+            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
               {[
                 [FileCheck2, "Matched source quotes"],
                 [ShieldCheck, "Missing evidence stays visible"],

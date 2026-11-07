@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -75,6 +77,12 @@ function download(name: string, content: string) {
 }
 
 export default function SitemapXmlClient() {
+  const [running, setRunning] = useState(false);
+  async function triggerRunFeedback() {
+    setRunning(true);
+    await paintToolFeedback();
+    setRunning(false);
+  }
   const fileRef = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<Tab>("generate");
 
@@ -177,6 +185,11 @@ export default function SitemapXmlClient() {
       id="sitemap-xml-generator"
       className="mx-auto max-w-6xl scroll-mt-24 rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-left backdrop-blur sm:p-8"
     >
+      <ToolRunOverlay
+        active={running}
+        title="Generating & validating XML sitemap"
+        description="Checking canonical URLs, lastmod timestamps, and protocol compliance."
+      />
       <div
         role="tablist"
         aria-label="Sitemap tool mode"
@@ -231,6 +244,7 @@ export default function SitemapXmlClient() {
                 type="button"
                 onClick={() => {
                   setUrlsText(SAMPLE_URLS);
+                void triggerRunFeedback();
                   setIncludeLastmod(true);
                   setRawXmlOverride(null);
                 }}

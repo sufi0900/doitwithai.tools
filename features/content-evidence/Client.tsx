@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -411,6 +413,11 @@ export default function Client() {
     ) || [];
   return (
     <div className={styles.workspace} id="evidence-review-workspace">
+      <ToolRunOverlay
+        active={busy}
+        title="Reviewing content evidence & source citations"
+        description="Inspecting factual claims, outbound references, and passages needing support."
+      />
       <section
         className={styles.inputPanel}
         aria-labelledby="evidence-input-heading"

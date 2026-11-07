@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useRef, useState } from "react";
@@ -433,6 +435,11 @@ export default function KeywordClusteringClient() {
   }
   return (
     <div className="space-y-6 text-slate-900 dark:text-white">
+      <ToolRunOverlay
+        active={busy}
+        title="Clustering keywords by shared page intent"
+        description="Grouping related search queries into single-page topic clusters and content briefs."
+      />
       <div className={card}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>

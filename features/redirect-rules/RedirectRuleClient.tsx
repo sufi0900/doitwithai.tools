@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
@@ -76,6 +78,12 @@ function download(
 }
 
 export default function RedirectRuleClient() {
+  const [running, setRunning] = useState(false);
+  async function triggerRunFeedback() {
+    setRunning(true);
+    await paintToolFeedback();
+    setRunning(false);
+  }
   const fileRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState(SAMPLE_INPUT);
   const [fileError, setFileError] = useState("");
@@ -155,6 +163,11 @@ export default function RedirectRuleClient() {
       id="redirect-rule-generator"
       className="mx-auto max-w-6xl scroll-mt-24 rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-left backdrop-blur sm:p-8"
     >
+      <ToolRunOverlay
+        active={running}
+        title="Compiling server redirect rules & chain checks"
+        description="Validating redirect mappings, flattening multi-hop chains, and generating config syntax."
+      />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <div>
           <label className={labelClass} htmlFor="rr-input">
@@ -187,6 +200,7 @@ export default function RedirectRuleClient() {
               onClick={() => {
                 setRawRulesOverride(null);
                 setText(SAMPLE_INPUT);
+                void triggerRunFeedback();
               }}
               className={smallButton}
             >

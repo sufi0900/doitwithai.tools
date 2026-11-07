@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -20,6 +22,12 @@ import {
 } from "./model";
 
 export default function LocalBusinessSchemaGeneratorClient() {
+  const [running, setRunning] = useState(false);
+  async function triggerRunFeedback() {
+    setRunning(true);
+    await paintToolFeedback();
+    setRunning(false);
+  }
   const [input, setInput] = useState<LocalBusinessSchemaInput>(
     DEFAULT_LOCAL_SCHEMA_INPUT,
   );
@@ -68,6 +76,11 @@ export default function LocalBusinessSchemaGeneratorClient() {
       aria-label="LocalBusiness JSON-LD Schema Generator Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={running}
+        title="Building validated LocalBusiness JSON-LD schema"
+        description="Structuring NAP details, geo coordinates, opening hours, and Google rich result markup."
+      />
       {toast && (
         <div
           role="status"
@@ -455,6 +468,7 @@ export default function LocalBusinessSchemaGeneratorClient() {
                   type="button"
                   onClick={() => {
                     setOutputMode("script");
+                void triggerRunFeedback();
                     setRawOverride(null);
                   }}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold ${

@@ -1,6 +1,10 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { Search, Sparkles, Loader2 } from "lucide-react";
+import ToolRunOverlay, {
+  focusToolSection,
+  paintToolFeedback,
+} from "@/features/tool-ui/ToolRunOverlay";
 import IntentResults from "./Results";
 import { copyReport } from "./presentation";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
@@ -40,34 +44,23 @@ export default function SearchIntentClient() {
     quickAnalyze(INITIAL_INTENT_DATA),
   );
   const [busy, setBusy] = useState(false);
+  const [overlayMode, setOverlayMode] = useState<"quick" | "ai">("quick");
   const [error, setError] = useState("");
   const [status, setStatus] = useState(
     "Sample intent analysis loaded. Review the suggested reader tasks and content angles on the right, or enter your own queries.",
   );
+  const [revision, setRevision] = useState(0);
   const active = useRef<AbortController | null>(null);
   const results = useRef<HTMLDivElement | null>(null);
-  const mountedRef = useRef(false);
   const [completedInput, setCompletedInput] = useState(() =>
     JSON.stringify(INITIAL_INTENT_DATA),
   );
 
   useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
+    if (!busy && revision > 0) {
+      focusToolSection(results.current);
     }
-    if (!report) return;
-    const frame = requestAnimationFrame(() => {
-      results.current?.focus({ preventScroll: true });
-      results.current?.scrollIntoView({
-        block: "start",
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
-      });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [report]);
+  }, [busy, revision]);
 
   useEffect(() => () => active.current?.abort(), []);
 
@@ -79,38 +72,55 @@ export default function SearchIntentClient() {
       notes,
     });
 
-  function quick(event?: React.FormEvent) {
+  async function quick(event?: React.FormEvent) {
     event?.preventDefault();
-    if (active.current) return;
+    if (active.current || busy) return;
     const parsed = input();
     if (!parsed.success) {
       setError(parsed.error.issues[0].message);
       return;
     }
-    setReport(quickAnalyze(parsed.data));
-    setCompletedInput(JSON.stringify(parsed.data));
+    setOverlayMode("quick");
+    setBusy(true);
     setError("");
-    setStatus(
-      "Keyword check complete. Choose Review with AI to include your audience context and pasted notes.",
-    );
+    setStatus("Checking keyword wording cues and classifying reader tasks…");
+    try {
+      await paintToolFeedback(650);
+      setReport(quickAnalyze(parsed.data));
+      setCompletedInput(JSON.stringify(parsed.data));
+      setRevision((r) => r + 1);
+      setStatus(
+        "Keyword check complete. Choose Review with AI to include your audience context and pasted notes.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function example() {
-    if (active.current) return;
-    setCompletedInput(JSON.stringify(INITIAL_INTENT_DATA));
-    setKeywords(INITIAL_INTENT_DATA.keywords.join("\n"));
-    setAudience(INITIAL_INTENT_DATA.audience);
-    setMarket(INITIAL_INTENT_DATA.market);
-    setNotes(INITIAL_INTENT_DATA.notes);
-    setReport(quickAnalyze(INITIAL_INTENT_DATA));
+  async function example() {
+    if (active.current || busy) return;
+    setOverlayMode("quick");
+    setBusy(true);
     setError("");
-    setStatus(
-      "Example loaded. Review the suggested reader tasks and content angles.",
-    );
+    try {
+      await paintToolFeedback(550);
+      setCompletedInput(JSON.stringify(INITIAL_INTENT_DATA));
+      setKeywords(INITIAL_INTENT_DATA.keywords.join("\n"));
+      setAudience(INITIAL_INTENT_DATA.audience);
+      setMarket(INITIAL_INTENT_DATA.market);
+      setNotes(INITIAL_INTENT_DATA.notes);
+      setReport(quickAnalyze(INITIAL_INTENT_DATA));
+      setRevision((r) => r + 1);
+      setStatus(
+        "Example loaded. Review the suggested reader tasks and content angles.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function analyze() {
-    if (active.current) return;
+    if (active.current || busy) return;
     const parsed = input();
     if (!parsed.success) {
       setError(parsed.error.issues[0].message);
@@ -119,12 +129,14 @@ export default function SearchIntentClient() {
     const controller = new AbortController();
     active.current = controller;
     const timer = setTimeout(() => controller.abort(), 55_000);
+    setOverlayMode("ai");
     setBusy(true);
     setError("");
     setStatus(
       "Reviewing your keywords. Your previous results remain visible until the new review completes.",
     );
     try {
+      await paintToolFeedback(300);
       const response = await fetch("/api/ai-tools/search-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -137,6 +149,7 @@ export default function SearchIntentClient() {
       }>(response);
       setReport(validateOutput(payload.result, parsed.data));
       setCompletedInput(JSON.stringify(parsed.data));
+      setRevision((r) => r + 1);
       setStatus(
         "AI review completed. Validate the interpretation against current search results before writing.",
       );
@@ -192,11 +205,29 @@ export default function SearchIntentClient() {
       aria-label="Search intent analysis workspace"
       className="rounded-[28px] border border-white/10 bg-slate-900/80 p-5 shadow-2xl sm:p-8"
     >
+      <ToolRunOverlay
+        active={busy}
+        title={
+          overlayMode === "ai"
+            ? "Running AI Search Intent & Context Review"
+            : "Analyzing Keyword Wording & Search Intent"
+        }
+        description={
+          overlayMode === "ai"
+            ? "Evaluating your queries against your target audience, market context, and supplied search-result notes."
+            : "Inspecting query modifiers, informational vs. commercial signals, reader tasks, and recommended page formats."
+        }
+        onCancel={() => {
+          active.current?.abort();
+          active.current = null;
+          setBusy(false);
+        }}
+      />
       <div role="status" aria-live="polite" className="sr-only">
         {status}
       </div>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <form onSubmit={quick} className="min-w-0">
+        <form onSubmit={(e) => void quick(e)} className="min-w-0">
           <div className="mb-5 flex items-center gap-3">
             <Search aria-hidden className="h-6 w-6 text-blue-300" />
             <h2 className="text-xl font-bold text-white">
@@ -232,7 +263,7 @@ export default function SearchIntentClient() {
                 Quick checks use English wording cues.
               </p>
             </div>
-            <details open className="rounded-xl border border-white/10 p-4">
+            <details className="rounded-xl border border-white/10 p-4">
               <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-white">
                 Add context for an AI review{" "}
                 <span className="font-normal text-slate-400">optional</span>
@@ -315,10 +346,10 @@ export default function SearchIntentClient() {
               </button>
               <button
                 type="button"
-                onClick={analyze}
+                onClick={() => void analyze()}
                 className={button + " text-white"}
               >
-                {busy ? (
+                {busy && overlayMode === "ai" ? (
                   <Loader2
                     aria-hidden
                     className="animate-spin motion-reduce:animate-none h-4 w-4"
@@ -326,11 +357,11 @@ export default function SearchIntentClient() {
                 ) : (
                   <Sparkles aria-hidden className="h-4 w-4" />
                 )}
-                {busy ? "Reviewing…" : "Review with AI"}
+                {busy && overlayMode === "ai" ? "Reviewing…" : "Review with AI"}
               </button>
               <button
                 type="button"
-                onClick={example}
+                onClick={() => void example()}
                 className="min-h-11 px-2 text-sm text-blue-200 underline"
               >
                 Try an example
@@ -340,7 +371,11 @@ export default function SearchIntentClient() {
           {busy && (
             <button
               type="button"
-              onClick={() => active.current?.abort()}
+              onClick={() => {
+                active.current?.abort();
+                active.current = null;
+                setBusy(false);
+              }}
               className="mt-3 min-h-11 text-sm text-slate-300 underline"
             >
               Stop waiting

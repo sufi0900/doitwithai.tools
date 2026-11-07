@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 import { useRef, useState, useEffect } from "react";
 import {
@@ -214,6 +216,11 @@ export default function Client() {
 
   return (
     <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <ToolRunOverlay
+        active={busy}
+        title="Finding contextual internal link opportunities"
+        description="Scanning candidate pages and matching natural anchor phrases inside your article."
+      />
       <form
         onSubmit={analyze}
         className="min-w-0 rounded-3xl border border-white/10 bg-white p-5 shadow-2xl dark:bg-[#1D2430] sm:p-8"

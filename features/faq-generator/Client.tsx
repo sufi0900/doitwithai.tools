@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, FileCheck2, ShieldCheck, Sparkles } from "lucide-react";
 import {
@@ -294,6 +296,11 @@ export default function FaqGeneratorClient() {
       id="faq-generator"
       className="grid scroll-mt-24 items-start gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
     >
+      <ToolRunOverlay
+        active={busy}
+        title="Generating FAQ questions, answers & FAQPage schema"
+        description="Drafting clear reader Q&As and validating JSON-LD structured data."
+      />
       <div className="min-w-0 rounded-[28px] border border-white/20 bg-white p-5 text-slate-950 shadow-xl dark:border-slate-700 dark:bg-[#1D2430] dark:text-white sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-black">Start with your source</h2>

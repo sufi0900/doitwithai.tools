@@ -145,7 +145,7 @@ export default function Page() {
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Article to Word{" "}
-                <span className="text-orange-300">ready for your edits</span>
+                <span className={toolHeroHeading}>ready for your edits</span>
               </h1>
               <p className="mt-5 text-base leading-8 text-orange-50/80">
                 Turn a public article URL or pasted content into a clean DOCX.

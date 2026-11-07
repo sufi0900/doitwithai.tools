@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
@@ -277,6 +279,11 @@ export default function EntitySameAsClient() {
       id="entity-sameas-finder"
       className="mx-auto max-w-6xl scroll-mt-24 rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-left backdrop-blur sm:p-8"
     >
+      <ToolRunOverlay
+        active={searching || loadingEntity}
+        title="Searching verified entity profiles & sameAs links"
+        description="Querying Wikidata and Wikipedia authority records to build disambiguated JSON-LD."
+      />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
         {/* Search column */}
         <div>

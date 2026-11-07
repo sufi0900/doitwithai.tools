@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import {
   CheckCircle2,
@@ -173,6 +175,11 @@ export default function LocalSeoServicePagePlannerClient() {
       aria-label="Local SEO Service-Area and City Page Matrix Planner Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingAi}
+        title="Generating localized city & service page brief"
+        description="Planning local proof elements, FAQs, schema, and anti-doorway content angles."
+      />
       {toast && (
         <div
           role="status"

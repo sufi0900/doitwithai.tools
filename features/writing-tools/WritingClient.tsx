@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -170,7 +172,12 @@ export default function WritingClient({ kind }: { kind: WritingKind }) {
   }
   return (
     <section id={`${kind}-workspace`} className="scroll-mt-24">
-      <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <ToolRunOverlay
+        active={busy}
+        title="Generating tailored writing options"
+        description="Drafting clear, reader-first copy variations aligned with your tone and goal."
+      />
+      <div className="mb-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         {[
           [Sparkles, "6", "Purposeful writing options"],
           [LayoutTemplate, "3", "Distinct writing directions"],
@@ -187,7 +194,7 @@ export default function WritingClient({ kind }: { kind: WritingKind }) {
           return (
             <div
               key={label as string}
-              className="rounded-2xl border border-white/15 bg-white/[0.07] p-4 backdrop-blur"
+              className="rounded-xl border border-white/15 bg-white/[0.07] px-3.5 py-2.5 backdrop-blur"
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-2xl font-black text-white">

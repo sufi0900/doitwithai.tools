@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { useDeferredValue, useMemo, useState } from "react";
 import CoveragePanel from "./CoveragePanel";
 import {
@@ -20,6 +22,12 @@ const button =
   "min-h-11 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold hover:border-[#5271FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5271FF] dark:border-slate-600";
 
 export default function KeywordDensityClient() {
+  const [running, setRunning] = useState(false);
+  async function triggerRunFeedback() {
+    setRunning(true);
+    await paintToolFeedback();
+    setRunning(false);
+  }
   const [text, setText] = useState(example);
   const [rawTargets, setRawTargets] = useState("AI writing tools\nhuman review");
   const [exclude, setExclude] = useState(true);
@@ -158,6 +166,11 @@ export default function KeywordDensityClient() {
 
   return (
     <div id="keyword-checker" className="grid items-start gap-6 lg:grid-cols-2">
+      <ToolRunOverlay
+        active={running}
+        title="Analyzing phrase frequency & keyword density"
+        description="Counting 1–4 word n-grams, target phrase occurrences, and passage locations."
+      />
       <section className="min-w-0 rounded-[28px] border border-white/20 bg-white p-5 text-slate-950 dark:border-slate-700 dark:bg-[#1D2430] dark:text-white sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-black">Check your draft</h2>
@@ -166,6 +179,7 @@ export default function KeywordDensityClient() {
             className={button}
             onClick={() => {
               setText(example);
+                void triggerRunFeedback();
               setRawTargets("AI writing tools\nhuman review");
               setSelected("AI writing tools");
               setStatus(

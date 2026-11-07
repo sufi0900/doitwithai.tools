@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useState } from "react";
@@ -310,6 +312,11 @@ export default function CoreWebVitalsClient() {
       id="core-web-vitals-checker"
       className={`${panelClass} relative p-5 sm:p-8`}
     >
+      <ToolRunOverlay
+        active={anyLoading}
+        title="Running Core Web Vitals & PageSpeed audit"
+        description="Measuring LCP, INP, CLS, and mobile/desktop field & lab performance diagnostics."
+      />
       <div className="flex flex-col gap-3 xl:flex-row">
         <ToolUrlInput
           className={`${inputClass} h-12 flex-1`}

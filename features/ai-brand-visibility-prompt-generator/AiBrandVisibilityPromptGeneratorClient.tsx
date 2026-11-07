@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
@@ -195,6 +197,11 @@ export default function AiBrandVisibilityPromptGeneratorClient() {
       aria-label="Brand AI Search Visibility and GEO Prompt Matrix Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={loadingAi}
+        title="Generating AI brand visibility prompt matrix"
+        description="Building buyer-stage prompts across ChatGPT, Perplexity, Gemini, and Google AI Overviews."
+      />
       {toast && (
         <div
           role="status"

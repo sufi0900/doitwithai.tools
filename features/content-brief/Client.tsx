@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { useEffect, useRef, useState } from "react";
 import {
   inputSchema,
@@ -108,7 +110,10 @@ export default function ContentBriefClient() {
       return;
     }
     if (!ai) {
+      setBusy(true);
+      await paintToolFeedback();
       show(template(data), data, "Brief template");
+      setBusy(false);
       return;
     }
     const controller = new AbortController();
@@ -154,6 +159,11 @@ export default function ContentBriefClient() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
+      <ToolRunOverlay
+        active={busy}
+        title="Building SEO content brief & writer outline"
+        description="Structuring search intent, heading outline, reader questions, and internal link targets."
+      />
       <div className="min-w-0 rounded-[28px] border border-white/10 bg-slate-900/80 p-5 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xl font-bold text-white">

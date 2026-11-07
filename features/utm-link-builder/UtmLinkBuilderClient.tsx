@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -17,6 +19,12 @@ import {
 } from "./model";
 
 export default function UtmLinkBuilderClient() {
+  const [running, setRunning] = useState(false);
+  async function triggerRunFeedback() {
+    setRunning(true);
+    await paintToolFeedback();
+    setRunning(false);
+  }
   const [input, setInput] = useState<UtmBuilderInput>(DEFAULT_UTM_INPUT);
   const [customUrlOverride, setCustomUrlOverride] = useState<string | null>(
     null,
@@ -37,6 +45,7 @@ export default function UtmLinkBuilderClient() {
     val: UtmBuilderInput[K],
   ) {
     setCustomUrlOverride(null);
+                void triggerRunFeedback();
     setInput((prev) => ({ ...prev, [key]: val }));
   }
 
@@ -71,6 +80,11 @@ export default function UtmLinkBuilderClient() {
       aria-label="UTM Campaign Link Builder and QR Studio Workspace"
       className="mx-auto w-full max-w-6xl overflow-x-clip px-4 py-10 sm:px-6"
     >
+      <ToolRunOverlay
+        active={running}
+        title="Building GA4-compliant UTM tracking links"
+        description="Normalizing campaign parameters, channel grouping rules, and bulk campaign URLs."
+      />
       {/* Channel Presets Bar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-[#111827]">
         <div>

@@ -4,11 +4,22 @@ import { useEffect, useId, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import styles from "./tool-run-overlay.module.css";
 
-/** Yield a painted frame before browser-only work, without simulating progress. */
-export const paintToolFeedback = () =>
-  new Promise<void>((resolve) =>
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-  );
+/** Yield painted frames and a brief perceptible loading modal window before browser-only work. */
+export const paintToolFeedback = (minMs = 620) =>
+  new Promise<void>((resolve) => {
+    const isTest =
+      typeof process !== "undefined" && process.env?.NODE_ENV === "test";
+    const delay = isTest ? 0 : minMs;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (delay > 0) {
+          window.setTimeout(resolve, delay);
+        } else {
+          resolve();
+        }
+      }),
+    );
+  });
 
 export function focusToolSection(node: HTMLElement | null) {
   if (!node) return;

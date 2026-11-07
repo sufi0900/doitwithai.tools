@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -402,6 +404,11 @@ export default function KeywordResearchClient() {
 
   return (
     <div className="space-y-6">
+      <ToolRunOverlay
+        active={busy}
+        title="Researching keywords, search intent & SERP opportunities"
+        description="Grouping seed topics, intent signals, difficulty estimates, and content angles."
+      />
       {/* 1-Click Competitor / Article URL Keyword Extractor */}
       <UrlArticleExtractorBar
         label="Option 1: Paste Any Competitor Article or Webpage URL to Extract Seed Topics & Discover 60 Keywords in 1 Click"

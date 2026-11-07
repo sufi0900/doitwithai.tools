@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import { useMemo, useState } from "react";
@@ -174,6 +176,11 @@ export default function HreflangClient() {
 
   return (
     <div id="hreflang-generator" className={`${panelClass} p-5 sm:p-8`}>
+      <ToolRunOverlay
+        active={fetching}
+        title="Inspecting live page hreflang annotations"
+        description="Fetching language and regional alternate tags, x-default, and return-tag status."
+      />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           <button

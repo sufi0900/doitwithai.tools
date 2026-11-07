@@ -1,4 +1,6 @@
 "use client";
+
+import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import ToolUrlInput from "@/features/tool-ui/ToolUrlInput";
 
 import {
@@ -187,17 +189,21 @@ export default function HeadingAnalyzerClient() {
     setNotice("Added a new H2 heading at the bottom of the outline.");
   }
 
-  function analyzePaste(text = source, explicitFormat?: Format) {
+  async function analyzePaste(text = source, explicitFormat?: Format) {
+    setLoading(true);
+    await paintToolFeedback();
     setError("");
     setNotice("");
     if (!text.trim()) {
       setError("Paste HTML or Markdown, or try the example.");
+      setLoading(false);
       return;
     }
     if (text.length > 2_000_000) {
       setError(
         "Paste up to 2 million characters, or use only the article section.",
       );
+      setLoading(false);
       return;
     }
     try {
@@ -223,6 +229,8 @@ export default function HeadingAnalyzerClient() {
           ? e.message
           : "This content could not be analyzed. Try a smaller HTML or Markdown section.",
       );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -333,6 +341,11 @@ export default function HeadingAnalyzerClient() {
       aria-label="Heading analysis workspace"
       className="relative mx-auto max-w-6xl rounded-3xl border border-white/15 bg-white/[0.06] p-4 text-white sm:p-7"
     >
+      <ToolRunOverlay
+        active={loading}
+        title="Analyzing H1–H6 heading hierarchy"
+        description="Checking heading order, skipped levels, duplicate headings, and outline structure."
+      />
       <div
         className="mb-6 flex flex-wrap gap-2"
         role="group"
