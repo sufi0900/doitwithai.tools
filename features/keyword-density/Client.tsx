@@ -1,6 +1,6 @@
 "use client";
 
-import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { useDeferredValue, useMemo, useState } from "react";
 import CoveragePanel from "./CoveragePanel";
 import {

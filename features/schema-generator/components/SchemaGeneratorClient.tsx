@@ -1,6 +1,6 @@
 "use client";
 
-import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 
 import { Braces, BrainCircuit, Download, Layers3 } from "lucide-react";
 import { useMemo, useState } from "react";

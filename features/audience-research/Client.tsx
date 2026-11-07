@@ -1,6 +1,6 @@
 "use client";
 
-import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import React, { useEffect, useRef, useState } from "react";
 import { Loader2, Users, Download, Copy, ArrowUpRight } from "lucide-react";
 import { inputErrors } from "./planning";

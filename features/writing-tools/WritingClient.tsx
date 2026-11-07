@@ -1,6 +1,6 @@
 "use client";
 
-import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 import { readToolResponse } from "@/lib/ai-tools/client-response";
 import { useEffect, useRef, useState } from "react";
 import {

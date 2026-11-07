@@ -1,6 +1,6 @@
 "use client";
 
-import { ToolRunOverlay, paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
+import ToolRunOverlay, { paintToolFeedback } from "@/features/tool-ui/ToolRunOverlay";
 
 import { AlertCircle, ArrowDown, BrainCircuit, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

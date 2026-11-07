@@ -1,3 +1,4 @@
+import { toolHeroHeading } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ArticlePdfClient from "@/features/article-conversion/ArticlePdfClient";

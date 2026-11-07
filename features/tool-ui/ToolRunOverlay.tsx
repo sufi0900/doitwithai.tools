@@ -32,7 +32,7 @@ export function focusToolSection(node: HTMLElement | null) {
   });
 }
 
-export default function ToolRunOverlay({
+export function ToolRunOverlay({
   active,
   title,
   description,
@@ -92,3 +92,5 @@ export default function ToolRunOverlay({
     </dialog>
   );
 }
+
+export default ToolRunOverlay;
