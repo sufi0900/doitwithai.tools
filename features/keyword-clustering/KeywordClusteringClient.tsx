@@ -359,6 +359,118 @@ export default function KeywordClusteringClient() {
         setError(e instanceof Error ? e.message : "Could not read the file.");
     }
   }
+  function runInstantWordGrouper() {
+    if (busy) return;
+    setError("");
+    if (parsed.errors.length) {
+      setError(parsed.errors.join(" "));
+      return;
+    }
+    const input = clusterInputSchema.safeParse({
+      keywords: parsed.keywords,
+      context,
+      audience,
+      mode,
+    });
+    if (!input.success) {
+      setError("Provide 2–80 unique keywords and check the optional fields.");
+      return;
+    }
+    const stopWords = new Set(["how", "to", "what", "is", "the", "a", "an", "for", "in", "on", "of", "and", "or", "with", "free", "best", "top", "online", "tool", "tools", "software", "generator", "checker", "ai", "write", "create", "make", "examples", "example", "guide", "tutorial"]);
+    const stemMap = new Map<string, typeof input.data.keywords>();
+    const unassignedList: Array<{ keywordId: string; reason: string }> = [];
+
+    for (const kw of input.data.keywords) {
+      const tokens = kw.text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter((w) => w.length > 2 && !stopWords.has(w))
+        .map((w) => w.replace(/(ing|ers|er|ies|es|s)$/, ""));
+      const isToolIntent = /\b(tool|tools|grouper|generator|checker|analyzer|software|calculator|free|online)\b/i.test(kw.text);
+      const isComparison = /\b(vs|versus|compare|comparison|best|top|alternatives|review)\b/i.test(kw.text);
+      const intentBucket = isToolIntent ? "tool" : isComparison ? "compare" : "guide";
+      const rootKey = tokens.slice(0, 2).join(" ") || kw.text.toLowerCase().trim();
+      if (tokens.length === 0 && kw.text.trim().split(/\s+/).length === 1) {
+        unassignedList.push({
+          keywordId: kw.id,
+          reason: "Single-word broad term—add a modifier or assign manually to a specific page group.",
+        });
+        continue;
+      }
+      const bucketKey = mode === "page-intent" ? `${rootKey}__${intentBucket}` : rootKey;
+      const existing = stemMap.get(bucketKey) || [];
+      existing.push(kw);
+      stemMap.set(bucketKey, existing);
+    }
+
+    const clusters: ClusterOutput["clusters"] = [];
+    for (const [bucketKey, kwList] of stemMap.entries()) {
+      const [rootName, intentTag] = bucketKey.split("__");
+      const cleanRoot = rootName
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+      const isTool = intentTag === "tool";
+      const isCompare = intentTag === "compare";
+      const label = isTool
+        ? `${cleanRoot} — Interactive Tool & Utility Group`
+        : isCompare
+          ? `${cleanRoot} — Comparison & Best Options Group`
+          : `${cleanRoot} — How-To Guide & Examples Group`;
+      clusters.push({
+        label,
+        primaryId: kwList[0].id,
+        keywordIds: kwList.map((k) => k.id),
+        intent: isTool ? "transactional" : isCompare ? "commercial" : "informational",
+        pageType: isTool ? "product or service" : isCompare ? "comparison" : "guide",
+        focus: isTool
+          ? `Serve "${kwList[0].text}" with an interactive browser utility, clear instructions, and FAQ schema.`
+          : isCompare
+            ? `Compare top options, evaluation criteria, and use cases for "${kwList[0].text}".`
+            : `Write a comprehensive step-by-step guide with examples covering "${kwList[0].text}".`,
+        rationale: `Grouped ${kwList.length} keyword(s) sharing the "${cleanRoot}" core topic and ${isTool ? "interactive tool/grouper" : isCompare ? "commercial comparison" : "informational guide"} intent.`,
+        review: "Verify live SERP overlap before merging tool queries with informational guide queries.",
+      });
+    }
+
+    if (clusters.length === 0 && input.data.keywords.length > 0) {
+      clusters.push({
+        label: "Primary Keyword Group",
+        primaryId: input.data.keywords[0].id,
+        keywordIds: input.data.keywords.map((k) => k.id),
+        intent: "informational",
+        pageType: "guide",
+        focus: `Organize "${input.data.keywords[0].text}" and related terms into a cohesive page plan.`,
+        rationale: "Grouped supplied terms into a starter workspace.",
+        review: "Split or move keywords if they target different reader tasks.",
+      });
+      unassignedList.length = 0;
+    }
+
+    const builtOutput: ClusterOutput = {
+      clusters,
+      unassigned: unassignedList,
+      review: [
+        "Instant Word & Intent Grouper completed. Check if any single-keyword groups should be merged into a broader pillar page.",
+        "Use the workspace controls below to move, split, or merge groups and export your CSV/Markdown plan.",
+      ],
+    };
+
+    const next = createWorkspace(builtOutput);
+    assertCoverage(next, input.data.keywords);
+    setSource(input.data);
+    setResult(builtOutput);
+    setWorkspace(next);
+    setHistory([]);
+    setSelected([]);
+    setTarget("review");
+    setActive(next.groups[0]?.id || "review");
+    setStatus(
+      `Instant Keyword Grouper organized ${input.data.keywords.length} keywords into ${clusters.length} group(s). Click any group below to customize or export.`,
+    );
+  }
+
   async function generate(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;
@@ -759,8 +871,19 @@ export default function KeywordClusteringClient() {
             {busy
               ? "Grouping keywords…"
               : workspace
-                ? "Generate a new draft"
-                : "Group my keywords"}
+                ? "Group Keywords with AI"
+                : "Group Keywords with AI"}
+          </button>
+          <button
+            type="button"
+            disabled={
+              busy || parsed.errors.length > 0 || parsed.keywords.length < 2
+            }
+            onClick={runInstantWordGrouper}
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-5 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300 disabled:opacity-50"
+          >
+            <Network size={17} aria-hidden />
+            ⚡ Instant Word & Stem Grouper (0.1s)
           </button>
           <p className="max-w-xl text-xs leading-6 text-slate-500 dark:text-slate-400">
             {workspace

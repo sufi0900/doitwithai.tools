@@ -6,19 +6,25 @@ import {
 } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Network, ListTree, FileCheck2 } from "lucide-react";
 import KeywordClusteringClient from "@/features/keyword-clustering/KeywordClusteringClient";
 import ToolResources from "@/features/tool-catalog/ToolResources";
+
 const pageUrl = "https://doitwithai.tools/tools/keyword-clustering-tool";
 const description =
-  "Free keyword grouping tool: paste or import a keyword list, cluster it by topic and search intent with AI, edit the groups, and export a reviewed content plan.";
-const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "AI Keyword Clustering Tool", category: "AI SEO · Content Writing", ctaText: "Group. Review. Plan.", features: "CSV Import,Editable Groups,Content Planning" })}`;
+  "Group your raw keyword list or CSV export into page-level topic clusters by shared search intent so you can plan stronger SEO pages without cannibalization.";
+const image = `https://doitwithai.tools/api/og?${new URLSearchParams({
+  title: "AI Keyword Clustering & Grouping Tool",
+  category: "AI SEO · Content Planning",
+  ctaText: "Group. Cluster. Plan.",
+  features: "Search-Intent Clustering,Instant Word Grouping,CSV Import & Export",
+})}`;
+
 export const metadata: Metadata = {
-  title: "Free Keyword Grouping Tool | AI Keyword Clustering",
+  title: "Free AI Keyword Clustering Tool: Group Keywords by Intent",
   description,
   alternates: { canonical: pageUrl },
   openGraph: {
-    title: "Free Keyword Grouping & Clustering Tool",
+    title: "Free AI Keyword Clustering Tool: Group Keywords by Intent",
     description,
     url: pageUrl,
     type: "website",
@@ -26,58 +32,80 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free Keyword Grouping & Clustering Tool",
+    title: "Free AI Keyword Clustering Tool: Group Keywords by Intent",
     description,
     images: [image],
   },
 };
+
 const faqs = [
   [
-    "Is this keyword grouping tool free?",
-    "Yes. You can paste or import a keyword list, group it, edit the groups, and export your plan without paying. A grouping is a planning aid you should review before publishing.",
+    "What is the difference between keyword grouping and keyword clustering?",
+    "In everyday SEO, both solve the exact same problem—organizing a messy keyword list into structured buckets so you know what to publish. The subtle distinction is that basic keyword grouping often sorts phrases by shared words (like grouping every phrase containing 'meta title'), whereas search-intent clustering groups phrases by whether they belong on the same webpage (separating 'how to write meta titles' into an educational guide and 'meta title generator' into an interactive tool).",
   ],
   [
-    "Is this a search-result clustering tool?",
-    "No. It groups supplied keyword wording with AI assistance. It does not compare live ranking URLs or calculate search-result overlap.",
+    "Is this keyword grouping and clustering tool completely free?",
+    "Yes, you can paste up to 80 keywords per batch or upload a CSV/TSV export, group them using either AI Search-Intent Clustering or the 0.1-second Instant Word Grouper, refine your groups, and export your content plan without paying or logging in.",
   ],
   [
-    "Can I import search volume and difficulty columns?",
-    "You can upload a CSV with multiple columns, but only the selected keyword column is used. Other metrics are neither imported nor evaluated.",
+    "How do I decide whether a group of keywords belongs on one page or separate pages?",
+    "Ask the Single-Page Intent Question: would a searcher typing Keyword A be completely satisfied landing on the exact same page as Keyword B? When two queries share the same reader task and expected page format, keep them in one cluster on a single canonical URL.",
   ],
   [
-    "Why are duplicate keywords removed?",
-    "Repeated terms do not add a distinct planning item. Cleanup compares case, spacing, and Unicode compatibility forms while preserving meaningful punctuation.",
+    "Can I import a CSV export from Google Search Console, Ahrefs, or Semrush?",
+    "Yes, upload any CSV or TSV file under 100 KB, pick the column that holds your queries, and the workspace will remove exact duplicates while keeping every unique keyword accounted for.",
   ],
   [
-    "Does each group require its own page?",
-    "No. A topic group can contain several tasks, and a task group may belong on an existing page. Review coverage and reader needs first.",
+    "Can I split, merge, or move keywords after the tool groups them?",
+    "Yes, select any keyword checkboxes in the workspace to move them into another cluster, split a broad group into two specialized page briefs, merge overlapping synonym groups, or undo recent edits in one click.",
   ],
   [
-    "Can I split or merge the AI suggestions?",
-    "Yes. Select keywords to move or create a group. Merge whole groups into a chosen destination. Undo restores recent edits without dropping keywords.",
+    "How does grouping keywords into clusters stop keyword cannibalization?",
+    "Keyword cannibalization happens when two or more pages on your site target slight wording variations of the same reader need, splitting your impressions and backlinks. Consolidating those variations into one cluster with one target URL focuses all ranking signals on a single authoritative page.",
   ],
   [
-    "What does primary keyword mean here?",
-    "It is a representative term for organizing the brief. The tool has no demand or difficulty data to establish the best ranking target.",
-  ],
-  [
-    "Where does my uploaded file go?",
-    "Import your CSV, review the cleaned keyword list, and add an optional brief before generating groups.",
-  ],
-  [
-    "Does the tool save my plan or guarantee rankings?",
-    "No. Unsaved drafts disappear on refresh. Save locally or export a project. Grouping is a planning aid and cannot guarantee search visibility, traffic, or business results.",
+    "What should I do after organizing my keyword clusters?",
+    "Assign a target URL to each cluster, check borderline queries in the Search Intent Checker, and export your reviewed cluster brief into the SEO Content Brief Generator or Article Outline Generator.",
   ],
 ];
+
+const CLUSTER_PROMPTS = [
+  {
+    title: "1. Search-Intent Keyword Clustering Prompt",
+    badge: "Prevent Cannibalization",
+    prompt: `Act as a Senior SEO Strategist. Group the following raw keyword list into page-level clusters based on shared search intent rather than shared words alone. For each cluster, provide: (1) Cluster Name, (2) Primary Target Keyword, (3) Supporting Secondary Keywords, (4) Expected Page Format (Guide, Comparison, or Interactive Tool), and (5) Suggested URL Slug.\n\nKeywords:\n[Paste 20-80 keywords here]`,
+  },
+  {
+    title: "2. Pillar & Spoke Topic Architecture Prompt",
+    badge: "Topical Authority",
+    prompt: `Take these grouped keyword clusters for [Your Niche] and organize them into 1 central Pillar Guide and 5-8 supporting Spoke pages, including the exact natural anchor text each spoke should use when linking back to the Pillar page.`,
+  },
+  {
+    title: "3. Search Console Striking-Distance Grouping Prompt",
+    badge: "GSC Optimization",
+    prompt: `Here are queries from Google Search Console where my page gets impressions between positions 15 and 85. Separate them into: (A) Same-intent phrasing variations to weave naturally into my existing H2s and FAQs, and (B) Distinct reader tasks that deserve their own dedicated page.\n\nGSC Queries:\n[Paste GSC queries here]`,
+  },
+  {
+    title: "4. Modifier & Funnel Stage Sorting Prompt",
+    badge: "Fast Taxonomy",
+    prompt: `Sort this keyword list by user journey stage: (1) Top-of-Funnel Learning ('how to', 'what is', 'examples'), (2) Mid-Funnel Evaluation ('best', 'vs', 'alternatives'), and (3) Bottom-of-Funnel Action ('tool', 'generator', 'template', 'near me').`,
+  },
+];
+
 const prose = "mt-4 text-sm leading-8 text-slate-600 dark:text-slate-300";
+
 export default function Page() {
   const schema = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "WebApplication",
-        name: "Keyword Grouping & Clustering Tool",
-        alternateName: ["Keyword Grouper", "AI Keyword Clustering Tool"],
+        name: "AI Keyword Clustering & Grouping Tool",
+        alternateName: [
+          "Keyword Grouping Tool",
+          "Keyword Grouper",
+          "Free AI Keyword Clustering Tool",
+        ],
         url: pageUrl,
         description,
         applicationCategory: "BusinessApplication",
@@ -104,6 +132,7 @@ export default function Page() {
       },
     ],
   };
+
   return (
     <>
       <script
@@ -112,8 +141,7 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
-      >
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
         <ToolHeroBackground />
         <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
@@ -130,26 +158,28 @@ export default function Page() {
           <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                AI SEO · Shared Search Intent & Page Grouping
+                AI SEO · KEYWORD GROUPING &amp; SEARCH-INTENT CLUSTERING
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-                Keyword Grouping & 
+                Keyword Clustering Tool:{" "}
                 <span className={toolHeroHeading}>
-                  Intent Clustering Tool
+                  Group Your Keywords by Search Intent
                 </span>
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                Group up to 80 raw keywords into page-level topic clusters based on shared reader intent—so you know when to write one comprehensive guide versus separate pages.
+                Paste a raw keyword list or upload a CSV to group related
+                searches into single-page topic clusters—so you know when to
+                write one comprehensive guide versus separate pages.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
                 <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Paste list or upload CSV/TSV
+                  Paste list or import CSV/TSV
                 </span>
                 <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Page-intent clustering
+                  AI Intent + Instant Stem Grouping
                 </span>
                 <span className="rounded-lg border border-white/15 px-3 py-2">
-                  Editable cluster workspace
+                  Split, merge &amp; export briefs
                 </span>
               </div>
               <PortableToolHeroBar />
@@ -161,16 +191,29 @@ export default function Page() {
               </p>
               <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
                 <li>
-                  <strong className="text-emerald-300">Primary Hub Keyword:</strong> Selects a clear representative query for each topic group.
+                  <strong className="text-emerald-300">
+                    Primary Hub Keyword:
+                  </strong>{" "}
+                  Selects a clear representative target query for each topic
+                  group.
                 </li>
                 <li>
-                  <strong className="text-indigo-300">Shared Reader Task:</strong> Explains why the grouped phrases belong on the same page.
+                  <strong className="text-indigo-300">
+                    Shared Reader Task:
+                  </strong>{" "}
+                  Explains why the grouped phrases belong on the same page.
                 </li>
                 <li>
-                  <strong className="text-sky-300">Page Brief Notes:</strong> Drafts suggested page formats, angles, and section ideas.
+                  <strong className="text-sky-300">Page Format &amp; Focus:</strong>{" "}
+                  Recommends whether the cluster needs a guide, comparison, or
+                  interactive tool.
                 </li>
                 <li>
-                  <strong className="text-amber-300">Interactive Editing:</strong> Move, split, merge, and export clusters as CSV, JSON, or MD.
+                  <strong className="text-amber-300">
+                    Editable Workspace:
+                  </strong>{" "}
+                  Move, split, merge, and export clusters as CSV, JSON, or
+                  Markdown.
                 </li>
               </ul>
             </div>
@@ -178,170 +221,169 @@ export default function Page() {
           <KeywordClusteringClient />
         </div>
       </div>
-      <div className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
-        <section className="grid gap-8 lg:grid-cols-2">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
-              Reader tasks before page counts
-            </p>
-            <h2 className="mt-3 text-3xl font-black sm:text-4xl">
-              What keyword clustering helps you organize
-            </h2>
-            <p className={prose}>
-              A keyword list can mix different needs. Someone searching for
-              title examples may want guidance, while someone searching for a
-              generator wants a utility.
-            </p>
-            <p className={prose}>
-              Clustering makes those relationships easier to inspect. This tool
-              suggests groups from the wording you supply, your audience, and
-              your project context.
-            </p>
-            <p className={prose}>
-              Each draft group includes a representative keyword, tentative
-              intent, a possible page format, and a suggested content focus. You
-              can change every planning decision.
-            </p>
-            <p className={prose}>
-              Google recommends useful content created for people. Treat
-              grouping as preparation for serving a reader, rather than a reason
-              to publish many similar pages.
-            </p>
-            <p className={prose}>
-              <a
-                className="font-semibold text-[#4662df] underline dark:text-blue-300"
-                href="https://developers.google.com/search/docs/fundamentals/creating-helpful-content"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Read Google&apos;s people-first content guidance
-              </a>
-              .
-            </p>
-          </div>
-          <aside className="rounded-3xl bg-slate-950 p-8 text-white">
-            <h3 className="text-2xl font-bold">
-              Semantic grouping, with human review
-            </h3>
-            <p className="mt-4 text-sm leading-8 text-slate-300">
-              These suggestions use keyword meaning and your brief. The tool
-              does not fetch current search results, search volumes, keyword
-              difficulty, or competitor rankings.
-            </p>
-            <p className="mt-4 text-sm leading-8 text-slate-300">
-              A shared word does not establish a shared reader task. A primary
-              keyword is a planning choice, not a measured traffic winner.
-            </p>
-            <p className="mt-4 text-sm leading-8 text-slate-300">
-              Check real search results and your existing pages before deciding
-              whether a group belongs on one page, several pages, or no new
-              page.
-            </p>
-          </aside>
-        </section>
-        <section className="rounded-3xl border border-slate-200 p-7 dark:border-slate-800">
-          <h2 className="text-3xl font-black">
-            Keyword grouper, keyword grouping and keyword clustering: same job
+
+      <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:px-6 lg:px-8">
+        {/* CLEAR, NATURAL EXPLANATION: KEYWORD GROUPING VS KEYWORD CLUSTERING */}
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-7 dark:border-slate-800 dark:bg-slate-900/80">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
+            Clear Up the Confusion
+          </p>
+          <h2 className="mt-2 text-2xl font-black sm:text-3xl">
+            Keyword Grouping vs. Keyword Clustering: Are They Different?
           </h2>
           <p className={prose}>
-            People call this a keyword grouper, a keyword grouping tool, or a
-            keyword clustering tool. All three describe the same task: taking a
-            long, messy keyword list and sorting it into groups that each map
-            to one page or one reader need.
+            Many marketers wonder whether they need a{" "}
+            <strong>keyword grouping tool</strong> (or keyword grouper) or a{" "}
+            <strong>keyword clustering tool</strong>. In practice, both refer to
+            the same core workflow: taking an unsorted list of keywords and
+            organizing them into structured page groups so you don&apos;t create
+            multiple pages that compete against each other.
           </p>
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-100 text-xs font-bold uppercase text-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                <tr>
+                  <th className="px-4 py-3.5">Approach</th>
+                  <th className="px-4 py-3.5">How It Sorts Your List</th>
+                  <th className="px-4 py-3.5">When to Use It</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
+                <tr>
+                  <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
+                    Word &amp; Stem Grouping (Fast Grouper)
+                  </td>
+                  <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">
+                    Groups phrases instantly by shared root words and modifier
+                    type (guides vs. comparisons vs. tools).
+                  </td>
+                  <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">
+                    Great for a 0.1-second first pass on a raw keyword list.
+                  </td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">
+                    AI Search-Intent Clustering
+                  </td>
+                  <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">
+                    Groups queries that share the exact same reader goal and
+                    belong on a single destination URL.
+                  </td>
+                  <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300">
+                    Best for finalizing page briefs and preventing keyword
+                    cannibalization.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <p className={prose}>
-            This free keyword grouping tool groups by meaning and search intent
-            rather than by shared words alone, so &quot;meta title
-            examples&quot; and &quot;meta title generator&quot; can land in
-            different groups even though they share a phrase.
-          </p>
-          <p className={prose}>
-            Not sure which intent a keyword has? Run it through the{" "}
+            Need to check the intent of a few specific queries before grouping a
+            large batch? Run them through our{" "}
             <Link
               href="/tools/search-intent-checker"
               className="font-semibold text-[#4662df] underline dark:text-blue-300"
             >
-              Keyword Intent Checker
+              Search Intent Checker
             </Link>{" "}
-            first, then come back to group the list. Need ideas to group?
-            Start with the{" "}
+            first, discover new seed terms in the{" "}
             <Link
               href="/tools/keyword-research-tool"
               className="font-semibold text-[#4662df] underline dark:text-blue-300"
             >
               Keyword Research Tool
             </Link>
+            , or read our full guide on{" "}
+            <Link
+              href="/ai-seo/what-to-do-after-keyword-research"
+              className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            >
+              What to Do After Keyword Research
+            </Link>
             .
           </p>
         </section>
+
+        {/* VISUAL DIAGRAMS */}
         <section>
-          <h2 className="text-3xl font-black">
-            Choose the grouping approach that fits your work
+          <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
+            Visual Workflow
+          </p>
+          <h2 className="mt-2 text-3xl font-black">
+            How Intent-Based Keyword Grouping Shapes Your Site Architecture
           </h2>
           <div className="mt-7 grid gap-6 md:grid-cols-2">
-            {[
-              [
-                "Shared reader task",
-                "Use this approach when preparing individual page briefs. The AI is asked to separate different tasks and likely formats, even within one subject.",
-                "For example, meta title examples and how to write meta titles may support a guide. Meta title generator may need a separate executable tool.",
-                "The suggested separation still needs review. A guide can contain examples, and a tool page can include supporting explanations.",
-              ],
-              [
-                "Broader topic groups",
-                "Use this approach when sorting a content inventory or investigating subject coverage. Related themes can stay together without implying one destination page.",
-                "A title-writing theme might contain tutorials, examples, and generators. Those keywords belong to a common subject but can serve different purposes.",
-                "Use the workspace to split a broad group once you understand the specific task each page should address.",
-              ],
-            ].map(([title, ...paragraphs]) => (
-              <article
-                key={title}
-                className="rounded-3xl border border-slate-200 p-7 dark:border-slate-800"
-              >
-                <h3 className="text-xl font-bold">{title}</h3>
-                {paragraphs.map((p) => (
-                  <p key={p} className={prose}>
-                    {p}
-                  </p>
-                ))}
-              </article>
-            ))}
+            <figure className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 p-4 dark:border-slate-800">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/articles/what-to-do-after-keyword-research/keyword-clustering-intent-mapping.webp"
+                alt="Grouping keywords into page-level topic clusters by shared search intent"
+                className="w-full rounded-2xl object-cover"
+                loading="lazy"
+              />
+              <figcaption className="mt-3 px-2 text-xs leading-6 text-slate-300">
+                <strong className="text-white">
+                  1. Group by Reader Task, Not Just Shared Words:
+                </strong>{" "}
+                Why phrases that share a topic still separate into distinct
+                guide and tool pages when search intent differs.
+              </figcaption>
+            </figure>
+            <figure className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 p-4 dark:border-slate-800">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/articles/what-to-do-after-keyword-research/topic-cluster-pillar-architecture.webp"
+                alt="Pillar page and supporting cluster spoke internal linking diagram"
+                className="w-full rounded-2xl object-cover"
+                loading="lazy"
+              />
+              <figcaption className="mt-3 px-2 text-xs leading-6 text-slate-300">
+                <strong className="text-white">
+                  2. Connect Clusters into a Hub-and-Spoke Map:
+                </strong>{" "}
+                Once your clusters are defined, link supporting tutorials and
+                tools back to your main pillar guide.
+              </figcaption>
+            </figure>
           </div>
         </section>
+
+        {/* PRACTICAL WORKFLOW */}
         <section>
           <h2 className="text-3xl font-black">
-            A practical workflow from list to draft brief
+            A Practical Workflow from Keyword List to Page Brief
           </h2>
           <div className="mt-7 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {[
               [
                 "01",
-                "Prepare a focused batch",
-                "Paste 2–80 unique keywords. Use a CSV or TSV column when importing an existing list. Review duplicate cleanup and input errors before generating.",
+                "Paste a focused batch",
+                "Paste 2–80 unique keywords or import a CSV/TSV column. Duplicate rows are cleaned automatically before grouping.",
               ],
               [
                 "02",
-                "Describe your reader",
-                "Add your site's purpose and intended audience. Context helps explain terminology without forcing unrelated searches into your niche.",
+                "Pick your grouping mode",
+                "Use 'Group Keywords with AI' for context-aware search intent clustering, or 'Instant Word & Stem Grouper' for immediate sorting.",
               ],
               [
                 "03",
-                "Inspect the suggested groups",
-                "Read the focus and review question. Check whether every keyword belongs to the same task. Ambiguous terms can remain in the review queue.",
+                "Inspect each cluster",
+                "Check the representative primary keyword, reader task, and suggested page format to confirm all terms belong on one URL.",
               ],
               [
                 "04",
-                "Refine the workspace",
-                "Move selected keywords, split a mixed group, or merge closely related groups. Pick a representative primary keyword and write a precise content focus.",
+                "Split, merge, or move terms",
+                "Refine the workspace by splitting mixed groups into separate pages or merging close synonyms into a single stronger cluster.",
               ],
               [
                 "05",
-                "Map existing coverage",
-                "Compare groups with pages you already maintain. Consider updating a useful existing page before adding another page with substantially similar coverage.",
+                "Map to existing pages first",
+                "Check whether an existing URL on your site already covers that cluster before creating a brand-new page.",
               ],
               [
                 "06",
-                "Export and draft",
-                "Export the complete plan, including uncertain terms. Copy a reviewed group brief into the Article Outline Generator, then verify the resulting structure.",
+                "Export and outline",
+                "Download your plan as CSV, Markdown, or JSON, then send your cluster into the Article Outline Generator or SEO Content Brief Generator.",
               ],
             ].map(([n, title, body]) => (
               <article
@@ -357,117 +399,59 @@ export default function Page() {
             ))}
           </div>
         </section>
+
+        {/* COPY-PASTE PROMPTS */}
         <section>
-          <h2 className="text-3xl font-black">
-            Example: separate related topics from different tasks
+          <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">
+            Copy-Paste AI Prompts
+          </p>
+          <h2 className="mt-2 text-3xl font-black">
+            Prompts to Group and Cluster Keywords with AI
           </h2>
           <p className={prose}>
-            These illustrative groups explain the workflow. They are not
-            measured keyword opportunities or findings from current search
-            results.
+            Use these prompts when working in ChatGPT, Claude, or Gemini—or
+            browse our full{" "}
+            <Link
+              href="/prompts/chatgpt-prompts-for-keyword-research"
+              className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            >
+              Keyword Research Prompts
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/prompts/chatgpt-prompts-for-topic-clusters"
+              className="font-semibold text-[#4662df] underline dark:text-blue-300"
+            >
+              Topic Cluster Prompts
+            </Link>{" "}
+            collections:
           </p>
-          <div className="mt-7 grid gap-6 md:grid-cols-3">
-            {[
-              [
-                "Writing title tags",
-                "how to write meta titles · meta title examples",
-                "Possible format: educational guide",
-                "Explain a practical writing process, then show examples with their context. Check whether the audience needs beginner instruction or a review checklist.",
-              ],
-              [
-                "Generating title drafts",
-                "meta title generator · AI title generator",
-                "Possible format: interactive tool",
-                "Help users generate and compare title drafts. Confirm that AI title generator means website titles rather than another kind of title.",
-              ],
-              [
-                "Ambiguous meaning",
-                "apple",
-                "Possible destination: review queue",
-                "The term could refer to fruit, a company, or another meaning. Add context or research the intended use before assigning a topic.",
-              ],
-            ].map(([title, keywords, format, focus]) => (
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            {CLUSTER_PROMPTS.map((item) => (
               <article
-                key={title}
-                className="rounded-3xl border border-slate-200 p-6 dark:border-slate-800"
+                key={item.title}
+                className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 dark:border-slate-800 dark:bg-slate-900"
               >
-                <h3 className="text-xl font-bold">{title}</h3>
-                <p className="mt-4 break-words rounded-xl bg-blue-50 p-4 text-sm leading-7 text-blue-900 dark:bg-blue-950 dark:text-blue-200">
-                  {keywords}
-                </p>
-                <p className="mt-4 text-sm font-bold">{format}</p>
-                <p className={prose}>{focus}</p>
+                <span className="inline-block rounded-full bg-blue-500/10 px-3 py-1 text-xs font-bold text-[#4662df] dark:text-blue-300">
+                  {item.badge}
+                </span>
+                <h3 className="mt-3 text-lg font-bold">{item.title}</h3>
+                <pre className="mt-3 whitespace-pre-wrap rounded-2xl bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-200">
+                  {item.prompt}
+                </pre>
               </article>
             ))}
           </div>
         </section>
-        <section className="grid gap-8 lg:grid-cols-2">
-          <div>
-            <h2 className="text-3xl font-black">
-              Build a page brief, not a publishing quota
-            </h2>
-            <p className={prose}>
-              Before drafting, write the reader&apos;s problem in one sentence.
-              Describe what they should understand, compare, or accomplish after
-              using the page.
-            </p>
-            <p className={prose}>
-              Choose supporting questions that belong to that task. Related
-              vocabulary can guide coverage, but every phrase does not need its
-              own heading or repetition.
-            </p>
-            <p className={prose}>
-              Review the suggested format against actual results for your
-              intended audience and location. Search intent can be mixed, and
-              the tool cannot observe those results.
-            </p>
-            <p className={prose}>
-              Keep a record of the existing URL, proposed change, evidence
-              needed, and editorial owner outside this workspace. These
-              decisions need information beyond keyword wording.
-            </p>
-            <p className={prose}>
-              An outline can then translate your reviewed focus into sections.
-              Recheck examples, factual claims, and the final content against
-              the original reader need.
-            </p>
-            <Link
-              href="/tools/article-outline-generator"
-              className="mt-5 inline-flex min-h-11 items-center rounded-lg border border-blue-200 px-4 py-2 text-sm font-bold text-[#4662df] dark:border-blue-900 dark:text-blue-300"
-            >
-              Plan the article structure
-            </Link>
-          </div>
-          <aside className="rounded-3xl border border-slate-200 p-7 dark:border-slate-800">
-            <h3 className="text-xl font-bold">Review before publishing</h3>
-            <ul className="mt-5 list-disc space-y-4 pl-5 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              <li>
-                Do group members share a useful reader task, rather than only a
-                word?
-              </li>
-              <li>
-                Have you checked ambiguous terms and tentative intent labels?
-              </li>
-              <li>Does an existing page already satisfy this need?</li>
-              <li>
-                Can you provide useful examples, evidence, and a clear next
-                action?
-              </li>
-              <li>
-                Are the primary keyword and proposed format sensible for your
-                audience?
-              </li>
-              <li>
-                Have you reviewed group notes again after changing membership?
-              </li>
-            </ul>
-          </aside>
-        </section>
+
+        {/* FAQS */}
         <section>
-          <h2 className="text-3xl font-black">Keyword clustering questions</h2>
+          <h2 className="text-3xl font-black">
+            Frequently Asked Questions: Grouping &amp; Clustering Keywords
+          </h2>
           <div className="mt-7 divide-y divide-slate-200 rounded-3xl border border-slate-200 px-6 dark:divide-slate-800 dark:border-slate-800">
             {faqs.map(([q, a]) => (
-              <details key={q} className="py-5">
+              <details key={q} className="py-5" open>
                 <summary className="cursor-pointer text-base font-bold leading-7">
                   {q}
                 </summary>
@@ -476,55 +460,7 @@ export default function Page() {
             ))}
           </div>
         </section>
-        <section className="grid gap-8 lg:grid-cols-2">
-          <div>
-            <h2 className="text-3xl font-black">
-              Keep a research trail for every page decision
-            </h2>
-            <p className={prose}>
-              Clustering is only the first step. Record whether a group needs a
-              new page, an existing-page update, or more research.
-            </p>
-            <p className={prose}>
-              Add an existing or proposed URL and notes from your research.
-              These references are never fetched, and their contents are not
-              checked automatically.
-            </p>
-            <p className={prose}>
-              When groups share a URL, the workspace asks you to review their
-              relationship. Sharing a destination does not prove a ranking
-              conflict.
-            </p>
-            <p className={prose}>
-              Use the checklist to record your review of membership, actual
-              search results, and existing coverage. Changing the brief or
-              membership clears those checks.
-            </p>
-          </div>
-          <aside className="rounded-3xl border border-slate-200 p-7 dark:border-slate-800">
-            <h3 className="text-xl font-bold">A project you can return to</h3>
-            <p className={prose}>
-              Save manually in your browser, or download a project JSON file
-              that keeps your source keywords, edited groups, and planning
-              notes.
-            </p>
-            <p className={prose}>
-              Imported projects are checked for supported structure and complete
-              keyword coverage. Invalid files leave the open workspace
-              unchanged.
-            </p>
-            <p className={prose}>
-              Browser saves stay on the same browser and site. Clearing browser
-              data can remove them. Keep an exported project when the plan
-              matters.
-            </p>
-            <p className={prose}>
-              Review progress represents your recorded decisions. It is not an
-              SEO score, research verification, or promise of search
-              performance.
-            </p>
-          </aside>
-        </section>
+
         <ToolResources slug="keyword-clustering-tool" />
       </div>
     </>

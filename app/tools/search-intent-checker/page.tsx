@@ -12,7 +12,7 @@ import SearchIntentClient from "@/features/search-intent/Client";
 import ToolResources from "@/features/tool-catalog/ToolResources";
 const pageUrl = "https://doitwithai.tools/tools/search-intent-checker";
 const description =
-  "Free keyword intent checker for search intent analysis. Identify informational, navigational, commercial, or transactional queries and choose a suitable page format.";
+  "Analyze any keyword list to identify informational, commercial, transactional, navigational, or local search intent and match each query to the right SERP page format.";
 const image = `https://doitwithai.tools/api/og?${new URLSearchParams({ title: "Search Intent Checker", category: "AI SEO · Content Planning", ctaText: "Understand. Verify. Plan.", features: "Reader Tasks,Intent Cues,Content Angles" })}`;
 export const metadata: Metadata = {
   title: "Free Keyword Intent Checker & Search Intent Analyzer (Instant + AI)",

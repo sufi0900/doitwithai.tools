@@ -490,13 +490,14 @@
       "id": "keyword-clustering-tool",
       "slug": "keyword-clustering-tool",
       "name": "Keyword Clustering Tool",
-      "description": "Group supplied keywords by reader task or topic, refine memberships, and export an editable content plan.",
+      "description": "Group raw keyword lists into page-level topic clusters by shared search intent, refine your groups, and export an editable SEO content plan.",
       "categories": [
         "ai-seo"
       ],
       "tags": [
         "keywords",
         "clustering",
+        "keyword grouping",
         "content planning"
       ],
       "kind": "AI-assisted",
@@ -504,6 +505,10 @@
       "addedAt": "2026-10-04",
       "featuredOrder": 9,
       "relatedGuides": [
+        {
+          "path": "/ai-seo/what-to-do-after-keyword-research",
+          "title": "What to do after keyword research: grouping, intent & mapping"
+        },
         {
           "path": "/ai-seo/chatgpt-keyword-research",
           "title": "Keyword research prompts and planning resources"
@@ -1828,7 +1833,7 @@
       "id": "featured-snippet-optimizer",
       "slug": "featured-snippet-optimizer",
       "name": "Featured Snippet & AI Overview Passage Optimizer",
-      "description": "Audit H2/H3 answer passages and generate 45–58 word Position Zero definitions, ordered step lists, and comparison tables for Featured Snippets and AI Overviews.",
+      "description": "Audit H2/H3 answer passages and generate 45\u201358 word Position Zero definitions, ordered step lists, and comparison tables for Featured Snippets and AI Overviews.",
       "categories": [
         "ai-seo"
       ],
@@ -2003,7 +2008,7 @@
       "id": "table-of-contents-generator",
       "slug": "table-of-contents-generator",
       "name": "SEO Table of Contents & Jump-Link Generator",
-      "description": "Generate a semantic HTML or Markdown Table of Contents from H2–H4 headings, automatically inject unique id attributes into your article, and export Jump-Link JSON-LD.",
+      "description": "Generate a semantic HTML or Markdown Table of Contents from H2\u2013H4 headings, automatically inject unique id attributes into your article, and export Jump-Link JSON-LD.",
       "categories": [
         "ai-seo"
       ],
@@ -2238,7 +2243,7 @@
       "id": "local-seo-service-page-planner",
       "slug": "local-seo-service-page-planner",
       "name": "Local SEO Service-Area & City Page Planner",
-      "description": "Plan a non-spammy City × Service landing page matrix, generate localized H1s, meta titles, and H2 outlines, and prevent doorway-page penalties.",
+      "description": "Plan a non-spammy City \u00d7 Service landing page matrix, generate localized H1s, meta titles, and H2 outlines, and prevent doorway-page penalties.",
       "categories": [
         "ai-seo"
       ],
@@ -2305,7 +2310,7 @@
       "id": "youtube-title-thumbnail-optimizer",
       "slug": "youtube-title-thumbnail-optimizer",
       "name": "YouTube Title, Hook & Thumbnail Optimizer",
-      "description": "Score YouTube video titles against the 58-character mobile cutoff, pair titles with 2–4 word thumbnail text overlays, and preview your video card in YouTube feeds.",
+      "description": "Score YouTube video titles against the 58-character mobile cutoff, pair titles with 2\u20134 word thumbnail text overlays, and preview your video card in YouTube feeds.",
       "categories": [
         "content-writing"
       ],
@@ -2641,7 +2646,7 @@
       "id": "linkedin-comment-generator",
       "slug": "linkedin-comment-generator",
       "name": "LinkedIn Comment & Engagement Generator",
-      "description": "Generate 5 high-visibility LinkedIn comments from any post or article URL—including authority frameworks, 90/10 contrarian nuance, and smart follow-up questions.",
+      "description": "Generate 5 high-visibility LinkedIn comments from any post or article URL\u2014including authority frameworks, 90/10 contrarian nuance, and smart follow-up questions.",
       "categories": [
         "content-writing"
       ],
@@ -2983,7 +2988,7 @@
       "slug": "ai-blog-article-writer",
       "name": "AI Blog & Article Writer",
       "shortDescription": "Draft full SEO blog articles with a 50-word Position Zero answer lead, 3 intro hooks, editable H2 sections, and E-E-A-T proof prompts.",
-      "description": "Write complete, reader-first SEO blog posts section by section with a 45–58 word Position Zero answer block, 3 introduction hook frameworks, editable H2/H3 cards, and E-E-A-T human-judgment prompts.",
+      "description": "Write complete, reader-first SEO blog posts section by section with a 45\u201358 word Position Zero answer block, 3 introduction hook frameworks, editable H2/H3 cards, and E-E-A-T human-judgment prompts.",
       "categories": [
         "content-writing",
         "ai-seo"
