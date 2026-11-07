@@ -642,7 +642,7 @@ export default function DataToChartVisualCardMakerClient() {
   return (
     <section
       aria-label="Data to Visual Chart Card Maker Studio"
-      className={`${studioStyles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
+      className={`${studioStyles.studio} mx-auto w-full max-w-6xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}

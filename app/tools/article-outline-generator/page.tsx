@@ -61,60 +61,72 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 sm:pt-7`}
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span aria-current="page" className="text-blue-200">
-              Article Outline Generator
-            </span>
+            <span aria-current="page">Article Outline Generator</span>
           </nav>
-          <header className="mb-6 mt-3 max-w-4xl text-left text-white">
-            <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-blue-100">
-              AI SEO · Content Writing
-            </p>
-            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-              AI Article Outline Generator{" "}<span className={toolHeroHeading}>
-                Give Every Section a Purpose
-              </span>
-            </h1>
-            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-              Turn your title and context into a reader-focused article plan.
-              Choose heading alternatives, shape the structure, and gather
-              evidence before you draft.
-            </p>
-            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
-              {[
-                [Layers3, "H1 / H2 / H3 structure"],
-                [PencilLine, "Editable writing notes"],
-                [ListChecks, "Human review"],
-              ].map(([Icon, label]) => {
-                const I = Icon as typeof Layers3;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2"
-                  >
-                    <I aria-hidden className="h-4 w-4 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                AI SEO · Content Planning & H2/H3 Architecture
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                AI Article Outline Generator 
+                <span className={toolHeroHeading}>
+                  for Reader-First H2–H3 Structure
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Turn your target topic and keyword brief into a logical H1–H3 article hierarchy with section goals, reader questions, and evidence notes before you start writing.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  H1 / H2 / H3 hierarchy
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Section-by-section goals
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Markdown & brief export
+                </span>
+              </div>
             </div>
-          </header>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Elements in Every Outline
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Heading Options:</strong> Compare multiple H1 and H2 angles tailored to search intent.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Section Purpose:</strong> Clear guidance on what each H2/H3 block must answer.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Evidence Prompts:</strong> Reminders for examples, screenshots, and original data.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Writer Handoff:</strong> One-click Markdown and structured outline export.
+                </li>
+              </ul>
+            </div>
+          </div>
           <OutlineClient />
         </div>
       </div>
-      <div className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">

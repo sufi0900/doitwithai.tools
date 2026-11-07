@@ -118,7 +118,7 @@ export default async function ToolResources({ slug }: { slug: string }) {
   return (
     <aside
       aria-label="Supporting guides and related tools"
-      className="mx-auto my-12 max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/60 sm:p-8"
+      className="mx-auto my-12 max-w-6xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/60 sm:p-8"
     >
       <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
         Continue your workflow

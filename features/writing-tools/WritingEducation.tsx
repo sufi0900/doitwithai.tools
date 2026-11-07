@@ -132,7 +132,7 @@ export default function WritingEducation({ kind }: { kind: WritingKind }) {
   return (
     <div
       data-writing-education
-      className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8"
+      className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8"
     >
       <section
         aria-labelledby={`${kind}-purpose`}

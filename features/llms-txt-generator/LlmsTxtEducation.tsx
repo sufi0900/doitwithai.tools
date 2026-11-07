@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function LlmsTxtEducation() {
   return (
     <section className="border-t border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-slate-950">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">A practical guide to creating llms.txt</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <article className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">

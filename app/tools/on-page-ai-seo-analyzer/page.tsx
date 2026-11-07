@@ -175,64 +175,77 @@ export default function OnPageAnalyzerPage() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section
-        className={`relative overflow-hidden ${toolHeroSurface} px-4 pb-7 pt-5 text-white sm:px-6 sm:pt-7`}
+      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-[1500px]">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
-            className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-blue-100/80"
             aria-label="Breadcrumb"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span>On-page AI SEO Analyzer</span>
+            <span aria-current="page">On-page AI SEO Analyzer</span>
           </nav>
-          <div className="mb-4 max-w-4xl text-left">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-300/30 bg-blue-400/10 px-4 py-2 text-xs font-bold tracking-wide text-blue-100">
-              <Layers3 size={15} />
-              Your complete page review workspace
-            </span>
-            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-              On-page AI SEO Analyzer{" "}<span className={toolHeroHeading}>
-                Audit. Understand. Improve.
-              </span>
-            </h1>
-            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-blue-100/85 sm:text-base sm:leading-7">
-              See what needs attention, inspect the evidence, and prepare useful
-              changes. Bring your page essentials together in one focused
-              workspace.
-            </p>
-            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs text-blue-100">
-              {[
-                [ScanLine, "Evidence behind every finding"],
-                [Sparkles, "Selected improvements"],
-                [ShieldCheck, "Review before publishing"],
-              ].map(([Icon, text]) => {
-                const I = Icon as typeof ScanLine;
-                return (
-                  <span
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2"
-                    key={text as string}
-                  >
-                    <I size={14} />
-                    {text as string}
-                  </span>
-                );
-              })}
+
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                On-Page SEO · 36-Factor Technical, Content & GEO Audit
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                On-Page AI SEO 
+                <span className={toolHeroHeading}>
+                  Analyzer & Page Workspace
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Audit any public webpage URL or pasted HTML across metadata, heading hierarchy, internal/external links, schema markup, image alt attributes, and AI citation readiness.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Live URL or raw HTML audit
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Evidence behind every finding
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  AI-assisted fix suggestions
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Audit Dimensions Inspected
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Snippet & Metadata:</strong> Title pixel width, meta description, canonical, and robots tags.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Content & Headings:</strong> H1–H6 structure, word count, readability, and passage clarity.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Links & Media:</strong> Internal/external link ratios, anchor text, and image alt coverage.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Schema & GEO:</strong> JSON-LD structured data entities, Open Graph, and trust signals.
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
-      <section className="bg-[#f5f7fc] px-3 py-8 dark:bg-[#0c1422] sm:px-6 sm:py-10">
-        <div className="mx-auto max-w-[1500px]">
+      <section className="bg-[#f5f7fc] py-8 dark:bg-[#0c1422] sm:py-10">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <AnalyzerClient />
         </div>
       </section>
-      <section className="border-t border-slate-200 bg-white px-5 py-20 dark:border-slate-800 dark:bg-slate-950">
-        <div className="mx-auto max-w-6xl">
+      <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="max-w-2xl">
             <p className="text-xs font-bold uppercase tracking-widest text-[#5271ff] dark:text-blue-300">
               A connected workflow
@@ -327,8 +340,8 @@ export default function OnPageAnalyzerPage() {
           </div>
         </div>
       </section>
-      <section className="bg-white px-5 py-20 dark:bg-slate-950">
-        <div className="mx-auto max-w-5xl">
+      <section className="bg-white py-20 dark:bg-slate-950">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <h2 className="text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">
             Questions about your page audit
           </h2>

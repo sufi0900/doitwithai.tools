@@ -166,69 +166,70 @@ export default function LlmsTxtGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 text-white sm:pt-7 lg:pb-12`}
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
-            <Link href="/" className="transition hover:text-white">
-              Home
-            </Link>
+            <Link href="/">Home</Link>
             <span>/</span>
-            <Link href="/tools" className="transition hover:text-white">
-              Tools
-            </Link>
+            <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span className="text-blue-200">llms.txt Generator</span>
+            <span aria-current="page">llms.txt Generator</span>
           </nav>
 
-          <div className="mb-5 max-w-4xl text-left">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-100 backdrop-blur">
-              <Sparkles className="h-4 w-4 text-cyan-300" /> GEO / AI search
-              readiness
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                GEO · AI Documentation Index & Markdown Builder
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                llms.txt Generator for 
+                <span className={toolHeroHeading}>
+                  AI Crawler-Ready Websites
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Curate your highest-value documentation, guides, and product URLs—or import them straight from your sitemap.xml—to build a clean, spec-compliant /llms.txt file.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  1-click sitemap.xml import
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Spec-compliant H1/H2 Markdown
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Copy or download llms.txt
+                </span>
+              </div>
             </div>
-            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-              llms.txt Generator for{" "}<span className={toolHeroHeading}>
-                AI Crawler-Ready Sites
-              </span>
-            </h1>
-            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-              Add your highest-value pages by hand, or import a starting list
-              straight from your sitemap.xml. Review the output, fix what the
-              checklist flags, then copy or download a clean, spec-compliant
-              llms.txt file.
-            </p>
-            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
-              {[
-                [FileCode2, "Spec-compliant Markdown output"],
-                [Globe, "Optional sitemap.xml import"],
-                [ShieldCheck, "Review before publishing"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof FileCode2;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"
-                  >
-                    <FeatureIcon className="h-3.5 w-3.5 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Elements of a Valid llms.txt
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">H1 Project Title:</strong> Starts with a single H1 naming your site or documentation hub.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Blockquote Summary:</strong> Concise > blockquote describing your product and core audience.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Grouped H2 Sections:</strong> Organizes canonical URLs with 1-line descriptions by topic.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Spec Validation:</strong> Verifies Markdown syntax, HTTPS links, and optional sections.
+                </li>
+              </ul>
             </div>
-            <a
-              href="#llms-txt-generator"
-              className="hidden items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Build your llms.txt <ArrowRight className="h-4 w-4" />
-            </a>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-8">
             <LlmsTxtClient />
           </div>
         </div>
@@ -237,7 +238,7 @@ export default function LlmsTxtGeneratorPage() {
       <LlmsTxtEducation />
 
       <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-[#5271ff]">
               Common questions

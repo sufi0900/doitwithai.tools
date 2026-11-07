@@ -135,59 +135,72 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 sm:pt-7`}
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span aria-current="page" className="text-blue-200">
-              Image Alt Text Generator
-            </span>
+            <span aria-current="page">Image Alt Text Generator</span>
           </nav>
-          <header className="mb-6 mt-3 max-w-4xl text-left text-white">
-            <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-blue-100">
-              AI SEO · Content Writing
-            </p>
-            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-              AI Image Alt Text Generator{" "}<span className={toolHeroHeading}>
-                Describe the Meaning That Matters
-              </span>
-            </h1>
-            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-              Give your image a purpose, compare useful alternatives, and refine
-              the wording before it reaches your readers.
-            </p>
-            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
-              {[
-                [ImagePlus, "Upload or describe"],
-                [ScanEye, "Purpose-aware drafts"],
-                [FileCheck2, "Human accuracy review"],
-              ].map(([Icon, label]) => {
-                const I = Icon as typeof ImagePlus;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2"
-                  >
-                    <I aria-hidden className="h-4 w-4 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                On-Page SEO & Accessibility · Descriptive Alt Text Studio
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                AI Image Alt Text 
+                <span className={toolHeroHeading}>
+                  & Accessibility Generator
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Upload an image or describe its visual role on your page to generate clear, screen-reader-friendly alt text variations aligned with WCAG guidelines and page context.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Image upload or text brief
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Role-aware alt variations
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Character & keyword checks
+                </span>
+              </div>
             </div>
-          </header>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Accessibility & SEO Checks
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Image Role:</strong> Adapts copy for informative, functional, chart, or product images.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Context Alignment:</strong> Connects visual details naturally to the surrounding topic.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Anti-Stuffing:</strong> Avoids robotic keyword lists and redundant 'image of' prefixes.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Ready to Copy:</strong> Provides concise, medium, and detailed options with HTML code.
+                </li>
+              </ul>
+            </div>
+          </div>
           <AltTextClient />
         </div>
       </div>
-      <div className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">

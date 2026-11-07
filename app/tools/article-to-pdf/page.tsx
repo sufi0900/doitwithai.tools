@@ -1,4 +1,4 @@
-import { toolHeroHeading } from "@/features/tool-ui/ToolHero";
+import { ToolHeroBackground, toolHeroHeading, toolHeroSurface } from "@/features/tool-ui/ToolHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import ArticlePdfClient from "@/features/article-conversion/ArticlePdfClient";
@@ -139,9 +139,9 @@ export default function Page() {
             <span>/</span>
             <span aria-current="page">Article to PDF</span>
           </nav>
-          <div className="grid items-center gap-8 lg:grid-cols-[1.3fr_0.8fr]">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-orange-200">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
                 Content conversion · Clean reading copies
               </p>
               <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
@@ -169,7 +169,7 @@ export default function Page() {
               </div>
             </div>
             <div className="rounded-2xl border border-orange-200/25 bg-[#352630] p-6">
-              <p className="text-xs font-bold uppercase tracking-wide text-orange-200">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#b4c3ff]">
                 Your reading copy
               </p>
               <ol className="mt-5 space-y-4 text-sm leading-7">

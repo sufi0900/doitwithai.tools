@@ -163,65 +163,70 @@ export default function IndexNowKeyGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 text-white sm:pt-7 lg:pb-12`}>
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}>
         <ToolHeroBackground />
 
-        <div className="relative mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
-            <Link href="/" className="transition hover:text-white">
-              Home
-            </Link>
+            <Link href="/">Home</Link>
             <span>/</span>
-            <Link href="/tools" className="transition hover:text-white">
-              Tools
-            </Link>
+            <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span className="text-blue-200">IndexNow Key Generator & URL Submitter</span>
+            <span aria-current="page">IndexNow Key Generator & URL Submitter</span>
           </nav>
 
-          <div className="mb-5 max-w-4xl text-left">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-blue-100 backdrop-blur">
-              <Sparkles className="h-4 w-4 text-cyan-300" /> Technical SEO
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                Technical SEO · Instant Search Engine Ping & Key Setup
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                IndexNow Key Generator 
+                <span className={toolHeroHeading}>
+                  & Instant URL Submitter
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Generate a cryptographic IndexNow API key, download the verification .txt file, verify live hosting on your domain, and submit updated URLs to participating search engines.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  1-click .txt key download
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Live key-file verification
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Bulk URL ping submission
+                </span>
+              </div>
             </div>
-            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-              IndexNow Key Generator{" "}<span className={toolHeroHeading}>
-                And Instant URL Submitter
-              </span>
-            </h1>
-            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-              Create your IndexNow key, download the key file, confirm it&apos;s live on your site, and
-              tell participating search engines about new, updated, or deleted pages ; all from one
-              page.
-            </p>
-            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
-              {[
-                [Key, "Key file ready to download"],
-                [ShieldCheck, "Review before publishing"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof Key;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"
-                  >
-                    <FeatureIcon className="h-3.5 w-3.5 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Steps to Instant Indexing
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Generate Key:</strong> Creates a spec-compliant hexadecimal IndexNow key in your browser.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Host Key File:</strong> Download the [key].txt file and place it in your site's root folder.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Verify Live URL:</strong> Confirm your key file returns HTTP 200 and matches your key.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Submit URLs:</strong> Ping IndexNow endpoints whenever you publish or update pages.
+                </li>
+              </ul>
             </div>
-            <a
-              href="#indexnow-key-generator"
-              className="hidden items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl transition hover:-translate-y-0.5 hover:bg-blue-50"
-            >
-              Generate your key <ArrowRight className="h-4 w-4" />
-            </a>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-8">
             <IndexNowClient />
           </div>
         </div>

@@ -111,61 +111,72 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 sm:pt-7`}
+      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
-            <span aria-hidden>/</span>
+            <span>/</span>
             <Link href="/tools">Tools</Link>
-            <span aria-hidden>/</span>
-            <span aria-current="page" className="text-blue-200">
-              AI FAQ Generator
-            </span>
+            <span>/</span>
+            <span aria-current="page">AI FAQ Generator</span>
           </nav>
-          <header className="mx-auto mb-12 mt-12 max-w-5xl text-center text-white">
-            <p className="inline-flex items-center gap-2 rounded-full border border-[#5271FF]/40 bg-[#5271FF]/15 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#AEBBFF]">
-              <Sparkles className="h-4 w-4" aria-hidden />
-              Source-first content writing
-            </p>
-            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-              AI FAQ Generator{" "}<span className={toolHeroHeading}>
-                Trace Every Answer Back to Your Text
-              </span>
-            </h1>
-            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-              Turn your article into useful questions and answer drafts. Inspect
-              the source quotes, resolve missing information, and export only
-              what you have reviewed.
-            </p>
-            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
-              {[
-                [FileCheck2, "Matched source quotes"],
-                [ShieldCheck, "Missing evidence stays visible"],
-                [ListChecks, "Editor-controlled exports"],
-              ].map(([Icon, label]) => {
-                const I = Icon as typeof FileCheck2;
-                return (
-                  <span
-                    key={String(label)}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#5271FF]/25 bg-[#5271FF]/10 px-3 py-2"
-                  >
-                    <I className="h-4 w-4 text-[#9AABFF]" aria-hidden />
-                    {String(label)}
-                  </span>
-                );
-              })}
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                On-Page SEO · Source-Grounded FAQ & Schema
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                AI FAQ Generator 
+                <span className={toolHeroHeading}>
+                  With Source Quotes & JSON-LD
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Turn your article or product page into reader-focused FAQ questions and concise answers traced directly back to your source text—complete with validated FAQPage schema.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Matched source quotes
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Missing-evidence alerts
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  FAQPage JSON-LD export
+                </span>
+              </div>
             </div>
-          </header>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                What This FAQ Workspace Builds
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Reader Questions:</strong> Extracts high-intent questions directly from your article body.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Source Traceability:</strong> Links every drafted answer to its exact supporting passage.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Gap Detection:</strong> Flags questions where your source text needs stronger proof.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Clean Exports:</strong> Outputs Markdown FAQs and validated FAQPage JSON-LD markup.
+                </li>
+              </ul>
+            </div>
+          </div>
           <FaqGeneratorClient />
         </div>
       </section>
-      <div className="mx-auto max-w-5xl space-y-16 px-4 py-16 sm:px-6">
+      <div className="mx-auto max-w-6xl space-y-16 px-4 py-16 sm:px-6">
         <section>
           <h2 className="text-3xl font-black">
             How to create FAQs from an article

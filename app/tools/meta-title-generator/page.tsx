@@ -165,72 +165,70 @@ export default function MetaTitleGeneratorPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
 
-      <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 text-white sm:pt-7 lg:pb-12`}
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
-            <Link href="/" className="transition hover:text-white">
-              Home
-            </Link>
+            <Link href="/">Home</Link>
             <span>/</span>
-            <Link href="/tools" className="transition hover:text-white">
-              Tools
-            </Link>
+            <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span className="text-blue-200">Meta Title Generator</span>
+            <span aria-current="page">Meta Title Generator</span>
           </nav>
 
-          <div className="mb-5 max-w-4xl text-left">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#5271FF]/40 bg-[#5271FF]/15 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-[#AEBBFF] backdrop-blur">
-              <Sparkles className="h-4 w-4 text-[#5271FF]" />
-              Free AI-assisted SEO tool
-            </div>
-            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-              Free AI Meta Title Generator{" "}<span className={toolHeroHeading}>
-                Compare Ideas Before You Publish
-              </span>
-            </h1>
-            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-              Generate multiple meta title ideas and compare how clearly they
-              represent your page, target keyword, and intended audience. Refine
-              your preferred option using measurable checks and mobile and
-              desktop search previews.
-            </p>
-            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
-              {[
-                [Search, "Page and keyword alignment"],
-                [UserRound, "Clear reader-focused wording"],
-                [Gauge, "Length and duplication checks"],
-              ].map(([Icon, label]) => {
-                const FeatureIcon = Icon as typeof Search;
-
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#5271FF]/25 bg-[#5271FF]/10 px-3 py-2"
-                  >
-                    <FeatureIcon className="h-3.5 w-3.5 text-[#8298FF]" />
-                    {label as string}
-                  </span>
-                );
-              })}
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                On-Page SEO · Pixel-Calibrated Title Tag Studio
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Free AI Meta Title 
+                <span className={toolHeroHeading}>
+                  Generator & SERP Pixel Lab
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Generate 25 distinct meta title candidates across 5 optimization lenses, compare ranked recommendations, and test exact desktop and mobile pixel widths in real time.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  25 titles across 5 lenses
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Live desktop & mobile pixel meter
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  1-click URL topic extraction
+                </span>
+              </div>
             </div>
 
-            <a
-              href="#meta-title-generator"
-              className="hidden items-center gap-2 rounded-xl bg-[#5271FF] px-5 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-[#5271FF]/20 transition hover:-translate-y-0.5 hover:bg-[#4664E8]"
-            >
-              Generate meta title ideas
-              <ArrowRight className="h-4 w-4" />
-            </a>
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                5 Optimization Lenses Generated
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Top 3 Ranked:</strong> Balanced recommendations scored for intent, clarity, and pixel fit.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">SEO & Intent:</strong> Front-loaded primary keyword variations aligned with SERP demand.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Reader Click Appeal:</strong> Outcome-driven hooks designed to earn higher organic CTR.
+                </li>
+                <li>
+                  <strong className="text-amber-300">AI & Compact:</strong> Entity-explicit and ultra-compact (under 48-char) mobile-safe titles.
+                </li>
+              </ul>
+            </div>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-8">
             <MetaTitleGeneratorClient />
           </div>
         </div>
@@ -239,7 +237,7 @@ export default function MetaTitleGeneratorPage() {
       <ToolEducation />
 
       <section
-        className="mx-auto max-w-5xl px-4 pb-24 sm:px-6 lg:px-8"
+        className="mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8"
         aria-labelledby="meta-title-faqs"
       >
         <div className="text-center">

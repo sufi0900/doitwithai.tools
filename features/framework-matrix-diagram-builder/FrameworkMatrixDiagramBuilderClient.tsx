@@ -650,7 +650,7 @@ export default function FrameworkMatrixDiagramBuilderClient() {
   return (
     <section
       aria-label="2x2 Strategy Matrix and Framework Diagram Studio"
-      className={`${studioStyles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
+      className={`${studioStyles.studio} mx-auto w-full max-w-6xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}

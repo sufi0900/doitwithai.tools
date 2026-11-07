@@ -87,14 +87,13 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-6 sm:pt-8`}
+      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
@@ -102,27 +101,58 @@ export default function Page() {
             <span>/</span>
             <span aria-current="page">SEO content brief generator</span>
           </nav>
-          <div className="mb-6 max-w-4xl">
-            <p className="text-sm font-bold text-blue-200">
-              Free content planning tool
-            </p>
-            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
-              AI-Assisted{" "}
-              <span className={toolHeroHeading}>SEO Content Brief Generator</span>
-            </h1>
-            <p className="mt-5 text-lg leading-8 text-slate-300">
-              Turn a topic into a clear writer handoff. Plan reader goals,
-              useful sections, research needs, and relevant next steps.
-            </p>
-            <p className="mt-4 text-sm leading-7 text-slate-400">
-              Start with a free brief template or generate a draft. No live
-              search results or keyword metrics are claimed.
-            </p>
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                AI SEO · Editorial Handoff & Outline Brief Builder
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                AI-Assisted SEO 
+                <span className={toolHeroHeading}>
+                  Content Brief Generator
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Turn a target keyword, audience, and topic into a structured writer handoff—complete with search intent, H2/H3 section plan, reader questions, and internal link targets.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Instant template or AI draft
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Editable writer handoff
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Markdown brief download
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                What Every Content Brief Includes
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Search Intent & Goal:</strong> Defines the primary reader task, target persona, and page angle.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Heading Architecture:</strong> Structured H2/H3 outline with talking points for each section.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Evidence Checklist:</strong> Specifies original examples, data points, and claims to verify.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Internal Link Plan:</strong> Maps relevant existing URLs and anchor concepts to include.
+                </li>
+              </ul>
+            </div>
           </div>
           <ContentBriefClient />
         </div>
       </section>
-      <div className="mx-auto max-w-5xl space-y-12 px-4 py-16 sm:px-6">
+      <div className="mx-auto max-w-6xl space-y-12 px-4 py-16 sm:px-6">
         {sections.map(([heading, text]) => (
           <section key={heading}>
             <h2 className="text-2xl font-black sm:text-3xl">{heading}</h2>

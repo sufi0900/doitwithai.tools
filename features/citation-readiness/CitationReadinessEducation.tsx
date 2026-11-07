@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function CitationReadinessEducation() {
   return (
     <section className="border-t border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-slate-950">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
           How to use your citation readiness review
         </h2>

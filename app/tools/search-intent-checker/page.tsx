@@ -151,42 +151,67 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-12 pt-6 sm:pt-8`}
+      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
-            <Link href="/" className="hover:text-white">
-              Home
-            </Link>
-            <span aria-hidden>/</span>
-            <Link href="/tools" className="hover:text-white">
-              Tools
-            </Link>
-            <span aria-hidden>/</span>
-            <span aria-current="page" className="text-blue-200">
-              Search intent checker
-            </span>
+            <Link href="/">Home</Link>
+            <span>/</span>
+            <Link href="/tools">Tools</Link>
+            <span>/</span>
+            <span aria-current="page">Search intent checker</span>
           </nav>
-          <div className="mb-6 max-w-4xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-blue-300/20 bg-blue-400/10 px-3.5 py-1.5 text-xs font-semibold text-blue-200">
-              <Compass aria-hidden className="h-3.5 w-3.5" />
-              Free Keyword &amp; Search Intent Planning Tool
-            </span>
-            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
-              Free Keyword &amp;{" "}
-              <span className={toolHeroHeading}>Search Intent Checker</span>
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-              Use this free keyword intent checker to understand what searchers
-              actually want—classify informational, commercial, transactional,
-              and navigational queries, inspect wording cues, and pick the right
-              page format before you write.
-            </p>
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                AI SEO · Keyword Intent & SERP Format Classifier
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                Free Keyword & 
+                <span className={toolHeroHeading}>
+                  Search Intent Checker
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Classify up to 10 keywords at once across Informational, Commercial, Transactional, and Navigational intent. Inspect wording cues, reader tasks, and recommended page formats.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Compare up to 10 queries
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Instant local + AI deep review
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Page format & angle guidance
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Intent Dimensions Analyzed
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Likely Intent:</strong> Classifies Informational, Commercial, Transactional, or Mixed cues.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Wording Signals:</strong> Highlights exact modifiers driving the classification.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Reader Task:</strong> Explains what the searcher is trying to accomplish or compare.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Recommended Format:</strong> Suggests whether to build a guide, comparison, tool, or landing page.
+                </li>
+              </ul>
+            </div>
           </div>
           <SearchIntentClient />
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -224,7 +249,7 @@ export default function Page() {
           </div>
         </div>
       </section>
-      <div className="mx-auto max-w-5xl space-y-16 px-4 py-16 sm:px-6">
+      <div className="mx-auto max-w-6xl space-y-16 px-4 py-16 sm:px-6">
         <section>
           <h2 className="text-3xl font-black">How to check keyword intent</h2>
           <ol className="mt-6 grid gap-5 sm:grid-cols-3">

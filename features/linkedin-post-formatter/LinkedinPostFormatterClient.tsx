@@ -127,7 +127,7 @@ export default function LinkedinPostFormatterClient() {
   return (
     <section
       aria-label="LinkedIn Post Formatter and Visual Feed Studio"
-      className={`${styles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
+      className={`${styles.studio} mx-auto w-full max-w-6xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={running}

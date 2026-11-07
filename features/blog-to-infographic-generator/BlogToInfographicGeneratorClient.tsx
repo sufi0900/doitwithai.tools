@@ -135,7 +135,7 @@ export default function BlogToInfographicGeneratorClient() {
   return (
     <section
       aria-label="Blog and Content Idea to Visual Infographic Studio"
-      className={`${studioStyles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
+      className={`${studioStyles.studio} mx-auto w-full max-w-6xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}

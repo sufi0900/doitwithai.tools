@@ -62,59 +62,72 @@ export default function Page() {
           __html: JSON.stringify(schema).replace(/</g, "\\u003c"),
         }}
       />
-      <div
-        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-5 sm:pt-7`}
+      <div className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="flex flex-wrap gap-2 text-xs text-slate-400"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span aria-current="page" className="text-blue-200">
-              Topical Map Generator
-            </span>
+            <span aria-current="page">Topical Map Generator</span>
           </nav>
-          <header className="mb-6 mt-3 max-w-4xl text-left text-white">
-            <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-blue-100">
-              AI SEO · Content Writing
-            </p>
-            <h1 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-              AI Topical Map Generator{" "}<span className={toolHeroHeading}>
-                Connect Broad Themes With Useful Reader Tasks
-              </span>
-            </h1>
-            <p className="mt-2.5 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-              Organize related searches, separate different reader tasks, and
-              build a content plan you can review before drafting.
-            </p>
-            <div className="mt-3.5 flex flex-wrap justify-start gap-2 text-xs font-bold text-slate-300">
-              {[
-                [GitBranch, "Seed or project brief"],
-                [ListTree, "Editable topic branches"],
-                [FileCheck2, "Human review"],
-              ].map(([Icon, label]) => {
-                const I = Icon as typeof GitBranch;
-                return (
-                  <span
-                    key={label as string}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2"
-                  >
-                    <I aria-hidden className="h-4 w-4 text-blue-300" />
-                    {label as string}
-                  </span>
-                );
-              })}
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                AI SEO · Pillar Hub & Supporting Cluster Architect
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                AI Topical Map Generator 
+                <span className={toolHeroHeading}>
+                  for Pillar & Cluster Authority
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Expand a core niche or seed topic into a visual 3-tier topical hierarchy connecting your main pillar hub, category pillars, and supporting long-tail articles.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Visual 3-tier topic tree
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Intent & format per node
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  CSV, Markdown & JSON export
+                </span>
+              </div>
             </div>
-          </header>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Layers in Every Topical Map
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Root Authority Hub:</strong> Defines the overarching subject and audience scope for your site.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Pillar Pages:</strong> Maps 3–6 comprehensive hub guides covering major sub-themes.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Supporting Clusters:</strong> Attaches specific long-tail articles and tutorials to each pillar.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Internal Link Flow:</strong> Shows parent-child linking paths to build topical authority.
+                </li>
+              </ul>
+            </div>
+          </div>
           <TopicalMapClient />
         </div>
       </div>
-      <div className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8">
         <section className="grid gap-8 lg:grid-cols-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-[#4662df] dark:text-blue-300">

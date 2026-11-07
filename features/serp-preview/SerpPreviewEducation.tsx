@@ -4,7 +4,7 @@ import { Code2, Eye, ShieldAlert } from "lucide-react";
 export default function SerpPreviewEducation() {
   return (
     <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-[#5271ff]">
             Before you trust the preview

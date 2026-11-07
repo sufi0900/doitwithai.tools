@@ -132,43 +132,72 @@ export default function Page() {
           }).replace(/</g, "\\u003c"),
         }}
       />
-      <section
-        className={`relative overflow-hidden ${toolHeroSurface} pb-10 pt-6 sm:pt-8`}
+      <section className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
         <ToolHeroBackground />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
           <nav
             aria-label="Breadcrumb"
-            className="mb-4 flex flex-wrap gap-2 text-sm text-blue-100"
+            className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300"
           >
             <Link href="/">Home</Link>
             <span>/</span>
             <Link href="/tools">Tools</Link>
             <span>/</span>
-            <span aria-current="page">Audience research</span>
+            <span aria-current="page">Target Audience Research Tool</span>
           </nav>
-          <div className="mb-9 max-w-3xl">
-            <p className="text-sm font-semibold text-blue-200">
-              AUDIENCE STRATEGY · BUSINESS AND CONTENT PLANNING
-            </p>
-            <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
-              AI{" "}
-              <span className={toolHeroHeading}>Target Audience Research Tool</span>
-            </h1>
-            <p className="mt-5 text-lg leading-8 text-slate-200">
-              Turn a business idea or website brief into working buyer personas,
-              content ideas, and a practical research plan.
-            </p>
-            <p className="mt-3 text-sm leading-7 text-slate-300">
-              Understand possible reader needs, buying decisions, and places to
-              investigate. Keep assumptions visible and validate them with real
-              people.
-            </p>
+
+          <div className="mb-8 grid items-center gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
+                Audience Strategy · Buyer Persona & Search Trigger Planner
+              </p>
+              <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
+                AI Target Audience 
+                <span className={toolHeroHeading}>
+                  & Buyer Persona Research Tool
+                </span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
+                Turn a product brief, service description, or live website URL into actionable buyer personas, search triggers, objections, and content channel experiments.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-xs font-semibold text-slate-200">
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Website URL or idea input
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Evidence-tagged personas
+                </span>
+                <span className="rounded-lg border border-white/15 px-3 py-2">
+                  Markdown & CSV report export
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#9aabff]/30 bg-[#101b30]/90 p-6 shadow-xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#b4c3ff]">
+                4 Persona Dimensions Mapped
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li>
+                  <strong className="text-emerald-300">Jobs to Be Done:</strong> Identifies the concrete problem or goal driving the buyer's search.
+                </li>
+                <li>
+                  <strong className="text-indigo-300">Objections & Hesitations:</strong> Surfaces trust barriers, pricing questions, and switching costs.
+                </li>
+                <li>
+                  <strong className="text-sky-300">Search Triggers:</strong> Maps questions and keywords asked at each stage of awareness.
+                </li>
+                <li>
+                  <strong className="text-amber-300">Validation Questions:</strong> Provides interview prompts to verify assumptions with real users.
+                </li>
+              </ul>
+            </div>
           </div>
           <AudienceClient />
         </div>
       </section>
-      <div className="mx-auto max-w-5xl space-y-14 px-4 py-16 sm:px-6">
+      <div className="mx-auto max-w-6xl space-y-14 px-4 py-16 sm:px-6">
         <section>
           <h2 className="text-3xl font-bold">
             How to find your target audience

@@ -776,7 +776,7 @@ export default function PinterestPinVisualGeneratorClient() {
   return (
     <section
       aria-label="Pinterest Tall Pin Visual Generator and SEO Studio"
-      className={`${studioStyles.studio} mx-auto w-full max-w-7xl space-y-6 px-4 py-10 sm:px-6`}
+      className={`${studioStyles.studio} mx-auto w-full max-w-6xl space-y-6 px-4 py-10 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}
