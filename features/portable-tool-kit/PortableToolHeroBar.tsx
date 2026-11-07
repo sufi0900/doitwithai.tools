@@ -141,7 +141,7 @@ ${
 
 ## 4. How to Deploy or Embed on Your Website (WordPress, Webflow, Next.js, Netlify)
 - **Option A (Upload Standalone HTML):** Upload \`Run-Tool.html\` to Netlify Drop, Cloudflare Pages, or your web hosting.
-- **Option B (WordPress / Webflow Embed):** Copy the responsive \`<iframe>\` snippet from https://doitwithai.tools/tools/${tool.slug}.
+- **Option B (WordPress / Webflow / any site):** Upload \`Run-Tool.html\` to your hosting and link to it (or embed it with an \`<iframe>\` that points to YOUR uploaded copy). It is the exact same tool, hero and dashboard as the live page, and it calls the DoItWithAI cloud API for results.
 - **Option C (Next.js / React Component):** Use the included \`React-Component.tsx\` file in your React or Next.js project.
 `;
 }
@@ -1016,8 +1016,22 @@ HOW TO RUN ON YOUR PC (ZERO INSTALLATION OR CODING REQUIRED):
 Official Tool URL: https://doitwithai.tools/tools/${tool.slug}
 ===================================================================`;
 
-  zip.file("Run-Tool.html", html);
-  zip.file(`${tool.slug}-app.html`, html);
+  // Prefer the REAL standalone build of the live tool (same hero + dashboard).
+  let realHtml: string | null = null;
+  try {
+    const res = await fetch(`/portable-tools/${tool.slug}.html`, { cache: "no-store" });
+    const type = res.headers.get("content-type") || "";
+    if (res.ok && type.includes("text/html")) {
+      const body = await res.text();
+      if (body.includes('id="root"')) realHtml = body;
+    }
+  } catch {
+    realHtml = null;
+  }
+  const appHtml = realHtml ?? html;
+  zip.file("Run-Tool.html", appHtml);
+  zip.file(`${tool.slug}-app.html`, appHtml);
+  if (realHtml) zip.file("Simple-Offline-Version.html", html);
   zip.file("USER-MANUAL.md", manual);
   zip.file("React-Component.tsx", reactTsx);
   zip.file("Vibe-Coding-Prompts.md", promptsMd);
