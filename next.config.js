@@ -11,6 +11,7 @@ const nextConfig = {
     { source: '/prompts/meta-title-prompts', destination: '/prompts/chatgpt-prompts-for-meta-title-and-meta-description', permanent: true },
     { source: '/ai-seo-tools', destination: '/tools', permanent: true },
     { source: '/tools/categories/seo', destination: '/tools/categories/ai-seo', permanent: true },
+    { source: '/download-and-embed', destination: '/tools/downloadable-ai-tools', permanent: true },
     ];
   },
   compiler: {

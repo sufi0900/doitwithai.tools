@@ -20,21 +20,9 @@ const menuData: Menu[] = [
     newTab: false,
   },
   {
-    id: 105,
-    title: "Extension",
-    path: "/chrome-extension",
-    newTab: false,
-  },
-  {
     id: 2,
     title: "SEO Hub",
     path: "/ai-seo",
-    newTab: false,
-  },
-  {
-    id: 43,
-    title: "Blogs",
-    path: "/blogs",
     newTab: false,
   },
   {
@@ -43,10 +31,15 @@ const menuData: Menu[] = [
     path: "/prompts",
     newTab: false,
   },
-
+  {
+    id: 106,
+    title: "Download Tools",
+    path: "/tools/downloadable-ai-tools",
+    newTab: false,
+  },
   {
     id: 6,
-    title: "Pages",
+    title: "Resources",
     newTab: false,
     submenu: [
       {
@@ -57,21 +50,26 @@ const menuData: Menu[] = [
       },
       {
         id: 111,
-        title: "Portable AI Tools (.ZIP)",
-        path: "/download-and-embed",
+        title: "Download & Embed 90+ Tools",
+        path: "/tools/downloadable-ai-tools",
         newTab: false,
       },
-      { id: 42, title: "Contact Us", path: "/contact", newTab: false },
+      {
+        id: 105,
+        title: "Chrome Extension",
+        path: "/chrome-extension",
+        newTab: false,
+      },
+      {
+        id: 43,
+        title: "All Blogs & Articles",
+        path: "/blogs",
+        newTab: false,
+      },
       {
         id: 3,
         title: "Free AI Resources",
         path: "/free-ai-resources",
-        newTab: false,
-      },
-      {
-        id: 41,
-        title: "About Us",
-        path: "/about",
         newTab: false,
       },
       {
@@ -82,14 +80,26 @@ const menuData: Menu[] = [
       },
       {
         id: 31,
-        title: "AiTools Hub",
+        title: "AI Tools Directory",
         path: "/ai-tools",
         newTab: false,
       },
       {
         id: 4,
-        title: "Earn with AI",
+        title: "AI Learn & Earn",
         path: "/ai-learn-earn",
+        newTab: false,
+      },
+      {
+        id: 41,
+        title: "About Us",
+        path: "/about",
+        newTab: false,
+      },
+      {
+        id: 47,
+        title: "Meet the Founder",
+        path: "/author/sufian-mustafa",
         newTab: false,
       },
       {
@@ -99,12 +109,13 @@ const menuData: Menu[] = [
         newTab: false,
       },
       {
-        id: 47,
-        title: "Author",
-        path: "/author/sufian-mustafa",
+        id: 42,
+        title: "Contact Us",
+        path: "/contact",
         newTab: false,
       },
     ],
   },
 ];
+
 export default menuData;

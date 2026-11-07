@@ -17,7 +17,7 @@ export const faqsData = [
   {
     question: "Can I download and run 90+ AI SEO tools on my PC offline?",
     answer:
-      "Yes! Every tool in our catalog is available as a 100% standalone desktop web application at /download-and-embed. You can download a single 1-click .ZIP package containing Run-Tool.html, extract it, and double-click to run on any computer in Chrome, Edge, or Safari with zero terminal commands, Node.js, or installation.",
+      "Yes! Every tool in our catalog is available as a 100% standalone desktop web application at /tools/downloadable-ai-tools. You can download a single 1-click .ZIP package containing Run-Tool.html, extract it, and double-click to run on any computer in Chrome, Edge, or Safari with zero terminal commands, Node.js, or installation.",
   },
   {
     question: "What is the Bring Your Own Key (BYOK) privacy policy on portable tools?",
