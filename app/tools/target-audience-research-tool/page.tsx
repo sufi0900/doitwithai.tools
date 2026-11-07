@@ -182,7 +182,7 @@ export default function Page() {
               </p>
               <ul className="mt-4 space-y-2.5 text-xs text-slate-300">
                 <li>
-                  <strong className="text-emerald-300">Jobs to Be Done:</strong> Identifies the concrete problem or goal driving the buyer's search.
+                  <strong className="text-emerald-300">Jobs to Be Done:</strong> Identifies the concrete problem or goal driving the buyer&apos;s search.
                 </li>
                 <li>
                   <strong className="text-indigo-300">Objections & Hesitations:</strong> Surfaces trust barriers, pricing questions, and switching costs.

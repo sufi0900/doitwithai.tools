@@ -216,7 +216,7 @@ export default function IndexNowKeyGeneratorPage() {
                   <strong className="text-emerald-300">Generate Key:</strong> Creates a spec-compliant hexadecimal IndexNow key in your browser.
                 </li>
                 <li>
-                  <strong className="text-indigo-300">Host Key File:</strong> Download the [key].txt file and place it in your site's root folder.
+                  <strong className="text-indigo-300">Host Key File:</strong> Download the [key].txt file and place it in your site&apos;s root folder.
                 </li>
                 <li>
                   <strong className="text-sky-300">Verify Live URL:</strong> Confirm your key file returns HTTP 200 and matches your key.
