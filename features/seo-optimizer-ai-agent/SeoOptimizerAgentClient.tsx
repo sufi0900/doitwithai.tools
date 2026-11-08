@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import Link from "next/link";
 import {
   Check,
   Code2,
@@ -12,6 +13,8 @@ import {
   ShieldCheck,
   Sparkles,
   Wand2,
+  Bot,
+  ArrowRight,
 } from "lucide-react";
 import {
   DEFAULT_SEO_OPTIMIZER_INPUT,
@@ -110,6 +113,83 @@ export default function SeoOptimizerAgentClient() {
         title="Running 5-Step SEO & AEO Page Optimizer Chain"
         description="Classifying search intent, engineering <580px meta tags, drafting a 50-word AI Overview Power Answer, auditing E-E-A-T entity gaps, and compiling @graph JSON-LD schema."
       />
+
+      {/* Live Autonomous Agent Status & Telemetry Banner */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#3452d1]/30 bg-gradient-to-r from-[#3452d1]/10 via-[#3452d1]/5 to-transparent p-4 dark:border-[#5271ff]/30 dark:from-[#5271ff]/15">
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#3452d1] to-[#4361EE] text-white shadow-md">
+            <Bot size={20} />
+            <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500"></span>
+            </span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                Live Autonomous SEO &amp; AEO Agent #1
+              </h3>
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-extrabold uppercase text-emerald-600 dark:text-emerald-400">
+                Online &amp; Autonomous
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              Chains 5 autonomous engines: Intent Classification → &lt;580px Title Tag → 50-Word RAG Snippet → E-E-A-T Gap Audit → Connected @graph JSON-LD.
+            </p>
+          </div>
+        </div>
+        <Link
+          href={`/do-it-ai?prompt=${encodeURIComponent(`I need you to act as the SEO & AEO Page Optimizer Agent. I want to optimize a page for: "${input.targetKeywordOrTopic || "AI SEO"}"`)}`}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[#3452d1]/40 bg-white px-3.5 py-2 text-xs font-bold text-[#3452d1] shadow-sm transition hover:bg-[#3452d1] hover:text-white dark:border-[#5271ff]/40 dark:bg-slate-900 dark:text-[#9aabff] dark:hover:bg-[#5271ff] dark:hover:text-white"
+        >
+          <Sparkles size={13} />
+          <span>Steer in Do It AI Chat</span>
+          <ArrowRight size={13} />
+        </Link>
+      </div>
+
+      {loading && (
+        <div className="mb-6 rounded-3xl border border-[#3452d1]/40 bg-slate-900 p-5 text-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+              </span>
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                Agent Live Reasoning Stream
+              </span>
+            </div>
+            <span className="text-[11px] font-bold text-slate-400">
+              Autonomous 5-Step Pipeline Active...
+            </span>
+          </div>
+
+          <div className="mt-4 space-y-2.5 text-xs font-mono">
+            <div className="flex items-center gap-2 text-emerald-300">
+              <Check size={14} className="shrink-0" />
+              <span>Step 1: Classifying search intent &amp; buyer stage for &quot;{input.targetKeywordOrTopic}&quot;</span>
+            </div>
+            <div className="flex items-center gap-2 text-emerald-300">
+              <Check size={14} className="shrink-0" />
+              <span>Step 2: Engineering &lt;580px meta title &amp; single-sentence description</span>
+            </div>
+            <div className="flex items-center gap-2 text-sky-300 animate-pulse">
+              <Sparkles size={14} className="shrink-0" />
+              <span>Step 3: Drafting 50-word RAG definition snippet for Google AI Overviews &amp; Perplexity...</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-400">
+              <span className="h-3 w-3 rounded-full border border-slate-600"></span>
+              <span>Step 4: Auditing E-E-A-T entity gaps against high-ranking competitors</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-400">
+              <span className="h-3 w-3 rounded-full border border-slate-600"></span>
+              <span>Step 5: Compiling interconnected @graph JSON-LD schema (WebPage + Article + FAQPage)</span>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {toast && (
         <div
@@ -535,6 +615,61 @@ export default function SeoOptimizerAgentClient() {
               </pre>
             </div>
           )}
+
+          {/* Interactive Agent Follow-Up Console */}
+          <div className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-5 shadow-lg dark:border-slate-800 dark:from-[#0d1527] dark:to-[#111A2E]">
+            <div className="flex items-center justify-between border-b border-slate-200/80 pb-3 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Bot size={16} className="text-[#3452d1] dark:text-[#9aabff]" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                  Autonomous Agent Next Steps &amp; Continuous Chat
+                </span>
+              </div>
+              <span className="rounded-full bg-[#3452d1]/10 px-2.5 py-0.5 text-[10px] font-extrabold text-[#3452d1] dark:text-[#9aabff]">
+                Live Memory Active
+              </span>
+            </div>
+
+            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
+              The agent has synthesized this 5-step optimization pack. You can refine specific sections with one click or launch continuous conversational steering inside the Do It AI Workspace:
+            </p>
+
+            <div className="mt-3.5 flex flex-wrap gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const aggressiveTitle = `The Definitive Guide to ${input.targetKeywordOrTopic} (2026 Strategy)`;
+                  updateField("draftTitle", aggressiveTitle);
+                  notify("Agent regenerated high-urgency CTR Title!");
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 transition hover:border-[#3452d1] hover:text-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              >
+                <Wand2 size={13} />
+                <span>Rewrite Title for Higher CTR</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveStepTab("step4");
+                  notify("Viewing E-E-A-T proof blocks & remediation code.");
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 transition hover:border-[#3452d1] hover:text-[#3452d1] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              >
+                <ShieldCheck size={13} />
+                <span>Deepen E-E-A-T Proof Blocks</span>
+              </button>
+
+              <Link
+                href={`/do-it-ai?prompt=${encodeURIComponent(`I have generated a 5-step SEO pack for "${input.targetKeywordOrTopic}". Here is the current meta title: "${pack.step2MetaOptimization.metaTitle}". Please review it and suggest 3 high-converting title variants and 5 FAQ schema questions.`)}`}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#3452d1] to-[#4361EE] px-4 py-2 text-xs font-extrabold text-white shadow-md transition hover:scale-[1.02]"
+              >
+                <Bot size={13} />
+                <span>Steer Agent in Do It AI Workspace →</span>
+              </Link>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
