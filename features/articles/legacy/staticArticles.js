@@ -1,3 +1,4 @@
+import sanitySnapshot from "./sanitySnapshot.json";
 // features/articles/legacy/staticArticles.js
 // Code-managed full SEO articles rendered through the exact same BlogLayout,
 // SeoAndSchemaWrapper, TableOfContents, FAQSection, and ArticleQuickStart pipeline
@@ -1675,33 +1676,51 @@ export const STATIC_ARTICLES = {
   },
 };
 
+export function getMergedStaticArticlesMap() {
+  return {
+    ...(sanitySnapshot || {}),
+    ...STATIC_ARTICLES,
+  };
+}
+
 export function getStaticArticle(slug, schemaType = "seo") {
   if (!slug) return null;
+  const allMap = getMergedStaticArticlesMap();
   const key = `${schemaType}:${slug}`;
-  const doc = STATIC_ARTICLES[key];
+  const doc = allMap[key];
   if (!doc) return null;
   return { ...doc, __source: "code-static" };
 }
 
 export function getStaticArticlesByType(schemaType = "seo") {
+  const allMap = getMergedStaticArticlesMap();
   const types = Array.isArray(schemaType) ? schemaType : [schemaType];
-  return Object.values(STATIC_ARTICLES)
-    .filter((doc) => types.includes(doc._type))
-    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  return Object.values(allMap)
+    .filter((doc) => doc && types.includes(doc._type))
+    .sort(
+      (a, b) =>
+        new Date(b.publishedAt || b._createdAt || 0).getTime() -
+        new Date(a.publishedAt || a._createdAt || 0).getTime(),
+    );
 }
 
 export function getStaticArticleSlugs(schemaType = "seo") {
-  return getStaticArticlesByType(schemaType).map((doc) => ({
-    slug: doc.slug.current,
-  }));
+  return getStaticArticlesByType(schemaType)
+    .filter((doc) => doc?.slug?.current)
+    .map((doc) => ({
+      slug: doc.slug.current,
+    }));
 }
 
 export function getAllStaticArticleSitemapEntries() {
-  return Object.values(STATIC_ARTICLES).map((doc) => ({
-    slug: doc.slug.current,
-    title: doc.title,
-    _type: doc._type,
-    _updatedAt: doc._updatedAt,
-    publishedAt: doc.publishedAt,
-  }));
+  const allMap = getMergedStaticArticlesMap();
+  return Object.values(allMap)
+    .filter((doc) => doc?.slug?.current)
+    .map((doc) => ({
+      slug: doc.slug.current,
+      title: doc.title,
+      _type: doc._type,
+      _updatedAt: doc._updatedAt,
+      publishedAt: doc.publishedAt,
+    }));
 }

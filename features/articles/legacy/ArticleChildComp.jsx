@@ -14,7 +14,7 @@ import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 // Dynamic imports with better loading strategy
 import BlogLayout from "@/features/articles/legacy/components/BlogLayout";
 import { applySeoOverrides } from "@/features/articles/legacy/seoArticleOverrides";
-import { getStaticArticle } from "@/features/articles/legacy/staticArticles";
+import { getStaticArticle, getStaticArticlesByType } from "@/features/articles/legacy/staticArticles";
 
 
 export default function ArticleChildComp({ serverData, params, schemaType }) {
@@ -280,7 +280,7 @@ export default function ArticleChildComp({ serverData, params, schemaType }) {
       <BlogLayout
         data={finalArticleData}
         loading={false} // Never pass loading true here since we handle it above
-        relatedPosts={relatedPosts || []}
+        relatedPosts={(relatedPosts && relatedPosts.length > 0) ? relatedPosts : getStaticArticlesByType(schemaType).filter((p) => p?.slug?.current !== currentSlug).slice(0, 3)}
         relatedPostsLoading={relatedPostsLoading}
         relatedResources={relatedResources || []}
         resourcesLoading={resourcesLoading}
