@@ -22,6 +22,7 @@ import {
   Type,
   Upload,
   UserCheck,
+  X,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
@@ -151,9 +152,10 @@ function wrapQuoteLines(
 }
 
 /**
- * Draws a crisp, high-resolution male executive portrait directly onto the 2D canvas
- * (or draws the user's uploaded photo if provided).
- * Strictly 100% male portraits only.
+ * Draws a realistic male executive photographic portrait directly onto the canvas.
+ * If the user uploaded a custom photo, it draws that.
+ * Otherwise, it draws the selected photographic male preset from presetImages.
+ * Strict 100% male executive portraits only.
  */
 function drawMalePortraitOnCanvas(
   ctx: CanvasRenderingContext2D,
@@ -163,6 +165,7 @@ function drawMalePortraitOnCanvas(
   boxH: number,
   presetId: MalePortraitPresetId,
   uploadedImg: HTMLImageElement | null,
+  presetImages: Record<string, HTMLImageElement | null>,
   accentColor: string,
   isCircularAvatar = false,
 ) {
@@ -184,162 +187,68 @@ function drawMalePortraitOnCanvas(
     ctx.clip();
   }
 
-  if (uploadedImg) {
-    // Cover-fit the user's uploaded photo cleanly
-    const imgRatio = uploadedImg.width / (uploadedImg.height || 1);
+  const activeImg =
+    uploadedImg || (presetImages ? presetImages[presetId] : null);
+
+  if (activeImg && activeImg.complete && activeImg.naturalWidth > 0) {
+    // Backdrop aura glow behind cutout
+    const cx = boxX + boxW * 0.5;
+    const cy = boxY + boxH * 0.55;
+    const rGlow = Math.max(boxW, boxH) * 0.55;
+    const bgGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, rGlow);
+    bgGrad.addColorStop(0, `${accentColor}33`);
+    bgGrad.addColorStop(1, "rgba(15, 23, 42, 0.35)");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+
+    // Draw the image with cover fit focusing on upper body/face
+    const imgRatio = activeImg.naturalWidth / (activeImg.naturalHeight || 1);
     const boxRatio = boxW / (boxH || 1);
     let drawW = boxW;
     let drawH = boxH;
     let drawX = boxX;
     let drawY = boxY;
-    if (imgRatio > boxRatio) {
-      drawW = boxH * imgRatio;
-      drawX = boxX - (drawW - boxW) / 2;
+
+    if (isCircularAvatar) {
+      if (imgRatio > boxRatio) {
+        drawW = boxH * imgRatio;
+        drawX = boxX - (drawW - boxW) / 2;
+        drawY = boxY;
+      } else {
+        drawH = boxW / imgRatio;
+        drawX = boxX;
+        drawY = boxY;
+      }
     } else {
-      drawH = boxW / imgRatio;
-      drawY = boxY - (drawH - boxH) * 0.2;
+      if (imgRatio > boxRatio) {
+        drawW = boxH * imgRatio;
+        drawX = boxX - (drawW - boxW) / 2;
+        drawY = boxY;
+      } else {
+        drawH = boxW / imgRatio;
+        drawX = boxX;
+        drawY = boxY + boxH - drawH; // align to bottom
+      }
     }
-    ctx.drawImage(uploadedImg, drawX, drawY, drawW, drawH);
+
+    ctx.drawImage(activeImg, drawX, drawY, drawW, drawH);
+
+    if (isCircularAvatar) {
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+    }
+
     ctx.restore();
     return;
   }
 
+  // Fallback if image is still loading
   const preset =
     MALE_PORTRAIT_PRESETS.find((p) => p.id === presetId) ||
     MALE_PORTRAIT_PRESETS[0];
-
-  // Subtle studio backdrop glow
-  const cx = boxX + boxW * 0.52;
-  const cy = boxY + boxH * 0.45;
-  const rGlow = Math.max(boxW, boxH) * 0.48;
-  const bgGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, rGlow);
-  bgGrad.addColorStop(0, `${accentColor}30`);
-  bgGrad.addColorStop(1, "rgba(148, 163, 184, 0.10)");
-  ctx.fillStyle = isCircularAvatar ? preset.suitColor : bgGrad;
-  ctx.fillRect(boxX, boxY, boxW, boxH);
-
-  // Coordinate space mapped from 220x260 viewBox
-  const scaleX = boxW / 220;
-  const scaleY = boxH / 260;
-  const s = Math.min(scaleX, scaleY);
-  const offsetX = boxX + (boxW - 220 * s) / 2;
-  const offsetY = boxY + boxH - 260 * s;
-
-  ctx.translate(offsetX, offsetY);
-  ctx.scale(s, s);
-
-  // Suit Shoulders
   ctx.fillStyle = preset.suitColor;
-  ctx.beginPath();
-  ctx.moveTo(16, 260);
-  ctx.bezierCurveTo(22, 192, 60, 174, 110, 174);
-  ctx.bezierCurveTo(160, 174, 198, 192, 204, 260);
-  ctx.closePath();
-  ctx.fill();
-
-  // Dress Shirt V
-  ctx.fillStyle = "#FFFFFF";
-  ctx.beginPath();
-  ctx.moveTo(85, 174);
-  ctx.lineTo(135, 174);
-  ctx.lineTo(118, 245);
-  ctx.lineTo(102, 245);
-  ctx.closePath();
-  ctx.fill();
-
-  // Executive Silk Tie
-  ctx.fillStyle = preset.tieColor || accentColor;
-  ctx.beginPath();
-  ctx.moveTo(103, 180);
-  ctx.lineTo(117, 180);
-  ctx.lineTo(121, 240);
-  ctx.lineTo(110, 254);
-  ctx.lineTo(99, 240);
-  ctx.closePath();
-  ctx.fill();
-
-  // Neck
-  ctx.fillStyle = preset.skinTone;
-  ctx.beginPath();
-  ctx.roundRect(92, 140, 36, 42, 12);
-  ctx.fill();
-
-  // Ears
-  ctx.beginPath();
-  ctx.arc(67, 112, 10, 0, Math.PI * 2);
-  ctx.arc(153, 112, 10, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Head & Male Jawline
-  ctx.beginPath();
-  ctx.roundRect(70, 56, 80, 98, 34);
-  ctx.fill();
-
-  // Short Executive Male Haircut
-  ctx.fillStyle = preset.hairColor;
-  ctx.beginPath();
-  ctx.moveTo(68, 92);
-  ctx.bezierCurveTo(66, 54, 86, 40, 112, 40);
-  ctx.bezierCurveTo(138, 40, 154, 56, 152, 92);
-  ctx.bezierCurveTo(146, 70, 132, 62, 110, 62);
-  ctx.bezierCurveTo(88, 62, 74, 70, 68, 92);
-  ctx.closePath();
-  ctx.fill();
-
-  // Eyebrows
-  ctx.fillRect(82, 90, 19, 4.5);
-  ctx.fillRect(119, 90, 19, 4.5);
-
-  // Eyes
-  ctx.fillStyle = "#0F172A";
-  ctx.beginPath();
-  ctx.arc(92, 103, 4.4, 0, Math.PI * 2);
-  ctx.arc(128, 103, 4.4, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Eye Catchlights
-  ctx.fillStyle = "#FFFFFF";
-  ctx.beginPath();
-  ctx.arc(93.5, 101.5, 1.5, 0, Math.PI * 2);
-  ctx.arc(129.5, 101.5, 1.5, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Optional Executive Glasses
-  if (preset.hasGlasses) {
-    ctx.strokeStyle = "#1E293B";
-    ctx.lineWidth = 3.2;
-    ctx.beginPath();
-    ctx.roundRect(78, 94, 27, 18, 4);
-    ctx.roundRect(115, 94, 27, 18, 4);
-    ctx.moveTo(105, 102);
-    ctx.lineTo(115, 102);
-    ctx.stroke();
-  }
-
-  // Groomed Male Beard
-  if (preset.hasBeard) {
-    ctx.fillStyle = preset.hairColor;
-    ctx.globalAlpha = 0.85;
-    ctx.beginPath();
-    ctx.moveTo(72, 118);
-    ctx.bezierCurveTo(73, 145, 90, 156, 110, 156);
-    ctx.bezierCurveTo(130, 156, 147, 145, 148, 118);
-    ctx.bezierCurveTo(144, 134, 130, 143, 110, 143);
-    ctx.bezierCurveTo(90, 143, 76, 134, 72, 118);
-    ctx.closePath();
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-
-  // Confident Smile
-  ctx.strokeStyle = preset.hasBeard ? "#FFFFFF" : "#7C2D12";
-  ctx.lineWidth = 3.2;
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(98, 131);
-  ctx.quadraticCurveTo(110, 139, 122, 131);
-  ctx.stroke();
-
+  ctx.fillRect(boxX, boxY, boxW, boxH);
   ctx.restore();
 }
 
@@ -366,6 +275,9 @@ export default function QuoteStatTestimonialCardStudioClient() {
     null,
   );
   const [uploadedLogoName, setUploadedLogoName] = useState<string>("");
+  const [presetImages, setPresetImages] = useState<
+    Record<string, HTMLImageElement | null>
+  >({});
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
@@ -374,6 +286,20 @@ export default function QuoteStatTestimonialCardStudioClient() {
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const personFileInputRef = useRef<HTMLInputElement | null>(null);
   const logoFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Preload realistic photographic male executive portraits
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const map: Record<string, HTMLImageElement> = {};
+    MALE_PORTRAIT_PRESETS.forEach((preset) => {
+      const img = new window.Image();
+      img.src = preset.imageSrc;
+      img.onload = () => {
+        map[preset.id] = img;
+        setPresetImages((prev) => ({ ...prev, [preset.id]: img }));
+      };
+    });
+  }, []);
 
   const activeTheme = useMemo(
     () => resolveStudioTheme(themeId, customColors),
@@ -417,6 +343,14 @@ export default function QuoteStatTestimonialCardStudioClient() {
     reader.readAsDataURL(file);
   }
 
+  function handleClearPersonPhoto() {
+    setUploadedPortrait(null);
+    setUploadedPortraitName("");
+    setInput((prev) => ({ ...prev, portraitPreset: "marcus-saas-vp" }));
+    if (personFileInputRef.current) personFileInputRef.current.value = "";
+    notify("Reverted to default male executive portrait.");
+  }
+
   function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -433,9 +367,17 @@ export default function QuoteStatTestimonialCardStudioClient() {
     reader.readAsDataURL(file);
   }
 
+  function handleClearLogo() {
+    setUploadedLogo(null);
+    setUploadedLogoName("");
+    if (logoFileInputRef.current) logoFileInputRef.current.value = "";
+    notify("Cleared custom brand logo (using domain badge).");
+  }
+
   function selectMalePortraitPreset(presetId: MalePortraitPresetId) {
     setUploadedPortrait(null);
     setUploadedPortraitName("");
+    if (personFileInputRef.current) personFileInputRef.current.value = "";
     const found = MALE_PORTRAIT_PRESETS.find((p) => p.id === presetId);
     setInput((prev) => ({
       ...prev,
@@ -556,7 +498,6 @@ export default function QuoteStatTestimonialCardStudioClient() {
     // TEMPLATE #1: ARAGON STUDIO SPLIT-PORTRAIT CUSTOMER TESTIMONIAL CARD
     if (input.template === "aragon-split-testimonial") {
       const footerH = Math.round(cardH * 0.175);
-      // Warm light card interior or custom card surface
       const isDefaultDarkSurface =
         !customColors.cardBg &&
         (activeTheme.cardBg === "#0f172a" ||
@@ -666,7 +607,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
         bx += bw + 14;
       }
 
-      // Right-Side Executive Male Portrait (or Uploaded Photo)
+      // Right-Side Executive Male Photographic Cutout Portrait (or Uploaded Photo)
       if (hasPortrait) {
         const pW = Math.round(cardW * 0.39);
         const pH = cardH - footerH - 44;
@@ -680,6 +621,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
           pH,
           currentPreset,
           uploadedPortrait,
+          presetImages,
           activeTheme.accent,
           false,
         );
@@ -700,38 +642,35 @@ export default function QuoteStatTestimonialCardStudioClient() {
         avY,
         avSize,
         avSize,
-        currentPreset === "none" ? "marcus-saas-vp" : currentPreset,
+        currentPreset,
         uploadedPortrait,
+        presetImages,
         activeTheme.accent,
         true,
       );
-      ctx.strokeStyle = activeTheme.accent;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(avX + avSize / 2, avY + avSize / 2, avSize / 2, 0, Math.PI * 2);
-      ctx.stroke();
 
-      // Author Name + Verified Badge + Role
-      const nameX = avX + avSize + 22;
+      // Name & Title in Footer
+      const textStartX = hasPortrait ? avX + avSize + 22 : contentLeftX;
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "900 28px system-ui, -apple-system, sans-serif";
-      ctx.fillText(input.authorName, nameX, footerY + footerH * 0.46);
+      ctx.font = "900 24px system-ui, -apple-system, sans-serif";
+      ctx.fillText(input.authorName, textStartX, footerY + 46);
 
-      const nW = ctx.measureText(input.authorName).width;
+      // Verified check badge next to author name
+      const authorW = ctx.measureText(input.authorName).width;
       ctx.fillStyle = activeTheme.accent;
       ctx.beginPath();
-      ctx.arc(nameX + nW + 20, footerY + footerH * 0.46 - 9, 12, 0, Math.PI * 2);
+      ctx.arc(textStartX + authorW + 18, footerY + 38, 11, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "900 15px system-ui, -apple-system, sans-serif";
-      ctx.fillText("✓", nameX + nW + 14.5, footerY + footerH * 0.46 - 3.5);
+      ctx.font = "900 13px system-ui, -apple-system, sans-serif";
+      ctx.fillText("✓", textStartX + authorW + 14, footerY + 43);
 
-      ctx.fillStyle = "#CBD5E1";
-      ctx.font = "600 20px system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = "#94A3B8";
+      ctx.font = "600 18px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        input.authorHandleOrRole,
-        nameX,
-        footerY + footerH * 0.74,
+        input.authorHandleOrRole || "Verified Customer",
+        textStartX,
+        footerY + 76,
       );
 
       // Right Side of Footer: Uploaded Brand Logo OR Custom Brand Pill
@@ -750,7 +689,9 @@ export default function QuoteStatTestimonialCardStudioClient() {
         );
       } else {
         ctx.font = "900 19px system-ui, -apple-system, sans-serif";
-        const brandLabel = (input.brandDomain || "doitwithai.tools").toUpperCase();
+        const brandLabel = (
+          input.brandDomain || "doitwithai.tools"
+        ).toUpperCase();
         const bWidth = ctx.measureText(brandLabel).width + 38;
         const bX = cardX + cardW - bWidth - 44;
         const bY = footerY + (footerH - 46) / 2;
@@ -763,14 +704,14 @@ export default function QuoteStatTestimonialCardStudioClient() {
         ctx.stroke();
 
         ctx.fillStyle = "#FFFFFF";
-        ctx.fillText(brandLabel, bX + 19, bY + 30);
+        ctx.fillText(brandLabel, bX + 19, bY + 29);
       }
 
       ctx.restore();
       return;
     }
 
-    // ALL OTHER 12 TEMPLATES (WITH INTEGRATED MALE AVATAR / LOGO SUPPORT)
+    // BASE CARD CONTAINER FOR TEMPLATES 2-13
     ctx.fillStyle = activeTheme.cardBg;
     ctx.strokeStyle =
       input.template === "boardroom-white-frame" ||
@@ -787,70 +728,74 @@ export default function QuoteStatTestimonialCardStudioClient() {
       ctx.strokeStyle = `${activeTheme.accent}55`;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.roundRect(cardX + 16, cardY + 16, cardW - 32, cardH - 32, 26);
+      ctx.roundRect(cardX + 16, cardY + 16, cardW - 32, cardH - 32, 28);
       ctx.stroke();
     }
 
-    const innerX = cardX + 64;
-    const innerW = cardW - 128;
-    const bodyRegionTop = cardY + 150;
-    const bodyRegionBottom = cardY + cardH - 86;
+    const innerX = cardX + 54;
+    const innerW = cardW - 108;
+    const bodyRegionTop = cardY + 110;
+    const bodyRegionBottom = cardY + cardH - 110;
     const bodyRegionMid = (bodyRegionTop + bodyRegionBottom) / 2;
 
     if (input.template === "verified-post-screenshot") {
       drawMalePortraitOnCanvas(
         ctx,
-        innerX,
-        cardY + 52,
-        86,
-        86,
-        currentPreset === "none" ? "marcus-saas-vp" : currentPreset,
+        cardX + 44,
+        cardY + 44,
+        88,
+        88,
+        currentPreset,
         uploadedPortrait,
+        presetImages,
         activeTheme.accent,
         true,
       );
 
       ctx.fillStyle = activeTheme.textMain;
       ctx.font = "800 28px system-ui, -apple-system, sans-serif";
-      ctx.fillText(input.authorName, innerX + 104, cardY + 88);
+      ctx.fillText(input.authorName, cardX + 148, cardY + 78);
 
       const nameW = ctx.measureText(input.authorName).width;
-      ctx.fillStyle = "#1D9BF0";
+      ctx.fillStyle = activeTheme.accent;
       ctx.beginPath();
-      ctx.arc(innerX + 124 + nameW, cardY + 79, 13, 0, Math.PI * 2);
+      ctx.arc(cardX + 148 + nameW + 18, cardY + 70, 11, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#FFFFFF";
-      ctx.font = "900 16px system-ui, -apple-system, sans-serif";
-      ctx.fillText("✓", innerX + 118 + nameW, cardY + 85);
+      ctx.font = "900 13px system-ui, -apple-system, sans-serif";
+      ctx.fillText("✓", cardX + 148 + nameW + 14, cardY + 75);
 
       ctx.fillStyle = activeTheme.textSub;
-      ctx.font = "500 21px system-ui, -apple-system, sans-serif";
-      ctx.fillText(input.authorHandleOrRole, innerX + 104, cardY + 120);
+      ctx.font = "500 20px system-ui, -apple-system, sans-serif";
+      ctx.fillText(input.authorHandleOrRole, cardX + 148, cardY + 112);
 
-      ctx.font = "600 37px system-ui, -apple-system, sans-serif";
-      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 6);
-      const qH = qLines.length * 50;
-      const calloutH = 88;
-      const totalH = qH + 28 + calloutH;
-      let qy = Math.max(bodyRegionTop + 34, bodyRegionMid - totalH / 2 + 34);
+      ctx.font = "500 37px system-ui, -apple-system, sans-serif";
+      const qLines = wrapQuoteLines(
+        ctx,
+        activeCard.quoteText,
+        cardW - 88,
+        6,
+      );
+      const totalH = qLines.length * 52;
+      let qy = Math.max(bodyRegionTop + 40, bodyRegionMid - totalH / 2);
 
       ctx.fillStyle = activeTheme.textMain;
       for (const l of qLines) {
-        ctx.fillText(l, innerX, qy);
-        qy += 50;
+        ctx.fillText(l, cardX + 44, qy);
+        qy += 52;
       }
 
-      const boxY = qy - 16;
-      ctx.fillStyle = `${activeTheme.accent}20`;
-      ctx.strokeStyle = activeTheme.accent;
-      ctx.lineWidth = 2;
+      const boxY = Math.min(cardY + cardH - 168, qy + 16);
+      ctx.fillStyle = `${activeTheme.accent}12`;
+      ctx.strokeStyle = `${activeTheme.accent}40`;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.roundRect(innerX, boxY, innerW, calloutH, 18);
+      ctx.roundRect(innerX, boxY, innerW, 68, 18);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = activeTheme.accent;
-      ctx.font = "800 22px system-ui, -apple-system, sans-serif";
+      ctx.font = "700 20px system-ui, -apple-system, sans-serif";
       ctx.fillText(
         `💡 ${activeCard.subContextOrReality.slice(0, 62)}`,
         innerX + 24,
@@ -877,7 +822,10 @@ export default function QuoteStatTestimonialCardStudioClient() {
         6,
       );
       const totalH = qLines.length * 52 + 110;
-      let qy = Math.max(bodyRegionTop + 36, bodyRegionMid - totalH / 2 + 36);
+      let qy = Math.max(
+        bodyRegionTop + 36,
+        bodyRegionMid - totalH / 2 + 36,
+      );
 
       ctx.fillStyle = activeTheme.textMain;
       for (const l of qLines) {
@@ -893,6 +841,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
         74,
         currentPreset === "none" ? "marcus-saas-vp" : currentPreset,
         uploadedPortrait,
+        presetImages,
         activeTheme.accent,
         true,
       );
@@ -903,7 +852,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
 
       ctx.fillStyle = activeTheme.textSub;
       ctx.font = "500 22px system-ui, -apple-system, sans-serif";
-      ctx.fillText(input.authorHandleOrRole, innerX + 92, qy + 76);
+      ctx.fillText(input.authorHandleOrRole, innerX + 92, qy + 74);
     } else if (
       input.template === "myth-vs-reality" ||
       input.template === "before-after-proof"
@@ -912,71 +861,74 @@ export default function QuoteStatTestimonialCardStudioClient() {
       const isBeforeAfter = input.template === "before-after-proof";
 
       ctx.fillStyle = "rgba(244, 63, 94, 0.14)";
-      ctx.strokeStyle = "#F43F5E";
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(244, 63, 94, 0.4)";
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(innerX, cardY + 56, innerW, boxH, 24);
+      ctx.roundRect(innerX, cardY + 54, innerW, boxH, 24);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = "#F43F5E";
-      ctx.font = "900 22px system-ui, -apple-system, sans-serif";
+      ctx.font = "900 20px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        isBeforeAfter ? "✗ BEFORE: OLD BOTTLENECK" : "✗ COMMON INDUSTRY MYTH",
-        innerX + 28,
-        cardY + 102,
+        isBeforeAfter ? "❌ BEFORE (THE BOTTLENECK)" : "❌ COMMON MYTH",
+        innerX + 32,
+        cardY + 98,
       );
 
       ctx.fillStyle = activeTheme.textMain;
-      ctx.font = "700 29px system-ui, -apple-system, sans-serif";
-      const mLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW - 56, 4);
-      const mBlockH = mLines.length * 39;
-      let my =
-        cardY + 118 + Math.max(0, (boxH - 76 - mBlockH) / 2) + 28;
-      for (const l of mLines) {
-        ctx.fillText(l, innerX + 28, my);
-        my += 39;
+      ctx.font = "700 32px system-ui, -apple-system, sans-serif";
+      const mythLines = wrapQuoteLines(
+        ctx,
+        activeCard.quoteText,
+        innerW - 64,
+        4,
+      );
+      let my = cardY + 148;
+      for (const l of mythLines) {
+        ctx.fillText(l, innerX + 32, my);
+        my += 44;
       }
 
-      const ryTop = cardY + 56 + boxH + 26;
-      ctx.fillStyle = "rgba(16, 185, 129, 0.15)";
-      ctx.strokeStyle = "#10B981";
-      ctx.lineWidth = 3;
+      const rY = cardY + 54 + boxH + 20;
+      ctx.fillStyle = `${activeTheme.accent}1E`;
+      ctx.strokeStyle = `${activeTheme.accent}55`;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(innerX, ryTop, innerW, boxH, 24);
+      ctx.roundRect(innerX, rY, innerW, boxH, 24);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = "#10B981";
-      ctx.font = "900 22px system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = activeTheme.accent;
+      ctx.font = "900 20px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        isBeforeAfter
-          ? "✓ AFTER: PROVEN WORKFLOW RESULT"
-          : "✓ PRACTITIONER REALITY",
-        innerX + 28,
-        ryTop + 46,
+        isBeforeAfter ? "✅ AFTER (THE WIN)" : "✅ PRACTITIONER REALITY",
+        innerX + 32,
+        rY + 44,
       );
 
       ctx.fillStyle = activeTheme.textMain;
-      ctx.font = "700 29px system-ui, -apple-system, sans-serif";
-      const rLines = wrapQuoteLines(
+      ctx.font = "700 32px system-ui, -apple-system, sans-serif";
+      const realityLines = wrapQuoteLines(
         ctx,
-        activeCard.subContextOrReality,
-        innerW - 56,
+        activeCard.subContextOrReality || activeCard.highlightPhrase,
+        innerW - 64,
         4,
       );
-      const rBlockH = rLines.length * 39;
-      let ry = ryTop + 62 + Math.max(0, (boxH - 76 - rBlockH) / 2) + 28;
-      for (const l of rLines) {
-        ctx.fillText(l, innerX + 28, ry);
-        ry += 39;
+      let ry = rY + 94;
+      for (const l of realityLines) {
+        ctx.fillText(l, innerX + 32, ry);
+        ry += 44;
       }
     } else if (input.template === "oversized-kpi-stat") {
       const statMatch =
-        activeCard.quoteText.match(/\d+(?:\.\d+)?(?:\s*%|\s*x|\+)/i)?.[0] ||
+        activeCard.quoteText.match(
+          /\d+(?:\.\d+)?(?:\s*%|\s*x|\+)/i,
+        )?.[0] ||
+        activeCard.highlightPhrase.match(
+          /\d+(?:\.\d+)?(?:\s*%|\s*x|\+)/i,
+        )?.[0] ||
         "2.8x";
-
-      ctx.font = "700 36px system-ui, -apple-system, sans-serif";
       const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 5);
       const totalH = 148 + 44 + qLines.length * 48;
       const startY = Math.max(cardY + 64, bodyRegionMid - totalH / 2);
@@ -1038,8 +990,8 @@ export default function QuoteStatTestimonialCardStudioClient() {
         5,
       );
       const qH = qLines.length * 48;
-      const availMid = (cardY + 125 + (cardY + cardH - 185)) / 2;
-      let qy = availMid - qH / 2 + 32;
+      const totalH = qH + 80;
+      let qy = Math.max(cardY + 145, bodyRegionMid - totalH / 2);
 
       ctx.fillStyle = activeTheme.textMain;
       for (const l of qLines) {
@@ -1047,20 +999,20 @@ export default function QuoteStatTestimonialCardStudioClient() {
         qy += 48;
       }
 
-      const waveY = cardY + cardH - 175;
+      // Audio waveform bars
+      const waveY = qy + 24;
       const barCount = 38;
-      const barGap = 8;
-      const barW = Math.floor((innerW - barGap * (barCount - 1)) / barCount);
+      const barW = Math.floor((innerW - (barCount - 1) * 8) / barCount);
       for (let i = 0; i < barCount; i++) {
-        const bh = 22 + ((i * 19 + 7) % 58);
+        const hVal = Math.sin(i * 0.42) * 26 + 32;
         ctx.fillStyle =
-          i < barCount * 0.62 ? activeTheme.accent : "rgba(148,163,184,0.32)";
+          i % 3 === 0 ? activeTheme.accent : `${activeTheme.accent}66`;
         ctx.beginPath();
         ctx.roundRect(
-          innerX + i * (barW + barGap),
-          waveY + (80 - bh) / 2,
+          innerX + i * (barW + 8),
+          waveY - hVal / 2,
           barW,
-          bh,
+          hVal,
           4,
         );
         ctx.fill();
@@ -1068,106 +1020,99 @@ export default function QuoteStatTestimonialCardStudioClient() {
     } else if (input.template === "checklist-takeaway-card") {
       ctx.font = "800 34px system-ui, -apple-system, sans-serif";
       const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 4);
+      let qy = cardY + 92;
+      ctx.fillStyle = activeTheme.textMain;
+      for (const l of qLines) {
+        ctx.fillText(l, innerX, qy);
+        qy += 46;
+      }
+
       const bullets = [
         activeCard.highlightPhrase,
         activeCard.subContextOrReality,
-        `Full breakdown at ${input.brandDomain}`,
-      ];
-      const totalH = 44 + qLines.length * 45 + 24 + bullets.length * 76;
-      const startY = Math.max(cardY + 60, bodyRegionMid - totalH / 2);
+        "Ready to implement in under 15 minutes today",
+      ].filter(Boolean);
 
-      ctx.fillStyle = activeTheme.accent;
-      ctx.font = "900 22px system-ui, -apple-system, sans-serif";
-      ctx.fillText(
-        `⚡ ${activeCard.badgeLabel.toUpperCase()}`,
-        innerX,
-        startY + 24,
-      );
-
-      ctx.fillStyle = activeTheme.textMain;
-      ctx.font = "800 34px system-ui, -apple-system, sans-serif";
-      let qy = startY + 76;
-      for (const l of qLines) {
-        ctx.fillText(l, innerX, qy);
-        qy += 45;
-      }
-
-      qy += 16;
-      bullets.forEach((b) => {
-        ctx.fillStyle = `${activeTheme.accentSecondary}22`;
+      let by = qy + 36;
+      for (let idx = 0; idx < bullets.length; idx++) {
+        const b = bullets[idx];
+        ctx.fillStyle = `${activeTheme.accent}1C`;
+        ctx.strokeStyle = activeTheme.accent;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.roundRect(innerX, qy, innerW, 62, 16);
+        ctx.roundRect(innerX, by, innerW, 64, 18);
         ctx.fill();
-        ctx.fillStyle = activeTheme.accentSecondary;
+        ctx.stroke();
+
+        ctx.fillStyle = activeTheme.accent;
         ctx.font = "900 24px system-ui, -apple-system, sans-serif";
-        ctx.fillText("✓", innerX + 20, qy + 39);
+        ctx.fillText("✓", innerX + 24, by + 40);
+
         ctx.fillStyle = activeTheme.textMain;
-        ctx.font = "700 22px system-ui, -apple-system, sans-serif";
-        ctx.fillText(b.slice(0, 56), innerX + 56, qy + 39);
-        qy += 76;
-      });
+        ctx.font = "700 23px system-ui, -apple-system, sans-serif";
+        ctx.fillText(b.slice(0, 56), innerX + 64, by + 40);
+        by += 78;
+      }
     } else if (input.template === "founder-memo-note") {
       ctx.fillStyle = "#F59E0B";
       ctx.fillRect(cardX, cardY, cardW, 18);
 
-      ctx.font = "800 38px system-ui, -apple-system, sans-serif";
-      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 5);
-      ctx.font = "500 25px system-ui, -apple-system, sans-serif";
-      const subLines = wrapQuoteLines(
-        ctx,
-        activeCard.subContextOrReality,
-        innerW,
-        3,
-      );
-      const totalH = 54 + qLines.length * 52 + 24 + subLines.length * 36;
-      const startY = Math.max(cardY + 64, bodyRegionMid - totalH / 2);
-
-      ctx.fillStyle = "#D97706";
-      ctx.font = "800 21px system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = activeTheme.textSub;
+      ctx.font = "800 20px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        `📝 FOUNDER MEMO · ${activeCard.badgeLabel.toUpperCase()}`,
+        `MEMO · ${input.authorName.toUpperCase()}`,
         innerX,
-        startY + 24,
+        cardY + 68,
       );
+
+      ctx.font = "700 38px Georgia, serif";
+      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 6);
+      const totalH = qLines.length * 52;
+      let qy = Math.max(bodyRegionTop + 36, bodyRegionMid - totalH / 2);
 
       ctx.fillStyle = activeTheme.textMain;
-      ctx.font = "800 38px system-ui, -apple-system, sans-serif";
-      let qy = startY + 84;
       for (const l of qLines) {
         ctx.fillText(l, innerX, qy);
         qy += 52;
       }
-
-      ctx.fillStyle = activeTheme.textSub;
-      ctx.font = "500 25px system-ui, -apple-system, sans-serif";
-      qy += 14;
-      for (const l of subLines) {
-        ctx.fillText(l, innerX, qy);
-        qy += 36;
-      }
     } else {
+      // DEFAULT EDITORIAL / HIGHLIGHTER / GLASSMORPHIC
+      ctx.fillStyle = activeTheme.accent;
+      ctx.font = "900 22px system-ui, -apple-system, sans-serif";
+      ctx.fillText(
+        activeCard.badgeLabel.toUpperCase(),
+        innerX,
+        cardY + 84,
+      );
+
+      if (input.template === "highlighter-quote") {
+        ctx.fillStyle = activeTheme.accent;
+        ctx.beginPath();
+        ctx.roundRect(innerX, cardY + 116, innerW, 10, 5);
+        ctx.fill();
+      }
+
       ctx.font =
         input.template === "executive-pull-quote"
           ? "700 38px Georgia, serif"
           : "800 37px system-ui, -apple-system, sans-serif";
-      const qLines = wrapQuoteLines(ctx, activeCard.quoteText, innerW, 6);
-      const totalH = 140 + qLines.length * 50;
-      const startY = Math.max(cardY + 64, bodyRegionMid - totalH / 2);
 
-      ctx.fillStyle = activeTheme.accent;
-      ctx.font = "900 110px Georgia, serif";
-      ctx.fillText("“", innerX - 10, startY + 62);
+      if (input.template === "executive-pull-quote") {
+        ctx.fillStyle = `${activeTheme.accent}33`;
+        ctx.font = "900 130px Georgia, serif";
+        ctx.fillText("“", innerX - 10, cardY + 205);
+      }
 
-      ctx.fillStyle = activeTheme.accent;
-      ctx.beginPath();
-      ctx.roundRect(innerX, startY + 74, innerW, 56, 14);
-      ctx.fill();
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "900 25px system-ui, -apple-system, sans-serif";
-      ctx.fillText(
-        activeCard.highlightPhrase.slice(0, 48),
-        innerX + 22,
-        startY + 110,
+      const qLines = wrapQuoteLines(
+        ctx,
+        `"${activeCard.quoteText}"`,
+        innerW,
+        6,
+      );
+      const totalH = qLines.length * 50;
+      let qy = Math.max(
+        cardY + 160,
+        bodyRegionMid - totalH / 2 + (input.template === "highlighter-quote" ? 20 : 0),
       );
 
       ctx.fillStyle = activeTheme.textMain;
@@ -1175,7 +1120,6 @@ export default function QuoteStatTestimonialCardStudioClient() {
         input.template === "executive-pull-quote"
           ? "700 38px Georgia, serif"
           : "800 37px system-ui, -apple-system, sans-serif";
-      let qy = startY + 186;
       for (const l of qLines) {
         ctx.fillText(l, innerX, qy);
         qy += 50;
@@ -1192,6 +1136,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
         48,
         currentPreset,
         uploadedPortrait,
+        presetImages,
         activeTheme.accent,
         true,
       );
@@ -1219,6 +1164,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
     customColors,
     uploadedPortrait,
     uploadedLogo,
+    presetImages,
   ]);
 
   function downloadActiveQuotePng() {
@@ -1226,7 +1172,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
       canvasRef.current,
       `testimonial-quote-card-0${activeCardIdx + 1}.png`,
     );
-    notify(`Downloaded Testimonial/Quote Card #0${activeCardIdx + 1} (.PNG)!`);
+    notify(`Downloaded Testimonial Card #0${activeCardIdx + 1} (.PNG)!`);
   }
 
   function downloadQuoteAndCaptionPackage() {
@@ -1249,12 +1195,12 @@ export default function QuoteStatTestimonialCardStudioClient() {
       id="tool-studio-workspace"
       data-tool-workspace="true"
       aria-label="AI Testimonial Card, Customer Quote & Stat Visual Studio"
-      className={`${studioStyles.studio} mx-auto w-full max-w-6xl space-y-6 px-4 py-10 sm:px-6`}
+      className={`${studioStyles.studio} mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}
         title="Designing Customer Testimonial & Quote Graphics..."
-        description="Building 5 branded social proof, founder memo, and quote cards."
+        description="Building branded social proof, founder memo, and quote cards."
       />
 
       <UrlArticleExtractorBar
@@ -1292,7 +1238,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
       <div
         ref={resultsRef}
         tabIndex={-1}
-        className="shadow-xs space-y-6 rounded-2xl border-2 border-[#4058d0]/25 bg-white p-5 focus:outline-none dark:border-[#4058d0]/35 dark:bg-[#111827] sm:p-6"
+        className="space-y-6 rounded-2xl border-2 border-[#4058d0]/25 bg-white p-5 shadow-xs focus:outline-none dark:border-[#4058d0]/35 dark:bg-[#111827] sm:p-6"
       >
         {toast && (
           <div
@@ -1304,6 +1250,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
           </div>
         )}
 
+        {/* TOP BRAND HEADER & PRIMARY ACTIONS */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <PlatformBrandIcon
@@ -1343,346 +1290,218 @@ export default function QuoteStatTestimonialCardStudioClient() {
           </div>
         </div>
 
-        {/* ARAGON-STYLE PHOTO & BRAND LOGO UPLOAD + 4 MALE PORTRAIT PRESETS BAR */}
-        <div className="grid gap-4 rounded-2xl border-2 border-dashed border-[#4058d0]/35 bg-slate-50/90 p-4 dark:border-[#4058d0]/40 dark:bg-slate-900/70 lg:grid-cols-12">
-          {/* Left 5 Cols: Upload Person Photo + Upload Brand Logo */}
-          <div className="flex flex-col justify-between gap-3 lg:col-span-5">
-            <div>
+        {/* 2-COLUMN UNIFIED STUDIO GRID */}
+        <div className="grid items-start gap-6 lg:grid-cols-12">
+          {/* LEFT CONTROL PANEL (lg:col-span-5) */}
+          <div className="space-y-4 lg:col-span-5">
+            {/* ASPECT RATIO & CARD SWITCHER */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  Aspect Ratio
+                </span>
+                <div className="flex items-center gap-1">
+                  {(["1:1", "4:5", "16:9"] as CardAspectRatioId[]).map((ar) => (
+                    <button
+                      key={ar}
+                      type="button"
+                      onClick={() =>
+                        setInput((prev) => ({ ...prev, aspectRatio: ar }))
+                      }
+                      className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition ${
+                        (input.aspectRatio || "1:1") === ar
+                          ? "bg-[#4058d0] text-white shadow-xs"
+                          : "border border-slate-300 bg-white text-slate-700 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
+                      }`}
+                    >
+                      {ar === "1:1"
+                        ? "1:1 Square"
+                        : ar === "4:5"
+                          ? "4:5 Feed"
+                          : "16:9 Deck"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* CARD TABS (Card #1, Card #2...) */}
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 pt-2.5 dark:border-slate-800">
+                <div className="flex flex-wrap gap-1">
+                  {cards.map((c, idx) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setActiveCardIdx(idx)}
+                      className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition ${
+                        activeCardIdx === idx
+                          ? "bg-[#4058d0] text-white shadow-xs"
+                          : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                      }`}
+                    >
+                      Card #{idx + 1}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleAddQuoteCard}
+                    disabled={!canAddCard}
+                    className="inline-flex items-center gap-0.5 rounded-lg bg-[#4058d0] px-2 py-1 text-[11px] font-bold text-white disabled:opacity-40"
+                  >
+                    <Plus size={12} /> Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveQuoteCard}
+                    disabled={!canRemoveCard}
+                    className="inline-flex items-center gap-0.5 rounded-lg bg-rose-600 px-2 py-1 text-[11px] font-bold text-white disabled:opacity-40"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* STEP 1: PHOTO & BRAND LOGO UPLOADS + MALE PORTRAITS */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
               <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#4058d0] dark:text-blue-300">
                 <ImagePlus size={14} />
-                Step 1 · Upload Customer Photo &amp; Brand Logo
-              </span>
-              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                Upload a front-facing portrait photo and your company logo—or
-                click a ready-made male executive portrait on the right.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2.5">
-              <button
-                type="button"
-                onClick={() => personFileInputRef.current?.click()}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#EA580C] to-[#F97316] px-4 py-2.5 text-xs font-black text-white shadow-md transition hover:brightness-110"
-              >
-                <Upload size={14} />
-                <span>
-                  {uploadedPortraitName
-                    ? `Photo: ${uploadedPortraitName.slice(0, 16)}...`
-                    : "Upload Your Photo ↑"}
-                </span>
-              </button>
-              <input
-                ref={personFileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handlePersonPhotoUpload}
-                className="sr-only"
-              />
-
-              <button
-                type="button"
-                onClick={() => logoFileInputRef.current?.click()}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-extrabold text-slate-800 shadow-2xs transition hover:border-[#4058d0] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-              >
-                <ShieldCheck size={14} className="text-[#4058d0]" />
-                <span>
-                  {uploadedLogoName
-                    ? `Logo: ${uploadedLogoName.slice(0, 14)}...`
-                    : "Upload Brand Logo"}
-                </span>
-              </button>
-              <input
-                ref={logoFileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                onChange={handleLogoUpload}
-                className="sr-only"
-              />
-            </div>
-          </div>
-
-          {/* Right 7 Cols: Clickable Male Portrait Presets + Aspect Ratio Selector */}
-          <div className="space-y-2.5 lg:col-span-7">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                <UserCheck size={14} className="text-emerald-500" />
-                Click one of these male executive portraits to try:
+                Step 1 · Customer Photo &amp; Brand Logo
               </span>
 
-              <div className="flex items-center gap-1">
-                {(["1:1", "4:5", "16:9"] as CardAspectRatioId[]).map((ar) => (
+              {/* Upload Buttons */}
+              <div className="mt-2.5 grid grid-cols-2 gap-2">
+                <div>
                   <button
-                    key={ar}
                     type="button"
-                    onClick={() =>
-                      setInput((prev) => ({ ...prev, aspectRatio: ar }))
-                    }
-                    className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition ${
-                      (input.aspectRatio || "1:1") === ar
-                        ? "bg-[#4058d0] text-white"
-                        : "border border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
-                    }`}
+                    onClick={() => personFileInputRef.current?.click()}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#EA580C] to-[#F97316] px-3 py-2 text-xs font-extrabold text-white shadow-xs transition hover:brightness-110"
                   >
-                    {ar === "1:1"
-                      ? "1:1 Square"
-                      : ar === "4:5"
-                        ? "4:5 Feed"
-                        : "16:9 Deck"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-              {MALE_PORTRAIT_PRESETS.map((mp) => {
-                const isSelected =
-                  !uploadedPortrait &&
-                  (input.portraitPreset || "marcus-saas-vp") === mp.id;
-                return (
-                  <button
-                    key={mp.id}
-                    type="button"
-                    onClick={() => selectMalePortraitPreset(mp.id)}
-                    className={`flex items-center gap-2 rounded-xl border p-2 text-left transition ${
-                      isSelected
-                        ? "border-[#4058d0] bg-[#4058d0]/15 ring-2 ring-[#4058d0]/30 dark:border-blue-400"
-                        : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950"
-                    }`}
-                  >
-                    <span
-                      style={{ backgroundColor: mp.suitColor }}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/40 text-[11px] font-black text-white"
-                    >
-                      {mp.authorSample
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                    <Upload size={13} />
+                    <span className="truncate">
+                      {uploadedPortraitName
+                        ? `${uploadedPortraitName.slice(0, 12)}...`
+                        : "Upload Photo ↑"}
                     </span>
-                    <div className="min-w-0">
-                      <span className="block truncate text-[11px] font-extrabold text-slate-900 dark:text-white">
-                        {mp.authorSample.split(" ")[0]}{" "}
-                        {mp.authorSample.split(" ")[1]?.[0]}.
-                      </span>
-                      <span className="block truncate text-[10px] text-slate-500 dark:text-slate-400">
-                        {mp.label.split("(")[1]?.replace(")", "") || "Exec"}
-                      </span>
-                    </div>
                   </button>
-                );
-              })}
+                  {uploadedPortraitName && (
+                    <button
+                      type="button"
+                      onClick={handleClearPersonPhoto}
+                      className="mt-1 flex w-full items-center justify-center gap-1 text-[10px] font-bold text-slate-500 hover:text-rose-500"
+                    >
+                      <X size={10} /> Clear Uploaded Photo
+                    </button>
+                  )}
+                  <input
+                    ref={personFileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handlePersonPhotoUpload}
+                    className="sr-only"
+                  />
+                </div>
 
-              <button
-                type="button"
-                onClick={() => selectMalePortraitPreset("none")}
-                className={`flex items-center justify-center rounded-xl border p-2 text-center text-[11px] font-extrabold transition ${
-                  !uploadedPortrait && input.portraitPreset === "none"
-                    ? "border-[#4058d0] bg-[#4058d0]/15 text-[#4058d0] dark:text-blue-300"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
-                }`}
-              >
-                No Photo (Text Only)
-              </button>
-            </div>
-          </div>
-        </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => logoFileInputRef.current?.click()}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-extrabold text-slate-800 shadow-2xs transition hover:border-[#4058d0] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                  >
+                    <ShieldCheck size={13} className="text-[#4058d0]" />
+                    <span className="truncate">
+                      {uploadedLogoName
+                        ? `${uploadedLogoName.slice(0, 12)}...`
+                        : "Upload Logo"}
+                    </span>
+                  </button>
+                  {uploadedLogoName && (
+                    <button
+                      type="button"
+                      onClick={handleClearLogo}
+                      className="mt-1 flex w-full items-center justify-center gap-1 text-[10px] font-bold text-slate-500 hover:text-rose-500"
+                    >
+                      <X size={10} /> Clear Logo
+                    </button>
+                  )}
+                  <input
+                    ref={logoFileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    onChange={handleLogoUpload}
+                    className="sr-only"
+                  />
+                </div>
+              </div>
 
-        {/* 13 TEMPLATES PICKER */}
-        <details open className="rounded-2xl border border-slate-400/30 p-4">
-          <summary className="cursor-pointer font-extrabold text-slate-900 dark:text-white">
-            Step 2 · Choose a Testimonial, Quote or Stat Card Layout (13 Templates)
-          </summary>
-          <div className="mt-4">
-            <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {QUOTE_TEMPLATES.map((tpl) => (
+              {/* Ready-Made Photographic Male Executive Portraits */}
+              <div className="mt-3">
+                <span className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                  Or click a ready-made male executive portrait:
+                </span>
+                <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                  {MALE_PORTRAIT_PRESETS.map((mp) => {
+                    const isSelected =
+                      !uploadedPortrait &&
+                      (input.portraitPreset || "marcus-saas-vp") === mp.id;
+                    return (
+                      <button
+                        key={mp.id}
+                        type="button"
+                        onClick={() => selectMalePortraitPreset(mp.id)}
+                        className={`flex items-center gap-2 rounded-xl border p-1.5 text-left transition ${
+                          isSelected
+                            ? "border-[#4058d0] bg-[#4058d0]/15 ring-2 ring-[#4058d0]/30 dark:border-blue-400"
+                            : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950"
+                        }`}
+                      >
+                        <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-300 bg-slate-800 dark:border-slate-700">
+                          <img
+                            src={mp.imageSrc}
+                            alt={mp.authorSample}
+                            className="h-full w-full object-cover object-top"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block truncate text-[11px] font-extrabold text-slate-900 dark:text-white">
+                            {mp.authorSample.split(" ")[0]}{" "}
+                            {mp.authorSample.split(" ")[1]?.[0]}.
+                          </span>
+                          <span className="block truncate text-[9px] text-slate-500 dark:text-slate-400">
+                            {mp.label.split("(")[1]?.replace(")", "") || "Exec"}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <button
-                  key={tpl.id}
                   type="button"
-                  onClick={() =>
-                    setInput((prev) => ({ ...prev, template: tpl.id }))
-                  }
-                  className={`rounded-xl border p-2.5 text-left transition ${
-                    input.template === tpl.id
-                      ? "border-[#4058d0] bg-[#4058d0]/10 dark:border-[#4058d0] dark:bg-[#4058d0]/20"
-                      : "border-slate-200 bg-slate-50/70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60"
+                  onClick={() => selectMalePortraitPreset("none")}
+                  className={`mt-1.5 flex w-full items-center justify-center rounded-xl border py-1 text-center text-[11px] font-extrabold transition ${
+                    !uploadedPortrait && input.portraitPreset === "none"
+                      ? "border-[#4058d0] bg-[#4058d0]/15 text-[#4058d0] dark:text-blue-300"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
                   }`}
                 >
-                  <TemplateThumbnail
-                    id={
-                      tpl.id === "aragon-split-testimonial"
-                        ? "testimonial-5-star"
-                        : tpl.id
-                    }
-                    category="viral-list"
-                  />
-                  <strong className="mt-1 block text-xs font-extrabold text-slate-900 dark:text-white">
-                    {tpl.label}
-                  </strong>
-                  <span className="mt-0.5 block text-[11px] text-slate-500 dark:text-slate-400">
-                    {tpl.desc}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </details>
-
-        {/* 10 Color Themes + Custom Brand Color Pickers */}
-        <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-slate-700 dark:text-slate-200">
-              <Palette size={14} className="text-[#4058d0]" />
-              Step 3 · 10 Brand Color Palettes &amp; Custom Hex Color Wheel
-            </span>
-            {Object.keys(customColors).length > 0 && (
-              <button
-                type="button"
-                onClick={() => setCustomColors({})}
-                className="text-[11px] font-bold text-[#4058d0] hover:underline"
-              >
-                Reset Custom Colors
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {STUDIO_COLOR_THEMES.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => {
-                  setThemeId(t.id);
-                  setCustomColors({});
-                }}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-extrabold transition ${
-                  themeId === t.id && Object.keys(customColors).length === 0
-                    ? "shadow-xs border-[#4058d0] bg-[#4058d0] text-white"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
-                }`}
-              >
-                <span
-                  className="h-3 w-3 rounded-full border border-white/40"
-                  style={{ background: t.accent }}
-                />
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
-            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
-              <input
-                type="color"
-                value={activeTheme.bgStart}
-                onChange={(e) =>
-                  setCustomColors((prev) => ({
-                    ...prev,
-                    bgStart: e.target.value,
-                    bgEnd: e.target.value,
-                  }))
-                }
-                className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-              />
-              <span>Backdrop BG</span>
-            </label>
-            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
-              <input
-                type="color"
-                value={
-                  activeTheme.cardBg.startsWith("#")
-                    ? activeTheme.cardBg
-                    : "#FFFDF9"
-                }
-                onChange={(e) =>
-                  setCustomColors((prev) => ({
-                    ...prev,
-                    cardBg: e.target.value,
-                  }))
-                }
-                className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-              />
-              <span>Card Surface</span>
-            </label>
-            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
-              <input
-                type="color"
-                value={activeTheme.accent}
-                onChange={(e) =>
-                  setCustomColors((prev) => ({
-                    ...prev,
-                    accent: e.target.value,
-                  }))
-                }
-                className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-              />
-              <span>Highlight Accent</span>
-            </label>
-            <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
-              <input
-                type="color"
-                value={activeTheme.textMain}
-                onChange={(e) =>
-                  setCustomColors((prev) => ({
-                    ...prev,
-                    textMain: e.target.value,
-                  }))
-                }
-                className="h-5 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-              />
-              <span>Quote Text</span>
-            </label>
-          </div>
-        </div>
-
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
-          {/* LEFT: QUOTE SWITCHER & INLINE EDITOR */}
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap gap-1.5">
-                {cards.map((c, idx) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setActiveCardIdx(idx)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-extrabold transition ${
-                      activeCardIdx === idx
-                        ? "bg-[#4058d0] text-white"
-                        : "border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                    }`}
-                  >
-                    Card #{idx + 1}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleAddQuoteCard}
-                  disabled={!canAddCard}
-                  style={{ cursor: canAddCard ? "pointer" : "not-allowed" }}
-                  className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1 text-[11px] font-extrabold text-white disabled:opacity-45"
-                >
-                  <Plus size={12} /> Add Card
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRemoveQuoteCard}
-                  disabled={!canRemoveCard}
-                  style={{
-                    backgroundColor: "#e11d48",
-                    cursor: canRemoveCard ? "pointer" : "not-allowed",
-                  }}
-                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-extrabold text-white disabled:opacity-45"
-                >
-                  <Trash2 size={12} /> Remove
+                  No Photo (Text Only)
                 </button>
               </div>
             </div>
 
+            {/* STEP 2: TESTIMONIAL QUOTE & AUTHOR DETAILS */}
             {activeCard && (
-              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
-                <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#4058d0] dark:text-blue-300">
+                  <Type size={14} />
+                  Step 2 · Quote Text &amp; Author Details
+                </span>
+
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-200">
                       Customer / Author Name
                     </label>
                     <input
@@ -1694,11 +1513,11 @@ export default function QuoteStatTestimonialCardStudioClient() {
                           authorName: e.target.value,
                         }))
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-200">
                       Brand / Company Badge
                     </label>
                     <input
@@ -1710,14 +1529,14 @@ export default function QuoteStatTestimonialCardStudioClient() {
                           brandDomain: e.target.value,
                         }))
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
                     />
                   </div>
                 </div>
 
-                <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-200">
                       Role / Title / Handle
                     </label>
                     <input
@@ -1729,11 +1548,11 @@ export default function QuoteStatTestimonialCardStudioClient() {
                           authorHandleOrRole: e.target.value,
                         }))
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-950"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-200">
                       Brand-Colored Highlight Phrase
                     </label>
                     <input
@@ -1742,32 +1561,32 @@ export default function QuoteStatTestimonialCardStudioClient() {
                       onChange={(e) =>
                         updateActiveCard("highlightPhrase", e.target.value)
                       }
-                      placeholder="Phrase to highlight in accent color"
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
+                      placeholder="e.g. lifted signups by 2.8x"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-950"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
-                    <span>Main Testimonial / Quote (Tip: Wrap **words** to highlight)</span>
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                    <span>Main Customer Quote</span>
                     <span className="text-[10px] text-[#4058d0]">
-                      {activeCard.quoteText.length}/220c
+                      {activeCard.quoteText.length}/240c · Wrap **words** to highlight
                     </span>
-                  </label>
+                  </div>
                   <textarea
-                    rows={4}
+                    rows={3}
                     value={activeCard.quoteText}
                     onChange={(e) =>
                       updateActiveCard("quoteText", e.target.value)
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2.5 text-xs leading-5 dark:border-slate-700 dark:bg-slate-950"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white p-2 text-xs leading-5 dark:border-slate-700 dark:bg-slate-950"
                   />
                 </div>
 
-                <div className="grid gap-2.5 sm:grid-cols-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-200">
                       Trust Pill #1
                     </label>
                     <input
@@ -1779,12 +1598,12 @@ export default function QuoteStatTestimonialCardStudioClient() {
                           trustBadge1: e.target.value,
                         }))
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-950"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                      Trust Pill #2 / Metric
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                      Trust Pill #2
                     </label>
                     <input
                       type="text"
@@ -1795,14 +1614,14 @@ export default function QuoteStatTestimonialCardStudioClient() {
                           trustBadge2: e.target.value,
                         }))
                       }
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-950"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
-                    Secondary Takeaway / Practitioner Reality
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                    Secondary Takeaway / Reality
                   </label>
                   <input
                     type="text"
@@ -1810,54 +1629,138 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     onChange={(e) =>
                       updateActiveCard("subContextOrReality", e.target.value)
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs dark:border-slate-700 dark:bg-slate-950"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-950"
                   />
                 </div>
               </div>
             )}
+
+            {/* STEP 3: BRAND COLOR PALETTES & CUSTOM HEX */}
+            <div className="space-y-2.5 rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#4058d0] dark:text-blue-300">
+                  <Palette size={14} />
+                  Step 3 · Brand Palette &amp; Hex Color Wheel
+                </span>
+                {Object.keys(customColors).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setCustomColors({})}
+                    className="text-[11px] font-bold text-[#4058d0] hover:underline"
+                  >
+                    Reset Colors
+                  </button>
+                )}
+              </div>
+
+              {/* 10 Color Theme Pills */}
+              <div className="flex flex-wrap gap-1">
+                {STUDIO_COLOR_THEMES.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setThemeId(t.id);
+                      setCustomColors({});
+                    }}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[10px] font-bold transition ${
+                      themeId === t.id && Object.keys(customColors).length === 0
+                        ? "border-[#4058d0] bg-[#4058d0] text-white shadow-2xs"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
+                    }`}
+                  >
+                    <span
+                      className="h-2.5 w-2.5 rounded-full border border-white/40"
+                      style={{ background: t.accent }}
+                    />
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 4 Custom Color Wheels */}
+              <div className="grid grid-cols-2 gap-1.5 pt-1 sm:grid-cols-4">
+                <label className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                  <input
+                    type="color"
+                    value={activeTheme.bgStart}
+                    onChange={(e) =>
+                      setCustomColors((prev) => ({
+                        ...prev,
+                        bgStart: e.target.value,
+                        bgEnd: e.target.value,
+                      }))
+                    }
+                    className="h-4 w-5 cursor-pointer rounded border-0 bg-transparent p-0"
+                  />
+                  <span>Backdrop</span>
+                </label>
+                <label className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                  <input
+                    type="color"
+                    value={
+                      activeTheme.cardBg.startsWith("#")
+                        ? activeTheme.cardBg
+                        : "#FFFDF9"
+                    }
+                    onChange={(e) =>
+                      setCustomColors((prev) => ({
+                        ...prev,
+                        cardBg: e.target.value,
+                      }))
+                    }
+                    className="h-4 w-5 cursor-pointer rounded border-0 bg-transparent p-0"
+                  />
+                  <span>Surface</span>
+                </label>
+                <label className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                  <input
+                    type="color"
+                    value={activeTheme.accent}
+                    onChange={(e) =>
+                      setCustomColors((prev) => ({
+                        ...prev,
+                        accent: e.target.value,
+                      }))
+                    }
+                    className="h-4 w-5 cursor-pointer rounded border-0 bg-transparent p-0"
+                  />
+                  <span>Accent</span>
+                </label>
+                <label className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
+                  <input
+                    type="color"
+                    value={activeTheme.textMain}
+                    onChange={(e) =>
+                      setCustomColors((prev) => ({
+                        ...prev,
+                        textMain: e.target.value,
+                      }))
+                    }
+                    className="h-4 w-5 cursor-pointer rounded border-0 bg-transparent p-0"
+                  />
+                  <span>Text</span>
+                </label>
+              </div>
+            </div>
           </div>
 
-          {/* RIGHT: LIVE CANVAS WITH PERSISTENT TOP BAR & BOTTOM ZOOM */}
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-[#070b14] shadow-lg dark:border-slate-700">
+          {/* RIGHT CANVAS & TEMPLATES PANEL (lg:col-span-7) */}
+          <div className="space-y-4 lg:col-span-7">
+            {/* CANVAS BEZEL CONTAINER */}
+            <div className="overflow-hidden rounded-2xl border-2 border-slate-300 bg-[#070b14] shadow-xl dark:border-slate-700">
+              {/* TOP ACTION & EXPORT BAR */}
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-4 py-2.5">
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-white">
+                <span className="text-[11px] font-black uppercase tracking-wider text-white">
                   Card #{activeCardIdx + 1} · {input.aspectRatio || "1:1"} HD Canvas
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={downloadActiveQuotePng}
-                    className="inline-flex items-center gap-1 rounded-lg bg-[#4058d0] px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-[#3452d1]"
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#3452d1] px-3 py-1.5 text-xs font-black text-white shadow-sm hover:bg-[#2842b5]"
                   >
-                    <Download size={12} /> PNG
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      downloadCanvasAsEmbeddedSvg(
-                        canvasRef.current,
-                        `testimonial-quote-card-0${activeCardIdx + 1}.svg`,
-                      );
-                      notify("Downloaded Scalable Vector Card (.SVG)!");
-                    }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-white/25"
-                  >
-                    <FileCode2 size={12} /> SVG
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      printCanvasAsPdfPoster(
-                        canvasRef.current,
-                        `${input.authorName} Testimonial Card #${activeCardIdx + 1}`,
-                        activeCard?.quoteText || "",
-                      );
-                      notify("Opened Print-Ready PDF View!");
-                    }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-white/25"
-                  >
-                    <FileText size={12} /> PDF
+                    <Download size={13} /> PNG (1080p)
                   </button>
                   <button
                     type="button"
@@ -1871,29 +1774,51 @@ export default function QuoteStatTestimonialCardStudioClient() {
                           : "Use PNG Download on this browser.",
                       );
                     }}
-                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-[11px] font-extrabold text-white hover:bg-emerald-500"
+                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-500"
                   >
                     <Copy size={12} /> Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      downloadCanvasAsEmbeddedSvg(
+                        canvasRef.current,
+                        `testimonial-quote-card-0${activeCardIdx + 1}.svg`,
+                      );
+                      notify("Downloaded Scalable Vector Card (.SVG)!");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
+                  >
+                    <FileCode2 size={12} /> SVG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      printCanvasAsPdfPoster(
+                        canvasRef.current,
+                        `${input.authorName} Testimonial Card #${activeCardIdx + 1}`,
+                        activeCard?.quoteText || "",
+                      );
+                      notify("Opened Print-Ready PDF View!");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
+                  >
+                    <FileText size={12} /> PDF
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(pack.socialCaption);
+                      notify("Copied Social Caption!");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
+                  >
+                    <Copy size={12} /> Caption
                   </button>
                 </div>
               </div>
 
-              {activeCard && (
-                <div className="flex items-center gap-2 border-b border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-white">
-                  <span className="inline-flex shrink-0 items-center gap-1 font-extrabold text-[#9aabff]">
-                    <Type size={13} /> Live Quote:
-                  </span>
-                  <input
-                    type="text"
-                    value={activeCard.quoteText}
-                    onChange={(e) =>
-                      updateActiveCard("quoteText", e.target.value)
-                    }
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white focus:border-[#5271ff] focus:outline-none"
-                  />
-                </div>
-              )}
-
+              {/* LIVE CANVAS STAGE */}
               <div
                 onWheel={(e) => {
                   if (e.ctrlKey || e.metaKey) {
@@ -1909,7 +1834,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     );
                   }
                 }}
-                className="overflow-auto p-3 sm:p-4"
+                className="overflow-auto p-3 sm:p-5"
               >
                 <div
                   style={{
@@ -1924,11 +1849,12 @@ export default function QuoteStatTestimonialCardStudioClient() {
                 >
                   <canvas
                     ref={canvasRef}
-                    className="mx-auto block h-auto w-full rounded-xl shadow-2xl"
+                    className="mx-auto block h-auto w-full rounded-2xl shadow-2xl"
                   />
                 </div>
               </div>
 
+              {/* ZOOM CONTROLS BAR */}
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-300">
                 <span className="text-[11px] text-slate-400">
                   Ctrl + Scroll to zoom
@@ -1965,20 +1891,6 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   >
                     <ZoomIn size={12} />
                   </button>
-                  {[1.35, 1.75].map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setZoomLevel(preset)}
-                      className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
-                        Math.abs(zoomLevel - preset) < 0.04
-                          ? "bg-[#3452d1] text-white"
-                          : "bg-slate-800 text-slate-300"
-                      }`}
-                    >
-                      {Math.round(preset * 100)}%
-                    </button>
-                  ))}
                   {zoomLevel !== 1 && (
                     <button
                       type="button"
@@ -1992,52 +1904,47 @@ export default function QuoteStatTestimonialCardStudioClient() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={downloadActiveQuotePng}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#3452d1]"
-              >
-                <Download size={14} />
-                Download Card #0{activeCardIdx + 1} (.PNG)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  downloadCanvasAsEmbeddedSvg(
-                    canvasRef.current,
-                    `testimonial-quote-card-0${activeCardIdx + 1}.svg`,
-                  );
-                  notify("Downloaded Scalable Vector Card (.SVG)!");
-                }}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                <FileCode2 size={14} /> SVG
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  printCanvasAsPdfPoster(
-                    canvasRef.current,
-                    `${input.authorName} Testimonial Card #${activeCardIdx + 1}`,
-                    activeCard?.quoteText || "",
-                  );
-                }}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                <FileText size={14} /> PDF
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(pack.socialCaption);
-                  notify("Copied Social Caption!");
-                }}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                <Copy size={14} />
-                Copy Caption
-              </button>
+            {/* STEP 4: CHOOSE LAYOUT (13 CARD TEMPLATES) DIRECTLY BELOW CANVAS */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+              <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#4058d0] dark:text-blue-300">
+                <MessageSquareQuote size={14} />
+                Step 4 · Choose Card Layout (13 Professional Templates)
+              </span>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                Click any layout below to instantly transform your live canvas while keeping your quotes, photo, logo, and brand colors.
+              </p>
+
+              <div className="mt-3.5 grid gap-2.5 sm:grid-cols-2 md:grid-cols-3">
+                {QUOTE_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() =>
+                      setInput((prev) => ({ ...prev, template: tpl.id }))
+                    }
+                    className={`rounded-xl border p-2 text-left transition ${
+                      input.template === tpl.id
+                        ? "border-[#4058d0] bg-[#4058d0]/10 ring-2 ring-[#4058d0]/30 dark:border-[#4058d0] dark:bg-[#4058d0]/20"
+                        : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950"
+                    }`}
+                  >
+                    <TemplateThumbnail
+                      id={
+                        tpl.id === "aragon-split-testimonial"
+                          ? "testimonial-5-star"
+                          : tpl.id
+                      }
+                      category="viral-list"
+                    />
+                    <strong className="mt-1 block text-xs font-extrabold text-slate-900 dark:text-white">
+                      {tpl.label}
+                    </strong>
+                    <span className="mt-0.5 block text-[10px] leading-4 text-slate-500 dark:text-slate-400">
+                      {tpl.desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -54,6 +54,7 @@ export const MALE_PORTRAIT_PRESETS: Array<{
   label: string;
   roleSample: string;
   authorSample: string;
+  imageSrc: string;
   suitColor: string;
   tieColor: string;
   skinTone: string;
@@ -66,6 +67,7 @@ export const MALE_PORTRAIT_PRESETS: Array<{
     label: "Marcus V. (SaaS VP)",
     authorSample: "Marcus Vance",
     roleSample: "VP of Growth · VeloCloud AI",
+    imageSrc: "/images/testimonials/marcus-executive.png",
     suitColor: "#1E293B",
     tieColor: "#EA580C",
     skinTone: "#E8B89A",
@@ -78,6 +80,7 @@ export const MALE_PORTRAIT_PRESETS: Array<{
     label: "Daniel K. (Tech Founder)",
     authorSample: "Daniel Mercer",
     roleSample: "Founder · NorthStar Analytics",
+    imageSrc: "/images/testimonials/daniel-executive.png",
     suitColor: "#0F172A",
     tieColor: "#2563EB",
     skinTone: "#F1C6A7",
@@ -90,6 +93,7 @@ export const MALE_PORTRAIT_PRESETS: Array<{
     label: "Tariq A. (Growth Director)",
     authorSample: "Tariq Al-Mansoor",
     roleSample: "Head of Acquisition · Apex B2B",
+    imageSrc: "/images/testimonials/tariq-executive.png",
     suitColor: "#1F2937",
     tieColor: "#10B981",
     skinTone: "#D9A17C",
@@ -102,6 +106,7 @@ export const MALE_PORTRAIT_PRESETS: Array<{
     label: "Sufian M. (SEO Architect)",
     authorSample: "Sufian Mustafa",
     roleSample: "Founder · DoItWithAI.tools",
+    imageSrc: "/images/testimonials/sufian-executive.png",
     suitColor: "#1E1B4B",
     tieColor: "#6366F1",
     skinTone: "#DFAC88",
