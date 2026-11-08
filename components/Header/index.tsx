@@ -572,9 +572,9 @@ const Header = () => {
                                       <Sparkles size={11} />
                                       {currentSuite.label}
                                     </span>
-                                    <h4 className="mt-3 text-base font-extrabold text-slate-900 dark:text-white">
+                                    <p className="mt-3 text-base font-extrabold text-slate-900 dark:text-white">
                                       Do It With AI Tool Ecosystem
-                                    </h4>
+                                    </p>
                                     <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                                       {currentSuite.summary}
                                     </p>
@@ -637,9 +637,9 @@ const Header = () => {
                                     >
                                       <div>
                                         <div className="flex items-center justify-between gap-2">
-                                          <h5 className="text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                          <span className="text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
                                             › {toolItem.title}
-                                          </h5>
+                                          </span>
                                           <ArrowRight
                                             size={13}
                                             className="shrink-0 text-slate-400 opacity-0 transition-all group-hover/item:translate-x-0.5 group-hover/item:text-[#5271FF] group-hover/item:opacity-100"
@@ -669,9 +669,9 @@ const Header = () => {
                                       <Bot size={12} className="text-[#5271FF]" />
                                       <span>Flagship Conversational Agent</span>
                                     </div>
-                                    <h4 className="mt-3 text-lg font-extrabold text-slate-900 dark:text-white">
+                                    <p className="mt-3 text-lg font-extrabold text-slate-900 dark:text-white">
                                       Do It AI Workspace
-                                    </h4>
+                                    </p>
                                     <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                                       Our flagship conversational AI agent wired directly to 90+ specialized SEO engines. Audit live URLs, verify SERP pixel limits, and execute complex workflows inside one unified chat workspace.
                                     </p>
@@ -738,9 +738,9 @@ const Header = () => {
                                             className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
                                           />
                                         </div>
-                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
                                           SEO &amp; AEO Page Optimizer Agent
-                                        </h5>
+                                        </span>
                                         <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                                           Intent classification, &lt;580px titles, AI Overview power answers, entity audits &amp; JSON-LD.
                                         </p>
@@ -761,9 +761,9 @@ const Header = () => {
                                             className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
                                           />
                                         </div>
-                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
                                           On-Page SEO Repair Agent
-                                        </h5>
+                                        </span>
                                         <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                                           Diagnoses pixel truncation, heading hierarchy, and compiles drop-in HTML &amp; JSON-LD patches.
                                         </p>
@@ -784,9 +784,9 @@ const Header = () => {
                                             className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
                                           />
                                         </div>
-                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
                                           AI Citation &amp; GEO Agent
-                                        </h5>
+                                        </span>
                                         <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                                           Structures 50-word RAG definition leads and fact comparison matrices for Perplexity citations.
                                         </p>
@@ -807,9 +807,9 @@ const Header = () => {
                                             className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
                                           />
                                         </div>
-                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
                                           SERP Content Gap Agent
-                                        </h5>
+                                        </span>
                                         <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                                           Compares outlines against SERP rivals, extracts Information Gain gaps, and drafts H2/H3 sections.
                                         </p>
@@ -830,9 +830,9 @@ const Header = () => {
                                             className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
                                           />
                                         </div>
-                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
                                           Omni-Channel Marketing Agent
-                                        </h5>
+                                        </span>
                                         <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                                           Repurposes any guide or tool into a LinkedIn carousel, 5-post X thread, Reddit reply &amp; newsletter.
                                         </p>
@@ -853,9 +853,9 @@ const Header = () => {
                                             className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
                                           />
                                         </div>
-                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                        <span className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
                                           AI Support Agent Builder
-                                        </h5>
+                                        </span>
                                         <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
                                           Generates system prompts, fallback routing, and embeddable FAQ chat widget code.
                                         </p>
@@ -977,9 +977,9 @@ const Header = () => {
                                           <span className="inline-block rounded-md bg-[#5271FF]/10 px-2 py-0.5 text-[10px] font-bold uppercase text-[#5271FF] dark:bg-[#5271FF]/20 dark:text-[#b4c2ff]">
                                             {article.category}
                                           </span>
-                                          <h5 className="mt-1 line-clamp-1 text-xs font-extrabold text-slate-900 group-hover/card:text-[#5271FF] dark:text-white dark:group-hover/card:text-[#9aabff]">
+                                          <span className="mt-1 line-clamp-1 text-xs font-extrabold text-slate-900 group-hover/card:text-[#5271FF] dark:text-white dark:group-hover/card:text-[#9aabff]">
                                             {article.title}
-                                          </h5>
+                                          </span>
                                           <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 group-hover/card:text-[#5271FF] dark:text-slate-400">
                                             Read Article ›
                                           </span>
@@ -1105,9 +1105,9 @@ const Header = () => {
                                           <span className="inline-block rounded-md bg-[#5271FF]/10 px-2 py-0.5 text-[10px] font-bold uppercase text-[#5271FF] dark:bg-[#5271FF]/20 dark:text-[#b4c2ff]">
                                             {pack.category}
                                           </span>
-                                          <h5 className="mt-1 line-clamp-1 text-xs font-extrabold text-slate-900 group-hover/card:text-[#5271FF] dark:text-white dark:group-hover/card:text-[#9aabff]">
+                                          <span className="mt-1 line-clamp-1 text-xs font-extrabold text-slate-900 group-hover/card:text-[#5271FF] dark:text-white dark:group-hover/card:text-[#9aabff]">
                                             {pack.title}
-                                          </h5>
+                                          </span>
                                           <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 group-hover/card:text-[#5271FF] dark:text-slate-400">
                                             Open Prompt Library ›
                                           </span>

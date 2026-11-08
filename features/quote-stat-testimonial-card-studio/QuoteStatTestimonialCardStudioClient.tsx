@@ -237,6 +237,10 @@ function drawMalePortraitOnCanvas(
       ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
       ctx.lineWidth = 2.5;
       ctx.stroke();
+    } else {
+      ctx.strokeStyle = `${accentColor}40`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
 
     ctx.restore();
@@ -520,10 +524,15 @@ export default function QuoteStatTestimonialCardStudioClient() {
       ctx.stroke();
       ctx.clip();
 
-      const contentLeftX = cardX + 58;
-      const textColumnW = hasPortrait
-        ? Math.round(cardW * 0.54)
-        : cardW - 116;
+      // Right-Side Executive Male Cutout Portrait geometry (strictly 40% width, isolated from text)
+      const pW = hasPortrait ? Math.round(cardW * 0.40) : 0;
+      const pH = cardH - footerH - 40;
+      const pX = cardX + cardW - pW - 28;
+      const pY = cardY + 40;
+
+      // Text column starts at cardX + 52 and strictly terminates 36px before pX (ZERO OVERLAP!)
+      const contentLeftX = cardX + 52;
+      const maxTextW = hasPortrait ? pX - contentLeftX - 36 : cardW - 104;
 
       // Giant Brand-Colored Quote Mark “
       ctx.fillStyle = activeTheme.accent;
@@ -539,15 +548,26 @@ export default function QuoteStatTestimonialCardStudioClient() {
         cardY + 86,
       );
 
-      // Multi-line Quote with Brand-Colored Highlighted Phrase
-      const fontSize = ratio === "16:9" ? 34 : 38;
-      const lineHeight = Math.round(fontSize * 1.32);
+      // Responsive font size and line height based on quote length and aspect ratio
+      let fontSize = ratio === "16:9" ? 30 : 34;
+      if (activeCard.quoteText.length > 210) fontSize = 24;
+      else if (activeCard.quoteText.length > 150) fontSize = 27;
+      else if (activeCard.quoteText.length > 100) fontSize = 30;
+      const lineHeight = Math.round(fontSize * 1.34);
+
+      // 2 Bottom Trust Badges geometry
+      const badgeY = cardY + cardH - footerH - 68;
+
+      // Available vertical space for quote lines so text never hits the trust badges
+      const availableQuoteH = badgeY - (cardY + 175) - 16;
+      const maxLines = Math.max(3, Math.floor(availableQuoteH / lineHeight));
+
       ctx.font = `800 ${fontSize}px system-ui, -apple-system, sans-serif`;
       const qLines = wrapQuoteLines(
         ctx,
         activeCard.quoteText,
-        textColumnW,
-        7,
+        maxTextW,
+        maxLines,
       );
       const hlLower = (activeCard.highlightPhrase || "")
         .trim()
@@ -569,7 +589,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
           ctx.roundRect(
             contentLeftX - 8,
             qy - fontSize + 4,
-            Math.min(textColumnW + 12, textW + 16),
+            Math.min(maxTextW, textW + 16),
             fontSize + 10,
             10,
           );
@@ -583,7 +603,6 @@ export default function QuoteStatTestimonialCardStudioClient() {
       }
 
       // 2 Bottom Trust Badges above footer bar
-      const badgeY = cardY + cardH - footerH - 68;
       const badges = [
         input.trustBadge1 || "Verified Customer",
         input.trustBadge2 || "2.8x Conversion Lift",
@@ -609,10 +628,6 @@ export default function QuoteStatTestimonialCardStudioClient() {
 
       // Right-Side Executive Male Photographic Cutout Portrait (or Uploaded Photo)
       if (hasPortrait) {
-        const pW = Math.round(cardW * 0.39);
-        const pH = cardH - footerH - 44;
-        const pX = cardX + cardW - pW - 24;
-        const pY = cardY + 44;
         drawMalePortraitOnCanvas(
           ctx,
           pX,
@@ -1376,7 +1391,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   <button
                     type="button"
                     onClick={() => personFileInputRef.current?.click()}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#EA580C] to-[#F97316] px-3 py-2 text-xs font-extrabold text-white shadow-xs transition hover:brightness-110"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#3452D1] via-[#4361EE] to-[#5271FF] shadow-md shadow-[#3452D1]/25 px-3 py-2 text-xs font-extrabold text-white shadow-xs transition hover:brightness-110"
                   >
                     <Upload size={13} />
                     <span className="truncate">
