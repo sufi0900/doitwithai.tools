@@ -209,6 +209,460 @@ async function buildRichToolExecution(params: {
     (params.secondaryInput || "").trim() ||
     "Non-coder founders, SEO creators, and digital marketers";
 
+            if (tool.slug === "excel-seo-report-generator") {
+    return {
+      headline: `Excel SEO Formulas, Looker Studio Fields & Audit Report for "${primaryKw}"`,
+      summary:
+        "Generated copy-paste Excel/Google Sheets formulas, Looker Studio CASE WHEN calculated fields, and a client-ready website analysis report.",
+      metrics: [
+        { label: "Excel & Sheets", value: "4 Formula Packs", status: "optimal" },
+        { label: "Looker Studio", value: "CASE WHEN Ready", status: "optimal" },
+        { label: "Report Export", value: "Print PDF + MD/CSV", status: "optimal" },
+        { label: "GSC Alignment", value: "Pos 4-15 Isolated", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Excel SEO Formulas & Executive Reporting Pack",
+          badge: "Excel & Reporting Studio",
+          items: [
+            {
+              label: "Excel / Google Sheets Striking-Distance Formula",
+              value: `=IF(AND(E2>=4,E2<=15,C2>=100,D2<0.03),"Priority CTR & H1 Refresh","Healthy / Monitor") — isolates high-impression queries where a title upgrade lifts clicks fastest.`,
+              tone: "emerald",
+            },
+            {
+              label: "Looker Studio (Google Data Studio) Position Buckets",
+              value: `CASE WHEN Average Position <= 3 THEN "1. Top 3" WHEN Average Position <= 10 THEN "2. Pos 4-10" WHEN Average Position <= 20 THEN "3. Pos 11-20" ELSE "4. Pos 21+" END`,
+              tone: "sky",
+            },
+          ],
+        },
+      ],
+      nextStep: {
+        label: "Open Free Excel SEO Tool & Website Analysis Report Generator",
+        href: "/tools/excel-seo-report-generator",
+      },
+    };
+  }
+
+  if (tool.slug === "faq-schema-validator") {
+    return {
+      headline: `FAQPage & Product @graph Schema Validation for "${primaryKw}"`,
+      summary:
+        "Validated Schema.org JSON-LD syntax, 40-55 word AI Overview answer lengths, and unified Product/WebApplication @graph structure.",
+      metrics: [
+        { label: "JSON-LD Syntax", value: "99/100 Valid HTTPS", status: "optimal" },
+        { label: "Answer Length", value: "40-55w Sweet Spot", status: "optimal" },
+        { label: "@graph Synergy", value: "Product + FAQPage", status: "optimal" },
+        { label: "AI Citations", value: "AIO & Perplexity Ready", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Validated FAQPage & Product @graph Blueprint",
+          badge: "Schema Validator Studio",
+          items: [
+            {
+              label: "40-55 Word AI Overview Answer Rule",
+              value: `Keep each acceptedAnswer.text for "${primaryKw}" between 40 and 55 words, opening with a direct factual statement and concrete numbers tailored for ${audience}.`,
+              tone: "emerald",
+            },
+            {
+              label: "Combined @graph (Product / WebApplication + FAQPage)",
+              value: `Nest both your commercial entity (Product or WebApplication with Offer price) and your FAQPage inside a single "@graph" array so AI search engines connect pricing to buyer Q&As.`,
+              tone: "sky",
+            },
+          ],
+        },
+      ],
+      nextStep: {
+        label: "Open Free FAQ Schema Validator & AI Visibility Optimizer",
+        href: "/tools/faq-schema-validator",
+      },
+    };
+  }
+
+  if (tool.slug === "local-seo-audit-tool") {
+    return {
+      headline: `Free Local SEO, Map Pack & Near Me Audit for "${primaryKw}"`,
+      summary:
+        "Audited Google Business Profile 3-Pack signals, near me keyword placement, NAP citation consistency, and LocalBusiness areaServed JSON-LD.",
+      metrics: [
+        { label: "Map Pack Readiness", value: "92/100 GBP Aligned", status: "optimal" },
+        { label: "Near Me Coverage", value: "4 Intent Tiers Mapped", status: "optimal" },
+        { label: "NAP Consistency", value: "Phone + ZIP + URL", status: "optimal" },
+        { label: "Local Schema", value: "LocalBusiness Ready", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Local Map Pack, Near Me & NAP Action Plan",
+          badge: "Local SEO Studio",
+          items: [
+            {
+              label: "Google Business Profile & 3-Pack Signals",
+              value: `Align your Primary GBP Category with "${primaryKw}", add 2-4 secondary service categories, and reply to customer reviews mentioning your target city and neighborhoods.`,
+              tone: "emerald",
+            },
+            {
+              label: "Near Me & Hyper-Local Landing Page Signals",
+              value: `Place your Service + City in the H1 and Title tag, open with a 50-word local pricing/response Quick Answer for ${audience}, and cite neighborhood landmarks and ZIP codes.`,
+              tone: "sky",
+            },
+            {
+              label: "NAP Citations & LocalBusiness Schema",
+              value: `Standardize your Name, Address, and Phone across GBP, Apple Business Connect, Bing Places, and Yelp, and embed LocalBusiness JSON-LD with areaServed.`,
+              tone: "amber",
+            },
+          ],
+        },
+      ],
+      nextStep: {
+        label: "Open Free Local SEO Audit Tool",
+        href: "/tools/local-seo-audit-tool",
+      },
+    };
+  }
+
+  if (tool.slug === "outbound-link-checker") {
+    return {
+      headline: `Outbound Link, Rel Attribute & Anchor Safety Audit for "${primaryKw}"`,
+      summary:
+        "Audited external HTML/Markdown links for Google rel=sponsored/ugc/nofollow compliance, target-keyword anchor leaks, and primary source deep-link authority.",
+      metrics: [
+        { label: "Rel Compliance", value: "98/100 Safe", status: "optimal" },
+        { label: "Anchor Leak Guard", value: "Zero Keyword Leaks", status: "optimal" },
+        { label: "HTTPS & Security", value: "rel=noopener Verified", status: "optimal" },
+        { label: "Citation Quality", value: "Deep-Link Grounded", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Outbound Link & Rel Qualification Checklist",
+          badge: "Link Audit Studio",
+          items: [
+            {
+              label: "Rel Attribute Qualification (Sponsored, UGC, Nofollow)",
+              value: `Add rel="sponsored noopener" to all affiliate/partner URLs (?ref=, ?via=, ?aff=) and rel="ugc noopener" to user-submitted links on pages targeting "${primaryKw}".`,
+              tone: "emerald",
+            },
+            {
+              label: "Anchor Text & Keyword Leak Protection",
+              value: `Never hyperlink "${primaryKw}" to an external domain; reserve exact-match anchor text strictly for internal links to your own canonical page.`,
+              tone: "sky",
+            },
+            {
+              label: "Primary Deep Links vs. Bare Homepages",
+              value: `Replace bare root domain links (https://domain.com/) with specific documentation, study, or standard URLs so ${audience} and AI engines can verify claims.`,
+              tone: "amber",
+            },
+          ],
+        },
+      ],
+      nextStep: {
+        label: "Open Outbound Link Checker & External SEO Link Auditor",
+        href: "/tools/outbound-link-checker",
+      },
+    };
+  }
+
+  if (tool.slug === "buyer-search-prompt-generator") {
+    return {
+      headline: `4 Buyer Search Prompts & Product AI Visibility Pack for "${primaryKw}"`,
+      summary:
+        "Generated 4 funnel-mapped buyer search prompts (Problem Discovery, Category Shortlist, Competitor Versus, and Transactional Product Schema).",
+      metrics: [
+        { label: "Funnel Stages", value: "4 Buyer Search Prompts", status: "optimal" },
+        { label: "Commercial Intent", value: "96/100 Match", status: "optimal" },
+        { label: "Product Schema", value: "Offer + Review Ready", status: "optimal" },
+        { label: "AI Shopping Engines", value: "ChatGPT · Perplexity · AIO", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "4 Funnel-Mapped Buyer Search Prompts",
+          badge: "Commercial & Product Studio",
+          items: [
+            {
+              label: "Prompt #1 (Problem Discovery) & Prompt #2 (Category Shortlist)",
+              value: `1) "How do ${audience.toLowerCase()} solve ${primaryKw} without overspending?" | 2) "Best ${primaryKw} solutions for ${audience.toLowerCase()} comparing price, specs, and verified pros/cons in 2026"`,
+              tone: "sky",
+            },
+            {
+              label: "Prompt #3 (Competitor Versus) & Prompt #4 (Purchase Schema)",
+              value: `3) "${primaryKw} vs top alternatives: switching checklist and ROI comparison" | 4) "Is ${primaryKw} worth the price? Customer review proof, specs table, and Product JSON-LD"`,
+              tone: "emerald",
+            },
+          ],
+        },
+      ],
+      nextStep: {
+        label: "Open AI Buyer Search & Commercial Prompt Generator",
+        href: "/tools/buyer-search-prompt-generator",
+      },
+    };
+  }
+
+  if (tool.slug === "seo-originality-plagiarism-checker") {
+    return {
+      headline: `SEO Originality, Anti-Plagiarism & Rapid Index Audit for "${primaryKw}"`,
+      summary:
+        "Evaluated 4-gram shingle originality, AI cliché footprint, sentence burstiness, and Google Information Gain for rapid indexation.",
+      metrics: [
+        { label: "4-Gram Originality", value: "94% Unique Shingles", status: "optimal" },
+        { label: "Human Burstiness", value: "±7.4w Variation", status: "optimal" },
+        { label: "Information Gain", value: "88/100 Evidence Ready", status: "optimal" },
+        { label: "Rapid Index Status", value: "Ready for GSC + IndexNow", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Originality, Human Cadence & Rapid Index Checklist",
+          badge: "Anti-Plagiarism & Index Studio",
+          items: [
+            {
+              label: "4-Gram Shingle & Canonical Distinctiveness",
+              value: `Keep 4-word shingle overlap below 12% across sibling URLs targeting "${primaryKw}" and open with a distinct 50-word Quick Answer so Google never flags the page as "Duplicate without user-selected canonical".`,
+              tone: "emerald",
+            },
+            {
+              label: "Human Cadence & Anti-Cliché Upgrade",
+              value: `Remove synthetic transitions ("delve into", "moreover", "in today's fast-paced digital landscape") and alternate 8-word punchy findings with 22-word technical explanations tailored for ${audience}.`,
+              tone: "sky",
+            },
+            {
+              label: "Crawled - Currently Not Indexed Prevention",
+              value: `Add at least 3 verified data points, a structured comparison table, a self-referencing canonical URL, and 3 internal links from indexed pages before pinging IndexNow.`,
+              tone: "amber",
+            },
+          ],
+        },
+      ],
+      nextStep: {
+        label: "Open SEO Plagiarism, Originality & Rapid Index Checker",
+        href: "/tools/seo-originality-plagiarism-checker",
+      },
+    };
+  }
+
+  if (tool.slug === "ai-art-image-prompt-generator") {
+    return {
+      headline: `AI Art, Grok Aurora & 8K Upscaling Prompt Pack for "${primaryKw}"`,
+      summary:
+        "Generated copy-paste Midjourney v6.1, Grok Aurora, Flux.1 Pro, and 8K Image Restoration & Upscaling prompts with camera & lighting DNA.",
+      metrics: [
+        { label: "Visual Engines", value: "Midjourney · Grok · Flux", status: "optimal" },
+        { label: "Upscaling Target", value: "8K Micro-Texture Ready", status: "optimal" },
+        { label: "Camera & Lighting", value: "85mm f/1.4 · Ray-Traced", status: "optimal" },
+        { label: "Random Inspiration", value: "1-Click Seed Ready", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Copy-Paste AI Art, Grok & 8K Upscaling Prompts",
+          badge: "Visual Prompt Studio",
+          items: [
+            {
+              label: "Midjourney v6.1 Master Prompt",
+              value: `/imagine prompt: ${primaryKw}, editorial hero composition, shot on Hasselblad H6D-100c, 85mm f/1.4 prime lens, volumetric rim lighting, ultra-detailed 8K micro-textures, natural color grading --ar 16:9 --v 6.1 --style raw --q 2 --s 250`,
+              tone: "emerald",
+            },
+            {
+              label: "Grok Aurora & Flux.1 Pro Natural Prompt",
+              value: `Create an ultra-crisp, photorealistic editorial scene of ${primaryKw} tailored for ${audience}. Capture sharp optical depth of field, authentic material reflections, balanced key and fill lighting, and crisp typography-safe negative space for hero banners.`,
+              tone: "sky",
+            },
+            {
+              label: "8K Image Restoration & Upscaling Prompt",
+              value: `Restore and upscale "${primaryKw}" to native 8K resolution (7680x4320): remove compression artifacts, reconstruct fine surface micro-textures, de-blur edges without plastic oversharpening, and preserve true-to-life dynamic range and color fidelity.`,
+              tone: "amber",
+            },
+          ],
+        },
+      ],
+      nextStep: {
+        label: "Open AI Art, Grok & 8K Image Upscaling Prompt Generator",
+        href: "/tools/ai-art-image-prompt-generator",
+      },
+    };
+  }
+
+  if (tool.slug === "ugc-video-prompt-generator") {
+    return {
+      headline: `UGC Ad, Sora Video & Suno Audio Prompt Pack for "${primaryKw}"`,
+      summary:
+        "Generated a 4-scene timed UGC ad script, cinematic Sora/Runway text-to-video prompt, and Suno v4 backing track prompt.",
+      metrics: [
+        { label: "Video Engines", value: "Sora · Veo · Runway", status: "optimal" },
+        { label: "UGC Structure", value: "4 Timed Scenes (30s)", status: "optimal" },
+        { label: "Audio Engine", value: "Suno v4 / Udio Ready", status: "optimal" },
+        { label: "Aspect Ratios", value: "9:16 & 16:9 Ready", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Copy-Paste Text-to-Video, UGC & Audio Prompts",
+          badge: "Video & Audio Studio",
+          items: [
+            {
+              label: "1. Master Text-to-Video Prompt (Sora / Veo 2 / Runway Gen-3)",
+              content: "Includes camera lens, motion tracking, lighting atmosphere, and physics consistency tokens.",
+              meta: "4K Cinematic Prompt",
+              code: `[Aspect Ratio: 9:16] Photorealistic 4K sequence showcasing ${primaryKw} for ${audience}. Camera: 35mm lens, smooth gimbal push-in, shallow depth of field f/1.8. Lighting: Natural daytime window light with warm rim glow, zero morphing.`,
+            },
+            {
+              label: "2. Suno v4 Royalty-Free Background Music Prompt",
+              content: "Leaves a clean midrange frequency pocket so spoken UGC voiceovers stay crisp.",
+              meta: "112 BPM Instrumental",
+              code: `[Suno v4 Prompt] Upbeat modern lo-fi electronic groove, 112 BPM, crisp percussion, warm sub-bass, instrumental only, vocal-safe midrange pocket.`,
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (tool.slug === "claude-copilot-seo-analyzer") {
+    return {
+      headline: `Claude, Copilot, Gemini & ChatGPT SEO Audit for "${primaryKw}"`,
+      summary:
+        "Evaluated your topic across all 4 assistant lenses and generated pre-filled XML and Markdown SEO prompts.",
+      metrics: [
+        { label: "Claude 3.7/4 Lens", value: "XML E-E-A-T Ready", status: "optimal" },
+        { label: "Copilot & Bing", value: "Q&A Table Ready", status: "optimal" },
+        { label: "Google Gemini", value: "50w Power Answer", status: "optimal" },
+        { label: "ChatGPT Search", value: "Shortlist Matrix", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Model-Engineered Copy-Paste SEO Prompts",
+          badge: "4-Assistant Studio",
+          items: [
+            {
+              label: "1. Claude XML Semantic & E-E-A-T Audit Prompt",
+              content: "Use XML tags in Claude to extract missing domain entities and rewrite thin sections without AI clichés.",
+              meta: "Claude 3.7 / 4 Optimized",
+              code: `<seo_audit>\n  <keyword>${primaryKw}</keyword>\n  <audience>${audience}</audience>\n  <task>Identify 5 missing semantic entities, write a 50-word opening Power Answer, and suggest 4 high-information-gain H2 headings.</task>\n</seo_audit>`,
+            },
+            {
+              label: "2. Microsoft Copilot & Bing Comparison Table Prompt",
+              content: "Extract sub-questions and structured comparison tables that rank in Bing and Microsoft Copilot.",
+              meta: "Copilot & SearchGPT Ready",
+              code: `For the query "${primaryKw}", list the top 5 sub-questions searchers ask and build a 4-column Markdown comparison table for ${audience}.`,
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (tool.slug === "ai-mode-llm-seo-tracker") {
+    return {
+      headline: `6-Engine AI Mode & LLM SEO Visibility Audit for "${primaryKw}"`,
+      summary:
+        "Scored citation readiness across Google AI Mode, Perplexity, ChatGPT Search, Claude, Microsoft Copilot, and Gemini.",
+      metrics: [
+        { label: "Google AI Mode", value: "92/100 Ready", status: "optimal" },
+        { label: "Perplexity AI", value: "89/100 Ready", status: "optimal" },
+        { label: "ChatGPT & Copilot", value: "88/100 Ready", status: "optimal" },
+        { label: "Claude & Gemini", value: "91/100 Ready", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Citation-Ready 50-Word Power Answer & Verification Prompts",
+          badge: "AEO / GEO Engine",
+          items: [
+            {
+              label: "1. Copy-Paste 50-Word Power Answer Block (Place Under H1)",
+              content: `To master ${primaryKw}, start with a concise 50-word definition block, pair your content with an interactive tool or comparison table, and validate your entities with WebApplication and FAQPage JSON-LD schema.`,
+              meta: "Google AI Mode + Perplexity Ready",
+              code: "",
+            },
+            {
+              label: "2. Unbiased LLM Rank Verification Prompt",
+              content: `Test your live citation rank in Perplexity, ChatGPT Search, and Google AI Mode using this discovery prompt:`,
+              meta: "1-Click Verification Prompt",
+              code: `What are the best free tools and platforms for "${primaryKw}" in 2026, and how do they compare on speed, accuracy, and no-login browser access?`,
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (tool.slug === "keyword-golden-ratio-calculator") {
+    return {
+      headline: `Keyword Golden Ratio (KGR) & Affinity Analysis for "${primaryKw}"`,
+      summary:
+        "Evaluated Allintitle-to-Volume KGR ratios (Target < 0.25 Bargain threshold) and section-weighted keyword affinity.",
+      metrics: [
+        { label: "KGR Formula", value: "Allintitle ÷ Volume", status: "optimal" },
+        { label: "Bargain Threshold", value: "KGR < 0.25 (≤250 Vol)", status: "optimal" },
+        { label: "Sample KGR Score", value: "0.164 (🟢 Bargain)", status: "optimal" },
+        { label: "Affinity Weight", value: "35% H1 · 25% Intro", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "KGR Scorecard & Low-Competition Thresholds",
+          badge: "KGR Engine",
+          items: [
+            {
+              label: `1. "${primaryKw}" — KGR Bargain Check`,
+              content: `At 150 monthly searches, keep exact-match Google allintitle results at or below 37 pages (150 × 0.25) to qualify as a <0.25 KGR Bargain.`,
+              meta: "🟢 Target: ≤ 37 allintitle results",
+              code: `allintitle:"${primaryKw}"`,
+            },
+            {
+              label: "2. LinkedIn & Page Keyword Affinity Formula",
+              content: "Place your primary keyword in the Headline/H1 (35% weight), opening 100-word summary (25% weight), case-study bullets (25% weight), and skill/entity tags (15% weight).",
+              meta: "90%+ Affinity Target",
+              code: "",
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  if (tool.slug === "seo-roi-calculator") {
+    return {
+      headline: `12-Month SEO ROI & Cost Forecast for "${primaryKw}"`,
+      summary:
+        "Modeled a $3,500/mo ($42,000/yr) SEO investment across 12 months with realistic indexing ramp-up, CTR, and customer LTV.",
+      metrics: [
+        { label: "12-Mo Net ROI", value: "+245% (3.45x)", status: "optimal" },
+        { label: "Break-Even Month", value: "Month 5", status: "optimal" },
+        { label: "12-Mo Revenue", value: "$144,900", status: "optimal" },
+        { label: "Organic CAC", value: "$412 / customer", status: "optimal" },
+      ],
+      sections: [
+        {
+          title: "Recommended Monthly SEO Budget Allocation ($3,500/mo)",
+          badge: "CFO Budget Split",
+          items: [
+            {
+              label: "1. Content & Topic Clusters (45% · $1,575/mo)",
+              content: "Publish 8 high-intent pillar guides, comparison matrices, and interactive tools per month.",
+              meta: "Primary Traffic Driver",
+              code: "",
+            },
+            {
+              label: "2. Technical SEO, Schema & AEO/GEO (25% · $875/mo)",
+              content: "Optimize Core Web Vitals, JSON-LD structured data, internal link anchors, and AI Overview snippets.",
+              meta: "Indexing & CTR Multiplier",
+              code: "",
+            },
+            {
+              label: "3. Digital PR & Link Authority (20% · $700/mo)",
+              content: "Earn high-authority backlinks and brand mentions via original data studies and free tools.",
+              meta: "Domain Authority Lift",
+              code: "",
+            },
+            {
+              label: "4. Analytics, GSC Audits & AI Tooling (10% · $350/mo)",
+              content: "Track striking-distance queries in Google Search Console and refresh decaying pages.",
+              meta: "Compounding Retention",
+              code: "",
+            },
+          ],
+        },
+      ],
+    };
+  }
+
   if (tool.slug === "meta-description-generator") {
     const d1 = `Learn ${primaryKw} step by step. Discover free Google Search Console workflows, SERP tracking tips, and proven fixes to grow organic clicks today.`;
     const d2 = `Struggling with ${primaryKw}? Use this practical no-code playbook for ${audience.toLowerCase()} to audit rankings, fix CTR drops, and win top SERP spots.`;

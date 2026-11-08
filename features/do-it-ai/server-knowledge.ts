@@ -1306,6 +1306,18 @@ export function findMatchingTools(query: string, limit = 6): ToolSummaryRecord[]
     if (/\bintent\b/.test(q) && t.slug === "search-intent-checker") score += 80;
     if (/\bslug\b/.test(q) && t.slug === "slug-generator") score += 80;
     if (/\balt text\b/.test(q) && t.slug === "image-alt-text-generator") score += 80;
+    if (/\b(seo roi|roi calculator|seo cost|seo budget|enterprise seo roi)\b/.test(q) && t.slug === "seo-roi-calculator") score += 90;
+    if (/\b(kgr|golden ratio|allintitle|affinity score|keyword affinity)\b/.test(q) && t.slug === "keyword-golden-ratio-calculator") score += 90;
+    if (/\b(ai mode|perplexity seo|llm seo|chatgpt seo tracking|copilot seo rank|claude seo rank)\b/.test(q) && t.slug === "ai-mode-llm-seo-tracker") score += 90;
+    if (/\b(claude seo|copilot seo|gemini seo|chatgpt seo analysis)\b/.test(q) && t.slug === "claude-copilot-seo-analyzer") score += 90;
+    if (/\b(ugc prompt|sora prompt|suno prompt|text to video|generating videos from textual prompts)\b/.test(q) && t.slug === "ugc-video-prompt-generator") score += 90;
+    if (/\b(prompt generator art|random art prompt|art prompts generator|8k upscaling|image restoration prompt|grok prompt generator|midjourney prompt|flux prompt)\b/.test(q) && t.slug === "ai-art-image-prompt-generator") score += 90;
+    if (/\b(plagiarism checker|seo tools online plagiarism|seo tools anti plagiarism|rapid index checker|crawled currently not indexed|sounds human|ai generated|information gain)\b/.test(q) && t.slug === "seo-originality-plagiarism-checker") score += 90;
+    if (/\b(buyer search prompt|generate 4 buyer|buyer persona prompt|product pages for ai visibility|product reviews impact ai|commercial prompt|ecommerce keyword)\b/.test(q) && t.slug === "buyer-search-prompt-generator") score += 90;
+    if (/\b(outbound link checker|seo tools link checker|external link checker|rel sponsored|rel ugc|outbound anchor)\b/.test(q) && t.slug === "outbound-link-checker") score += 90;
+    if (/\b(free local seo audit|local seo tools for smbs|near me keywords|map pack audit|nap citation|ecommerce geo targeting)\b/.test(q) && t.slug === "local-seo-audit-tool") score += 90;
+    if (/\b(excel seo tool|website analysis report pdf|google data studio keyword ranking|looker studio seo|seo reporting tool)\b/.test(q) && t.slug === "excel-seo-report-generator") score += 90;
+    if (/\b(faq schema markup validation|faq generator for seo and ai visibility|optimize product schema markup for ai search|faqpage validator)\b/.test(q) && t.slug === "faq-schema-validator") score += 90;
 
     for (const tok of tokens) {
       if (t.name.toLowerCase().includes(tok)) score += 14;

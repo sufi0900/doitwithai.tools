@@ -66,7 +66,8 @@
         "core-web-vitals-checker",
         "llms-txt-generator",
         "content-evidence-review",
-        "external-link-source-review"
+        "external-link-source-review",
+        "claude-copilot-seo-analyzer"
       ],
       "topics": [
         "on-page"
@@ -522,7 +523,8 @@
         "search-intent-checker",
         "seo-content-brief-generator",
         "keyword-density-checker",
-        "keyword-research-tool"
+        "keyword-research-tool",
+        "keyword-golden-ratio-calculator"
       ],
       "topics": [
         "keywords"
@@ -849,7 +851,8 @@
         "schema-markup-generator",
         "content-evidence-review",
         "external-link-source-review",
-        "keyword-density-checker"
+        "keyword-density-checker",
+        "ai-mode-llm-seo-tracker"
       ],
       "topics": [
         "ai-search"
@@ -873,7 +876,8 @@
       "relatedGuides": [],
       "relatedToolSlugs": [
         "keyword-cannibalization-finder",
-        "meta-title-generator"
+        "meta-title-generator",
+        "seo-roi-calculator"
       ],
       "topics": [
         "keywords"
@@ -1153,7 +1157,9 @@
         "keyword-clustering-tool",
         "search-intent-checker",
         "seo-content-brief-generator",
-        "target-audience-research-tool"
+        "target-audience-research-tool",
+        "seo-roi-calculator",
+        "keyword-golden-ratio-calculator"
       ],
       "topics": [
         "keywords"
@@ -1823,7 +1829,8 @@
         "entity-sameas-finder",
         "content-evidence-review",
         "ai-citation-readiness-checker",
-        "information-gain-auditor"
+        "information-gain-auditor",
+        "claude-copilot-seo-analyzer"
       ],
       "topics": [
         "on-page"
@@ -2367,7 +2374,8 @@
         "blog-to-video-script",
         "youtube-title-thumbnail-optimizer",
         "blog-to-social-posts",
-        "social-thread-generator"
+        "social-thread-generator",
+        "ugc-video-prompt-generator"
       ],
       "topics": [
         "social"
@@ -2568,7 +2576,8 @@
         "llms-txt-generator",
         "ai-citation-readiness-checker",
         "entity-sameas-finder",
-        "comparison-page-generator"
+        "comparison-page-generator",
+        "ai-mode-llm-seo-tracker"
       ],
       "topics": [
         "ai-search"
@@ -2772,7 +2781,8 @@
         "short-form-video-script-generator",
         "instagram-caption-generator",
         "youtube-transcript-generator",
-        "social-media-video-thumbnail-grabber"
+        "social-media-video-thumbnail-grabber",
+        "ugc-video-prompt-generator"
       ],
       "topics": [
         "social"
@@ -3062,209 +3072,497 @@
       ]
     },
     {
-      "id": "seo-optimizer-ai-agent",
-      "slug": "seo-optimizer-ai-agent",
-      "name": "SEO & AEO Page Optimizer Agent",
-      "description": "5-Step Chain from 1 Topic/URL: (1) Classifies Search Intent, (2) Writes <580px Meta Title & single-sentence Meta Description, (3) Writes 50-word AI Overview Power Answer, (4) Audits E-E-A-T entity gaps, and (5) Outputs @graph JSON-LD Schema.",
+      "id": "seo-roi-calculator",
+      "slug": "seo-roi-calculator",
+      "name": "SEO ROI, Cost & Budget Calculator",
+      "description": "Calculate your projected 12-month SEO return on investment, monthly organic budget, and break-even timeline using real traffic, conversion, and LTV metrics.",
       "categories": [
-        "ai-seo"
-      ],
-      "topics": [
-        "on-page",
-        "ai-search",
-        "technical"
+        "ai-seo",
+        "productivity"
       ],
       "tags": [
-        "seo optimizer ai agent",
-        "ai agents for aeo content production",
-        "agent analytics ai visibility products",
-        "JSON-LD schema"
+        "seo roi calculator",
+        "enterprise seo roi calculator",
+        "seo cost calculator",
+        "seo budget calculator",
+        "seo forecasting"
       ],
-      "kind": "Autonomous 5-Step Agent",
+      "kind": "AI-assisted",
       "status": "live",
-      "access": "free",
       "addedAt": "2026-11-08",
-      "relatedToolSlugs": [
-        "on-page-ai-seo-analyzer",
-        "meta-title-generator",
-        "schema-markup-generator"
-      ],
       "relatedGuides": [
         {
-          "title": "Understand SEO and AI search",
-          "path": "/ai-seo/what-is-ai-seo"
+          "path": "/ai-seo/what-to-do-after-keyword-research",
+          "title": "What to do after keyword research: grouping, intent & mapping"
+        },
+        {
+          "path": "/ai-seo/check-google-keyword-rankings",
+          "title": "How to check keyword rankings in Google Search Console"
         }
+      ],
+      "relatedToolSlugs": [
+        "keyword-research-tool",
+        "keyword-clustering-tool",
+        "search-intent-checker",
+        "gsc-striking-distance-finder",
+        "on-page-ai-seo-analyzer",
+        "keyword-golden-ratio-calculator"
+      ],
+      "topics": [
+        "keywords",
+        "technical-seo"
       ]
     },
     {
-      "id": "ai-support-agent-builder",
-      "slug": "ai-support-agent-builder",
-      "name": "No-Code Docs-to-Chatbot Support Agent Builder",
-      "description": "Paste company FAQs, pricing, or internal docs to structure a grounded RAG knowledge base, set strict domain boundaries, test-chat live on screen, and export a 1-click embeddable HTML/React Support Chatbot.",
+      "id": "keyword-golden-ratio-calculator",
+      "slug": "keyword-golden-ratio-calculator",
+      "name": "Keyword Golden Ratio (KGR) & Affinity Calculator",
+      "description": "Calculate the Keyword Golden Ratio (KGR) and profile keyword affinity score for up to 50 queries at once to spot low-competition terms that rank fast.",
       "categories": [
-        "productivity",
-        "content-conversion"
-      ],
-      "topics": [
-        "technical",
-        "conversion"
+        "ai-seo",
+        "productivity"
       ],
       "tags": [
-        "ai support agent that can answer from internal docs",
-        "deploy ai agents without technical team",
-        "ai support agent that integrates with common helpdesks",
-        "best ai user support agent for saas companies"
+        "keyword golden ratio calculator",
+        "kgr calculator",
+        "linkedin keyword affinity score calculation",
+        "low competition keywords",
+        "allintitle calculator"
       ],
-      "kind": "Build with AI Agent",
+      "kind": "AI-assisted",
       "status": "live",
-      "access": "free",
       "addedAt": "2026-11-08",
-      "relatedToolSlugs": [
-        "on-page-ai-seo-analyzer",
-        "seo-optimizer-ai-agent"
-      ],
       "relatedGuides": [
         {
-          "title": "Understand SEO and AI search",
-          "path": "/ai-seo/what-is-ai-seo"
+          "path": "/ai-seo/what-to-do-after-keyword-research",
+          "title": "What to do after keyword research: grouping, intent & mapping"
+        },
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research prompts and planning resources"
         }
+      ],
+      "relatedToolSlugs": [
+        "keyword-research-tool",
+        "keyword-clustering-tool",
+        "search-intent-checker",
+        "seo-roi-calculator",
+        "meta-title-generator"
+      ],
+      "topics": [
+        "keywords"
       ]
     },
     {
-      "id": "client-intake-lead-agent",
-      "slug": "client-intake-lead-agent",
-      "name": "B2B Buyer-Fit & Client Intake Agent",
-      "description": "Enter your service offer & target buyer to generate a 100-point Ideal Buyer Fit (ICP) Scoring Rubric, a 5-step interactive Client Intake & Qualification Flow, outreach & AI voice scripts, and a downloadable intake bot widget.",
+      "id": "ai-mode-llm-seo-tracker",
+      "slug": "ai-mode-llm-seo-tracker",
+      "name": "AI Mode & LLM SEO Rank Tracker",
+      "description": "Track and audit your brand and webpage citation readiness across Google AI Mode, Perplexity, ChatGPT, Claude, and Copilot with live verification prompts.",
       "categories": [
-        "productivity",
+        "ai-seo",
+        "productivity"
+      ],
+      "tags": [
+        "ai mode seo rank tracking tool",
+        "perplexity seo rank tracking tool",
+        "claude seo rank tracking tool",
+        "copilot seo rank tracking tool",
+        "chatgpt seo tracking tool",
+        "llm seo checking tool"
+      ],
+      "kind": "AI-assisted",
+      "status": "live",
+      "addedAt": "2026-11-08",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/check-google-keyword-rankings",
+          "title": "How to check keyword rankings in Google Search Console"
+        },
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "What is AI SEO and how answer engines cite pages"
+        }
+      ],
+      "relatedToolSlugs": [
+        "ai-citation-readiness-checker",
+        "ai-brand-visibility-prompt-generator",
+        "llms-txt-generator",
+        "on-page-ai-seo-analyzer",
+        "search-intent-checker",
+        "keyword-clustering-tool",
+        "claude-copilot-seo-analyzer"
+      ],
+      "topics": [
+        "technical-seo",
+        "keywords"
+      ]
+    },
+    {
+      "id": "claude-copilot-seo-analyzer",
+      "slug": "claude-copilot-seo-analyzer",
+      "name": "Claude, Copilot & Gemini SEO Analyzer",
+      "description": "Audit your webpage content and generate model-specific SEO optimization workflows for Claude, Microsoft Copilot, Google Gemini, and ChatGPT in one studio.",
+      "categories": [
+        "ai-seo",
         "content-writing"
       ],
-      "topics": [
-        "conversion",
-        "writing"
-      ],
       "tags": [
-        "b2b sales research ai agent ideal buyer fit scoring",
-        "client intake ai agent",
-        "ai sales agent onboarding best practices first message",
-        "reliable ai voice agents for lead qualification"
+        "claude seo tool",
+        "copilot seo tool",
+        "best gemini seo tools",
+        "best claude seo analysis tools",
+        "best copilot seo analysis tools",
+        "chatgpt seo analysis tool"
       ],
-      "kind": "B2B Sales & Intake Agent",
+      "kind": "AI-assisted",
       "status": "live",
-      "access": "free",
       "addedAt": "2026-11-08",
-      "relatedToolSlugs": [
-        "ai-support-agent-builder",
-        "ai-marketing-campaign-agent"
-      ],
       "relatedGuides": [
         {
-          "title": "Understand SEO and AI search",
-          "path": "/ai-seo/what-is-ai-seo"
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "What is AI SEO and how answer engines cite pages"
+        },
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research prompts and planning resources"
         }
+      ],
+      "relatedToolSlugs": [
+        "ai-mode-llm-seo-tracker",
+        "on-page-ai-seo-analyzer",
+        "eeat-content-auditor",
+        "ai-citation-readiness-checker",
+        "semantic-entity-gap-analyzer"
+      ],
+      "topics": [
+        "keywords",
+        "technical-seo"
       ]
     },
     {
-      "id": "ai-marketing-campaign-agent",
-      "slug": "ai-marketing-campaign-agent",
-      "name": "Omnichannel Content & Marketing Campaign Agent",
-      "description": "Turn one product launch or article into a complete campaign: marketing work intake capacity/sprint plan, LinkedIn post + carousel, X thread, short-form video script, paid traffic ad copy angles, and UTM tracking links.",
+      "id": "ugc-video-prompt-generator",
+      "slug": "ugc-video-prompt-generator",
+      "name": "UGC Ad, Sora Video & Text-to-Video Prompt Studio",
+      "description": "Generate scene-by-scene UGC ad scripts, cinematic Sora and Runway text-to-video prompts, and Suno background audio prompts with camera and lighting controls.",
       "categories": [
         "content-writing",
-        "content-conversion",
         "productivity"
       ],
-      "topics": [
-        "social",
-        "conversion",
-        "writing"
-      ],
       "tags": [
-        "marketing work intake ai agent capacity planning",
-        "ai agent paid traffic analysis marketing automation",
-        "ai agent for marketing campaigns",
-        "ai marketing agent vs chatgpt"
+        "ugc prompt generator",
+        "sora prompts generator",
+        "suno prompt generator",
+        "text to video prompt generator",
+        "ai video prompts"
       ],
-      "kind": "1-Brief-to-Campaign Agent",
+      "kind": "AI-assisted",
       "status": "live",
-      "access": "free",
       "addedAt": "2026-11-08",
-      "relatedToolSlugs": [
-        "seo-optimizer-ai-agent",
-        "whatsapp-instagram-ai-agent-studio"
-      ],
       "relatedGuides": [
         {
-          "title": "Understand SEO and AI search",
-          "path": "/ai-seo/what-is-ai-seo"
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "What is AI SEO and how answer engines cite pages"
         }
+      ],
+      "relatedToolSlugs": [
+        "short-form-video-script-generator",
+        "tiktok-script-caption-generator",
+        "youtube-title-thumbnail-optimizer",
+        "ai-blog-article-writer"
+      ],
+      "topics": [
+        "keywords"
       ]
     },
     {
-      "id": "whatsapp-instagram-ai-agent-studio",
-      "slug": "whatsapp-instagram-ai-agent-studio",
-      "name": "WhatsApp, Telegram & Instagram DM Sales Agent Studio",
-      "description": "Build automated conversational DM & WhatsApp/Telegram flows for Instagram Shop price inquiries, booking, objection handling, and community management—complete with copy-paste ManyChat and n8n JSON templates.",
+      "id": "ai-art-image-prompt-generator",
+      "slug": "ai-art-image-prompt-generator",
+      "name": "AI Art, Grok & 8K Image Upscaling Prompt Generator",
+      "description": "Generate random AI art prompts, Midjourney v6.1 & Grok Aurora visual prompts, and 8K image restoration & upscaling prompts with instant visual DNA presets.",
       "categories": [
-        "content-conversion",
+        "content-writing",
         "productivity"
       ],
-      "topics": [
-        "social",
-        "conversion"
-      ],
       "tags": [
-        "ai agents for community management in telegram and whatsapp",
-        "trends in ai agents whatsapp",
-        "manychat ai agent for instagram shop price inquiries 2026 guide"
+        "prompt generator art",
+        "random art prompt generator",
+        "art prompts generator",
+        "random prompt generator art",
+        "best generative ai prompts for image restoration and 8k upscaling",
+        "grok prompt generator",
+        "best art prompt generator",
+        "midjourney prompt generator",
+        "flux prompt generator"
       ],
-      "kind": "DM & Community Agent Studio",
+      "kind": "generator",
       "status": "live",
-      "access": "free",
-      "addedAt": "2026-11-08",
-      "relatedToolSlugs": [
-        "ai-marketing-campaign-agent",
-        "no-code-workflow-agent-planner"
-      ],
+      "addedAt": "2026-04-20",
       "relatedGuides": [
         {
-          "title": "Understand SEO and AI search",
-          "path": "/ai-seo/what-is-ai-seo"
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "What is AI SEO and how answer engines cite pages"
         }
+      ],
+      "relatedToolSlugs": [
+        "ugc-video-prompt-generator",
+        "image-alt-text-generator"
+      ],
+      "topics": [
+        "ai-art-prompts",
+        "image-upscaling",
+        "grok-prompts",
+        "midjourney-prompts"
       ]
     },
     {
-      "id": "no-code-workflow-agent-planner",
-      "slug": "no-code-workflow-agent-planner",
-      "name": "No-Code Workflow & Capacity Planning Agent (n8n / Sheets)",
-      "description": "Describe any repetitive business task (e.g., syncing Google Sheets leads to Google Calendar & sending AI follow-ups) and get the step-by-step no-code agent architecture, Excel/Sheets formulas, system prompts, and downloadable n8n workflow blueprint.",
+      "id": "seo-originality-plagiarism-checker",
+      "slug": "seo-originality-plagiarism-checker",
+      "name": "SEO Plagiarism, Originality & Rapid Index Checker",
+      "description": "Check your SEO content for n-gram plagiarism, AI writing clich\u00e9s, information gain, and Google rapid index readiness with instant humanized rewrites.",
       "categories": [
-        "productivity"
-      ],
-      "topics": [
-        "technical",
-        "conversion"
+        "ai-seo",
+        "content-writing"
       ],
       "tags": [
-        "ai agent platforms",
-        "google calendar and sheets api for capacity planning ai agent",
-        "excel ai agent",
-        "build ai agents and automate workflows with n8n",
-        "n8n vs langchain for ai agent orchestration"
+        "seo tool rapid index checker",
+        "free seo tools plagiarism checker",
+        "seo tools online plagiarism",
+        "seo tools anti plagiarism",
+        "ai content creation for seo that sounds human",
+        "how do you know if it is ai generated",
+        "crawled currently not indexed fix",
+        "information gain seo checker"
       ],
-      "kind": "No-Code Workflow Agent",
+      "kind": "analyzer",
       "status": "live",
-      "access": "free",
-      "addedAt": "2026-11-08",
-      "relatedToolSlugs": [
-        "ai-support-agent-builder",
-        "whatsapp-instagram-ai-agent-studio"
-      ],
+      "addedAt": "2026-04-20",
       "relatedGuides": [
         {
-          "title": "Understand SEO and AI search",
-          "path": "/ai-seo/what-is-ai-seo"
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "What is AI SEO and how answer engines cite pages"
+        },
+        {
+          "path": "/ai-seo/chatgpt-keyword-research",
+          "title": "Keyword research prompts and planning resources"
         }
+      ],
+      "relatedToolSlugs": [
+        "indexnow-key-generator",
+        "claude-copilot-seo-analyzer",
+        "ai-mode-llm-seo-tracker"
+      ],
+      "topics": [
+        "content-originality",
+        "anti-plagiarism",
+        "google-indexing",
+        "information-gain"
+      ]
+    },
+    {
+      "id": "buyer-search-prompt-generator",
+      "slug": "buyer-search-prompt-generator",
+      "name": "AI Buyer Search & Commercial Prompt Generator",
+      "description": "Generate 4 buyer search prompts across problem discovery, category comparisons, competitor alternatives, and product schema to win AI shopping citations.",
+      "categories": [
+        "content-writing",
+        "ai-seo"
+      ],
+      "tags": [
+        "generate 4 buyer search prompts",
+        "chatgpt buyer persona prompt",
+        "ai prompts for buyer personas",
+        "how to optimize your product pages for ai visibility",
+        "how do product reviews impact ai search visibility",
+        "how to do ai prompt seo research",
+        "ai prompt library marketing seo and social media marketing",
+        "creative writing prompts technology",
+        "informational writing prompts"
+      ],
+      "kind": "generator",
+      "status": "live",
+      "addedAt": "2026-04-20",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "What is AI SEO and how answer engines cite pages"
+        }
+      ],
+      "relatedToolSlugs": [
+        "search-intent-checker",
+        "seo-roi-calculator",
+        "keyword-clustering-tool",
+        "claude-copilot-seo-analyzer"
+      ],
+      "topics": [
+        "buyer-search-prompts",
+        "commercial-intent",
+        "product-page-seo",
+        "buyer-persona-prompts"
+      ]
+    },
+    {
+      "id": "outbound-link-checker",
+      "slug": "outbound-link-checker",
+      "name": "Outbound Link Checker & External SEO Link Auditor",
+      "description": "Audit your outbound links, anchor text, rel attributes (nofollow, sponsored, ugc), and citation authority with instant SEO-safe HTML and Markdown fixes.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "outbound link checker",
+        "seo tools link checker",
+        "external link seo checker",
+        "rel sponsored nofollow ugc checker",
+        "outbound anchor text auditor",
+        "affiliate link seo compliance",
+        "external citation authority checker"
+      ],
+      "kind": "analyzer",
+      "status": "live",
+      "addedAt": "2026-04-20",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "external-link-source-review",
+        "internal-link-anchor-auditor",
+        "internal-link-opportunity-finder",
+        "link-placement-quality-checker"
+      ],
+      "topics": [
+        "outbound-links",
+        "link-auditing",
+        "anchor-text",
+        "technical-seo"
+      ]
+    },
+    {
+      "id": "local-seo-audit-tool",
+      "slug": "local-seo-audit-tool",
+      "name": "Free Local SEO Audit Tool: Map Pack & Near Me Optimizer",
+      "description": "Run a free local SEO audit for your SMB to check Google Business Profile signals, near me keyword coverage, NAP citations, and LocalBusiness schema.",
+      "categories": [
+        "ai-seo",
+        "productivity"
+      ],
+      "tags": [
+        "free local seo audit",
+        "local seo tools for smbs",
+        "near me keywords seo",
+        "ai-powered local seo tools for ecommerce geo targeting",
+        "best citation management tools for local seo",
+        "google map pack checker",
+        "nap consistency checker"
+      ],
+      "kind": "analyzer",
+      "status": "live",
+      "addedAt": "2026-04-20",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-is-ai-seo",
+          "title": "Understand SEO and AI search"
+        }
+      ],
+      "relatedToolSlugs": [
+        "local-seo-service-page-planner",
+        "google-business-profile-auditor",
+        "local-business-schema-generator",
+        "google-review-link-generator"
+      ],
+      "topics": [
+        "local-seo",
+        "google-business-profile",
+        "near-me-seo",
+        "nap-citations"
+      ]
+    },
+    {
+      "id": "excel-seo-report-generator",
+      "slug": "excel-seo-report-generator",
+      "name": "Free Excel SEO Tool & Website Analysis Report Generator",
+      "description": "Generate Excel SEO formulas, Looker Studio calculated fields, and client-ready website analysis reports from your Search Console metrics in seconds.",
+      "categories": [
+        "ai-seo",
+        "productivity"
+      ],
+      "tags": [
+        "excel seo tool",
+        "seo website analysis report pdf",
+        "google data studio keyword ranking",
+        "seo reporting tools for agencies",
+        "looker studio seo formulas",
+        "search console excel formulas"
+      ],
+      "kind": "generator",
+      "status": "live",
+      "addedAt": "2026-04-20",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-to-do-after-keyword-research",
+          "title": "What to do after keyword research: grouping, intent & mapping"
+        },
+        {
+          "path": "/ai-seo/check-google-keyword-rankings",
+          "title": "How to check keyword rankings in Google Search Console"
+        }
+      ],
+      "relatedToolSlugs": [
+        "seo-roi-calculator",
+        "keyword-golden-ratio-calculator",
+        "content-decay-refresh-analyzer",
+        "search-intent-checker"
+      ],
+      "topics": [
+        "excel-seo",
+        "seo-reporting",
+        "looker-studio",
+        "search-console"
+      ]
+    },
+    {
+      "id": "faq-schema-validator",
+      "slug": "faq-schema-validator",
+      "name": "Free FAQ Schema Validator & AI Visibility Optimizer",
+      "description": "Validate, repair, and optimize your FAQPage and Product JSON-LD schema markup to fix syntax errors and win Google AI Overview and Perplexity citations.",
+      "categories": [
+        "ai-seo",
+        "content-writing"
+      ],
+      "tags": [
+        "best seo tools for faq schema markup validation and optimization",
+        "best faq generator for seo and ai visibility",
+        "how to optimize product schema markup for ai search",
+        "faqpage json-ld validator",
+        "product faq schema graph"
+      ],
+      "kind": "analyzer",
+      "status": "live",
+      "addedAt": "2026-04-20",
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/what-to-do-after-keyword-research",
+          "title": "What to do after keyword research: grouping, intent & mapping"
+        },
+        {
+          "path": "/ai-seo/check-google-keyword-rankings",
+          "title": "How to check keyword rankings in Google Search Console"
+        }
+      ],
+      "relatedToolSlugs": [
+        "ai-faq-generator",
+        "schema-markup-generator",
+        "ai-citation-readiness-checker",
+        "buyer-search-prompt-generator"
+      ],
+      "topics": [
+        "faq-schema",
+        "structured-data",
+        "product-schema",
+        "ai-visibility"
       ]
     }
   ],

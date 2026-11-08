@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-11-08T09:57:29.900Z",
+  "generated": "2026-11-08T09:32:39.695Z",
   "static_pages": [
     {
       "url": "/",
@@ -645,38 +645,74 @@
       "type": "static"
     },
     {
-      "url": "/tools/seo-optimizer-ai-agent",
-      "title": "SEO & AEO Page Optimizer Agent",
+      "url": "/tools/seo-roi-calculator",
+      "title": "SEO ROI, Cost & Budget Calculator",
       "priority": "high",
       "type": "static"
     },
     {
-      "url": "/tools/ai-support-agent-builder",
-      "title": "No-Code Docs-to-Chatbot Support Agent Builder",
+      "url": "/tools/keyword-golden-ratio-calculator",
+      "title": "Keyword Golden Ratio (KGR) & Affinity Calculator",
       "priority": "high",
       "type": "static"
     },
     {
-      "url": "/tools/client-intake-lead-agent",
-      "title": "B2B Buyer-Fit & Client Intake Agent",
+      "url": "/tools/ai-mode-llm-seo-tracker",
+      "title": "AI Mode & LLM SEO Rank Tracker",
       "priority": "high",
       "type": "static"
     },
     {
-      "url": "/tools/ai-marketing-campaign-agent",
-      "title": "Omnichannel Content & Marketing Campaign Agent",
+      "url": "/tools/claude-copilot-seo-analyzer",
+      "title": "Claude, Copilot & Gemini SEO Analyzer",
       "priority": "high",
       "type": "static"
     },
     {
-      "url": "/tools/whatsapp-instagram-ai-agent-studio",
-      "title": "WhatsApp, Telegram & Instagram DM Sales Agent Studio",
+      "url": "/tools/ugc-video-prompt-generator",
+      "title": "UGC Ad, Sora Video & Text-to-Video Prompt Studio",
       "priority": "high",
       "type": "static"
     },
     {
-      "url": "/tools/no-code-workflow-agent-planner",
-      "title": "No-Code Workflow & Capacity Planning Agent (n8n / Sheets)",
+      "url": "/tools/ai-art-image-prompt-generator",
+      "title": "AI Art, Grok & 8K Image Upscaling Prompt Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/seo-originality-plagiarism-checker",
+      "title": "SEO Plagiarism, Originality & Rapid Index Checker",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/buyer-search-prompt-generator",
+      "title": "AI Buyer Search & Commercial Prompt Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/outbound-link-checker",
+      "title": "Outbound Link Checker & External SEO Link Auditor",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/local-seo-audit-tool",
+      "title": "Free Local SEO Audit Tool: Map Pack & Near Me Optimizer",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/excel-seo-report-generator",
+      "title": "Free Excel SEO Tool & Website Analysis Report Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/faq-schema-validator",
+      "title": "Free FAQ Schema Validator & AI Visibility Optimizer",
       "priority": "high",
       "type": "static"
     },
@@ -705,5 +741,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 117
+  "total_pages": 123
 }
