@@ -32,12 +32,6 @@ const menuData: Menu[] = [
     newTab: false,
   },
   {
-    id: 106,
-    title: "Download Tools",
-    path: "/tools/downloadable-ai-tools",
-    newTab: false,
-  },
-  {
     id: 6,
     title: "Resources",
     newTab: false,

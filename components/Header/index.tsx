@@ -435,8 +435,9 @@ const Header = () => {
                     const isSeoHubItem = menuItem.id === 2;
                     const isPromptsItem = menuItem.id === 102;
                     const isDownloadToolsItem = menuItem.id === 106;
+                    const isResourcesItem = menuItem.id === 6;
                     const hasMegaMenu =
-                      isToolsItem || isSeoHubItem || isPromptsItem;
+                      isToolsItem || isSeoHubItem || isPromptsItem || isResourcesItem;
                     const hasDropdown =
                       hasMegaMenu || isDoItAiItem || Boolean(menuItem.submenu);
 
@@ -966,7 +967,186 @@ const Header = () => {
                           </div>
                         )}
 
-                        {/* Standard Submenu for Resources (id: 6) */}
+                        {/* MEGA-MENU 5: Resources Rich 3-Column Mega-Dropdown */}
+                        {isResourcesItem && (
+                          <div className="invisible absolute left-4 right-4 top-full z-50 mx-auto max-w-[1040px] pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
+                            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_28px_70px_-15px_rgba(15,23,42,0.28)] dark:border-slate-700/90 dark:bg-[#0D1527] dark:shadow-[0_28px_70px_-15px_rgba(0,0,0,0.75)]">
+                              <div className="grid grid-cols-12 gap-6">
+                                {/* Col 1: Platform Architecture & Portable Apps */}
+                                <div className="col-span-4 rounded-2xl border border-[#5271FF]/20 bg-gradient-to-b from-[#5271FF]/[0.08] to-slate-50 p-4.5 dark:border-[#5271FF]/30 dark:from-[#5271FF]/[0.12] dark:to-[#111C33]">
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-[#5271FF] dark:text-[#b4c2ff]">
+                                    Platform Architecture &amp; Apps
+                                  </p>
+                                  <div className="mt-3 space-y-2.5">
+                                    <Link
+                                      href="/what-our-ai-tool-can-do"
+                                      className="block rounded-xl border border-slate-200/80 bg-white p-3 transition hover:border-[#5271FF]/50 hover:shadow-sm dark:border-slate-700/80 dark:bg-slate-900"
+                                    >
+                                      <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+                                        <span>What Our AI Tool Can Do</span>
+                                        <ArrowRight
+                                          size={13}
+                                          className="text-[#5271FF]"
+                                        />
+                                      </div>
+                                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        Detailed comparison: generic chatbots vs. our 90+ algorithmic SEO engines.
+                                      </p>
+                                    </Link>
+
+                                    <Link
+                                      href="/tools/downloadable-ai-tools"
+                                      className="block rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] p-3 transition hover:border-emerald-500 hover:shadow-sm dark:border-emerald-500/40 dark:bg-emerald-950/20"
+                                    >
+                                      <div className="flex items-center justify-between text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                                        <span>Download &amp; Embed 90+ Tools</span>
+                                        <Download size={13} />
+                                      </div>
+                                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        1-Click .ZIP offline packs. Run on PC with zero setup or embed on your site.
+                                      </p>
+                                    </Link>
+
+                                    <Link
+                                      href="/chrome-extension"
+                                      className="block rounded-xl border border-slate-200/80 bg-white p-3 transition hover:border-[#5271FF]/50 hover:shadow-sm dark:border-slate-700/80 dark:bg-slate-900"
+                                    >
+                                      <div className="flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
+                                        <span>Chrome Extension</span>
+                                        <ArrowRight
+                                          size={13}
+                                          className="text-[#5271FF]"
+                                        />
+                                      </div>
+                                      <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                        Audit on-page SEO, headings, and schema directly in your browser.
+                                      </p>
+                                    </Link>
+                                  </div>
+                                </div>
+
+                                {/* Col 2: Directory & Learning Hub */}
+                                <div className="col-span-4 border-r border-slate-200/80 pr-4 dark:border-slate-800">
+                                  <p className="border-b border-slate-200/80 pb-2 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    AI Ecosystem &amp; Learning
+                                  </p>
+                                  <div className="mt-2.5 space-y-1">
+                                    <Link
+                                      href="/tools/categories"
+                                      className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>› Tool Categories</span>
+                                        <span className="text-[10px] font-normal text-slate-400">
+                                          6 Suites
+                                        </span>
+                                      </div>
+                                    </Link>
+                                    <Link
+                                      href="/ai-tools"
+                                      className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>› AI Tools Directory</span>
+                                        <span className="text-[10px] font-normal text-slate-400">
+                                          Catalog
+                                        </span>
+                                      </div>
+                                    </Link>
+                                    <Link
+                                      href="/free-ai-resources"
+                                      className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>› Free AI Resources</span>
+                                        <span className="text-[10px] font-normal text-slate-400">
+                                          Templates
+                                        </span>
+                                      </div>
+                                    </Link>
+                                    <Link
+                                      href="/ai-learn-earn"
+                                      className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>› AI Learn &amp; Earn</span>
+                                        <span className="text-[10px] font-normal text-slate-400">
+                                          Playbooks
+                                        </span>
+                                      </div>
+                                    </Link>
+                                    <Link
+                                      href="/blogs"
+                                      className="block rounded-xl px-3 py-2 text-xs font-bold text-[#5271FF] transition hover:bg-[#5271FF]/10 dark:text-[#9aabff] dark:hover:bg-slate-800"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>› All Blogs &amp; Articles</span>
+                                        <span className="text-[10px] font-bold text-[#5271FF]">
+                                          Guides →
+                                        </span>
+                                      </div>
+                                    </Link>
+                                  </div>
+                                </div>
+
+                                {/* Col 3: Company, Founder & Trust */}
+                                <div className="col-span-4">
+                                  <p className="border-b border-slate-200/80 pb-2 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    Company &amp; Trust
+                                  </p>
+                                  <div className="mt-2.5 space-y-1">
+                                    <Link
+                                      href="/author/sufian-mustafa"
+                                      className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>› Meet the Founder</span>
+                                        <span className="text-[10px] font-normal text-slate-400">
+                                          Sufian Mustafa
+                                        </span>
+                                      </div>
+                                    </Link>
+                                    <Link
+                                      href="/about"
+                                      className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>› About Us</span>
+                                        <span className="text-[10px] font-normal text-slate-400">
+                                          Mission
+                                        </span>
+                                      </div>
+                                    </Link>
+                                    <Link
+                                      href="/faq"
+                                      className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>› FAQ</span>
+                                        <span className="text-[10px] font-normal text-slate-400">
+                                          Answers
+                                        </span>
+                                      </div>
+                                    </Link>
+                                    <Link
+                                      href="/contact"
+                                      className="block rounded-xl px-3 py-2 text-xs font-bold text-slate-800 transition hover:bg-[#5271FF]/10 hover:text-[#5271FF] dark:text-slate-200 dark:hover:bg-slate-800"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>› Contact Us</span>
+                                        <span className="text-[10px] font-normal text-slate-400">
+                                          Support
+                                        </span>
+                                      </div>
+                                    </Link>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+{/* Standard Submenu for Resources (id: 6) */}
                         {!hasMegaMenu && !isDoItAiItem && menuItem.submenu && (
                           <div
                             className={`submenu relative right-0 top-full z-50 transform pt-2 transition-all duration-200 group-hover:opacity-100 lg:invisible lg:absolute lg:right-0 lg:top-full lg:block lg:w-[300px] lg:scale-95 lg:opacity-0 lg:group-hover:visible lg:group-hover:scale-100 ${
