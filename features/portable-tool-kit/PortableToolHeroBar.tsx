@@ -1766,20 +1766,32 @@ export function PortableToolModal({
   );
 }
 
-export default function PortableToolHeroBar({ slug }: { slug?: string }) {
+export default function PortableToolHeroBar({
+  slug,
+  title,
+  path,
+  primaryLabel,
+  workspaceId = "tool-studio-workspace",
+}: {
+  slug?: string;
+  title?: string;
+  path?: string;
+  primaryLabel?: string;
+  workspaceId?: string;
+}) {
   const pathname = usePathname();
   const [modalOpen, setModalOpen] = useState(false);
   const [downloadingZip, setDownloadingZip] = useState(false);
 
   const detectedSlug = useMemo(() => {
     if (slug) return slug;
-    if (!pathname) return "";
-    const parts = pathname.split("/").filter(Boolean);
+    const sourcePath = path || pathname || "";
+    const parts = sourcePath.split("/").filter(Boolean);
     if (parts[0] === "tools" && parts[1] && parts[1] !== "categories") {
       return parts[1];
     }
     return "";
-  }, [slug, pathname]);
+  }, [slug, path, pathname]);
 
   const tool = useMemo(
     () => tools.find((t) => t.slug === detectedSlug) || null,
@@ -1788,13 +1800,30 @@ export default function PortableToolHeroBar({ slug }: { slug?: string }) {
 
   if (!tool) return null;
 
+  function handleUseToolNow() {
+    if (typeof document === "undefined") return;
+    const target =
+      document.getElementById(workspaceId) ||
+      document.querySelector("[data-tool-workspace=\"true\"]") ||
+      document.querySelector("main section, section");
+    if (target && "scrollIntoView" in target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      const firstInput = target.querySelector(
+        "input:not([type=\"hidden\"]):not([type=\"file\"]), textarea, select",
+      ) as HTMLElement | null;
+      if (firstInput) {
+        setTimeout(() => firstInput.focus({ preventScroll: true }), 420);
+      }
+    }
+  }
+
   async function handleDirectZipDownload() {
     if (!tool) return;
     setDownloadingZip(true);
     try {
       await downloadToolZipPackage(
         tool,
-        tool.name,
+        title || tool.name,
         "DoItWithAI.tools",
         "#3452D1",
         "dark",
@@ -1810,32 +1839,43 @@ export default function PortableToolHeroBar({ slug }: { slug?: string }) {
         data-portable-hero-bar="true"
         className="mt-5 flex flex-wrap items-center gap-2.5"
       >
+        {/* PRIMARY DOMINANT BUTTON: USE TOOL NOW */}
         <button
           type="button"
-          disabled={downloadingZip}
-          onClick={handleDirectZipDownload}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#3452d1] to-[#5271ff] px-4 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-[#3452d1]/25 transition hover:brightness-110"
+          onClick={handleUseToolNow}
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#3452d1] via-[#4361ee] to-[#5271ff] px-5 py-2.5 text-xs sm:text-sm font-black text-white shadow-xl shadow-[#3452d1]/35 ring-1 ring-white/25 transition hover:brightness-110"
         >
-          <Archive size={14} />
-          {downloadingZip ? "Packaging .ZIP..." : "Download PC App (.ZIP Pack)"}
+          <Wand2 size={15} />
+          <span>{primaryLabel || "Use Tool Now — Start Free"}</span>
         </button>
+
+        {/* SECONDARY BUTTONS */}
+        <Link
+          href={`/do-it-ai?tool=${tool.slug}`}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[#9aabff]/35 bg-[#101b30]/90 px-3.5 py-2 text-xs font-bold text-[#b4c3ff] transition hover:border-[#9aabff] hover:bg-[#162440] hover:text-white"
+        >
+          <Sparkles size={13} />
+          Use in Do It AI →
+        </Link>
 
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-extrabold text-white transition hover:bg-white/20"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-bold text-slate-200 transition hover:bg-white/20 hover:text-white"
         >
-          <Palette size={14} />
+          <Palette size={13} />
           Customize &amp; Embed
         </button>
 
-        <Link
-          href={`/do-it-ai?tool=${tool.slug}`}
-          className="inline-flex items-center gap-2 rounded-xl border border-[#9aabff]/35 bg-[#101b30]/90 px-4 py-2.5 text-xs font-extrabold text-[#b4c3ff] transition hover:border-[#9aabff] hover:bg-[#162440] hover:text-white"
+        <button
+          type="button"
+          disabled={downloadingZip}
+          onClick={handleDirectZipDownload}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-white/15 bg-slate-900/70 px-3.5 py-2 text-xs font-bold text-slate-300 transition hover:border-white/30 hover:bg-slate-900 hover:text-white"
         >
-          <Sparkles size={14} />
-          Do It AI Workspace →
-        </Link>
+          <Archive size={13} />
+          {downloadingZip ? "Packaging .ZIP..." : "Download PC App (.ZIP)"}
+        </button>
       </div>
 
       <PortableToolModal

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-11-08T09:32:39.695Z",
+  "generated": "2026-11-08T21:00:25.655Z",
   "static_pages": [
     {
       "url": "/",
@@ -628,7 +628,7 @@
     },
     {
       "url": "/tools/quote-stat-testimonial-card-studio",
-      "title": "AI Quote, Founder Memo & Testimonial Visual Card Studio",
+      "title": "AI Testimonial Card & Customer Quote Graphic Generator",
       "priority": "high",
       "type": "static"
     },

@@ -2962,8 +2962,8 @@
     {
       "id": "quote-stat-testimonial-card-studio",
       "slug": "quote-stat-testimonial-card-studio",
-      "name": "AI Quote, Founder Memo & Testimonial Visual Card Studio",
-      "description": "Extract the sharpest quotes from any article URL or paste customer reviews to design 1080x1080 verified social post cards, highlighter quotes, founder memos, and 5-star testimonial graphics.",
+      "name": "AI Testimonial Card & Customer Quote Graphic Generator",
+      "description": "Turn customer reviews, case study stats, and article quotes into branded testimonial cards with custom male portraits, brand logos, and 1080p exports.",
       "categories": [
         "content-writing"
       ],
@@ -2971,7 +2971,14 @@
         "quote card generator",
         "tweet screenshot maker",
         "testimonial card studio",
-        "founder memo graphic"
+        "founder memo graphic",
+        "ai testimonial card generator",
+        "customer quote graphics",
+        "free testimonial card maker",
+        "social proof graphic generator",
+        "client review card maker",
+        "founder memo quote card",
+        "do it with ai testimonial studio"
       ],
       "kind": "Quote & testimonial visual studio",
       "status": "live",
@@ -2984,10 +2991,11 @@
         }
       ],
       "relatedToolSlugs": [
+        "google-review-link-generator",
         "linkedin-post-formatter",
-        "instagram-caption-generator",
+        "blog-to-linkedin-carousel",
         "blog-to-infographic-generator",
-        "social-thread-generator"
+        "data-to-chart-visual-card-maker"
       ],
       "topics": [
         "social"
