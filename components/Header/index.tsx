@@ -355,6 +355,14 @@ const Header = () => {
 
   const isMenuActive = (path?: string) => {
     if (!path) return false;
+    if (path === "/agents") {
+      return (
+        usePathName === "/agents" ||
+        usePathName.startsWith("/agents/") ||
+        usePathName === "/do-it-ai" ||
+        usePathName.startsWith("/do-it-ai/")
+      );
+    }
     if (path === "/tools") {
       return (
         usePathName === "/tools" ||
@@ -431,15 +439,15 @@ const Header = () => {
                   {menuData.map((menuItem, index) => {
                     const active = isMenuActive(menuItem.path);
                     const isToolsItem = menuItem.id === 100;
-                    const isDoItAiItem = menuItem.id === 101;
+                    const isAgentsItem = menuItem.id === 107;
                     const isSeoHubItem = menuItem.id === 2;
                     const isPromptsItem = menuItem.id === 102;
                     const isDownloadToolsItem = menuItem.id === 106;
                     const isResourcesItem = menuItem.id === 6;
                     const hasMegaMenu =
-                      isToolsItem || isSeoHubItem || isPromptsItem || isResourcesItem;
+                      isToolsItem || isAgentsItem || isSeoHubItem || isPromptsItem || isResourcesItem;
                     const hasDropdown =
-                      hasMegaMenu || isDoItAiItem || Boolean(menuItem.submenu);
+                      hasMegaMenu || Boolean(menuItem.submenu);
 
                     return (
                       <li
@@ -463,7 +471,7 @@ const Header = () => {
                           >
                             <span className="relative z-10 flex items-center gap-1.5">
                               <span>{menuItem.title}</span>
-                              {isDoItAiItem && (
+                              {isAgentsItem && (
                                 <span
                                   className={`rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${
                                     active
@@ -649,66 +657,212 @@ const Header = () => {
                           </div>
                         )}
 
-                        {/* DROPDOWN 2: Do It AI Quick Dropdown */}
-                        {isDoItAiItem && (
-                          <div className="invisible absolute left-0 top-full z-50 w-[340px] pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
-                            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700/90 dark:bg-[#0D1527]">
-                              <div className="mb-2.5 flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
-                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#5271FF]">
-                                  Unified AI Agent &amp; Architecture
-                                </span>
-                              </div>
-                              <div className="space-y-1.5">
-                                <Link
-                                  href="/do-it-ai"
-                                  className="block rounded-xl p-2.5 transition hover:bg-slate-50 dark:hover:bg-slate-800/70"
-                                >
-                                  <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
-                                    <span>Launch Do It AI Workspace</span>
-                                    <ArrowRight
-                                      size={13}
-                                      className="text-[#5271FF]"
-                                    />
+                        {/* MEGA-MENU 2: AI Agents (Do It AI Workspace + 10 Autonomous Task Agents) */}
+                        {isAgentsItem && (
+                          <div className="invisible absolute left-4 right-4 top-full z-50 mx-auto max-w-[1040px] pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
+                            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_28px_70px_-15px_rgba(15,23,42,0.28)] dark:border-slate-700/90 dark:bg-[#0D1527] dark:shadow-[0_28px_70px_-15px_rgba(0,0,0,0.75)]">
+                              <div className="grid grid-cols-12 gap-6">
+                                {/* Left Column: Do It AI Flagship Conversational Agent Workspace */}
+                                <div className="col-span-5 flex flex-col justify-between rounded-2xl border border-[#5271FF]/25 bg-gradient-to-b from-[#5271FF]/10 to-slate-50 p-5 dark:border-[#5271FF]/35 dark:from-[#5271FF]/15 dark:to-[#111C33]">
+                                  <div>
+                                    <div className="inline-flex items-center gap-1.5 rounded-full bg-[#5271FF]/15 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#4361EE] dark:text-[#b4c2ff]">
+                                      <Bot size={12} className="text-[#5271FF]" />
+                                      <span>Flagship Conversational Agent</span>
+                                    </div>
+                                    <h4 className="mt-3 text-lg font-extrabold text-slate-900 dark:text-white">
+                                      Do It AI Workspace
+                                    </h4>
+                                    <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                                      Our flagship conversational AI agent wired directly to 90+ specialized SEO engines. Audit live URLs, verify SERP pixel limits, and execute complex workflows inside one unified chat workspace.
+                                    </p>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                      <Link
+                                        href="/do-it-ai"
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#5271FF] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#4361EE]"
+                                      >
+                                        <span>Launch Do It AI Workspace</span>
+                                        <ArrowRight size={13} />
+                                      </Link>
+                                      <Link
+                                        href="/what-our-ai-tool-can-do"
+                                        className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                                      >
+                                        Capabilities
+                                      </Link>
+                                    </div>
                                   </div>
-                                  <p className="mt-0.5 text-[11px] font-normal text-slate-500 dark:text-slate-400">
-                                    Chat with 90+ specialized SEO tools, live
-                                    web search, and deep site grounding.
-                                  </p>
-                                </Link>
-                                <Link
-                                  href="/what-our-ai-tool-can-do"
-                                  className="block rounded-xl p-2.5 transition hover:bg-slate-50 dark:hover:bg-slate-800/70"
-                                >
-                                  <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
-                                    <span>What Our AI Tool Can Do</span>
-                                    <ArrowRight
-                                      size={13}
-                                      className="text-[#5271FF]"
-                                    />
+
+                                  <div className="mt-5 border-t border-slate-200/80 pt-3.5 dark:border-slate-700/80">
+                                    <Link
+                                      href="/agents"
+                                      className="flex items-center justify-between rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-xs font-bold text-slate-900 transition hover:border-[#5271FF] hover:text-[#5271FF] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        <Sparkles
+                                          size={14}
+                                          className="text-[#5271FF]"
+                                        />
+                                        <span>Browse All 10 AI Agents Hub</span>
+                                      </span>
+                                      <ArrowRight size={13} />
+                                    </Link>
                                   </div>
-                                  <p className="mt-0.5 text-[11px] font-normal text-slate-500 dark:text-slate-400">
-                                    See how our deterministic SEO engines beat
-                                    generic chat wrappers.
-                                  </p>
-                                </Link>
-                                <Link
-                                  href="/tools/downloadable-ai-tools"
-                                  className="block rounded-xl p-2.5 transition hover:bg-slate-50 dark:hover:bg-slate-800/70"
-                                >
-                                  <div className="flex items-center justify-between text-xs font-extrabold text-slate-900 dark:text-white">
-                                    <span>
-                                      Download &amp; Embed 90+ Portable Tools
-                                    </span>
-                                    <ArrowRight
-                                      size={13}
-                                      className="text-emerald-500"
-                                    />
+                                </div>
+
+                                {/* Right Column: Autonomous Task Agents */}
+                                <div className="col-span-7">
+                                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5 dark:border-slate-800">
+                                    <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                      Autonomous Task Agents
+                                    </p>
+                                    <Link
+                                      href="/agents"
+                                      className="text-xs font-bold text-[#5271FF] hover:underline"
+                                    >
+                                      View All 10 Agents →
+                                    </Link>
                                   </div>
-                                  <p className="mt-0.5 text-[11px] font-normal text-slate-500 dark:text-slate-400">
-                                    Download standalone offline .ZIP apps or
-                                    embed tools on your site.
-                                  </p>
-                                </Link>
+
+                                  <div className="mt-3 grid grid-cols-2 gap-3">
+                                    <Link
+                                      href="/agents/seo-optimizer-ai-agent"
+                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
+                                    >
+                                      <div>
+                                        <div className="flex items-center justify-between gap-1.5">
+                                          <span className="rounded bg-blue-500/10 px-2 py-0.5 text-[9px] font-bold text-blue-600 dark:text-blue-400">
+                                            5-Step Chain
+                                          </span>
+                                          <ArrowRight
+                                            size={12}
+                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
+                                          />
+                                        </div>
+                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                          SEO &amp; AEO Page Optimizer Agent
+                                        </h5>
+                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                                          Intent classification, &lt;580px titles, AI Overview power answers, entity audits &amp; JSON-LD.
+                                        </p>
+                                      </div>
+                                    </Link>
+
+                                    <Link
+                                      href="/agents/on-page-ai-seo-repair-agent"
+                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
+                                    >
+                                      <div>
+                                        <div className="flex items-center justify-between gap-1.5">
+                                          <span className="rounded bg-indigo-500/10 px-2 py-0.5 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
+                                            On-Page Technical
+                                          </span>
+                                          <ArrowRight
+                                            size={12}
+                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
+                                          />
+                                        </div>
+                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                          On-Page SEO Repair Agent
+                                        </h5>
+                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                                          Diagnoses pixel truncation, heading hierarchy, and compiles drop-in HTML &amp; JSON-LD patches.
+                                        </p>
+                                      </div>
+                                    </Link>
+
+                                    <Link
+                                      href="/agents/ai-citation-geo-agent"
+                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
+                                    >
+                                      <div>
+                                        <div className="flex items-center justify-between gap-1.5">
+                                          <span className="rounded bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold text-purple-600 dark:text-purple-400">
+                                            GEO &amp; AEO
+                                          </span>
+                                          <ArrowRight
+                                            size={12}
+                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
+                                          />
+                                        </div>
+                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                          AI Citation &amp; GEO Agent
+                                        </h5>
+                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                                          Structures 50-word RAG definition leads and fact comparison matrices for Perplexity citations.
+                                        </p>
+                                      </div>
+                                    </Link>
+
+                                    <Link
+                                      href="/agents/serp-content-gap-agent"
+                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
+                                    >
+                                      <div>
+                                        <div className="flex items-center justify-between gap-1.5">
+                                          <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400">
+                                            Content Outranker
+                                          </span>
+                                          <ArrowRight
+                                            size={12}
+                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
+                                          />
+                                        </div>
+                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                          SERP Content Gap Agent
+                                        </h5>
+                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                                          Compares outlines against SERP rivals, extracts Information Gain gaps, and drafts H2/H3 sections.
+                                        </p>
+                                      </div>
+                                    </Link>
+
+                                    <Link
+                                      href="/agents/omnichannel-marketing-agent"
+                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
+                                    >
+                                      <div>
+                                        <div className="flex items-center justify-between gap-1.5">
+                                          <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                                            Safe Distribution
+                                          </span>
+                                          <ArrowRight
+                                            size={12}
+                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
+                                          />
+                                        </div>
+                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                          Omni-Channel Marketing Agent
+                                        </h5>
+                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                                          Repurposes any guide or tool into a LinkedIn carousel, 5-post X thread, Reddit reply &amp; newsletter.
+                                        </p>
+                                      </div>
+                                    </Link>
+
+                                    <Link
+                                      href="/agents/ai-support-agent-builder"
+                                      className="group/item flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 transition hover:border-[#5271FF]/50 hover:bg-white hover:shadow-md dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-[#5271FF]/60 dark:hover:bg-slate-900"
+                                    >
+                                      <div>
+                                        <div className="flex items-center justify-between gap-1.5">
+                                          <span className="rounded bg-sky-500/10 px-2 py-0.5 text-[9px] font-bold text-sky-600 dark:text-sky-400">
+                                            Support Builder
+                                          </span>
+                                          <ArrowRight
+                                            size={12}
+                                            className="text-slate-400 opacity-0 transition group-hover/item:opacity-100 group-hover/item:text-[#5271FF]"
+                                          />
+                                        </div>
+                                        <h5 className="mt-2 text-xs font-extrabold text-slate-900 group-hover/item:text-[#5271FF] dark:text-white dark:group-hover/item:text-[#9aabff]">
+                                          AI Support Agent Builder
+                                        </h5>
+                                        <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                                          Generates system prompts, fallback routing, and embeddable FAQ chat widget code.
+                                        </p>
+                                      </div>
+                                    </Link>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1147,7 +1301,7 @@ const Header = () => {
                         )}
 
 {/* Standard Submenu for Resources (id: 6) */}
-                        {!hasMegaMenu && !isDoItAiItem && menuItem.submenu && (
+                        {!hasMegaMenu && menuItem.submenu && (
                           <div
                             className={`submenu relative right-0 top-full z-50 transform pt-2 transition-all duration-200 group-hover:opacity-100 lg:invisible lg:absolute lg:right-0 lg:top-full lg:block lg:w-[300px] lg:scale-95 lg:opacity-0 lg:group-hover:visible lg:group-hover:scale-100 ${
                               openIndex === index
@@ -1445,7 +1599,7 @@ const Header = () => {
                           >
                             <span className="relative z-10 flex items-center gap-2">
                               {menuItem.title}
-                              {menuItem.id === 101 && (
+                              {menuItem.id === 107 && (
                                 <span className="rounded-full bg-[#5271FF]/15 px-1.5 py-0.5 text-[9px] font-extrabold uppercase text-[#5271FF] dark:text-[#b4c2ff]">
                                   AI
                                 </span>
