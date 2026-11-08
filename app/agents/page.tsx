@@ -3,11 +3,14 @@ import Link from "next/link";
 import {
   ArrowRight,
   Bot,
-  Code2,
   Compass,
+  GitBranch,
+  Megaphone,
+  MessageCircle,
   Share2,
   ShieldCheck,
   Sparkles,
+  Target,
   Wrench,
 } from "lucide-react";
 import {
@@ -18,9 +21,9 @@ import {
 
 const pageUrl = "https://doitwithai.tools/agents";
 const title =
-  "Autonomous AI SEO & Digital Marketing Agents | Do It With AI Tools";
+  "Autonomous AI SEO, Support, Sales & No-Code Marketing Agents | Do It With AI Tools";
 const description =
-  "Run multi-step autonomous AI SEO, Generative Engine Optimization (GEO), SERP Content Gap, and White-Hat Omni-Channel Marketing Agents with human-in-the-loop control.";
+  "Run 10 multi-step autonomous AI Agents: 5-step SEO & AEO Page Optimizer, No-Code Docs-to-Chatbot Support Builder, B2B Buyer-Fit & Client Intake, Omnichannel Campaign & UTM Planner, WhatsApp/Telegram/Instagram DM Sales Studio, and n8n/Sheets Workflow Planner.";
 
 export const metadata: Metadata = {
   title,
@@ -43,7 +46,92 @@ export const metadata: Metadata = {
 
 const AGENTS = [
   {
+    slug: "seo-optimizer-ai-agent",
+    toolPath: "/tools/seo-optimizer-ai-agent",
+    badge: "Agent #1 · 5-Step SEO & AEO Chain",
+    name: "SEO & AEO Page Optimizer Agent",
+    description:
+      "5-Step Chain from 1 Topic/URL: (1) Classifies Search & AEO Intent → (2) Writes <580px Meta Title & single-sentence Meta Description → (3) Writes 50-word AI Overview Power Answer → (4) Audits E-E-A-T entity gaps → (5) Outputs @graph JSON-LD Schema.",
+    deliverables: [
+      "Search Intent + <580px Meta Title & 1-sentence Description",
+      "50-word AI Overview Power Answer (<aside> snippet)",
+      "E-E-A-T Entity Gap Audit + @graph JSON-LD Schema",
+    ],
+    icon: Sparkles,
+  },
+  {
+    slug: "ai-support-agent-builder",
+    toolPath: "/tools/ai-support-agent-builder",
+    badge: "Agent #2 · Flagship Build-with-AI Support Studio",
+    name: "No-Code Docs-to-Chatbot Support Agent Builder",
+    description:
+      "Paste your company FAQs, pricing, or internal docs → Agent structures the RAG knowledge base, sets strict domain boundaries, lets you test-chat live on screen, and exports a 1-click embeddable HTML or React Support Chatbot.",
+    deliverables: [
+      "Grounded RAG Knowledge Base chunks from internal docs",
+      "Live on-screen test chat + helpdesk escalation rules",
+      "1-Click embeddable HTML/JS widget & React component",
+    ],
+    icon: Bot,
+  },
+  {
+    slug: "client-intake-lead-agent",
+    toolPath: "/tools/client-intake-lead-agent",
+    badge: "Agent #3 · B2B Sales & Lead Qualification",
+    name: "B2B Buyer-Fit & Client Intake Agent",
+    description:
+      "Enter your service offer & target buyer → Agent generates a 100-point Ideal Buyer Fit (ICP) Scoring Rubric, a 5-step interactive Client Intake & Qualification Flow, first-message onboarding & AI voice scripts, and a downloadable intake bot widget.",
+    deliverables: [
+      "100-point Ideal Buyer Fit (ICP) Scoring Rubric",
+      "5-step Client Intake Flow + AI voice & first-message scripts",
+      "Downloadable HTML/JS Client Intake Bot Widget",
+    ],
+    icon: Target,
+  },
+  {
+    slug: "ai-marketing-campaign-agent",
+    toolPath: "/tools/ai-marketing-campaign-agent",
+    badge: "Agent #4 · 1-Brief-to-Full-Campaign Studio",
+    name: "Omnichannel Content & Marketing Campaign Agent",
+    description:
+      "Turns one product launch or article into a complete campaign in one run: marketing work-intake capacity/sprint plan, LinkedIn post + carousel, X thread, 60s short-form video script, paid traffic ad copy angles, and UTM tracking links.",
+    deliverables: [
+      "Work-intake 5-day capacity & sprint plan",
+      "LinkedIn post + carousel, X thread & 60s video script",
+      "Paid traffic ad copy angles + UTM tracking links",
+    ],
+    icon: Megaphone,
+  },
+  {
+    slug: "whatsapp-instagram-ai-agent-studio",
+    toolPath: "/tools/whatsapp-instagram-ai-agent-studio",
+    badge: "Agent #5 · DM Commerce & Community Studio",
+    name: "WhatsApp, Telegram & Instagram DM Sales Agent Studio",
+    description:
+      "Builds automated conversational Instagram Shop DM, WhatsApp Business, and Telegram flows for price inquiries, booking, objection handling, and community management—complete with copy-paste ManyChat and n8n JSON templates.",
+    deliverables: [
+      "Instagram Shop & WhatsApp price inquiry DM funnel",
+      "Objection handling playbook + TG/WA community rules",
+      "Copy-paste ManyChat & n8n webhook router JSON templates",
+    ],
+    icon: MessageCircle,
+  },
+  {
+    slug: "no-code-workflow-agent-planner",
+    toolPath: "/tools/no-code-workflow-agent-planner",
+    badge: "Agent #6 · n8n, Sheets, Calendar & Excel AI",
+    name: "No-Code Workflow & Capacity Planning Agent (n8n / Sheets)",
+    description:
+      "Describe any repetitive business task (e.g., 'Sync Google Sheets leads to Calendar & send AI follow-up') and get the step-by-step no-code agent architecture, Sheets/Excel formulas, system prompts, and downloadable n8n workflow blueprint.",
+    deliverables: [
+      "4-node n8n + Google Calendar/Sheets capacity architecture",
+      "Copy-paste Google Sheets & Excel AI capacity formulas",
+      "n8n vs LangChain matrix + downloadable n8n .JSON blueprint",
+    ],
+    icon: GitBranch,
+  },
+  {
     slug: "on-page-ai-seo-repair-agent",
+    toolPath: "/agents/on-page-ai-seo-repair-agent",
     badge: "On-Page Technical & Editorial Agent",
     name: "Autonomous On-Page AI SEO Repair Agent",
     description:
@@ -57,6 +145,7 @@ const AGENTS = [
   },
   {
     slug: "ai-citation-geo-agent",
+    toolPath: "/agents/ai-citation-geo-agent",
     badge: "AI Search & RAG Citation Agent",
     name: "Generative Engine Optimization (GEO) & AI Citation Agent",
     description:
@@ -70,6 +159,7 @@ const AGENTS = [
   },
   {
     slug: "serp-content-gap-agent",
+    toolPath: "/agents/serp-content-gap-agent",
     badge: "Competitive Content Outranker Agent",
     name: "Competitor SERP Content Gap & Outranker Agent",
     description:
@@ -83,6 +173,7 @@ const AGENTS = [
   },
   {
     slug: "omnichannel-marketing-agent",
+    toolPath: "/agents/omnichannel-marketing-agent",
     badge: "White-Hat Distribution Agent",
     name: "Omni-Channel Content Repurposing & Safe Marketing Agent",
     description:
@@ -141,12 +232,12 @@ export default function AiAgentsHubPage() {
           <div className="max-w-3xl">
             <p className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1 text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
               <Bot size={14} />
-              Dedicated Agentic Workspace · Separate from Single-Task Tools
+              10 Autonomous Multi-Step AI Agents · SEO, Support, Sales &amp; No-Code Ops
             </p>
             <h1 className="mt-4 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
-              Autonomous AI SEO &amp;{" "}
+              Autonomous AI SEO, Sales,{" "}
               <span className={toolHeroHeading}>
-                Digital Marketing Agents
+                Support &amp; No-Code Agents
               </span>
             </h1>
             <p className="mt-5 text-base leading-8 text-slate-300">
@@ -154,11 +245,11 @@ export default function AiAgentsHubPage() {
               <Link href="/tools" className="underline hover:text-white">
                 90+ AI Tools
               </Link>{" "}
-              solve single tasks, our <strong>Autonomous AI Agents</strong>{" "}
-              execute complete multi-step workflows—crawling live URLs,
-              diagnosing technical and topical gaps, and synthesizing
-              ready-to-deploy code patches, RAG matrices, and multi-channel
-              campaigns.
+              solve single tasks, our <strong>10 Autonomous AI Agents</strong>{" "}
+              execute complete multi-step workflows—from 5-step SEO/AEO chains
+              and grounded RAG support bots to B2B client intake scoring,
+              WhatsApp/Instagram DM sales funnels, and n8n/Sheets capacity
+              planning.
             </p>
           </div>
         </div>
@@ -207,10 +298,10 @@ export default function AiAgentsHubPage() {
                   </ul>
                 </div>
 
-                <div className="mt-6 pt-2">
+                <div className="mt-6 flex flex-wrap gap-2 pt-2">
                   <Link
                     href={`/agents/${agent.slug}`}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#3452d1] to-[#5271ff] px-5 py-3 text-xs font-extrabold text-white shadow transition hover:brightness-110"
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#3452d1] to-[#5271ff] px-5 py-3 text-xs font-extrabold text-white shadow transition hover:brightness-110"
                   >
                     Launch Autonomous Agent
                     <ArrowRight size={14} />

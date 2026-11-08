@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-11-07T19:31:26.467Z",
+  "generated": "2026-11-08T09:57:29.900Z",
   "static_pages": [
     {
       "url": "/",
@@ -645,6 +645,42 @@
       "type": "static"
     },
     {
+      "url": "/tools/seo-optimizer-ai-agent",
+      "title": "SEO & AEO Page Optimizer Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-support-agent-builder",
+      "title": "No-Code Docs-to-Chatbot Support Agent Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/client-intake-lead-agent",
+      "title": "B2B Buyer-Fit & Client Intake Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-marketing-campaign-agent",
+      "title": "Omnichannel Content & Marketing Campaign Agent",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/whatsapp-instagram-ai-agent-studio",
+      "title": "WhatsApp, Telegram & Instagram DM Sales Agent Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/no-code-workflow-agent-planner",
+      "title": "No-Code Workflow & Capacity Planning Agent (n8n / Sheets)",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -669,5 +705,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 111
+  "total_pages": 117
 }
