@@ -70,8 +70,8 @@ const toolExecutionSchema = z.object({
           .max(6),
       }),
     )
-    .min(2)
-    .max(5),
+    .min(1)
+    .max(6),
 });
 
 export type RichToolExecutionResult = z.infer<typeof toolExecutionSchema>;
@@ -227,22 +227,20 @@ async function buildRichToolExecution(params: {
           items: [
             {
               label: "Excel / Google Sheets Striking-Distance Formula",
-              value: `=IF(AND(E2>=4,E2<=15,C2>=100,D2<0.03),"Priority CTR & H1 Refresh","Healthy / Monitor") — isolates high-impression queries where a title upgrade lifts clicks fastest.`,
-              tone: "emerald",
-            },
+              content: `=IF(AND(E2>=4,E2<=15,C2>=100,D2<0.03),"Priority CTR & H1 Refresh","Healthy / Monitor") — isolates high-impression queries where a title upgrade lifts clicks fastest.`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "Looker Studio (Google Data Studio) Position Buckets",
-              value: `CASE WHEN Average Position <= 3 THEN "1. Top 3" WHEN Average Position <= 10 THEN "2. Pos 4-10" WHEN Average Position <= 20 THEN "3. Pos 11-20" ELSE "4. Pos 21+" END`,
-              tone: "sky",
-            },
+              content: `CASE WHEN Average Position <= 3 THEN "1. Top 3" WHEN Average Position <= 10 THEN "2. Pos 4-10" WHEN Average Position <= 20 THEN "3. Pos 11-20" ELSE "4. Pos 21+" END`,
+              meta: "Verified Output",
+              code: "",
+              },
           ],
         },
       ],
-      nextStep: {
-        label: "Open Free Excel SEO Tool & Website Analysis Report Generator",
-        href: "/tools/excel-seo-report-generator",
-      },
-    };
+          };
   }
 
   if (tool.slug === "faq-schema-validator") {
@@ -263,22 +261,20 @@ async function buildRichToolExecution(params: {
           items: [
             {
               label: "40-55 Word AI Overview Answer Rule",
-              value: `Keep each acceptedAnswer.text for "${primaryKw}" between 40 and 55 words, opening with a direct factual statement and concrete numbers tailored for ${audience}.`,
-              tone: "emerald",
-            },
+              content: `Keep each acceptedAnswer.text for "${primaryKw}" between 40 and 55 words, opening with a direct factual statement and concrete numbers tailored for ${audience}.`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "Combined @graph (Product / WebApplication + FAQPage)",
-              value: `Nest both your commercial entity (Product or WebApplication with Offer price) and your FAQPage inside a single "@graph" array so AI search engines connect pricing to buyer Q&As.`,
-              tone: "sky",
-            },
+              content: `Nest both your commercial entity (Product or WebApplication with Offer price) and your FAQPage inside a single "@graph" array so AI search engines connect pricing to buyer Q&As.`,
+              meta: "Verified Output",
+              code: "",
+              },
           ],
         },
       ],
-      nextStep: {
-        label: "Open Free FAQ Schema Validator & AI Visibility Optimizer",
-        href: "/tools/faq-schema-validator",
-      },
-    };
+          };
   }
 
   if (tool.slug === "local-seo-audit-tool") {
@@ -299,27 +295,26 @@ async function buildRichToolExecution(params: {
           items: [
             {
               label: "Google Business Profile & 3-Pack Signals",
-              value: `Align your Primary GBP Category with "${primaryKw}", add 2-4 secondary service categories, and reply to customer reviews mentioning your target city and neighborhoods.`,
-              tone: "emerald",
-            },
+              content: `Align your Primary GBP Category with "${primaryKw}", add 2-4 secondary service categories, and reply to customer reviews mentioning your target city and neighborhoods.`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "Near Me & Hyper-Local Landing Page Signals",
-              value: `Place your Service + City in the H1 and Title tag, open with a 50-word local pricing/response Quick Answer for ${audience}, and cite neighborhood landmarks and ZIP codes.`,
-              tone: "sky",
-            },
+              content: `Place your Service + City in the H1 and Title tag, open with a 50-word local pricing/response Quick Answer for ${audience}, and cite neighborhood landmarks and ZIP codes.`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "NAP Citations & LocalBusiness Schema",
-              value: `Standardize your Name, Address, and Phone across GBP, Apple Business Connect, Bing Places, and Yelp, and embed LocalBusiness JSON-LD with areaServed.`,
-              tone: "amber",
-            },
+              content: `Standardize your Name, Address, and Phone across GBP, Apple Business Connect, Bing Places, and Yelp, and embed LocalBusiness JSON-LD with areaServed.`,
+              meta: "Verified Output",
+              code: "",
+              },
           ],
         },
       ],
-      nextStep: {
-        label: "Open Free Local SEO Audit Tool",
-        href: "/tools/local-seo-audit-tool",
-      },
-    };
+          };
   }
 
   if (tool.slug === "outbound-link-checker") {
@@ -340,27 +335,26 @@ async function buildRichToolExecution(params: {
           items: [
             {
               label: "Rel Attribute Qualification (Sponsored, UGC, Nofollow)",
-              value: `Add rel="sponsored noopener" to all affiliate/partner URLs (?ref=, ?via=, ?aff=) and rel="ugc noopener" to user-submitted links on pages targeting "${primaryKw}".`,
-              tone: "emerald",
-            },
+              content: `Add rel="sponsored noopener" to all affiliate/partner URLs (?ref=, ?via=, ?aff=) and rel="ugc noopener" to user-submitted links on pages targeting "${primaryKw}".`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "Anchor Text & Keyword Leak Protection",
-              value: `Never hyperlink "${primaryKw}" to an external domain; reserve exact-match anchor text strictly for internal links to your own canonical page.`,
-              tone: "sky",
-            },
+              content: `Never hyperlink "${primaryKw}" to an external domain; reserve exact-match anchor text strictly for internal links to your own canonical page.`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "Primary Deep Links vs. Bare Homepages",
-              value: `Replace bare root domain links (https://domain.com/) with specific documentation, study, or standard URLs so ${audience} and AI engines can verify claims.`,
-              tone: "amber",
-            },
+              content: `Replace bare root domain links (https://domain.com/) with specific documentation, study, or standard URLs so ${audience} and AI engines can verify claims.`,
+              meta: "Verified Output",
+              code: "",
+              },
           ],
         },
       ],
-      nextStep: {
-        label: "Open Outbound Link Checker & External SEO Link Auditor",
-        href: "/tools/outbound-link-checker",
-      },
-    };
+          };
   }
 
   if (tool.slug === "buyer-search-prompt-generator") {
@@ -381,22 +375,20 @@ async function buildRichToolExecution(params: {
           items: [
             {
               label: "Prompt #1 (Problem Discovery) & Prompt #2 (Category Shortlist)",
-              value: `1) "How do ${audience.toLowerCase()} solve ${primaryKw} without overspending?" | 2) "Best ${primaryKw} solutions for ${audience.toLowerCase()} comparing price, specs, and verified pros/cons in 2026"`,
-              tone: "sky",
-            },
+              content: `1) "How do ${audience.toLowerCase()} solve ${primaryKw} without overspending?" | 2) "Best ${primaryKw} solutions for ${audience.toLowerCase()} comparing price, specs, and verified pros/cons in 2026"`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "Prompt #3 (Competitor Versus) & Prompt #4 (Purchase Schema)",
-              value: `3) "${primaryKw} vs top alternatives: switching checklist and ROI comparison" | 4) "Is ${primaryKw} worth the price? Customer review proof, specs table, and Product JSON-LD"`,
-              tone: "emerald",
-            },
+              content: `3) "${primaryKw} vs top alternatives: switching checklist and ROI comparison" | 4) "Is ${primaryKw} worth the price? Customer review proof, specs table, and Product JSON-LD"`,
+              meta: "Verified Output",
+              code: "",
+              },
           ],
         },
       ],
-      nextStep: {
-        label: "Open AI Buyer Search & Commercial Prompt Generator",
-        href: "/tools/buyer-search-prompt-generator",
-      },
-    };
+          };
   }
 
   if (tool.slug === "seo-originality-plagiarism-checker") {
@@ -417,27 +409,26 @@ async function buildRichToolExecution(params: {
           items: [
             {
               label: "4-Gram Shingle & Canonical Distinctiveness",
-              value: `Keep 4-word shingle overlap below 12% across sibling URLs targeting "${primaryKw}" and open with a distinct 50-word Quick Answer so Google never flags the page as "Duplicate without user-selected canonical".`,
-              tone: "emerald",
-            },
+              content: `Keep 4-word shingle overlap below 12% across sibling URLs targeting "${primaryKw}" and open with a distinct 50-word Quick Answer so Google never flags the page as "Duplicate without user-selected canonical".`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "Human Cadence & Anti-Cliché Upgrade",
-              value: `Remove synthetic transitions ("delve into", "moreover", "in today's fast-paced digital landscape") and alternate 8-word punchy findings with 22-word technical explanations tailored for ${audience}.`,
-              tone: "sky",
-            },
+              content: `Remove synthetic transitions ("delve into", "moreover", "in today's fast-paced digital landscape") and alternate 8-word punchy findings with 22-word technical explanations tailored for ${audience}.`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "Crawled - Currently Not Indexed Prevention",
-              value: `Add at least 3 verified data points, a structured comparison table, a self-referencing canonical URL, and 3 internal links from indexed pages before pinging IndexNow.`,
-              tone: "amber",
-            },
+              content: `Add at least 3 verified data points, a structured comparison table, a self-referencing canonical URL, and 3 internal links from indexed pages before pinging IndexNow.`,
+              meta: "Verified Output",
+              code: "",
+              },
           ],
         },
       ],
-      nextStep: {
-        label: "Open SEO Plagiarism, Originality & Rapid Index Checker",
-        href: "/tools/seo-originality-plagiarism-checker",
-      },
-    };
+          };
   }
 
   if (tool.slug === "ai-art-image-prompt-generator") {
@@ -458,27 +449,26 @@ async function buildRichToolExecution(params: {
           items: [
             {
               label: "Midjourney v6.1 Master Prompt",
-              value: `/imagine prompt: ${primaryKw}, editorial hero composition, shot on Hasselblad H6D-100c, 85mm f/1.4 prime lens, volumetric rim lighting, ultra-detailed 8K micro-textures, natural color grading --ar 16:9 --v 6.1 --style raw --q 2 --s 250`,
-              tone: "emerald",
-            },
+              content: `/imagine prompt: ${primaryKw}, editorial hero composition, shot on Hasselblad H6D-100c, 85mm f/1.4 prime lens, volumetric rim lighting, ultra-detailed 8K micro-textures, natural color grading --ar 16:9 --v 6.1 --style raw --q 2 --s 250`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "Grok Aurora & Flux.1 Pro Natural Prompt",
-              value: `Create an ultra-crisp, photorealistic editorial scene of ${primaryKw} tailored for ${audience}. Capture sharp optical depth of field, authentic material reflections, balanced key and fill lighting, and crisp typography-safe negative space for hero banners.`,
-              tone: "sky",
-            },
+              content: `Create an ultra-crisp, photorealistic editorial scene of ${primaryKw} tailored for ${audience}. Capture sharp optical depth of field, authentic material reflections, balanced key and fill lighting, and crisp typography-safe negative space for hero banners.`,
+              meta: "Verified Output",
+              code: "",
+              },
             {
               label: "8K Image Restoration & Upscaling Prompt",
-              value: `Restore and upscale "${primaryKw}" to native 8K resolution (7680x4320): remove compression artifacts, reconstruct fine surface micro-textures, de-blur edges without plastic oversharpening, and preserve true-to-life dynamic range and color fidelity.`,
-              tone: "amber",
-            },
+              content: `Restore and upscale "${primaryKw}" to native 8K resolution (7680x4320): remove compression artifacts, reconstruct fine surface micro-textures, de-blur edges without plastic oversharpening, and preserve true-to-life dynamic range and color fidelity.`,
+              meta: "Verified Output",
+              code: "",
+              },
           ],
         },
       ],
-      nextStep: {
-        label: "Open AI Art, Grok & 8K Image Upscaling Prompt Generator",
-        href: "/tools/ai-art-image-prompt-generator",
-      },
-    };
+          };
   }
 
   if (tool.slug === "ugc-video-prompt-generator") {

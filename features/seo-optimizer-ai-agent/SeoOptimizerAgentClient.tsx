@@ -133,9 +133,9 @@ export default function SeoOptimizerAgentClient() {
               draftTitle: data.title || input.draftTitle,
               draftDescription: data.description || input.draftDescription,
               targetKeywordOrTopic:
-                data.primaryKeyword || data.title || input.targetKeywordOrTopic,
+                data.focusKeyword || data.title || input.targetKeywordOrTopic,
               contentSummaryOrDraft:
-                data.excerpt ||
+                data.description ||
                 (data.keyTakeaways || []).join("\n") ||
                 input.contentSummaryOrDraft,
             };

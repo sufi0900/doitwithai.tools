@@ -198,10 +198,7 @@ export default function BuyerSearchPromptGeneratorPage() {
                 Google AI Mode, ChatGPT Search, and Perplexity.
               </p>
               <div className="mt-5">
-                <PortableToolHeroBar
-                  title="Free AI Buyer Search & Commercial Prompt Generator"
-                  path="/tools/buyer-search-prompt-generator"
-                />
+                <PortableToolHeroBar slug="buyer-search-prompt-generator" />
               </div>
             </div>
 

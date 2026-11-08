@@ -426,7 +426,6 @@ export default function OutboundLinkCheckerClient() {
     setRawLinksInput(preset.rawLinksInput);
     setTimeout(() => {
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 80);
   };
 
@@ -443,7 +442,6 @@ export default function OutboundLinkCheckerClient() {
       setPack(updated);
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 300);
   };
 
@@ -470,7 +468,6 @@ export default function OutboundLinkCheckerClient() {
     } finally {
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }
   };
 
@@ -545,14 +542,11 @@ export default function OutboundLinkCheckerClient() {
 
   return (
     <div className="relative space-y-8">
-      <ToolRunOverlay
-        active={isRunning}
-        label={
+      <ToolRunOverlay active={isRunning} title={
           runMode === "ai"
             ? "Auditing Outbound Anchors, Rel Tags & Citation Authority..."
             : "Scanning External Links, Rel Attributes & Keyword Leaks..."
-        }
-      />
+        } description="Analyzing data and compiling real-time report..." />
 
       {/* TOP INPUT DASHBOARD */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8">

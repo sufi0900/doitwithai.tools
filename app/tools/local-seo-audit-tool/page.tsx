@@ -195,10 +195,7 @@ export default function LocalSeoAuditToolPage() {
                 <strong>LocalBusiness JSON-LD schema</strong>.
               </p>
               <div className="mt-5">
-                <PortableToolHeroBar
-                  title="Free Local SEO Audit Tool: Map Pack & Near Me Optimizer"
-                  path="/tools/local-seo-audit-tool"
-                />
+                <PortableToolHeroBar slug="local-seo-audit-tool" />
               </div>
             </div>
 

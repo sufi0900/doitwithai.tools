@@ -136,7 +136,7 @@ export default function MarketingCampaignAgentClient() {
               campaignNameOrProductLaunch:
                 data.title || input.campaignNameOrProductLaunch,
               coreValuePropsAndTakeaways:
-                takeaways || data.excerpt || input.coreValuePropsAndTakeaways,
+                takeaways || data.description || input.coreValuePropsAndTakeaways,
             };
             setInput(nextInput);
             setPack(buildDeterministicMarketingCampaignPack(nextInput));

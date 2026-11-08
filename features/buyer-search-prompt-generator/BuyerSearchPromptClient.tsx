@@ -257,7 +257,6 @@ export default function BuyerSearchPromptClient() {
     setKeyDifferentiator(preset.keyDifferentiator);
     setTimeout(() => {
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 80);
   };
 
@@ -282,7 +281,6 @@ export default function BuyerSearchPromptClient() {
       setPack(updated);
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 300);
   };
 
@@ -311,7 +309,6 @@ export default function BuyerSearchPromptClient() {
     } finally {
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }
   };
 
@@ -386,14 +383,11 @@ export default function BuyerSearchPromptClient() {
 
   return (
     <div className="relative space-y-8">
-      <ToolRunOverlay
-        active={isRunning}
-        label={
+      <ToolRunOverlay active={isRunning} title={
           runMode === "ai"
             ? "Synthesizing Custom 4-Stage Buyer Search Prompts..."
             : "Generating 4 Buyer Search Prompts & Product Visibility Matrix..."
-        }
-      />
+        } description="Analyzing data and compiling real-time report..." />
 
       {/* TOP INPUT DASHBOARD */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8">

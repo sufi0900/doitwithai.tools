@@ -200,10 +200,7 @@ export default function ExcelSeoReportGeneratorPage() {
                 .
               </p>
               <div className="mt-5">
-                <PortableToolHeroBar
-                  title="Free Excel SEO Tool & Website Analysis Report Generator"
-                  path="/tools/excel-seo-report-generator"
-                />
+                <PortableToolHeroBar slug="excel-seo-report-generator" />
               </div>
             </div>
 

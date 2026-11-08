@@ -389,7 +389,6 @@ export default function FaqSchemaValidatorClient() {
     setRawFaqOrJsonInput(preset.rawFaqOrJsonInput);
     setTimeout(() => {
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 80);
   };
 
@@ -406,7 +405,6 @@ export default function FaqSchemaValidatorClient() {
       setPack(updated);
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 300);
   };
 
@@ -433,7 +431,6 @@ export default function FaqSchemaValidatorClient() {
     } finally {
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }
   };
 
@@ -498,14 +495,11 @@ export default function FaqSchemaValidatorClient() {
 
   return (
     <div className="relative space-y-8">
-      <ToolRunOverlay
-        active={isRunning}
-        label={
+      <ToolRunOverlay active={isRunning} title={
           runMode === "ai"
             ? "Synthesizing AI-Citation-Ready FAQPage & Product @graph..."
             : "Validating FAQPage JSON-LD Syntax & Answer Word Counts..."
-        }
-      />
+        } description="Analyzing data and compiling real-time report..." />
 
       {/* TOP INPUT DASHBOARD */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8">

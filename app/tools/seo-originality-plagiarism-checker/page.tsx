@@ -198,10 +198,7 @@ export default function SeoOriginalityPlagiarismCheckerPage() {
                 <em>&ldquo;Crawled - currently not indexed&rdquo;</em> hurdles.
               </p>
               <div className="mt-5">
-                <PortableToolHeroBar
-                  title="Free SEO Plagiarism, Originality & Rapid Index Checker"
-                  path="/tools/seo-originality-plagiarism-checker"
-                />
+                <PortableToolHeroBar slug="seo-originality-plagiarism-checker" />
               </div>
             </div>
 

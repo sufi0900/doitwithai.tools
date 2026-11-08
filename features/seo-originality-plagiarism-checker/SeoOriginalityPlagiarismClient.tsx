@@ -344,7 +344,6 @@ export default function SeoOriginalityPlagiarismClient() {
     setReferenceText(preset.referenceText);
     setTimeout(() => {
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 80);
   };
 
@@ -362,7 +361,6 @@ export default function SeoOriginalityPlagiarismClient() {
       setPack(updated);
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 320);
   };
 
@@ -393,7 +391,6 @@ export default function SeoOriginalityPlagiarismClient() {
     } finally {
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }
   };
 
@@ -462,14 +459,11 @@ export default function SeoOriginalityPlagiarismClient() {
 
   return (
     <div className="relative space-y-8">
-      <ToolRunOverlay
-        active={isRunning}
-        label={
+      <ToolRunOverlay active={isRunning} title={
           runMode === "ai"
             ? "Synthesizing AI Originality & Rapid Index Rewrite..."
             : "Scanning 4-Gram Shingles, AI Clichés & Index Readiness..."
-        }
-      />
+        } description="Analyzing data and compiling real-time report..." />
 
       {/* TOP INPUT DASHBOARD */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8">

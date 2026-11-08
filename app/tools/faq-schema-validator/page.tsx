@@ -195,10 +195,7 @@ export default function FaqSchemaValidatorPage() {
                 <strong>unified @graph entities</strong>.
               </p>
               <div className="mt-5">
-                <PortableToolHeroBar
-                  title="Free FAQ Schema Validator & AI Visibility Optimizer"
-                  path="/tools/faq-schema-validator"
-                />
+                <PortableToolHeroBar slug="faq-schema-validator" />
               </div>
             </div>
 

@@ -177,7 +177,7 @@ export default function SupportAgentBuilderClient() {
                 ? data.title.slice(0, 60)
                 : input.companyOrProductName,
               rawDocsPricingFaqs:
-                extractedFaqs || data.excerpt || input.rawDocsPricingFaqs,
+                extractedFaqs || data.description || input.rawDocsPricingFaqs,
             };
             setInput(nextInput);
             setPack(buildDeterministicSupportAgentPack(nextInput));

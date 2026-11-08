@@ -196,10 +196,7 @@ export default function OutboundLinkCheckerPage() {
                 copy-ready HTML repairs.
               </p>
               <div className="mt-5">
-                <PortableToolHeroBar
-                  title="Free Outbound Link Checker & External SEO Link Auditor"
-                  path="/tools/outbound-link-checker"
-                />
+                <PortableToolHeroBar slug="outbound-link-checker" />
               </div>
             </div>
 

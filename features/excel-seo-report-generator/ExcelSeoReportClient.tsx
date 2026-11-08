@@ -291,7 +291,6 @@ export default function ExcelSeoReportClient() {
     setPriorityGoal(preset.priorityGoal);
     setTimeout(() => {
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 80);
   };
 
@@ -310,7 +309,6 @@ export default function ExcelSeoReportClient() {
       setPack(updated);
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }, 300);
   };
 
@@ -339,7 +337,6 @@ export default function ExcelSeoReportClient() {
     } finally {
       setIsRunning(false);
       focusToolSection(resultsRef.current);
-      paintToolFeedback(resultsRef.current);
     }
   };
 
@@ -407,14 +404,11 @@ export default function ExcelSeoReportClient() {
 
   return (
     <div className="relative space-y-8">
-      <ToolRunOverlay
-        active={isRunning}
-        label={
+      <ToolRunOverlay active={isRunning} title={
           runMode === "ai"
             ? "Synthesizing Executive SEO Report & Custom Excel Formulas..."
             : "Building Excel SEO Formulas, Looker Fields & Executive Report..."
-        }
-      />
+        } description="Analyzing data and compiling real-time report..." />
 
       {/* TOP INPUT DASHBOARD */}
       <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8">
