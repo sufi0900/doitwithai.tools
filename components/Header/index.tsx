@@ -709,7 +709,7 @@ const Header = () => {
                                           size={14}
                                           className="text-[#5271FF]"
                                         />
-                                        <span>Browse All 5 AI Agents Hub</span>
+                                        <span>Browse All 10 Autonomous Agents Hub</span>
                                       </span>
                                       <ArrowRight size={13} />
                                     </Link>
@@ -720,13 +720,13 @@ const Header = () => {
                                 <div className="col-span-7">
                                   <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5 dark:border-slate-800">
                                     <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                      4 Autonomous Task Agents
+                                      Autonomous SEO &amp; Growth Agents
                                     </p>
                                     <Link
                                       href="/agents"
                                       className="text-xs font-bold text-[#5271FF] hover:underline"
                                     >
-                                      View All Agents →
+                                      View All 10 Agents →
                                     </Link>
                                   </div>
 
