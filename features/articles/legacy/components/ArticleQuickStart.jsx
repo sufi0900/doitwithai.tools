@@ -3,6 +3,7 @@
 // Above-the-fold "Quick answer + live checker + tool CTA" block for articles.
 // Driven by `data.seoEnhancement` from seoArticleOverrides.js. Server-rendered
 // (client component SSR) so the quick answer is in the initial HTML for crawlers.
+// Uses a non-heading <p> for the callout prompt so it never pollutes the article's H1–H6 outline.
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
@@ -25,6 +26,7 @@ function toSlug(text) {
 function LengthChecker({ checker }) {
   const [value, setValue] = useState("");
   const count = value.trim().length;
+  const approxPx = Math.round(count * 9.6);
   const status = useMemo(() => {
     if (!count) return null;
     if (count < checker.min) return { tone: "amber", text: checker.tooShort };
@@ -52,9 +54,9 @@ function LengthChecker({ checker }) {
         <div className={`h-full transition-all ${count ? bar : ""}`} style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-2 text-sm text-gray-700 dark:text-gray-300" aria-live="polite">
-        <strong>{count}</strong> characters · suggested range {checker.min}–{checker.max}
-        {checker.mobile ? ` · front-load key words in the first ~${checker.mobile}` : ""}
-        {status ? <span className="block mt-1">{status.text}</span> : null}
+        <strong>{count}</strong> characters (~<strong>{approxPx}px</strong>) · practical target {checker.min}–{checker.max} chars
+        {checker.mobile ? ` · keep key topic words in the first ~${checker.mobile} chars (~580px SERP limit)` : ""}
+        {status ? <span className="block mt-1 font-medium">{status.text}</span> : null}
       </p>
     </div>
   );
@@ -112,9 +114,15 @@ export default function ArticleQuickStart({ enhancement }) {
     >
       {quickAnswer ? (
         <div className="overview">
-          <p className="text-xs font-bold uppercase tracking-widest text-blue-700 dark:text-blue-300">Quick answer</p>
-          <h2 className="mt-1 text-xl font-extrabold text-gray-900 dark:text-white sm:text-2xl">{quickAnswer.question}</h2>
-          <p className="mt-2 text-base leading-7 text-gray-800 dark:text-gray-200">{quickAnswer.answer}</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-blue-700 dark:text-blue-300">
+            Quick answer
+          </p>
+          <p className="mt-1 text-xl font-extrabold text-gray-900 dark:text-white sm:text-2xl">
+            {quickAnswer.question}
+          </p>
+          <p className="mt-2 text-base leading-7 text-gray-800 dark:text-gray-200">
+            {quickAnswer.answer}
+          </p>
         </div>
       ) : null}
 

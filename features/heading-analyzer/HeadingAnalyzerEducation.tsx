@@ -25,7 +25,7 @@ const GOOD = `<h1>How to write a meta description</h1>
 export default function HeadingAnalyzerEducation() {
   return (
     <section className="border-t border-slate-200 bg-white py-20 dark:border-slate-800 dark:bg-slate-950">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="text-xs font-extrabold uppercase tracking-[0.17em] text-[#5271ff]">
             Learn the method
@@ -131,7 +131,11 @@ export default function HeadingAnalyzerEducation() {
         <div className="mt-14 rounded-2xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
           <h3 className="text-lg font-black text-slate-950 dark:text-white">Improve the headings you find</h3>
           <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            Need a stronger main heading? Try the{" "}
+            Want to master{" "}
+            <Link href="/ai-seo/h1-heading" className="font-bold text-[#4662df] hover:underline dark:text-blue-300">
+              H1 tag best practices, ideal H1 length, and H1 vs. title tag rules
+            </Link>
+            ? Read our complete H1 SEO guide. Need a stronger main heading? Try the{" "}
             <Link href="/tools/h1-heading-generator" className="font-bold text-[#4662df] hover:underline dark:text-blue-300">
               H1 Heading Generator
             </Link>

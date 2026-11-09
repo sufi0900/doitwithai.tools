@@ -4,6 +4,7 @@
   import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
   import FeatureImg from './BlogHeader';
   import TableOfContents from './TableOfContents';
+  import ArticleQuickStart from './ArticleQuickStart';
   import TagsAndShare from './TagsAndShare';
   import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
   import { PortableText } from "@portabletext/react";
@@ -19,11 +20,8 @@ import Link from 'next/link';
 import { AccessTime, CalendarMonthOutlined } from '@mui/icons-material';
 import Image from 'next/image';
 
-  // FAQSection is imported statically so FAQs are present in server-rendered HTML.
-  import FAQSection from './FAQSection';
-  import ArticleQuickStart from './ArticleQuickStart';
-
   // Lazy load non-critical components
+  const FAQSection = lazy(() => import('./FAQSection'));
   const RelatedPostsSection = lazy(() => import('./RelatedPostsSection'));
   const RelatedResources = lazy(() => import("@/app/free-ai-resources/RelatedResources"));
   const BlogSidebar = lazy(() => import("./BlogSidebar"));
@@ -291,7 +289,7 @@ if (!data && loading) {
                         <AccessTime className="w-4 h-4" />
                       </span>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {data.readTime?.minutes} min read
+                        {data.readTime?.minutes || data.estimatedReadingTime || Math.max(4, Math.ceil((data.wordCount || 1800) / 240))} min read
                       </span>
                     </div>
                   </div>
@@ -316,10 +314,21 @@ if (!data && loading) {
                       <PortableText value={data.content} components={portableTextComponents} />
                     </div>
 
-                    {/* FAQ + author bio render in the initial server HTML (no loadStage gate)
-                        so search engines and AI crawlers can read them and match FAQPage schema. */}
-                    <FAQSection faqs={data.faqs} />
-                    <AuthorBioCard />
+                    {/* FAQ Section - Load after stage 4 */}
+                    <SmartShimmer
+                      isLoading={loadStage < 4}
+                      fallback={<ComponentSkeleton height="300px" />}
+                      delay={100} // Small delay to avoid flash if already loaded
+                    >
+
+
+
+                      <Suspense fallback={<ComponentSkeleton height="300px" />}>
+                        <FAQSection faqs={data.faqs} />
+                      </Suspense>
+                      {/* ADD AUTHOR BIO CARD HERE */}
+<AuthorBioCard />
+                    </SmartShimmer>
                   </div>
                   <SmartShimmer
   isLoading={loadStage < 4}
@@ -407,18 +416,7 @@ if (!data && loading) {
             </Suspense>
           </SmartShimmer>
 
-          {/* Recent Posts - Load after stage 4 */}
-          <div className="border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-            <SmartShimmer
-              isLoading={loadStage < 4} // Based on progressive loading stage
-              fallback={<ComponentSkeleton height="400px" />}
-              delay={200} // Slightly longer delay for the very last component
-            >
-              <Suspense fallback={<ComponentSkeleton height="400px" />}>
-                <RecentPost />
-              </Suspense>
-            </SmartShimmer>
-          </div>
+
         </div>
       </section>
     </div> 

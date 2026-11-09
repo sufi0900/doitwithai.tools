@@ -1,109 +1,42 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from "react";
 import { ExpandMore, ExpandLess } from "@mui/icons-material";
 
-export const generateAnchor = (text) => {
-  if (!text) return "";
-  return String(text)
+export function generateHeadingAnchor(text) {
+  return String(text || "")
     .toLowerCase()
-    .trim()
     .replace(/[^\w\s-]/g, "")
+    .trim()
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-};
+    .replace(/-+/g, "-");
+}
 
-/**
- * Extracts a structured Table of Contents (`[{ heading, subheadings: [{ subheading }] }]`)
- * directly from the PortableText `content` blocks (`h2` and `h3`).
- */
-export const buildTocFromPortableText = (content) => {
-  if (!Array.isArray(content) || content.length === 0) return [];
+export function resolveSynchronizedToc(tableOfContents, content) {
   const derived = [];
   let currentH2 = null;
 
-  for (const block of content) {
-    if (!block || block._type !== "block") continue;
-    const style = block.style;
-    if (style !== "h2" && style !== "h3") continue;
-
-    const text = Array.isArray(block.children)
-      ? block.children
-          .map((span) => (typeof span?.text === "string" ? span.text : ""))
+  if (Array.isArray(content)) {
+    content.forEach((block, idx) => {
+      if (block?._type === "block" && (block.style === "h2" || block.style === "h3")) {
+        const text = (block.children || [])
+          .map((child) => child?.text || "")
           .join("")
-          .trim()
-      : "";
-    if (!text) continue;
-
-    if (style === "h2") {
-      currentH2 = { heading: text, subheadings: [] };
-      derived.push(currentH2);
-    } else if (style === "h3") {
-      if (currentH2) {
-        currentH2.subheadings.push({ subheading: text });
-      } else {
-        derived.push({ heading: text, subheadings: [] });
-      }
-    }
-  }
-
-  return derived;
-};
-
-/**
- * Reconciles the manual `tableOfContents` field from Sanity with the actual
- * rendered `h2`/`h3` blocks in `content`. If `tableOfContents` is missing or
- * contains stale headings that do not exist in `content` (such as on
- * `/ai-seo/what-is-ai-seo`), returns the body-derived TOC so 100% of TOC text
- * and `#anchor` targets match the rendered DOM headings.
- */
-export const resolveSynchronizedToc = (tableOfContents, content) => {
-  const bodyToc = buildTocFromPortableText(content);
-  const manualToc = Array.isArray(tableOfContents)
-    ? tableOfContents.filter((item) => item && item.heading)
-    : [];
-
-  if (bodyToc.length === 0) {
-    return manualToc;
-  }
-  if (manualToc.length === 0) {
-    return bodyToc;
-  }
-
-  // Collect all valid heading anchors present in the rendered body
-  const validBodyAnchors = new Set();
-  for (const item of bodyToc) {
-    const h2Anchor = generateAnchor(item.heading);
-    if (h2Anchor) validBodyAnchors.add(h2Anchor);
-    if (Array.isArray(item.subheadings)) {
-      for (const sub of item.subheadings) {
-        const h3Anchor = generateAnchor(sub?.subheading);
-        if (h3Anchor) validBodyAnchors.add(h3Anchor);
-      }
-    }
-  }
-
-  // Verify whether every manual TOC heading & subheading exists in the body
-  let allManualMatchBody = true;
-  for (const item of manualToc) {
-    const hAnchor = generateAnchor(item?.heading);
-    if (!hAnchor || !validBodyAnchors.has(hAnchor)) {
-      allManualMatchBody = false;
-      break;
-    }
-    if (Array.isArray(item?.subheadings)) {
-      for (const sub of item.subheadings) {
-        const sAnchor = generateAnchor(sub?.subheading);
-        if (sAnchor && !validBodyAnchors.has(sAnchor)) {
-          allManualMatchBody = false;
-          break;
+          .trim();
+        if (!text) return;
+        if (block.style === "h2") {
+          currentH2 = { _key: `toc_${idx}`, heading: text, subheadings: [] };
+          derived.push(currentH2);
+        } else if (block.style === "h3" && currentH2) {
+          currentH2.subheadings.push({ _key: `sub_${idx}`, subheading: text });
         }
       }
-    }
-    if (!allManualMatchBody) break;
+    });
   }
 
-  return allManualMatchBody ? manualToc : bodyToc;
-};
+  if (derived.length > 0) {
+    return derived;
+  }
+  return Array.isArray(tableOfContents) ? tableOfContents : [];
+}
 
 const TableOfContents = ({ tableOfContents, content }) => {
   const [isOpen, setIsOpen] = useState(true);
@@ -113,10 +46,6 @@ const TableOfContents = ({ tableOfContents, content }) => {
     [tableOfContents, content]
   );
 
-  const toggleTableOfContents = () => {
-    setIsOpen(!isOpen);
-  };
-
   if (!synchronizedToc || synchronizedToc.length === 0) {
     return null;
   }
@@ -124,11 +53,8 @@ const TableOfContents = ({ tableOfContents, content }) => {
   return (
     <>
       <button
-        className="relative mb-4 mt-4 inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-medium transition-all duration-200 
-        bg-transparent border border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400
-        dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:border-blue-500
-        focus:outline-none focus:ring-4 focus:ring-blue-300/20 dark:focus:ring-blue-800/20"
-        onClick={toggleTableOfContents}
+        className="relative mb-4 mt-4 inline-flex items-center rounded-lg px-3 py-2 text-center text-sm font-medium transition-all duration-200 bg-transparent border border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 dark:border-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-300/20 dark:focus:ring-blue-800/20"
+        onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? (
           <>
@@ -145,25 +71,26 @@ const TableOfContents = ({ tableOfContents, content }) => {
         )}
       </button>
 
-      <div
+      <nav
+        aria-label="Table of Contents"
         className={`transition-max-height mb-8 overflow-y-auto ${
           isOpen ? "max-h-[800px]" : "max-h-0"
         }`}
       >
         <div className="rounded-lg border border-gray-300 shadow-md bg-white dark:bg-gray-800 transition-colors duration-300 overflow-hidden">
           <div className="bg-gradient-to-r from-blue-50 to-white dark:from-gray-800 dark:to-gray-900 p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl sm:text-3xl font-semibold text-gray-800 dark:text-white">
+            <p className="m-0 text-xl sm:text-3xl font-semibold text-gray-800 dark:text-white">
               Table of Contents
-            </h2>
+            </p>
           </div>
 
           <div className="p-4 sm:p-6">
             <ul className="space-y-3 sm:space-y-4">
               {synchronizedToc.map((item, index) => (
-                <li key={index} className="relative">
+                <li key={item._key || index} className="relative">
                   <div className="group">
                     <a
-                      href={`#${generateAnchor(item.heading)}`}
+                      href={`#${generateHeadingAnchor(item.heading)}`}
                       className="flex items-center gap-2 sm:gap-3 text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 font-medium text-base sm:text-lg"
                     >
                       <span className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 group-hover:bg-blue-500 dark:group-hover:bg-blue-400 transition-all duration-200 flex-shrink-0">
@@ -180,11 +107,11 @@ const TableOfContents = ({ tableOfContents, content }) => {
                       <div className="absolute left-[-13px] sm:left-[-15px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-blue-200 to-transparent dark:from-blue-800 dark:to-transparent"></div>
 
                       {item.subheadings.map((subheadingObj, subIndex) => (
-                        <li key={subIndex} className="relative">
+                        <li key={subheadingObj._key || subIndex} className="relative">
                           <div className="absolute left-[-13px] sm:left-[-15px] top-1/2 w-2.5 sm:w-3 h-[2px] bg-blue-200 dark:bg-blue-800"></div>
 
                           <a
-                            href={`#${generateAnchor(subheadingObj.subheading)}`}
+                            href={`#${generateHeadingAnchor(subheadingObj.subheading)}`}
                             className="flex items-center gap-1.5 sm:gap-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 group pl-1.5 sm:pl-2 text-sm sm:text-base"
                           >
                             <span className="flex items-center justify-center w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gray-100 dark:bg-gray-700 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-all duration-200 flex-shrink-0">
@@ -203,7 +130,7 @@ const TableOfContents = ({ tableOfContents, content }) => {
             </ul>
           </div>
         </div>
-      </div>
+      </nav>
     </>
   );
 };

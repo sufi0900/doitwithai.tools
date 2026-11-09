@@ -4,11 +4,12 @@
   import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
   import FeatureImg from './BlogHeader';
   import TableOfContents from './TableOfContents';
+  import ArticleQuickStart from './ArticleQuickStart';
   import TagsAndShare from './TagsAndShare';
   import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
   import { PortableText } from "@portabletext/react";
   import PortableTextComponents from './createPortableTextComponents';
-  import ReviewLionxeHeader from '@/app/ai-tools/[slug]/ReviewLionxeHeader'; //Adjust path as needed
+  import ReviewLionxeHeader from '@/app/ai-tools/[slug]/ReviewLionxeHeader';
   // import ArticleHeader from './ArticleHeader';
   import AuthorBioCard from './AuthorBioCard'; // Adjust path as needed
 
@@ -288,7 +289,7 @@ if (!data && loading) {
                         <AccessTime className="w-4 h-4" />
                       </span>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {data.readTime?.minutes} min read
+                        {data.readTime?.minutes || data.estimatedReadingTime || Math.max(4, Math.ceil((data.wordCount || 1800) / 240))} min read
                       </span>
                     </div>
                   </div>
@@ -306,6 +307,7 @@ if (!data && loading) {
                 {/* Main Content - Critical for FCP */}
                 <div className="relative w-full">
                   <div className="opacity-100"> {/* Always show content if we have data */}
+                    <ArticleQuickStart enhancement={data.seoEnhancement} />
                     <TableOfContents tableOfContents={data.tableOfContents} content={data.content} />
                     
                     <div className="mb-4  mt-4 border-b-2  border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
@@ -414,18 +416,7 @@ if (!data && loading) {
             </Suspense>
           </SmartShimmer>
 
-          {/* Recent Posts - Load after stage 4 */}
-          <div className="border-b-2 border-black border-opacity-10 pb-4 dark:border-white dark:border-opacity-10">
-            <SmartShimmer
-              isLoading={loadStage < 4} // Based on progressive loading stage
-              fallback={<ComponentSkeleton height="400px" />}
-              delay={200} // Slightly longer delay for the very last component
-            >
-              <Suspense fallback={<ComponentSkeleton height="400px" />}>
-                <RecentPost />
-              </Suspense>
-            </SmartShimmer>
-          </div>
+
         </div>
       </section>
     </div> 

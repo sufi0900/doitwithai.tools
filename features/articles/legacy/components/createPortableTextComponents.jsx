@@ -1,57 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PortableText } from "@portabletext/react";
 import { urlForImage } from "@/sanity/lib/image";
 import OptimizedVideo from "@/app/ai-seo/[slug]/OptimizedVideo";
+// import OptimizedGif from "@/app/ai-seo/[slug]/OptimizedGif";
 import OptimizedImage from "@/app/ai-seo/[slug]/OptimizedImage";
-import { Rocket, Clipboard, Check } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 import { CopyBlock, dracula } from "react-code-blocks";
-import { getFileUrl } from "./sanityFileUrl";
+import { Clipboard, Check } from "lucide-react";
+import { getFileUrl } from "./sanityFileUrl"; // path as you saved it
 import Link from 'next/link';
-import Image from 'next/image';
+// import Image from 'next/image';
 
-/**
- * Generates a deterministic URL-safe anchor ID from heading text.
- * Matches TableOfContents.jsx and SeoAndSchemaWrapper.js 100%.
- */
-export const generateAnchor = (text) => {
-  if (!text) return "";
-  return String(text)
+
+function generateHeadingAnchor(text) {
+  return String(text || "")
     .toLowerCase()
-    .trim()
     .replace(/[^\w\s-]/g, "")
+    .trim()
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-};
+    .replace(/-+/g, "-");
+}
 
-/**
- * Extracts plain text from either a raw Sanity PortableText block (`value`)
- * or rendered React `children` nodes so heading IDs are always deterministic
- * during both server-side rendering and client hydration.
- */
-export const extractHeadingText = (value, children) => {
-  if (value && Array.isArray(value.children)) {
-    const fromSpans = value.children
-      .map((span) => (typeof span?.text === "string" ? span.text : ""))
+function extractHeadingText(value, children) {
+  if (Array.isArray(value?.children)) {
+    const raw = value.children.map((c) => c?.text || "").join("").trim();
+    if (raw) return raw;
+  }
+  if (typeof children === "string") return children;
+  if (Array.isArray(children)) {
+    return children
+      .map((c) => (typeof c === "string" ? c : c?.props?.children || ""))
       .join("")
       .trim();
-    if (fromSpans) return fromSpans;
   }
-
-  const walkNode = (node) => {
-    if (node == null || typeof node === "boolean") return "";
-    if (typeof node === "string" || typeof node === "number") return String(node);
-    if (Array.isArray(node)) return node.map(walkNode).join("");
-    if (React.isValidElement(node) && node.props) {
-      return walkNode(node.props.children);
-    }
-    return "";
-  };
-
-  return walkNode(children).trim();
-};
+  return "";
+}
 
 const PortableTextComponents = () => {
+  // Add this before the PortableTextComponents function
   const CodeBlockComponent = ({ code, language }) => {
     const [copied, setCopied] = useState(false);
 
@@ -91,7 +77,7 @@ const PortableTextComponents = () => {
             </button>
           </div>
 
-          <div className="overflow-x-auto px-1 sm:px-2 bg-transparent">
+          <div className="overflow-x-auto px-1 sm:px-2 py-2 bg-transparent">
             <div className="min-w-0">
               <CopyBlock
                 text={String(code)}
@@ -109,294 +95,170 @@ const PortableTextComponents = () => {
     );
   };
 
-  const inlineCellComponents = {
-    block: {
-      normal: ({ children }) => <span>{children}</span>,
-    },
-    marks: {
-      strong: ({ children }) => (
-        <strong className="font-bold text-gray-900 dark:text-white">
-          {children}
-        </strong>
-      ),
-      em: ({ children }) => <em className="italic">{children}</em>,
-      code: ({ children }) => (
-        <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-blue-600 dark:text-blue-400">
-          {children}
-        </code>
-      ),
-      link: ({ value, children }) => {
-        const isExternal = typeof value?.href === "string" && value.href.startsWith("http");
-        const target = value?.blank || isExternal ? "_blank" : "_self";
-        const rel = value?.blank || isExternal ? "noopener noreferrer" : undefined;
-        return (
-          <Link
-            href={value?.href || "#"}
-            target={target}
-            rel={rel}
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline hover:no-underline transition-colors duration-200 font-semibold"
-          >
-            {children}
-          </Link>
-        );
-      },
-    },
-  };
+const RichTableComponent = ({ value }) => {
+  const caption = value?.caption || value?.title;
+  const rows = value?.rows || value?.table?.rows || [];
+  const headerRows = Number(value?.headerRows ?? 1);
 
-  /**
-   * Universal Sanity Table Renderer:
-   * Supports @sanity/table (`_type: "table"`, where `row.cells` is an array of strings)
-   * as well as `richTable`, `complexTable`, and `customTable` (where cells may contain
-   * PortableText blocks or objects with `.content` / `.text`).
-   */
-  const RichTableComponent = ({ value }) => {
-    const caption = value?.caption || value?.title;
-    const rawRows = Array.isArray(value?.rows)
-      ? value.rows
-      : Array.isArray(value?.table?.rows)
-      ? value.table.rows
-      : [];
 
-    if (!rawRows.length) return null;
-
-    // Normalize rows so each row has `{ _key, cells: [...] }`
-    const rows = rawRows.map((row, idx) => {
-      if (Array.isArray(row)) {
-        return { _key: `row-${idx}`, cells: row };
-      }
-      return {
-        _key: row?._key || `row-${idx}`,
-        cells: Array.isArray(row?.cells) ? row.cells : [],
-      };
-    });
-
-    // If headerRows is explicitly set, honor it; otherwise default to 1 header row when >= 2 rows exist
-    const explicitHeaderRows =
-      value?.headerRows !== undefined && value?.headerRows !== null
-        ? Number(value.headerRows)
-        : null;
-    const headerRowCount =
-      explicitHeaderRows !== null
-        ? explicitHeaderRows
-        : rows.length > 1
-        ? 1
-        : 0;
-
-    const theadRows = headerRowCount > 0 ? rows.slice(0, headerRowCount) : [];
-    const tbodyRows = headerRowCount > 0 ? rows.slice(headerRowCount) : rows;
-
-    const renderInlineMarkdown = (text) => {
-      if (!text || typeof text !== "string") return text;
-      const tokenRegex =
-        /(\*{2}\[([^\]]+)\]\(([^)]+)\)\*{2}|\[\*{2}([^*]+)\*{2}\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|\*{2}`([^`]+)`\*{2}|\*{2}([^*]+)\*{2}|\*([^*]+)\*|`([^`]+)`)/g;
-      if (!tokenRegex.test(text)) {
-        return <span className="whitespace-pre-line">{text}</span>;
-      }
-      tokenRegex.lastIndex = 0;
-      const parts = [];
-      let lastIdx = 0;
-      let m;
-      let k = 0;
-      while ((m = tokenRegex.exec(text)) !== null) {
-        if (m.index > lastIdx) {
-          parts.push(text.slice(lastIdx, m.index));
-        }
-        if (m[2] && m[3]) {
-          const isExt = m[3].startsWith("http");
-          parts.push(
-            <Link
-              key={k++}
-              href={m[3]}
-              {...(isExt ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {m[2]}
-            </Link>
-          );
-        } else if (m[4] && m[5]) {
-          const isExt = m[5].startsWith("http");
-          parts.push(
-            <Link
-              key={k++}
-              href={m[5]}
-              {...(isExt ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className="font-bold text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              {m[4]}
-            </Link>
-          );
-        } else if (m[6] && m[7]) {
-          const isExt = m[7].startsWith("http");
-          parts.push(
-            <Link
-              key={k++}
-              href={m[7]}
-              {...(isExt ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-            >
-              {m[6]}
-            </Link>
-          );
-        } else if (m[8]) {
-          parts.push(
-            <strong key={k++} className="font-bold text-gray-900 dark:text-white">
-              <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-blue-600 dark:text-blue-400">
-                {m[8]}
-              </code>
-            </strong>
-          );
-        } else if (m[9]) {
-          parts.push(
-            <strong key={k++} className="font-bold text-gray-900 dark:text-white">
-              {m[9]}
-            </strong>
-          );
-        } else if (m[10]) {
-          parts.push(
-            <em key={k++} className="italic">
-              {m[10]}
-            </em>
-          );
-        } else if (m[11]) {
-          parts.push(
-            <code
-              key={k++}
-              className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-blue-600 dark:text-blue-400"
-            >
-              {m[11]}
-            </code>
-          );
-        }
-        lastIdx = tokenRegex.lastIndex;
-      }
-      if (lastIdx < text.length) {
-        parts.push(text.slice(lastIdx));
-      }
-      return <span className="whitespace-pre-line">{parts}</span>;
-    };
-
-    const renderCellValue = (cell) => {
-      if (cell === null || cell === undefined || cell === "") {
-        return <span className="text-gray-400 dark:text-gray-500">—</span>;
-      }
-      if (typeof cell === "string" || typeof cell === "number") {
-        return renderInlineMarkdown(String(cell));
-      }
-      if (Array.isArray(cell)) {
-        return <PortableText value={cell} components={inlineCellComponents} />;
-      }
-      if (typeof cell === "object") {
-        if (cell.content) {
-          if (typeof cell.content === "string" || typeof cell.content === "number") {
-            return renderInlineMarkdown(String(cell.content));
-          }
-          if (Array.isArray(cell.content)) {
-            return <PortableText value={cell.content} components={inlineCellComponents} />;
-          }
-        }
-        if (cell._type === "block" || Array.isArray(cell.children)) {
-          return <PortableText value={[cell]} components={inlineCellComponents} />;
-        }
-        if (typeof cell.text === "string" || typeof cell.value === "string") {
-          return renderInlineMarkdown(cell.text || cell.value);
-        }
-      }
-      return <span className="text-gray-400 dark:text-gray-500">—</span>;
-    };
-
-    return (
-      <div className="card2 mx-2 sm:mx-0 sm:m-2 mb-6 mt-6 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-        {caption && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
-            <p className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white text-center">
-              {caption}
-            </p>
-          </div>
-        )}
-
-        <div className="relative overflow-x-auto">
-          <table className="w-full text-left text-xs sm:text-sm border-collapse">
-            {theadRows.length > 0 && (
-              <thead>
-                {theadRows.map((row, rowIndex) => (
-                  <tr
-                    key={row._key || `thead-${rowIndex}`}
-                    className="border-b border-gray-200 dark:border-gray-700 bg-blue-50/90 dark:bg-gray-800"
-                  >
-                    {row.cells.map((cell, cellIndex) => (
-                      <th
-                        key={cellIndex}
-                        scope="col"
-                        className="px-3 sm:px-4 md:px-6 py-3 sm:py-3.5 text-xs sm:text-sm md:text-base font-bold text-gray-900 dark:text-white break-words align-top"
-                      >
-                        {renderCellValue(cell)}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-            )}
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700/80">
-              {tbodyRows.map((row, rowIndex) => (
-                <tr
-                  key={row._key || `tbody-${rowIndex}`}
-                  className={
-                    rowIndex % 2 === 1
-                      ? "bg-gray-50/60 dark:bg-gray-800/40 hover:bg-blue-50/30 dark:hover:bg-gray-800/70 transition-colors"
-                      : "bg-white dark:bg-gray-900 hover:bg-blue-50/30 dark:hover:bg-gray-800/70 transition-colors"
-                  }
-                >
-                  {row.cells.map((cell, cellIndex) => {
-                    const isRowHeader = Boolean(cell && typeof cell === "object" && cell.isHeader);
-                    const CellTag = isRowHeader ? "th" : "td";
-                    return (
-                      <CellTag
-                        key={cellIndex}
-                        scope={isRowHeader ? "row" : undefined}
-                        className={`px-3 sm:px-4 md:px-6 py-3 sm:py-3.5 text-xs sm:text-sm md:text-base break-words align-top ${
-                          isRowHeader
-                            ? "font-bold text-gray-900 dark:text-white bg-blue-50/60 dark:bg-gray-800"
-                            : "font-medium text-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        {renderCellValue(cell)}
-                      </CellTag>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  return (
+    <div className="card2 mx-2 sm:mx-0 sm:m-2 mb-6 mt-6 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+      {caption && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
+          <p className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white text-center">
+            {caption}
+          </p>
         </div>
+      )}
+      
+      <div className="relative overflow-x-auto">
+        <table className="w-full text-left text-xs sm:text-sm">
+          <tbody>
+            {rows.map((row, rowIndex) => (
+               <tr key={row._key || rowIndex}>
+    {row.cells?.map((cell, cellIndex) => {
+      const isHeader =
+        rowIndex < headerRows || Boolean(cell.isHeader);
+
+      const CellTag = isHeader ? "th" : "td";
+                  
+                  return (
+                    <CellTag
+                      key={cellIndex}
+                      className={`px-3 sm:px-4 md:px-6 py-3 sm:py-3 md:py-4 text-xs sm:text-sm md:text-base break-words ${
+                        isHeader
+                          ? 'font-bold text-gray-900 dark:text-white bg-blue-50 dark:bg-gray-700'
+                          : 'font-medium text-gray-700 dark:text-gray-300'
+                      }`}
+                      scope={isHeader ? 'row' : undefined}
+                    >
+                      {typeof cell === "string" ? (
+                        <span>{cell}</span>
+                      ) : typeof cell?.text === "string" ? (
+                        <span>{cell.text}</span>
+                      ) : cell?._type === "block" ? (
+                        <PortableText
+                          value={[cell]}
+                          components={{
+                            block: {
+                              normal: ({ children }) => <span>{children}</span>,
+                            },
+                            marks: {
+                              strong: ({ children }) => (
+                                <strong className="font-bold text-gray-900 dark:text-white">
+                                  {children}
+                                </strong>
+                              ),
+                              em: ({ children }) => (
+                                <em className="italic">{children}</em>
+                              ),
+                              code: ({ children }) => (
+                                <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-blue-600 dark:text-blue-400">
+                                  {children}
+                                </code>
+                              ),
+                              link: ({ value, children }) => {
+                                const href = value?.href || "#";
+                                const isInternal = href.startsWith("/") || href.startsWith("https://doitwithai.tools");
+                                const normalizedHref = href.startsWith("https://doitwithai.tools")
+                                  ? href.replace("https://doitwithai.tools", "") || "/"
+                                  : href;
+                                return (
+                                  <Link
+                                    href={normalizedHref}
+                                    target={isInternal ? undefined : "_blank"}
+                                    rel={isInternal ? undefined : "noopener noreferrer"}
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline hover:no-underline transition-colors duration-200 font-semibold"
+                                  >
+                                    {children}
+                                  </Link>
+                                );
+                              },
+                            },
+                          }}
+                        />
+                      ) : cell?.content ? (
+                        <PortableText
+                          value={cell.content}
+                          components={{
+                            block: {
+                              normal: ({ children }) => <span>{children}</span>,
+                            },
+                            marks: {
+                              strong: ({ children }) => (
+                                <strong className="font-bold text-gray-900 dark:text-white">
+                                  {children}
+                                </strong>
+                              ),
+                              em: ({ children }) => (
+                                <em className="italic">{children}</em>
+                              ),
+                              code: ({ children }) => (
+                                <code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-mono text-blue-600 dark:text-blue-400">
+                                  {children}
+                                </code>
+                              ),
+                              link: ({ value, children }) => {
+                                const target = value?.blank ? '_blank' : '_self';
+                                const rel = value?.blank ? 'noopener noreferrer' : undefined;
+                                
+                                return (
+                                  <Link
+                                    href={value?.href || '#'}
+                                    target={target}
+                                    rel={rel}
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline hover:no-underline transition-colors duration-200 font-semibold"
+                                  >
+                                    {children}
+                                  </Link>
+                                );
+                              },
+                            },
+                          }}
+                        />
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-600 italic text-xs">
+                          Empty
+                        </span>
+                      )}
+                    </CellTag>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
-  const imgdesc = {
-    block: {
-      normal: ({ children }) => (
-        <p className="text-sm sm:text-base leading-[1.7] text-gray-800 dark:text-gray-300 hover:text-gray-950 dark:hover:text-gray-50 mb-1 mt-1 font-medium transition-all duration-300 ease-in-out">
+
+ const imgdesc = {
+  block: {
+    normal: ({ children }) => (
+<p className="text-sm  sm:text-base leading-[1.7] text-gray-800 dark:text-gray-300 hover:text-gray-950 dark:hover:text-gray-50 mb-1 mt-1 font-medium transition-all duration-300 ease-in-out">
+        {children}
+      </p>
+    ),
+  },
+  marks: {
+    link: ({ children, value }) => {
+      const isExternal = value.href && !value.href.startsWith('/');
+      return (
+        <a
+          href={value.href}
+          rel={isExternal ? 'noreferrer noopener' : undefined}
+          target={isExternal ? '_blank' : undefined}
+          className="text-blue-600 dark:text-blue-400 font-semibold transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
+        >
           {children}
-        </p>
-      ),
+        </a>
+      );
     },
-    marks: {
-      link: ({ children, value }) => {
-        const isExternal = value?.href && !value.href.startsWith('/');
-        return (
-          <a
-            href={value?.href}
-            rel={isExternal ? 'noreferrer noopener' : undefined}
-            target={isExternal ? '_blank' : undefined}
-            className="text-blue-600 dark:text-blue-400 font-semibold transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
-          >
-            {children}
-          </a>
-        );
-      },
-    },
-  };
-
+  },
+};
+  // Enhanced VideoComponent in portableTextComponents
   const VideoComponent = ({ value }) => {
     const [fileUrl, setFileUrl] = useState(null);
     const [isUrlLoading, setIsUrlLoading] = useState(true);
@@ -418,16 +280,16 @@ const PortableTextComponents = () => {
         }
       };
       load();
-      return () => {
-        mounted = false;
-      };
+      return () => (mounted = false);
     }, [value]);
 
+    // Show loading state while URL is being fetched
     if (isUrlLoading) {
       return (
         <div className="relative w-full my-8 sm:my-10 md:my-12">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="group relative transform transition-all duration-500">
+              {/* Loading skeleton while URL loads */}
               <div className="relative overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700">
                 <div className="aspect-video w-full min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[350px] xl:min-h-[400px] flex items-center justify-center animate-pulse">
                   <div className="text-center">
@@ -446,6 +308,7 @@ const PortableTextComponents = () => {
       );
     }
 
+    // Show error state if no URL could be loaded
     if (!fileUrl) {
       return (
         <div className="relative w-full my-8 sm:my-10 md:my-12">
@@ -479,10 +342,18 @@ const PortableTextComponents = () => {
     return (
       <div className="relative w-full my-8 sm:my-10 md:my-12">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="group relative transform transition-all duration-500">
+          <div className="group relative transform transition-all duration-500 ">
+
+            {/* Enhanced gradient border - responsive */}
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-sm"></div>
+
+            {/* Main container with responsive padding */}
             <div className="relative bg-white dark:bg-gray-900 p-2 sm:p-3 md:p-4 rounded-lg shadow-xl group-hover:shadow-2xl transition-shadow duration-500">
+
               <div className="relative overflow-hidden rounded-lg">
+
+
+                {/* Video container with OptimizedVideo component */}
                 <div className="relative">
                   <OptimizedVideo
                     src={fileUrl}
@@ -490,27 +361,40 @@ const PortableTextComponents = () => {
                     caption={value.caption}
                     className="rounded-lg shadow-lg"
                   />
+
+                  {/* Enhanced caption with proper mobile sizing */}
                   {value.caption && (
-                    <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <div className="flex items-start gap-2 sm:gap-3">
-                        <div className="flex-shrink-0">
-                          <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                            <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    
+                    {/* Caption icon - no vertical alignment class needed here */}
+                    <div className="flex-shrink-0">
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                          <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </div>
                         </div>
+
+                        {/* Caption text - properly sized for mobile */}
                         <div className="flex-1 min-w-0">
                           <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words">
                             {value.caption}
                           </p>
                         </div>
+
                       </div>
                     </div>
                   )}
+
+
                 </div>
+
               </div>
+
+              {/* Background glow effect - reduced on mobile */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
             </div>
           </div>
         </div>
@@ -520,283 +404,149 @@ const PortableTextComponents = () => {
 
   const portableTextComponents = {
     types: {
+
       code: ({ value }) => {
         const code = value?.code || value?.codeString || value?.source || "";
         const language = (value?.language || value?.lang || "text").toLowerCase();
+
         return <CodeBlockComponent code={code} language={language} />;
       },
 
       video: VideoComponent,
-      gif: VideoComponent,
 
-      image: ({ value, index }) => {
-        const imageUrl =
-          value?.localUrl ||
-          (value?.asset ? urlForImage(value.asset).url() : value?.url || "/fallback-image-url.png");
-        const isPriority = index < 2;
-        const blurDataURL = value?.localUrl
-          ? "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjMTgyNDNlIi8+PC9zdmc+"
-          : (value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined);
-        const captionText = value?.caption || value?.imageDescription;
+image: ({ value, index }) => {
+  const imageUrl = value?.localUrl || (value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png");
+  const isPriority = index < 3;
+  const blurDataURL = !value?.localUrl && value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined;
 
-        return (
-          <div className="relative w-full my-8 sm:my-10 md:my-12">
-            <div className="mx-auto max-w-4xl px-4 sm:px-6">
-              <div className="group relative transform transition-all duration-500">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-sm"></div>
-                <div className="relative bg-white dark:bg-gray-900 p-2 sm:p-3 md:p-4 rounded-lg shadow-xl group-hover:shadow-2xl transition-shadow duration-500">
-                  <div className="relative overflow-hidden rounded-lg">
-                    <figure className="relative">
-                      <div className="relative overflow-hidden rounded-lg">
-                        <OptimizedImage
-                          src={imageUrl}
-                          alt={value.alt || value.altText || "Article illustration"}
-                          className="w-full h-auto object-cover rounded-lg shadow-lg"
-                          priority={isPriority}
-                          blurDataURL={blurDataURL}
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
-                          width={1200}
-                          height={675}
-                          quality={85}
-                          enableModal={true}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg" />
-                      </div>
+  return (
+    <div className="relative w-full my-8 sm:my-10 md:my-12">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+        <div className="group relative transform transition-all duration-500">
 
-                      {captionText && (
-                        <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                          <div className="flex items-start gap-2 sm:gap-3">
-                            <div className="flex-shrink-0">
-                              <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                                <svg
-                                  className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div>
-                                {typeof captionText === "string" ? (
-                                  <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-medium">
-                                    {captionText}
-                                  </p>
-                                ) : Array.isArray(captionText) ? (
-                                  <PortableText value={captionText} components={imgdesc} />
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </figure>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      },
+          {/* Enhanced gradient border - responsive (same as video) */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500 blur-sm"></div>
 
-      // Register all Sanity table block types to RichTableComponent
-      table: RichTableComponent,
-      richTable: RichTableComponent,
-      complexTable: RichTableComponent,
-      customTable: RichTableComponent,
+          {/* Main container with responsive padding (same as video) */}
+          <div className="relative bg-white dark:bg-gray-900 p-2 sm:p-3 md:p-4 rounded-lg shadow-xl group-hover:shadow-2xl transition-shadow duration-500">
 
-      button: ({ value }) => {
-        const { text, link } = value || {};
-        return (
-          <div className="flex justify-center mb-4 sm:mb-6 mt-4 sm:mt-6 px-2 sm:px-0">
-            <a
-              href={link}
-              className="press-button w-full sm:w-auto inline-flex items-center justify-center min-h-[48px] sm:min-h-[52px] px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 hover:bg-blue-700 text-white text-base sm:text-lg md:text-xl font-semibold tracking-wide rounded-lg shadow-md transition-all duration-300 ease-in-out transform hover:scale-[1.02] no-shift"
-              aria-label={text}
-              itemProp="url"
-            >
-              <span className="truncate">{text}</span>
-              <Rocket className="ml-2 flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
-            </a>
-          </div>
-        );
-      },
+            <div className="relative overflow-hidden rounded-lg">
+              <figure className="relative">
 
-      toolPromoCard: ({ value }) => {
-        const {
-          badge = "Do It With AI Tools",
-          title,
-          description,
-          ctaText = "Open Free Tool",
-          link = "/tools",
-          secondaryText,
-          secondaryLink,
-          image,
-          imageAlt,
-        } = value || {};
-
-        if (image) {
-          return (
-            <aside
-              className="my-10 grid min-w-0 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50 min-[768px]:grid-cols-[0.95fr_1.05fr]"
-              aria-label={badge || title}
-            >
-              <div className="flex min-w-0 items-center justify-center bg-[#e6ebff] p-3 sm:p-5 dark:bg-[#12203c]">
-                <Image
-                  src={image}
-                  alt={imageAlt || title || "Featured guide graphic"}
-                  width={800}
-                  height={450}
-                  sizes="(max-width: 767px) 100vw, 480px"
-                  className="block aspect-video h-auto w-full min-[768px]:h-full min-[768px]:aspect-auto rounded-xl object-cover shadow-sm"
-                  unoptimized={typeof image === "string" && image.startsWith("http")}
-                />
-              </div>
-              <div className="flex min-w-0 flex-col justify-center p-5 sm:p-7 lg:p-9">
-                <div className="flex items-center gap-2.5 text-xs font-semibold">
-                  <Image
-                    src="/doitwithai-logo-square.png"
-                    width={32}
-                    height={32}
-                    alt=""
-                    className="!h-8 !w-8 shrink-0 rounded-lg object-contain"
+                {/* Image container */}
+                <div className="relative overflow-hidden rounded-lg">
+                  <OptimizedImage
+                    src={imageUrl}
+                    alt={value.alt || "Article image"}
+                    className="w-full h-auto object-cover rounded-lg shadow-lg"
+                    priority={isPriority}
+                    blurDataURL={blurDataURL}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
+                    width={800}
+                    height={600}
+                    quality={85}
+                    enableModal={true}
                   />
-                  <span>Do It With AI Tools</span>
+                  
+                  {/* Subtle overlay on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-lg" />
                 </div>
-                {badge && (
-                  <p className="mb-2 mt-4 text-xs font-bold uppercase leading-6 tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
-                    {badge}
-                  </p>
-                )}
-                {title && (
-                  <h3 className="text-xl font-extrabold leading-snug sm:text-2xl lg:text-3xl">
-                    {title}
-                  </h3>
-                )}
-                {description && (
-                  <p className="mb-6 mt-3 text-base leading-7 text-slate-600 dark:text-slate-300 sm:leading-8">
-                    {description}
-                  </p>
-                )}
-                <div className="flex flex-wrap items-center gap-3">
+
+                {/* Enhanced image description with proper mobile sizing (same as video caption) */}
+                {value.imageDescription && (
+                <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    
+                    {/* Caption icon - no vertical alignment class needed here */}
+                    <div className="flex-shrink-0">
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-blue-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    
+                    {/* Caption text container */}
+                   {/* Updated Caption text container */}
+<div className="flex-1 min-w-0">
+  {/* Changed <p> to <div> to avoid nested <p> tags */}
+  <div>
+    <PortableText value={value.imageDescription} components={imgdesc} />
+  </div>
+</div>
+                    
+                  </div>
+                </div>
+              )}
+
+              </figure>
+            </div>
+
+            {/* Background glow effect - reduced on mobile (same as video) */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+},
+        richTable: RichTableComponent,
+        table: RichTableComponent,
+        complexTable: RichTableComponent,
+        customTable: RichTableComponent,
+        toolPromoCard: ({ value }) => {
+          if (!value) return null;
+          return (
+            <div className="my-7 rounded-2xl border border-blue-200/80 bg-gradient-to-br from-blue-50/90 via-white to-indigo-50/80 p-5 sm:p-6 shadow-md dark:border-blue-900/60 dark:from-slate-900 dark:via-slate-900/95 dark:to-blue-950/40">
+              {value.badge && (
+                <p className="m-0 mb-2 inline-flex items-center rounded-full bg-blue-600/10 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">
+                  {value.badge}
+                </p>
+              )}
+              {value.title && (
+                <p className="m-0 text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white leading-snug">
+                  {value.title}
+                </p>
+              )}
+              {value.description && (
+                <p className="mt-2 mb-4 text-sm sm:text-base leading-relaxed text-gray-700 dark:text-gray-300">
+                  {value.description}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-3">
+                {value.link && (
                   <Link
-                    href={link}
-                    className="inline-flex min-h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-5 py-3 text-sm font-bold leading-6 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
+                    href={value.link}
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
                   >
-                    {ctaText} <span aria-hidden="true">↗</span>
+                    <span>{value.ctaText || "Open Free Tool"}</span>
+                    <Rocket className="h-4 w-4" />
                   </Link>
-                  {secondaryText && secondaryLink && (
-                    <Link
-                      href={secondaryLink}
-                      className="text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
-                    >
-                      {secondaryText} →
-                    </Link>
-                  )}
-                </div>
+                )}
+                {value.secondaryLink && value.secondaryText && (
+                  <Link
+                    href={value.secondaryLink}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-xs sm:text-sm font-semibold text-blue-700 transition hover:bg-blue-50 dark:border-blue-800 dark:bg-slate-800 dark:text-blue-200 dark:hover:bg-slate-700"
+                  >
+                    <span>{value.secondaryText}</span>
+                  </Link>
+                )}
               </div>
-            </aside>
+            </div>
           );
-        }
+        },
 
-        return (
-          <aside
-            className="my-8 sm:my-10 overflow-hidden rounded-2xl border border-[#a9b9ff] bg-[#f3f5ff] p-5 sm:p-6 md:p-7 text-slate-900 shadow-sm transition-shadow hover:shadow-md dark:border-[#7388e6] dark:bg-[#18243e] dark:text-slate-50"
-            aria-label={badge || title}
-          >
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-              <Image
-                src="/doitwithai-logo-square.png"
-                width={28}
-                height={28}
-                alt=""
-                className="!h-7 !w-7 shrink-0 rounded-lg object-contain"
-              />
-              <span>Do It With AI Tools</span>
-            </div>
-            {badge && (
-              <p className="mb-1.5 mt-2.5 text-[11px] font-bold uppercase tracking-wider text-[#364cb4] dark:text-[#b7c5ff]">
-                {badge}
-              </p>
-            )}
-            {title && (
-              <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold leading-snug text-gray-900 dark:text-white">
-                {title}
-              </h3>
-            )}
-            {description && (
-              <p className="mb-4 mt-1.5 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300 max-w-3xl">
-                {description}
-              </p>
-            )}
-            <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href={link}
-                className="inline-flex min-h-10 sm:min-h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-[#4058d0] px-4 py-2.5 text-xs sm:text-sm font-bold leading-5 text-white shadow-sm transition hover:bg-[#3147b6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#5271ff]"
-              >
-                {ctaText} <span aria-hidden="true">↗</span>
-              </Link>
-              {secondaryText && secondaryLink && (
-                <Link
-                  href={secondaryLink}
-                  className="text-xs sm:text-sm font-semibold text-[#364cb4] dark:text-[#b7c5ff] hover:underline"
-                >
-                  {secondaryText} →
-                </Link>
-              )}
-            </div>
-          </aside>
-        );
-      },
-
-      imagePlaceholder: ({ value }) => {
-        const {
-          label = "Visual Placeholder",
-          title,
-          captureInstructions,
-          recommendedFilename,
-          altText,
-        } = value || {};
-        return (
-          <figure className="my-6 sm:my-8 rounded-2xl border-2 border-dashed border-blue-300 dark:border-blue-700/80 bg-slate-50/90 dark:bg-slate-800/60 p-5 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-900/40 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                {label}
-              </span>
-              {recommendedFilename && (
-                <code className="rounded bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                  {recommendedFilename}
-                </code>
-              )}
-            </div>
-            {title && (
-              <div className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
-                {title}
-              </div>
-            )}
-            {captureInstructions && (
-              <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed mb-3">
-                <strong className="font-semibold text-slate-900 dark:text-white">Visual Specification: </strong>
-                {captureInstructions}
-              </p>
-            )}
-            {altText && (
-              <figcaption className="rounded-lg bg-white/90 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-700/80 px-3.5 py-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
-                <strong className="font-semibold text-slate-800 dark:text-slate-200">Prepared Image Alt Text: </strong>
-                {altText}
-              </figcaption>
-            )}
-          </figure>
-        );
-      },
     },
 
     block: {
@@ -806,191 +556,212 @@ const PortableTextComponents = () => {
         </p>
       ),
 
-      h1: ({ children, value }) => {
-        const anchorId = generateAnchor(extractHeadingText(value, children));
-        return (
-          <h1
-            id={anchorId || undefined}
-            className="scroll-mt-24 mb-3 sm:mb-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold leading-tight sm:leading-none tracking-tight text-gray-900 dark:text-white transition-colors duration-300 hover:text-blue-600 dark:hover:text-blue-400 px-2 sm:px-0"
-          >
-            {children}
-          </h1>
-        );
-      },
+      h1: ({ children, value }) => (
+        <h1
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold leading-tight sm:leading-none tracking-tight text-gray-900 dark:text-white transition-colors duration-300 hover:text-blue-600 dark:hover:text-blue-400 px-2 sm:px-0"
+        >
+          {children}
+        </h1>
+      ),
 
-      // H2 - Primary section headings (synchronized with TableOfContents & Schema)
-      h2: ({ children, value }) => {
-        const anchorId = generateAnchor(extractHeadingText(value, children));
-        return (
-          <h2
-            id={anchorId || undefined}
-            className="scroll-mt-24 mb-3 sm:mb-4 md:mb-5 text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-bold text-gray-800 dark:text-white px-2 sm:px-0"
-          >
-            {children}
-          </h2>
-        );
-      },
+      // H2 - Primary section headings
+      h2: ({ children, value }) => (
+        <h2
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 md:mb-5 text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-3xl font-bold text-gray-800 dark:text-white px-2 sm:px-0"
+        >
+          {children}
+        </h2>
+      ),
 
-      // H3 - Subsection headings (synchronized with TableOfContents & Schema)
-      h3: ({ children, value }) => {
-        const anchorId = generateAnchor(extractHeadingText(value, children));
-        return (
-          <h3
-            id={anchorId || undefined}
-            className="scroll-mt-24 mb-3 sm:mb-4 text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-semibold text-gray-700 dark:text-gray-200 px-2 sm:px-0"
-          >
-            {children}
-          </h3>
-        );
-      },
+      // H3 - Subsection headings
+      h3: ({ children, value }) => (
+        <h3
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 text-base sm:text-lg md:text-xl lg:text-2xl xl:text-2xl font-semibold text-gray-700 dark:text-gray-200 px-2 sm:px-0"
+        >
+          {children}
+        </h3>
+      ),
 
       // H4 - Sub-subsection headings
-      h4: ({ children, value }) => {
-        const anchorId = generateAnchor(extractHeadingText(value, children));
-        return (
-          <h4
-            id={anchorId || undefined}
-            className="scroll-mt-24 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-3 sm:mb-4 text-sm sm:text-base md:text-lg lg:text-xl xl:text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 px-2 sm:px-0"
-          >
-            {children}
-          </h4>
-        );
-      },
+      h4: ({ children, value }) => (
+        <h4
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-300 ease-in-out mb-3 sm:mb-4 text-sm sm:text-base md:text-lg lg:text-xl xl:text-xl font-bold leading-tight text-gray-700 dark:text-gray-300 px-2 sm:px-0"
+        >
+          {children}
+        </h4>
+      ),
 
       // H5 - Minor headings
-      h5: ({ children, value }) => {
-        const anchorId = generateAnchor(extractHeadingText(value, children));
-        return (
-          <h5
-            id={anchorId || undefined}
-            className="scroll-mt-24 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-lg xl:text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0"
-          >
-            {children}
-          </h5>
-        );
-      },
+      h5: ({ children, value }) => (
+        <h5
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-lg xl:text-lg font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0"
+        >
+          {children}
+        </h5>
+      ),
 
       // H6 - Small heading
-      h6: ({ children, value }) => {
-        const anchorId = generateAnchor(extractHeadingText(value, children));
-        return (
-          <h6
-            id={anchorId || undefined}
-            className="scroll-mt-24 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-base font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0"
-          >
-            {children}
-          </h6>
-        );
-      },
+      h6: ({ children, value }) => (
+        <h6
+          id={generateHeadingAnchor(extractHeadingText(value, children))}
+          className="scroll-mt-24 mb-3 sm:mb-4 text-xs sm:text-sm md:text-base lg:text-base font-semibold leading-tight text-gray-600 dark:text-gray-400 px-2 sm:px-0"
+        >
+          {children}
+        </h6>
+      ),
+        blockquote: ({ children }) => (
+         <div className="relative z-10 mb-6 sm:mb-8 overflow-hidden rounded-md bg-primary bg-opacity-10 px-5 py-6 sm:px-7 sm:py-7 md:px-8 md:py-8">
+    <blockquote className="text-center text-sm sm:text-base md:text-lg lg:text-xl italic font-medium leading-relaxed sm:leading-relaxed text-gray-700 dark:text-gray-300 px-2 sm:px-4">
 
-      blockquote: ({ children }) => (
-        <div className="relative z-10 mb-6 sm:mb-8 overflow-hidden rounded-md bg-primary bg-opacity-10 px-5 py-6 sm:px-7 sm:py-7 md:px-8 md:py-8">
-          <blockquote className="text-center text-sm sm:text-base md:text-lg lg:text-xl italic font-medium leading-relaxed sm:leading-relaxed text-gray-700 dark:text-gray-300 px-2 sm:px-4">
-            <span className="absolute left-0 top-0 z-[-1]">
-              <svg
-                width="132"
-                height="109"
-                viewBox="0 0 132 109"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  opacity="0.5"
-                  d="M33.0354 90.11C19.9851 102.723 -3.75916 101.834 -14 99.8125V-15H132C131.456 -12.4396 127.759 -2.95278 117.318 14.5117C104.268 36.3422 78.7114 31.8952 63.2141 41.1934C47.7169 50.4916 49.3482 74.3435 33.0354 90.11Z"
-                  fill="url(#paint0_linear_111:606)"
-                />
-                <path
-                  opacity="0.5"
-                  d="M33.3654 85.0768C24.1476 98.7862 1.19876 106.079 -9.12343 108.011L-38.876 22.9988L100.816 -25.8905C100.959 -23.8126 99.8798 -15.5499 94.4164 0.87754C87.5871 21.4119 61.9822 26.677 49.5641 38.7512C37.146 50.8253 44.8877 67.9401 33.3654 85.0768Z"
-                  fill="url(#paint1_linear_111:606)"
-                />
-                <defs>
-                  <linearGradient
-                    id="paint0_linear_111:606"
-                    x1="94.7523"
-                    y1="82.0246"
-                    x2="8.40951"
-                    y2="52.0609"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stopColor="white" stopOpacity="0.06" />
-                    <stop offset="1" stopColor="white" stopOpacity="0" />
-                  </linearGradient>
-                  <linearGradient
-                    id="paint1_linear_111:606"
-                    x1="90.3206"
-                    y1="58.4236"
-                    x2="1.16149"
-                    y2="50.8365"
-                    gradientUnits="userSpaceOnUse"
-                  >
-                    <stop stopColor="white" stopOpacity="0.06" />
-                    <stop offset="1" stopColor="white" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </span>
+          <span className="absolute left-0 top-0 z-[-1]">
+                        <svg
+                          width="132"
+                          height="109"
+                          viewBox="0 0 132 109"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            opacity="0.5"
+                            d="M33.0354 90.11C19.9851 102.723 -3.75916 101.834 -14 99.8125V-15H132C131.456 -12.4396 127.759 -2.95278 117.318 14.5117C104.268 36.3422 78.7114 31.8952 63.2141 41.1934C47.7169 50.4916 49.3482 74.3435 33.0354 90.11Z"
+                            fill="url(#paint0_linear_111:606)"
+                          />
+                          <path
+                            opacity="0.5"
+                            d="M33.3654 85.0768C24.1476 98.7862 1.19876 106.079 -9.12343 108.011L-38.876 22.9988L100.816 -25.8905C100.959 -23.8126 99.8798 -15.5499 94.4164 0.87754C87.5871 21.4119 61.9822 26.677 49.5641 38.7512C37.146 50.8253 44.8877 67.9401 33.3654 85.0768Z"
+                            fill="url(#paint1_linear_111:606)"
+                          />
+                          <defs>
+                            <linearGradient
+                              id="paint0_linear_111:606"
+                              x1="94.7523"
+                              y1="82.0246"
+                              x2="8.40951"
+                              y2="52.0609"
+                              gradientUnits="userSpaceOnUse"
+                            >
+                              <stop stopColor="white" stopOpacity="0.06" />
+                              <stop
+                                offset="1"
+                                stopColor="white"
+                                stopOpacity="0"
+                              />
+                            </linearGradient>
+                            <linearGradient
+                              id="paint1_linear_111:606"
+                              x1="90.3206"
+                              y1="58.4236"
+                              x2="1.16149"
+                              y2="50.8365"
+                              gradientUnits="userSpaceOnUse"
+                            >
+                              <stop stopColor="white" stopOpacity="0.06" />
+                              <stop
+                                offset="1"
+                                stopColor="white"
+                                stopOpacity="0"
+                              />
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                      </span>
+               
+                    
             {children}
             <span className="absolute bottom-0 right-0 z-[-1]">
-              <svg
-                width="53"
-                height="30"
-                viewBox="0 0 53 30"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <circle opacity="0.8" cx="37.5" cy="37.5" r="37.5" fill="#4A6CF7" />
-                <mask
-                  id="mask0_111:596"
-                  style={{ maskType: "alpha" }}
-                  maskUnits="userSpaceOnUse"
-                  x="0"
-                  y="0"
-                  width="75"
-                  height="75"
+                
+                <svg
+                  width="53"
+                  height="30"
+                  viewBox="0 0 53 30"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  <circle opacity="0.8" cx="37.5" cy="37.5" r="37.5" fill="#4A6CF7" />
-                </mask>
-                <g mask="url(#mask0_111:596)">
                   <circle
                     opacity="0.8"
                     cx="37.5"
                     cy="37.5"
                     r="37.5"
-                    fill="url(#paint0_radial_111:596)"
+                    fill="#4A6CF7"
                   />
-                  <g opacity="0.8" filter="url(#filter0_f_111:596)">
-                    <circle cx="40.8089" cy="19.853" r="15.4412" fill="white" />
+                  <mask
+                    id="mask0_111:596"
+                    style={{ maskType: "alpha" }}
+                    maskUnits="userSpaceOnUse"
+                    x="0"
+                    y="0"
+                    width="75"
+                    height="75"
+                  >
+                    <circle
+                      opacity="0.8"
+                      cx="37.5"
+                      cy="37.5"
+                      r="37.5"
+                      fill="#4A6CF7"
+                    />
+                  </mask>
+                  <g mask="url(#mask0_111:596)">
+                    <circle
+                      opacity="0.8"
+                      cx="37.5"
+                      cy="37.5"
+                      r="37.5"
+                      fill="url(#paint0_radial_111:596)"
+                    />
+                    <g opacity="0.8" filter="url(#filter0_f_111:596)">
+                      <circle
+                        cx="40.8089"
+                        cy="19.853"
+                        r="15.4412"
+                        fill="white"
+                      />
+                    </g>
                   </g>
-                </g>
-                <defs>
-                  <filter
-                    id="filter0_f_111:596"
-                    x="4.36768"
-                    y="-16.5881"
-                    width="72.8823"
-                    height="72.8823"
-                    filterUnits="userSpaceOnUse"
-                    colorInterpolationFilters="sRGB"
-                  >
-                    <feFlood floodOpacity="0" result="BackgroundImageFix" />
-                    <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
-                    <feGaussianBlur stdDeviation="10.5" result="effect1_foregroundBlur_111:596" />
-                  </filter>
-                  <radialGradient
-                    id="paint0_radial_111:596"
-                    cx="0"
-                    cy="0"
-                    r="1"
-                    gradientUnits="userSpaceOnUse"
-                    gradientTransform="translate(37.5 37.5) rotate(90) scale(40.2574)"
-                  >
-                    <stop stopOpacity="0.47" />
-                    <stop offset="1" stopOpacity="0" />
-                  </radialGradient>
-                </defs>
-              </svg>
-            </span>
+                  <defs>
+                    <filter
+                      id="filter0_f_111:596"
+                      x="4.36768"
+                      y="-16.5881"
+                      width="72.8823"
+                      height="72.8823"
+                      filterUnits="userSpaceOnUse"
+                      colorInterpolationFilters="sRGB"
+                    >
+                      <feFlood
+                        floodOpacity="0"
+                        result="BackgroundImageFix"
+                      />
+                      <feBlend
+                        mode="normal"
+                        in="SourceGraphic"
+                        in2="BackgroundImageFix"
+                        result="shape"
+                      />
+                      <feGaussianBlur
+                        stdDeviation="10.5"
+                        result="effect1_foregroundBlur_111:596"
+                      />
+                    </filter>
+                    <radialGradient
+                      id="paint0_radial_111:596"
+                      cx="0"
+                      cy="0"
+                      r="1"
+                      gradientUnits="userSpaceOnUse"
+                      gradientTransform="translate(37.5 37.5) rotate(90) scale(40.2574)"
+                    >
+                      <stop stopOpacity="0.47" />
+                      <stop offset="1" stopOpacity="0" />
+                    </radialGradient>
+                  </defs>
+                </svg>
+              </span>
           </blockquote>
         </div>
       ),
@@ -1044,30 +815,31 @@ const PortableTextComponents = () => {
         </code>
       ),
 
-      strong: ({ children }) => (
-        <strong className="font-bold text-current">
-          {children}
-        </strong>
-      ),
+    // new strong renderer — inherits color from parent (link or paragraph)
+strong: ({ children }) => (
+  <strong className="font-bold text-current">
+    {children}
+  </strong>
+),
 
       em: ({ children }) => <em>{children}</em>,
 
-      link: ({ children, value }) => {
-        return (
-          <a
-            href={value?.href}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
-          >
-            {children}
-          </a>
-        );
-      },
+    link: ({ children, value }) => {
+  return (
+    <a
+      href={value.href}
+      target="_blank"
+      rel="noreferrer noopener" // ✅ Apply this to all links with target="_blank"
+      className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
+    >
+      {children}
+    </a>
+  );
+},
     },
 
     button: ({ value }) => {
-      const { text, link } = value || {};
+      const { text, link } = value;
 
       return (
         <div className="flex justify-center mb-4 sm:mb-6 mt-4 sm:mt-6 px-2 sm:px-0">

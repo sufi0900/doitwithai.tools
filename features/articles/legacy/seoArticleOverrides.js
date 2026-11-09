@@ -12,28 +12,37 @@
 
 export const seoArticleOverrides = {
   "seo:h1-heading": {
-    metatitle: "H1 Tag Length, Examples & Free H1 Checker (2026)",
+    title: "H1 Tag in SEO: Best Practices, Length, Examples & AI Guide",
+    metatitle: "H1 Tag Length & SEO Guide (2026): Examples + Free Checker",
     metadesc:
-      "Google sets no fixed H1 length. See H1 vs title tag examples, practical length ranges, AI prompts, and test your own heading in a free H1 checker.",
-    relatedToolSlugs: ["h1-heading-generator", "heading-structure-analyzer", "meta-title-generator"],
+      "What is an H1 tag and how long should it be? See the 20–70 char & 600px SERP rules, H1 vs. title tag examples, CMS fixes, and test your H1 live for free.",
+    relatedToolSlugs: [
+      "h1-heading-generator",
+      "heading-structure-analyzer",
+      "meta-title-generator",
+      "on-page-ai-seo-analyzer",
+      "article-outline-generator",
+    ],
     quickAnswer: {
-      question: "How long should an H1 be?",
+      question: "What is an H1 tag and how long should an H1 heading be for SEO?",
       answer:
-        "Google does not publish a character limit for H1 headings. Most clear H1s fall roughly between 20 and 70 characters: long enough to describe the page topic, short enough to scan. Use one descriptive main heading per page and match the reader's intent instead of copying your title tag word for word.",
+        "An H1 tag (<h1>) is the primary HTML heading visible on a webpage that defines its main topic for readers, screen readers, and search engines. While Google sets no strict H1 character limit, keeping your H1 between 20 and 70 characters (or 50–60 characters / ~600px when your CMS reuses the H1 as the <title> tag) prevents mobile wrapping and SERP title-link truncation.",
     },
     checker: {
       kind: "length",
-      label: "Check your H1 length",
-      placeholder: "Paste or type your H1 heading…",
+      label: "Check your H1 tag length & SERP title-fallback safety",
+      placeholder: "Paste or type your H1 tag or page headline…",
       min: 20,
       max: 70,
-      tooShort: "Very short. Add the topic or benefit so readers know what the page covers.",
-      good: "Clear, scannable length for a main heading.",
-      tooLong: "Long for a heading. Consider moving detail into the intro or an H2.",
+      mobile: 60,
+      tooShort: "Under 20 chars — too vague. Add the specific page topic, reader task, or audience.",
+      good: "Optimal 20–70 char range (scannable on mobile and safe if Google uses your H1 as the SERP title link).",
+      tooLong: "Over 70 chars — likely to wrap to 3+ lines on mobile and truncate past ~600px if used as a SERP title link.",
     },
     tools: [
-      { slug: "h1-heading-generator", name: "H1 Heading Generator", primary: true },
-      { slug: "heading-structure-analyzer", name: "Heading Structure Analyzer" },
+      { slug: "h1-heading-generator", name: "AI H1 Tag Generator", primary: true },
+      { slug: "heading-structure-analyzer", name: "H1–H6 Structure Analyzer" },
+      { slug: "meta-title-generator", name: "Meta Title Generator" },
     ],
   },
 
@@ -415,9 +424,10 @@ export function applySeoOverrides(data, schemaType) {
   const type = data._type || schemaType;
   const override = seoArticleOverrides[`${type}:${slugOf(data)}`];
   if (!override) return data;
-  const { metatitle, metadesc, relatedToolSlugs, ...enhancement } = override;
+  const { title, metatitle, metadesc, relatedToolSlugs, ...enhancement } = override;
   return {
     ...data,
+    ...(title ? { title } : {}),
     ...(metatitle ? { metatitle } : {}),
     ...(metadesc ? { metadesc } : {}),
     ...(relatedToolSlugs ? { relatedToolSlugs } : {}),

@@ -1724,3 +1724,97 @@ export function getAllStaticArticleSitemapEntries() {
       publishedAt: doc.publishedAt,
     }));
 }
+
+export const CLUSTER_RELATED_SLUGS = {
+  "seo:h1-heading": [
+    "meta-title",
+    "meta-description",
+    "blog-introduction",
+    "write-slug-urls",
+    "what-to-do-after-keyword-research",
+  ],
+  "seo:meta-title": [
+    "h1-heading",
+    "meta-description",
+    "write-slug-urls",
+    "blog-introduction",
+    "check-google-keyword-rankings",
+  ],
+  "seo:meta-description": [
+    "meta-title",
+    "h1-heading",
+    "write-slug-urls",
+    "blog-introduction",
+    "check-google-keyword-rankings",
+  ],
+  "seo:blog-introduction": [
+    "h1-heading",
+    "meta-title",
+    "ai-readability-tools",
+    "meta-description",
+  ],
+  "seo:write-slug-urls": [
+    "h1-heading",
+    "meta-title",
+    "meta-description",
+    "schema-markup-optimization",
+  ],
+  "seo:schema-markup-optimization": [
+    "h1-heading",
+    "meta-title",
+    "what-is-ai-seo",
+    "write-slug-urls",
+  ],
+  "seo:what-is-ai-seo": [
+    "h1-heading",
+    "meta-title",
+    "what-to-do-after-keyword-research",
+    "check-google-keyword-rankings",
+  ],
+  "seo:ai-readability-tools": [
+    "h1-heading",
+    "blog-introduction",
+    "meta-title",
+    "what-is-ai-seo",
+  ],
+  "seo:what-to-do-after-keyword-research": [
+    "check-google-keyword-rankings",
+    "chatgpt-keyword-research",
+    "h1-heading",
+    "meta-title",
+  ],
+  "seo:check-google-keyword-rankings": [
+    "what-to-do-after-keyword-research",
+    "h1-heading",
+    "meta-title",
+    "meta-description",
+  ],
+};
+
+export function getClusterRelatedArticles(slug, schemaType = "seo", limit = 3) {
+  const allMap = getMergedStaticArticlesMap();
+  const key = `${schemaType}:${slug}`;
+  const preferredSlugs = CLUSTER_RELATED_SLUGS[key] || [];
+  const results = [];
+  const seen = new Set([slug]);
+
+  for (const candSlug of preferredSlugs) {
+    if (seen.has(candSlug)) continue;
+    const doc = allMap[`${schemaType}:${candSlug}`];
+    if (doc) {
+      results.push({ ...doc, __source: "code-static" });
+      seen.add(candSlug);
+      if (results.length >= limit) return results;
+    }
+  }
+
+  for (const doc of getStaticArticlesByType(schemaType)) {
+    const docSlug = doc?.slug?.current;
+    if (!docSlug || seen.has(docSlug)) continue;
+    results.push({ ...doc, __source: "code-static" });
+    seen.add(docSlug);
+    if (results.length >= limit) break;
+  }
+
+  return results;
+}

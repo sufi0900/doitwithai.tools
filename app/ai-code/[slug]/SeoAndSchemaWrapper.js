@@ -30,7 +30,9 @@ export default function SeoAndSchemaWrapper({
 }) {
   const currentSlug = params.slug;
   const canonicalUrl = `https://doitwithai.tools/${basePath}/${currentSlug}`;
-  const imageUrl = data?.mainImage ? urlForImage(data.mainImage).url() : null;
+  const imageUrl = data?.mainImage?.localUrl
+    ? (data.mainImage.localUrl.startsWith("http") ? data.mainImage.localUrl : `https://doitwithai.tools${data.mainImage.localUrl}`)
+    : (data?.mainImage?.asset ? urlForImage(data.mainImage).url() : null);
   const readingTime = data ? Math.ceil((data.wordCount || 1000) / 250) : null;
 
   // Memoize schema generation to prevent recalculations on every render
@@ -65,14 +67,14 @@ export default function SeoAndSchemaWrapper({
     return {
       __html: JSON.stringify({
         "@context": "https://schema.org",
-        "@type": ["Article", "TechArticle"], // TechArticle is good for SEO articles
+        "@type": ["Article", "TechArticle", "BlogPosting"], // TechArticle is good for SEO articles
         "@id": `${canonicalUrl}#article`,
         "mainEntityOfPage": {
           "@type": "WebPage",
           "@id": canonicalUrl,
           "url": canonicalUrl
         },
-        "headline": data.metatitle, // Use headline as primary title
+        "headline": data.title || data.metatitle, // Align JSON-LD headline with visible H1
         "name": data.schematitle || data.metatitle, // Redundant if same as headline, but harmless
         "description": data.metadesc,
         "abstract": data.overview, // Good to include if you have an abstract
@@ -156,96 +158,40 @@ export default function SeoAndSchemaWrapper({
     };
   }
 
-  function generateAnchorSlug(text) {
-    if (!text) return '';
-    return String(text)
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  }
-
-  function resolveTocForSchema(data) {
-    const content = Array.isArray(data?.content) ? data.content : [];
-    const bodyToc = [];
-    let currentH2 = null;
-    for (const block of content) {
-      if (!block || block._type !== 'block') continue;
-      if (block.style !== 'h2' && block.style !== 'h3') continue;
-      const text = Array.isArray(block.children)
-        ? block.children.map((s) => (typeof s?.text === 'string' ? s.text : '')).join('').trim()
-        : '';
-      if (!text) continue;
-      if (block.style === 'h2') {
-        currentH2 = { heading: text, subheadings: [] };
-        bodyToc.push(currentH2);
-      } else if (block.style === 'h3') {
-        if (currentH2) currentH2.subheadings.push({ subheading: text });
-        else bodyToc.push({ heading: text, subheadings: [] });
-      }
-    }
-    const manualToc = Array.isArray(data?.tableOfContents)
-      ? data.tableOfContents.filter((i) => i && i.heading)
-      : [];
-    if (!bodyToc.length) return manualToc;
-    if (!manualToc.length) return bodyToc;
-    const validAnchors = new Set();
-    bodyToc.forEach((item) => {
-      validAnchors.add(generateAnchorSlug(item.heading));
-      (item.subheadings || []).forEach((s) => validAnchors.add(generateAnchorSlug(s.subheading)));
-    });
-    const allMatch = manualToc.every((item) => {
-      const h = generateAnchorSlug(item.heading);
-      if (!h || !validAnchors.has(h)) return false;
-      return (item.subheadings || []).every((s) => {
-        const sub = generateAnchorSlug(s?.subheading);
-        return !sub || validAnchors.has(sub);
-      });
-    });
-    return allMatch ? manualToc : bodyToc;
-  }
-
   function generateCorrectTableOfContentsSchema(data, canonicalUrl) {
-    const resolvedToc = resolveTocForSchema(data);
-    if (!resolvedToc || resolvedToc.length === 0) {
+    if (!data || !data.tableOfContents || data.tableOfContents.length === 0) {
       return null;
     }
 
     const tocItems = [];
     let position = 1;
 
-    resolvedToc.forEach((item) => {
-      const headingSlug = generateAnchorSlug(item.heading);
-      if (!headingSlug) return;
+    data.tableOfContents.forEach((item) => {
       // Add main heading
       tocItems.push({
         "@type": "ListItem",
         "position": position++,
         "name": item.heading,
-        "url": `${canonicalUrl}#${headingSlug}`,
+        "url": `${canonicalUrl}#${item.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`,
         "item": {
           "@type": "WebPageElement",
           "name": item.heading,
-          "url": `${canonicalUrl}#${headingSlug}`
+          "url": `${canonicalUrl}#${item.heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`
         }
       });
 
       // Add subheadings if they exist
       if (item.subheadings && item.subheadings.length > 0) {
         item.subheadings.forEach((sub) => {
-          const subSlug = generateAnchorSlug(sub.subheading);
-          if (!subSlug) return;
           tocItems.push({
             "@type": "ListItem",
             "position": position++,
             "name": sub.subheading,
-            "url": `${canonicalUrl}#${subSlug}`,
+            "url": `${canonicalUrl}#${sub.subheading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`,
             "item": {
               "@type": "WebPageElement",
               "name": sub.subheading,
-              "url": `${canonicalUrl}#${subSlug}`
+              "url": `${canonicalUrl}#${sub.subheading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`
             }
           });
         });

@@ -53,10 +53,15 @@
         {
           "path": "/ai-seo/meta-title",
           "title": "Write useful page titles"
+        },
+        {
+          "path": "/ai-seo/h1-heading",
+          "title": "H1 Tag in SEO: Best Practices, Length & Examples"
         }
       ],
       "relatedToolSlugs": [
         "structured-data-validator",
+        "h1-heading-generator",
         "heading-structure-analyzer",
         "meta-title-generator",
         "meta-description-generator",
@@ -66,8 +71,7 @@
         "core-web-vitals-checker",
         "llms-txt-generator",
         "content-evidence-review",
-        "external-link-source-review",
-        "claude-copilot-seo-analyzer"
+        "external-link-source-review"
       ],
       "topics": [
         "on-page"
@@ -235,6 +239,10 @@
         {
           "path": "/ai-seo/meta-title",
           "title": "How to write meta titles"
+        },
+        {
+          "path": "/ai-seo/h1-heading",
+          "title": "H1 Tag vs. Title Tag: Best Practices & Length"
         }
       ],
       "relatedToolSlugs": [
@@ -242,7 +250,8 @@
         "slug-generator",
         "schema-markup-generator",
         "meta-description-generator",
-        "h1-heading-generator"
+        "h1-heading-generator",
+        "heading-structure-analyzer"
       ],
       "topics": [
         "on-page"
@@ -337,6 +346,10 @@
         {
           "path": "/ai-seo/meta-description",
           "title": "How to write meta descriptions"
+        },
+        {
+          "path": "/ai-seo/h1-heading",
+          "title": "H1 Tag in SEO: Best Practices & Examples"
         }
       ],
       "relatedToolSlugs": [
@@ -352,12 +365,15 @@
       "id": "h1-heading-generator",
       "slug": "h1-heading-generator",
       "name": "H1 Heading Generator",
-      "description": "Create and compare clear main headings based on the content your page actually offers.",
+      "description": "Generate 6 reader-first H1 heading options across 3 editorial angles, check character and pixel fit, preview your H1–H2 outline, and refine wording live.",
       "categories": [
         "ai-seo"
       ],
       "tags": [
+        "H1 tag generator",
         "headings",
+        "on-page SEO",
+        "title vs H1",
         "content"
       ],
       "kind": "AI-assisted",
@@ -367,12 +383,24 @@
       "relatedGuides": [
         {
           "path": "/ai-seo/h1-heading",
-          "title": "How to write H1 headings"
+          "title": "H1 Tag in SEO: Best Practices, Length & Examples"
+        },
+        {
+          "path": "/ai-seo/meta-title",
+          "title": "How to Write Meta Titles With AI (H1 vs. Title Tag)"
+        },
+        {
+          "path": "/ai-seo/blog-introduction",
+          "title": "How to Write a Clear Blog Introduction After Your H1"
         }
       ],
       "relatedToolSlugs": [
+        "heading-structure-analyzer",
+        "article-outline-generator",
         "meta-title-generator",
-        "meta-description-generator"
+        "meta-description-generator",
+        "on-page-ai-seo-analyzer",
+        "serp-rich-result-preview-generator"
       ],
       "topics": [
         "on-page"
@@ -382,7 +410,7 @@
       "id": "article-outline-generator",
       "slug": "article-outline-generator",
       "name": "Article Outline Generator",
-      "description": "Shape an article plan with heading alternatives, section goals, evidence prompts, and editable H2/H3 structure.",
+      "description": "Turn your topic and keyword brief into a logical H1–H3 article hierarchy with 3 heading options per section, section goals, and 1-click Markdown export.",
       "categories": [
         "content-writing"
       ],
@@ -397,16 +425,21 @@
       "featuredOrder": 6,
       "relatedGuides": [
         {
+          "path": "/ai-seo/h1-heading",
+          "title": "H1 Tag in SEO: Best Practices, Length & Examples"
+        },
+        {
           "path": "/ai-seo/blog-introduction",
-          "title": "How to plan a useful blog introduction"
+          "title": "How to Plan a Useful Blog Introduction"
         },
         {
           "path": "/ai-seo/chatgpt-target-audience-research",
-          "title": "Understand your intended reader"
+          "title": "Understand Your Intended Reader"
         }
       ],
       "relatedToolSlugs": [
         "h1-heading-generator",
+        "heading-structure-analyzer",
         "meta-title-generator",
         "meta-description-generator",
         "image-alt-text-generator",
@@ -491,14 +524,13 @@
       "id": "keyword-clustering-tool",
       "slug": "keyword-clustering-tool",
       "name": "Keyword Clustering Tool",
-      "description": "Group raw keyword lists into page-level topic clusters by shared search intent, refine your groups, and export an editable SEO content plan.",
+      "description": "Group supplied keywords by reader task or topic, refine memberships, and export an editable content plan.",
       "categories": [
         "ai-seo"
       ],
       "tags": [
         "keywords",
         "clustering",
-        "keyword grouping",
         "content planning"
       ],
       "kind": "AI-assisted",
@@ -506,10 +538,6 @@
       "addedAt": "2026-10-04",
       "featuredOrder": 9,
       "relatedGuides": [
-        {
-          "path": "/ai-seo/what-to-do-after-keyword-research",
-          "title": "What to do after keyword research: grouping, intent & mapping"
-        },
         {
           "path": "/ai-seo/chatgpt-keyword-research",
           "title": "Keyword research prompts and planning resources"
@@ -523,8 +551,7 @@
         "search-intent-checker",
         "seo-content-brief-generator",
         "keyword-density-checker",
-        "keyword-research-tool",
-        "keyword-golden-ratio-calculator"
+        "keyword-research-tool"
       ],
       "topics": [
         "keywords"
@@ -851,8 +878,7 @@
         "schema-markup-generator",
         "content-evidence-review",
         "external-link-source-review",
-        "keyword-density-checker",
-        "ai-mode-llm-seo-tracker"
+        "keyword-density-checker"
       ],
       "topics": [
         "ai-search"
@@ -876,8 +902,7 @@
       "relatedGuides": [],
       "relatedToolSlugs": [
         "keyword-cannibalization-finder",
-        "meta-title-generator",
-        "seo-roi-calculator"
+        "meta-title-generator"
       ],
       "topics": [
         "keywords"
@@ -1107,23 +1132,41 @@
       "id": "heading-structure-analyzer",
       "slug": "heading-structure-analyzer",
       "name": "Heading Structure Analyzer",
-      "description": "Check a webpage URL, HTML, or Markdown for heading hierarchy, skipped levels, duplicates, and target phrase placement.",
+      "description": "Inspect any live webpage URL, raw HTML, or Markdown draft to check H1–H6 hierarchy, catch missing or multiple H1 tags, spot skipped heading levels, and verify target phrase placement.",
       "categories": [
         "ai-seo"
       ],
       "tags": [
-        "headings",
-        "content structure"
+        "check H1 H2 tags",
+        "heading structure analyzer",
+        "H1–H6 hierarchy",
+        "on-page SEO"
       ],
       "kind": "Utility",
       "status": "live",
       "addedAt": "2026-10-20",
       "featuredOrder": 29,
-      "relatedGuides": [],
+      "relatedGuides": [
+        {
+          "path": "/ai-seo/h1-heading",
+          "title": "H1 Tag in SEO: Best Practices, Length & Examples"
+        },
+        {
+          "path": "/ai-seo/meta-title",
+          "title": "How to Write Meta Titles With AI"
+        },
+        {
+          "path": "/ai-seo/what-to-do-after-keyword-research",
+          "title": "What to Do After Keyword Research"
+        }
+      ],
       "relatedToolSlugs": [
-        "on-page-ai-seo-analyzer",
         "h1-heading-generator",
-        "readability-checker"
+        "article-outline-generator",
+        "on-page-ai-seo-analyzer",
+        "meta-title-generator",
+        "readability-checker",
+        "ai-citation-readiness-checker"
       ],
       "topics": [
         "on-page"
@@ -1157,9 +1200,7 @@
         "keyword-clustering-tool",
         "search-intent-checker",
         "seo-content-brief-generator",
-        "target-audience-research-tool",
-        "seo-roi-calculator",
-        "keyword-golden-ratio-calculator"
+        "target-audience-research-tool"
       ],
       "topics": [
         "keywords"
@@ -1829,8 +1870,7 @@
         "entity-sameas-finder",
         "content-evidence-review",
         "ai-citation-readiness-checker",
-        "information-gain-auditor",
-        "claude-copilot-seo-analyzer"
+        "information-gain-auditor"
       ],
       "topics": [
         "on-page"
@@ -1840,7 +1880,7 @@
       "id": "featured-snippet-optimizer",
       "slug": "featured-snippet-optimizer",
       "name": "Featured Snippet & AI Overview Passage Optimizer",
-      "description": "Audit H2/H3 answer passages and generate 45\u201358 word Position Zero definitions, ordered step lists, and comparison tables for Featured Snippets and AI Overviews.",
+      "description": "Audit H2/H3 answer passages and generate 45–58 word Position Zero definitions, ordered step lists, and comparison tables for Featured Snippets and AI Overviews.",
       "categories": [
         "ai-seo"
       ],
@@ -2015,7 +2055,7 @@
       "id": "table-of-contents-generator",
       "slug": "table-of-contents-generator",
       "name": "SEO Table of Contents & Jump-Link Generator",
-      "description": "Generate a semantic HTML or Markdown Table of Contents from H2\u2013H4 headings, automatically inject unique id attributes into your article, and export Jump-Link JSON-LD.",
+      "description": "Generate a semantic HTML or Markdown Table of Contents from H2–H4 headings, automatically inject unique id attributes into your article, and export Jump-Link JSON-LD.",
       "categories": [
         "ai-seo"
       ],
@@ -2250,7 +2290,7 @@
       "id": "local-seo-service-page-planner",
       "slug": "local-seo-service-page-planner",
       "name": "Local SEO Service-Area & City Page Planner",
-      "description": "Plan a non-spammy City \u00d7 Service landing page matrix, generate localized H1s, meta titles, and H2 outlines, and prevent doorway-page penalties.",
+      "description": "Plan a non-spammy City × Service landing page matrix, generate localized H1s, meta titles, and H2 outlines, and prevent doorway-page penalties.",
       "categories": [
         "ai-seo"
       ],
@@ -2317,7 +2357,7 @@
       "id": "youtube-title-thumbnail-optimizer",
       "slug": "youtube-title-thumbnail-optimizer",
       "name": "YouTube Title, Hook & Thumbnail Optimizer",
-      "description": "Score YouTube video titles against the 58-character mobile cutoff, pair titles with 2\u20134 word thumbnail text overlays, and preview your video card in YouTube feeds.",
+      "description": "Score YouTube video titles against the 58-character mobile cutoff, pair titles with 2–4 word thumbnail text overlays, and preview your video card in YouTube feeds.",
       "categories": [
         "content-writing"
       ],
@@ -2374,8 +2414,7 @@
         "blog-to-video-script",
         "youtube-title-thumbnail-optimizer",
         "blog-to-social-posts",
-        "social-thread-generator",
-        "ugc-video-prompt-generator"
+        "social-thread-generator"
       ],
       "topics": [
         "social"
@@ -2576,8 +2615,7 @@
         "llms-txt-generator",
         "ai-citation-readiness-checker",
         "entity-sameas-finder",
-        "comparison-page-generator",
-        "ai-mode-llm-seo-tracker"
+        "comparison-page-generator"
       ],
       "topics": [
         "ai-search"
@@ -2655,7 +2693,7 @@
       "id": "linkedin-comment-generator",
       "slug": "linkedin-comment-generator",
       "name": "LinkedIn Comment & Engagement Generator",
-      "description": "Generate 5 high-visibility LinkedIn comments from any post or article URL\u2014including authority frameworks, 90/10 contrarian nuance, and smart follow-up questions.",
+      "description": "Generate 5 high-visibility LinkedIn comments from any post or article URL—including authority frameworks, 90/10 contrarian nuance, and smart follow-up questions.",
       "categories": [
         "content-writing"
       ],
@@ -2781,8 +2819,7 @@
         "short-form-video-script-generator",
         "instagram-caption-generator",
         "youtube-transcript-generator",
-        "social-media-video-thumbnail-grabber",
-        "ugc-video-prompt-generator"
+        "social-media-video-thumbnail-grabber"
       ],
       "topics": [
         "social"
@@ -2950,7 +2987,7 @@
         }
       ],
       "relatedToolSlugs": [
-        "blog-to-social-posts",
+        "pinterest-pin-seo-generator",
         "blog-to-infographic-generator",
         "instagram-caption-generator",
         "webpage-image-extractor"
@@ -2962,8 +2999,8 @@
     {
       "id": "quote-stat-testimonial-card-studio",
       "slug": "quote-stat-testimonial-card-studio",
-      "name": "AI Testimonial Card & Customer Quote Graphic Generator",
-      "description": "Turn customer reviews, case study stats, and article quotes into branded testimonial cards with custom male portraits, brand logos, and 1080p exports.",
+      "name": "AI Quote, Founder Memo & Testimonial Visual Card Studio",
+      "description": "Extract the sharpest quotes from any article URL or paste customer reviews to design 1080x1080 verified social post cards, highlighter quotes, founder memos, and 5-star testimonial graphics.",
       "categories": [
         "content-writing"
       ],
@@ -2971,14 +3008,7 @@
         "quote card generator",
         "tweet screenshot maker",
         "testimonial card studio",
-        "founder memo graphic",
-        "ai testimonial card generator",
-        "customer quote graphics",
-        "free testimonial card maker",
-        "social proof graphic generator",
-        "client review card maker",
-        "founder memo quote card",
-        "do it with ai testimonial studio"
+        "founder memo graphic"
       ],
       "kind": "Quote & testimonial visual studio",
       "status": "live",
@@ -2991,11 +3021,10 @@
         }
       ],
       "relatedToolSlugs": [
-        "google-review-link-generator",
         "linkedin-post-formatter",
-        "blog-to-linkedin-carousel",
+        "instagram-caption-generator",
         "blog-to-infographic-generator",
-        "data-to-chart-visual-card-maker"
+        "social-thread-generator"
       ],
       "topics": [
         "social"
@@ -3006,7 +3035,7 @@
       "slug": "ai-blog-article-writer",
       "name": "AI Blog & Article Writer",
       "shortDescription": "Draft full SEO blog articles with a 50-word Position Zero answer lead, 3 intro hooks, editable H2 sections, and E-E-A-T proof prompts.",
-      "description": "Write complete, reader-first SEO blog posts section by section with a 45\u201358 word Position Zero answer block, 3 introduction hook frameworks, editable H2/H3 cards, and E-E-A-T human-judgment prompts.",
+      "description": "Write complete, reader-first SEO blog posts section by section with a 45–58 word Position Zero answer block, 3 introduction hook frameworks, editable H2/H3 cards, and E-E-A-T human-judgment prompts.",
       "categories": [
         "content-writing",
         "ai-seo"
@@ -3326,7 +3355,7 @@
       "id": "seo-originality-plagiarism-checker",
       "slug": "seo-originality-plagiarism-checker",
       "name": "SEO Plagiarism, Originality & Rapid Index Checker",
-      "description": "Check your SEO content for n-gram plagiarism, AI writing clich\u00e9s, information gain, and Google rapid index readiness with instant humanized rewrites.",
+      "description": "Check your SEO content for n-gram plagiarism, AI writing clichés, information gain, and Google rapid index readiness with instant humanized rewrites.",
       "categories": [
         "ai-seo",
         "content-writing"

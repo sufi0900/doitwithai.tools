@@ -132,7 +132,7 @@ export default function WritingEducation({ kind }: { kind: WritingKind }) {
   return (
     <div
       data-writing-education
-      className="mx-auto max-w-6xl space-y-20 px-4 py-20 sm:px-6 lg:px-8"
+      className="mx-auto max-w-7xl space-y-20 px-4 py-20 sm:px-6 lg:px-8"
     >
       <section
         aria-labelledby={`${kind}-purpose`}
@@ -291,7 +291,7 @@ export default function WritingEducation({ kind }: { kind: WritingKind }) {
             What the writing checks can tell you
           </h3>
           <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            Counts describe the draft&apos;s length. Keyword checks look for literal
+            Counts describe the draft's length. Keyword checks look for literal
             words, and repetition checks flag repeated phrases for your review.
           </p>
           <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
@@ -338,7 +338,7 @@ export default function WritingEducation({ kind }: { kind: WritingKind }) {
           ))}
         </ol>
         <p className="mt-7 border-t border-slate-200 pt-5 text-sm leading-7 text-slate-600 dark:border-slate-800 dark:text-slate-400">
-          Review the page&apos;s title, main heading, and description together. Use
+          Review the page's title, main heading, and description together. Use
           the{" "}
           <Link
             href="/tools/meta-title-generator"
@@ -362,7 +362,28 @@ export default function WritingEducation({ kind }: { kind: WritingKind }) {
               meta description
             </Link>
           )}
-          . Each element should represent the same page accurately.
+          . After publishing,{" "}
+          <Link
+            href="/tools/heading-structure-analyzer"
+            className="font-semibold text-[#4662df] underline underline-offset-4 dark:text-blue-300"
+          >
+            check your live H1–H6 heading hierarchy
+          </Link>
+          , plan new section outlines with the{" "}
+          <Link
+            href="/tools/article-outline-generator"
+            className="font-semibold text-[#4662df] underline underline-offset-4 dark:text-blue-300"
+          >
+            AI Article Outline Generator
+          </Link>
+          , and review our{" "}
+          <Link
+            href="/ai-seo/h1-heading"
+            className="font-semibold text-[#4662df] underline underline-offset-4 dark:text-blue-300"
+          >
+            H1 tag SEO best practices &amp; length guide
+          </Link>
+          .
         </p>
       </section>
     </div>

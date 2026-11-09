@@ -2,50 +2,47 @@ import React, { useMemo } from "react";
 import Image from "next/image";
 import { urlForImage } from "@/sanity/lib/image";
 import { PortableText } from "@portabletext/react";
-// import ReadingProgressCircle from "@/app/ai-seo/[slug]/ReadingProgressCircle";
 
-// Optimized Portable Text component for image descriptions
 const ImgDescPortableText = React.memo(({ value }) => {
-  const components = useMemo(() => ({
-    block: {
-      normal: ({ children }) => {
-        // More robust empty content check
-        const hasContent = children.some(child => 
-          typeof child === "string" ? child.trim() : true
-        );
-        
-        if (!hasContent) return null;
-
-        return (
-          <p className="text-[11px] sm:text-xs md:text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300 transition-colors duration-300 hover:text-gray-900 dark:hover:text-gray-100 m-0">
-            {children}
-          </p>
-        );
+  const components = useMemo(
+    () => ({
+      block: {
+        normal: ({ children }) => {
+          const hasContent = children.some((child) =>
+            typeof child === "string" ? child.trim() : true
+          );
+          if (!hasContent) return null;
+          return (
+            <p className="text-[11px] sm:text-xs md:text-sm font-medium leading-relaxed text-gray-700 dark:text-gray-300 transition-colors duration-300 hover:text-gray-900 dark:hover:text-gray-100 m-0">
+              {children}
+            </p>
+          );
+        },
       },
-    },
-    marks: {
-      link: ({ children, value }) => {
-        const isExternal = value.href && !value.href.startsWith('/');
-        return (
-          <a
-            className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
-            href={value.href}
-            rel={isExternal ? 'noreferrer noopener' : undefined}
-            target={isExternal ? '_blank' : undefined}
-          >
-            {children}
-          </a>
-        );
+      marks: {
+        link: ({ children, value }) => {
+          const isExternal = value.href && !value.href.startsWith("/");
+          return (
+            <a
+              className="text-blue-600 dark:text-blue-400 font-medium transition-all duration-300 ease-in-out hover:text-blue-700 dark:hover:text-blue-300 bg-gradient-to-r from-current to-current bg-[length:100%_1.5px] bg-no-repeat bg-[position:0_100%] hover:bg-[length:0_1.5px] break-words"
+              href={value.href}
+              rel={isExternal ? "noreferrer noopener" : undefined}
+              target={isExternal ? "_blank" : undefined}
+            >
+              {children}
+            </a>
+          );
+        },
       },
-    },
-  }), []);
+    }),
+    []
+  );
 
   return <PortableText value={value} components={components} />;
 });
 
-ImgDescPortableText.displayName = 'ImgDescPortableText';
+ImgDescPortableText.displayName = "ImgDescPortableText";
 
-// Enhanced loading skeleton component
 const LoadingSkeleton = React.memo(() => (
   <div className="w-full animate-pulse">
     <div className="mb-6 sm:mb-8">
@@ -56,50 +53,53 @@ const LoadingSkeleton = React.memo(() => (
   </div>
 ));
 
-LoadingSkeleton.displayName = 'LoadingSkeleton';
-
+LoadingSkeleton.displayName = "LoadingSkeleton";
 
 const ArticleHeader = ({ data }) => {
-  // Memoize image URLs to prevent recalculation on re-renders
- const imageUrls = useMemo(() => {
+  const imageUrls = useMemo(() => {
     if (!data?.mainImage) return null;
-    
-    return {
-      main: urlForImage(data.mainImage)
-        .quality(95)  // Increased from 85 to 95
-        .format('webp')
-        .auto('format')  // Add auto format selection
-        .url(),
-      blur: urlForImage(data.mainImage)
-        .width(20)
-        .height(11)
-        .blur(10)
-        .quality(20)
-        .format('webp')
-        .url()
-    };
+    if (data.mainImage.localUrl) {
+      return {
+        main: data.mainImage.localUrl,
+        blur: null,
+      };
+    }
+    if (data.mainImage.asset) {
+      try {
+        return {
+          main: urlForImage(data.mainImage)
+            .quality(95)
+            .format("webp")
+            .auto("format")
+            .url(),
+          blur: urlForImage(data.mainImage)
+            .width(20)
+            .height(11)
+            .blur(10)
+            .quality(20)
+            .format("webp")
+            .url(),
+        };
+      } catch {
+        return null;
+      }
+    }
+    return null;
   }, [data?.mainImage]);
 
-  // Check if image description has actual content
   const hasImageDescription = useMemo(() => {
     if (!data?.mainImage?.imageDescription) return false;
-    
-    // More thorough content check for Portable Text
-    return data.mainImage.imageDescription.some(block => 
-      block.children?.some(child => 
-        child.text && child.text.trim().length > 0
-      )
+    return data.mainImage.imageDescription.some((block) =>
+      block.children?.some((child) => child.text && child.text.trim().length > 0)
     );
   }, [data?.mainImage?.imageDescription]);
 
-  // Early return for loading state
-  if (!data || !data.title || !data.mainImage) {
+  if (!data || !data.title || !imageUrls?.main) {
     return <LoadingSkeleton />;
   }
 
   return (
     <article className="w-full">
-      {/* Article Title Section with improved typography */}
       <header className="mb-6 text-left sm:mb-8 lg:mb-10">
         <h1 className="mb-4 text-xl font-bold leading-[1.1] tracking-tight text-blue-600 dark:text-blue-400 sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl transition-colors duration-300 hover:text-blue-700 dark:hover:text-blue-300">
           {data.title}
@@ -107,62 +107,16 @@ const ArticleHeader = ({ data }) => {
         <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full sm:w-24 transition-all duration-300 hover:w-20 sm:hover:w-28"></div>
       </header>
 
+      <section className="my-6 w-full sm:my-8 lg:my-10" aria-label="Article featured image">
+        <div className="group relative isolate">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl transition-all duration-500 ease-out hover:shadow-2xl dark:from-gray-800 dark:to-gray-900">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-pink-500/20 p-[1px] opacity-60 transition-opacity duration-300 group-hover:opacity-100">
+              <div className="h-full w-full rounded-2xl bg-white dark:bg-gray-900" />
+            </div>
 
-
-    
-     {/* Main Image Section with dynamic aspect ratio */}
-<section className="my-6 w-full sm:my-8 lg:my-10" aria-label="Article featured image">
-  <div className="group relative isolate">
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl transition-all duration-500 ease-out hover:shadow-2xl dark:from-gray-800 dark:to-gray-900">
-      
-      {/* Enhanced gradient border effect */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-pink-500/20 p-[1px] opacity-60 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="h-full w-full rounded-2xl bg-white dark:bg-gray-900" />
-      </div>
-
-      <div className="relative p-1 sm:p-2 lg:p-3">
-        <figure className="relative">
-          {/* REMOVED aspect-[16/9] wrapper - Container now scales with image */}
-          <div className="relative overflow-hidden rounded-xl shadow-lg">
-            {data.mainImage?.isPlaceholder ? (
-              <div className="relative flex min-h-[260px] sm:min-h-[340px] flex-col justify-between overflow-hidden rounded-xl border border-blue-200/80 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 p-6 sm:p-8 md:p-10 text-white">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 border border-blue-400/30 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-200">
-                    {data.mainImage.badge || "Do It With AI Tools • Practical SEO Workflow"}
-                  </span>
-                  <span className="inline-flex items-center rounded-md bg-amber-500/20 border border-amber-400/30 px-2.5 py-1 text-[11px] font-medium text-amber-200">
-                    Featured Image Placeholder ({data.mainImage.recommendedFilename || "hero-infographic.webp"})
-                  </span>
-                </div>
-                <div className="my-6 max-w-3xl">
-                  <p className="text-lg sm:text-2xl md:text-3xl font-extrabold leading-snug text-white">
-                    {data.mainImage.placeholderTitle || data.title}
-                  </p>
-                  {data.mainImage.placeholderSubtitle && (
-                    <p className="mt-2.5 text-sm sm:text-base text-blue-100/90 leading-relaxed">
-                      {data.mainImage.placeholderSubtitle}
-                    </p>
-                  )}
-                </div>
-                {Array.isArray(data.mainImage.placeholderSteps) && data.mainImage.placeholderSteps.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
-                    {data.mainImage.placeholderSteps.map((stepItem, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur-sm"
-                      >
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-blue-300">
-                          Step {idx + 1}
-                        </div>
-                        <div className="mt-0.5 text-xs sm:text-sm font-semibold text-white">
-                          {stepItem}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
+            <div className="relative p-1 sm:p-2 lg:p-3">
+              <figure className="relative">
+                <div className="relative overflow-hidden rounded-xl shadow-lg">
                   <Image
                     className="h-auto w-full object-contain transition-transform duration-700 ease-out will-change-transform"
                     src={imageUrls.main}
@@ -170,40 +124,37 @@ const ArticleHeader = ({ data }) => {
                     width={1200}
                     height={675}
                     priority
-                      quality={100}  // Changed from 85 to 100
-
-                    unoptimized // <-- ADD THIS to stop Next.js from re-compressing
-                    placeholder={imageUrls?.blur?.startsWith("data:") ? "blur" : "empty"}
-                    blurDataURL={imageUrls?.blur?.startsWith("data:") ? imageUrls.blur : undefined}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, (max-width: 1280px) 80vw, 70vw"
+                    quality={100}
+                    unoptimized
+                    {...(imageUrls.blur
+                      ? { placeholder: "blur", blurDataURL: imageUrls.blur }
+                      : {})}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, (max-width: 1280px) 80vw, 70vw"
                   />
-            )}
-            
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                </div>
+
+                {hasImageDescription && (
+                  <figcaption className="mt-3 rounded-xl border border-gray-200/60 bg-gradient-to-r from-gray-50/80 to-gray-100/80 backdrop-blur-sm px-3 py-2.5 sm:mt-4 sm:px-4 sm:py-3 md:px-5 md:py-4 dark:border-gray-700/60 dark:from-gray-800/80 dark:to-gray-900/80 transition-all duration-300 hover:shadow-md group-hover:border-gray-300/60 dark:group-hover:border-gray-600/60">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="flex-shrink-0 p-1 rounded-full bg-blue-100 dark:bg-blue-900/30 transition-colors duration-300">
+                        <svg className="h-3 w-3 text-blue-600 dark:text-blue-400 sm:h-3.5 sm:w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <ImgDescPortableText value={data.mainImage.imageDescription} />
+                      </div>
+                    </div>
+                  </figcaption>
+                )}
+              </figure>
+            </div>
           </div>
 
-          {/* Caption remains exactly as you had it */}
-          {hasImageDescription && (
-            <figcaption className="mt-3 rounded-xl border border-gray-200/60 bg-gradient-to-r from-gray-50/80 to-gray-100/80 backdrop-blur-sm px-3 py-2.5 sm:mt-4 sm:px-4 sm:py-3 md:px-5 md:py-4 dark:border-gray-700/60 dark:from-gray-800/80 dark:to-gray-900/80 transition-all duration-300 hover:shadow-md group-hover:border-gray-300/60 dark:group-hover:border-gray-600/60">
-              <div className="flex items-start gap-2 sm:gap-3">
-                <div className="flex-shrink-0 p-1 rounded-full bg-blue-100 dark:bg-blue-900/30 transition-colors duration-300">
-                  <svg className="h-3 w-3 text-blue-600 dark:text-blue-400 sm:h-3.5 sm:w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <ImgDescPortableText value={data.mainImage.imageDescription} />
-                </div>
-              </div>
-            </figcaption>
-          )}
-        </figure>
-      </div>
-    </div>
-    
-    <div className="absolute -inset-2 -z-10 rounded-2xl bg-gradient-to-r from-blue-500/15 via-purple-500/15 to-pink-500/15 blur-2xl opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:scale-105" />
-  </div>
-</section>
+          <div className="absolute -inset-2 -z-10 rounded-2xl bg-gradient-to-r from-blue-500/15 via-purple-500/15 to-pink-500/15 blur-2xl opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:scale-105" />
+        </div>
+      </section>
     </article>
   );
 };
