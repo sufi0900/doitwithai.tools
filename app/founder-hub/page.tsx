@@ -2,8 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
-import FounderCommandCenterClient from "@/features/founder-hub/FounderCommandCenterClient";
+import dynamicImport from "next/dynamic";
+import FounderLoginGate from "@/features/founder-hub/FounderLoginGate";
 import { COOKIE_NAME, getExpectedPasskeys } from "@/lib/founder-hub/auth";
+import { FOUNDER_WORKBOOK_CORE } from "@/lib/founder-hub/data";
+
+const FounderCommandCenterClient = dynamicImport(
+  () => import("@/features/founder-hub/FounderCommandCenterClient"),
+  { ssr: true }
+);
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +37,13 @@ export default async function FounderHubPage() {
   const expected = getExpectedPasskeys();
   const initialAuthenticated = Boolean(sessionCookie && expected.includes(sessionCookie));
 
+  // If not authenticated on the backend, serve ONLY the isolated login gate.
+  // ZERO sheets, ZERO markdown, and ZERO dashboard chunks are sent to the client.
+  if (!initialAuthenticated) {
+    return <FounderLoginGate />;
+  }
+
+  // Authenticated Founder Session: Load server data and pass strictly to authenticated view
   let handbookMarkdown = "";
   let masterPromptText = "";
   try {
@@ -52,7 +66,7 @@ export default async function FounderHubPage() {
 
   return (
     <FounderCommandCenterClient
-      initialAuthenticated={initialAuthenticated}
+      workbookCore={FOUNDER_WORKBOOK_CORE}
       handbookMarkdown={handbookMarkdown}
       masterPromptText={masterPromptText}
     />

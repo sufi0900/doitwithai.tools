@@ -2,17 +2,17 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import {
-  FOUNDER_WORKBOOK_CORE,
   MULTI_AI_COLLABORATION_PROTOCOL,
   EXECUTIVE_KPI_CARDS,
   WEEKLY_EXECUTION_SEQUENCE,
   SYSTEM_ARCHITECTURE_DEPENDENCY_MAP,
   FOUNDER_AI_CHANGELOG,
   type TableSheetData,
+  type FounderWorkbookCore,
 } from "@/lib/founder-hub/data";
 
 interface Props {
-  initialAuthenticated: boolean;
+  workbookCore: FounderWorkbookCore;
   handbookMarkdown: string;
   masterPromptText: string;
 }
@@ -336,15 +336,10 @@ function InteractiveSheetViewer({
 }
 
 export default function FounderCommandCenterClient({
-  initialAuthenticated,
+  workbookCore,
   handbookMarkdown,
   masterPromptText,
 }: Props) {
-  const [authenticated, setAuthenticated] = useState(initialAuthenticated);
-  const [passkeyInput, setPasskeyInput] = useState("");
-  const [authError, setAuthError] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
-
   const [activeTab, setActiveTab] = useState<MainTabId>("overview");
   const [ctrSubTab, setCtrSubTab] = useState<"ctr" | "guides32" | "brand6" | "aitask">("ctr");
   const [gscSubTab, setGscSubTab] = useState<
@@ -360,33 +355,9 @@ export default function FounderCommandCenterClient({
 
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthError("");
-    setAuthLoading(true);
-    try {
-      const res = await fetch("/api/founder-hub/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passkey: passkeyInput }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
-        setAuthError(data.error || "Invalid passkey");
-      } else {
-        setAuthenticated(true);
-      }
-    } catch {
-      setAuthError("Network error while verifying Founder passkey.");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
   const handleLogout = async () => {
     await fetch("/api/founder-hub/auth", { method: "DELETE" });
-    setAuthenticated(false);
-    setPasskeyInput("");
+    window.location.reload();
   };
 
   const loadLargeSheetsIfNeeded = useCallback(async () => {
@@ -415,71 +386,7 @@ export default function FounderCommandCenterClient({
     }
   };
 
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
-        <div className="max-w-md w-full rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold mb-4">
-            <span>🔒 Protected Founder & Multi-AI Route</span>
-            <span>·</span>
-            <span>NoIndex / NoFollow</span>
-          </div>
-
-          <h1 className="text-2xl font-extrabold text-white tracking-tight">
-            DoItWithAI Founder Command Center
-          </h1>
-          <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-            Restricted to <strong className="text-slate-200">Sufian Mustafa (Founder)</strong> and
-            authorized AI coding agents with repository access. Blocked from Googlebot, search
-            crawlers, and public navigation.
-          </p>
-
-          <form onSubmit={handleLogin} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Founder Passkey / Credential
-              </label>
-              <input
-                type="password"
-                value={passkeyInput}
-                onChange={(e) => setPasskeyInput(e.target.value)}
-                placeholder="Enter Founder Passkey..."
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                autoFocus
-              />
-            </div>
-
-            {authError && (
-              <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300">
-                {authError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={authLoading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg transition disabled:opacity-50"
-            >
-              {authLoading ? "Verifying Credential..." : "Unlock Founder Command Center →"}
-            </button>
-          </form>
-
-          <div className="mt-6 pt-5 border-t border-slate-800/80 text-[11px] text-slate-400 space-y-1.5">
-            <p className="font-semibold text-slate-300">🤖 Note for AI Coding Agents:</p>
-            <p>
-              If you have GitHub / repository access, all structured data powering this dashboard is
-              stored directly in{" "}
-              <code className="text-blue-400 font-mono">lib/founder-hub/data.ts</code>,{" "}
-              <code className="text-blue-400 font-mono">lib/founder-hub/workbook-core.json</code>,
-              and <code className="text-blue-400 font-mono">docs/TOOL_OPTIMIZATION_RULES.md</code>.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const sheets = FOUNDER_WORKBOOK_CORE.sheets;
+  const sheets = workbookCore.sheets;
 
   const navTabs: { id: MainTabId; label: string; badge?: string }[] = [
     { id: "overview", label: "1. Command Hub & AI Protocol", badge: "Start Here" },
