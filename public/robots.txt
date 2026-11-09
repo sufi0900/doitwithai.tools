@@ -17,36 +17,57 @@ User-agent: OAI-SearchBot
 Allow: /
 Disallow: /admin/
 Disallow: /private/
+Disallow: /founder-hub
+Disallow: /founder-hub/
+Disallow: /api/founder-hub/
 
 User-agent: ChatGPT-User
 Allow: /
 Disallow: /admin/
 Disallow: /private/
+Disallow: /founder-hub
+Disallow: /founder-hub/
+Disallow: /api/founder-hub/
 
 User-agent: GPTBot
 Allow: /
 Disallow: /admin/
 Disallow: /private/
+Disallow: /founder-hub
+Disallow: /founder-hub/
+Disallow: /api/founder-hub/
 
 User-agent: ClaudeBot
 Allow: /
 Disallow: /admin/
 Disallow: /private/
+Disallow: /founder-hub
+Disallow: /founder-hub/
+Disallow: /api/founder-hub/
 
 User-agent: Claude-SearchBot
 Allow: /
 Disallow: /admin/
 Disallow: /private/
+Disallow: /founder-hub
+Disallow: /founder-hub/
+Disallow: /api/founder-hub/
 
 User-agent: PerplexityBot
 Allow: /
 Disallow: /admin/
 Disallow: /private/
+Disallow: /founder-hub
+Disallow: /founder-hub/
+Disallow: /api/founder-hub/
 
 User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /private/
+Disallow: /founder-hub
+Disallow: /founder-hub/
+Disallow: /api/founder-hub/
 
 Sitemap: https://doitwithai.tools/sitemap.xml
 Sitemap: https://doitwithai.tools/image-sitemap.xml

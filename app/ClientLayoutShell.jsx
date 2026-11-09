@@ -102,6 +102,8 @@ export default function ClientLayoutShell({ children }) {
   const isHomePage = pathname === "/";
   const isDoItAiPage =
     pathname === "/do-it-ai" || pathname.startsWith("/do-it-ai/");
+  const isFounderHubPage =
+    pathname === "/founder-hub" || pathname.startsWith("/founder-hub/");
   const [isEmbeddedView, setIsEmbeddedView] = useState(false);
 
   useEffect(() => {
@@ -176,12 +178,13 @@ export default function ClientLayoutShell({ children }) {
       <Providers>
         <WorkspaceProvider>
           {!isEmbeddedView &&
+            !isFounderHubPage &&
             (isSlugPage ? <ConditionalGlobalHeader /> : <Header />)}
 
           <CacheProvider>
             <main
               className={
-                isEmbeddedView
+                isEmbeddedView || isFounderHubPage
                   ? "min-h-screen"
                   : isDoItAiPage
                     ? "h-dvh pt-[80px] overflow-hidden"
@@ -193,9 +196,9 @@ export default function ClientLayoutShell({ children }) {
               {children}
             </main>
 
-            {!isDoItAiPage && !isEmbeddedView && <Footer />}
-            {!isDoItAiPage && !isEmbeddedView && <ScrollToTop />}
-            {!isDoItAiPage && !isEmbeddedView && <SiteAssistant />}
+            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && <Footer />}
+            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && <ScrollToTop />}
+            {!isDoItAiPage && !isEmbeddedView && !isFounderHubPage && <SiteAssistant />}
           </CacheProvider>
 
           <Toaster position="bottom-center" />
