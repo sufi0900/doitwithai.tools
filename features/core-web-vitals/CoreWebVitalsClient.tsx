@@ -284,7 +284,6 @@ export default function CoreWebVitalsClient() {
       setShowSample(false);
       setValidationError("");
       void ensure(target, strategy);
-      void ensure(target, strategy === "mobile" ? "desktop" : "mobile");
     } catch {
       setValidationError(
         "Enter a full page URL beginning with https:// or http://.",
@@ -294,6 +293,16 @@ export default function CoreWebVitalsClient() {
   function selectDevice(device: Strategy) {
     setStrategy(device);
     setValidationError("");
+    if (!showSample && url.trim()) {
+      try {
+        const target = normalizeReportUrl(url);
+        if (!matchingReport(reports, target, device)) {
+          void ensure(target, device);
+        }
+      } catch {
+        /* Ignore invalid URL on device switch */
+      }
+    }
   }
   function downloadReport() {
     if (!result) return;
@@ -362,8 +371,7 @@ export default function CoreWebVitalsClient() {
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs leading-6 text-slate-500 dark:text-slate-400">
         <span>
-          One check prepares mobile and desktop together. Switch devices at any
-          time. A fresh check may take up to a minute.
+          Fast Core Web Vitals audit with field data and lab diagnostics. Switch between Mobile and Desktop at any time.
         </span>
         <div className="flex flex-wrap gap-2">
           <button

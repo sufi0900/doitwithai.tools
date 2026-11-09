@@ -10,7 +10,7 @@ export async function checkCoreWebVitals(
   const abort = () => controller.abort();
   signal?.addEventListener("abort", abort, { once: true });
   if (signal?.aborted) abort();
-  const timer = setTimeout(abort, 60_000);
+  const timer = setTimeout(abort, 20_000);
   try {
     const response = await fetch("/api/ai-tools/core-web-vitals/check", {
       method: "POST",
