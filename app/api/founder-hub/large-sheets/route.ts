@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isAuthorizedFounderRequest } from "../auth/route";
+import { isAuthorizedFounderRequest } from "@/lib/founder-hub/auth";
 import workbookLargeJson from "@/lib/founder-hub/workbook-large.json";
 
 export async function GET(req: NextRequest) {

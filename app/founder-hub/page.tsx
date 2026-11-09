@@ -3,7 +3,7 @@ import path from "node:path";
 import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import FounderCommandCenterClient from "@/features/founder-hub/FounderCommandCenterClient";
-import { COOKIE_NAME, getExpectedPasskeys } from "@/app/api/founder-hub/auth/route";
+import { COOKIE_NAME, getExpectedPasskeys } from "@/lib/founder-hub/auth";
 
 export const dynamic = "force-dynamic";
 
