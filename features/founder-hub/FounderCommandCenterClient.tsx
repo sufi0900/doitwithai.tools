@@ -5,6 +5,7 @@ import {
   MULTI_AI_COLLABORATION_PROTOCOL,
   DAILY_ENGINEERING_VELOCITY,
   SPRINT_PROGRESS_BARS,
+  FIVE_FEEDER_TOOLS_BUILD_QUEUE,
   EXECUTIVE_KPI_CARDS,
   GRAND_AI_CONTENT_WRITER_PIPELINE,
   H1_CLUSTER_DOMINATION_BLUEPRINT,
@@ -56,6 +57,190 @@ function exportRowsToCsv(filename: string, headers: string[], rows: string[][]) 
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+function FiveFeederToolsQueueTracker({
+  onOpenBlueprints,
+}: {
+  onOpenBlueprints?: () => void;
+}) {
+  const [checkedMap, setCheckedMap] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    for (const item of FIVE_FEEDER_TOOLS_BUILD_QUEUE) {
+      init[item.id] = item.completed;
+      item.checklistSteps.forEach((_, idx) => {
+        init[`${item.id}-step-${idx}`] = item.checklistSteps[idx].done;
+      });
+    }
+    return init;
+  });
+
+  const toggleCheck = (key: string) => {
+    setCheckedMap((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const completedToolsCount = FIVE_FEEDER_TOOLS_BUILD_QUEUE.filter(
+    (t) => checkedMap[t.id]
+  ).length;
+
+  return (
+    <div className="rounded-3xl border border-amber-500/40 bg-gradient-to-br from-amber-950/35 via-slate-900 to-slate-950 p-6 sm:p-8 shadow-2xl space-y-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-amber-500/20 pb-5">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold mb-2">
+            <span>⏰ Scheduled Autonomous Build · Nov 10, 2026 at 6:00 AM PKT</span>
+            <span>·</span>
+            <span>
+              {completedToolsCount} / {FIVE_FEEDER_TOOLS_BUILD_QUEUE.length} Completed
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+            5 Dedicated Feeder Tools Build Queue & Bespoke Competitor Research Tracker (#58–#62)
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
+            <strong>Founder Quality Directive:</strong> Every tool below applies the universal UX smoothness, SEO/AEO rigor, and 4-tier AI failover from our Testimonial Card Studio, while using{" "}
+            <strong className="text-amber-300">
+              100% unique, domain-specific interactive architecture and deep competitor research
+            </strong>{" "}
+            (no copied visual card templates where they don&apos;t belong). Tick marks automatically update to{" "}
+            <code className="text-emerald-300 font-mono">[x]</code> as each tool ships.
+          </p>
+        </div>
+
+        {onOpenBlueprints && (
+          <button
+            type="button"
+            onClick={onOpenBlueprints}
+            className="px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-xs font-bold shrink-0"
+          >
+            🚀 View Full 8-Stage AI Writer Pipeline →
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-5">
+        {FIVE_FEEDER_TOOLS_BUILD_QUEUE.map((tool) => {
+          const isToolDone = Boolean(checkedMap[tool.id]);
+          return (
+            <div
+              key={tool.id}
+              className={`rounded-2xl border p-5 transition-all space-y-4 ${
+                isToolDone
+                  ? "border-emerald-500/50 bg-emerald-950/20"
+                  : "border-slate-800 bg-slate-950/90"
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleCheck(tool.id)}
+                    className={`w-6 h-6 rounded-lg border flex items-center justify-center text-xs font-black transition shrink-0 mt-0.5 sm:mt-0 ${
+                      isToolDone
+                        ? "bg-emerald-500 border-emerald-400 text-slate-950"
+                        : "bg-slate-900 border-slate-600 text-transparent hover:border-amber-400"
+                    }`}
+                    aria-label={`Toggle completion for ${tool.title}`}
+                  >
+                    ✓
+                  </button>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-extrabold font-mono">
+                        Order {tool.order}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-bold font-mono">
+                        Vol: {tool.searchVolume} · KD: {tool.kd}
+                      </span>
+                      <code className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-xs text-blue-300 font-mono">
+                        {tool.route}
+                      </code>
+                    </div>
+                    <h3
+                      className={`text-base sm:text-lg font-extrabold mt-1.5 ${
+                        isToolDone ? "line-through text-slate-400" : "text-white"
+                      }`}
+                    >
+                      {tool.title}
+                    </h3>
+                  </div>
+                </div>
+
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-bold border shrink-0 self-start sm:self-center ${
+                    isToolDone
+                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                      : "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                  }`}
+                >
+                  {isToolDone ? "✅ Completed & Live" : tool.statusLabel}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-3.5 space-y-1.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-blue-300">
+                    🎯 Primary Keyword & Competitor Benchmark
+                  </div>
+                  <div className="text-xs text-slate-300">
+                    <strong>Primary Keyword:</strong>{" "}
+                    <code className="text-emerald-300 font-mono">{tool.primaryKeyword}</code>
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    <strong className="text-slate-300">Competitors to Beat:</strong>{" "}
+                    {tool.competitorBenchmark}
+                  </div>
+                </div>
+
+                <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-3.5 space-y-1.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-purple-300">
+                    🛠️ Unique Domain-Specific Studio UX (Zero Generic Copy)
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {tool.uniqueUxArchitecture}
+                  </p>
+                </div>
+              </div>
+
+              {/* 5-Step Sub-Checklist per Tool */}
+              <div className="rounded-xl bg-slate-900/60 border border-slate-800/90 p-3.5">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  6:00 AM PKT Execution Checklist (Tick Marks Update as Each Step Completes):
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {tool.checklistSteps.map((st, idx) => {
+                    const stepKey = `${tool.id}-step-${idx}`;
+                    const stepDone = Boolean(checkedMap[stepKey]) || isToolDone;
+                    return (
+                      <button
+                        key={stepKey}
+                        type="button"
+                        onClick={() => toggleCheck(stepKey)}
+                        className="flex items-start gap-2 text-left text-xs text-slate-300 hover:text-white group"
+                      >
+                        <span
+                          className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
+                            stepDone
+                              ? "bg-emerald-500 border-emerald-400 text-slate-950"
+                              : "bg-slate-950 border-slate-700 text-transparent group-hover:border-slate-500"
+                          }`}
+                        >
+                          ✓
+                        </span>
+                        <span className={stepDone ? "line-through text-slate-500" : ""}>
+                          {st.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function GscVelocityOverviewChart() {
@@ -807,7 +992,7 @@ export default function FounderCommandCenterClient({
   const [logSearch, setLogSearch] = useState<string>("");
   const [copiedBlogId, setCopiedBlogId] = useState<string | null>(null);
   const [expandedBlogPreviewId, setExpandedBlogPreviewId] = useState<string | null>(
-    "log-sprint-10-founder-hub-upgrade"
+    "log-sprint-11-scheduled-5-feeder-tools"
   );
 
   // On-demand state for large datasets (2,621 Keyword Review & 3,700 Raw Semrush)
@@ -884,8 +1069,8 @@ export default function FounderCommandCenterClient({
         {
           id: "flagship-blueprints",
           icon: "🚀",
-          label: "AI Writer & H1 Blueprints",
-          badge: "8-Stage Map",
+          label: "AI Writer & 5-Tool Queue",
+          badge: "6 AM PKT",
         },
       ],
     },
@@ -1002,8 +1187,8 @@ export default function FounderCommandCenterClient({
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     Protected · NoIndex
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                    Updated Nov 10, 2026 (Batch 2 + Velocity)
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    5 Feeder Tools Queued · 6:00 AM PKT
                   </span>
                 </div>
                 <p className="text-xs text-slate-400">
@@ -1105,12 +1290,12 @@ export default function FounderCommandCenterClient({
           <div className="mt-6 pt-4 border-t border-slate-800 space-y-2.5">
             <div className="rounded-2xl bg-slate-950/90 border border-slate-800 p-3.5 space-y-2">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-bold text-slate-300">Founder Access</span>
-                <span className="text-emerald-400 font-semibold">● Verified</span>
+                <span className="font-bold text-slate-300">Next Scheduled Run</span>
+                <span className="text-amber-300 font-semibold font-mono">6:00 AM PKT</span>
               </div>
               <div className="text-[11px] text-slate-400 leading-relaxed">
-                All 15 Excel tabs, 10 Founder Sprints, and AI rules are synced in{" "}
-                <code className="text-blue-300 font-mono">lib/founder-hub/</code>.
+                5 Feeder Tools (#58–#62) queued in{" "}
+                <code className="text-blue-300 font-mono">lib/founder-hub/data.ts</code>.
               </div>
             </div>
           </div>
@@ -1123,6 +1308,11 @@ export default function FounderCommandCenterClient({
             <div className="space-y-8">
               {/* GSC-Style Daily Activity & Velocity Graph + Progress Bars */}
               <GscVelocityOverviewChart />
+
+              {/* Interactive 5-Tool Scheduled Build Queue & Tick-Mark Tracker */}
+              <FiveFeederToolsQueueTracker
+                onOpenBlueprints={() => handleSelectTab("flagship-blueprints")}
+              />
 
               {/* Prominent Multi-AI Collaboration Protocol Banner */}
               <div className="rounded-3xl border border-blue-500/40 bg-gradient-to-br from-blue-950/70 via-slate-900 to-indigo-950/70 p-6 sm:p-8 shadow-2xl">
@@ -1144,7 +1334,7 @@ export default function FounderCommandCenterClient({
                       onClick={() => handleSelectTab("founder-ai-log")}
                       className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow"
                     >
-                      📜 Read All 10 Founder Discussions →
+                      📜 Read All 11 Founder Sprints →
                     </button>
                     <button
                       type="button"
@@ -1215,62 +1405,6 @@ export default function FounderCommandCenterClient({
                     <div className="text-xs text-slate-400 mt-1.5">{card.subtext}</div>
                   </div>
                 ))}
-              </div>
-
-              {/* Nov 9 Batch 2 Breakout Additions (#57 - #64) Spotlight */}
-              <div className="rounded-2xl border border-emerald-500/30 bg-slate-900/90 p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-4 border-b border-slate-800">
-                  <div>
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                      🚀 Latest Nov 9, 2026 (Batch 2) Additions — Orders #57 to #64
-                    </span>
-                    <h3 className="text-lg font-extrabold text-white mt-0.5">
-                      High-Volume AI Content Writer, Pricing Calculator & Quiz Generator Cluster
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleSelectTab("flagship-blueprints")}
-                      className="px-3.5 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-bold"
-                    >
-                      Open 8-Stage Pipeline Blueprint →
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectTab("keyword-plan-64")}
-                      className="px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold"
-                    >
-                      View All 64 Items in Sheet →
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  {sheets["Keyword Plan"].rows.slice(56, 64).map((r) => (
-                    <div
-                      key={r[0]}
-                      className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 space-y-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold">
-                          Order #{r[0]} · {r[1]}
-                        </span>
-                        <span className="text-xs font-mono text-slate-400">
-                          Vol: <strong className="text-white">{r[4]}</strong> · KD:{" "}
-                          <strong className="text-emerald-300">{r[5]}%</strong>
-                        </span>
-                      </div>
-                      <div className="text-sm font-bold text-white">{r[2]}</div>
-                      <div className="text-xs text-blue-300 font-mono break-all">
-                        Keyword: &ldquo;{r[3]}&rdquo; → {r[7]}
-                      </div>
-                      <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">
-                        {r[8]}
-                      </p>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               {/* 8–12 Week Execution Sequence */}
@@ -1475,9 +1609,12 @@ export default function FounderCommandCenterClient({
             </div>
           )}
 
-          {/* TAB 3: GRAND AI CONTENT WRITER & H1 DOMINATION BLUEPRINTS */}
+          {/* TAB 3: GRAND AI CONTENT WRITER, 5-TOOL QUEUE & H1 DOMINATION BLUEPRINTS */}
           {activeTab === "flagship-blueprints" && (
             <div className="space-y-8">
+              {/* Interactive 5-Tool Scheduled Build Queue & Tick-Mark Tracker */}
+              <FiveFeederToolsQueueTracker />
+
               {/* Blueprint A: Grand AI Content Writer 8-Stage Pipeline */}
               <div className="rounded-3xl border border-emerald-500/40 bg-slate-900/95 p-6 sm:p-8 space-y-6 shadow-2xl">
                 <div>
@@ -1541,33 +1678,6 @@ export default function FounderCommandCenterClient({
                         <div className="pt-2 border-t border-slate-800/80 text-[11px] font-mono text-emerald-300">
                           {st.connectedRoute}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 5 Low-KD Feeder Tools */}
-                <div>
-                  <h3 className="text-sm font-extrabold text-white uppercase tracking-wider mb-3">
-                    3. Five Ultra-Low-KD Feeder Tools That Funnel Traffic Into /tools/ai-content-writer
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {GRAND_AI_CONTENT_WRITER_PIPELINE.feederTools.map((ft) => (
-                      <div
-                        key={ft.order}
-                        className="rounded-2xl border border-emerald-500/25 bg-slate-950/90 p-4 space-y-2"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-extrabold">
-                            Order {ft.order} · Vol {ft.vol}/mo · KD {ft.kd}
-                          </span>
-                          <code className="text-xs text-blue-300 font-mono">{ft.route}</code>
-                        </div>
-                        <div className="text-sm font-bold text-white">{ft.title}</div>
-                        <div className="text-xs font-mono text-slate-400">
-                          Primary Keyword: <strong className="text-slate-200">{ft.keyword}</strong>
-                        </div>
-                        <p className="text-xs text-slate-300 leading-relaxed">{ft.whyItWins}</p>
                       </div>
                     ))}
                   </div>
