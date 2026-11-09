@@ -371,27 +371,59 @@ function SlideCard({
           )}
 
           {s.style === "bleed" && (
-            <div className="absolute inset-0 overflow-hidden">
-              <Image
-                src={s.imageSrc}
-                alt={`${s.personName} portrait`}
-                fill
-                sizes="220px"
-                priority={eager}
-                className="scale-105 object-cover object-top"
-              />
+            <div className="relative flex h-full w-full items-center justify-center">
+              {/* Ambient radial glow aura */}
               <div
                 style={{
-                  background: `linear-gradient(90deg, ${t.bg} 0%, ${t.bg}B8 32%, transparent 100%)`,
+                  background: `radial-gradient(circle at 50% 40%, ${s.accent}45 0%, transparent 70%)`,
                 }}
-                className="pointer-events-none absolute inset-y-0 left-0 w-2/5"
+                className="pointer-events-none absolute inset-0 opacity-75"
               />
+              {/* Secondary corner dot accent */}
               <div
                 style={{
-                  background: `linear-gradient(180deg, transparent 65%, ${t.footer} 100%)`,
+                  backgroundImage: `radial-gradient(${s.accent} 1.5px, transparent 1.5px)`,
+                  backgroundSize: "12px 12px",
                 }}
-                className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3"
+                className="pointer-events-none absolute -right-1 -top-1 h-20 w-20 opacity-35"
               />
+              {/* Sleek architectural rounded portrait window */}
+              <div
+                style={{
+                  borderColor: s.accent,
+                  boxShadow: `0 0 30px ${s.accent}33, 0 10px 25px -5px rgba(0,0,0,0.5)`,
+                }}
+                className="relative z-10 h-[202px] w-[156px] overflow-hidden rounded-3xl border-[2.5px] bg-slate-900 shadow-2xl sm:h-[216px] sm:w-[166px]"
+              >
+                <Image
+                  src={s.imageSrc}
+                  alt={`${s.personName} portrait`}
+                  fill
+                  sizes="180px"
+                  priority={eager}
+                  className="scale-105 object-cover object-top"
+                />
+                {/* Subtle bottom fade into container */}
+                <div
+                  style={{
+                    background: `linear-gradient(180deg, transparent 65%, ${t.footer}E6 100%)`,
+                  }}
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-16"
+                />
+                {/* Floating Founder pill badge */}
+                <div className="pointer-events-none absolute inset-x-1.5 bottom-2 flex justify-center">
+                  <span
+                    style={{
+                      borderColor: `${s.accent}66`,
+                      backgroundColor: "rgba(6, 11, 25, 0.85)",
+                      color: "#93C5FD",
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-xs backdrop-blur-md"
+                  >
+                    ⚡ Verified Founder
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </div>
