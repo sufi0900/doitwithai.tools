@@ -6,9 +6,27 @@ export function getGroqModel(image = false) {
     ? process.env.GROQ_VISION_MODEL?.trim() || "qwen/qwen3.8-27b"
     : process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b";
 }
+export function getGroqApiKeys(): string[] {
+  const keys: string[] = [];
+  const primary = process.env.GROQ_API_KEY?.trim();
+  if (primary) keys.push(primary);
+  const rawList = process.env.GROQ_API_KEYS?.trim();
+  if (rawList) {
+    for (const k of rawList.split(",")) {
+      const clean = k.trim();
+      if (clean && !keys.includes(clean)) keys.push(clean);
+    }
+  }
+  for (let i = 2; i <= 5; i++) {
+    const k = process.env[`GROQ_API_KEY_${i}`]?.trim();
+    if (k && !keys.includes(k)) keys.push(k);
+  }
+  return keys;
+}
+
 export function isGroqConfigured(image = false) {
   return Boolean(
-    process.env.GROQ_API_KEY?.trim() &&
+    getGroqApiKeys().length > 0 &&
     /^[a-zA-Z0-9][a-zA-Z0-9._/-]{1,119}$/.test(getGroqModel(image)),
   );
 }
@@ -25,9 +43,14 @@ export async function generateGroq<T>(
   timeout: number,
   image: boolean,
 ) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), Math.max(1, timeout));
-  try {
+  const keys = getGroqApiKeys();
+  let lastError: unknown = null;
+
+  for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
+    const activeKey = keys[keyIdx];
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), Math.max(1, timeout));
+    try {
     const messages = params.input.map((item) => ({
       role: item.role,
       content:
@@ -49,7 +72,7 @@ export async function generateGroq<T>(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.GROQ_API_KEY!.trim()}`,
+          Authorization: `Bearer ${activeKey}`,
         },
         signal: controller.signal,
         cache: "no-store",
@@ -112,15 +135,29 @@ export async function generateGroq<T>(
     } catch {
       throw new GroqError(502, "MODEL_OUTPUT_INVALID");
     }
-  } catch (cause) {
-    if (cause instanceof GroqError) throw cause;
-    throw new GroqError(
-      controller.signal.aborted ? 504 : 502,
-      controller.signal.aborted
-        ? "PROVIDER_TIMEOUT"
-        : "PROVIDER_CONNECTION_FAILED",
-    );
-  } finally {
-    clearTimeout(timer);
+    } catch (cause) {
+      if (cause instanceof GroqError) {
+        if (cause.status === 429 && keyIdx + 1 < keys.length) {
+          lastError = cause;
+          continue;
+        }
+        throw cause;
+      }
+      const err = new GroqError(
+        controller.signal.aborted ? 504 : 502,
+        controller.signal.aborted
+          ? "PROVIDER_TIMEOUT"
+          : "PROVIDER_CONNECTION_FAILED",
+      );
+      if (keyIdx + 1 < keys.length) {
+        lastError = err;
+        continue;
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  if (lastError instanceof GroqError) throw lastError;
+  throw new GroqError(502, "PROVIDER_FAILED");
 }
