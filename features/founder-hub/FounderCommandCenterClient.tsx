@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import FounderVideoPlaybook from "./FounderVideoPlaybook";
-import type { VideoPlaybook } from "@/lib/founder-hub/video-playbook";
 import {
   MULTI_AI_COLLABORATION_PROTOCOL,
   DAILY_ENGINEERING_VELOCITY,
@@ -22,7 +21,6 @@ interface Props {
   workbookCore: FounderWorkbookCore;
   handbookMarkdown: string;
   masterPromptText: string;
-  videoPlaybook: VideoPlaybook | null;
 }
 
 type MainTabId =
@@ -982,7 +980,6 @@ export default function FounderCommandCenterClient({
   workbookCore,
   handbookMarkdown,
   masterPromptText,
-  videoPlaybook,
 }: Props) {
   const [activeTab, setActiveTab] = useState<MainTabId>("overview");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -2065,7 +2062,7 @@ export default function FounderCommandCenterClient({
           )}
 
           {activeTab === "video-production" && (
-            <FounderVideoPlaybook playbook={videoPlaybook} />
+            <FounderVideoPlaybook />
           )}
 
           {/* TAB 9: INDUSTRIAL TOOL OPTIMIZATION HANDBOOK & MASTER PROMPT */}

@@ -6,7 +6,7 @@ Existing cache and article logic is preserved. Test on a preview deployment befo
 
 ## Founder Hub: Video Production Playbook
 
-For video commissions, start with [the founder’s production playbook](docs/FOUNDER_VIDEO_PRODUCTION.md). It records the creative decisions, review workflow, and reusable AI prompts. The same handbook is available in **Video Production Playbook** inside the signed-in Founder Hub.
+For video commissions, start with [the founder’s production playbook](features/founder-hub/video-production-content.tsx). It records the creative decisions, review workflow, and reusable AI prompts. The dashboard renders this content directly in **Video Production Playbook** inside the signed-in Founder Hub.
 
 ## Original template documentation
 
