@@ -35,20 +35,21 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
+import ToolRunOverlay, {
+  focusToolSection,
+} from "@/features/tool-ui/ToolRunOverlay";
+import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import {
   copyCanvasImageToClipboard,
   downloadCanvasAsEmbeddedSvg,
   downloadCanvasAsPng,
-  focusToolSection,
-  PlatformBrandIcon,
   printCanvasAsPdfPoster,
   resolveStudioTheme,
   STUDIO_COLOR_THEMES,
-  ToolRunOverlay,
-  UrlArticleExtractorBar,
   type CustomStudioColorOverrides,
   type StudioColorThemeId,
-} from "@/features/tool-ui";
+} from "@/features/tool-ui/visualCardExport";
 import {
   buildDeterministicQuotePack,
   DEFAULT_QUOTE_STUDIO_INPUT,
@@ -186,7 +187,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
     buildDeterministicQuotePack(DEFAULT_QUOTE_STUDIO_INPUT).cards.slice(0, 3),
   );
   const [activeCardIdx, setActiveCardIdx] = useState(0);
-  const [themeId, setThemeId] = useState<StudioColorThemeId>("royal-indigo");
+  const [themeId, setThemeId] = useState<StudioColorThemeId>("royal-cobalt");
   const [customColors, setCustomColors] = useState<CustomStudioColorOverrides>(
     {},
   );
@@ -594,16 +595,20 @@ export default function QuoteStatTestimonialCardStudioClient() {
           setAiPack(null);
           let domain = "doitwithai.tools";
           try {
-            if (data.sourceUrl) {
-              domain = new URL(data.sourceUrl).hostname.replace(/^www\./, "");
+            if (data.url) {
+              domain = new URL(data.url).hostname.replace(/^www\./, "");
             }
           } catch {
-            domain = "doitwithai.tools";
+            domain = data.domain || "doitwithai.tools";
           }
           const nextInput: QuoteStudioInput = {
             ...input,
+            authorName: data.author || input.authorName,
             brandDomain: domain,
-            sourceContent: data.extractedText,
+            sourceContent:
+              (data.paragraphs || []).slice(0, 6).join("\n\n") ||
+              data.cleanText ||
+              "",
           };
           setInput(nextInput);
           const built = buildDeterministicQuotePack(nextInput);

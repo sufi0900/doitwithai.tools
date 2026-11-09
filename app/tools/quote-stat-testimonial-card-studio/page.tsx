@@ -19,12 +19,12 @@ import HeroAnimatedTestimonialShowcase from "@/features/quote-stat-testimonial-c
 import { QUOTE_TEMPLATES } from "@/features/quote-stat-testimonial-card-studio/model";
 import ToolFaq from "@/features/tool-ui/ToolFaq";
 import ToolResources from "@/features/tool-catalog/ToolResources";
+import PortableToolHeroBar from "@/features/portable-tool-kit/PortableToolHeroBar";
 import {
-  PortableToolHeroBar,
   ToolHeroBackground,
   toolHeroHeading,
   toolHeroSurface,
-} from "@/features/tool-ui/PortableToolHeroBar";
+} from "@/features/tool-ui/ToolHero";
 import { PlatformBrandIcon } from "@/features/tool-ui/PlatformBrandIcon";
 
 const pageUrl =
