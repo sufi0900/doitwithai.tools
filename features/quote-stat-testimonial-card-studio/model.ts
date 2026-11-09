@@ -1,17 +1,22 @@
+/**
+ * Testimonial / Quote Card Studio — data model
+ *
+ * RULE (site-wide, see docs/TOOL_OPTIMIZATION_RULES.md):
+ * every portrait used in this tool must be a MALE person. Never add a female
+ * portrait to MALE_PORTRAIT_PRESETS or to any hero / promo card for this tool.
+ */
+
 export type QuoteVisualTemplateId =
-  | "aragon-split-testimonial"
-  | "verified-post-screenshot"
-  | "highlighter-quote"
-  | "founder-memo-note"
-  | "testimonial-5-star"
-  | "myth-vs-reality"
-  | "executive-pull-quote"
-  | "oversized-kpi-stat"
-  | "before-after-proof"
-  | "podcast-clip-quote"
-  | "glassmorphic-saas-card"
-  | "boardroom-white-frame"
-  | "checklist-takeaway-card";
+  | "arch-aura-split"
+  | "flagship-footer-split"
+  | "obsidian-gold-rings"
+  | "wave-trust-pills"
+  | "editorial-dot-grid"
+  | "portrait-left-quote"
+  | "full-bleed-portrait"
+  | "kpi-stat-portrait"
+  | "x-verified-post"
+  | "founder-memo-portrait";
 
 export type MalePortraitPresetId =
   | "marcus-saas-vp"
@@ -41,7 +46,12 @@ export interface QuoteStudioInput {
   aspectRatio?: CardAspectRatioId;
   trustBadge1?: string;
   trustBadge2?: string;
+  trustBadge3?: string;
   starRatingLabel?: string;
+  /** 0.8 – 1.25, scales the person cut-out inside the template */
+  portraitScale?: number;
+  /** -0.15 – 0.15, nudges the person left/right inside its zone */
+  portraitOffsetX?: number;
 }
 
 export interface QuoteStudioPack {
@@ -49,18 +59,74 @@ export interface QuoteStudioPack {
   socialCaption: string;
 }
 
+export const QUOTE_TEMPLATES: {
+  id: QuoteVisualTemplateId;
+  label: string;
+  desc: string;
+}[] = [
+  {
+    id: "arch-aura-split",
+    label: "Arch Aura Portrait",
+    desc: "Cream card, accent arch behind a large person cut-out, dark name bar with your logo",
+  },
+  {
+    id: "flagship-footer-split",
+    label: "Flagship Split Portrait",
+    desc: "Highlighted quote left, person right, trust pills and brand footer",
+  },
+  {
+    id: "wave-trust-pills",
+    label: "Wave + 3 Trust Pills",
+    desc: "White card, curved brand-color wave and three proof pills",
+  },
+  {
+    id: "obsidian-gold-rings",
+    label: "Obsidian Rings",
+    desc: "Dark premium card with concentric rings behind the person",
+  },
+  {
+    id: "editorial-dot-grid",
+    label: "Editorial Dot Grid",
+    desc: "Clean editorial layout with dot-grid accent and green-bar proof strip",
+  },
+  {
+    id: "portrait-left-quote",
+    label: "Portrait Left",
+    desc: "Person on the left, quote and attribution on the right",
+  },
+  {
+    id: "full-bleed-portrait",
+    label: "Full-Bleed Portrait",
+    desc: "Large person fading into a dark gradient, big white quote",
+  },
+  {
+    id: "kpi-stat-portrait",
+    label: "KPI Stat + Portrait",
+    desc: "Oversized result number, supporting quote and customer portrait",
+  },
+  {
+    id: "x-verified-post",
+    label: "Verified Post Card",
+    desc: "Social-post style card with round avatar and verified check",
+  },
+  {
+    id: "founder-memo-portrait",
+    label: "Founder Memo Note",
+    desc: "Warm paper memo with serif quote and founder avatar",
+  },
+];
+
+/**
+ * To add another person: drop a transparent-background PNG of a MALE person
+ * (head and shoulders / half body, ideally ≤ 1200px tall) into
+ * /public/images/testimonials/ and add one entry here. Nothing else changes.
+ */
 export const MALE_PORTRAIT_PRESETS: Array<{
   id: MalePortraitPresetId;
   label: string;
   roleSample: string;
   authorSample: string;
   imageSrc: string;
-  suitColor: string;
-  tieColor: string;
-  skinTone: string;
-  hairColor: string;
-  hasBeard: boolean;
-  hasGlasses: boolean;
 }> = [
   {
     id: "marcus-saas-vp",
@@ -68,12 +134,6 @@ export const MALE_PORTRAIT_PRESETS: Array<{
     authorSample: "Marcus Vance",
     roleSample: "VP of Growth · VeloCloud AI",
     imageSrc: "/images/testimonials/marcus-executive.png",
-    suitColor: "#1E293B",
-    tieColor: "#EA580C",
-    skinTone: "#E8B89A",
-    hairColor: "#27272A",
-    hasBeard: true,
-    hasGlasses: false,
   },
   {
     id: "daniel-founder",
@@ -81,12 +141,6 @@ export const MALE_PORTRAIT_PRESETS: Array<{
     authorSample: "Daniel Mercer",
     roleSample: "Founder · NorthStar Analytics",
     imageSrc: "/images/testimonials/daniel-executive.png",
-    suitColor: "#0F172A",
-    tieColor: "#2563EB",
-    skinTone: "#F1C6A7",
-    hairColor: "#3F2E21",
-    hasBeard: false,
-    hasGlasses: true,
   },
   {
     id: "tariq-growth-lead",
@@ -94,12 +148,6 @@ export const MALE_PORTRAIT_PRESETS: Array<{
     authorSample: "Tariq Al-Mansoor",
     roleSample: "Head of Acquisition · Apex B2B",
     imageSrc: "/images/testimonials/tariq-executive.png",
-    suitColor: "#1F2937",
-    tieColor: "#10B981",
-    skinTone: "#D9A17C",
-    hairColor: "#18181B",
-    hasBeard: true,
-    hasGlasses: false,
   },
   {
     id: "sufian-founder",
@@ -107,12 +155,6 @@ export const MALE_PORTRAIT_PRESETS: Array<{
     authorSample: "Sufian Mustafa",
     roleSample: "Founder · DoItWithAI.tools",
     imageSrc: "/images/testimonials/sufian-executive.png",
-    suitColor: "#1E1B4B",
-    tieColor: "#6366F1",
-    skinTone: "#DFAC88",
-    hairColor: "#18181B",
-    hasBeard: true,
-    hasGlasses: false,
   },
 ];
 
@@ -121,13 +163,16 @@ export const DEFAULT_QUOTE_STUDIO_INPUT: QuoteStudioInput = {
   authorHandleOrRole: "VP of Growth · VeloCloud AI",
   brandDomain: "doitwithai.tools",
   sourceContent:
-    "Our customer quotes used to sit buried in text walls. Turning them into branded portrait testimonial cards lifted our landing page demo signups by 2.8x in two weeks.\n\nWhen you pair a bold opening hook with a 1080x1080 visual takeaway card and brand-colored phrase highlights, feed dwell time and saves jump by over 2.4x.\n\nWe replaced four separate design subscriptions in one afternoon—upload a portrait, add your brand hex colors, and export client-ready social proof in seconds.",
-  template: "aragon-split-testimonial",
+    "Our customer quotes used to sit buried in text walls. Turning them into branded portrait testimonial cards made our landing page proof far easier to scan.\n\nWhen you pair a bold opening hook with a square visual takeaway card and brand-colored phrase highlights, feed posts become easier to save and share.\n\nWe replaced several separate design tools in one afternoon: upload a portrait, add your brand colors, and export client-ready social proof in seconds.",
+  template: "arch-aura-split",
   portraitPreset: "marcus-saas-vp",
   aspectRatio: "1:1",
   trustBadge1: "Verified Customer",
-  trustBadge2: "2.8x Conversion Lift",
-  starRatingLabel: "★★★★★ 5.0 Verified Review",
+  trustBadge2: "Easy to Use",
+  trustBadge3: "Highly Recommended",
+  starRatingLabel: "5.0",
+  portraitScale: 1,
+  portraitOffsetX: 0,
 };
 
 export function buildDeterministicQuotePack(
@@ -145,10 +190,10 @@ export function buildDeterministicQuotePack(
   ).slice(0, 5);
 
   const badges = [
-    "VERIFIED CUSTOMER WIN",
-    "CASE STUDY BENCHMARK",
+    "CUSTOMER WIN",
+    "CASE STUDY INSIGHT",
     "FOUNDER TAKEAWAY",
-    "ROI PROOF POINT",
+    "PROOF POINT",
     "GROWTH PLAYBOOK",
   ];
 
@@ -157,11 +202,12 @@ export function buildDeterministicQuotePack(
     const firstSentence = sentences[0] || para;
     const words = firstSentence.split(/\s+/);
     const highlightPhrase = words
-      .slice(Math.max(0, words.length - 7))
-      .join(" ");
+      .slice(Math.max(0, words.length - 6))
+      .join(" ")
+      .replace(/[.!?,;:]+$/, "");
     const subContextOrReality =
       sentences.slice(1).join(" ").trim() ||
-      "Verified customer testimonial & social proof graphic.";
+      "Customer testimonial and social proof graphic.";
 
     return {
       id: `quote-card-${idx + 1}`,
@@ -174,6 +220,6 @@ export function buildDeterministicQuotePack(
 
   return {
     cards,
-    socialCaption: `💡 ${cards.length} Customer Proof & Visual Takeaways:\n\n${cards.map((c, i) => `${i + 1}. "${c.quoteText}"`).join("\n\n")}\n\nDesign your own branded testimonial & quote cards free at:\n🌐 https://${input.brandDomain || "doitwithai.tools"}/tools/quote-stat-testimonial-card-studio`,
+    socialCaption: `💡 ${cards.length} customer proof takeaways:\n\n${cards.map((c, i) => `${i + 1}. "${c.quoteText}"`).join("\n\n")}\n\nDesign your own branded testimonial & quote cards free at:\n🌐 https://${input.brandDomain || "doitwithai.tools"}/tools/quote-stat-testimonial-card-studio`,
   };
 }

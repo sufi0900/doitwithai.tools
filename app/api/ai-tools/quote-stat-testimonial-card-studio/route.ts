@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       ).trim(),
       brandDomain: (body.brandDomain || "doitwithai.tools").trim(),
       sourceContent: (body.sourceContent || "").trim(),
-      template: body.template || "verified-post-screenshot",
+      template: body.template || "arch-aura-split",
     };
 
     const fallback = buildDeterministicQuotePack(input);
