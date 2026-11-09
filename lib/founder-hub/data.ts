@@ -181,11 +181,11 @@ export const DAILY_ENGINEERING_VELOCITY: DailyActivityPoint[] = [
   {
     date: "2026-11-10",
     shortLabel: "Nov 10",
-    errorsFixed: 2,
-    improvementsShipped: 6,
-    routesAndToolsAdded: 5,
-    commitsPushed: 3,
-    highlightNote: "/founder-hub Left Sidebar + GSC Velocity Graph + 5 Dedicated Feeder Tools Scheduled (6:00 AM PKT)",
+    errorsFixed: 3,
+    improvementsShipped: 8,
+    routesAndToolsAdded: 6,
+    commitsPushed: 4,
+    highlightNote: "/founder-hub Left Sidebar + GSC Graph + 5 Feeder Tools Scheduled (6 AM) + VoxFolio Ecosystem Calculator",
   },
 ];
 
@@ -234,12 +234,12 @@ export const SPRINT_PROGRESS_BARS: SprintProgressBarItem[] = [
   {
     id: "seo-technical-ctr-fixes",
     label: "Technical SEO, H1/Meta Audit & AI Failover Infrastructure",
-    completed: 35,
+    completed: 36,
     total: 38,
-    percentage: 92,
-    unitLabel: "35 / 38 Core Engineering & CTR Checks Completed",
+    percentage: 95,
+    unitLabel: "36 / 38 Core Engineering & CTR Checks Completed",
     tone: "purple",
-    detail: "Navbar H4/H6 removal, 144/144 HTTP 200 sitemap check, 4-tier Gemini/Groq/OpenRouter failover, Testimonial Studio & /founder-hub v2 completed.",
+    detail: "Navbar H4/H6 removal, 144/144 HTTP 200 sitemap check, 4-tier Gemini/Groq/OpenRouter failover, Testimonial Studio & /founder-hub v3 completed.",
   },
 ];
 
@@ -418,6 +418,220 @@ export const FIVE_FEEDER_TOOLS_BUILD_QUEUE: FeederToolQueueItem[] = [
     ],
   },
 ];
+
+export interface MasterVisionPhase {
+  id: string;
+  phaseNumber: number;
+  title: string;
+  category:
+    | "Core SEO & Tools (DoItWithAI)"
+    | "Content & Keyword Sheet"
+    | "VoxFolio & Ecosystem Expansion"
+    | "Social & Off-Page Automation";
+  completedItems: number;
+  totalItems: number;
+  weight: number;
+  status: "Completed" | "Active Sprint" | "Scheduled (6 AM PKT)" | "Next Phase" | "Future R&D";
+  deliverablesSummary: string;
+}
+
+export const MASTER_VISION_PHASES: MasterVisionPhase[] = [
+  {
+    id: "phase-1-core-tools",
+    phaseNumber: 1,
+    title: "Phase 1: Core Platform, 104+ AI/SEO Tools, Chrome Extension & Portable PC App Kit",
+    category: "Core SEO & Tools (DoItWithAI)",
+    completedItems: 104,
+    totalItems: 104,
+    weight: 25,
+    status: "Completed",
+    deliverablesSummary:
+      "104 live interactive tools, PortableToolHeroBar (Embed + Offline .ZIP PC App), Chrome Extension v2, and /do-it-ai hub.",
+  },
+  {
+    id: "phase-2-sanity-static",
+    phaseNumber: 2,
+    title: "Phase 2: Sanity CMS to Frontend Static Migration (17 Pillar Articles + 382 Archive Images)",
+    category: "Core SEO & Tools (DoItWithAI)",
+    completedItems: 17,
+    totalItems: 17,
+    weight: 10,
+    status: "Completed",
+    deliverablesSummary:
+      "100% static frontend rendering via sanitySnapshot.json and 382 local archive images (commit 76c0a9d).",
+  },
+  {
+    id: "phase-3-tech-seo-failover",
+    phaseNumber: 3,
+    title: "Phase 3: Technical SEO, H1/Meta Audit, 4-Tier AI Failover, Testimonial Studio & /founder-hub",
+    category: "Core SEO & Tools (DoItWithAI)",
+    completedItems: 36,
+    totalItems: 38,
+    weight: 15,
+    status: "Active Sprint",
+    deliverablesSummary:
+      "Navbar H4/H6 cleanup, 144/144 HTTP 200 sitemap check, 4-tier Gemini/Groq/OpenRouter failover, 14-template Testimonial Studio, and Protected /founder-hub.",
+  },
+  {
+    id: "phase-4-5-feeder-tools",
+    phaseNumber: 4,
+    title: "Phase 4: 5 Dedicated Low-KD Feeder Tools (#58–#62 Scheduled 6:00 AM PKT)",
+    category: "Core SEO & Tools (DoItWithAI)",
+    completedItems: 0,
+    totalItems: 5,
+    weight: 8,
+    status: "Scheduled (6 AM PKT)",
+    deliverablesSummary:
+      "#58 SEO Pricing Calculator (3,600 vol, KD 7), #59 Article-to-Quiz (1,600 vol, KD 14), #60 Source/PDF-to-Article, #61 50-Word Summarizer, #62 AI Detector & Humanizer.",
+  },
+  {
+    id: "phase-5-keyword-plan-64",
+    phaseNumber: 5,
+    title: "Phase 5: Master 64-Item Keyword Plan Execution (Remaining Tool Upgrades & Pillar Articles)",
+    category: "Content & Keyword Sheet",
+    completedItems: 28,
+    totalItems: 59,
+    weight: 12,
+    status: "Active Sprint",
+    deliverablesSummary:
+      "Upgrading priority SEO studios (#1–#56) and publishing high-intent comparison and AI automation guides across 88,281/mo curated keyword pool.",
+  },
+  {
+    id: "phase-6-ctr-guides-brand",
+    phaseNumber: 6,
+    title: "Phase 6: CTR Playbook (10), 2026–2027 'What AI Can Do' Blog Plan (32 Guides) & Brand Layers (6)",
+    category: "Content & Keyword Sheet",
+    completedItems: 8,
+    totalItems: 48,
+    weight: 10,
+    status: "Next Phase",
+    deliverablesSummary:
+      "10 CTR snippet/widget upgrades, 32 vertical 'What AI Can Do' guides across 7 pillars, and 6 'Do It With AI' brand authority layers.",
+  },
+  {
+    id: "phase-7-grand-ai-writer",
+    phaseNumber: 7,
+    title: "Phase 7: Grand Flagship 'AI Content Writer' 8-Stage Connected Pipeline (/tools/ai-content-writer)",
+    category: "Core SEO & Tools (DoItWithAI)",
+    completedItems: 2,
+    totalItems: 10,
+    weight: 8,
+    status: "Next Phase",
+    deliverablesSummary:
+      "Chaining Search Intent -> Slug -> Meta -> H1/Outline -> 50-Word Box -> Full E-E-A-T Article -> FAQ Schema -> Visual Cards into one flagship studio.",
+  },
+  {
+    id: "phase-8-voxfolio-bridge",
+    phaseNumber: 8,
+    title: "Phase 8: VoxFolio 3D Website/Blog Builder Expansion + 1-Click AI Tool Website Injector",
+    category: "VoxFolio & Ecosystem Expansion",
+    completedItems: 9,
+    totalItems: 28,
+    weight: 7,
+    status: "Future R&D",
+    deliverablesSummary:
+      "VoxFolio V27.12 foundation (9 templates, 3D scenes, /p/[slug]/blog, /api/connect/command) + new Blog/Tool-Site templates + 1-Click 'Inject DoItWithAI Tools Into My Site' builder + direct AI Content Writer -> VoxFolio CMS publishing.",
+  },
+  {
+    id: "phase-9-social-offpage-automation",
+    phaseNumber: 9,
+    title: "Phase 9: Buffer-Style Multi-Channel Social Auto-Publisher API & Off-Page SEO Automation Agent",
+    category: "Social & Off-Page Automation",
+    completedItems: 0,
+    totalItems: 18,
+    weight: 5,
+    status: "Future R&D",
+    deliverablesSummary:
+      "Direct OAuth / Buffer API integration for LinkedIn, Pinterest, TikTok, X, Instagram & Facebook + 1-click blog-to-social auto-scheduling + automated Off-Page SEO & Digital PR outreach.",
+  },
+];
+
+export const VOXFOLIO_ECOSYSTEM_BLUEPRINT = {
+  title: "VoxFolio × DoItWithAI.tools × /do-it-ai — Unified 'Build, Equip, Rank & Auto-Distribute' Ecosystem",
+  subtitle:
+    "Deep technical audit of github.com/sufi0900/voice-directed-3d-portfolio-builder (VoxFolio V27.12) and the 6-Phase Master Blueprint connecting Website Creation, 1-Click AI Tool Injection, AI Blog Publishing, SEO, and Buffer-Style Social Media Automation.",
+  repoAudit: {
+    repoUrl: "https://github.com/sufi0900/voice-directed-3d-portfolio-builder",
+    liveUrl: "https://voice-directed-3d-portfolio-builder.vercel.app/",
+    currentVersion: "Release V27.12 (Commit bce565e)",
+    metrics: [
+      {
+        label: "Codebase Scale",
+        value: "193 Strict TS/TSX Files",
+        detail: "~11.9k lines · Next.js 15 App Router · React 19 · TypeScript 5.9",
+      },
+      {
+        label: "Automated Verification",
+        value: "177 Passing Tests",
+        detail: "Vitest 3 across 38 test files + bundle-budget guard",
+      },
+      {
+        label: "3D & Editorial Templates",
+        value: "9 Templates + 4 3D Scenes",
+        detail: "Cinematic Orbit, Kinetic Gallery, Velocity Atelier, Olive Journal, Midnight Bento, etc.",
+      },
+      {
+        label: "Voice & Command Pipeline",
+        value: "35 Allowlisted Voice Tools",
+        detail: "AssemblyAI 24 kHz PCM AudioWorklet + Zod-validated reversible Command Bus",
+      },
+      {
+        label: "Built-In Blog & Page Engine",
+        value: "/p/[slug]/blog/[post]",
+        detail: "Tiptap 3 structured blocks, SEO metadata, live SERP preview & atomic snapshots",
+      },
+      {
+        label: "Ready External API Bridge",
+        value: "/api/connect/command",
+        detail: "Migration 014 private content connections + OpenAPI schema already built!",
+      },
+    ],
+  },
+  ecosystemStages: [
+    {
+      stage: "Stage 1",
+      title: "Launch a Custom 3D Website, Personal Blog, or Niche Portal on VoxFolio",
+      connection: "VoxFolio (/start & /studio/[projectId])",
+      detail:
+        "Expand VoxFolio beyond portfolios with dedicated Multi-Author Blog, Niche Authority Magazine, and AI Tool Directory templates. Users speak to Vox or use the Studio to customize their branding, domain slug, and layout in minutes.",
+    },
+    {
+      stage: "Stage 2",
+      title: "1-Click 'Inject AI Tools Into My Website' (Turn Any User Site Into a Tool Website)",
+      connection: "DoItWithAI Catalog (lib/tools-catalog.js) -> VoxFolio Studio Block",
+      detail:
+        "Give users a 1-click button inside DoItWithAI.tools and VoxFolio Studio to embed any single tool—or a curated bundle of 5–20 tools—directly into their own VoxFolio website. Users instantly get their own working AI Tool Website to promote, while every embedded tool is powered by our backend and carries a natural 'Powered by DoItWithAI.tools' authority link.",
+    },
+    {
+      stage: "Stage 3",
+      title: "Draft SEO-Optimized Blogs via Grand AI Content Writer & 1-Click Publish to VoxFolio CMS",
+      connection: "DoItWithAI (/tools/ai-content-writer) -> VoxFolio (/api/connect/command)",
+      detail:
+        "Because VoxFolio already has `src/app/api/connect/command`, `014_private_content_connections.sql`, and `manage_page_or_post`, we connect `/tools/ai-content-writer` directly to VoxFolio! Users research keywords, generate a 2,000-word E-E-A-T article with a 50-word AEO summary box and FAQ schema on DoItWithAI.tools, and click 'Publish to My VoxFolio Blog'—creating a live post at `/p/[slug]/blog/[post-slug]` with zero copy-pasting.",
+    },
+    {
+      stage: "Stage 4",
+      title: "Automated Technical, On-Page & Off-Page SEO Engine",
+      connection: "DoItWithAI SEO Suite -> User's Published VoxFolio Site",
+      detail:
+        "Technical & On-Page SEO (clean H1–H3 hierarchy, pixel-verified meta titles, JSON-LD Article/FAQ schema, XML sitemaps, IndexNow ping) are baked into every published page automatically. For Off-Page SEO, our AI Agent runs Digital PR Linkable Asset campaigns, Journalist Pitch generation, Unlinked Brand Mention recovery, and natural tool-embed backlink loops.",
+    },
+    {
+      stage: "Stage 5",
+      title: "Buffer-Style Multi-Channel Social Media Auto-Publisher & AI Distribution Agent",
+      connection: "/do-it-ai Agent -> LinkedIn, Pinterest, TikTok, X, Instagram & Buffer APIs",
+      detail:
+        "When a blog post goes live, the user doesn't have to manually upload posts to social media. Our visual and script studios automatically convert the article into a LinkedIn carousel/post, Pinterest vertical pin, Founder Quote card, and TikTok/Reels script, then push them via OAuth APIs (or Buffer/Webhook integration) on an automated schedule.",
+    },
+    {
+      stage: "Stage 6",
+      title: "'Build & Grow With AI' Go-To-Market Advertising & Viral Acquisition Loop",
+      connection: "Unified Funnel: Ad Traffic -> Free Tool / Website Builder -> Power User Ecosystem",
+      detail:
+        "Instead of advertising just another 'AI writer', our marketing hook is a complete business-in-a-box: 'Build your own AI-powered Blog & Tool Website, rank it on Google & AI Search, and automate all your social media from one command center.' Every user who launches a site or embeds our tools promotes our ecosystem to their own audience.",
+    },
+  ],
+};
 
 export const EXECUTIVE_KPI_CARDS = [
   {
@@ -651,9 +865,9 @@ export const WEEKLY_EXECUTION_SEQUENCE = [
   },
   {
     window: "Weeks 4–12",
-    focus: "Cohort Measurement, Internal Linking & AdSense RPM Loop",
+    focus: "VoxFolio Bridge, 1-Click Tool Injector & Social Auto-Publisher",
     action:
-      "Enforce the 3-step AdSense RPM & Session-Depth loop (Low-KD Guide -> Above-the-fold Interactive Tool -> /do-it-ai multi-step workflow) and compare 28-day GSC cohorts.",
+      "Connect /tools/ai-content-writer to VoxFolio (/api/connect/command), launch 1-Click Tool Website Injection, and wire Buffer-style multi-channel social auto-publishing.",
     status: "Ongoing",
   },
 ];
@@ -801,6 +1015,42 @@ export interface ChangelogEntry {
 
 export const FOUNDER_AI_CHANGELOG: ChangelogEntry[] = [
   {
+    id: "log-sprint-12-voxfolio-ecosystem-master-calculator",
+    sprintNumber: 12,
+    date: "2026-11-10",
+    title: "VoxFolio (V27.12) Deep Audit, Unified 'Build + Rank + Auto-Publish' Ecosystem Blueprint & Dynamic Master Vision Calculator",
+    category: "Founder Command Center",
+    founderRequestSummary:
+      "Analyze my hackathon project VoxFolio (github.com/sufi0900/voice-directed-3d-portfolio-builder & voice-directed-3d-portfolio-builder.vercel.app) and document my grand future vision inside /founder-hub: (1) Build a dynamic Master Implementation & Vision Progress Calculator with a progress bar that calculates our exact completion % across all SEO sheets, tools, articles, and future phases—and automatically recalculates whenever we add new scope or phases; (2) Connect VoxFolio and DoItWithAI.tools so users can build a custom 3D website/blog, inject any of our 104+ AI tools into their own website with a 1-click button (creating their own tool website), write SEO articles with our AI Content Writer that publish directly to their blog, and auto-distribute content to LinkedIn, Pinterest, TikTok, and social channels via a Buffer-style AI automation agent alongside automated On-Page, Technical, and Off-Page SEO.",
+    aiStrategicBlueprint:
+      "Audited all 193 TypeScript files and 17 Supabase migrations in VoxFolio (Release V27.12) and discovered that VoxFolio ALREADY includes a blog engine (/p/[slug]/blog/[post], src/domain/blog-writing.ts) AND a token-authenticated external command API (/api/connect/command + 014_private_content_connections.sql). Architected a 6-Stage Unified Ecosystem Blueprint bridging DoItWithAI.tools, /do-it-ai, and VoxFolio, and engineered the interactive MasterVisionCompletionCalculator inside /founder-hub tracking all 9 phases (327 total milestones) with a real-time 'Add / Simulate Future Scope' calculator.",
+    aiImplementationDetails: [
+      "Completed full codebase audit of sufi0900/voice-directed-3d-portfolio-builder (193 TS/TSX files, 177 passing Vitest tests, 9 templates, 4 Three.js 3D scene families, 35 AssemblyAI voice tools, Tiptap blog engine, and /api/connect/command bridge).",
+      "Built the interactive MasterVisionCompletionCalculator in /founder-hub tracking 9 end-to-end phases (Core Tools 100%, Sanity Static Migration 100%, Tech SEO & Failover 95%, 5 Feeder Tools Scheduled, 64-Item Keyword Plan, CTR & 32 Guides, Grand AI Content Writer, VoxFolio Bridge & 1-Click Tool Injector, and Social/Off-Page Auto-Publisher).",
+      "Added interactive '+ / - Completed Items' and 'Simulate New Scope / Future Series Addition' controls so the Founder can see how adding new tools, articles, or phases dynamically shifts the overall Master Vision percentage.",
+      "Added a dedicated '🌐 VoxFolio & Ecosystem Plan' tab in the /founder-hub Left Sidebar documenting all 6 Ecosystem Stages, API bridge mechanics, and the 'Build & Grow With AI' advertising strategy.",
+    ],
+    blogPostDraftMarkdown: `# From Voice-Directed 3D Portfolios to a Full-Stack AI Publishing & Tool Ecosystem: Connecting VoxFolio and DoItWithAI.tools
+
+During the AssemblyAI Voice Agent Hackathon, I built **VoxFolio** (\`voice-directed-3d-portfolio-builder\`)—a Next.js 15, React Three Fiber, and Supabase platform with 193 TypeScript files, 177 automated tests, 9 templates, and 35 voice tools that let creators speak a 3D portfolio and blog into existence.
+
+Meanwhile, on **DoItWithAI.tools**, we scaled an ecosystem of **104+ free AI & SEO studios** backed by a 4-tier multi-key AI failover engine.
+
+### The Grand Vision: One Unified "Build -> Equip -> Rank -> Distribute" Loop
+Instead of keeping website building, SEO content creation, and social media distribution in separate silos, our multi-phase roadmap connects both platforms into a single creator growth engine:
+1. **Build Your Website & Blog on VoxFolio**: Pick from 3D cinematic or editorial journal templates and customize your site by voice or studio controls.
+2. **1-Click "Inject AI Tools Into My Website"**: Choose any of our 104+ AI & SEO tools from DoItWithAI.tools and embed them into your own site with one click—launching an instant niche tool website.
+3. **1-Click Blog Publishing via \`/api/connect/command\`**: Draft E-E-A-T articles in our 8-stage **AI Content Writer** and push them straight to your VoxFolio blog (\`/p/[slug]/blog\`) with automatic Technical & On-Page SEO.
+4. **Buffer-Style Social Media & Off-Page SEO Automation**: Automatically convert every new blog post into LinkedIn carousels, Pinterest pins, Founder Quote cards, and short-form video scripts scheduled across your social channels.`,
+    filesTouched: [
+      "lib/founder-hub/data.ts",
+      "features/founder-hub/FounderEcosystemAndCalculator.tsx",
+      "features/founder-hub/FounderCommandCenterClient.tsx",
+    ],
+    commits: ["3a8d325", "Latest (Nov 10, 2026)"],
+    status: "Completed & Live",
+  },
+  {
     id: "log-sprint-11-scheduled-5-feeder-tools",
     sprintNumber: 11,
     date: "2026-11-10",
@@ -809,7 +1059,7 @@ export const FOUNDER_AI_CHANGELOG: ChangelogEntry[] = [
     founderRequestSummary:
       "At 6:00 AM Pakistan Time (4 hours from now), begin creating the 5 recommended dedicated feeder tools (#58 SEO Content Pricing Calculator, #59 AI Article-to-Quiz Generator, #60 Source/PDF/NotebookLM-to-Article Converter, #61 50-Word AI Article Summarizer, and #62 Writer.com Alternative AI Detector & Humanizer). Make sure every tool has the same industrial UX quality and optimization rigor as our Free AI Testimonial Card Generator, WITHOUT blindly copying visual card templates or duplicate content where they don't belong. Each of the 5 tools must have its own deep competitor research, unique domain-specific interactive architecture, and smooth UX. Document all 5 tools in /founder-hub as Pending right now and check off their tick marks [x] as each tool is completed.",
     aiStrategicBlueprint:
-      "Created FIVE_FEEDER_TOOLS_BUILD_QUEUE in lib/founder-hub/data.ts and rendered an interactive 5-Tool Build Queue & Tick-Mark Checklist inside /founder-hub (both on the Overview tab and in the AI Writer & H1 Blueprints tab). Defined bespoke competitor benchmarks and unique non-template interactive architectures for each of the 5 tools so none of them copy visual card templates inappropriately, while enforcing all universal engineering rules (PortableToolHeroBar, 4-tier Gemini/Groq/OpenRouter failover, 'Free AI [Tool Name]' SEO, 50-word AEO answer box, FAQPage JSON-LD, and 3 below-the-fold internal linking grids). Scheduled the autonomous 6:00 AM PKT build job to ship and tick off each tool.",
+      "Created FIVE_FEEDER_TOOLS_BUILD_QUEUE in lib/founder-hub/data.ts and rendered an interactive 5-Tool Build Queue & Tick-Mark Checklist inside /founder-hub (both on the Overview tab and in the AI Writer & 5-Tool Queue tab). Defined bespoke competitor benchmarks and unique non-template interactive architectures for each of the 5 tools so none of them copy visual card templates inappropriately, while enforcing all universal engineering rules (PortableToolHeroBar, 4-tier Gemini/Groq/OpenRouter failover, 'Free AI [Tool Name]' SEO, 50-word AEO answer box, FAQPage JSON-LD, and 3 below-the-fold internal linking grids). Scheduled the autonomous 6:00 AM PKT build job to ship and tick off each tool.",
     aiImplementationDetails: [
       "Documented all 5 dedicated feeder tools (#58–#62) in FIVE_FEEDER_TOOLS_BUILD_QUEUE with status '⏳ Pending (Scheduled 6:00 AM PKT)' and a 5-step per-tool verification checklist.",
       "Specified bespoke domain UX for #58 (/tools/seo-content-pricing-calculator, Vol 3,600, KD 7): Interactive sliders + 4-Column Agency vs. Freelancer vs. In-House vs. AI Comparison Matrix + 12-Month Traffic Break-Even model.",
@@ -832,7 +1082,7 @@ That would be a mistake. A **Per-Article SEO Pricing Calculator** or an **AI Con
       "lib/founder-hub/data.ts",
       "features/founder-hub/FounderCommandCenterClient.tsx",
     ],
-    commits: ["7604a11", "Latest (Nov 10, 2026)"],
+    commits: ["3a8d325"],
     status: "In Progress",
   },
   {
@@ -960,7 +1210,7 @@ Here is how we engineered **DoItWithAI.tools** to achieve 99.99% AI generation u
       "Authored docs/TOOL_OPTIMIZATION_RULES.md (413 lines) covering the 7-Stage Evolution Post-Mortem of QuoteStatTestimonialCardStudioClient.",
       "Documented Mathematical Canvas & Zero-Overlap Layout Rules: explicit left/right column reservation (textMaxW = rightLimit - leftPad - colGap with colGap >= 32px) and bottom-up vertical footer budgeting.",
       "Codified Architectural Portrait Framing (Concentric Circle-in-Ring, Editorial Rounded Arch, Adjustable Radius 0%–50%, Full-Bleed Split Rounded Window) + <15ms client-side Flood-Fill background removal.",
-      "Added Section 8: Universal Copy-Paste Master Prompt for any AI coding agent (now available with 1-click copy in /founder-hub Tab 7).",
+      "Added Section 8: Universal Copy-Paste Master Prompt for any AI coding agent (now available with 1-click copy in /founder-hub Tab 9).",
     ],
     blogPostDraftMarkdown: `# Why Most AI-Generated Web Tools Look Generic—And the 8-Point Industrial Standard We Built to Fix Them
 

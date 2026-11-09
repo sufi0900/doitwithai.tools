@@ -15,6 +15,10 @@ import {
   type TableSheetData,
   type FounderWorkbookCore,
 } from "@/lib/founder-hub/data";
+import {
+  MasterVisionCompletionCalculator,
+  VoxFolioEcosystemView,
+} from "./FounderEcosystemAndCalculator";
 
 interface Props {
   workbookCore: FounderWorkbookCore;
@@ -26,6 +30,7 @@ type MainTabId =
   | "overview"
   | "founder-ai-log"
   | "flagship-blueprints"
+  | "voxfolio-ecosystem"
   | "keyword-plan-64"
   | "expansion-370"
   | "ctr-guides-brand"
@@ -202,7 +207,6 @@ function FiveFeederToolsQueueTracker({
                 </div>
               </div>
 
-              {/* 5-Step Sub-Checklist per Tool */}
               <div className="rounded-xl bg-slate-900/60 border border-slate-800/90 p-3.5">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
                   6:00 AM PKT Execution Checklist (Tick Marks Update as Each Step Completes):
@@ -364,7 +368,6 @@ function GscVelocityOverviewChart() {
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900/95 shadow-2xl overflow-hidden">
-      {/* Header */}
       <div className="p-5 sm:p-6 border-b border-slate-800 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold mb-2">
@@ -387,7 +390,6 @@ function GscVelocityOverviewChart() {
         </div>
       </div>
 
-      {/* 4 GSC-Style Clickable Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-5 pb-2">
         {metricCards.map((m) => {
           const isOn = activeMetrics[m.key];
@@ -426,10 +428,8 @@ function GscVelocityOverviewChart() {
         })}
       </div>
 
-      {/* Interactive SVG Multi-Line Graph */}
       <div className="px-5 pt-3 pb-5">
         <div className="rounded-2xl border border-slate-800/90 bg-slate-950/90 p-4">
-          {/* Active Date Callout Banner */}
           {activePoint && (
             <div className="mb-3 pb-3 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
               <div className="flex items-center gap-2 flex-wrap">
@@ -473,7 +473,6 @@ function GscVelocityOverviewChart() {
                 </linearGradient>
               </defs>
 
-              {/* Horizontal Grid Lines */}
               {[0, 6, 12, 18, 24].map((tick) => {
                 const y = getY(tick);
                 return (
@@ -501,7 +500,6 @@ function GscVelocityOverviewChart() {
                 );
               })}
 
-              {/* Area Fills */}
               {activeMetrics.improvementsShipped && (
                 <path
                   d={buildAreaPath((d) => d.improvementsShipped)}
@@ -515,7 +513,6 @@ function GscVelocityOverviewChart() {
                 />
               )}
 
-              {/* Trend Lines */}
               {activeMetrics.improvementsShipped && (
                 <path
                   d={buildPath((d) => d.improvementsShipped)}
@@ -558,7 +555,6 @@ function GscVelocityOverviewChart() {
                 />
               )}
 
-              {/* Data Points & Hover Columns */}
               {DAILY_ENGINEERING_VELOCITY.map((d, idx) => {
                 const x = getX(idx);
                 const isSelected = hoveredIdx === idx;
@@ -581,7 +577,6 @@ function GscVelocityOverviewChart() {
                       />
                     )}
 
-                    {/* Invisible wider hit target */}
                     <rect
                       x={x - 24}
                       y={padTop}
@@ -649,7 +644,6 @@ function GscVelocityOverviewChart() {
           </div>
         </div>
 
-        {/* 4 Sprint Completion Progress Bars */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
           {SPRINT_PROGRESS_BARS.map((bar) => {
             const fillGradient =
@@ -987,15 +981,13 @@ export default function FounderCommandCenterClient({
     "pages" | "queries" | "countries" | "daily" | "indexing" | "live-audit"
   >("pages");
 
-  // Founder Discussions filtering & blog post copy state
   const [logCategoryFilter, setLogCategoryFilter] = useState<string>("ALL");
   const [logSearch, setLogSearch] = useState<string>("");
   const [copiedBlogId, setCopiedBlogId] = useState<string | null>(null);
   const [expandedBlogPreviewId, setExpandedBlogPreviewId] = useState<string | null>(
-    "log-sprint-11-scheduled-5-feeder-tools"
+    "log-sprint-12-voxfolio-ecosystem-master-calculator"
   );
 
-  // On-demand state for large datasets (2,621 Keyword Review & 3,700 Raw Semrush)
   const [largeSheets, setLargeSheets] = useState<Record<string, TableSheetData> | null>(null);
   const [largeLoading, setLargeLoading] = useState(false);
   const [largeActiveSheet, setLargeActiveSheet] = useState<"Keyword Review" | "Raw Semrush">(
@@ -1057,7 +1049,7 @@ export default function FounderCommandCenterClient({
         {
           id: "overview",
           icon: "📊",
-          label: "Overview & Velocity Graph",
+          label: "Overview & Master Calculator",
           badge: "Start Here",
         },
         {
@@ -1071,6 +1063,12 @@ export default function FounderCommandCenterClient({
           icon: "🚀",
           label: "AI Writer & 5-Tool Queue",
           badge: "6 AM PKT",
+        },
+        {
+          id: "voxfolio-ecosystem",
+          icon: "🌐",
+          label: "VoxFolio & Ecosystem Plan",
+          badge: "9 Phases",
         },
       ],
     },
@@ -1163,7 +1161,6 @@ export default function FounderCommandCenterClient({
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Top Command Bar (Preserved Header Data + Mobile Sidebar Trigger) */}
       <header className="border-b border-slate-800 bg-slate-900/95 backdrop-blur sticky top-0 z-40">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex items-center justify-between gap-3">
@@ -1187,12 +1184,12 @@ export default function FounderCommandCenterClient({
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     Protected · NoIndex
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    5 Feeder Tools Queued · 6:00 AM PKT
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    VoxFolio Ecosystem + Master Calculator Live
                   </span>
                 </div>
                 <p className="text-xs text-slate-400">
-                  Unified Documentation, 15-Sheet SEO/Keyword Studio, Architecture Dependency Map &
+                  Unified Documentation, 15-Sheet SEO/Keyword Studio, Dynamic Master Vision Calculator &
                   Blog-Ready Founder Discussions
                 </p>
               </div>
@@ -1227,9 +1224,7 @@ export default function FounderCommandCenterClient({
         </div>
       </header>
 
-      {/* Main Layout Shell: Standard Left Sidebar + Scrollable Content Area */}
       <div className="max-w-[1600px] w-full mx-auto flex-1 flex relative">
-        {/* Mobile Backdrop */}
         {mobileSidebarOpen && (
           <div
             className="fixed inset-0 bg-black/60 z-30 lg:hidden"
@@ -1237,7 +1232,6 @@ export default function FounderCommandCenterClient({
           />
         )}
 
-        {/* Standard Left Sidebar Navigation Panel */}
         <aside
           className={`${
             mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
@@ -1286,7 +1280,6 @@ export default function FounderCommandCenterClient({
             ))}
           </div>
 
-          {/* Left Sidebar Footer Summary Card */}
           <div className="mt-6 pt-4 border-t border-slate-800 space-y-2.5">
             <div className="rounded-2xl bg-slate-950/90 border border-slate-800 p-3.5 space-y-2">
               <div className="flex items-center justify-between text-[11px]">
@@ -1294,27 +1287,27 @@ export default function FounderCommandCenterClient({
                 <span className="text-amber-300 font-semibold font-mono">6:00 AM PKT</span>
               </div>
               <div className="text-[11px] text-slate-400 leading-relaxed">
-                5 Feeder Tools (#58–#62) queued in{" "}
+                9 Ecosystem Phases & 5 Feeder Tools tracked in{" "}
                 <code className="text-blue-300 font-mono">lib/founder-hub/data.ts</code>.
               </div>
             </div>
           </div>
         </aside>
 
-        {/* Main Content Area */}
         <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 pb-20 space-y-8">
-          {/* TAB 1: OVERVIEW & GSC-STYLE VELOCITY GRAPH */}
+          {/* TAB 1: OVERVIEW, GSC VELOCITY GRAPH & MASTER VISION CALCULATOR */}
           {activeTab === "overview" && (
             <div className="space-y-8">
-              {/* GSC-Style Daily Activity & Velocity Graph + Progress Bars */}
               <GscVelocityOverviewChart />
 
-              {/* Interactive 5-Tool Scheduled Build Queue & Tick-Mark Tracker */}
+              <MasterVisionCompletionCalculator
+                onOpenVoxfolioTab={() => handleSelectTab("voxfolio-ecosystem")}
+              />
+
               <FiveFeederToolsQueueTracker
                 onOpenBlueprints={() => handleSelectTab("flagship-blueprints")}
               />
 
-              {/* Prominent Multi-AI Collaboration Protocol Banner */}
               <div className="rounded-3xl border border-blue-500/40 bg-gradient-to-br from-blue-950/70 via-slate-900 to-indigo-950/70 p-6 sm:p-8 shadow-2xl">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-blue-500/20 pb-5">
                   <div>
@@ -1334,7 +1327,14 @@ export default function FounderCommandCenterClient({
                       onClick={() => handleSelectTab("founder-ai-log")}
                       className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow"
                     >
-                      📜 Read All 11 Founder Sprints →
+                      📜 Read All 12 Founder Sprints →
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTab("voxfolio-ecosystem")}
+                      className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow"
+                    >
+                      🌐 Open VoxFolio Ecosystem Plan →
                     </button>
                     <button
                       type="button"
@@ -1342,13 +1342,6 @@ export default function FounderCommandCenterClient({
                       className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow"
                     >
                       📋 Get Universal AI Upgrade Prompt →
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSelectTab("keyword-plan-64")}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700"
-                    >
-                      📊 Open 64-Item Master Plan →
                     </button>
                   </div>
                 </div>
@@ -1386,7 +1379,6 @@ export default function FounderCommandCenterClient({
                 </div>
               </div>
 
-              {/* Executive KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {EXECUTIVE_KPI_CARDS.map((card) => (
                   <div
@@ -1407,7 +1399,6 @@ export default function FounderCommandCenterClient({
                 ))}
               </div>
 
-              {/* 8–12 Week Execution Sequence */}
               <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-6">
                 <h3 className="text-lg font-bold text-white mb-4">
                   🗓️ Master 8–12 Week Execution Sequence
@@ -1469,7 +1460,6 @@ export default function FounderCommandCenterClient({
                   </div>
                 </div>
 
-                {/* Category Filter Pills */}
                 <div className="flex items-center gap-2 overflow-x-auto py-4 border-b border-slate-800/80">
                   {logCategories.map((cat) => (
                     <button
@@ -1487,7 +1477,6 @@ export default function FounderCommandCenterClient({
                   ))}
                 </div>
 
-                {/* Sprint Cards */}
                 <div className="space-y-6 mt-6">
                   {filteredChangelog.map((entry) => {
                     const isPreviewOpen = expandedBlogPreviewId === entry.id;
@@ -1565,7 +1554,6 @@ export default function FounderCommandCenterClient({
                           </ul>
                         </div>
 
-                        {/* Collapsible Personal Blog Post Draft */}
                         <div className="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
                           <button
                             type="button"
@@ -1612,10 +1600,8 @@ export default function FounderCommandCenterClient({
           {/* TAB 3: GRAND AI CONTENT WRITER, 5-TOOL QUEUE & H1 DOMINATION BLUEPRINTS */}
           {activeTab === "flagship-blueprints" && (
             <div className="space-y-8">
-              {/* Interactive 5-Tool Scheduled Build Queue & Tick-Mark Tracker */}
               <FiveFeederToolsQueueTracker />
 
-              {/* Blueprint A: Grand AI Content Writer 8-Stage Pipeline */}
               <div className="rounded-3xl border border-emerald-500/40 bg-slate-900/95 p-6 sm:p-8 space-y-6 shadow-2xl">
                 <div>
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -1629,7 +1615,6 @@ export default function FounderCommandCenterClient({
                   </p>
                 </div>
 
-                {/* Target Commercial Keywords Table */}
                 <div>
                   <h3 className="text-sm font-extrabold text-white uppercase tracking-wider mb-3">
                     1. Target Commercial Head Terms & High-CPC Cluster (From 1,632-Line Semrush Export)
@@ -1655,7 +1640,6 @@ export default function FounderCommandCenterClient({
                   </div>
                 </div>
 
-                {/* 8-Stage Connected Pipeline */}
                 <div>
                   <h3 className="text-sm font-extrabold text-white uppercase tracking-wider mb-3">
                     2. 8-Stage Connected Article Production Architecture (Chaining Existing Studios)
@@ -1684,7 +1668,6 @@ export default function FounderCommandCenterClient({
                 </div>
               </div>
 
-              {/* Blueprint B: H1 Heading & Tag Cluster Domination Map */}
               <div className="rounded-3xl border border-blue-500/40 bg-slate-900/95 p-6 sm:p-8 space-y-6 shadow-2xl">
                 <div>
                   <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
@@ -1748,6 +1731,9 @@ export default function FounderCommandCenterClient({
               </div>
             </div>
           )}
+
+          {/* TAB 3B: VOXFOLIO & FULL-STACK ECOSYSTEM BLUEPRINT */}
+          {activeTab === "voxfolio-ecosystem" && <VoxFolioEcosystemView />}
 
           {/* TAB 4: 64-ITEM KEYWORD & TOOL EXECUTION PLAN */}
           {activeTab === "keyword-plan-64" && (
@@ -2051,7 +2037,6 @@ export default function FounderCommandCenterClient({
           {/* TAB 9: INDUSTRIAL TOOL OPTIMIZATION HANDBOOK & MASTER PROMPT */}
           {activeTab === "handbook-prompt" && (
             <div className="space-y-6">
-              {/* 1-Click Copy Universal AI Upgrade Prompt Box */}
               <div className="rounded-3xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/50 via-slate-900 to-slate-950 p-6 shadow-2xl">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-emerald-500/20">
                   <div>
@@ -2082,7 +2067,6 @@ export default function FounderCommandCenterClient({
                 </pre>
               </div>
 
-              {/* Full Handbook Renderer */}
               <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 sm:p-8">
                 <div className="flex items-center justify-between gap-3 pb-4 border-b border-slate-800 mb-6">
                   <div>
