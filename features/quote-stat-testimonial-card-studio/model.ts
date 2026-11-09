@@ -8,15 +8,29 @@
 
 export type QuoteVisualTemplateId =
   | "arch-aura-split"
-  | "flagship-footer-split"
   | "obsidian-gold-rings"
-  | "wave-trust-pills"
+  | "flagship-footer-split"
   | "editorial-dot-grid"
-  | "portrait-left-quote"
+  | "wave-trust-pills"
   | "full-bleed-portrait"
+  | "portrait-left-quote"
   | "kpi-stat-portrait"
   | "x-verified-post"
-  | "founder-memo-portrait";
+  | "founder-memo-portrait"
+  | "before-after-proof"
+  | "myth-vs-reality"
+  | "podcast-clip-quote"
+  | "checklist-takeaway-card"
+  // Legacy aliases supported seamlessly:
+  | "aragon-split-testimonial"
+  | "verified-post-screenshot"
+  | "highlighter-quote"
+  | "founder-memo-note"
+  | "testimonial-5-star"
+  | "executive-pull-quote"
+  | "oversized-kpi-stat"
+  | "glassmorphic-saas-card"
+  | "boardroom-white-frame";
 
 export type MalePortraitPresetId =
   | "marcus-saas-vp"
@@ -28,12 +42,21 @@ export type MalePortraitPresetId =
 
 export type CardAspectRatioId = "1:1" | "4:5" | "16:9";
 
+export type PortraitFrameMode =
+  | "auto"
+  | "ring-circle"
+  | "arch"
+  | "rounded"
+  | "cutout";
+
+export type LogoBadgeStyle = "auto" | "pill" | "white" | "dark" | "plain";
+
 export interface QuoteCardItem {
   id: string;
+  badgeLabel: string;
   quoteText: string;
   highlightPhrase: string;
   subContextOrReality: string;
-  badgeLabel: string;
 }
 
 export interface QuoteStudioInput {
@@ -48,10 +71,22 @@ export interface QuoteStudioInput {
   trustBadge2?: string;
   trustBadge3?: string;
   starRatingLabel?: string;
-  /** 0.8 – 1.25, scales the person cut-out inside the template */
+  /** Frame style override: auto matches template, or force ring-circle / arch / rounded / cutout */
+  portraitFrame?: PortraitFrameMode;
+  /** 0.70 – 1.45, zooms the person inside the frame/ring */
   portraitScale?: number;
-  /** -0.15 – 0.15, nudges the person left/right inside its zone */
+  /** -0.25 – 0.25, nudges the person left/right inside the frame/ring */
   portraitOffsetX?: number;
+  /** -0.25 – 0.25, nudges the person up/down inside the frame/ring */
+  portraitOffsetY?: number;
+  /** 0 – 50, controls corner radius % (50 = full circle) */
+  portraitRadius?: number;
+  /** 0.75 – 1.20, scales the overall ring / arch / frame container size */
+  portraitRingScale?: number;
+  /** 0.70 – 1.50, scales the uploaded brand logo or domain pill */
+  logoScale?: number;
+  /** Container style behind the uploaded brand logo */
+  logoBgStyle?: LogoBadgeStyle;
 }
 
 export interface QuoteStudioPack {
@@ -62,65 +97,95 @@ export interface QuoteStudioPack {
 export const QUOTE_TEMPLATES: {
   id: QuoteVisualTemplateId;
   label: string;
+  badge: string;
   desc: string;
 }[] = [
   {
     id: "arch-aura-split",
-    label: "Arch Aura Portrait",
-    desc: "Cream card, accent arch behind a large person cut-out, dark name bar with your logo",
-  },
-  {
-    id: "flagship-footer-split",
-    label: "Flagship Split Portrait",
-    desc: "Highlighted quote left, person right, trust pills and brand footer",
-  },
-  {
-    id: "wave-trust-pills",
-    label: "Wave + 3 Trust Pills",
-    desc: "White card, curved brand-color wave and three proof pills",
+    label: "1. Arch Aura Split Portrait",
+    badge: "Arch Frame",
+    desc: "Cream card, customer portrait framed inside a warm accent arch, 5 stars & dark brand footer",
   },
   {
     id: "obsidian-gold-rings",
-    label: "Obsidian Rings",
-    desc: "Dark premium card with concentric rings behind the person",
+    label: "2. Concentric Ring Portrait",
+    badge: "Circle in Ring",
+    desc: "Dark luxury card with customer photo framed directly inside glowing concentric rings",
+  },
+  {
+    id: "flagship-footer-split",
+    label: "3. Flagship Studio Split",
+    badge: "Studio Split",
+    desc: "Highlighted quote on left, framed executive portrait on right, proof pills & brand footer bar",
   },
   {
     id: "editorial-dot-grid",
-    label: "Editorial Dot Grid",
-    desc: "Clean editorial layout with dot-grid accent and green-bar proof strip",
+    label: "4. Editorial Dot-Grid Frame",
+    badge: "Editorial Frame",
+    desc: "Magazine layout with dot-grid accent, bordered portrait frame & dark proof footer",
   },
   {
-    id: "portrait-left-quote",
-    label: "Portrait Left",
-    desc: "Person on the left, quote and attribution on the right",
+    id: "wave-trust-pills",
+    label: "5. Curved Wave + 3 Proof Pills",
+    badge: "Wave Footer",
+    desc: "Clean white card, curved brand-color wave footer, 3 verified pills & framed portrait",
   },
   {
     id: "full-bleed-portrait",
-    label: "Full-Bleed Portrait",
-    desc: "Large person fading into a dark gradient, big white quote",
+    label: "6. Full-Bleed Magazine Split",
+    badge: "58/42 Full Bleed",
+    desc: "Cinematic split where the portrait fills the right panel with a seamless gradient fade",
+  },
+  {
+    id: "portrait-left-quote",
+    label: "7. Left Portrait + Right Quote",
+    badge: "Left Portrait",
+    desc: "Framed customer portrait on the left column, 5 stars, highlighted quote & logo on the right",
   },
   {
     id: "kpi-stat-portrait",
-    label: "KPI Stat + Portrait",
-    desc: "Oversized result number, supporting quote and customer portrait",
+    label: "8. Oversized KPI Stat + Ring",
+    badge: "KPI + Ring",
+    desc: "Giant ROI metric callout (2.8x / +184%), quote & customer portrait inside a radar ring",
   },
   {
     id: "x-verified-post",
-    label: "Verified Post Card",
-    desc: "Social-post style card with round avatar and verified check",
+    label: "9. Verified Social Post Card",
+    badge: "Social Post",
+    desc: "High-trust X / LinkedIn post card with circular ring avatar, verified check & 5 stars",
   },
   {
     id: "founder-memo-portrait",
-    label: "Founder Memo Note",
-    desc: "Warm paper memo with serif quote and founder avatar",
+    label: "10. Founder Memo Note",
+    badge: "Exec Memo",
+    desc: "Warm executive memo aesthetic with top brand bar, serif quote, circular avatar & logo",
+  },
+  {
+    id: "before-after-proof",
+    label: "11. Before vs. After Case Study",
+    badge: "Before / After",
+    desc: "Contrasts ❌ Before bottleneck vs ✅ After verified customer win with portrait & logo",
+  },
+  {
+    id: "myth-vs-reality",
+    label: "12. Contrarian Myth vs. Reality",
+    badge: "Myth / Reality",
+    desc: "Splits ❌ Common Industry Myth vs ✅ Proven Reality with executive portrait header",
+  },
+  {
+    id: "podcast-clip-quote",
+    label: "13. Podcast Waveform Quote",
+    badge: "Audio + Ring",
+    desc: "Speaker portrait inside a soundwave ring, brand-colored audio waveform bars & quote",
+  },
+  {
+    id: "checklist-takeaway-card",
+    label: "14. Quote + 3 Action Takeaways",
+    badge: "3 Takeaways",
+    desc: "Pairs the customer quote with 3 checkmarked action takeaways, portrait & brand footer",
   },
 ];
 
-/**
- * To add another person: drop a transparent-background PNG of a MALE person
- * (head and shoulders / half body, ideally ≤ 1200px tall) into
- * /public/images/testimonials/ and add one entry here. Nothing else changes.
- */
 export const MALE_PORTRAIT_PRESETS: Array<{
   id: MalePortraitPresetId;
   label: string;
@@ -137,7 +202,7 @@ export const MALE_PORTRAIT_PRESETS: Array<{
   },
   {
     id: "daniel-founder",
-    label: "Daniel K. (Tech Founder)",
+    label: "Daniel M. (Tech Founder)",
     authorSample: "Daniel Mercer",
     roleSample: "Founder · NorthStar Analytics",
     imageSrc: "/images/testimonials/daniel-executive.png",
@@ -163,41 +228,51 @@ export const DEFAULT_QUOTE_STUDIO_INPUT: QuoteStudioInput = {
   authorHandleOrRole: "VP of Growth · VeloCloud AI",
   brandDomain: "doitwithai.tools",
   sourceContent:
-    "Our customer quotes used to sit buried in text walls. Turning them into branded portrait testimonial cards made our landing page proof far easier to scan.\n\nWhen you pair a bold opening hook with a square visual takeaway card and brand-colored phrase highlights, feed posts become easier to save and share.\n\nWe replaced several separate design tools in one afternoon: upload a portrait, add your brand colors, and export client-ready social proof in seconds.",
+    "Our customer quotes used to sit buried in text walls. Turning them into branded portrait testimonial cards lifted our landing page demo signups by 2.8x in two weeks.\n\nWhen you pair a bold opening hook with a square visual takeaway card and brand-colored phrase highlights, feed dwell time and saves jump by over 2.4x.\n\nWe replaced several separate design tools in one afternoon: upload a portrait, adjust the ring frame and brand colors, and export client-ready social proof in seconds.",
   template: "arch-aura-split",
   portraitPreset: "marcus-saas-vp",
   aspectRatio: "1:1",
   trustBadge1: "Verified Customer",
-  trustBadge2: "Easy to Use",
+  trustBadge2: "2.8x Conversion Lift",
   trustBadge3: "Highly Recommended",
   starRatingLabel: "5.0",
+  portraitFrame: "auto",
   portraitScale: 1,
   portraitOffsetX: 0,
+  portraitOffsetY: 0,
+  portraitRadius: 24,
+  portraitRingScale: 1,
+  logoScale: 1,
+  logoBgStyle: "auto",
 };
 
 export function buildDeterministicQuotePack(
   input: QuoteStudioInput,
 ): QuoteStudioPack {
-  const paragraphs = String(input.sourceContent || "")
-    .split(/\n{2,}|\n+/)
-    .map((p) => p.replace(/\s+/g, " ").trim())
-    .filter((p) => p.length >= 25);
+  const rawParagraphs = (input.sourceContent || "")
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 20);
 
-  const selected = (
-    paragraphs.length >= 2
-      ? paragraphs
-      : DEFAULT_QUOTE_STUDIO_INPUT.sourceContent.split("\n\n")
+  const fallbackParagraphs = [
+    "Our customer quotes used to sit buried in text walls. Turning them into branded portrait testimonial cards lifted our landing page demo signups by 2.8x in two weeks.",
+    "When you pair a bold opening hook with a square visual takeaway card and brand-colored phrase highlights, feed dwell time and saves jump by over 2.4x.",
+    "We replaced several separate design tools in one afternoon: upload a portrait, adjust the ring frame and brand colors, and export client-ready social proof in seconds.",
+  ];
+
+  const sourceList = (
+    rawParagraphs.length >= 2 ? rawParagraphs : fallbackParagraphs
   ).slice(0, 5);
 
   const badges = [
-    "CUSTOMER WIN",
-    "CASE STUDY INSIGHT",
+    "VERIFIED CUSTOMER WIN",
+    "CASE STUDY BENCHMARK",
     "FOUNDER TAKEAWAY",
-    "PROOF POINT",
+    "ROI PROOF POINT",
     "GROWTH PLAYBOOK",
   ];
 
-  const cards: QuoteCardItem[] = selected.map((para, idx) => {
+  const cards: QuoteCardItem[] = sourceList.map((para, idx) => {
     const sentences = para.split(/(?<=[.!?])\s+/);
     const firstSentence = sentences[0] || para;
     const words = firstSentence.split(/\s+/);
@@ -207,19 +282,19 @@ export function buildDeterministicQuotePack(
       .replace(/[.!?,;:]+$/, "");
     const subContextOrReality =
       sentences.slice(1).join(" ").trim() ||
-      "Customer testimonial and social proof graphic.";
+      "Verified customer testimonial & social proof graphic.";
 
     return {
       id: `quote-card-${idx + 1}`,
-      quoteText: para.slice(0, 240),
-      highlightPhrase,
-      subContextOrReality: subContextOrReality.slice(0, 140),
-      badgeLabel: badges[idx] || `TAKEAWAY #${idx + 1}`,
+      badgeLabel: badges[idx % badges.length],
+      quoteText: para.slice(0, 220),
+      highlightPhrase: highlightPhrase.slice(0, 64),
+      subContextOrReality: subContextOrReality.slice(0, 130),
     };
   });
 
   return {
     cards,
-    socialCaption: `💡 ${cards.length} customer proof takeaways:\n\n${cards.map((c, i) => `${i + 1}. "${c.quoteText}"`).join("\n\n")}\n\nDesign your own branded testimonial & quote cards free at:\n🌐 https://${input.brandDomain || "doitwithai.tools"}/tools/quote-stat-testimonial-card-studio`,
+    socialCaption: `💡 ${cards.length} Customer Proof & Visual Takeaways:\n\n${cards.map((c, i) => `${i + 1}. "${c.quoteText}"`).join("\n\n")}\n\nDesign your own free AI testimonial & quote cards at:\n🌐 https://${input.brandDomain || "doitwithai.tools"}/tools/quote-stat-testimonial-card-studio`,
   };
 }

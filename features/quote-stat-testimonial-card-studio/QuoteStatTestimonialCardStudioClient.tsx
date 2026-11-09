@@ -13,7 +13,6 @@ import type { ChangeEvent } from "react";
 import Image from "next/image";
 import JSZip from "jszip";
 import {
-  CheckCircle2,
   Copy,
   Download,
   FileCode2,
@@ -21,9 +20,11 @@ import {
   ImagePlus,
   Loader2,
   MessageSquareQuote,
+  Move,
   PackageCheck,
   Palette,
   Plus,
+  Printer,
   RotateCcw,
   ShieldCheck,
   Sparkles,
@@ -34,28 +35,29 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
-import ToolRunOverlay, {
-  focusToolSection,
-} from "@/features/tool-ui/ToolRunOverlay";
-import PlatformBrandIcon from "@/features/tool-ui/PlatformBrandIcon";
 import {
   copyCanvasImageToClipboard,
   downloadCanvasAsEmbeddedSvg,
   downloadCanvasAsPng,
+  focusToolSection,
+  PlatformBrandIcon,
   printCanvasAsPdfPoster,
   resolveStudioTheme,
   STUDIO_COLOR_THEMES,
+  ToolRunOverlay,
+  UrlArticleExtractorBar,
   type CustomStudioColorOverrides,
   type StudioColorThemeId,
-} from "@/features/tool-ui/visualCardExport";
+} from "@/features/tool-ui";
 import {
   buildDeterministicQuotePack,
   DEFAULT_QUOTE_STUDIO_INPUT,
   MALE_PORTRAIT_PRESETS,
   QUOTE_TEMPLATES,
   type CardAspectRatioId,
+  type LogoBadgeStyle,
   type MalePortraitPresetId,
+  type PortraitFrameMode,
   type QuoteCardItem,
   type QuoteStudioInput,
   type QuoteStudioPack,
@@ -69,6 +71,7 @@ import {
 import {
   loadImageFromFile,
   removePortraitBackground,
+  removeStudioBackdropInstant,
 } from "./portraitCutout";
 
 const MIN_QUOTE_CARDS = 2;
@@ -76,11 +79,32 @@ const MAX_QUOTE_CARDS = 8;
 
 type BgStatus = "idle" | "working" | "done" | "failed";
 
-/** Live mini-preview of one template, using the visitor's own quote, photo and logo. */
+const FRAME_MODE_OPTIONS: { id: PortraitFrameMode; label: string }[] = [
+  { id: "auto", label: "Auto (Template)" },
+  { id: "ring-circle", label: "Circle in Ring" },
+  { id: "arch", label: "Arch Frame" },
+  { id: "rounded", label: "Radius Frame" },
+  { id: "cutout", label: "Cutout Aura" },
+];
+
+const LOGO_STYLE_OPTIONS: { id: LogoBadgeStyle; label: string }[] = [
+  { id: "auto", label: "Auto" },
+  { id: "pill", label: "Brand Pill" },
+  { id: "white", label: "White Box" },
+  { id: "dark", label: "Dark Box" },
+  { id: "plain", label: "No Box" },
+];
+
+/**
+ * Live mini-preview of each template in the listing, rendered with the exact
+ * same `renderQuoteCard` engine so the user sees the real visual layout
+ * (concentric rings, arch frame, full-bleed split, waveform, before/after, etc.).
+ */
 function TemplateThumb({
   params,
   template,
   label,
+  badge,
   desc,
   active,
   onPick,
@@ -88,46 +112,67 @@ function TemplateThumb({
   params: RenderParams | null;
   template: QuoteVisualTemplateId;
   label: string;
+  badge: string;
   desc: string;
   active: boolean;
   onPick: () => void;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const deferred = useDeferredValue(params);
+
   useEffect(() => {
     if (!ref.current || !deferred) return;
     renderQuoteCard(
       ref.current,
       {
         ...deferred,
-        input: { ...deferred.input, template, aspectRatio: "1:1" },
+        input: {
+          ...deferred.input,
+          template,
+          aspectRatio: "1:1",
+          portraitFrame: "auto",
+        },
       },
-      0.34,
+      0.35,
     );
   }, [deferred, template]);
+
   return (
     <button
       type="button"
       onClick={onPick}
       aria-pressed={active}
-      className={`rounded-xl border p-2 text-left transition ${
+      className={`group relative flex flex-col justify-between rounded-2xl border p-2.5 text-left transition-all ${
         active
-          ? "border-[#4058d0] bg-[#4058d0]/10 ring-2 ring-[#4058d0]/30"
-          : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950"
+          ? "border-[#4058d0] bg-[#4058d0]/10 ring-2 ring-[#4058d0]/35 dark:bg-[#4058d0]/20"
+          : "border-slate-200 bg-white hover:border-[#4058d0]/50 hover:shadow-md dark:border-slate-800 dark:bg-slate-950"
       }`}
     >
-      <canvas
-        ref={ref}
-        role="img"
-        aria-label={`${label} template preview`}
-        className="block h-auto w-full rounded-lg"
-      />
-      <strong className="mt-1.5 block text-xs font-extrabold text-slate-900 dark:text-white">
-        {label}
-      </strong>
-      <span className="mt-0.5 block text-[10px] leading-4 text-slate-500 dark:text-slate-400">
-        {desc}
-      </span>
+      <div>
+        <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-slate-900 dark:border-slate-800">
+          <canvas
+            ref={ref}
+            role="img"
+            aria-label={`${label} live template preview`}
+            className="block h-auto w-full transition-transform duration-200 group-hover:scale-[1.02]"
+          />
+          <span
+            className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider shadow-xs ${
+              active
+                ? "bg-[#4058d0] text-white"
+                : "bg-slate-900/85 text-white backdrop-blur-xs"
+            }`}
+          >
+            {badge}
+          </span>
+        </div>
+        <strong className="mt-2 block text-xs font-extrabold text-slate-900 dark:text-white">
+          {label}
+        </strong>
+        <span className="mt-0.5 block text-[10px] leading-4 text-slate-500 dark:text-slate-400">
+          {desc}
+        </span>
+      </div>
     </button>
   );
 }
@@ -137,17 +182,20 @@ export default function QuoteStatTestimonialCardStudioClient() {
     DEFAULT_QUOTE_STUDIO_INPUT,
   );
   const [aiPack, setAiPack] = useState<QuoteStudioPack | null>(null);
-  const [cards, setCards] = useState<QuoteCardItem[]>(
-    () => buildDeterministicQuotePack(DEFAULT_QUOTE_STUDIO_INPUT).cards,
+  const [cards, setCards] = useState<QuoteCardItem[]>(() =>
+    buildDeterministicQuotePack(DEFAULT_QUOTE_STUDIO_INPUT).cards.slice(0, 3),
   );
   const [activeCardIdx, setActiveCardIdx] = useState(0);
-  const [themeId, setThemeId] = useState<StudioColorThemeId>("royal-cobalt");
+  const [themeId, setThemeId] = useState<StudioColorThemeId>("royal-indigo");
   const [customColors, setCustomColors] = useState<CustomStudioColorOverrides>(
     {},
   );
 
   // Person photo state
   const [presetImg, setPresetImg] = useState<HTMLImageElement | null>(null);
+  const [presetCutout, setPresetCutout] = useState<HTMLCanvasElement | null>(
+    null,
+  );
   const [uploadedImg, setUploadedImg] = useState<HTMLImageElement | null>(null);
   const [uploadedCutout, setUploadedCutout] =
     useState<HTMLCanvasElement | null>(null);
@@ -169,15 +217,15 @@ export default function QuoteStatTestimonialCardStudioClient() {
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const personFileInputRef = useRef<HTMLInputElement | null>(null);
   const logoFileInputRef = useRef<HTMLInputElement | null>(null);
-  const presetCache = useRef<Record<string, HTMLImageElement>>({});
+  const presetCache = useRef<
+    Record<string, { raw: HTMLImageElement; cutout: HTMLCanvasElement }>
+  >({});
 
   const activeTheme = useMemo(
     () => resolveStudioTheme(themeId, customColors),
     [themeId, customColors],
   );
 
-  // Cards are rebuilt only when the SOURCE TEXT changes, so switching template,
-  // size or colors never wipes the quote the visitor has been editing.
   const fallbackPack = useMemo(
     () =>
       buildDeterministicQuotePack({
@@ -189,12 +237,8 @@ export default function QuoteStatTestimonialCardStudioClient() {
   );
   const pack = aiPack || fallbackPack;
 
-  useEffect(() => {
-    setCards(pack.cards);
-    setActiveCardIdx(0);
-  }, [pack]);
-
-  const activeCard = cards[activeCardIdx] || cards[0];
+  const activeCard =
+    cards[activeCardIdx] || cards[0] || fallbackPack.cards[0];
   const canAddCard = cards.length < MAX_QUOTE_CARDS;
   const canRemoveCard = cards.length > MIN_QUOTE_CARDS;
 
@@ -203,28 +247,64 @@ export default function QuoteStatTestimonialCardStudioClient() {
     setTimeout(() => setToast(""), 3600);
   }
 
-  // Load only the selected preset (the PNGs are large, so no eager preloading)
+  useEffect(() => {
+    function onSelectTemplateEvent(e: Event) {
+      const custom = e as CustomEvent<{
+        template?: QuoteVisualTemplateId;
+        portraitPreset?: MalePortraitPresetId;
+        accent?: string;
+      }>;
+      const detail = custom.detail;
+      if (!detail) return;
+      setInput((prev) => ({
+        ...prev,
+        template: detail.template || prev.template,
+        portraitPreset: detail.portraitPreset || prev.portraitPreset,
+      }));
+      if (detail.accent) {
+        setCustomColors((prev) => ({ ...prev, accent: detail.accent }));
+      }
+    }
+    window.addEventListener(
+      "select-testimonial-template",
+      onSelectTemplateEvent,
+    );
+    return () =>
+      window.removeEventListener(
+        "select-testimonial-template",
+        onSelectTemplateEvent,
+      );
+  }, []);
+
   useEffect(() => {
     const id = input.portraitPreset;
     if (!id || id === "none" || id === "custom-upload") {
       setPresetImg(null);
+      setPresetCutout(null);
       return;
     }
     const preset = MALE_PORTRAIT_PRESETS.find((p) => p.id === id);
     if (!preset) {
       setPresetImg(null);
+      setPresetCutout(null);
       return;
     }
     const cached = presetCache.current[id];
     if (cached) {
-      setPresetImg(cached);
+      setPresetImg(cached.raw);
+      setPresetCutout(cached.cutout);
       return;
     }
     let cancelled = false;
     const img = new window.Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => {
-      presetCache.current[id] = img;
-      if (!cancelled) setPresetImg(img);
+      const cut = removeStudioBackdropInstant(img);
+      presetCache.current[id] = { raw: img, cutout: cut };
+      if (!cancelled) {
+        setPresetImg(img);
+        setPresetCutout(cut);
+      }
     };
     img.src = preset.imageSrc;
     return () => {
@@ -232,16 +312,32 @@ export default function QuoteStatTestimonialCardStudioClient() {
     };
   }, [input.portraitPreset]);
 
-  const portrait = useMemo<{ src: PortraitSource | null; cutout: boolean }>(() => {
+  const portrait = useMemo<{
+    src: PortraitSource | null;
+    cutout: boolean;
+  }>(() => {
+    const useCutoutSource =
+      autoRemoveBg || input.portraitFrame === "cutout";
     if (input.portraitPreset === "custom-upload" && uploadedImg) {
-      if (autoRemoveBg && uploadedCutout) {
+      if (useCutoutSource && uploadedCutout) {
         return { src: uploadedCutout, cutout: true };
       }
       return { src: uploadedImg, cutout: false };
     }
     if (input.portraitPreset === "none") return { src: null, cutout: false };
-    return { src: presetImg, cutout: true };
-  }, [input.portraitPreset, uploadedImg, uploadedCutout, autoRemoveBg, presetImg]);
+    if (useCutoutSource && presetCutout) {
+      return { src: presetCutout, cutout: true };
+    }
+    return { src: presetImg, cutout: false };
+  }, [
+    input.portraitPreset,
+    input.portraitFrame,
+    uploadedImg,
+    uploadedCutout,
+    autoRemoveBg,
+    presetImg,
+    presetCutout,
+  ]);
 
   async function runCutout(img: HTMLImageElement) {
     setBgStatus("working");
@@ -249,13 +345,12 @@ export default function QuoteStatTestimonialCardStudioClient() {
       const cut = await removePortraitBackground(img);
       setUploadedCutout(cut);
       setBgStatus("done");
-      notify("Background removed. Your photo now fits every template.");
+      notify("Background removed and photo fitted into the template frame.");
     } catch {
-      setUploadedCutout(null);
-      setBgStatus("failed");
-      notify(
-        "Auto background removal isn't available right now, so your original photo is used.",
-      );
+      const fallbackCut = removeStudioBackdropInstant(img);
+      setUploadedCutout(fallbackCut);
+      setBgStatus("done");
+      notify("Photo fitted into the template frame.");
     }
   }
 
@@ -270,9 +365,9 @@ export default function QuoteStatTestimonialCardStudioClient() {
       setBgStatus("idle");
       setInput((prev) => ({ ...prev, portraitPreset: "custom-upload" }));
       if (autoRemoveBg) await runCutout(img);
-      else notify(`Loaded photo: ${file.name}`);
+      else notify(`Loaded customer photo: ${file.name}`);
     } catch {
-      notify("Could not open that image. Please use a JPG, PNG or WEBP file.");
+      notify("Could not open that image. Please use a JPG, PNG, or WEBP file.");
     }
   }
 
@@ -290,7 +385,20 @@ export default function QuoteStatTestimonialCardStudioClient() {
     setBgStatus("idle");
     setInput((prev) => ({ ...prev, portraitPreset: "marcus-saas-vp" }));
     if (personFileInputRef.current) personFileInputRef.current.value = "";
-    notify("Reverted to the default portrait.");
+    notify("Reverted to default portrait.");
+  }
+
+  function resetPhotoAdjustments() {
+    setInput((prev) => ({
+      ...prev,
+      portraitFrame: "auto",
+      portraitScale: 1,
+      portraitOffsetX: 0,
+      portraitOffsetY: 0,
+      portraitRadius: 24,
+      portraitRingScale: 1,
+    }));
+    notify("Reset photo position, zoom, and ring/frame radius.");
   }
 
   async function handleLogoUpload(e: ChangeEvent<HTMLInputElement>) {
@@ -300,9 +408,11 @@ export default function QuoteStatTestimonialCardStudioClient() {
       const img = await loadImageFromFile(file);
       setUploadedLogo(img);
       setUploadedLogoName(file.name);
-      notify(`Logo added to every template: ${file.name}`);
+      notify(`Brand logo added to all 14 templates: ${file.name}`);
     } catch {
-      notify("Could not open that logo. Please use a PNG, JPG, WEBP or SVG file.");
+      notify(
+        "Could not open that logo. Please use a PNG, JPG, WEBP, or SVG file.",
+      );
     }
   }
 
@@ -310,7 +420,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
     setUploadedLogo(null);
     setUploadedLogoName("");
     if (logoFileInputRef.current) logoFileInputRef.current.value = "";
-    notify("Logo removed (using the domain badge).");
+    notify("Logo removed (using brand domain badge).");
   }
 
   function selectPreset(presetId: MalePortraitPresetId) {
@@ -329,10 +439,11 @@ export default function QuoteStatTestimonialCardStudioClient() {
     const newCard: QuoteCardItem = {
       id: `quote-custom-${Date.now()}`,
       badgeLabel: `CUSTOMER WIN #0${nextIdx}`,
-      highlightPhrase: "in one afternoon",
+      highlightPhrase: "lifted conversions by 2.8x",
       quoteText:
-        "Replace this with your customer's own words. Short, specific results read best.",
-      subContextOrReality: "Pair every quote with a real portrait and your brand logo.",
+        "Turning our raw client feedback into branded testimonial graphics lifted conversions by 2.8x across our landing pages and LinkedIn posts.",
+      subContextOrReality:
+        "Pair every quote with a framed portrait, verified stars, and your brand logo.",
     };
     setCards((prev) => [...prev, newCard]);
     setActiveCardIdx(cards.length);
@@ -348,7 +459,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
   }
 
   async function runGenerateAiQuotes(overrideInput?: QuoteStudioInput) {
-    const payload = overrideInput || input;
+    const targetInput = overrideInput || input;
     setLoading(true);
     try {
       const res = await fetch(
@@ -356,15 +467,15 @@ export default function QuoteStatTestimonialCardStudioClient() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(targetInput),
         },
       );
       const data = await res.json();
-      if (data?.pack) {
+      if (data?.pack?.cards?.length) {
         setAiPack(data.pack);
         setCards(data.pack.cards);
         setActiveCardIdx(0);
-        notify("Generated quote cards from your text.");
+        notify("Generated 5 AI quote & testimonial cards!");
       }
       focusToolSection(resultsRef.current);
     } catch {
@@ -422,7 +533,10 @@ export default function QuoteStatTestimonialCardStudioClient() {
         c.toBlob(res, "image/png"),
       );
       if (blob) {
-        zip.file(`testimonial-card-${String(i + 1).padStart(2, "0")}.png`, blob);
+        zip.file(
+          `testimonial-card-${String(i + 1).padStart(2, "0")}.png`,
+          blob,
+        );
       }
     }
     zip.file("social-caption.txt", pack.socialCaption);
@@ -464,43 +578,37 @@ export default function QuoteStatTestimonialCardStudioClient() {
     <section
       id="tool-studio-workspace"
       data-tool-workspace="true"
-      aria-label="AI Testimonial Card and Customer Quote Studio"
+      aria-label="Free AI Testimonial Card and Customer Quote Studio"
       className={`${studioStyles.studio} mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6`}
     >
       <ToolRunOverlay
         active={loading}
-        title="Designing your testimonial cards..."
-        description="Building branded social proof, memo and quote cards."
+        title="Designing your AI testimonial cards..."
+        description="Building branded social proof, ring-framed portraits, and quote cards."
       />
 
       <UrlArticleExtractorBar
-        label="Optional: paste a blog or case-study URL to pull quotable lines into cards"
-        placeholder="Paste an article or case study URL..."
+        label="Optional: Paste any Blog or Case-Study URL to AI-Extract 5 Quotable Customer Wins"
+        placeholder="Paste an article or case study URL to pull quotable insights into cards..."
         onExtracted={(data) => {
           setAiPack(null);
           let domain = "doitwithai.tools";
           try {
-            domain = new URL(data.url).hostname.replace(/^www\./, "");
-          } catch {}
+            if (data.sourceUrl) {
+              domain = new URL(data.sourceUrl).hostname.replace(/^www\./, "");
+            }
+          } catch {
+            domain = "doitwithai.tools";
+          }
           const nextInput: QuoteStudioInput = {
             ...input,
-            authorName: data.author || input.authorName,
             brandDomain: domain,
-            sourceContent:
-              (data.paragraphs || []).slice(0, 6).join("\n\n") ||
-              data.cleanText ||
-              input.sourceContent,
+            sourceContent: data.extractedText,
           };
           setInput(nextInput);
-          void runGenerateAiQuotes(nextInput);
-        }}
-        onSelectSubTopic={(sub) => {
-          setAiPack(null);
-          const nextInput: QuoteStudioInput = {
-            ...input,
-            sourceContent: sub.content,
-          };
-          setInput(nextInput);
+          const built = buildDeterministicQuotePack(nextInput);
+          setCards(built.cards);
+          setActiveCardIdx(0);
           void runGenerateAiQuotes(nextInput);
         }}
       />
@@ -513,27 +621,28 @@ export default function QuoteStatTestimonialCardStudioClient() {
         {toast && (
           <div
             role="status"
-            className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-800 dark:text-emerald-300"
+            aria-live="polite"
+            className="rounded-xl border border-[#4058d0]/30 bg-[#4058d0]/10 px-4 py-2.5 text-xs font-bold text-[#4058d0] dark:text-blue-300"
           >
-            <CheckCircle2 size={15} />
-            <span>{toast}</span>
+            {toast}
           </div>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <PlatformBrandIcon
-              platform="x"
-              slug="quote-stat-testimonial-card-studio"
-              size={42}
+              slugOrText="quote-stat-testimonial-card-studio"
+              size={38}
             />
             <div>
               <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#4058d0]">
                 <MessageSquareQuote size={14} />
-                {QUOTE_TEMPLATES.length} portrait-ready templates
+                {QUOTE_TEMPLATES.length} Responsive Testimonial, Ring &amp; Quote
+                Templates
               </span>
               <h2 className="text-lg font-black text-slate-900 dark:text-white">
-                AI Testimonial Card &amp; Customer Quote Studio
+                Free AI Testimonial Card, Customer Quote &amp; Social Proof
+                Studio
               </h2>
             </div>
           </div>
@@ -545,7 +654,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#3452d1] px-4 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-[#2842b5] disabled:opacity-60"
             >
               <Sparkles size={14} />
-              Generate cards from my text
+              AI Generate 5 Quote Cards
             </button>
             <button
               type="button"
@@ -553,20 +662,29 @@ export default function QuoteStatTestimonialCardStudioClient() {
               className="inline-flex items-center gap-1.5 rounded-xl border border-[#4058d0] px-4 py-2.5 text-xs font-extrabold text-[#4058d0] hover:bg-[#4058d0]/10 dark:text-blue-300"
             >
               <PackageCheck size={15} />
-              PNG + caption
+              Download PNG + Caption
             </button>
           </div>
         </div>
 
         <div className="grid items-start gap-6 lg:grid-cols-12">
-          {/* ============ SINGLE LEFT PANEL: every control lives here ============ */}
+          {/* ============ LEFT PANEL: ALL CUSTOMIZATION CONTROLS ============ */}
           <div className="order-2 space-y-4 lg:order-1 lg:col-span-5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-1">
-            {/* STEP 1 — PHOTO & LOGO */}
+            {/* STEP 1 — PHOTO, RING/FRAME & BRAND LOGO */}
             <div className={panel}>
-              <span className={stepTitle}>
-                <ImagePlus size={14} />
-                1 · Customer photo &amp; brand logo
-              </span>
+              <div className="flex items-center justify-between gap-2">
+                <span className={stepTitle}>
+                  <ImagePlus size={14} />
+                  1 · Customer Photo, Frame &amp; Logo
+                </span>
+                <button
+                  type="button"
+                  onClick={resetPhotoAdjustments}
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-[#4058d0] hover:underline dark:text-blue-300"
+                >
+                  <RotateCcw size={10} /> Reset Fit
+                </button>
+              </div>
 
               <div className="mt-2.5 grid grid-cols-2 gap-2">
                 <div>
@@ -581,7 +699,9 @@ export default function QuoteStatTestimonialCardStudioClient() {
                       <Upload size={13} />
                     )}
                     <span className="truncate">
-                      {uploadedName ? `${uploadedName.slice(0, 14)}…` : "Upload photo"}
+                      {uploadedName
+                        ? `${uploadedName.slice(0, 14)}…`
+                        : "Upload photo"}
                     </span>
                   </button>
                   {uploadedName && (
@@ -609,7 +729,9 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   >
                     <ShieldCheck size={13} className="text-[#4058d0]" />
                     <span className="truncate">
-                      {uploadedLogoName ? `${uploadedLogoName.slice(0, 14)}…` : "Upload logo"}
+                      {uploadedLogoName
+                        ? `${uploadedLogoName.slice(0, 14)}…`
+                        : "Upload logo"}
                     </span>
                   </button>
                   {uploadedLogoName && (
@@ -631,7 +753,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                 </div>
               </div>
 
-              <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white p-2.5 text-[11px] dark:border-slate-800 dark:bg-slate-950">
+              <label className="mt-2.5 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-[11px] dark:border-slate-800 dark:bg-slate-950">
                 <input
                   type="checkbox"
                   checked={autoRemoveBg}
@@ -640,20 +762,17 @@ export default function QuoteStatTestimonialCardStudioClient() {
                 />
                 <span>
                   <strong className="text-slate-900 dark:text-white">
-                    Auto-remove photo background
+                    Auto-remove &amp; blend photo background
                   </strong>
-                  <span className="block text-slate-500 dark:text-slate-400">
-                    Runs in your browser. Your photo is never uploaded.
-                    {bgStatus === "working" && " Working…"}
-                    {bgStatus === "done" && " Done."}
-                    {bgStatus === "failed" && " Unavailable, using original photo."}
+                  <span className="block text-[10px] text-slate-500 dark:text-slate-400">
+                    Runs privately in your browser + frames photo inside rings/arches.
                   </span>
                 </span>
               </label>
 
               <div className="mt-3">
                 <span className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
-                  Or pick a ready-made portrait:
+                  Or pick a ready-made executive portrait:
                 </span>
                 <div className="mt-1.5 grid grid-cols-2 gap-1.5">
                   {MALE_PORTRAIT_PRESETS.map((mp) => {
@@ -700,50 +819,217 @@ export default function QuoteStatTestimonialCardStudioClient() {
                       : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
                   }`}
                 >
-                  No photo (text only)
+                  No photo (initials &amp; text only)
                 </button>
               </div>
 
               {portrait.src && (
-                <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="mt-3 space-y-2.5 rounded-xl border border-slate-200 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-950">
+                  <div>
+                    <span className="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-[#4058d0] dark:text-blue-300">
+                      <Move size={11} /> Photo Shape &amp; Ring Frame
+                    </span>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {FRAME_MODE_OPTIONS.map((opt) => {
+                        const isAct =
+                          (input.portraitFrame || "auto") === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() =>
+                              setInput((p) => ({
+                                ...p,
+                                portraitFrame: opt.id,
+                              }))
+                            }
+                            className={`rounded-lg px-2 py-1 text-[10px] font-extrabold transition ${
+                              isAct
+                                ? "bg-[#4058d0] text-white"
+                                : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <label className={label}>
+                      <span className="flex justify-between">
+                        <span>Photo Zoom</span>
+                        <span className="text-[10px] text-[#4058d0]">
+                          {Math.round((input.portraitScale ?? 1) * 100)}%
+                        </span>
+                      </span>
+                      <input
+                        type="range"
+                        min={0.7}
+                        max={1.45}
+                        step={0.01}
+                        value={input.portraitScale ?? 1}
+                        onChange={(e) =>
+                          setInput((p) => ({
+                            ...p,
+                            portraitScale: Number(e.target.value),
+                          }))
+                        }
+                        className="mt-1 w-full accent-[#4058d0]"
+                      />
+                    </label>
+
+                    <label className={label}>
+                      <span className="flex justify-between">
+                        <span>Ring / Frame Size</span>
+                        <span className="text-[10px] text-[#4058d0]">
+                          {Math.round((input.portraitRingScale ?? 1) * 100)}%
+                        </span>
+                      </span>
+                      <input
+                        type="range"
+                        min={0.75}
+                        max={1.2}
+                        step={0.01}
+                        value={input.portraitRingScale ?? 1}
+                        onChange={(e) =>
+                          setInput((p) => ({
+                            ...p,
+                            portraitRingScale: Number(e.target.value),
+                          }))
+                        }
+                        className="mt-1 w-full accent-[#4058d0]"
+                      />
+                    </label>
+
+                    <label className={label}>
+                      <span className="flex justify-between">
+                        <span>Position Up / Down</span>
+                        <span className="text-[10px] text-[#4058d0]">
+                          {Math.round((input.portraitOffsetY ?? 0) * 100)}%
+                        </span>
+                      </span>
+                      <input
+                        type="range"
+                        min={-0.25}
+                        max={0.25}
+                        step={0.01}
+                        value={input.portraitOffsetY ?? 0}
+                        onChange={(e) =>
+                          setInput((p) => ({
+                            ...p,
+                            portraitOffsetY: Number(e.target.value),
+                          }))
+                        }
+                        className="mt-1 w-full accent-[#4058d0]"
+                      />
+                    </label>
+
+                    <label className={label}>
+                      <span className="flex justify-between">
+                        <span>Position Left / Right</span>
+                        <span className="text-[10px] text-[#4058d0]">
+                          {Math.round((input.portraitOffsetX ?? 0) * 100)}%
+                        </span>
+                      </span>
+                      <input
+                        type="range"
+                        min={-0.25}
+                        max={0.25}
+                        step={0.01}
+                        value={input.portraitOffsetX ?? 0}
+                        onChange={(e) =>
+                          setInput((p) => ({
+                            ...p,
+                            portraitOffsetX: Number(e.target.value),
+                          }))
+                        }
+                        className="mt-1 w-full accent-[#4058d0]"
+                      />
+                    </label>
+                  </div>
+
                   <label className={label}>
-                    Photo size
+                    <span className="flex justify-between">
+                      <span>Circle / Corner Radius (0% Square → 50% Circle)</span>
+                      <span className="text-[10px] text-[#4058d0]">
+                        {input.portraitRadius ?? 24}%
+                      </span>
+                    </span>
                     <input
                       type="range"
-                      min={0.8}
-                      max={1.25}
-                      step={0.01}
-                      value={input.portraitScale ?? 1}
-                      onChange={(e) =>
-                        setInput((p) => ({ ...p, portraitScale: Number(e.target.value) }))
-                      }
-                      className="mt-1 w-full"
-                    />
-                  </label>
-                  <label className={label}>
-                    Photo position
-                    <input
-                      type="range"
-                      min={-0.15}
-                      max={0.15}
-                      step={0.01}
-                      value={input.portraitOffsetX ?? 0}
-                      onChange={(e) =>
-                        setInput((p) => ({ ...p, portraitOffsetX: Number(e.target.value) }))
-                      }
-                      className="mt-1 w-full"
+                      min={0}
+                      max={50}
+                      step={1}
+                      value={input.portraitRadius ?? 24}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        setInput((p) => ({
+                          ...p,
+                          portraitRadius: val,
+                          portraitFrame:
+                            p.portraitFrame === "auto"
+                              ? "rounded"
+                              : p.portraitFrame,
+                        }));
+                      }}
+                      className="mt-1 w-full accent-[#4058d0]"
                     />
                   </label>
                 </div>
               )}
+
+              <div className="mt-2.5 space-y-2 rounded-xl border border-slate-200 bg-white p-2.5 dark:border-slate-800 dark:bg-slate-950">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                    Logo / Brand Badge Style
+                  </span>
+                  <span className="text-[10px] font-bold text-[#4058d0]">
+                    Scale: {Math.round((input.logoScale ?? 1) * 100)}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0.7}
+                  max={1.45}
+                  step={0.02}
+                  value={input.logoScale ?? 1}
+                  onChange={(e) =>
+                    setInput((p) => ({
+                      ...p,
+                      logoScale: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-[#4058d0]"
+                />
+                <div className="flex flex-wrap gap-1">
+                  {LOGO_STYLE_OPTIONS.map((ls) => (
+                    <button
+                      key={ls.id}
+                      type="button"
+                      onClick={() =>
+                        setInput((p) => ({ ...p, logoBgStyle: ls.id }))
+                      }
+                      className={`rounded-lg px-2 py-0.5 text-[10px] font-bold transition ${
+                        (input.logoBgStyle || "auto") === ls.id
+                          ? "bg-[#4058d0] text-white"
+                          : "border border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                      }`}
+                    >
+                      {ls.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* STEP 2 — TEXT */}
+            {/* STEP 2 — QUOTE & CUSTOMER DETAILS */}
             {activeCard && (
               <div className={`${panel} space-y-3`}>
                 <span className={stepTitle}>
                   <Type size={14} />
-                  2 · Quote &amp; customer details
+                  2 · Quote &amp; Customer Details
                 </span>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div>
@@ -751,7 +1037,9 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     <input
                       type="text"
                       value={input.authorName}
-                      onChange={(e) => setInput((p) => ({ ...p, authorName: e.target.value }))}
+                      onChange={(e) =>
+                        setInput((p) => ({ ...p, authorName: e.target.value }))
+                      }
                       className={`${field} font-bold`}
                     />
                   </div>
@@ -760,7 +1048,12 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     <input
                       type="text"
                       value={input.authorHandleOrRole}
-                      onChange={(e) => setInput((p) => ({ ...p, authorHandleOrRole: e.target.value }))}
+                      onChange={(e) =>
+                        setInput((p) => ({
+                          ...p,
+                          authorHandleOrRole: e.target.value,
+                        }))
+                      }
                       className={field}
                     />
                   </div>
@@ -769,47 +1062,76 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-200">
                     <span>Customer quote</span>
                     <span className="text-[10px] text-[#4058d0]">
-                      {activeCard.quoteText.length}/240 · wrap **words** to highlight
+                      {activeCard.quoteText.length}/240 · wrap **words** to
+                      highlight
                     </span>
                   </div>
                   <textarea
-                    rows={4}
+                    rows={3}
                     maxLength={240}
                     value={activeCard.quoteText}
-                    onChange={(e) => updateActiveCard("quoteText", e.target.value)}
+                    onChange={(e) =>
+                      updateActiveCard("quoteText", e.target.value)
+                    }
                     className={`${field} leading-5`}
                   />
                 </div>
                 <div>
-                  <label className={label}>Highlighted phrase (brand color)</label>
+                  <label className={label}>
+                    Highlighted phrase (brand color)
+                  </label>
                   <input
                     type="text"
                     value={activeCard.highlightPhrase}
-                    onChange={(e) => updateActiveCard("highlightPhrase", e.target.value)}
-                    placeholder="e.g. in one afternoon"
+                    onChange={(e) =>
+                      updateActiveCard("highlightPhrase", e.target.value)
+                    }
+                    placeholder="e.g. lifted demo signups by 2.8x"
                     className={`${field} font-bold`}
                   />
                 </div>
+                <div>
+                  <label className={label}>
+                    Secondary takeaway / After-win (for Before/After &amp;
+                    Takeaway cards)
+                  </label>
+                  <input
+                    type="text"
+                    value={activeCard.subContextOrReality}
+                    onChange={(e) =>
+                      updateActiveCard("subContextOrReality", e.target.value)
+                    }
+                    className={field}
+                  />
+                </div>
                 <div className="grid gap-2 sm:grid-cols-3">
-                  {(["trustBadge1", "trustBadge2", "trustBadge3"] as const).map((k, i) => (
-                    <div key={k}>
-                      <label className={label}>Proof pill {i + 1}</label>
-                      <input
-                        type="text"
-                        value={input[k] || ""}
-                        onChange={(e) => setInput((p) => ({ ...p, [k]: e.target.value }))}
-                        className={field}
-                      />
-                    </div>
-                  ))}
+                  {(["trustBadge1", "trustBadge2", "trustBadge3"] as const).map(
+                    (k, i) => (
+                      <div key={k}>
+                        <label className={label}>Proof pill {i + 1}</label>
+                        <input
+                          type="text"
+                          value={input[k] || ""}
+                          onChange={(e) =>
+                            setInput((p) => ({ ...p, [k]: e.target.value }))
+                          }
+                          className={field}
+                        />
+                      </div>
+                    ),
+                  )}
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div>
-                    <label className={label}>Brand / domain badge (used when no logo)</label>
+                    <label className={label}>
+                      Brand / domain badge (when no logo)
+                    </label>
                     <input
                       type="text"
                       value={input.brandDomain}
-                      onChange={(e) => setInput((p) => ({ ...p, brandDomain: e.target.value }))}
+                      onChange={(e) =>
+                        setInput((p) => ({ ...p, brandDomain: e.target.value }))
+                      }
                       className={field}
                     />
                   </div>
@@ -818,7 +1140,12 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     <input
                       type="text"
                       value={input.starRatingLabel || ""}
-                      onChange={(e) => setInput((p) => ({ ...p, starRatingLabel: e.target.value }))}
+                      onChange={(e) =>
+                        setInput((p) => ({
+                          ...p,
+                          starRatingLabel: e.target.value,
+                        }))
+                      }
                       className={field}
                     />
                   </div>
@@ -826,12 +1153,12 @@ export default function QuoteStatTestimonialCardStudioClient() {
               </div>
             )}
 
-            {/* STEP 3 — COLORS */}
+            {/* STEP 3 — BRAND COLORS */}
             <div className={`${panel} space-y-2.5`}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className={stepTitle}>
                   <Palette size={14} />
-                  3 · Brand colors
+                  3 · Brand Colors &amp; Hex Wheel
                 </span>
                 {Object.keys(customColors).length > 0 && (
                   <button
@@ -859,7 +1186,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     }`}
                   >
                     <span
-                      className="h-2.5 w-2.5 rounded-full border border-white/40"
+                      className="h-2.5 w-2.5 rounded-full"
                       style={{ background: t.accent }}
                     />
                     {t.label}
@@ -869,10 +1196,26 @@ export default function QuoteStatTestimonialCardStudioClient() {
               <div className="grid grid-cols-2 gap-1.5 pt-1 sm:grid-cols-4">
                 {(
                   [
-                    ["Backdrop", activeTheme.bgStart, (v: string) => ({ bgStart: v, bgEnd: v })],
-                    ["Card", customColors.cardBg || "#FFFDF9", (v: string) => ({ cardBg: v })],
-                    ["Accent", activeTheme.accent, (v: string) => ({ accent: v })],
-                    ["Text", customColors.textMain || "#0F172A", (v: string) => ({ textMain: v })],
+                    [
+                      "Backdrop",
+                      activeTheme.bgStart,
+                      (v: string) => ({ bgStart: v, bgEnd: v }),
+                    ],
+                    [
+                      "Card",
+                      customColors.cardBg || "#FFFDF9",
+                      (v: string) => ({ cardBg: v }),
+                    ],
+                    [
+                      "Accent",
+                      activeTheme.accent,
+                      (v: string) => ({ accent: v }),
+                    ],
+                    [
+                      "Text",
+                      customColors.textMain || "#0F172A",
+                      (v: string) => ({ textMain: v }),
+                    ],
                   ] as const
                 ).map(([name, value, build]) => (
                   <label
@@ -883,7 +1226,10 @@ export default function QuoteStatTestimonialCardStudioClient() {
                       type="color"
                       value={value}
                       onChange={(e) =>
-                        setCustomColors((prev) => ({ ...prev, ...build(e.target.value) }))
+                        setCustomColors((prev) => ({
+                          ...prev,
+                          ...build(e.target.value),
+                        }))
                       }
                       className="h-4 w-5 cursor-pointer rounded border-0 bg-transparent p-0"
                     />
@@ -893,23 +1239,29 @@ export default function QuoteStatTestimonialCardStudioClient() {
               </div>
             </div>
 
-            {/* STEP 4 — SIZE */}
+            {/* STEP 4 — ASPECT RATIO SIZE */}
             <div className={panel}>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className={stepTitle}>4 · Size</span>
+                <span className={stepTitle}>4 · Export Dimensions</span>
                 <div className="flex items-center gap-1">
                   {(["1:1", "4:5", "16:9"] as CardAspectRatioId[]).map((ar) => (
                     <button
                       key={ar}
                       type="button"
-                      onClick={() => setInput((p) => ({ ...p, aspectRatio: ar }))}
+                      onClick={() =>
+                        setInput((p) => ({ ...p, aspectRatio: ar }))
+                      }
                       className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold transition ${
                         (input.aspectRatio || "1:1") === ar
                           ? "bg-[#4058d0] text-white"
                           : "border border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
                       }`}
                     >
-                      {ar === "1:1" ? "Square" : ar === "4:5" ? "4:5 Feed" : "16:9 Deck"}
+                      {ar === "1:1"
+                        ? "1:1 Square"
+                        : ar === "4:5"
+                          ? "4:5 LinkedIn"
+                          : "16:9 Deck"}
                     </button>
                   ))}
                 </div>
@@ -917,9 +1269,8 @@ export default function QuoteStatTestimonialCardStudioClient() {
             </div>
           </div>
 
-          {/* ============ RIGHT: live canvas + template gallery ============ */}
+          {/* ============ RIGHT: LIVE CANVAS + 14 VISUAL TEMPLATE PREVIEWS ============ */}
           <div className="order-1 space-y-4 lg:order-2 lg:col-span-7">
-            {/* card tabs */}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap gap-1">
                 {cards.map((c, idx) => (
@@ -981,8 +1332,14 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   <button
                     type="button"
                     onClick={async () => {
-                      const ok = await copyCanvasImageToClipboard(canvasRef.current);
-                      notify(ok ? "Copied card image." : "Use the PNG download in this browser.");
+                      const ok = await copyCanvasImageToClipboard(
+                        canvasRef.current,
+                      );
+                      notify(
+                        ok
+                          ? "Copied card image."
+                          : "Use the PNG download in this browser.",
+                      );
                     }}
                     className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
                   >
@@ -1013,7 +1370,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     }}
                     className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
                   >
-                    <FileText size={12} /> PDF
+                    <Printer size={12} /> PDF
                   </button>
                   <button
                     type="button"
@@ -1023,7 +1380,7 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     }}
                     className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-white/25"
                   >
-                    <Copy size={12} /> Caption
+                    <FileText size={12} /> Caption
                   </button>
                 </div>
               </div>
@@ -1033,7 +1390,13 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   if (e.ctrlKey || e.metaKey) {
                     e.preventDefault();
                     setZoomLevel((z) =>
-                      Math.min(2.25, Math.max(0.6, +(z + (e.deltaY < 0 ? 0.12 : -0.12)).toFixed(2))),
+                      Math.min(
+                        2.25,
+                        Math.max(
+                          0.6,
+                          +(z + (e.deltaY < 0 ? 0.12 : -0.12)).toFixed(2),
+                        ),
+                      ),
                     );
                   }
                 }}
@@ -1041,7 +1404,10 @@ export default function QuoteStatTestimonialCardStudioClient() {
               >
                 <div
                   style={{
-                    width: zoomLevel === 1 ? "100%" : `${Math.round(zoomLevel * 100)}%`,
+                    width:
+                      zoomLevel === 1
+                        ? "100%"
+                        : `${Math.round(zoomLevel * 100)}%`,
                     maxWidth: zoomLevel === 1 ? "620px" : "none",
                     transition: "width 0.16s ease-out",
                   }}
@@ -1057,12 +1423,17 @@ export default function QuoteStatTestimonialCardStudioClient() {
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 bg-[#0d1424] px-3.5 py-2 text-xs text-slate-300">
-                <span className="text-[11px] text-slate-400">Ctrl + scroll to zoom</span>
+                <span className="text-[11px] text-slate-400">
+                  Ctrl + scroll to zoom · Use sliders on left to adjust ring,
+                  radius &amp; photo position
+                </span>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     aria-label="Zoom out"
-                    onClick={() => setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))}
+                    onClick={() =>
+                      setZoomLevel((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))
+                    }
                     className="rounded-lg bg-slate-800 px-2 py-1 text-white hover:bg-slate-700"
                   >
                     <ZoomOut size={12} />
@@ -1071,7 +1442,9 @@ export default function QuoteStatTestimonialCardStudioClient() {
                     type="button"
                     onClick={() => setZoomLevel(1)}
                     className={`rounded-lg px-2.5 py-1 text-[11px] font-extrabold ${
-                      zoomLevel === 1 ? "bg-[#4058d0] text-white" : "bg-slate-800 text-slate-200"
+                      zoomLevel === 1
+                        ? "bg-[#4058d0] text-white"
+                        : "bg-slate-800 text-slate-200"
                     }`}
                   >
                     Fit ({Math.round(zoomLevel * 100)}%)
@@ -1079,7 +1452,11 @@ export default function QuoteStatTestimonialCardStudioClient() {
                   <button
                     type="button"
                     aria-label="Zoom in"
-                    onClick={() => setZoomLevel((z) => Math.min(2.25, +(z + 0.15).toFixed(2)))}
+                    onClick={() =>
+                      setZoomLevel((z) =>
+                        Math.min(2.25, +(z + 0.15).toFixed(2)),
+                      )
+                    }
                     className="rounded-lg bg-slate-800 px-2 py-1 text-white hover:bg-slate-700"
                   >
                     <ZoomIn size={12} />
@@ -1098,25 +1475,40 @@ export default function QuoteStatTestimonialCardStudioClient() {
               </div>
             </div>
 
-            {/* TEMPLATE GALLERY: live previews with the visitor's own content */}
+            {/* TEMPLATE GALLERY: 14 LIVE MINI-CARD PREVIEWS */}
             <div className={`${panel} p-4`}>
-              <span className={stepTitle}>
-                <MessageSquareQuote size={14} />
-                Choose a layout ({QUOTE_TEMPLATES.length} templates)
-              </span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className={stepTitle}>
+                  <MessageSquareQuote size={14} />
+                  Choose a Card Layout ({QUOTE_TEMPLATES.length} Visual
+                  Templates)
+                </span>
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                  Live mini-previews with your photo, logo &amp; brand colors
+                </span>
+              </div>
               <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                Every preview below uses your own quote, photo, logo and colors. Click one to apply it.
+                Click any template below to apply its layout—from Concentric
+                Ring Portraits and Arch Frames to Full-Bleed Splits, KPI Stats,
+                Before/After Cards, and Podcast Waveforms.
               </p>
-              <div className="mt-3.5 grid grid-cols-2 gap-2.5 md:grid-cols-3">
+              <div className="mt-3.5 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {QUOTE_TEMPLATES.map((tpl) => (
                   <TemplateThumb
                     key={tpl.id}
                     params={renderParams}
                     template={tpl.id}
                     label={tpl.label}
+                    badge={tpl.badge}
                     desc={tpl.desc}
                     active={input.template === tpl.id}
-                    onPick={() => setInput((p) => ({ ...p, template: tpl.id }))}
+                    onPick={() =>
+                      setInput((p) => ({
+                        ...p,
+                        template: tpl.id,
+                        portraitFrame: "auto",
+                      }))
+                    }
                   />
                 ))}
               </div>
