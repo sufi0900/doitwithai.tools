@@ -172,24 +172,26 @@ export async function probeSyntheticPageSpeed(
 
   const htmlBytes = html.length;
 
-  const linkMatches = html.match(/<link[^>]+>/gi) || [];
-  const scriptMatches = html.match(/<script[^>]*>[\s\S]*?<\/script>/gi) || [];
-  const imgMatches = html.match(/<img[^>]+>/gi) || [];
+  const linkMatches: string[] = Array.from(html.match(/<link[^>]+>/gi) ?? []);
+  const scriptMatches: string[] = Array.from(html.match(/<script[^>]*>[\s\S]*?<\/script>/gi) ?? []);
+  const imgMatches: string[] = Array.from(html.match(/<img[^>]+>/gi) ?? []);
 
-  const blockingCss = linkMatches.filter(
-    (l) => /rel=["']?stylesheet["']?/i.test(l) && !/media=["']print["']?/i.test(l),
+  const blockingCss: string[] = linkMatches.filter(
+    (l: string) => /rel=["']?stylesheet["']?/i.test(l) && !/media=["']print["']?/i.test(l),
   );
-  const blockingJs = scriptMatches.filter((s) => {
-    const tagOpen = (s.match(/<script[^>]*>/i) || [""])[0];
+  const blockingJs: string[] = scriptMatches.filter((s: string) => {
+    const match = s.match(/<script[^>]*>/i);
+    const tagOpen = match ? match[0] : "";
     return /src=["']/i.test(tagOpen) && !/defer|async|type=["']module["']/i.test(tagOpen);
   });
-  const inlineScripts = scriptMatches.filter((s) => {
-    const tagOpen = (s.match(/<script[^>]*>/i) || [""])[0];
+  const inlineScripts: string[] = scriptMatches.filter((s: string) => {
+    const match = s.match(/<script[^>]*>/i);
+    const tagOpen = match ? match[0] : "";
     return !/src=["']/i.test(tagOpen);
   });
 
-  const imgsWithoutDimensions = imgMatches.filter(
-    (img) => !/width=["'\d]/i.test(img) || !/height=["'\d]/i.test(img),
+  const imgsWithoutDimensions: string[] = imgMatches.filter(
+    (img: string) => !/width=["'\d]/i.test(img) || !/height=["'\d]/i.test(img),
   );
   const hasHeroImage = imgMatches.length > 0 && html.indexOf(imgMatches[0]) < 25_000;
 
@@ -290,7 +292,7 @@ export async function probeSyntheticPageSpeed(
       displayValue: `Potential savings of ~${Math.min(900, blockingJs.length * 200)} ms`,
       savingsMs: Math.min(900, blockingJs.length * 200),
       savingsBytes: null,
-      resources: blockingJs.slice(0, 3).map((s) => (s.match(/src=["']([^"']+)["']/i) || ["", "script"])[1]),
+      resources: blockingJs.slice(0, 3).map((s: string) => { const m = s.match(/src=["']([^"']+)["']/i); return m ? m[1] : "script"; }),
       nextStep: "Add defer or async attribute to external script tags or load them dynamically.",
     });
   }
@@ -305,7 +307,7 @@ export async function probeSyntheticPageSpeed(
       displayValue: `${imgsWithoutDimensions.length} unsized images detected`,
       savingsMs: null,
       savingsBytes: null,
-      resources: imgsWithoutDimensions.slice(0, 3).map((i) => (i.match(/src=["']([^"']+)["']/i) || ["", "image"])[1]),
+      resources: imgsWithoutDimensions.slice(0, 3).map((i: string) => { const m = i.match(/src=["']([^"']+)["']/i); return m ? m[1] : "image"; }),
       nextStep: "Set explicit width and height on <img> elements to reserve visual space before loading.",
     });
   }
