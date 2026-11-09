@@ -4,6 +4,10 @@ Start with [the Phase 1 release and testing guide](docs/PHASE1_RELEASE.md).
 The [Phase 1.5 and agency handoff](docs/PHASE1_5_AND_AGENCY_HANDOFF.md) records the next steps.
 Existing cache and article logic is preserved. Test on a preview deployment before production.
 
+## Founder Hub: Video Production Playbook
+
+For video commissions, start with [the founder’s production playbook](docs/FOUNDER_VIDEO_PRODUCTION.md). It records the creative decisions, review workflow, and reusable AI prompts. The same handbook is available in **Video Production Playbook** inside the signed-in Founder Hub.
+
 ## Original template documentation
 
 # Startup - Free Next.js Startup Website Template

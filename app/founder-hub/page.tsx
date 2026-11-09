@@ -6,6 +6,11 @@ import dynamicImport from "next/dynamic";
 import FounderLoginGate from "@/features/founder-hub/FounderLoginGate";
 import { COOKIE_NAME, getExpectedPasskeys } from "@/lib/founder-hub/auth";
 import { FOUNDER_WORKBOOK_CORE } from "@/lib/founder-hub/data";
+import {
+  parseVideoPlaybook,
+  VIDEO_PLAYBOOK_PATH,
+  type VideoPlaybook,
+} from "@/lib/founder-hub/video-playbook";
 
 const FounderCommandCenterClient = dynamicImport(
   () => import("@/features/founder-hub/FounderCommandCenterClient"),
@@ -64,11 +69,21 @@ export default async function FounderHubPage() {
     handbookMarkdown = "Handbook file not found at docs/TOOL_OPTIMIZATION_RULES.md.";
   }
 
+  let videoPlaybook: VideoPlaybook | null = null;
+  try {
+    videoPlaybook = parseVideoPlaybook(
+      fs.readFileSync(path.join(process.cwd(), VIDEO_PLAYBOOK_PATH), "utf8")
+    );
+  } catch {
+    // The tab can still point to the repository when the local handbook is missing.
+  }
+
   return (
     <FounderCommandCenterClient
       workbookCore={FOUNDER_WORKBOOK_CORE}
       handbookMarkdown={handbookMarkdown}
       masterPromptText={masterPromptText}
+      videoPlaybook={videoPlaybook}
     />
   );
 }

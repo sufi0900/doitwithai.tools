@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
+import FounderVideoPlaybook from "./FounderVideoPlaybook";
+import type { VideoPlaybook } from "@/lib/founder-hub/video-playbook";
 import {
   MULTI_AI_COLLABORATION_PROTOCOL,
   DAILY_ENGINEERING_VELOCITY,
@@ -20,6 +22,7 @@ interface Props {
   workbookCore: FounderWorkbookCore;
   handbookMarkdown: string;
   masterPromptText: string;
+  videoPlaybook: VideoPlaybook | null;
 }
 
 type MainTabId =
@@ -31,6 +34,7 @@ type MainTabId =
   | "ctr-guides-brand"
   | "gsc-technical-audit"
   | "large-semrush-review"
+  | "video-production"
   | "handbook-prompt"
   | "architecture-manual";
 
@@ -978,6 +982,7 @@ export default function FounderCommandCenterClient({
   workbookCore,
   handbookMarkdown,
   masterPromptText,
+  videoPlaybook,
 }: Props) {
   const [activeTab, setActiveTab] = useState<MainTabId>("overview");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -1106,6 +1111,16 @@ export default function FounderCommandCenterClient({
           icon: "🗄️",
           label: "2,621 Review & 3,700 Raw",
           badge: "6,321 Rows",
+        },
+      ],
+    },
+    {
+      groupTitle: "Founder Studio",
+      items: [
+        {
+          id: "video-production",
+          icon: "🎬",
+          label: "Video Production Playbook",
         },
       ],
     },
@@ -1257,6 +1272,7 @@ export default function FounderCommandCenterClient({
                         key={item.id}
                         type="button"
                         onClick={() => handleSelectTab(item.id)}
+                        aria-current={active ? "true" : undefined}
                         className={`w-full px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between gap-2 text-left border ${
                           active
                             ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/25"
@@ -2046,6 +2062,10 @@ export default function FounderCommandCenterClient({
                 />
               )}
             </div>
+          )}
+
+          {activeTab === "video-production" && (
+            <FounderVideoPlaybook playbook={videoPlaybook} />
           )}
 
           {/* TAB 9: INDUSTRIAL TOOL OPTIMIZATION HANDBOOK & MASTER PROMPT */}
