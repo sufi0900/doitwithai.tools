@@ -224,7 +224,7 @@ async function generateGemini<T>(
         new GeminiError(status, code, upstream, provider.status);
 
       // Rotate keys if quota exhausted or temporarily unavailable and more keys exist
-      if ((upstream === 429 || upstream === 503) && keyIdx + 1 < keys.length) {
+      if ((upstream === 429 || upstream === 503 || upstream === 401 || upstream === 403) && keyIdx + 1 < keys.length) {
         process.stderr.write(
           JSON.stringify({
             event: "gemini_key_rotation",
