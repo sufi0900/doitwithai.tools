@@ -342,8 +342,8 @@ export default function SeoOriginalityPlagiarismClient() {
         label="Optional: Paste any published blog URL to extract its body text and run a sentence-by-sentence AI footprint & burstiness audit"
         placeholder="https://example.com/blog/ai-seo-strategy..."
         onExtracted={(extracted) => {
-          if (extracted.content) {
-            setDraft(extracted.content.slice(0, 4500));
+          if (extracted.cleanText) {
+            setDraft(extracted.cleanText.slice(0, 4500));
             setAiPolishedDraft(null);
           }
         }}

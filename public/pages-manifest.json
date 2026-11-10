@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-11-08T21:28:17.599Z",
+  "generated": "2026-11-10T08:17:25.762Z",
   "static_pages": [
     {
       "url": "/",
@@ -628,7 +628,7 @@
     },
     {
       "url": "/tools/quote-stat-testimonial-card-studio",
-      "title": "AI Testimonial Card & Customer Quote Graphic Generator",
+      "title": "AI Quote, Founder Memo & Testimonial Visual Card Studio",
       "priority": "high",
       "type": "static"
     },
@@ -682,7 +682,7 @@
     },
     {
       "url": "/tools/seo-originality-plagiarism-checker",
-      "title": "SEO Plagiarism, Originality & Rapid Index Checker",
+      "title": "AI Content Detector, Burstiness Grader & Humanizer Studio",
       "priority": "high",
       "type": "static"
     },
@@ -717,6 +717,30 @@
       "type": "static"
     },
     {
+      "url": "/tools/seo-content-pricing-calculator",
+      "title": "AI SEO Content Writing Cost, Per-Article Pricing & ROI Calculator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/article-to-quiz-test-generator",
+      "title": "AI Article-to-Quiz, Assessment Test & Lead Magnet Generator",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/source-pdf-to-article-generator",
+      "title": "AI Source, PDF, Interview & NotebookLM-to-Article Converter Studio",
+      "priority": "high",
+      "type": "static"
+    },
+    {
+      "url": "/tools/ai-article-summarizer",
+      "title": "AI Article Summarizer & 50-Word AI Overview Summary Box Builder",
+      "priority": "high",
+      "type": "static"
+    },
+    {
       "url": "/tools/categories/ai-seo",
       "title": "AI SEO",
       "priority": "medium",
@@ -741,5 +765,5 @@
       "type": "static"
     }
   ],
-  "total_pages": 123
+  "total_pages": 127
 }

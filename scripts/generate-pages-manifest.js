@@ -7,6 +7,9 @@ function generatePagesManifest() {
   const pagesDir = path.join(process.cwd(), 'app');
   const staticPages = [];
   
+  const tools = Array.isArray(registry.tools) ? registry.tools : [];
+  const categories = Array.isArray(registry.categories) ? registry.categories : [];
+
   // Define your static pages
   const knownStaticPages = [
     { url: '/', title: 'Home', priority: 'high' },
@@ -24,8 +27,8 @@ function generatePagesManifest() {
     { url: '/prompts', title: 'AI Prompt Library', priority: 'high' },
     { url: '/tools/categories', title: 'Tool Categories', priority: 'medium' },
     { url: '/guides', title: 'Practical Guides', priority: 'medium' },
-    ...registry.tools.filter(tool => tool.status === 'live').map(tool => ({ url: `/tools/${tool.slug}`, title: tool.name, priority: 'high' })),
-    ...registry.categories.filter(category => registry.tools.some(tool => tool.status === 'live' && tool.categories.includes(category.slug))).map(category => ({ url: `/tools/categories/${category.slug}`, title: category.name, priority: 'medium' }))
+    ...tools.filter(tool => tool && tool.status === 'live').map(tool => ({ url: `/tools/${tool.slug}`, title: tool.name, priority: 'high' })),
+    ...categories.filter(category => category && tools.some(tool => tool && tool.status === 'live' && Array.isArray(tool.categories) && tool.categories.includes(category.slug))).map(category => ({ url: `/tools/categories/${category.slug}`, title: category.name, priority: 'medium' }))
   ];
 
   // Add all static pages to the manifest

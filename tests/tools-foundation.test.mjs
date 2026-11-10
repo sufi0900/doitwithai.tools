@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { articleMetrics } from '../features/articles/legacy/content-metrics.mjs';
+import { fileURLToPath } from 'node:url';
 const registry = createRequire(import.meta.url)('../features/tool-catalog/registry.json');
 
 const sample = [
@@ -24,9 +25,13 @@ test('featured and recent sorting use explicit registry data', () => {
   assert.deepEqual(findTools(sample, { sort: 'name' }).map(x => x.name), ['Alpha', 'Beta']);
 });
 test('empty categories stay out of sitemap until tools become available', () => {
-  const entries = toolSitemapEntries(registry, 'https://doitwithai.tools');
+  const mockRegistry = {
+    ...registry,
+    categories: [...(registry.categories || []), { slug: 'empty-upcoming-category', name: 'Upcoming', description: 'Coming soon', guidePath: '/guides' }]
+  };
+  const entries = toolSitemapEntries(mockRegistry, 'https://doitwithai.tools');
   assert.ok(entries.some(x => x.url.endsWith('/tools/categories/ai-seo')));
-  assert.ok(!entries.some(x => x.url.endsWith('/tools/categories/productivity')));
+  assert.ok(!entries.some(x => x.url.endsWith('/tools/categories/empty-upcoming-category')));
   assert.ok(!entries.some(x => x.url.includes('/ai-seo/meta-title-generator')));
 });
 test('content discovery maps supported articles without inventing detail routes or dates', () => {
@@ -59,7 +64,7 @@ test('all API route durations fit the deployed Vercel Hobby limit', () => {
       else if (/^route\.(ts|js)$/.test(entry.name)) routes.push(path);
     }
   }
-  collect(new URL('../app/api/', import.meta.url).pathname);
+  collect(fileURLToPath(new URL('../app/api/', import.meta.url)));
   let configured = 0;
   for (const path of routes) {
     const match = readFileSync(path, 'utf8').match(/export const maxDuration = (\d+)/);

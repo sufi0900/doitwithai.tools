@@ -234,8 +234,8 @@ export default function ArticleToQuizTestGeneratorClient() {
         placeholder="https://example.com/blog/your-article..."
         onExtracted={(extracted) => {
           if (extracted.title) setArticleTitle(extracted.title);
-          if (extracted.content) {
-            setArticleText(extracted.content.slice(0, 4500));
+          if (extracted.cleanText) {
+            setArticleText(extracted.cleanText.slice(0, 4500));
             setAiQuestions(null);
           }
         }}

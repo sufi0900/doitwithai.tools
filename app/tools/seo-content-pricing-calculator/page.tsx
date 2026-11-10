@@ -12,9 +12,7 @@ export const metadata: Metadata = {
   title: "Free AI SEO Content Writing Cost, Per-Article Pricing & ROI Calculator (2026)",
   description:
     "Compare 2025–2026 SEO content writing service pricing per article across agencies, freelance writers, in-house teams, and AI + human E-E-A-T workflows with a 12-month ROI calculator.",
-  alternates: {
-    canonical: pageUrl
-  },
+  alternates: { canonical: pageUrl },
   openGraph: {
     title: "AI SEO Content Writing Cost, Per-Article Pricing & ROI Calculator",
     description:

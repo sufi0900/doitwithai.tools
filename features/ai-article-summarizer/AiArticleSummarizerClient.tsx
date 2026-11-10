@@ -165,8 +165,8 @@ export default function AiArticleSummarizerClient() {
         placeholder="https://example.com/blog/long-form-guide..."
         onExtracted={(extracted) => {
           if (extracted.title) setArticleTitle(extracted.title);
-          if (extracted.content) {
-            setArticleBody(extracted.content.slice(0, 5000));
+          if (extracted.cleanText) {
+            setArticleBody(extracted.cleanText.slice(0, 5000));
             setAiBoxOverride(null);
           }
         }}

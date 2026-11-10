@@ -12,9 +12,7 @@ export const metadata: Metadata = {
   title: "Free AI Article-to-Quiz, Assessment Test & Lead Magnet Generator (2026)",
   description:
     "Convert any blog article, URL, or study guide into an interactive multiple-choice, true/false, and scenario assessment quiz with answer rationales and HTML blog embed code.",
-  alternates: {
-    canonical: pageUrl
-  },
+  alternates: { canonical: pageUrl },
   openGraph: {
     title: "Free AI Article-to-Quiz, Assessment Test & Interactive Lead Magnet Generator",
     description:

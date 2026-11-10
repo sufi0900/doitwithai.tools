@@ -204,8 +204,8 @@ export default function SourcePdfToArticleGeneratorClient() {
         placeholder="https://example.com/research/2026-report..."
         onExtracted={(extracted) => {
           if (extracted.title) setArticleHeadline(extracted.title);
-          if (extracted.content) {
-            setSource1(extracted.content.slice(0, 3000));
+          if (extracted.cleanText) {
+            setSource1(extracted.cleanText.slice(0, 3000));
             setAiArticleMarkdown(null);
           }
         }}

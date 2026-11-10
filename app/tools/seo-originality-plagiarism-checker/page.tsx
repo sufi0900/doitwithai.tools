@@ -12,9 +12,7 @@ export const metadata: Metadata = {
   title: "Free AI Content Detector, Burstiness Grader & Humanizer (Writer.com Alternative)",
   description:
     "Audit your article drafts with a sentence-by-sentence AI content detector heatmap, burstiness score, E-E-A-T proof grader, and 1-click AI-to-human text polisher. No 1,500-word cap.",
-  alternates: {
-    canonical: pageUrl
-  },
+  alternates: { canonical: pageUrl },
   openGraph: {
     title: "Free AI Content Detector, Burstiness Grader & Human-Like Article Polisher",
     description:

@@ -12,9 +12,7 @@ export const metadata: Metadata = {
   title: "Free AI Source, PDF, Interview & NotebookLM-to-Article Converter Studio",
   description:
     "Convert NotebookLM research notes, PDF whitepaper extracts, and SME interview transcripts into a citation-mapped, E-E-A-T SEO article with [S1]/[S2]/[S3] footnotes.",
-  alternates: {
-    canonical: pageUrl
-  },
+  alternates: { canonical: pageUrl },
   openGraph: {
     title: "Free AI Source, PDF, Interview & NotebookLM-to-Article Converter Studio",
     description:

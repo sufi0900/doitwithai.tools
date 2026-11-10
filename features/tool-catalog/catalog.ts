@@ -1,7 +1,7 @@
 import registry from "./registry.json";
 
-export const categories = registry.categories;
-export const tools = registry.tools.filter((tool) => tool.status === "live");
+export const categories = Array.isArray(registry.categories) ? registry.categories : [];
+export const tools = (Array.isArray(registry.tools) ? registry.tools : []).filter((tool) => tool.status === "live");
 export type CatalogTool = (typeof tools)[number];
 export const toolPath = (slug: string) => `/tools/${slug}`;
 export const categoryPath = (slug: string) => `/tools/categories/${slug}`;

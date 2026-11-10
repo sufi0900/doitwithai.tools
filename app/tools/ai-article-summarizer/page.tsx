@@ -12,9 +12,7 @@ export const metadata: Metadata = {
   title: "Free AI Article Summarizer & 50-Word AI Overview Summary Box Builder",
   description:
     "Condense any long-form article or URL into a 50-word Google AI Overview answer box, executive TL;DR bullets, extracted quantitative claims, and copy-paste HTML callout code.",
-  alternates: {
-    canonical: pageUrl
-  },
+  alternates: { canonical: pageUrl },
   openGraph: {
     title: "Free AI Article Summarizer & 50-Word AI Overview Summary Box Builder",
     description:

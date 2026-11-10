@@ -10,8 +10,15 @@ export function articlePath(article) {
 }
 
 export function toolSitemapEntries(registry, origin) {
-  const available = registry.tools.filter((tool) => tool.status === "live");
-  const paths = ["/tools", "/tools/categories", ...registry.categories.filter((category) => available.some((tool) => tool.categories.includes(category.slug))).map((category) => `/tools/categories/${category.slug}`), ...available.map((tool) => `/tools/${tool.slug}`)];
+  const tools = Array.isArray(registry?.tools) ? registry.tools : [];
+  const categories = Array.isArray(registry?.categories) ? registry.categories : [];
+  const available = tools.filter((tool) => tool && tool.status === "live");
+  const paths = [
+    "/tools",
+    "/tools/categories",
+    ...categories.filter((category) => category && available.some((tool) => Array.isArray(tool.categories) && tool.categories.includes(category.slug))).map((category) => `/tools/categories/${category.slug}`),
+    ...available.map((tool) => `/tools/${tool.slug}`)
+  ];
   return paths.map((path) => ({ url: `${origin}${path}` }));
 }
 
