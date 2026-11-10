@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import dynamicImport from "next/dynamic";
 import FounderLoginGate from "@/features/founder-hub/FounderLoginGate";
+import ApexTechnicalSeoAgentHub from "@/features/founder-hub/ApexTechnicalSeoAgentHub";
 import { COOKIE_NAME, getExpectedPasskeys } from "@/lib/founder-hub/auth";
 import { FOUNDER_WORKBOOK_CORE } from "@/lib/founder-hub/data";
 
@@ -65,10 +66,13 @@ export default async function FounderHubPage() {
   }
 
   return (
-    <FounderCommandCenterClient
-      workbookCore={FOUNDER_WORKBOOK_CORE}
-      handbookMarkdown={handbookMarkdown}
-      masterPromptText={masterPromptText}
-    />
+    <>
+      <ApexTechnicalSeoAgentHub />
+      <FounderCommandCenterClient
+        workbookCore={FOUNDER_WORKBOOK_CORE}
+        handbookMarkdown={handbookMarkdown}
+        masterPromptText={masterPromptText}
+      />
+    </>
   );
 }
