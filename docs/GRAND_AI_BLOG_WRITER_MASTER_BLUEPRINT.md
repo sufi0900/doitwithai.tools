@@ -125,17 +125,25 @@
 - **Downstream Hand-Off Contract (For Phase 6, Phase 7 & Phase 9)**:
   - Exports `<BlogInfographicStudio mode="embedded-modal" initialConfig={...} onSaveConfig={(updated) => ...} />`, `generateBlogInfographicSvg(config)`, and `renderBlogInfographicToPngDataUrl(config)` for Phase 6 (`Stage4RichEditorAndScorecard.tsx`), Phase 7 (`technical-seo-compiler.ts`), and Phase 9 (`zip-bundle-builder.ts`).
 
-### ⏳ Phase 5: 4-Tier AI Long-Form Drafting Engine, Per-Section Co-Pilot & AI Humanizer (`Stage 3`)
+### ✅ Phase 5: 4-Tier AI Long-Form Drafting Engine, Per-Section Co-Pilot & AI Humanizer (`Stage 3`) — COMPLETED & LIVE
+- **Status**: `Completed & Live` — Signed by **Nova-Forge (`Flagship Studio Persistence & Workspace Engineer`)**
 - **Upstream Connection (From Phases 1–4)**:
-  - Import `runMultiModelFailover` from `@/lib/ai/multi-model-router`.
-  - Import `CanonicalBlogProjectState` from `@/lib/blog-writer/canonical-state` and `applyOneClickSeoAutoFixes` from `@/lib/blog-writer/deterministic-analyzers`.
-- **Exact Implementation Specification**:
-  - Create `app/api/blog-writer/generate/route.ts`:
+  - Imports `runMultiModelFailover` from `@/lib/ai/multi-model-router`.
+  - Imports `CanonicalBlogProjectState` from `@/lib/blog-writer/canonical-state` and `applyOneClickSeoAutoFixes` from `@/lib/blog-writer/deterministic-analyzers`.
+- **Shipped Implementation**:
+  - `lib/ai/multi-model-router.ts`:
+    - 4-Tier Multi-Key AI Failover Router rotating across Google Gemini (`GEMINI_API_KEY`, `GEMINI_API_KEYS`, `GEMINI_API_KEY_2..10`, `GEMINI_API_KEY_BACKUP`) -> Groq LPU (`GROQ_API_KEY`, `GROQ_API_KEYS`, `GROQ_API_KEY_2..5`) -> OpenRouter (`OPENROUTER_API_KEY`) -> Tier-4 Deterministic Synthesis Fallback.
+  - `app/api/blog-writer/generate/route.ts`:
     - Supports 3 action modes in one endpoint:
-      1. `mode: "generate-outline-and-meta"` (LLM Pass #1 — `~1,200 tokens`): Returns structured JSON updating `metaPack`, `keywordCluster.lsiEntities`, and `sections[]` with auto-mapped infographic nodes.
-      2. `mode: "generate-full-article-and-pack"` (LLM Pass #2 — `~2,800–4,200 tokens`): Generates humanized Markdown for every H2/H3 section, 50-word AEO Direct Answer box, comparison tables, 5 FAQs, 5 Quiz MCQs, and the 6-channel `distributionPack`.
-      3. `mode: "section-copilot-action"`: Executes targeted micro-actions on a single section (`rewrite`, `expand-examples`, `humanize-burstiness`, `add-comparison-table`, `regenerate-visual-nodes`) in `<600 tokens`.
+      1. `mode: "generate-outline-and-meta"` (LLM Pass #1 — `~1,200 tokens`): Returns structured JSON updating `metaPack`, `keywordCluster.lsiEntities`, and `sections[]` with auto-mapped 25-template infographic nodes.
+      2. `mode: "generate-full-article-and-pack"` (LLM Pass #2 — `~2,800–4,200 tokens`): Generates humanized Markdown for every H2/H3 section, 50-word AEO Direct Answer box, comparison tables, 5 FAQs, 5 Quiz MCQs, internal links, E-E-A-T citations, and the 6-channel `distributionPack`.
+      3. `mode: "section-copilot-action"`: Executes targeted micro-actions on a single section (`rewrite`, `expand-examples`, `humanize-burstiness`, `add-comparison-table`, `add-aeo-box`, `regenerate-visual-nodes`) in `<600 tokens`.
     - Includes a rich **Tier-4 Deterministic Synthesis Fallback** so even if all cloud API keys are exhausted or offline, the route returns a complete, keyword-tailored, multi-section article with comparison tables, FAQs, quiz questions, and infographic configs with zero 500 errors.
+  - `features/blog-writer-studio/components/Stage3DraftingAndCopilot.tsx`:
+    - Interactive Stage 3 UI with 1-click Full Article + Pack generation, live burstiness (`σ`) and Flesch telemetry strip, and per-section Co-Pilot action pills.
+- **Downstream Hand-Off Contract (For Phase 6 & Phase 10)**:
+  - `POST /api/blog-writer/generate` accepts `{ mode, project, sectionId?, copilotAction?, customCopilotInstruction? }` and returns `{ ok: true, updatedProject: CanonicalBlogProjectState, providerUsed: string, tierUsed: 1 | 2 | 3 | 4, latencyMs: number }`.
+  - Exports `Stage3DraftingAndCopilot` from `@/features/blog-writer-studio/components/Stage3DraftingAndCopilot`.
 
 ### ⏳ Phase 6: Interactive Split-Screen Rich Text & Visual Editor + Live 0–100 SEO Scorecard (`Stage 4`)
 - **Upstream Connection (From Phases 1, 4 & 5)**:
