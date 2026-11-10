@@ -256,6 +256,77 @@ export default function AiAgentsHubPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        {/* Flagship Autonomous 62-Tool Blog, Visual & Distribution Studio Spotlight */}
+        <section className="mb-10 rounded-3xl border border-indigo-500/40 bg-gradient-to-br from-[#101B34] via-[#132042] to-[#1D2B5B] p-6 text-white shadow-2xl sm:p-8">
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+            <div className="max-w-3xl">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-amber-300">
+                <Sparkles size={14} />
+                Flagship 62-Tool Autonomous Production Studio · 1-Click Express + 6-Stage Guided
+              </span>
+              <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">
+                Grand AI Blog, Article &amp; 25-Template Visual Infographic Studio
+              </h2>
+              <p className="mt-2.5 text-sm leading-relaxed text-slate-200">
+                Orchestrates 47 zero-token deterministic SEO/AEO analyzers, a 4-tier multi-key AI router, 25 Canva &amp; Napkin.ai-style HTML5 Canvas section infographics, validated Article + FAQPage JSON-LD <code>@graph</code> schema, an interactive reader quiz widget, and a 6-channel social campaign in one workspace.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold">
+                <Link
+                  href="/tools/ai-blog-writer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#3452d1] to-[#5271ff] px-4 py-2.5 text-white shadow hover:brightness-110"
+                >
+                  Launch AI Blog Writer Studio
+                  <ArrowRight size={14} />
+                </Link>
+                <Link
+                  href="/tools/ai-content-writer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-white hover:bg-white/20"
+                >
+                  AI Content Writer Studio
+                </Link>
+                <Link
+                  href="/tools/ai-article-writer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-white hover:bg-white/20"
+                >
+                  AI Article Writer Studio
+                </Link>
+                <Link
+                  href="/tools/blog-section-infographic-generator"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-2.5 text-emerald-200 hover:bg-emerald-500/25"
+                >
+                  25-Template Infographic Studio
+                </Link>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-center sm:min-w-[260px]">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5">
+                <div className="text-xl font-black text-amber-300">62</div>
+                <div className="text-[11px] font-semibold text-slate-300">
+                  Connected Engines
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5">
+                <div className="text-xl font-black text-emerald-300">25</div>
+                <div className="text-[11px] font-semibold text-slate-300">
+                  Canvas &amp; SVG Layouts
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5">
+                <div className="text-xl font-black text-sky-300">0–100</div>
+                <div className="text-[11px] font-semibold text-slate-300">
+                  Deterministic Scorecard
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3.5">
+                <div className="text-xl font-black text-indigo-300">8-File</div>
+                <div className="text-[11px] font-semibold text-slate-300">
+                  Master .ZIP Bundle
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <div className="grid gap-6 md:grid-cols-2">
           {AGENTS.map((agent) => {
             const Icon = agent.icon;

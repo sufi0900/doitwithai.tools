@@ -598,6 +598,17 @@ export function exportBlogProjectJsonFile(project: CanonicalBlogProjectState): v
   window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
+/** Alias for Phase 9 MultiFormatExportBar compatibility. */
+export const exportProjectAsJsonFile = exportBlogProjectJsonFile;
+
+/** Alias for Phase 9 MultiFormatExportBar compatibility (accepts raw JSON string or browser File). */
+export async function parseImportedProjectJson(
+  input: string | File
+): Promise<CanonicalBlogProjectState> {
+  const jsonText = typeof input === "string" ? input : await input.text();
+  return importBlogProjectJsonFile(jsonText);
+}
+
 /** Parses + persists an imported backup in one call. */
 export async function importAndSaveBlogProjectJson(jsonText: string): Promise<CanonicalBlogProjectState> {
   return saveBlogProject(importBlogProjectJsonFile(jsonText));

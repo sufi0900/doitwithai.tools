@@ -321,7 +321,7 @@ export async function buildMasterBlogZipBytes(
       try {
         const pngDataUrl =
           sec.infographicConfig.renderedPngDataUrl ||
-          renderBlogInfographicToPngDataUrl(sec.infographicConfig);
+          (await renderBlogInfographicToPngDataUrl(sec.infographicConfig));
         if (pngDataUrl) {
           const pngBytes = base64DataUrlToBytes(pngDataUrl);
           if (pngBytes) {
