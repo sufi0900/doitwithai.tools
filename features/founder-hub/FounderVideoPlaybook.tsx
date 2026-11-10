@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import FounderVideoPublishing from "./FounderVideoPublishing";
 import {
   videoFounderDecisions,
   videoProductionPrompts,
@@ -25,6 +26,7 @@ const panels = [
     sections: ["screen", "keyword", "cta"],
   },
   { id: "review", label: "Review & Handoff", sections: ["review"] },
+  { id: "publishing", label: "Captions & Publishing" },
   { id: "decisions", label: "Founder Decisions" },
   { id: "prompts", label: "AI Prompts" },
 ] as const;
@@ -56,6 +58,11 @@ const workflow: { panel: PanelId; title: string; detail: string }[] = [
     title: "Check and hand off",
     detail:
       "Review the portrait export, caption timing, and sources. Keep the editable project and verification notes.",
+  },
+  {
+    panel: "publishing",
+    title: "Write for each platform",
+    detail: "Use separate Facebook, TikTok, and YouTube copy. Check the destination and confirm the live post when publishing is authorized.",
   },
 ];
 
@@ -191,7 +198,7 @@ export default function FounderVideoPlaybook() {
                       className={`${focus} flex h-full w-full gap-3 rounded-xl border border-slate-700 bg-slate-950 p-4 text-left hover:border-blue-500`}
                     >
                       <span className="shrink-0 font-bold text-blue-300">
-                        0{index + 1}
+                      {String(index + 1).padStart(2, "0")}
                       </span>
                       <span>
                         <span className="block font-semibold text-white">
@@ -215,6 +222,8 @@ export default function FounderVideoPlaybook() {
           panel.sections.map((section) => (
             <StrategyCard key={section} section={section} />
           ))}
+
+        {active === "publishing" && <FounderVideoPublishing />}
 
         {active === "decisions" && (
           <>
