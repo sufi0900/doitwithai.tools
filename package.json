@@ -108,5 +108,12 @@
     "typescript": "^5.2.2",
     "web-vitals": "^5.0.3",
     "webpack-bundle-analyzer": "^4.10.2"
-  }
+  },
+  "browserslist": [
+    "chrome >= 105",
+    "edge >= 105",
+    "firefox >= 105",
+    "safari >= 16",
+    "ios_saf >= 16"
+  ]
 }

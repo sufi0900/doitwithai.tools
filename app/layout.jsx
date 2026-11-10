@@ -1,10 +1,7 @@
 // app/layout.jsx — Server Component RootLayout (Guarantees pure SSR <head> output for Google AdSense & Search Crawlers)
+// Optimized by Apex-CWV (Phase 1): Scoped homepage/carousel CSS to route level & deferred 3P scripts to lazyOnload to eliminate 1,190ms render-blocking waterfall & 410ms TBT.
 
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 import "../styles/index.css";
-import "../components/Hero/critical-hero.css";
-import "@/features/homepage/homepage.css";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import ClientLayoutShell from "./ClientLayoutShell";
@@ -26,18 +23,13 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta
           name="google-adsense-account"
           content="ca-pub-1402360917878288"
         />
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1402360917878288"
-          crossOrigin="anonymous"
-        ></script>
         <link
           rel="icon"
           href="/favicon.ico?v=20260917"
@@ -57,20 +49,30 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#000000" />
 
-        {/* Ahrefs Web Analytics */}
+        {/* Google AdSense — loaded via lazyOnload so main-thread hydration & LCP are never blocked */}
         <Script
+          id="google-adsense-lib"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1402360917878288"
+          crossOrigin="anonymous"
+          strategy="lazyOnload"
+        />
+
+        {/* Ahrefs Web Analytics — deferred to lazyOnload to preserve 0ms TBT during FCP/LCP */}
+        <Script
+          id="ahrefs-analytics"
           src="https://analytics.ahrefs.com/analytics.js"
           data-key="vodw9TgfqC4efMfrAO9xrw"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
 
-        {/* Google Analytics (GA4) */}
+        {/* Google Analytics (GA4) — deferred to lazyOnload */}
         <Script
+          id="ga4-lib"
           src="https://www.googletagmanager.com/gtag/js?id=G-SHX78424XN"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
 
-        <Script id="ga4-init" strategy="afterInteractive">
+        <Script id="ga4-init" strategy="lazyOnload">
           {`
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}

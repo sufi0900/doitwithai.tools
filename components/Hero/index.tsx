@@ -161,7 +161,7 @@ useEffect(() => {
   return (
     <section
       id="home"
-      className="relative herobg z-10 mb-10 overflow-hidden bg-teal-50 dark:bg-gray-800 min-h-screen flex items-center justify-center   pt-[135px]"
+      className="relative herobg hero-animations-active z-10 mb-10 overflow-hidden bg-teal-50 dark:bg-gray-800 min-h-screen flex items-center justify-center pt-[135px]"
       ref={heroRef}
       aria-labelledby="hero-heading"
       aria-describedby="hero-description"
@@ -391,8 +391,8 @@ useEffect(() => {
 
               {/* CRITICAL FIX: Enhanced trust indicator with social proof */}
               <div className="mt-6 text-center">
-                <p className="trust-text text-xs text-gray-500 dark:text-gray-400 mb-2">Tools for the task. Guidance for the decisions. Resources to get started.</p>
-                <p className="trust-text text-xs text-gray-400 dark:text-gray-500">For marketers, SEO teams, and website owners doing SEO and content work.</p>
+                <p className="trust-text text-xs text-gray-700 dark:text-gray-300 mb-2">Tools for the task. Guidance for the decisions. Resources to get started.</p>
+                <p className="trust-text text-xs text-gray-600 dark:text-gray-300">For marketers, SEO teams, and website owners doing SEO and content work.</p>
               </div>
             </div>
           </div>
