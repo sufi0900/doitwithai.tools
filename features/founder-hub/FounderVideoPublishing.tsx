@@ -52,6 +52,22 @@ const guides = [
     image: { width: 624, height: 618, alt: "Owner’s Facebook Page example: a heading structure lesson with short paragraphs, bullet steps, a relevant tool link and a disclosure." },
     note: "Follow the helpful tone, concrete example and visible action. Keep disclosure proportional to the film; this example has unusually detailed provenance.",
   },
+  {
+    id: "linkedin",
+    name: "LinkedIn Company Page",
+    target: "Professional insight + one worked example + a next step readers can use",
+    limit: "Post: 3,000 characters. Review the opening in the feed preview.",
+    steps: [
+      "Open with a decision or problem your professional audience recognizes. State the takeaway in the first two lines so it makes sense before ‘see more’. Write as the company: use ‘we’ for work the team actually did and ‘you’ when giving practical advice.",
+      "Ground the post in one concrete example from the film. Use short paragraphs and a short list only when it helps readers scan steps or compare cases. Spell out unfamiliar acronyms once. Give readers a useful action even if they never play the video.",
+      "Separate observations, estimates, sample results and recommendations. Name the source where it matters, and keep qualifications next to the claim. Add one labeled, verified resource link and a low-pressure next step after the lesson.",
+      "Invite a specific practitioner response only if the question adds value. Use a few relevant hashtags if useful; do not treat a hashtag count, link placement or post length as a reach guarantee. Reply as the Company Page when it makes sense.",
+      "Attach the approved video directly to the Company Page post. Preview the opening and link on mobile. Check the thumbnail and readability with sound off. Where supported, upload reviewed timed subtitles or review LinkedIn’s automatic captions for terms, numbers and names. Keep the written post separate from the video subtitles.",
+    ],
+    pattern: "Workplace problem → practical takeaway → one worked example → actionable steps → labeled resource and soft CTA → brief disclosure and optional tags",
+    image: { width: 478, height: 716, alt: "Founder’s LinkedIn Company Page caption example: a keyword research post opens with advice, follows one fictional espresso-school brief, separates suggestions from measurements, and gives one next step." },
+    note: "Use the pacing and evidence distinctions. The example teaches before introducing the link and explains what the demonstrated tool does and does not measure.",
+  },
 ] as const;
 
 const sources = [
@@ -66,6 +82,9 @@ const sources = [
   ["YouTube: clickable links", "https://support.google.com/youtube/answer/13748639"],
   ["YouTube: three-minute Shorts", "https://support.google.com/youtube/answer/15424877"],
   ["YouTube: altered content disclosure", "https://support.google.com/youtube/answer/14328491"],
+  ["LinkedIn: Company Page best practices", "https://business.linkedin.com/advertise/linkedin-pages/best-practices"],
+  ["LinkedIn: post length", "https://www.linkedin.com/help/linkedin/answer/a522483/differences-between-posting-and-publishing"],
+  ["LinkedIn: video uploads and subtitles", "https://www.linkedin.com/help/linkedin/answer/a7486279"],
 ] as const;
 
 export default function FounderVideoPublishing() {
@@ -74,7 +93,7 @@ export default function FounderVideoPublishing() {
       <section className={card} aria-labelledby="caption-guide-title">
         <p className="text-xs font-bold uppercase tracking-wider text-blue-300">Founder Studio · Distribution</p>
         <h3 id="caption-guide-title" className="mt-2 text-xl font-bold text-white">Captions &amp; Publishing</h3>
-        <p className="mt-2">Write three versions from the approved cut. Each should teach the same useful idea in a form that fits the platform. Post copy is separate from the timed subtitles on the video.</p>
+        <p className="mt-2">Write a distinct version for each destination from the approved cut. Each should teach the same useful idea in a form that fits the platform. Post copy is separate from the timed subtitles on the video.</p>
         <p className="mt-2 text-slate-300">Use the approved title, exact duration, worked example, visible actions, source notes, and verified destination URLs. Label sample reports and illustrations where the distinction matters. Keep any promised result within what the film shows.</p>
       </section>
 
@@ -111,7 +130,7 @@ export default function FounderVideoPublishing() {
           <li>Reopen each Buffer post and record its actual status and public link. Sending is pending; if the result is unclear, reconcile the existing post before retrying.</li>
         </ol>
         <h4 className="mt-5 font-bold text-white">Reusable AI prompt</h4>
-        <blockquote className="mt-2 rounded-lg border-l-2 border-blue-400 bg-slate-950 p-3">From [approved film, transcript, exact URLs, source and disclosure notes], draft distinct copy for TikTok, YouTube and Facebook. Give TikTok a unique, complete first-line title and a detailed natural walkthrough. Give YouTube a separate title, short summary, covered-topic bullets, CTA and labeled links. Give Facebook a problem-first Page caption with a concrete example and a useful next step. Preserve qualifiers, verify current platform limits and link behavior, and state any missing facts. Return the exact copy and platform metadata. Publish only if authorized for this film.</blockquote>
+        <blockquote className="mt-2 rounded-lg border-l-2 border-blue-400 bg-slate-950 p-3">From [approved film, transcript, exact URLs, source and disclosure notes], draft distinct copy for TikTok, YouTube, Facebook and the LinkedIn Company Page. Give TikTok a unique, complete first-line title and a detailed natural walkthrough. Give YouTube a separate title, short summary, covered-topic bullets, CTA and labeled links. Give Facebook a problem-first Page caption with a concrete example and a useful next step. Give LinkedIn a professional decision or takeaway, one worked example, practical steps, and one labeled resource after the lesson. Preserve qualifiers, verify current platform limits and link behavior, and state any missing facts. Return the exact copy and platform metadata. Publish only if authorized for this film.</blockquote>
         <h4 className="mt-5 font-bold text-white">Official references</h4>
         <p className="mt-1 text-slate-300">Check current platform rules again before future uploads. Editorial examples here are founder preferences.</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">

@@ -62,7 +62,7 @@ const workflow: { panel: PanelId; title: string; detail: string }[] = [
   {
     panel: "publishing",
     title: "Write for each platform",
-    detail: "Use separate Facebook, TikTok, and YouTube copy. Check the destination and confirm the live post when publishing is authorized.",
+    detail: "Use separate Facebook, TikTok, YouTube, and LinkedIn Company Page copy. Check the destination and confirm the live post when publishing is authorized.",
   },
 ];
 
