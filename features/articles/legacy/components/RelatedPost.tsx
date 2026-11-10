@@ -6,7 +6,15 @@ const RelatedPost = ({ title, image, slug, date }) => {
     <div className="flex items-center lg:block xl:flex">
       <div className="mr-5 lg:mb-3 xl:mb-0">
         <div className="relative h-[60px] w-[70px] overflow-hidden rounded-md sm:h-[75px] sm:w-[85px]">
-          <Image src={image || "/images/blog/blog-01.jpg"} alt={title || "Related article"} layout="fill" objectFit="cover" unoptimized />
+          <Image
+            src={image || "/images/blog/blog-01.jpg"}
+            alt={title || "Related article"}
+            fill
+            sizes="85px"
+            quality={75}
+            loading="lazy"
+            className="object-cover"
+          />
         </div>
       </div>
       <div>

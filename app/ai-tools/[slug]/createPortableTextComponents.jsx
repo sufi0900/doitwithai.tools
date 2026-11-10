@@ -416,7 +416,7 @@ const RichTableComponent = ({ value }) => {
 
 image: ({ value, index }) => {
   const imageUrl = value?.localUrl || (value?.asset ? urlForImage(value.asset).url() : "/fallback-image-url.png");
-  const isPriority = index < 3;
+  const isPriority = false; // Keep priority strictly on BlogHeader hero image so body images never compete with LCP
   const blurDataURL = !value?.localUrl && value?.asset ? urlForImage(value.asset).width(20).height(20).blur(10).url() : undefined;
 
   return (
@@ -441,10 +441,10 @@ image: ({ value, index }) => {
                     className="w-full h-auto object-cover rounded-lg shadow-lg"
                     priority={isPriority}
                     blurDataURL={blurDataURL}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 768px, 800px"
                     width={800}
                     height={600}
-                    quality={85}
+                    quality={80}
                     enableModal={true}
                   />
                   

@@ -1,21 +1,28 @@
 import Image from "next/image";
 import Link from "next/link";
 
-
 export default function SingleBlog({
   publishedAt,
-  image = "/path-to-placeholder-image.jpg", // Fallback for missing image
+  image = "/images/blog/blog-01.jpg",
   title,
   overview,
-  date = "Unknown Date", // Fallback for missing date
-  slug = "#", // Fallback for missing slug
+  date = "Unknown Date",
+  slug = "#",
 }) {
   return (
     <div className="flex items-center lg:block xl:flex">
       <Link href={slug}>
         <div className="mr-5 lg:mb-3 xl:mb-0">
           <div className="relative h-[60px] w-[70px] overflow-hidden rounded-md sm:h-[75px] sm:w-[85px]">
-            <Image src={image} alt={title || "No Title"} fill />
+            <Image
+              src={image}
+              alt={title || "Related article"}
+              fill
+              sizes="85px"
+              quality={75}
+              loading="lazy"
+              className="object-cover"
+            />
           </div>
         </div>
       </Link>
@@ -32,6 +39,4 @@ export default function SingleBlog({
       </div>
     </div>
   );
-};
-
-
+}

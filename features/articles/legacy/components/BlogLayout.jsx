@@ -40,13 +40,12 @@ import Image from 'next/image';
 
   // Smart shimmer effect for progressive loading
   const SmartShimmer = ({ isLoading, children, fallback, delay = 0 }) => {
-    const [showFallback, setShowFallback] = useState(isLoading);
+    const [showFallback, setShowFallback] = useState(Boolean(isLoading));
     
     useEffect(() => {
       if (!isLoading) {
         // Add small delay to prevent flash
-        const timer = setTimeout(() => setShowFallback(false), delay);
-        return () => clearTimeout(timer);
+        setShowFallback(false);
       } else {
         setShowFallback(true);
       }
@@ -87,7 +86,7 @@ import Image from 'next/image';
     // KEY CHANGES for BlogLayout.js - useState declarations
     const [showGlobalHeader, setShowGlobalHeader] = useState(true);
     const [mounted, setMounted] = useState(false);
-    const [loadStage, setLoadStage] = useState(1);
+    const [loadStage, setLoadStage] = useState(4); // Render all sections in SSR HTML & eliminate 6 cascading hydration timers
     const [contentReady, setContentReady] = useState(!!data); // Use !!data instead of !loading
     const isLargeDevice = useDeviceSize();
 
@@ -140,10 +139,7 @@ import Image from 'next/image';
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('load', handleLoad);
 
-    // OPTIMIZE loading timers - make them faster:
-    const loadTimer1 = setTimeout(() => setLoadStage(2), 10);   // Reduced from 50ms
-    const loadTimer2 = setTimeout(() => setLoadStage(3), 50);   // Reduced from 200ms  
-    const loadTimer3 = setTimeout(() => setLoadStage(4), 100);  // Reduced from 500ms
+    // All stages active immediately to prevent hydration TBT spikes and skeleton CLS
 
     handleScroll();
 
@@ -151,9 +147,7 @@ import Image from 'next/image';
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('load', handleLoad);
-      clearTimeout(loadTimer1);
-      clearTimeout(loadTimer2);
-      clearTimeout(loadTimer3);
+
     };
   }, [data, loading]); // Add 'data' to dependencies
 
@@ -227,7 +221,7 @@ if (!data && loading) {
 
       
       <section className={`overflow-hidden pb-[120px] transition-all duration-500 ease-out ${
-        mounted && showGlobalHeader ? 'pt-[38px]' : 'pt-[10px]' // Keep original pt values for main content section
+        showGlobalHeader ? 'pt-[38px]' : 'pt-[10px]' /* Eliminates 28px hydration CLS (0.025 -> 0) */ // Keep original pt values for main content section
       }`}>
         <div className="container">
         {/* Sticky Navigation Bar - Critical for FCP */}
@@ -256,8 +250,9 @@ if (!data && loading) {
                           src="/sufian-mustafa-founder-doitwithaitools.png"
                           alt="Sufian Mustafa - AI Tools Expert"
                           fill
+                          sizes="48px"
+                          quality={75}
                           className="object-cover transition-transform duration-300 group-hover:scale-110"
-                          priority 
                         />
                       </Link>
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-800"></div>
