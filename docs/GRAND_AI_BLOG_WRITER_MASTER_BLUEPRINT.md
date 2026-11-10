@@ -73,23 +73,25 @@
   - `CanonicalBlogProjectState`, `BlogSectionNode`, `BlogInfographicConfig`, `DeterministicSeoScorecard`, `DEFAULT_FLAGSHIP_BLOG_PROJECT`, `createEmptyBlogProjectState()` from `@/lib/blog-writer/canonical-state`.
   - `measureTitlePixelWidth()`, `measureMetaDescriptionPixelWidth()`, `normalizeSeoSlug()`, `generateAnchorId()`, `autoRecommendInfographicTemplate()`, `analyzeReadabilityAndBurstiness()`, `runFullDeterministicSeoScorecard()`, and `applyOneClickSeoAutoFixes()` from `@/lib/blog-writer/deterministic-analyzers`.
 
-### ⏳ Phase 2: IndexedDB Multi-Project Workspace, Autosave History & Portable `.JSON` Backup Engine
+### ✅ Phase 2: IndexedDB Multi-Project Workspace, Autosave History & Portable `.JSON` Backup Engine (`COMPLETED & LIVE`)
+- **Status**: `Completed & Live` — Built & Signed by **Nova-Forge (`Flagship Studio Persistence & Workspace Engineer`)**
 - **Upstream Connection (From Phase 1)**:
-  - Import `CanonicalBlogProjectState`, `DEFAULT_FLAGSHIP_BLOG_PROJECT`, and `createEmptyBlogProjectState` from `@/lib/blog-writer/canonical-state`.
-  - Import `runFullDeterministicSeoScorecard` from `@/lib/blog-writer/deterministic-analyzers`.
-- **Exact Implementation Specification**:
-  - Create `lib/blog-writer/project-storage-db.ts`:
-    - Open browser IndexedDB database `DoItWithAI_BlogStudio_DB` (version `1`) with object store `projects` keyed by `projectId`.
-    - Maintain a lightweight metadata summary list in `localStorage` under key `doitwithai_blog_projects_index_v1` (`{ projectId, projectTitle, primaryKeyword, updatedAtIso, overallScore, wordCount }[]`) for instant sidebar rendering before IndexedDB resolves.
-    - Export async functions:
-      - `listSavedBlogProjects(): Promise<BlogProjectMetaSummary[]>`
-      - `loadBlogProjectById(projectId: string): Promise<CanonicalBlogProjectState>`
-      - `saveBlogProject(project: CanonicalBlogProjectState): Promise<void>` (auto-computes `runFullDeterministicSeoScorecard(project)` before saving)
-      - `deleteBlogProject(projectId: string): Promise<void>`
-      - `exportBlogProjectJsonFile(project: CanonicalBlogProjectState): void` (downloads `<slug>.blogproject.json`)
-      - `importBlogProjectJsonFile(jsonString: string): CanonicalBlogProjectState`
+  - Imports `CanonicalBlogProjectState`, `DEFAULT_FLAGSHIP_BLOG_PROJECT`, and `createEmptyBlogProjectState` from `@/lib/blog-writer/canonical-state`.
+  - Imports `runFullDeterministicSeoScorecard` and `applyOneClickSeoAutoFixes` from `@/lib/blog-writer/deterministic-analyzers`.
+- **Shipped File**: `lib/blog-writer/project-storage-db.ts`
+  - Browser IndexedDB database `DoItWithAI_BlogStudio_DB` (version `1`) with object store `projects` keyed by `projectId` (and automatic in-memory fallback when IndexedDB is unavailable in SSR or private mode).
+  - Lightweight metadata summary list in `localStorage` under key `doitwithai_blog_projects_index_v1` (`BlogProjectMetaSummary[]`: `{ projectId, projectTitle, primaryKeyword, updatedAtIso, overallScore, wordCount }`) for instant sidebar rendering before IndexedDB resolves.
+  - Exported async CRUD & backup helpers:
+    - `listSavedBlogProjects(): Promise<BlogProjectMetaSummary[]>`
+    - `loadBlogProjectById(projectId: string): Promise<CanonicalBlogProjectState>`
+    - `saveBlogProject(project: CanonicalBlogProjectState): Promise<CanonicalBlogProjectState>` (auto-computes `runFullDeterministicSeoScorecard(project)` before saving)
+    - `deleteBlogProject(projectId: string): Promise<void>`
+    - `duplicateBlogProject(projectId: string): Promise<CanonicalBlogProjectState>`
+    - `exportBlogProjectJsonFile(project: CanonicalBlogProjectState): void` (downloads `<slug>.blogproject.json`)
+    - `importBlogProjectJsonFile(jsonString: string): CanonicalBlogProjectState` (alias `importBlogProjectJsonString`)
+    - `serializeBlogProjectToJson(project: CanonicalBlogProjectState): string` (reused by Phase 9 `.ZIP` bundler)
 - **Downstream Hand-Off Contract (For Phases 3–10)**:
-  - Expose a clean React hook `useBlogProjectWorkspace()` from `lib/blog-writer/project-storage-db.ts` returning `{ activeProject, setActiveProject, projectList, createNewProject, switchProject, deleteProject, exportJson, importJson, isSaving, lastSavedAt }` with automatic 2.5-second debounced autosave.
+  - Exposes `useBlogProjectWorkspace(initialVariant?: "blog-writer" | "content-writer" | "article-writer")` returning `{ activeProject, updateProject, setActiveProject, projectList, createNewProject, switchProject, removeProject, deleteProject, duplicateProject, exportJson, importJson, runOneClickAutoFix, saveNow, isSaving, isHydrated, hasUnsavedChanges, lastSavedIso, lastSavedAt, storageError, storageBackend }` with automatic 2.5-second debounced autosave and `pagehide` flush.
 
 ### ⏳ Phase 3: 6-Mode Input Hub, SERP Intent Classifier & Interactive Outline Architect (Stages 1 & 2 UX)
 - **Upstream Connection (From Phases 1 & 2)**:
