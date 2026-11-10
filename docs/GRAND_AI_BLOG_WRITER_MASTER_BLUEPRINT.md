@@ -173,13 +173,17 @@
 - **Downstream Hand-Off Contract (For Phase 9 & Phase 10)**:
   - Exports `compileCleanCwvArticleHtml`, `compileCompleteJsonLdGraph`, `compileHeadMetaTagsHtml`, `compileRobotsAndSitemapSnippet`, `compileWordPressGutenbergHtml`, and `compileCleanArticleMarkdown` from `@/lib/blog-writer/technical-seo-compiler`, plus `Stage5TechnicalSeoPack` from `@/features/blog-writer-studio/components/Stage5TechnicalSeoPack`.
 
-### ⏳ Phase 8: Interactive Reader Quiz, Executive Summary & Omnichannel Social Distribution Pack (`Stage 6`)
-- **Upstream Connection (From Phase 1 & Phase 5)**:
-  - Import `CanonicalBlogProjectState` from `@/lib/blog-writer/canonical-state`.
-- **Exact Implementation Specification**:
-  - Create `features/blog-writer-studio/components/Stage6DistributionAndQuizPack.tsx`:
-    - Displays an interactive preview + self-contained embeddable HTML snippet for the **5-Question Reader Comprehension Quiz** (`/tools/article-to-quiz-test-generator` integration).
-    - Displays 1-click copy cards for **LinkedIn Carousel Outline**, **LinkedIn Long-Form Post**, **X/Twitter 7-Post Thread**, **Reddit Value Post**, **Quora Authority Answer**, **Email Newsletter Digest**, **60s Short Video Script**, and **UTM Campaign Tracking Links**.
+### ✅ Phase 8: Interactive Reader Quiz, Executive Summary & Omnichannel Social Distribution Pack (`Stage 6`) — COMPLETED & LIVE
+- **Status**: `Completed & Live` — Signed by **Nova-Forge (`Flagship Studio Persistence & Workspace Engineer`)**
+- **Upstream Connection (From Phase 1, Phase 5 & Phase 7)**:
+  - Imports `CanonicalBlogProjectState` from `@/lib/blog-writer/canonical-state` and `resolveCanonicalAndSlug` from `@/lib/blog-writer/technical-seo-compiler`.
+- **Shipped Implementation**:
+  - `features/blog-writer-studio/components/Stage6DistributionAndQuizPack.tsx`:
+    - Exports deterministic compilers `compileEmbeddableQuizHtml(project)`, `compileOmnichannelSocialMarkdown(project)`, and `compileUtmCampaignCsv(project)`.
+    - Displays an interactive live-playable + editable preview and self-contained embeddable HTML/JS widget for the **5-Question Reader Comprehension Quiz** (`/tools/article-to-quiz-test-generator` integration).
+    - Displays live-editable 1-click copy & download cards for **LinkedIn Carousel Outline**, **LinkedIn Long-Form Post**, **X/Twitter 7-Post Thread** (with per-tweet 280-char meters), **Reddit Value Post**, **Quora Authority Answer**, **Email Newsletter Digest**, **60s Short Video Script**, and **UTM Campaign Tracking Links (`.CSV`)**.
+- **Downstream Hand-Off Contract (For Phase 9 & Phase 10)**:
+  - Exports `compileEmbeddableQuizHtml`, `compileOmnichannelSocialMarkdown`, `compileUtmCampaignCsv`, and `Stage6DistributionAndQuizPack` from `@/features/blog-writer-studio/components/Stage6DistributionAndQuizPack`.
 
 ### ⏳ Phase 9: Client-Side Master `.ZIP` Production Bundle Exporter & Multi-Format Export Bar
 - **Upstream Connection (From Phases 1, 4, 7 & 8)**:
