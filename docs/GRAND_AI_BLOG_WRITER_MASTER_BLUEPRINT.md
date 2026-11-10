@@ -107,21 +107,23 @@
 - **Downstream Hand-Off Contract (For Phases 4, 5 & 10)**:
   - Both components export default + named props interfaces (`Stage1InputHubProps`, `Stage2OutlineArchitectProps`) accepting `{ project: CanonicalBlogProjectState; onChange: (next: CanonicalBlogProjectState) => void; onRunAiOutline?: () => void; onNextStage?: () => void; onProceedToNextStage?: () => void }`.
 
-### ⏳ Phase 4: Dedicated 25-Template Canva / Napkin.ai-Style Blog Infographic Studio (`/tools/blog-section-infographic-generator`)
+### ✅ Phase 4: Dedicated 25-Template Canva / Napkin.ai-Style Blog Infographic Studio (`/tools/blog-section-infographic-generator`) (`COMPLETED & LIVE`)
+- **Status**: `Completed & Live` — Built & Signed by **Nova-Forge (`Flagship Studio Persistence & Workspace Engineer`)**
 - **Upstream Connection (From Phase 1)**:
-  - Import `BlogInfographicConfig`, `BlogInfographicNodeItem`, `InfographicAspectRatio` from `@/lib/blog-writer/canonical-state`.
-  - Import `BLOG_INFOGRAPHIC_25_TEMPLATES` from `@/lib/founder-hub/grand-blog-writer-blueprint`.
-- **Exact Implementation Specification**:
-  - Create `lib/blog-infographic-studio/canvas-renderer.ts`:
-    - Pure HTML5 `<canvas>` + crisp SVG renderer supporting all **25 Templates** across the 6 visual families (`Process & Step Flows`, `Comparison & Versus`, `Data, KPI & Stat Callouts`, `Frameworks & Pyramids`, `Checklists & Cheat Sheets`, `Hero, OG & Quote Cards`), 8 brand color palettes, and 4 aspect ratios (`16:9` `1600x900`, `1:1` `1080x1080`, `4:5` `1080x1350`, `9:16` `1080x1920`).
-    - Export `renderBlogInfographicToCanvas(canvas: HTMLCanvasElement, config: BlogInfographicConfig): void` and `generateBlogInfographicSvg(config: BlogInfographicConfig): string`.
-  - Create `features/blog-infographic-studio/BlogInfographicStudio.tsx`:
-    - Works both as a **standalone full-page studio** at `/tools/blog-section-infographic-generator` AND as an **embedded modal/drawer** inside the Grand AI Blog Writer (`mode?: "standalone" | "embedded-modal"`).
-    - Allows live editing of headline, subheadline, every node badge/title/detail/metric, color palette, aspect ratio, and footer brand label, with 1-click **Download PNG**, **Download SVG**, **Download WebP**, or **Save & Insert into Blog Section**.
-  - Create `app/tools/blog-section-infographic-generator/page.tsx`:
-    - SSR route with `PortableToolHeroBar`, 50-word AEO answer box, comparison table, FAQ section, and `SoftwareApplication` + `HowTo` + `FAQPage` JSON-LD.
-- **Downstream Hand-Off Contract (For Phase 6 & Phase 9)**:
-  - Export `<BlogInfographicStudio initialConfig={...} onSaveConfig={(updated) => ...} />` and `renderBlogInfographicToPngDataUrl(config): Promise<string>` so the Rich Text Editor (Phase 6) and `.ZIP` Bundle Builder (Phase 9) can render all section visuals automatically.
+  - Imports `BlogInfographicConfig`, `BlogInfographicNodeItem`, `InfographicAspectRatio` from `@/lib/blog-writer/canonical-state`.
+  - Imports `BLOG_INFOGRAPHIC_25_TEMPLATES` from `@/lib/founder-hub/grand-blog-writer-blueprint`.
+- **Shipped Files**:
+  - `lib/blog-infographic-studio/canvas-renderer.ts`:
+    - Pure HTML5 `<canvas>` + crisp vector `<svg>` renderer supporting all **25 Templates** across 6 visual families, 8 brand palettes + custom hex overrides, 4 aspect ratios (`16:9`, `1:1`, `4:5`, `9:16`), architectural portrait framing (`Circle in Ring`, `Arch Frame`, `Radius Frame`, `Cutout Aura`), and custom brand logo badges.
+    - Exports `renderBlogInfographicToCanvas()`, `generateBlogInfographicSvg()`, `renderBlogInfographicToPngDataUrl()`, and `createSampleInfographicConfig()`.
+  - `features/blog-infographic-studio/HeroAnimatedInfographicShowcase.tsx`:
+    - 5-slide auto-cycling right-hero showcase (`3200ms`, pause-on-hover) with clickable template pills, ring-framed male executive portraits, and `CustomEvent("select-blog-infographic-template")` studio sync.
+  - `features/blog-infographic-studio/BlogInfographicStudio.tsx`:
+    - Dual-mode studio (`mode="standalone"` + `mode="embedded-modal"`) with top URL extractor, sticky 4-step left control deck, multi-section tabs, 25 live miniature `<canvas>` template thumbnails (`useDeferredValue`), and 1-click PNG, Vector SVG, WebP, PDF, CWV `<figure>` HTML, `.ZIP`, and **Save & Insert into Blog Section**.
+  - `app/tools/blog-section-infographic-generator/page.tsx`:
+    - Flagship SSR page with `PortableToolHeroBar`, `HeroAnimatedInfographicShowcase`, 50-word AEO Quick Answer box, 3-step visual workflow, 25-template breakdown grid, 6 industry use cases, competitor comparison table, `/do-it-ai` command center integration, 3 internal-linking promo grids, and `WebApplication` + `SoftwareApplication` + `HowTo` + `BreadcrumbList` + `FAQPage` JSON-LD `@graph`.
+- **Downstream Hand-Off Contract (For Phase 6, Phase 7 & Phase 9)**:
+  - Exports `<BlogInfographicStudio mode="embedded-modal" initialConfig={...} onSaveConfig={(updated) => ...} />`, `generateBlogInfographicSvg(config)`, and `renderBlogInfographicToPngDataUrl(config)` for Phase 6 (`Stage4RichEditorAndScorecard.tsx`), Phase 7 (`technical-seo-compiler.ts`), and Phase 9 (`zip-bundle-builder.ts`).
 
 ### ⏳ Phase 5: 4-Tier AI Long-Form Drafting Engine, Per-Section Co-Pilot & AI Humanizer (`Stage 3`)
 - **Upstream Connection (From Phases 1–4)**:
