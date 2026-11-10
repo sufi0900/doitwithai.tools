@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import {
+  MASTER_AI_ARCHITECT_IDENTITY,
+  MULTI_AI_NAMING_AND_DAILY_READ_PROTOCOL,
+  DAILY_MULTI_AI_NEWS_FEED,
   GRAND_BLOG_WRITER_EXECUTIVE_SUMMARY,
   FOUNDER_GRAND_BLOG_WRITER_DISCUSSION_RECORD,
   GRAND_BLOG_WRITER_IMPLEMENTATION_PHASES,
@@ -10,9 +13,14 @@ import {
 
 export default function GrandBlogWriterBlueprintSection() {
   const [activeTab, setActiveTab] = useState<
-    "phases" | "founder-discussion" | "visual-25-templates" | "token-architecture"
+    | "phases"
+    | "daily-news-feed"
+    | "founder-discussion"
+    | "visual-25-templates"
+    | "multi-ai-protocol"
   >("phases");
   const [collapsed, setCollapsed] = useState(false);
+  const [copiedPhaseId, setCopiedPhaseId] = useState<string | null>(null);
 
   const [phaseChecked, setPhaseChecked] = useState<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {};
@@ -24,6 +32,16 @@ export default function GrandBlogWriterBlueprintSection() {
 
   const togglePhase = (id: string) => {
     setPhaseChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleCopyPrompt = async (id: string, promptText: string) => {
+    try {
+      await navigator.clipboard.writeText(promptText);
+      setCopiedPhaseId(id);
+      setTimeout(() => setCopiedPhaseId(null), 2500);
+    } catch {
+      // ignore
+    }
   };
 
   const completedCount = GRAND_BLOG_WRITER_IMPLEMENTATION_PHASES.filter(
@@ -39,30 +57,31 @@ export default function GrandBlogWriterBlueprintSection() {
     >
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="rounded-3xl border border-indigo-500/40 bg-gradient-to-br from-indigo-950/50 via-slate-900 to-purple-950/40 p-5 sm:p-7 shadow-2xl space-y-6">
-          {/* Header */}
+          {/* Header with Master AI Identity Badge */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-indigo-500/25 pb-5">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 text-xs font-extrabold uppercase tracking-wider">
-                  👑 Flagship Product Blueprint · 62-Tool Orchestrator
+                  👑 Master AI Architect · {MASTER_AI_ARCHITECT_IDENTITY.codename}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
-                  25+ Canva / Napkin.ai Blog Infographic Templates
+                  Phase 1 Shipped &amp; Live · {completedCount}/{totalPhases} Phases ({progressPercent}%)
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">
-                  Phase Progress: {completedCount}/{totalPhases} ({progressPercent}%)
+                <span className="px-2.5 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-xs font-bold">
+                  62 Tools + 25 Canva/Napkin Visual Templates
                 </span>
               </div>
               <h2 className="text-lg sm:text-2xl font-extrabold text-white tracking-tight">
                 {GRAND_BLOG_WRITER_EXECUTIVE_SUMMARY.flagshipTitle}
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-4xl">
-                Unifying <code className="text-indigo-300 font-mono">ai blog writer</code> (14.8K/mo),{" "}
-                <code className="text-indigo-300 font-mono">ai content writer</code> (18.1K/mo), and{" "}
-                <code className="text-indigo-300 font-mono">ai article writer</code> (12.1K/mo) into a
-                single autonomous 62-tool production studio with deterministic 0-token SEO analyzers,
-                25+ editable section infographic templates, IndexedDB 500MB+ project storage, and 1-click
-                Master <code className="text-emerald-300 font-mono">.ZIP</code> bundle export.
+                Authored &amp; maintained by{" "}
+                <strong className="text-indigo-300">
+                  {MASTER_AI_ARCHITECT_IDENTITY.codename} ({MASTER_AI_ARCHITECT_IDENTITY.officialTitle})
+                </strong>
+                . Every implementation phase below includes complete{" "}
+                <strong className="text-emerald-300">Upstream &amp; Downstream Hand-Off Contracts</strong>{" "}
+                and a 1-click copyable prompt so any AI expert can build any phase seamlessly.
               </p>
             </div>
 
@@ -72,81 +91,40 @@ export default function GrandBlogWriterBlueprintSection() {
                 onClick={() => setCollapsed(!collapsed)}
                 className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-indigo-300 border border-indigo-500/30 transition"
               >
-                {collapsed ? "▼ Expand Flagship Blueprint" : "▲ Collapse Box"}
+                {collapsed ? "▼ Expand Flagship Blueprint & News" : "▲ Collapse Box"}
               </button>
             </div>
           </div>
 
           {!collapsed && (
             <>
-              {/* KPI Strip */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="rounded-2xl bg-slate-950/80 border border-slate-800 p-4">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-300">
-                    Combined Keyword Volume
-                  </div>
-                  <div className="text-xl font-black text-white mt-1">53,300+ / mo</div>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    AI Blog + Content + Article + Infographic Cluster
-                  </div>
-                </div>
-                <div className="rounded-2xl bg-slate-950/80 border border-slate-800 p-4">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
-                    Backend Tools Chained
-                  </div>
-                  <div className="text-xl font-black text-white mt-1">
-                    62 Specialized Tools
-                  </div>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    47 Zero-Token Deterministic + 15 AI-Assisted
-                  </div>
-                </div>
-                <div className="rounded-2xl bg-slate-950/80 border border-slate-800 p-4">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-purple-300">
-                    Editable Blog Visual Studio
-                  </div>
-                  <div className="text-xl font-black text-white mt-1">
-                    25+ Infographic + 14 Quote Cards
-                  </div>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    &lt;20ms HTML5 Canvas/SVG · $0 API Cost · Live Editable
-                  </div>
-                </div>
-                <div className="rounded-2xl bg-slate-950/80 border border-slate-800 p-4">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
-                    Storage & Export Engine
-                  </div>
-                  <div className="text-xl font-black text-white mt-1">
-                    IndexedDB + Master .ZIP
-                  </div>
-                  <div className="text-xs text-slate-400 mt-0.5">
-                    500MB+ Browser Project History + 6-Folder ZIP Pack
-                  </div>
-                </div>
-              </div>
-
               {/* Navigation Tabs */}
               <div className="flex flex-wrap items-center gap-2">
                 {[
                   {
                     id: "phases" as const,
-                    label: "🚀 1. 10-Phase Implementation Series (Separate Roadmap)",
-                    badge: `${completedCount}/${totalPhases} Phases`,
+                    label: "🚀 1. 10-Phase Implementation Series & Multi-AI Hand-Off Contracts",
+                    badge: `${completedCount}/${totalPhases} Done`,
+                  },
+                  {
+                    id: "daily-news-feed" as const,
+                    label: "📰 2. Live Daily Multi-AI News, Commits & Updates Feed",
+                    badge: `${DAILY_MULTI_AI_NEWS_FEED.length} Broadcasts`,
                   },
                   {
                     id: "founder-discussion" as const,
-                    label: "💬 2. Complete Founder Discussion & Strategy Log (Separate Record)",
+                    label: "💬 3. Founder Discussion & Strategy Log (Separate Record)",
                     badge: `${FOUNDER_GRAND_BLOG_WRITER_DISCUSSION_RECORD.length} Decisions`,
                   },
                   {
                     id: "visual-25-templates" as const,
-                    label: "🎨 3. 25-Template Canva / Napkin.ai Blog Infographic Studio Spec",
+                    label: "🎨 4. 25-Template Canva / Napkin.ai Blog Infographic Studio",
                     badge: "25 Templates",
                   },
                   {
-                    id: "token-architecture" as const,
-                    label: "⚡ 4. Token-Saving Architecture, IndexedDB & Master .ZIP Spec",
-                    badge: "Zero-Conflict",
+                    id: "multi-ai-protocol" as const,
+                    label: "🤖 5. Multi-AI Naming, Signature & Daily Read Protocol",
+                    badge: "Mandatory Rule",
                   },
                 ].map((tab) => {
                   const active = activeTab === tab.id;
@@ -174,23 +152,22 @@ export default function GrandBlogWriterBlueprintSection() {
                 })}
               </div>
 
-              {/* TAB 1: 10-PHASE IMPLEMENTATION SERIES */}
+              {/* TAB 1: 10-PHASE IMPLEMENTATION SERIES WITH UPSTREAM/DOWNSTREAM HANDOFFS */}
               {activeTab === "phases" && (
                 <div className="space-y-4">
                   <div className="rounded-2xl bg-slate-900/80 border border-indigo-500/30 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                       <div className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
-                        Sequential Implementation Progress Tracker
+                        10-Phase Flagship Build Progress ({completedCount} of {totalPhases} Phases Completed — {progressPercent}%)
                       </div>
                       <p className="text-xs text-slate-300 mt-0.5">
-                        Documented separately per Founder instruction. Phase 1 begins on the next
-                        execution turn.
+                        Phase 1 is completed and live in <code className="text-emerald-300 font-mono">lib/blog-writer/*</code>. Each phase card below contains exact upstream imports, deliverables, downstream exports, and a copyable prompt for any AI expert.
                       </p>
                     </div>
                     <div className="w-full sm:w-64 bg-slate-950 rounded-full h-3 border border-slate-800 overflow-hidden">
                       <div
                         className="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full transition-all duration-300"
-                        style={{ width: `${Math.max(progressPercent, 4)}%` }}
+                        style={{ width: `${Math.max(progressPercent, 8)}%` }}
                       />
                     </div>
                   </div>
@@ -201,7 +178,7 @@ export default function GrandBlogWriterBlueprintSection() {
                       return (
                         <div
                           key={phase.id}
-                          className={`rounded-2xl border p-5 space-y-3 transition ${
+                          className={`rounded-2xl border p-5 space-y-4 transition ${
                             isDone
                               ? "border-emerald-500/45 bg-emerald-950/20"
                               : "border-slate-800 bg-slate-950/90"
@@ -229,6 +206,11 @@ export default function GrandBlogWriterBlueprintSection() {
                                   <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-[11px] font-mono text-emerald-300">
                                     Token Budget: {phase.estimatedTokenCost}
                                   </span>
+                                  {phase.completedByAi && (
+                                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30 text-[11px] font-bold text-emerald-200">
+                                      Shipped by: {phase.completedByAi}
+                                    </span>
+                                  )}
                                 </div>
                                 <h3 className="text-base sm:text-lg font-extrabold text-white mt-1">
                                   {phase.title}
@@ -236,20 +218,53 @@ export default function GrandBlogWriterBlueprintSection() {
                               </div>
                             </div>
 
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold border shrink-0 self-start sm:self-center ${
-                                isDone
-                                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                                  : "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                              }`}
-                            >
-                              {isDone ? "✅ Completed & Live" : `⏳ ${phase.status}`}
-                            </span>
+                            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleCopyPrompt(phase.id, phase.copyPasteAiPrompt)
+                                }
+                                className="px-3 py-1.5 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-400/40 text-indigo-200 text-xs font-bold transition"
+                              >
+                                {copiedPhaseId === phase.id
+                                  ? "✓ Copied AI Hand-Off Prompt!"
+                                  : "📋 Copy Prompt for Any AI Expert"}
+                              </button>
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                  isDone
+                                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                    : "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                                }`}
+                              >
+                                {isDone ? "✅ Completed & Live" : `⏳ ${phase.status}`}
+                              </span>
+                            </div>
                           </div>
 
                           <p className="text-xs text-slate-300 leading-relaxed">
                             {phase.primaryObjective}
                           </p>
+
+                          {/* Upstream & Downstream Hand-Off Boxes */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-3.5 space-y-1">
+                              <div className="text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+                                ⬆️ Upstream Connection (How This Connects to Previous Phase)
+                              </div>
+                              <p className="text-xs text-slate-300 leading-relaxed font-mono">
+                                {phase.upstreamConnection}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-3.5 space-y-1">
+                              <div className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
+                                ⬇️ Downstream Hand-Off Contract (Exports for Next Phase)
+                              </div>
+                              <p className="text-xs text-slate-300 leading-relaxed font-mono">
+                                {phase.downstreamHandoff}
+                              </p>
+                            </div>
+                          </div>
 
                           <div className="space-y-1">
                             <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-300">
@@ -260,20 +275,6 @@ export default function GrandBlogWriterBlueprintSection() {
                                 <li key={i}>• {d}</li>
                               ))}
                             </ul>
-                          </div>
-
-                          <div className="pt-1 flex flex-wrap items-center gap-1.5">
-                            <span className="text-[11px] font-semibold text-slate-400">
-                              Connected Ecosystem Tools:
-                            </span>
-                            {phase.connectedEcosystemTools.map((t) => (
-                              <code
-                                key={t}
-                                className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] text-emerald-300 font-mono"
-                              >
-                                /tools/{t}
-                              </code>
-                            ))}
                           </div>
 
                           <div className="pt-1 flex flex-wrap items-center gap-1.5">
@@ -289,6 +290,13 @@ export default function GrandBlogWriterBlueprintSection() {
                               </code>
                             ))}
                           </div>
+
+                          <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-indigo-300 font-semibold italic">
+                            <span>— Signed by: {phase.signedBy}</span>
+                            <span className="text-slate-500 not-italic font-mono">
+                              Multi-AI Unified Spec
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
@@ -296,7 +304,75 @@ export default function GrandBlogWriterBlueprintSection() {
                 </div>
               )}
 
-              {/* TAB 2: FOUNDER DISCUSSION & VISION LOG */}
+              {/* TAB 2: LIVE DAILY MULTI-AI NEWS, COMMITS & UPDATES FEED */}
+              {activeTab === "daily-news-feed" && (
+                <div className="space-y-4">
+                  <div className="rounded-2xl bg-indigo-950/40 border border-indigo-500/30 p-4">
+                    <h3 className="text-sm sm:text-base font-extrabold text-white">
+                      📰 Daily Multi-AI News, Shipped Commits &amp; Cross-Agent Broadcast Feed
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-1">
+                      Every AI coding agent working on <code className="text-indigo-300 font-mono">doitwithai.tools</code> MUST read this feed first to see what was pushed today and log its own signed entry after every commit.
+                    </p>
+                  </div>
+
+                  {DAILY_MULTI_AI_NEWS_FEED.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="rounded-2xl border border-slate-800 bg-slate-950/90 p-5 space-y-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-extrabold font-mono">
+                            {entry.dateIso} · {entry.pktTimestamp}
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                            🤖 {entry.authorAiCodename} ({entry.authorAiTitle})
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold">
+                            {entry.updateCategory}
+                          </span>
+                        </div>
+                        <span className="text-xs font-mono text-slate-400">
+                          Commits: <strong className="text-white">{entry.commitShas.join(", ")}</strong>
+                        </span>
+                      </div>
+
+                      <h4 className="text-base font-extrabold text-white">{entry.headline}</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        {entry.detailedSummary}
+                      </p>
+
+                      <div className="rounded-xl bg-amber-950/25 border border-amber-500/30 p-3 text-xs">
+                        <div className="font-bold text-amber-300 uppercase tracking-wider text-[10px]">
+                          📢 Mandatory Hand-Off Note for Next AI Agent:
+                        </div>
+                        <p className="text-slate-200 mt-1">{entry.whatNextAiMustKnow}</p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[11px] font-semibold text-slate-400">
+                          Files Touched:
+                        </span>
+                        {entry.filesTouched.map((f) => (
+                          <code
+                            key={f}
+                            className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] text-indigo-300 font-mono"
+                          >
+                            {f}
+                          </code>
+                        ))}
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-800/80 text-[11px] font-semibold text-emerald-300 italic">
+                        {entry.signatureLine}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* TAB 3: FOUNDER DISCUSSION & VISION LOG */}
               {activeTab === "founder-discussion" && (
                 <div className="space-y-4">
                   {FOUNDER_GRAND_BLOG_WRITER_DISCUSSION_RECORD.map((item) => (
@@ -315,7 +391,7 @@ export default function GrandBlogWriterBlueprintSection() {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                         <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-3.5 space-y-1">
                           <div className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
-                            Founder Requirement & Strategic Context
+                            Founder Requirement &amp; Strategic Context
                           </div>
                           <p className="text-xs text-slate-300 leading-relaxed">
                             {item.founderIntentSummary}
@@ -323,32 +399,22 @@ export default function GrandBlogWriterBlueprintSection() {
                         </div>
                         <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-3.5 space-y-1">
                           <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-300">
-                            Engineered Solution & Architecture
+                            Engineered Solution &amp; Architecture
                           </div>
                           <p className="text-xs text-slate-300 leading-relaxed">
                             {item.architecturalDecision}
                           </p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="text-[11px] font-semibold text-slate-400">
-                          Connected Routes / Files:
-                        </span>
-                        {item.connectedToolsOrFiles.map((c) => (
-                          <code
-                            key={c}
-                            className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] text-indigo-300 font-mono"
-                          >
-                            {c}
-                          </code>
-                        ))}
+                      <div className="pt-2 border-t border-slate-800/80 text-[11px] font-semibold text-indigo-300 italic">
+                        — Signed by: {item.signedBy}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* TAB 3: 25+ INFOGRAPHIC TEMPLATES */}
+              {/* TAB 4: 25+ INFOGRAPHIC TEMPLATES */}
               {activeTab === "visual-25-templates" && (
                 <div className="rounded-2xl border border-slate-800 bg-slate-950/90 overflow-hidden">
                   <div className="p-4 border-b border-slate-800">
@@ -364,7 +430,7 @@ export default function GrandBlogWriterBlueprintSection() {
                       <thead className="bg-slate-900/95 border-b border-slate-800 text-slate-300">
                         <tr>
                           <th className="p-3 font-bold">#</th>
-                          <th className="p-3 font-bold">Template Name & Slug</th>
+                          <th className="p-3 font-bold">Template Name &amp; Slug</th>
                           <th className="p-3 font-bold">Visual Family</th>
                           <th className="p-3 font-bold">Auto-Mapped Blog Section Type</th>
                           <th className="p-3 font-bold">Live Editable Canva-Style Controls</th>
@@ -397,64 +463,36 @@ export default function GrandBlogWriterBlueprintSection() {
                 </div>
               )}
 
-              {/* TAB 4: TOKEN-SAVING, INDEXEDDB & MASTER .ZIP SPEC */}
-              {activeTab === "token-architecture" && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/90 p-5 space-y-3">
-                    <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-300">
-                      1. Hybrid Token-Minimization Engine
-                    </div>
-                    <h4 className="text-base font-extrabold text-white">
-                      47 Zero-Token Deterministic Tools + 2 Compact JSON LLM Passes
-                    </h4>
-                    <ul className="space-y-1.5 text-xs text-slate-300 leading-relaxed">
-                      <li>
-                        • <strong>Shared CanonicalBlogProjectState</strong>: Prevents tool-to-tool contradictions by keeping keyword cluster, meta pack, outline, draft sections, visuals, schema, and social posts in one synchronized object.
-                      </li>
-                      <li>
-                        • <strong>0-Token Deterministic Engines (&lt;15ms)</strong>: Pixel width (&lt;580px), slug optimizer, H1–H6 validator, LSI coverage, Flesch readability, burstiness/originality heatmap, TOC anchors, JSON-LD @graph compiler, CWV HTML serializer, and all 25 Canvas visual templates.
-                      </li>
-                      <li>
-                        • <strong>2 Structured LLM Passes (~3.5K–5.5K tokens total)</strong>: Routed through our 4-Tier Multi-Key Gemini → Groq → OpenRouter failover engine.
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/90 p-5 space-y-3">
+              {/* TAB 5: MULTI-AI NAMING, SIGNATURE & DAILY READ PROTOCOL */}
+              {activeTab === "multi-ai-protocol" && (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-indigo-500/40 bg-slate-950/90 p-5 space-y-3">
                     <div className="text-xs font-extrabold uppercase tracking-wider text-indigo-300">
-                      2. Browser Project History (IndexedDB)
+                      👑 Primary Lead AI Identity
                     </div>
-                    <h4 className="text-base font-extrabold text-white">
-                      500MB+ Local Workspace Persistence (Zero DB Cost)
-                    </h4>
-                    <ul className="space-y-1.5 text-xs text-slate-300 leading-relaxed">
-                      <li>
-                        • <strong>Why Not localStorage Alone?</strong> Browser localStorage caps at 5MB (fills up after 2–3 blogs with PNG infographics).
-                      </li>
-                      <li>
-                        • <strong>DoItWithAI_BlogStudio_DB (IndexedDB)</strong>: Stores 50+ full 2,500-word projects alongside their rendered 1080p PNG/SVG visuals, quiz widgets, and version snapshots directly in the user&apos;s browser.
-                      </li>
-                      <li>
-                        • <strong>Portable .blogproject.json</strong>: 1-click export/import to move projects across devices or share with editors.
-                      </li>
+                    <h3 className="text-lg font-extrabold text-white">
+                      {MASTER_AI_ARCHITECT_IDENTITY.codename} · {MASTER_AI_ARCHITECT_IDENTITY.officialTitle}
+                    </h3>
+                    <ul className="space-y-1.5 text-xs text-slate-300">
+                      {MASTER_AI_ARCHITECT_IDENTITY.primaryResponsibilities.map((r, i) => (
+                        <li key={i}>• {r}</li>
+                      ))}
                     </ul>
+                    <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-emerald-300">
+                      Required Signature Line: {MASTER_AI_ARCHITECT_IDENTITY.signatureFormat}
+                    </div>
                   </div>
 
                   <div className="rounded-2xl border border-slate-800 bg-slate-950/90 p-5 space-y-3">
-                    <div className="text-xs font-extrabold uppercase tracking-wider text-amber-300">
-                      3. Master .ZIP Production Bundle
-                    </div>
                     <h4 className="text-base font-extrabold text-white">
-                      1-Click Complete Publishing & Campaign Archive
+                      {MULTI_AI_NAMING_AND_DAILY_READ_PROTOCOL.ruleTitle}
                     </h4>
-                    <ul className="space-y-1.5 text-xs text-slate-300 leading-relaxed font-mono">
-                      <li>📁 /article/article-clean-cwv.html</li>
-                      <li>📁 /article/article.md + Gutenberg HTML</li>
-                      <li>📁 /visuals/hero-1200x630.png + section-1..N.png</li>
-                      <li>📁 /seo-technical/schema-graph.json + meta.html</li>
-                      <li>📁 /engagement/interactive-reader-quiz.html</li>
-                      <li>📁 /social-distribution/omnichannel-pack.md + utm.csv</li>
-                      <li>📁 /project-backup/blog-project-state.json</li>
+                    <ul className="space-y-2 text-xs text-slate-300 leading-relaxed">
+                      {MULTI_AI_NAMING_AND_DAILY_READ_PROTOCOL.rules.map((rule, idx) => (
+                        <li key={idx} className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                          {rule}
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 </div>
