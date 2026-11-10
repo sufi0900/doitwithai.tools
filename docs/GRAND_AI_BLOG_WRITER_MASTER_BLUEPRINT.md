@@ -185,16 +185,19 @@
 - **Downstream Hand-Off Contract (For Phase 9 & Phase 10)**:
   - Exports `compileEmbeddableQuizHtml`, `compileOmnichannelSocialMarkdown`, `compileUtmCampaignCsv`, and `Stage6DistributionAndQuizPack` from `@/features/blog-writer-studio/components/Stage6DistributionAndQuizPack`.
 
-### ⏳ Phase 9: Client-Side Master `.ZIP` Production Bundle Exporter & Multi-Format Export Bar
-- **Upstream Connection (From Phases 1, 4, 7 & 8)**:
-  - Import `CanonicalBlogProjectState` from `@/lib/blog-writer/canonical-state` and compilers from `@/lib/blog-writer/technical-seo-compiler`.
-- **Exact Implementation Specification**:
-  - Create `lib/blog-writer/zip-bundle-builder.ts`:
-    - Pure TypeScript client-side ZIP binary generator (standard PKZIP Store + CRC32 table, zero external npm package dependencies) that packages:
+### ✅ Phase 9: Client-Side Master `.ZIP` Production Bundle Exporter & Multi-Format Export Bar — COMPLETED & LIVE
+- **Status**: `Completed & Live` — Signed by **Nova-Forge (`Flagship Studio Persistence & Workspace Engineer`)**
+- **Upstream Connection (From Phases 1, 2, 4, 7 & 8)**:
+  - Imports `CanonicalBlogProjectState` from `@/lib/blog-writer/canonical-state`, compilers from `@/lib/blog-writer/technical-seo-compiler`, visual renderers from `@/lib/blog-infographic-studio/canvas-renderer`, and quiz/social compilers from `@/features/blog-writer-studio/components/Stage6DistributionAndQuizPack`.
+- **Shipped Implementation**:
+  - `lib/blog-writer/zip-bundle-builder.ts`:
+    - Pure TypeScript client-side PKZIP Store + IEEE 802.3 CRC32 binary generator (zero external npm dependencies) packaging:
+      - `README-PUBLISHING-MANIFEST.md`
       - `article/article-cwv-optimized.html`
+      - `article/article-standalone-inline-visuals.html` (complete offline `<!DOCTYPE html>` with inline vector SVG data URIs, `<head>` meta tags, and JSON-LD `@graph`)
       - `article/article.md`
       - `article/article-wordpress-gutenberg.html`
-      - `visuals/section-1-infographic.svg` ... `visuals/section-N-infographic.svg` (plus PNG data URLs if rendered)
+      - `visuals/section-1-infographic.svg` ... `visuals/section-N-infographic.svg` (plus high-res `1200x675` `.png` binary renders when run in browser)
       - `seo-technical/schema-graph.json`
       - `seo-technical/head-meta-tags.html`
       - `seo-technical/sitemap-and-robots.txt`
@@ -202,7 +205,11 @@
       - `social-distribution/omnichannel-social-pack.md`
       - `social-distribution/utm-campaign-links.csv`
       - `project-backup/blog-project-state.json`
-    - Triggers an instant browser download of `<slug>-master-seo-bundle.zip`.
+    - Exports `downloadMasterBlogZipBundle`, `buildMasterBlogZipBytes`, `encodePkZipArchive`, and `computeCrc32`.
+  - `features/blog-writer-studio/components/MultiFormatExportBar.tsx`:
+    - Persistent 1-click Multi-Format Export & `.blogproject.json` Backup/Restore Bar.
+- **Downstream Hand-Off Contract (For Phase 10)**:
+  - Exports `downloadMasterBlogZipBundle` from `@/lib/blog-writer/zip-bundle-builder` and `MultiFormatExportBar` from `@/features/blog-writer-studio/components/MultiFormatExportBar`.
 
 ### ⏳ Phase 10: Flagship Route Unification (`/tools/ai-blog-writer`, `/tools/ai-content-writer`, `/tools/ai-article-writer` & `/agents`) + Catalog Registration
 - **Upstream Connection (From Phases 1–9)**:
