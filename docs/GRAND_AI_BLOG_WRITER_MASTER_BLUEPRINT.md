@@ -93,24 +93,19 @@
 - **Downstream Hand-Off Contract (For Phases 3–10)**:
   - Exposes `useBlogProjectWorkspace(initialVariant?: "blog-writer" | "content-writer" | "article-writer")` returning `{ activeProject, updateProject, setActiveProject, projectList, createNewProject, switchProject, removeProject, deleteProject, duplicateProject, exportJson, importJson, runOneClickAutoFix, saveNow, isSaving, isHydrated, hasUnsavedChanges, lastSavedIso, lastSavedAt, storageError, storageBackend }` with automatic 2.5-second debounced autosave and `pagehide` flush.
 
-### ⏳ Phase 3: 6-Mode Input Hub, SERP Intent Classifier & Interactive Outline Architect (Stages 1 & 2 UX)
+### ✅ Phase 3: 6-Mode Input Hub, SERP Intent Classifier & Interactive Outline Architect (Stages 1 & 2 UX) (`COMPLETED & LIVE`)
+- **Status**: `Completed & Live` — Built & Signed by **Nova-Forge (`Flagship Studio Persistence & Workspace Engineer`)**
 - **Upstream Connection (From Phases 1 & 2)**:
-  - Import `CanonicalBlogProjectState`, `BlogInputMode`, `BlogSectionNode` from `@/lib/blog-writer/canonical-state`.
-  - Import `measureTitlePixelWidth`, `measureMetaDescriptionPixelWidth`, `normalizeSeoSlug`, `autoRecommendInfographicTemplate`, `generateAnchorId` from `@/lib/blog-writer/deterministic-analyzers`.
-- **Exact Implementation Specification**:
-  - Create `features/blog-writer-studio/components/Stage1InputHub.tsx`:
-    - 6 Input Mode Tabs:
-      1. `keyword-cluster`: Primary keyword + comma/newline list of secondary SEMrush/Ahrefs keywords.
-      2. `topic-idea`: Topic headline + target audience + goal.
-      3. `custom-outline`: Paste raw H2/H3 lines -> deterministically parsed into `BlogSectionNode[]`.
-      4. `competitor-gap`: Paste competitor headings/claims -> identifies missing semantic angles.
-      5. `pdf-transcript`: Paste extracted PDF text, YouTube transcript, or research notes.
-      6. `custom-prompt`: Freeform natural-language instructions + Brand Tone & POV selectors.
-    - Live Google Desktop/Mobile SERP Preview Card showing `measureTitlePixelWidth()` (`<580px` progress bar) and `measureMetaDescriptionPixelWidth()` (`<920px` progress bar).
-  - Create `features/blog-writer-studio/components/Stage2OutlineArchitect.tsx`:
-    - Interactive H2/H3 section list where the user can reorder sections (`↑` / `↓`), add/delete H2 or H3 nodes, adjust per-section word-count targets, toggle `includeComparisonTable`, and select which of the **25 Infographic Templates** is paired with each H2 (pre-populated automatically via `autoRecommendInfographicTemplate()`).
-- **Downstream Hand-Off Contract (For Phases 4 & 5)**:
-  - Both components accept `{ project: CanonicalBlogProjectState; onChange: (next: CanonicalBlogProjectState) => void; onRunAiOutline?: () => void; onProceedToNextStage: () => void }`.
+  - Imports `CanonicalBlogProjectState`, `BlogInputMode`, `BlogSectionNode`, `BlogSubHeadingNode`, `BlogInfographicConfig`, `InfographicAspectRatio`, `KeywordClusterPack` from `@/lib/blog-writer/canonical-state`.
+  - Imports `measureTitlePixelWidth`, `measureMetaDescriptionPixelWidth`, `normalizeSeoSlug`, `autoRecommendInfographicTemplate`, `generateAnchorId` from `@/lib/blog-writer/deterministic-analyzers`.
+  - Imports `BLOG_INFOGRAPHIC_25_TEMPLATES` from `@/lib/founder-hub/grand-blog-writer-blueprint`.
+- **Shipped Files**:
+  - `features/blog-writer-studio/components/Stage1InputHub.tsx`:
+    - All 6 Input Mode Tabs (`keyword-cluster`, `topic-idea`, `custom-outline`, `competitor-gap`, `pdf-transcript`, `custom-prompt`), `classifyKeywordSearchIntent()`, `parseRawOutlineIntoSections()`, Express vs. 6-Stage Guided mode switcher, Brand Voice / POV / E-E-A-T Author controls, and live Desktop/Mobile Google SERP Simulator with `<580px` title and `<920px` meta description progress bars + 1-click CTR title variations.
+  - `features/blog-writer-studio/components/Stage2OutlineArchitect.tsx`:
+    - Live `#anchor-id` Table of Contents bar, interactive H2/H3 outline tree with `↑` / `↓` reordering, H2/H3 add/remove, per-section word-count targets, comparison table & takeaway callout toggles, and 25-template infographic + 8-palette + 4-aspect-ratio selector per H2.
+- **Downstream Hand-Off Contract (For Phases 4, 5 & 10)**:
+  - Both components export default + named props interfaces (`Stage1InputHubProps`, `Stage2OutlineArchitectProps`) accepting `{ project: CanonicalBlogProjectState; onChange: (next: CanonicalBlogProjectState) => void; onRunAiOutline?: () => void; onNextStage?: () => void; onProceedToNextStage?: () => void }`.
 
 ### ⏳ Phase 4: Dedicated 25-Template Canva / Napkin.ai-Style Blog Infographic Studio (`/tools/blog-section-infographic-generator`)
 - **Upstream Connection (From Phase 1)**:
