@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import dynamicImport from "next/dynamic";
 import FounderLoginGate from "@/features/founder-hub/FounderLoginGate";
 import ApexTechnicalSeoAgentHub from "@/features/founder-hub/ApexTechnicalSeoAgentHub";
+import GrandBlogWriterBlueprintSection from "@/features/founder-hub/GrandBlogWriterBlueprintSection";
 import { COOKIE_NAME, getExpectedPasskeys } from "@/lib/founder-hub/auth";
 import { FOUNDER_WORKBOOK_CORE } from "@/lib/founder-hub/data";
 
@@ -27,7 +28,6 @@ export const metadata: Metadata = {
       index: false,
       follow: false,
       noimageindex: true,
-      "max-snippet": -1,
     },
   },
 };
@@ -55,11 +55,12 @@ export default async function FounderHubPage() {
     const markerIdx = handbookMarkdown.indexOf(promptMarker);
     if (markerIdx !== -1) {
       const rawSection = handbookMarkdown.slice(markerIdx + promptMarker.length);
-      const quoteLines = rawSection
-        .split(/\r?\n/)
-        .filter((line) => line.trim().startsWith(">"))
-        .map((line) => line.replace(/^\s*>\s?/, ""));
-      masterPromptText = quoteLines.join("\n").trim();
+      const codeFenceMatch = rawSection.match(/```[a-zA-Z]*\n([\s\S]*?)```/);
+      if (codeFenceMatch && codeFenceMatch[1]) {
+        masterPromptText = codeFenceMatch[1].trim();
+      } else {
+        masterPromptText = rawSection.trim();
+      }
     }
   } catch {
     handbookMarkdown = "Handbook file not found at docs/TOOL_OPTIMIZATION_RULES.md.";
@@ -67,6 +68,7 @@ export default async function FounderHubPage() {
 
   return (
     <>
+      <GrandBlogWriterBlueprintSection />
       <ApexTechnicalSeoAgentHub />
       <FounderCommandCenterClient
         workbookCore={FOUNDER_WORKBOOK_CORE}
