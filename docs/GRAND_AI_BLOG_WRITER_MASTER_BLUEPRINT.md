@@ -145,13 +145,16 @@
   - `POST /api/blog-writer/generate` accepts `{ mode, project, sectionId?, copilotAction?, customCopilotInstruction? }` and returns `{ ok: true, updatedProject: CanonicalBlogProjectState, providerUsed: string, tierUsed: 1 | 2 | 3 | 4, latencyMs: number }`.
   - Exports `Stage3DraftingAndCopilot` from `@/features/blog-writer-studio/components/Stage3DraftingAndCopilot`.
 
-### ⏳ Phase 6: Interactive Split-Screen Rich Text & Visual Editor + Live 0–100 SEO Scorecard (`Stage 4`)
+### ✅ Phase 6: Interactive Split-Screen Rich Text & Visual Editor + Live 0–100 SEO Scorecard (`Stage 4`) — COMPLETED & LIVE
+- **Status**: `Completed & Live` — Signed by **Nova-Forge (`Flagship Studio Persistence & Workspace Engineer`)**
 - **Upstream Connection (From Phases 1, 4 & 5)**:
-  - Import `runFullDeterministicSeoScorecard`, `applyOneClickSeoAutoFixes` from `@/lib/blog-writer/deterministic-analyzers` and `BlogInfographicStudio` from `@/features/blog-infographic-studio/BlogInfographicStudio`.
-- **Exact Implementation Specification**:
-  - Create `features/blog-writer-studio/components/Stage4RichEditorAndScorecard.tsx`:
-    - **Left Pane (70% width)**: Interactive Section-by-Section & Unified Article Editor with 3 view modes (`Rich Visual Preview`, `Markdown Source Editor`, `Clean Semantic HTML`), Per-Section AI Co-Pilot action pills, and inline rendered H2 infographics with a **"🎨 Customize Visual in Canva/Napkin Studio"** button that opens `BlogInfographicStudio` for that exact section.
-    - **Right Pane (30% width)**: Sticky Live `0–100` SEO, Originality & Readability Scorecard showing real-time pixel widths, keyword density, LSI checklist pills (green = used, slate = click to insert), burstiness score, and a **"✨ 1-Click Auto-Fix All SEO Warnings"** button calling `applyOneClickSeoAutoFixes()`.
+  - Imports `runFullDeterministicSeoScorecard`, `applyOneClickSeoAutoFixes` from `@/lib/blog-writer/deterministic-analyzers` and `BlogInfographicStudio` from `@/features/blog-infographic-studio/BlogInfographicStudio`.
+- **Shipped Implementation**:
+  - `features/blog-writer-studio/components/Stage4RichEditorAndScorecard.tsx`:
+    - **Left Pane (70% width)**: Interactive Section-by-Section & Unified Article Editor with 3 view modes (`Rich Visual Preview`, `Markdown Source Editor`, `Clean Semantic HTML`), Per-Section AI Co-Pilot action pills, and inline rendered HTML5 `<canvas>` H2 infographics with a **"🎨 Customize Visual in Canva/Napkin Studio"** button that opens `<BlogInfographicStudio mode="embedded-modal" />` for that exact section.
+    - **Right Pane (30% width)**: Sticky Live `0–100` SEO, Originality & Readability Scorecard showing real-time pixel widths (`<580px` / `<920px`), keyword density, interactive LSI checklist pills (green = used, click unused pill to weave into active H2), burstiness score (`σ`), 7-pillar diagnostic checks, and a **"✨ 1-Click Auto-Fix All SEO Warnings"** button calling `applyOneClickSeoAutoFixes()`.
+- **Downstream Hand-Off Contract (For Phase 10)**:
+  - Exports `Stage4RichEditorAndScorecard` accepting `{ project, onChange, onRunSectionCopilot?, onAdvanceToStage5? }`.
 
 ### ⏳ Phase 7: Technical SEO, Complete JSON-LD `@graph` & Core Web Vitals HTML Serializer (`Stage 5`)
 - **Upstream Connection (From Phase 1)**:
