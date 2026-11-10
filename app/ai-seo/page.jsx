@@ -10,7 +10,6 @@ import { PageCacheProvider } from "@/React_Query_Caching/CacheProvider";
 import { client } from "@/sanity/lib/client";
 import { redisHelpers } from "@/app/lib/redis";
 import AISEOHeroSection from "@/features/content-listing/SeoListingHero";
-import { getStaticArticlesByType } from "@/features/articles/legacy/staticArticles";
 export const revalidate = 300;
 const SUBCATEGORIES_LIMIT = 2;
 const BLOGS_PAGE_LIMIT = 12;
@@ -32,26 +31,8 @@ function generateOGImageURL(params) {
 }
 
 async function getData(schemaType, pageSlugPrefix) {
-  const cacheKey = `blogList:${schemaType}:main`;
+  const cacheKey = `blogList:${schemaType}:main:cwv3`;
   const startTime = Date.now();
-  const staticPosts = getStaticArticlesByType(schemaType);
-
-  const mergeStaticFirstPage = (payload) => {
-    if (!payload) return payload;
-    const raw = Array.isArray(payload.firstPageBlogs) ? payload.firstPageBlogs : [];
-    const seen = new Set();
-    const merged = [...staticPosts, ...raw].filter((p) => {
-      const s = p?.slug?.current || p?.slug;
-      if (!s || seen.has(s)) return false;
-      seen.add(s);
-      return true;
-    });
-    return {
-      ...payload,
-      firstPageBlogs: merged.slice(0, BLOGS_PAGE_LIMIT + 1),
-      totalCountBlogs: (Number(payload.totalCountBlogs) || 0) + staticPosts.length,
-    };
-  };
 
   try {
     const cachedData = await redisHelpers.get(cacheKey);
@@ -59,7 +40,7 @@ async function getData(schemaType, pageSlugPrefix) {
       console.log(
         `[RedisCacheHit] for ${cacheKey} in ${Date.now() - startTime}ms`,
       );
-      return mergeStaticFirstPage({ ...cachedData, __source: "server-redis" });
+      return { ...cachedData, __source: "server-redis" };
     }
   } catch (redisError) {
     console.error(`Redis error for ${cacheKey}:`, redisError.message);
@@ -67,8 +48,8 @@ async function getData(schemaType, pageSlugPrefix) {
 
   console.log(`[SanityFetch] for ${cacheKey} starting...`);
 
-  const featuresQuery = `*[_type=="${schemaType}"&&displaySettings.isOwnPageFeature==true][0]`;
-  const firstPageBlogsQuery = `*[_type=="${schemaType}"]|order(publishedAt desc)[0...${BLOGS_PAGE_LIMIT + 1}]`;
+  const featuresQuery = `*[_type=="${schemaType}"&&displaySettings.isOwnPageFeature==true][0]{ _id, _type, title, slug, mainImage, overview, publishedAt, readTime, tags, resourceType, resourceFormat, aiToolDetails, seoTitle, seoDescription }`;
+  const firstPageBlogsQuery = `*[_type=="${schemaType}"]|order(publishedAt desc)[0...${BLOGS_PAGE_LIMIT + 1}]{ _id, _type, title, slug, mainImage, overview, publishedAt, readTime, tags, resourceType, resourceFormat, aiToolDetails, seoTitle, seoDescription }`;
   const totalCountBlogsQuery = `count(*[_type=="${schemaType}"])`;
   const firstPageSEOSubcategoriesQuery = `*[_type=="seoSubcategory"]|order(orderRank asc){
     _id,
@@ -130,7 +111,7 @@ async function getData(schemaType, pageSlugPrefix) {
         );
       }
     }
-    return mergeStaticFirstPage({ ...data, __source: "server-network" });
+    return { ...data, __source: "server-network" };
   } catch (error) {
     console.error(`Server-side fetch for AI SEO page failed:`, error.message);
     return null;
@@ -384,17 +365,6 @@ export default async function Page() {
   const pageTitleHighlight = "Learn SEO with AI";
   const pageDescription =
     "Explore practical explanations, worked examples, and content workflows to complement your tools and prompts.";
-
-  // const breadcrumbProps = {
-  //   pageName: "AI SEO",
-  //   pageName2: "Resource Hub",
-  //   // Match meta description
-  //   description: "Access our free AI SEO learning hub for expert guides, smart tools, and custom prompts to boost your content rankings and maximize AI citation.",
-  //   firstlinktext: "Home",
-  //   firstlink: "/",
-  //   link: "/ai-seo",
-  //   linktext: "ai-seo",
-  // };
 
   const breadcrumbProps = {
     pageName: "AI SEO",

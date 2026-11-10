@@ -10,7 +10,6 @@ import { CACHE_KEYS } from '@/React_Query_Caching/cacheKeys';
 import { usePageCache } from '@/React_Query_Caching/usePageCache';
 import { cacheSystem } from '@/React_Query_Caching/cacheSystem';
 import { CacheStatusIndicator } from '@/React_Query_Caching/CacheStatusIndicator';
-import { getStaticArticlesByType } from '@/features/articles/legacy/staticArticles';
 
 const ReusableCachedAllBlogs = ({
   currentPage = 1,
@@ -20,27 +19,11 @@ const ReusableCachedAllBlogs = ({
   onDataLoad,
   customQuery = null,
   isSearchMode = false ,
-   initialPageData = null,    // Add this prop
-  initialTotalCount = null,  // Add this prop
+   initialPageData = null,
+  initialTotalCount = null,
 }) => {
   const [paginationStaleWarning, setPaginationStaleWarning] = useState(false);
   const start = useMemo(() => (currentPage - 1) * limit, [currentPage, limit]);
-
-  // --- COMPONENT LIFECYCLE DEBUG LOGS (Controlled by useEffect) ---
-  useEffect(() => {
-    console.log(`%c[ReusableCachedAllBlogs Component] Mounted for Page ${currentPage}`, 'color: purple; font-weight: bold;');
-    console.log(`%c[ReusableCachedAllBlogs Component] Current prop currentPage: ${currentPage}`, 'color: blue;');
-    return () => {
-      console.log(`%c[ReusableCachedAllBlogs Component] Unmounted for Page ${currentPage}`, 'color: red; font-weight: bold;');
-    };
-  }, [currentPage]); 
-
-  // Add debugging for prop changes - this useEffect runs on every prop change
-  useEffect(() => {
-    console.log(`%c[ReusableCachedAllBlogs Component] Props changed - currentPage: ${currentPage}, documentType: ${documentType}, isSearchMode: ${isSearchMode}`, 'color: orange;');
-  }, [currentPage, documentType, pageSlugPrefix, limit, isSearchMode]);
-  // --- END COMPONENT LIFECYCLE DEBUG LOGS ---
-
 
   // Ensure typeIdentifier is always a string
   const typeIdentifier = useMemo(() => (
@@ -51,17 +34,19 @@ const ReusableCachedAllBlogs = ({
         : 'default-blog-type'
   ), [documentType]);
 
-  // MEMOIZE THE QUERIES
+  // MEMOIZE THE QUERIES — Optimized by Apex-CWV (Phase 3): omit heavy `body` PortableText from listing cards
   const memoizedPageQuery = useMemo(() => {
+    const resourceFields = typeIdentifier.includes('freeairesources')
+      ? ', "resourceFile": resourceFile.asset->, content, promptContent, "relatedArticle": relatedArticle->{title, slug}'
+      : '';
     return customQuery
       ? `${customQuery.trim().endsWith(']') ? customQuery.slice(0, -1) : customQuery}[${start}...${start + limit + 1}]`
       : `*[_type=="${Array.isArray(documentType) ? documentType.join('" || _type=="') : documentType}"] | order(publishedAt desc) {
-          _id, title, slug, mainImage, readTime, tags, overview, body, publishedAt, _type,
+          _id, title, slug, mainImage, readTime, tags, overview, publishedAt, _type,
           resourceType, resourceFormat, aiToolDetails, seoTitle, seoDescription, seoKeywords,
-          altText, structuredData, "resourceFile": resourceFile.asset->, content, promptContent,
-          "relatedArticle": relatedArticle->{title, slug}
+          altText, structuredData${resourceFields}
         }[${start}...${start + limit + 1}]`;
-  }, [customQuery, documentType, start, limit]);
+  }, [customQuery, documentType, start, limit, typeIdentifier]);
 
   const memoizedTotalCountQuery = useMemo(() => {
     return customQuery
@@ -69,7 +54,6 @@ const ReusableCachedAllBlogs = ({
       : `count(*[_type=="${Array.isArray(documentType) ? documentType.join('" || _type=="') : documentType}"])`;
   }, [customQuery, documentType]);
 
-  // MEMOIZE THE PARAMS OBJECT: This is crucial for stopping infinite loops related to params
   const memoizedParams = useMemo(() => ({}), []); 
 
   const pageCacheKey = useMemo(() => {
@@ -88,20 +72,15 @@ const ReusableCachedAllBlogs = ({
     componentName: `${typeIdentifier || 'Custom'}-AllBlogs-Page${currentPage}`,
     enableOffline: true,
     group: paginationGroup,
-    initialData: currentPage === 1 ? initialPageData : null, // Only use for first page
- 
+    initialData: currentPage === 1 ? initialPageData : null,
   }), [typeIdentifier, currentPage, paginationGroup, initialPageData]);
 
   const stableTotalCacheOptions = useMemo(() => ({
     componentName: `${typeIdentifier || 'Custom'}-AllBlogs-TotalCount`,
     enableOffline: true,
     group: paginationGroup,
-    initialData: initialTotalCount, // Use initial total count
-
+    initialData: initialTotalCount,
   }), [typeIdentifier, paginationGroup, initialTotalCount]);
-
-  // Removed the direct console.log statements from here.
-  // They will no longer spam the console on every component re-render.
 
  const {
   data: pageData,
@@ -149,10 +128,8 @@ const {
   const handleRefresh = useCallback(async (refreshAllGroup = false) => {
     try {
       if (refreshAllGroup && typeof cacheSystem !== 'undefined' && cacheSystem.refreshGroup) {
-        console.log(`Manually refreshing entire group: ${paginationGroup}`);
         await cacheSystem.refreshGroup(paginationGroup);
       } else {
-        console.log(`Manually refreshing current page and total count`);
         await refreshPageData();
         await refreshTotal();
       }
@@ -162,25 +139,13 @@ const {
   }, [paginationGroup, refreshPageData, refreshTotal]);
 
   const hasError = pageError || totalError;
-
-  // Consolidate loading/error states for indicator
   const combinedIsLoading = pageIsLoading || totalIsLoading;
-  const combinedIsStale = pageIsStale || totalIsStale;
-  let combinedCacheSource = pageCacheSource === 'network' ? 'network' : totalCacheSource === 'network' ? 'network' : (pageCacheSource || totalCacheSource);
-  if (combinedIsLoading) {
-      combinedCacheSource = 'loading';
-  } else if (hasError) {
-      combinedCacheSource = 'error';
-  }
-  const combinedLastUpdated = pageLastUpdated || totalLastUpdated;
   const combinedError = hasError;
-
 
   // Render skeleton cards if loading and no data is present yet
   if (combinedIsLoading && !pageData) {
     return (
       <div style={{ position: 'relative' }}>
-      
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: limit }).map((_, index) => (
             <SkelCard key={index} />
@@ -194,7 +159,6 @@ const {
   if (combinedError && !pageData) {
     return (
       <div style={{ position: 'relative', textAlign: 'center', padding: '20px' }}>
-       
         <p className="text-red-500 dark:text-red-400">
           Failed to load content: {combinedError.message || 'An unknown error occurred.'}
         </p>
@@ -205,28 +169,10 @@ const {
     );
   }
 
-  const rawPosts = (pageData && Array.isArray(pageData)) ? pageData : [];
-  const postsToDisplay = (() => {
-    if (currentPage === 1 && !isSearchMode && !customQuery) {
-      const staticPosts = getStaticArticlesByType(documentType);
-      const seenSlugs = new Set();
-      return [...staticPosts, ...rawPosts]
-        .filter((post) => {
-          const s = post?.slug?.current || post?.slug;
-          if (!s || seenSlugs.has(s)) return false;
-          seenSlugs.add(s);
-          return true;
-        })
-        .slice(0, limit);
-    }
-    return rawPosts.slice(0, limit);
-  })();
+  const postsToDisplay = (pageData && Array.isArray(pageData)) ? pageData.slice(0, limit) : [];
 
   return (
     <div className="space-y-4" style={{ position: 'relative' }}>
-      {/* Cache Status Indicator for this component instance */}
-
-
       {paginationStaleWarning && (
         <div className="bg-yellow-100 border border-yellow-200 rounded-lg p-4 dark:bg-yellow-900/20 dark:border-yellow-800">
           <div className="flex items-center space-x-2">
@@ -246,7 +192,7 @@ const {
             overview={post.overview}
             title={post.title}
             tags={post.tags}
-            mainImage={post.mainImage?.localUrl || (post.mainImage ? urlForImage(post.mainImage).url() : "https://placehold.co/600x400/cccccc/000000?text=No+Image")} 
+            mainImage={post.mainImage ? urlForImage(post.mainImage).url() : "https://placehold.co/600x400/cccccc/000000?text=No+Image"} 
             slug={
               post._type === "seo"
                 ? `/ai-seo/${post.slug.current}`
