@@ -1,5 +1,7 @@
 # Blog section infographic studio
 
+**Current implementation:** see [Prism Forge pilot and manual tests](./PRISM_FORGE_INFOGRAPHIC_PILOT.md). The notes below describe the earlier 25-layout baseline; source selection, the default collection and hero have since been revised.
+
 Redesign based on `main` at `7c86244`, November 11, 2026. Routes: `/tools/blog-section-infographic-generator` and the shared section editor in `/tools/ai-content-writer` (also used by the blog/article writer).
 
 ## The design decision

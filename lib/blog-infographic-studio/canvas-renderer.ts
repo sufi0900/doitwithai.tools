@@ -3,6 +3,7 @@ import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
 } from "@/lib/blog-writer/canonical-state";
+import { buildPrismScene } from "./prism-renderer";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
 import { ASPECT_RATIO_DIMENSIONS, BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
 import artwork from "./editorial-art.json";
@@ -184,6 +185,7 @@ export function buildInfographicScene(
   config: BlogInfographicConfig,
   options: BlogInfographicRenderOptions = {},
 ): { svg: string; issues: InfographicFitIssue[] } {
+  if (config.visualEngine === "prism-antv") return buildPrismScene({ ...config, brand: { ...config.brand, customColors: { ...config.brand?.customColors, ...options.customColors } } });
   const { width: W, height: H } =
     ASPECT_RATIO_DIMENSIONS[config.aspectRatio] ||
     ASPECT_RATIO_DIMENSIONS["16:9"];
@@ -1209,7 +1211,9 @@ export function generateBlogInfographicSvg(
   config: BlogInfographicConfig,
   options: BlogInfographicRenderOptions = {},
 ): string {
-  return buildInfographicScene(config, options).svg;
+  const scene = buildInfographicScene(config, options);
+  if (config.visualEngine === "prism-antv" && scene.issues.length) throw new Error(scene.issues.map(i => `${i.field}: ${i.message}`).join(" "));
+  return scene.svg;
 }
 const pendingRenders = new WeakMap<HTMLCanvasElement, object>();
 /** Await this function before reading canvas pixels. Older preview requests cannot overwrite newer edits. */

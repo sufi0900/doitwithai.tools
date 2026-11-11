@@ -5,6 +5,70 @@ import type {
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
 import { ASPECT_RATIO_DIMENSIONS, BLOG_INFOGRAPHIC_PALETTES } from "./palettes";
 import { isSafeInfographicImage } from "./canvas-renderer";
+import { PRISM_LAYOUTS } from "./visual-brief";
+import type { VisualBrief } from "./visual-brief";
+function importBrief(raw: VisualBrief | undefined): VisualBrief | undefined {
+  if (!raw) return undefined;
+  if (
+    !Array.isArray(raw.sourceBlocks) ||
+    raw.sourceBlocks.length > 1200 ||
+    !Array.isArray(raw.warnings)
+  )
+    throw new Error("The project's source brief is invalid.");
+  let length = 0;
+  const sourceBlocks = raw.sourceBlocks.map((b) => {
+    if (
+      !b ||
+      !["paragraph", "list", "table", "caption", "heading"].includes(b.kind) ||
+      typeof b.id !== "string" ||
+      typeof b.text !== "string" ||
+      (length += b.text.length) > 90000
+    )
+      throw new Error("The project's source text is invalid or too large.");
+    return {
+      id: b.id.slice(0, 120),
+      kind: b.kind,
+      text: b.text,
+      heading:
+        typeof b.heading === "string" ? b.heading.slice(0, 500) : undefined,
+    };
+  });
+  let sourceUrl: string | undefined;
+  if (raw.sourceUrl) {
+    try {
+      const u = new URL(raw.sourceUrl);
+      if (
+        ["https:", "http:"].includes(u.protocol) &&
+        !u.username &&
+        !u.password
+      )
+        sourceUrl = u.href;
+    } catch {}
+  }
+  const count = (n: number) =>
+    Number.isFinite(n) ? Math.max(0, Math.min(100000, Math.floor(n))) : 0;
+  return {
+    sourceUrl,
+    sectionId: String(raw.sectionId || "imported").slice(0, 120),
+    relationship: raw.relationship === "sequence" ? "sequence" : "concepts",
+    sourceBlocks,
+    excludedBlocks: count(raw.excludedBlocks),
+    omittedPoints: count(raw.omittedPoints),
+    warnings: raw.warnings
+      .filter((w) => typeof w === "string")
+      .slice(0, 12)
+      .map((w) => w.slice(0, 1000)),
+    articleCoverage: raw.articleCoverage
+      ? {
+          sectionsFound: count(raw.articleCoverage.sectionsFound),
+          sectionsIncluded: count(raw.articleCoverage.sectionsIncluded),
+          blocksFound: count(raw.articleCoverage.blocksFound),
+          blocksIncluded: count(raw.articleCoverage.blocksIncluded),
+          truncated: Boolean(raw.articleCoverage.truncated),
+        }
+      : undefined,
+  };
+}
 /** Rendered assets are caches, never authoritative after a content/design edit. */
 export function patchInfographic(
   config: BlogInfographicConfig,
@@ -28,6 +92,8 @@ export function selectInfographicTemplate(
     templateId: spec.id,
     templateSlug: spec.slug,
     templateName: spec.name,
+    visualEngine: undefined,
+    prismLayout: undefined,
   });
 }
 export function nodesFromText(raw: string): BlogInfographicNodeItem[] {
@@ -85,7 +151,7 @@ export function importInfographicProject(
         (x) => typeof x === "string" && x.length < 10000,
       ) ||
       !Array.isArray(c.nodes) ||
-      !c.nodes.length ||
+      (!c.nodes.length && c.visualEngine !== "prism-antv") ||
       c.nodes.length > 8
     )
       throw new Error(`Section ${index + 1} has invalid content or settings.`);
@@ -109,12 +175,21 @@ export function importInfographicProject(
         "This project contains an unsupported logo. Use a PNG, JPG or WebP image.",
       );
     const spec = BLOG_INFOGRAPHIC_25_TEMPLATES[c.templateId - 1];
+    const prism =
+      c.visualEngine === "prism-antv"
+        ? PRISM_LAYOUTS.find((l) => l.id === c.prismLayout) || PRISM_LAYOUTS[0]
+        : undefined;
     return {
       id: `import-${Date.now()}-${index}`,
       sectionId: `import-section-${index}`,
       templateId: spec.id,
-      templateSlug: spec.slug,
-      templateName: spec.name,
+      templateSlug: prism ? `prism-${prism.id}` : spec.slug,
+      templateName: prism?.name || spec.name,
+      visualEngine: c.visualEngine === "prism-antv" ? "prism-antv" : undefined,
+      prismLayout: PRISM_LAYOUTS.some((l) => l.id === c.prismLayout)
+        ? c.prismLayout
+        : undefined,
+      visualBrief: importBrief(c.visualBrief),
       headline: c.headline,
       subheadline: c.subheadline,
       footerSourceLabel: c.footerSourceLabel,
@@ -137,6 +212,21 @@ export function importInfographicProject(
         detail: n.detail,
         badge: n.badge,
         metricValue: n.metricValue || "",
+        icon: [
+          "answer",
+          "evidence",
+          "workflow",
+          "search",
+          "target",
+          "chart",
+          "check",
+          "idea",
+        ].includes(n.icon || "")
+          ? n.icon
+          : undefined,
+        sourceBlockIds: Array.isArray(n.sourceBlockIds)
+          ? n.sourceBlockIds.filter((id) => typeof id === "string").slice(0, 12)
+          : undefined,
       })),
       brand: brand
         ? {

@@ -266,7 +266,8 @@ test("server-rendered editor and hero expose real infographic previews without p
   const $ = load(html);
   assert.equal($('[aria-label="Editor controls"] button').length, 3);
   assert.equal($('button[role="tab"][tabindex="0"]').length, 1);
-  assert.ok($("img").length >= 26);
+  assert.ok($("img").length >= 4);
+  assert.ok(html.includes("Classic collection"));
   assert.doesNotMatch(
     html,
     /male-avatars|Marcus Vance|Daniel Mercer|Author \/ Executive|portraitFrame|Photo Zoom/,
@@ -275,7 +276,8 @@ test("server-rendered editor and hero expose real infographic previews without p
     React.createElement(HeroAnimatedInfographicShowcase),
   );
   assert.ok(hero.includes("data:image/svg+xml"));
-  assert.ok(hero.includes("Use this layout in the studio"));
+  assert.ok(hero.includes("Show Editorial atlas"));
+  assert.ok(hero.includes("aspect-[4/5]"));
   assert.doesNotMatch(hero, /male-avatars|executive portrait/);
 });
 

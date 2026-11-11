@@ -18,6 +18,10 @@ import {
   ASPECT_RATIO_DIMENSIONS,
 } from "@/lib/blog-infographic-studio/canvas-renderer";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
+import {
+  PRISM_LAYOUTS,
+  withPrismLayout,
+} from "@/lib/blog-infographic-studio/visual-brief";
 import type { SectionCopilotAction } from "@/app/api/blog-writer/generate/route";
 export interface Stage4RichEditorAndScorecardProps {
   project: CanonicalBlogProjectState;
@@ -78,16 +82,42 @@ function InlineSectionInfographicCard({
   onQuickChangeConfig: (updated: BlogInfographicConfig) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [visualError, setVisualError] = useState("");
   const dims =
     ASPECT_RATIO_DIMENSIONS[config.aspectRatio] ||
     ASPECT_RATIO_DIMENSIONS["16:9"];
   useEffect(() => {
     if (!canvasRef.current) return;
-    void renderBlogInfographicToCanvas(canvasRef.current, config).catch(
-      () => {},
-    );
+    let stale = false;
+    setVisualError("");
+    const canvas = canvasRef.current;
+    void renderBlogInfographicToCanvas(canvas, config).catch((error) => {
+      if (stale) return;
+      canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+      setVisualError(
+        error instanceof Error
+          ? error.message
+          : "Open the visual editor to complete this infographic.",
+      );
+    });
+    return () => {
+      stale = true;
+    };
   }, [config]);
   function handleCycleTemplate(delta: number) {
+    if (config.visualEngine === "prism-antv") {
+      const index = PRISM_LAYOUTS.findIndex((l) => l.id === config.prismLayout);
+      onQuickChangeConfig(
+        withPrismLayout(
+          config,
+          PRISM_LAYOUTS[
+            (Math.max(0, index) + delta + PRISM_LAYOUTS.length) %
+              PRISM_LAYOUTS.length
+          ].id,
+        ),
+      );
+      return;
+    }
     const currentIdx = BLOG_INFOGRAPHIC_25_TEMPLATES.findIndex(
       (t) => t.id === config.templateId,
     );
@@ -105,7 +135,17 @@ function InlineSectionInfographicCard({
     });
   }
   function handleDownloadSvg() {
-    const svgMarkup = generateBlogInfographicSvg(config);
+    let svgMarkup: string;
+    try {
+      svgMarkup = generateBlogInfographicSvg(config);
+    } catch (error) {
+      setVisualError(
+        error instanceof Error
+          ? error.message
+          : "Fix the infographic before exporting.",
+      );
+      return;
+    }
     const blob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -119,13 +159,15 @@ function InlineSectionInfographicCard({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/90 bg-slate-900/90 px-4 py-2.5">
         <div className="flex items-center gap-2">
           <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 text-[11px] font-bold text-indigo-300">
-            Template #{config.templateId}/25
+            {config.visualEngine
+              ? "Editorial collection"
+              : `Template #${config.templateId}/25`}
           </span>
           <span className="text-xs font-semibold text-white">
             {config.templateName}
           </span>
           <span className="hidden text-[11px] text-slate-400 sm:inline">
-            · {config.aspectRatio} · Zero-CLS Vector/Canvas
+            · {config.aspectRatio}
           </span>
         </div>
 
@@ -163,7 +205,18 @@ function InlineSectionInfographicCard({
         </div>
       </div>
 
-      <div className="relative flex items-center justify-center bg-slate-950 p-3">
+      {visualError && (
+        <p
+          role="alert"
+          className="m-3 rounded-lg border border-amber-500/40 bg-amber-950/40 p-3 text-xs leading-relaxed text-amber-200"
+        >
+          {visualError} Open “Customize infographic” to adjust the content or
+          format.
+        </p>
+      )}
+      <div
+        className={`relative items-center justify-center bg-slate-950 p-3 ${visualError ? "hidden" : "flex"}`}
+      >
         <canvas
           ref={canvasRef}
           width={dims.width}
@@ -171,7 +224,7 @@ function InlineSectionInfographicCard({
           onClick={onOpenModal}
           style={{ aspectRatio: `${dims.width} / ${dims.height}` }}
           className="h-auto w-full max-w-3xl cursor-pointer rounded-xl border border-slate-800 shadow-md transition hover:border-indigo-500/60"
-          title="Click to customize this section infographic in the 25-Template Studio"
+          title="Click to edit this section infographic"
         />
       </div>
 
@@ -1241,6 +1294,7 @@ export function Stage4RichEditorAndScorecard({
             <BlogInfographicStudio
               mode="embedded-modal"
               initialConfig={activeModalSection.infographicConfig}
+              sourceSection={activeModalSection}
               onSaveConfig={(updatedCfg) => {
                 updateSection(activeModalSection.id, (sec) => ({
                   ...sec,

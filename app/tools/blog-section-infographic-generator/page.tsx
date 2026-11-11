@@ -67,7 +67,7 @@ const faqs = [
     question:
       "What is the Free AI Blog Section Infographic Generator and how does it work?",
     answer:
-      "The Free AI Blog Section Infographic Generator converts any H2 blog heading, bullet list, paragraph, or public article URL into a crisp, typo-free visual diagram. Unlike diffusion image generators that paint flat pixels with misspelled words, our engine renders 25 structured HTML5 Canvas and vector SVG templates that you can edit live in your browser.",
+      "Turn a substantive blog section into an editable visual summary. Read a public article URL or paste section text, review its supported explanations, then choose an original editorial composition. Heading-only inputs need more content before export.",
   },
   {
     question:
@@ -97,7 +97,7 @@ const faqs = [
     question:
       "Can I extract multiple section infographics directly from a published blog URL?",
     answer:
-      "Yes. Paste any public article URL into the top extractor bar. The studio extracts the key sections, auto-recommends the matching infographic template for each heading, and populates multiple visual tabs that you can download individually or together as a single .ZIP archive.",
+      "Paste a public article URL, then choose a section. Its paragraphs, lists and tables stay available in the source panel while you review the visual draft. Each selection updates the current visual. Add another section tab when you want a separate infographic. Pages that require a login or client-side rendering may need pasted text.",
   },
   {
     question:
@@ -157,7 +157,7 @@ const PROMPT_PROMO_CARDS = [
     desc: "Copy-paste prompt frameworks to turn raw research notes, statistics, and SOPs into structured 4-node and 6-node infographic copy.",
     image: "/prompts/infographic-data-visualization-prompts-hero-v2.webp",
     snippet:
-      "Act as an Information Designer. Compress this H2 section into 4 scannable diagram nodes with a 2-word badge, 4-word title, and 1 KPI metric...",
+      "Act as an Information Designer. Summarize this section into explained concepts. Preserve its meaning, attach source references, and include a metric only when the source supplies its value and context...",
     href: "/prompts/infographic-data-visualization-prompts",
     cta: "Open Visual Prompt Pack",
   },
@@ -380,7 +380,7 @@ export default function BlogSectionInfographicGeneratorPage() {
         }}
       />
 
-      {/* COMPACT UNIFIED HERO: LEFT SEO & CTA COLUMN + RIGHT 5-SLIDE INTERACTIVE SHOWCASE */}
+      {/* ARTICLE-FOCUSED HERO WITH PORTRAIT INFOGRAPHIC SHOWCASE */}
       <header
         className={`relative overflow-hidden ${toolHeroSurface} text-white`}
       >
@@ -415,24 +415,18 @@ export default function BlogSectionInfographicGeneratorPage() {
               </div>
 
               <p className="text-xs font-bold uppercase tracking-widest text-[#b4c3ff]">
-                AI BLOG SECTION INFOGRAPHIC GENERATOR · 25 CANVA &amp; NAPKIN
-                LAYOUTS · SVG &amp; WEBP
+                BLOG SECTION INFOGRAPHICS · EDITABLE TEXT · YOUR BRAND
               </p>
 
               <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl lg:text-5xl">
                 Free AI Blog Section Infographic Generator:{" "}
                 <span className={toolHeroHeading}>
-                  25 Editable Infographic Layouts
+                  Turn Explanations Into Clear Visuals
                 </span>
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-200">
-                Turn any blog H2 heading, paragraph, bullet list, or article URL
-                into a crisp, 100% editable section diagram. Choose from{" "}
-                {templateCount} deterministic layouts (pipelines, versus cards,
-                KPI bento grids, pyramids &amp; checklists), add your brand logo
-                and optional editorial artwork, then export PNG, vector
-                SVG, WebP, or PDF at $0 API cost.
+                Turn a blog section into a clear visual story. Choose a section from an article URL or paste its text, review the key explanations, then make it yours with editable text, topic icons and your brand. Start with three original editorial compositions, or explore the classic collection.
               </p>
 
               <PortableToolHeroBar
@@ -461,20 +455,10 @@ export default function BlogSectionInfographicGeneratorPage() {
             Quick Answer · Free AI Blog Section Infographic Generator
           </p>
           <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-            How do you create a clear blog section infographic that helps
-            converts?
+            How do you turn a blog section into a useful infographic?
           </h2>
           <p className={prose}>
-            To create a high-retention blog section infographic, convert each{" "}
-            <strong>H2 heading into 3–6 structured visual nodes</strong> paired
-            with <strong>quantified KPI badges</strong>, match the section
-            intent to a{" "}
-            <strong>
-              process pipeline, versus card, bento grid, or pyramid layout
-            </strong>
-            , apply your <strong>brand logo and hex palette</strong>, and embed{" "}
-            <strong>zero-CLS WebP or vector SVG markup</strong> with descriptive
-            alt text.
+            Start with a section’s explanation, select the concepts a reader needs to understand, and give each one a clear title and supporting detail. Choose a composition that shows how the ideas relate, apply your branding, then check the source and text fit before exporting. Use numbers only when the source provides their meaning and context.
           </p>
         </div>
       </section>
@@ -491,26 +475,25 @@ export default function BlogSectionInfographicGeneratorPage() {
             How does the Free AI Blog Section Infographic Generator work?
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
-            Go from a raw H2 heading, paragraph, or published blog URL to a
-            publish-ready diagram in under 30 seconds.
+            Start with the section’s explanation, review what belongs in the visual, then choose the composition that makes it clearest.
           </p>
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {[
             {
               num: "1",
-              title: "Enter H2 heading, paste text, or extract URL",
-              body: "Type your H2 headline and nodes, paste a raw paragraph to auto-split into diagram cards, or extract multiple H2 sections directly from any public article URL.",
+              title: "Read an article section or paste its text",
+              body: "The source reader keeps section bodies and subheadings together. Choose a meaningful section and check its source coverage before editing the draft.",
             },
             {
               num: "2",
-              title: "Choose your logo, illustration & colors",
-              body: "Upload your company logo, pick from 8 curated brand palettes or custom hex colors, and choose an optional editorial illustration.",
+              title: "Review the message and make it yours",
+              body: "Give each point a clear explanation, adjust its topic icon, then apply your logo and palette. No portrait is needed.",
             },
             {
               num: "3",
-              title: "Switch across 25 live layouts & export HD",
-              body: "Click any of the 25 live layout previews to test different visual families without losing your text. Export as PNG, vector SVG, WebP, PDF, CWV HTML, or a multi-section .ZIP.",
+              title: "Choose a composition and check the fit",
+              body: "Compare three original editorial compositions using your own content. The classic 25-layout collection is also available. Fix text-fit warnings, then export images or keep the editable project.",
             },
           ].map((step) => (
             <div
@@ -537,15 +520,13 @@ export default function BlogSectionInfographicGeneratorPage() {
       >
         <div className="text-center">
           <p className="text-xs font-extrabold uppercase tracking-widest text-[#3452d1] dark:text-blue-300">
-            {templateCount} Built-In Canva &amp; Napkin.ai-Style Blog Layouts
+            Also available: {templateCount} classic layouts
           </p>
           <h2 className="mt-2 text-3xl font-black sm:text-4xl">
-            Every blog infographic template engineered for clear reading paths
+            Explore the classic collection
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
-            All 25 templates adapt across 16:9 Blog/OG, 1:1 Square, 4:5
-            LinkedIn, and 9:16 Story/Pin dimensions with crisp, editable
-            typography.
+            Use the classic collection for specialized charts, comparisons and checklists. The new editorial collection above starts in portrait and flags content that needs more space.
           </p>
         </div>
         <ul className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -658,60 +639,15 @@ export default function BlogSectionInfographicGeneratorPage() {
         </div>
 
         <div className="mt-10 overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-100 text-xs font-extrabold uppercase text-slate-700 dark:bg-slate-950 dark:text-slate-200">
-              <tr>
-                <th className="px-4 py-3.5">Capability</th>
-                <th className="px-4 py-3.5 text-[#3452d1] dark:text-blue-300">
-                  DoItWithAI 25-Template Infographic Studio
-                </th>
-                <th className="px-4 py-3.5">Paid Diagram SaaS (Napkin / Venngage)</th>
-                <th className="px-4 py-3.5">Raw AI Diffusion Image Prompts</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
-              <tr>
-                <td className="px-4 py-3.5 font-bold">
-                  Blog-Specific Infographic Templates
-                </td>
-                <td className="px-4 py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                  25 Layouts across 6 Families (Pipelines, Versus, Bento KPI,
-                  Pyramids, Checklists, Hero OG)
-                </td>
-                <td className="px-4 py-3.5">Limited on free tier</td>
-                <td className="px-4 py-3.5">Unstructured random art</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3.5 font-bold">
-                  Typography &amp; Live Node Editing
-                </td>
-                <td className="px-4 py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                  100% Editable Badges, Titles, Details &amp; Metrics (Zero
-                  Typos)
-                </td>
-                <td className="px-4 py-3.5">Editable (requires account login)</td>
-                <td className="px-4 py-3.5">Frequent misspelled / garbled text</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3.5 font-bold">
-                  Author Ring Framing &amp; Brand Logo Upload
-                </td>
-                <td className="px-4 py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                  Auto Background Cutout + Ring/Arch Sliders + Custom Logo Pill
-                </td>
-                <td className="px-4 py-3.5">Paid Brand Kit tier only</td>
-                <td className="px-4 py-3.5">Not supported</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3.5 font-bold">
-                  Export Formats &amp; Pricing
-                </td>
-                <td className="px-4 py-3.5 font-semibold text-emerald-600 dark:text-emerald-400">
-                  100% Free · PNG, Vector SVG, WebP, PDF, CWV HTML &amp; .ZIP
-                </td>
-                <td className="px-4 py-3.5">$18–$49/mo subscription</td>
-                <td className="px-4 py-3.5">Per-image credit cost + flat raster</td>
-              </tr>
+          <table className="w-full min-w-[600px] text-left text-sm">
+            <thead className="bg-slate-100 dark:bg-slate-800"><tr><th className="px-4 py-3">Capability</th><th className="px-4 py-3">Included in this studio</th><th className="px-4 py-3">Before publishing</th></tr></thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              {[
+                ["Article section summaries", "Source paragraphs, lists, subheadings and tables stay attached to your draft.", "Review the selected section and source coverage."],
+                ["Editable compositions", "Three original editorial compositions plus the classic 25-layout collection.", "Choose a structure that suits the message and check text fit."],
+                ["Brand and illustrations", "Your logo, palette, topic icons and editable wording.", "Check contrast, icon relevance and logo readability."],
+                ["Export and reuse", "PNG, SVG, WebP, PDF/print, editable project JSON and ZIP.", "Compare the download with the preview at the size readers will see."],
+              ].map(row => <tr key={row[0]}>{row.map((cell,i) => <td key={i} className={`px-4 py-3.5 ${i === 0 ? "font-bold" : "text-slate-600 dark:text-slate-300"}`}>{cell}</td>)}</tr>)}
             </tbody>
           </table>
         </div>

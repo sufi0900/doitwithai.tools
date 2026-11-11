@@ -34,8 +34,18 @@ import { printCanvasAsPdfPoster } from "@/features/tool-ui/visualCardExport";
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
+  BlogSectionNode,
   InfographicAspectRatio,
 } from "@/lib/blog-writer/canonical-state";
+import {
+  PRISM_LAYOUTS,
+  buildSectionVisual,
+  createPrismSample,
+  sectionFromText,
+  visualFromWriterSection,
+  withPrismLayout,
+} from "@/lib/blog-infographic-studio/visual-brief";
+import type { PrismLayout } from "@/lib/blog-infographic-studio/visual-brief";
 import { autoRecommendInfographicTemplate } from "@/lib/blog-writer/deterministic-analyzers";
 import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/blog-infographic-studio/templates";
 import {
@@ -48,7 +58,6 @@ import {
 } from "@/lib/blog-infographic-studio/canvas-renderer";
 import {
   importInfographicProject,
-  nodesFromText,
   patchInfographic,
   selectInfographicTemplate,
 } from "@/lib/blog-infographic-studio/project";
@@ -56,6 +65,7 @@ import {
 export interface BlogInfographicStudioProps {
   mode?: "standalone" | "embedded-modal";
   initialConfig?: BlogInfographicConfig;
+  sourceSection?: BlogSectionNode;
   onSaveConfig?: (updated: BlogInfographicConfig) => void;
   onClose?: () => void;
 }
@@ -99,6 +109,55 @@ function escapeHtml(s: string) {
   );
 }
 
+function PrismTemplateCard({
+  config,
+  layout,
+  onSelect,
+}: {
+  config: BlogInfographicConfig;
+  layout: PrismLayout;
+  onSelect: () => void;
+}) {
+  const spec = PRISM_LAYOUTS.find((l) => l.id === layout)!;
+  const scene = useMemo(
+    () => buildInfographicScene(withPrismLayout(config, layout)),
+    [config, layout],
+  );
+  const selected =
+    config.visualEngine === "prism-antv" && config.prismLayout === layout;
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onSelect}
+      className={`overflow-hidden rounded-xl border-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selected ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" : "border-transparent bg-slate-100 hover:border-indigo-300 dark:bg-slate-800"}`}
+    >
+      <div className="flex h-64 items-center justify-center bg-slate-200/60 p-3 dark:bg-slate-950/50">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={svgSource(scene.svg)}
+          alt={`${spec.name} with your current text`}
+          loading="lazy"
+          className="max-h-full max-w-full object-contain shadow-md"
+        />
+      </div>
+      <div className="p-3">
+        <p className="text-sm font-bold text-slate-900 dark:text-white">
+          {selected ? "✓ " : ""}
+          {spec.name}
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-300">
+          {spec.description}
+        </p>
+        {scene.issues.length > 0 && (
+          <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
+            Needs a text or format adjustment
+          </p>
+        )}
+      </div>
+    </button>
+  );
+}
 function TemplateCard({
   config,
   id,
@@ -171,11 +230,12 @@ function familyIndex(id: number) {
 export function BlogInfographicStudio({
   mode = "standalone",
   initialConfig,
+  sourceSection,
   onSaveConfig,
   onClose,
 }: BlogInfographicStudioProps) {
   const [cards, setCards] = useState<BlogInfographicConfig[]>(() => [
-    initialConfig || createSampleInfographicConfig(),
+    initialConfig || createPrismSample(),
   ]);
   const [activeIdx, setActiveIdx] = useState(0),
     [panel, setPanel] = useState<"content" | "design" | "brand">("content"),
@@ -186,6 +246,7 @@ export function BlogInfographicStudio({
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [zoom, setZoom] = useState(1);
+  const [classicOpen, setClassicOpen] = useState(false);
   const [past, setPast] = useState<BlogInfographicConfig[][]>([]),
     [future, setFuture] = useState<BlogInfographicConfig[][]>([]);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -408,26 +469,57 @@ export function BlogInfographicStudio({
   function addSection() {
     if (cards.length >= 12) return;
     const card = {
-      ...createSampleInfographicConfig(active.templateId, active.paletteId),
+      ...createPrismSample(),
+      paletteId: active.paletteId,
       id: uid(),
       sectionId: uid(),
       headline: "Your next section",
-      subheadline: "Add a short explanation of the main idea",
+      subheadline: "Paste the section body to create its visual summary.",
+      nodes: [],
+      visualBrief: undefined,
+      footerSourceLabel: "Source: supplied section text",
+      altText: "",
       brand: { ...active.brand },
     };
     commit([...cards, card]);
     setActiveIdx(cards.length);
   }
   function pastePoints() {
-    const nodes = nodesFromText(paste);
-    if (!nodes.length) {
-      setError("Paste at least one sentence or list item first.");
+    if (
+      paste.length > 90000 ||
+      paste.split(/\n+/).filter((s) => s.trim()).length > 1200
+    ) {
+      setError(
+        "This section exceeds the source limit (90,000 characters or 1,200 blocks). Split it into smaller sections before creating a visual.",
+      );
       return;
     }
-    update({ nodes });
-    setPaste("");
+    const headline =
+      paste.match(/^#{1,2}\s+([^\n]+)/m)?.[1]?.trim() || active.headline;
+    const result = buildSectionVisual(
+      sectionFromText(headline, paste, active.sectionId),
+    );
+    if (result.nodes.length < 2) {
+      setError(
+        "Paste at least two explanatory points, not just headings. Include the section body.",
+      );
+      return;
+    }
+    update({
+      ...withPrismLayout(active, active.prismLayout || "editorial"),
+      headline,
+      subheadline: "",
+      nodes: result.nodes,
+      visualBrief: result.brief,
+      altText: `${headline}: ${result.nodes.map((n) => n.title).join("; ")}`,
+      footerSourceLabel: active.footerSourceLabel.includes(
+        "Illustrative framework",
+      )
+        ? "Source: supplied section text"
+        : active.footerSourceLabel,
+    });
     notify(
-      "Text split into editable points. Review the wording before exporting.",
+      "Created a source-based draft. Check the explanations and source coverage before exporting.",
     );
   }
   return (
@@ -453,6 +545,12 @@ export function BlogInfographicStudio({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <a
+            className={button + " lg:hidden"}
+            href={`#${mode}-infographic-preview`}
+          >
+            See preview
+          </a>
           <button
             type="button"
             className={button}
@@ -506,43 +604,51 @@ export function BlogInfographicStudio({
           </summary>
           <div className="mt-4">
             <UrlArticleExtractorBar
+              extractionPurpose="infographic"
+              label="Create from an article section"
+              buttonLabel="Read article sections"
               onExtracted={(data) => {
-                if (cards.length >= 12) {
+                const section = data.sections?.find(
+                  (s) => s.id === data.selectedSectionId,
+                );
+                const input =
+                  section || sectionFromText(data.title, data.cleanText);
+                const result = buildSectionVisual(input, data.url);
+                if (result.nodes.length < 2) {
                   setError(
-                    "This project has 12 sections. Save it and start a new project for more.",
+                    result.brief.warnings.join(" ") ||
+                      "Choose a section with explanatory text, not just a heading.",
                   );
                   return;
                 }
-                const paras = (data.paragraphs || [])
-                  .filter((p: string) => p.trim().length > 25)
-                  .slice(0, Math.min(6, 12 - cards.length));
-                if (!paras.length) {
-                  setError(
-                    "No readable article paragraphs were found. Paste the text in Content instead.",
-                  );
-                  return;
-                }
-                const next = paras.map((p: string) => {
-                  const headline = p.split(/[.!?]/)[0].slice(0, 140),
-                    rec = autoRecommendInfographicTemplate(headline, p);
-                  return {
-                    ...createSampleInfographicConfig(
-                      rec.templateId,
-                      active.paletteId,
-                    ),
-                    id: uid(),
-                    sectionId: uid(),
-                    headline,
-                    subheadline: `Visual summary · ${data.domain || "Imported article"}`,
-                    nodes: nodesFromText(p),
-                    footerSourceLabel: `Source: ${data.domain || data.url}`,
-                    brand: { ...active.brand },
-                  };
-                });
-                commit([...cards, ...next]);
-                setActiveIdx(cards.length);
+                let next = withPrismLayout(
+                  {
+                    ...active,
+                    id: active.id,
+                    sectionId: input.id,
+                    headline: input.title,
+                    subheadline: "",
+                    aspectRatio: "4:5",
+                    nodes: result.nodes,
+                    visualBrief: {
+                      ...result.brief,
+                      articleCoverage: data.coverage,
+                    },
+                    footerSourceLabel: `Source: ${data.domain}`,
+                    altText: `${input.title}: ${result.nodes.map((n) => n.title).join("; ")}`,
+                  },
+                  active.prismLayout || "editorial",
+                );
+                if (
+                  buildInfographicScene(next).issues.some(
+                    (i) => i.field === "Text fit",
+                  )
+                )
+                  next = { ...next, aspectRatio: "9:16" };
+                // Selecting a source replaces the current visual; it never creates a separate card for every paragraph.
+                update(next);
                 notify(
-                  `Added ${next.length} editable section summaries. Review them before publishing.`,
+                  `${result.nodes.length} supported points from the selected section.${data.coverage?.truncated ? " Article exceeded extraction limits; inspect source coverage." : " Review the source text before publishing."}`,
                 );
               }}
             />
@@ -596,10 +702,105 @@ export function BlogInfographicStudio({
             id={`infographic-panel-${panel}`}
             role="tabpanel"
             aria-labelledby={`infographic-tab-${panel}`}
-            className="max-h-[720px] space-y-6 overflow-y-auto p-5 lg:max-h-[calc(100vh-190px)]"
+            className="space-y-6 p-4 sm:p-5 lg:max-h-[calc(100vh-190px)] lg:overflow-y-auto"
           >
             {panel === "content" && (
               <>
+                {sourceSection && (
+                  <button
+                    type="button"
+                    className={primary + " w-full"}
+                    onClick={() => {
+                      const result = visualFromWriterSection(sourceSection);
+                      if (result.nodes.length < 2) {
+                        setError(
+                          "Write the section body first. An outline alone cannot provide explanations.",
+                        );
+                        return;
+                      }
+                      update(result);
+                      notify(
+                        "Rebuilt from this writer section’s body. Review the draft before saving.",
+                      );
+                    }}
+                  >
+                    Build from this section’s content
+                  </button>
+                )}
+                {active.visualBrief && (
+                  <details className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-3 text-xs dark:border-indigo-500/30 dark:bg-indigo-950/30">
+                    <summary className="cursor-pointer font-bold text-indigo-700 dark:text-indigo-300">
+                      Source & coverage ·{" "}
+                      {
+                        new Set(
+                          active.nodes.flatMap((n) => n.sourceBlockIds || []),
+                        ).size
+                      }{" "}
+                      cited blocks /{" "}
+                      {
+                        active.visualBrief.sourceBlocks.filter(
+                          (b) => b.kind !== "heading",
+                        ).length
+                      }{" "}
+                      source blocks
+                    </summary>
+                    <p className="mt-3 leading-relaxed text-slate-600 dark:text-slate-300">
+                      This is an extractive draft, not a fact check. Read the
+                      source and edit for clarity.{" "}
+                      {active.visualBrief.excludedBlocks} unsuitable blocks
+                      excluded; {active.visualBrief.omittedPoints} additional
+                      points kept in the source below.
+                    </p>
+                    {active.visualBrief.sourceUrl && (
+                      <a
+                        className="mt-2 inline-block font-bold text-indigo-600 underline dark:text-indigo-300"
+                        href={active.visualBrief.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open source article
+                      </a>
+                    )}
+                    {active.visualBrief.articleCoverage && (
+                      <p className="mt-2 text-slate-600 dark:text-slate-300">
+                        Article coverage:{" "}
+                        {active.visualBrief.articleCoverage.sectionsIncluded}/
+                        {active.visualBrief.articleCoverage.sectionsFound}{" "}
+                        sections and{" "}
+                        {active.visualBrief.articleCoverage.blocksIncluded}/
+                        {active.visualBrief.articleCoverage.blocksFound} blocks.
+                        {active.visualBrief.articleCoverage.truncated
+                          ? " Extraction limit reached. Paste missing section text manually."
+                          : ""}
+                      </p>
+                    )}
+                    {active.visualBrief.warnings.map((w, i) => (
+                      <p
+                        key={i}
+                        className="mt-2 text-amber-700 dark:text-amber-300"
+                      >
+                        {w}
+                      </p>
+                    ))}
+                    <div className="mt-3 max-h-64 space-y-3 overflow-auto">
+                      {active.visualBrief.sourceBlocks.map((b) => (
+                        <p
+                          key={b.id}
+                          className="whitespace-pre-wrap leading-relaxed text-slate-600 dark:text-slate-300"
+                        >
+                          <span className="font-bold">
+                            {b.kind === "heading"
+                              ? b.text
+                              : b.heading
+                                ? `${b.heading}: `
+                                : ""}
+                          </span>
+                          {b.kind !== "heading" && b.text}
+                        </p>
+                      ))}
+                    </div>
+                  </details>
+                )}
                 <div className="space-y-4">
                   <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
                     Headline
@@ -623,14 +824,15 @@ export function BlogInfographicStudio({
                 </div>
                 <details className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3 dark:border-indigo-500/30 dark:bg-indigo-950/30">
                   <summary className="cursor-pointer text-xs font-bold text-indigo-700 dark:text-indigo-300">
-                    Turn a paragraph into points
+                    Create from section text
                   </summary>
                   <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    Split sentences or list items into editable blocks. No facts
-                    or statistics are added.
+                    Paste paragraphs or lists, including their explanations.
+                    Subheadings help identify the main concepts. No facts or
+                    statistics are invented.
                   </p>
                   <textarea
-                    aria-label="Paragraph to split into points"
+                    aria-label="Section text for infographic"
                     className={field}
                     rows={5}
                     value={paste}
@@ -651,13 +853,15 @@ export function BlogInfographicStudio({
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                       Your points{" "}
                       <span className="text-slate-400">
-                        {active.nodes.length}/8
+                        {active.nodes.length}/{active.visualEngine ? 6 : 8}
                       </span>
                     </h3>
                     <button
                       type="button"
                       className={button}
-                      disabled={active.nodes.length >= 8}
+                      disabled={
+                        active.nodes.length >= (active.visualEngine ? 6 : 8)
+                      }
                       onClick={() =>
                         update({
                           nodes: [
@@ -681,15 +885,15 @@ export function BlogInfographicStudio({
                     </button>
                   </div>
                   <p className="mb-3 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    For comparison layouts, points alternate between the left
-                    and right columns. Values are optional; charts use the
-                    figures you enter.
+                    {active.visualEngine
+                      ? "Give each concept a short title and a complete explanation. Icons follow the topic; no statistics are added."
+                      : "For comparison layouts, points alternate between columns. Charts use only the figures you enter."}
                   </p>
                   <div className="space-y-3">
                     {active.nodes.map((n, i) => (
                       <details
                         key={n.id}
-                        open
+                        open={i === 0}
                         className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"
                       >
                         <summary className="flex cursor-pointer items-center gap-2 text-sm font-bold text-slate-800 dark:text-white">
@@ -702,6 +906,42 @@ export function BlogInfographicStudio({
                           <ChevronDown size={13} />
                         </summary>
                         <div className="mt-3 space-y-3">
+                          {active.visualEngine && (
+                            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                              Illustration
+                              <select
+                                className={field}
+                                value={n.icon || "auto"}
+                                onChange={(e) =>
+                                  updateNode(n.id, {
+                                    icon:
+                                      e.target.value === "auto"
+                                        ? undefined
+                                        : (e.target
+                                            .value as BlogInfographicNodeItem["icon"]),
+                                  })
+                                }
+                              >
+                                <option value="auto">
+                                  Match the topic automatically
+                                </option>
+                                {[
+                                  "answer",
+                                  "evidence",
+                                  "workflow",
+                                  "search",
+                                  "target",
+                                  "chart",
+                                  "check",
+                                  "idea",
+                                ].map((icon) => (
+                                  <option key={icon} value={icon}>
+                                    {icon}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
                           <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
                             Title
                             <input
@@ -737,20 +977,22 @@ export function BlogInfographicStudio({
                                 }
                               />
                             </label>
-                            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                              Value / metric
-                              <input
-                                className={field}
-                                value={n.metricValue || ""}
-                                maxLength={30}
-                                placeholder="e.g. 42%"
-                                onChange={(e) =>
-                                  updateNode(n.id, {
-                                    metricValue: e.target.value,
-                                  })
-                                }
-                              />
-                            </label>
+                            {!active.visualEngine && (
+                              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                Value / metric
+                                <input
+                                  className={field}
+                                  value={n.metricValue || ""}
+                                  maxLength={30}
+                                  placeholder="e.g. 42%"
+                                  onChange={(e) =>
+                                    updateNode(n.id, {
+                                      metricValue: e.target.value,
+                                    })
+                                  }
+                                />
+                              </label>
+                            )}
                           </div>
                           <div className="flex justify-end gap-1">
                             <button
@@ -887,33 +1129,58 @@ export function BlogInfographicStudio({
                     ))}
                   </div>
                 )}
-                {[3, 19].includes(active.templateId) && (
+                {(active.visualEngine
+                  ? active.prismLayout === "constellation"
+                  : [3, 19].includes(active.templateId)) && (
                   <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
                     Center label
                     <input
                       className={field}
                       maxLength={45}
                       value={active.centerLabel || ""}
-                      placeholder={active.templateId === 3 ? "Cycle" : "Topic"}
+                      placeholder={
+                        active.visualEngine
+                          ? "Key ideas"
+                          : active.templateId === 3
+                            ? "Cycle"
+                            : "Topic"
+                      }
                       onChange={(e) => update({ centerLabel: e.target.value })}
                     />
                   </label>
                 )}
                 <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-500">
-                    Selected layout · {active.templateId}/25
+                    Selected layout ·{" "}
+                    {active.visualEngine
+                      ? "Editorial collection"
+                      : `${active.templateId}/25`}
                   </p>
                   <h3 className="mt-1 text-base font-bold text-slate-900 dark:text-white">
-                    {spec.name}
+                    {active.templateName}
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    {spec.bestForSectionType}. Choose a different layout in the
-                    gallery; your writing stays in place.
+                    {active.visualEngine
+                      ? "Concepts and source-based explanations"
+                      : spec.bestForSectionType}
+                    . Choose a different layout in the gallery; your writing
+                    stays in place.
                   </p>
                   <button
                     type="button"
                     className={button + " mt-3 w-full"}
                     onClick={() => {
+                      if (active.visualEngine) {
+                        const layout =
+                          active.nodes.length <= 3
+                            ? "constellation"
+                            : "editorial";
+                        update(withPrismLayout(active, layout));
+                        notify(
+                          "Suggested an editorial composition for this point count. Check the text fit before exporting.",
+                        );
+                        return;
+                      }
                       const rec = autoRecommendInfographicTemplate(
                         active.headline,
                         active.nodes.map((n) => n.detail).join(" "),
@@ -928,34 +1195,36 @@ export function BlogInfographicStudio({
                     Suggest a layout
                   </button>
                 </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Editorial illustration
-                  </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    Optional reusable artwork. All wording and figures stay
-                    editable.
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    {(["none", "paper-steps"] as const).map((v) => (
-                      <button
-                        type="button"
-                        key={v}
-                        aria-pressed={
-                          (active.brand?.illustration || "none") === v
-                        }
-                        className={
-                          (active.brand?.illustration || "none") === v
-                            ? primary
-                            : button
-                        }
-                        onClick={() => updateBrand({ illustration: v })}
-                      >
-                        {v === "none" ? "Type only" : "Paper & progress"}
-                      </button>
-                    ))}
+                {!active.visualEngine && (
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Editorial illustration
+                    </h3>
+                    <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                      Optional reusable artwork. All wording and figures stay
+                      editable.
+                    </p>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      {(["none", "paper-steps"] as const).map((v) => (
+                        <button
+                          type="button"
+                          key={v}
+                          aria-pressed={
+                            (active.brand?.illustration || "none") === v
+                          }
+                          className={
+                            (active.brand?.illustration || "none") === v
+                              ? primary
+                              : button
+                          }
+                          onClick={() => updateBrand({ illustration: v })}
+                        >
+                          {v === "none" ? "Type only" : "Paper & progress"}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             )}
             {panel === "brand" && (
@@ -1146,7 +1415,10 @@ export function BlogInfographicStudio({
             )}
           </div>
         </aside>
-        <div className="min-w-0 space-y-6">
+        <div
+          id={`${mode}-infographic-preview`}
+          className="min-w-0 scroll-mt-28 space-y-6"
+        >
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 p-3 dark:border-slate-800">
               <div
@@ -1209,12 +1481,14 @@ export function BlogInfographicStudio({
                 className={button}
                 disabled={busy}
                 onClick={() =>
-                  saveFile(
-                    new Blob([generateBlogInfographicSvg(active)], {
-                      type: "image/svg+xml",
-                    }),
-                    `${filename}.svg`,
-                  )
+                  void run(async () => {
+                    saveFile(
+                      new Blob([generateBlogInfographicSvg(active)], {
+                        type: "image/svg+xml",
+                      }),
+                      `${filename}.svg`,
+                    );
+                  })
                 }
               >
                 SVG
@@ -1348,59 +1622,91 @@ export function BlogInfographicStudio({
               )}
             </div>
           )}
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[.18em] text-indigo-500">
-                  25 ways to tell the story
-                </p>
-                <h3 className="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  Find the right visual structure.
-                </h3>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Live previews use your content, colors, logo and format.
-                </p>
-              </div>
-              <label>
-                <span className="sr-only">Search layouts</span>
-                <input
-                  className={field + " !mt-0 max-w-[200px]"}
-                  placeholder="Search layouts…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </label>
-            </div>
-            <div className="my-5 flex flex-wrap gap-2">
-              {familyLabels.map((f, i) => (
-                <button
-                  type="button"
-                  key={f}
-                  aria-pressed={family === i}
-                  onClick={() => setFamily(i)}
-                  className={`rounded-full border px-3 py-2 text-xs font-semibold ${family === i ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:text-slate-300"}`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 xl:grid-cols-3">
-              {templates.map((t) => (
-                <TemplateCard
-                  key={t.id}
-                  id={t.id}
+          <div className="rounded-2xl border border-indigo-200 bg-white p-4 dark:border-indigo-500/30 dark:bg-slate-900 sm:p-5">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+              An editorial collection for your section
+            </h3>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              Three original compositions. Your explanations, palette and logo
+              stay in place when you switch.
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              {PRISM_LAYOUTS.map((layout) => (
+                <PrismTemplateCard
+                  key={layout.id}
                   config={deferred}
-                  selected={active.templateId === t.id}
-                  onSelect={() => choose(t.id)}
+                  layout={layout.id}
+                  onSelect={() => update(withPrismLayout(active, layout.id))}
                 />
               ))}
             </div>
-            {!templates.length && (
-              <p className="py-10 text-center text-sm text-slate-500">
-                No layouts match. Try a different search or category.
-              </p>
-            )}
           </div>
+          <details
+            open={classicOpen}
+            onToggle={(e) => setClassicOpen(e.currentTarget.open)}
+            className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 sm:p-5"
+          >
+            <summary className="cursor-pointer text-sm font-bold text-slate-700 dark:text-slate-200">
+              Classic collection · 25 legacy layouts
+            </summary>
+            {classicOpen && (
+              <>
+                <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[.18em] text-indigo-500">
+                      25 ways to tell the story
+                    </p>
+                    <h3 className="mt-1 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                      Find the right visual structure.
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Live previews use your content, colors, logo and format.
+                    </p>
+                  </div>
+                  <label>
+                    <span className="sr-only">Search layouts</span>
+                    <input
+                      className={field + " !mt-0 max-w-[200px]"}
+                      placeholder="Search layouts…"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="my-5 flex flex-wrap gap-2">
+                  {familyLabels.map((f, i) => (
+                    <button
+                      type="button"
+                      key={f}
+                      aria-pressed={family === i}
+                      onClick={() => setFamily(i)}
+                      className={`rounded-full border px-3 py-2 text-xs font-semibold ${family === i ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:text-slate-300"}`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 xl:grid-cols-3">
+                  {templates.map((t) => (
+                    <TemplateCard
+                      key={t.id}
+                      id={t.id}
+                      config={deferred}
+                      selected={
+                        !active.visualEngine && active.templateId === t.id
+                      }
+                      onSelect={() => choose(t.id)}
+                    />
+                  ))}
+                </div>
+                {!templates.length && (
+                  <p className="py-10 text-center text-sm text-slate-500">
+                    No layouts match. Try a different search or category.
+                  </p>
+                )}
+              </>
+            )}
+          </details>
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
             <div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-white">

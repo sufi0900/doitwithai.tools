@@ -42,7 +42,7 @@ import {
   normalizeSeoSlug,
   runFullDeterministicSeoScorecard,
 } from "@/lib/blog-writer/deterministic-analyzers";
-import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/founder-hub/grand-blog-writer-blueprint";
+import { buildSectionVisual, sectionFromText, visualFromWriterSection, withPrismLayout } from "@/lib/blog-infographic-studio/visual-brief";
 
 export type BlogWriterGenerateMode =
   | "generate-outline-and-meta"
@@ -88,76 +88,25 @@ function toTitleCase(input: string): string {
     .join(" ");
 }
 
-/**
- * Deterministically synthesizes a rich 25-template BlogInfographicConfig for an H2 section.
- */
+/** Source-based section visuals. Outline-only sections cannot supply factual takeaways. */
 function buildSectionInfographicConfig(
-  sectionId: string,
-  h2Text: string,
-  primaryKeyword: string,
-  orderIndex: number,
-  bodyHint = "",
-  existing?: BlogInfographicConfig
+  sectionId: string, h2Text: string, primaryKeyword: string, orderIndex: number,
+  bodyHint = "", existing?: BlogInfographicConfig,
 ): BlogInfographicConfig {
   const recommended = autoRecommendInfographicTemplate(h2Text, bodyHint);
-  const templateId = existing?.templateId || recommended.templateId;
-  const matchedSpec =
-    BLOG_INFOGRAPHIC_25_TEMPLATES.find((t) => t.id === templateId) ||
-    BLOG_INFOGRAPHIC_25_TEMPLATES[0];
-
-  const paletteId =
-    existing?.paletteId || PALETTE_CYCLE[orderIndex % PALETTE_CYCLE.length];
-  const kwLabel = toTitleCase(primaryKeyword || "AI Content Strategy");
-
-  return {
-    id: existing?.id || `vis-${sectionId}`,
-    sectionId,
-    templateId: matchedSpec.id,
-    templateSlug: matchedSpec.slug,
-    templateName: matchedSpec.name,
-    headline: h2Text,
-    subheadline: `Verified ${kwLabel} Framework · Section ${orderIndex + 1} Visual Breakdown`,
-    paletteId,
-    aspectRatio: existing?.aspectRatio || "16:9",
-    nodes:
-      existing?.nodes && existing.nodes.length >= 3
-        ? existing.nodes
-        : [
-            {
-              id: `${sectionId}-n1`,
-              badge: "01",
-              title: "Search Intent Alignment",
-              detail: `Front-load ${primaryKeyword} entities & direct answers in the first 60 words.`,
-              metricValue: "98% Fit",
-            },
-            {
-              id: `${sectionId}-n2`,
-              badge: "02",
-              title: "Semantic Depth & Proof",
-              detail: "Pair structured H3 subheadings with verifiable benchmarks and tables.",
-              metricValue: "+42% Dwell",
-            },
-            {
-              id: `${sectionId}-n3`,
-              badge: "03",
-              title: "Visual Diagram Synthesis",
-              detail: "Embed zero-CLS SVG/Canvas infographics to capture image & AI search snippets.",
-              metricValue: "0.000 CLS",
-            },
-            {
-              id: `${sectionId}-n4`,
-              badge: "04",
-              title: "Technical Schema Graph",
-              detail: "Validate BlogPosting, FAQPage, and HowTo JSON-LD before publishing.",
-              metricValue: "100/100 CWV",
-            },
-          ],
-    footerSourceLabel:
-      existing?.footerSourceLabel || "DoItWithAI.tools · Visual SEO Studio",
-    altText:
-      existing?.altText ||
-      `${h2Text} — ${kwLabel} infographic diagram (${matchedSpec.name})`,
+  const base: BlogInfographicConfig = {
+    ...existing,
+    id: existing?.id || `vis-${sectionId}`, sectionId,
+    templateId: existing?.templateId || recommended.templateId,
+    templateSlug: "prism-editorial", templateName: "Editorial atlas",
+    headline: h2Text, subheadline: bodyHint ? "" : "Write the section body to build its visual summary.",
+    paletteId: existing?.paletteId || PALETTE_CYCLE[orderIndex % PALETTE_CYCLE.length],
+    aspectRatio: "4:5", nodes: [],
+    footerSourceLabel: existing?.footerSourceLabel || "DoItWithAI.tools · Article section summary",
+    altText: `${h2Text} — section infographic`,
   };
+  const result = buildSectionVisual(sectionFromText(h2Text, bodyHint, sectionId));
+  return withPrismLayout({ ...base, nodes: result.nodes, visualBrief: result.brief }, existing?.prismLayout || "editorial");
 }
 
 // ============================================================================
@@ -1041,7 +990,7 @@ Rules:
 - metaTitle MUST be 42 to 57 characters so its Google SERP pixel width is strictly under 580px. Front-load the primary keyword.
 - metaDescription MUST be 130 to 154 characters (<920px).
 - aeoDirectAnswer50Words MUST be a 45-to-55 word direct, encyclopedic definition front-loading the primary keyword for Google AI Overviews.
-- Return 5 structured H2 sections in "sections", each with 2 H3 "subHeadings" and 4 "infographicNodes" (badge, title, detail, metricValue).
+- Return 5 structured H2 sections in "sections", each with 2 H3 "subHeadings". Return an empty "infographicNodes" array; visual takeaways are built from the completed section text after drafting, not invented at outline time.
 - Never use robotic AI clichés ("delve into", "testament to", "tapestry of", "in today's fast-paced digital world").`;
 
       const userPrompt = JSON.stringify({
@@ -1087,17 +1036,6 @@ Rules:
           idx
         );
 
-        const customNodes =
-          Array.isArray(sec.infographicNodes) && sec.infographicNodes.length >= 3
-            ? sec.infographicNodes.slice(0, 4).map((n, nIdx) => ({
-                id: `${sectionId}-n${nIdx + 1}`,
-                badge: String(n.badge || `0${nIdx + 1}`),
-                title: String(n.title || "Key Insight"),
-                detail: String(n.detail || "Verified SEO implementation step."),
-                metricValue: String(n.metricValue || "Verified"),
-              }))
-            : baseInfographic.nodes;
-
         return {
           id: sectionId,
           orderIndex: idx,
@@ -1130,7 +1068,7 @@ Rules:
               : true,
           infographicConfig: {
             ...baseInfographic,
-            nodes: customNodes,
+            nodes: [],
           },
         };
       });
@@ -1332,7 +1270,7 @@ Strict Editorial & SEO Rules:
               sec.h2Text,
               pk,
               idx,
-              bodyMarkdown,
+              [bodyMarkdown, ...subHeadings.map(sub => `### ${sub.h3Text}\n${sub.bodyMarkdown}`)].join("\n\n"),
               sec.infographicConfig
             ),
           };
@@ -1459,6 +1397,7 @@ Strict Editorial & SEO Rules:
       };
 
       const autoFixed = applyOneClickSeoAutoFixes(draftedProject);
+      autoFixed.sections = autoFixed.sections.map(sec => ({ ...sec, infographicConfig: visualFromWriterSection(sec) }));
       autoFixed.scorecard = runFullDeterministicSeoScorecard(autoFixed);
 
       return NextResponse.json({
@@ -1550,11 +1489,6 @@ Rules:
         (Array.isArray(rawCopilot.infographicNodes) &&
           rawCopilot.infographicNodes.length >= 3)
       ) {
-        const nodesSource =
-          Array.isArray(rawCopilot.infographicNodes) &&
-          rawCopilot.infographicNodes.length >= 3
-            ? rawCopilot.infographicNodes
-            : fallbackCopilot.infographicNodes || [];
         const baseVis = buildSectionInfographicConfig(
           sec.id,
           sec.h2Text,
@@ -1563,19 +1497,7 @@ Rules:
           updatedBody,
           sec.infographicConfig
         );
-        updatedInfographic = {
-          ...baseVis,
-          nodes:
-            nodesSource.length >= 3
-              ? nodesSource.slice(0, 4).map((n, nIdx) => ({
-                  id: `${sec.id}-n${nIdx + 1}`,
-                  badge: String(n.badge || `0${nIdx + 1}`),
-                  title: String(n.title || "Key Metric"),
-                  detail: String(n.detail || "Verified insight"),
-                  metricValue: String(n.metricValue || "Verified"),
-                }))
-              : baseVis.nodes,
-        };
+        updatedInfographic = visualFromWriterSection({ ...sec, h2Text: rawCopilot.h2Text || sec.h2Text, bodyMarkdown: updatedBody, infographicConfig: baseVis });
       }
 
       return {
@@ -1613,6 +1535,7 @@ Rules:
   } catch (error) {
     // Ultimate safety net: even if request parsing or unexpected state occurs, return a valid 200 fallback project
     const fallbackProject = applyOneClickSeoAutoFixes(DEFAULT_FLAGSHIP_BLOG_PROJECT);
+    fallbackProject.sections = fallbackProject.sections.map(sec => ({ ...sec, infographicConfig: visualFromWriterSection(sec) }));
     return NextResponse.json({
       ok: true,
       mode: "generate-full-article-and-pack",

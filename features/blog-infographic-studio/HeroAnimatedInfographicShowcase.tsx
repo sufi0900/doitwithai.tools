@@ -1,17 +1,13 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
+import { buildInfographicScene } from "@/lib/blog-infographic-studio/canvas-renderer";
 import {
-  createSampleInfographicConfig,
-  generateBlogInfographicSvg,
-} from "@/lib/blog-infographic-studio/canvas-renderer";
-const slides = [
-  { id: 2, label: "Roadmap", palette: "blue-trust" },
-  { id: 8, label: "Comparison", palette: "emerald-growth" },
-  { id: 11, label: "Key figures", palette: "amber-executive" },
-  { id: 17, label: "Hierarchy", palette: "rose-editorial" },
-  { id: 22, label: "Anatomy", palette: "violet-saas" },
-] as const;
+  createPrismSample,
+  PRISM_LAYOUTS,
+  withPrismLayout,
+} from "@/lib/blog-infographic-studio/visual-brief";
+
 export default function HeroAnimatedInfographicShowcase() {
   const [index, setIndex] = useState(0),
     [paused, setPaused] = useState(false),
@@ -21,94 +17,31 @@ export default function HeroAnimatedInfographicShowcase() {
     [reduced, setReduced] = useState(true);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onMotion = () => setReduced(media.matches),
-      onVisibility = () => setHidden(document.hidden);
-    onMotion();
-    onVisibility();
-    media.addEventListener("change", onMotion);
-    document.addEventListener("visibilitychange", onVisibility);
+    const motion = () => setReduced(media.matches),
+      visibility = () => setHidden(document.hidden);
+    motion();
+    visibility();
+    media.addEventListener("change", motion);
+    document.addEventListener("visibilitychange", visibility);
     return () => {
-      media.removeEventListener("change", onMotion);
-      document.removeEventListener("visibilitychange", onVisibility);
+      media.removeEventListener("change", motion);
+      document.removeEventListener("visibilitychange", visibility);
     };
   }, []);
   useEffect(() => {
     if (paused || hover || focused || hidden || reduced) return;
     const timer = setInterval(
-      () => setIndex((i) => (i + 1) % slides.length),
-      4500,
+      () => setIndex((i) => (i + 1) % PRISM_LAYOUTS.length),
+      2400,
     );
     return () => clearInterval(timer);
   }, [paused, hover, focused, hidden, reduced]);
-  const source = useMemo(
+  const slides = useMemo(
     () =>
-      slides.map((s) => {
-        const c = createSampleInfographicConfig(s.id, s.palette);
-        if (s.id === 8) {
-          c.headline = "From scattered ideas to a clear plan";
-          c.subheadline = "Compare two approaches to planning a useful article";
-          c.comparisonLabels = ["Unstructured", "Planned"];
-          c.nodes = [
-            {
-              id: "a1",
-              badge: "01",
-              title: "Start with a title",
-              detail: "Draft before checking what the reader needs.",
-            },
-            {
-              id: "b1",
-              badge: "02",
-              title: "Start with a question",
-              detail: "Define the reader’s task before choosing the format.",
-            },
-            {
-              id: "a2",
-              badge: "03",
-              title: "Publish in isolation",
-              detail: "Check overlapping pages and related links later.",
-            },
-            {
-              id: "b2",
-              badge: "04",
-              title: "Map before writing",
-              detail:
-                "Choose the page, useful examples and next step together.",
-            },
-          ];
-          c.altText =
-            "Comparison of unstructured and planned article workflows.";
-        }
-        if (s.id === 17) {
-          c.headline = "Build useful content from the ground up";
-          c.subheadline = "A simple hierarchy for a stronger editorial process";
-          c.nodes = [
-            {
-              id: "h1",
-              badge: "03",
-              title: "Review and improve",
-              detail: "Use feedback and search data to decide what to update.",
-            },
-            {
-              id: "h2",
-              badge: "02",
-              title: "Create the right answer",
-              detail:
-                "Write a clear page with useful examples and relevant links.",
-            },
-            {
-              id: "h3",
-              badge: "01",
-              title: "Understand the audience",
-              detail:
-                "Establish the reader’s question, intent and context first.",
-            },
-          ];
-          c.altText =
-            "Three-tier content hierarchy: audience understanding, useful answers, review.";
-        }
-        c.brand = { illustration: s.id === 2 ? "paper-steps" : "none" };
-        return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(generateBlogInfographicSvg(c))}`;
-      }),
+      PRISM_LAYOUTS.map(
+        (l) =>
+          `data:image/svg+xml;charset=utf-8,${encodeURIComponent(buildInfographicScene(withPrismLayout(createPrismSample(), l.id)).svg)}`,
+      ),
     [],
   );
   const select = (i: number) => {
@@ -119,6 +52,7 @@ export default function HeroAnimatedInfographicShowcase() {
     <div
       aria-label="Infographic layout showcase"
       aria-roledescription="carousel"
+      className="group relative mx-auto w-full max-w-[540px]"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onFocusCapture={() => setFocused(true)}
@@ -126,103 +60,69 @@ export default function HeroAnimatedInfographicShowcase() {
         if (!e.currentTarget.contains(e.relatedTarget as Node))
           setFocused(false);
       }}
-      className="overflow-hidden rounded-3xl border border-indigo-200 bg-[#EEF1FF] shadow-xl dark:border-indigo-500/25 dark:bg-[#111C38]"
     >
-      <div className="flex items-center justify-between px-5 pt-4">
-        <span className="text-[10px] font-bold uppercase tracking-[.2em] text-indigo-600 dark:text-indigo-200">
-          One idea. Different perspectives.
-        </span>
+      <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#F6F7FF] shadow-[0_24px_70px_#3452d12e] ring-1 ring-indigo-500/10">
+        {slides.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt={
+              i === index
+                ? `${PRISM_LAYOUTS[i].name}: three sides of AI SEO`
+                : ""
+            }
+            aria-hidden={i !== index}
+            className={`absolute inset-0 h-full w-full object-contain motion-safe:transition-opacity motion-safe:duration-300 ${i === index ? "opacity-100" : "opacity-0"}`}
+          />
+        ))}
+      </div>
+      <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-slate-200 bg-white/95 p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900/95">
         <button
           type="button"
+          aria-label="Previous infographic"
+          onClick={() => select(index - 1)}
+          className="rounded-full p-2 text-indigo-600 dark:text-indigo-300"
+        >
+          <ArrowLeft size={14} />
+        </button>
+        {PRISM_LAYOUTS.map((l, i) => (
+          <button
+            key={l.id}
+            type="button"
+            aria-label={`Show ${l.name}`}
+            aria-pressed={i === index}
+            onClick={() => select(i)}
+            className="flex h-8 w-6 items-center justify-center"
+          >
+            <span
+              className={`h-2 rounded-full ${index === i ? "w-4 bg-indigo-600" : "w-2 bg-slate-300"}`}
+            />
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={reduced}
           aria-label={
             reduced
-              ? "Automatic rotation is disabled for reduced motion"
+              ? "Rotation disabled for reduced motion"
               : paused
-                ? "Play layout showcase"
-                : "Pause layout showcase"
+                ? "Play infographic showcase"
+                : "Pause infographic showcase"
           }
-          disabled={reduced}
           onClick={() => setPaused((p) => !p)}
-          className="rounded-lg p-2 text-indigo-600 hover:bg-indigo-100 dark:text-indigo-200 dark:hover:bg-indigo-500/20"
+          className="rounded-full p-2 text-indigo-600 disabled:opacity-40 dark:text-indigo-300"
         >
-          {paused ? <Play size={14} /> : <Pause size={14} />}
+          {paused || reduced ? <Play size={14} /> : <Pause size={14} />}
         </button>
-      </div>
-      <div className="relative flex h-[350px] items-center justify-center overflow-hidden px-5 py-5 sm:h-[380px]">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#5271ff20,_transparent_70%)]" />
-        {/* These are real renderer output, not testimonial mockups or baked-in screenshots. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={source[(index + 1) % slides.length]}
-          alt=""
-          aria-hidden="true"
-          className="absolute right-[5%] h-[76%] max-w-[48%] rotate-12 object-contain opacity-40 shadow-lg"
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          key={index}
-          src={source[index]}
-          alt={`${slides[index].label} infographic example with editable text and source footer`}
-          className="relative z-10 h-full max-w-[80%] -rotate-3 object-contain shadow-2xl motion-safe:transition-transform motion-safe:duration-300"
-        />
-        <div className="absolute bottom-3 left-4 z-20 rounded-xl border border-white/60 bg-white/95 px-3 py-2 shadow-sm dark:border-slate-600 dark:bg-slate-900/95">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-500">
-            Made in this studio
-          </p>
-          <p className="mt-0.5 text-xs font-semibold text-slate-800 dark:text-white">
-            Editable text · Brand-ready · SVG + PNG
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center justify-between gap-2 px-3 pb-4">
         <button
           type="button"
-          onClick={() => select(index - 1)}
-          aria-label="Previous example"
-          className="rounded-lg p-2 text-indigo-600 dark:text-indigo-200"
-        >
-          <ArrowLeft size={15} />
-        </button>
-        <div className="flex flex-wrap justify-center gap-1.5">
-          {slides.map((s, i) => (
-            <button
-              type="button"
-              key={s.id}
-              aria-pressed={index === i}
-              onClick={() => select(i)}
-              className={`rounded-full px-2.5 py-2 text-[10px] font-bold ${index === i ? "bg-indigo-600 text-white" : "bg-white/70 text-indigo-900 hover:bg-white dark:bg-slate-800 dark:text-indigo-200"}`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
+          aria-label="Next infographic"
           onClick={() => select(index + 1)}
-          aria-label="Next example"
-          className="rounded-lg p-2 text-indigo-600 dark:text-indigo-200"
+          className="rounded-full p-2 text-indigo-600 dark:text-indigo-300"
         >
-          <ArrowRight size={15} />
+          <ArrowRight size={14} />
         </button>
       </div>
-      <button
-        type="button"
-        onClick={() => {
-          window.dispatchEvent(
-            new CustomEvent("select-blog-infographic-template", {
-              detail: { templateId: slides[index].id },
-            }),
-          );
-          document.getElementById("tool-studio-workspace")?.scrollIntoView({
-            behavior: reduced ? "auto" : "smooth",
-            block: "start",
-          });
-        }}
-        className="flex w-full items-center justify-center gap-2 border-t border-indigo-200 bg-white px-4 py-4 text-xs font-bold text-indigo-700 hover:bg-indigo-50 dark:border-indigo-500/25 dark:bg-indigo-950/60 dark:text-indigo-200"
-      >
-        Use this layout in the studio
-        <ArrowDown size={14} />
-      </button>
     </div>
   );
 }

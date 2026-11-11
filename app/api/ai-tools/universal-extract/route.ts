@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { parseHTML } from "linkedom";
 import { Readability } from "@mozilla/readability";
 import { z } from "zod";
+import { extractArticleSource } from "@/lib/blog-infographic-studio/article-source";
+import type { ArticleSourceSection, ArticleSourceCoverage } from "@/lib/blog-infographic-studio/article-source";
 import { BodyError, readBoundedJson } from "@/lib/ai-tools/request-body";
 import {
   fetchPublic,
@@ -14,12 +16,14 @@ export const maxDuration = 60;
 
 const inputSchema = z.object({
   url: z.string().trim().min(4).max(2048),
+  purpose: z.literal("infographic").optional(),
 });
 
 export type ExtractedSubTopic = {
   title: string;
   summary: string;
   content: string;
+  sectionId?: string;
 };
 
 export type ExtractedImageAsset = {
@@ -46,6 +50,10 @@ export type UniversalExtractResponse = {
   keyTakeaways: string[];
   subTopics: ExtractedSubTopic[];
   images: ExtractedImageAsset[];
+  sections?: ArticleSourceSection[];
+  recommendedSectionId?: string;
+  selectedSectionId?: string;
+  coverage?: ArticleSourceCoverage;
   rawTranscriptWithTimestamps?: string;
   transcriptSegments?: Array<{
     timestamp: string;
@@ -1611,6 +1619,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const sourceTree = input.purpose === "infographic" ? extractArticleSource(document as unknown as Document, title) : undefined;
+    const sourceParagraphs = sourceTree?.sections.flatMap(s => s.blocks.filter(b => b.kind !== "heading").map(b => b.text));
     const resPayload: UniversalExtractResponse = {
       isYoutube: false,
       url: finalUrl,
@@ -1620,10 +1630,11 @@ export async function POST(request: NextRequest) {
       author,
       focusKeyword: focusKeyword || "ai tools",
       headings,
-      paragraphs,
-      cleanText: paragraphs.join("\n\n"),
-      keyTakeaways,
-      subTopics,
+      paragraphs: sourceParagraphs || paragraphs,
+      cleanText: (sourceParagraphs || paragraphs).join("\n\n"),
+      keyTakeaways: sourceTree ? sourceTree.sections.filter(s => s.role === "content").flatMap(s => s.blocks.filter(b => b.kind !== "heading").slice(0,1).map(b => b.text)).slice(0,6) : keyTakeaways,
+      subTopics: sourceTree ? sourceTree.sections.map(s => ({ sectionId: s.id, title: s.title, summary: s.blocks.find(b => b.kind !== "heading")?.text || "", content: s.blocks.filter(b => b.kind !== "heading").map(b => b.text).join("\n\n") })) : subTopics,
+      ...sourceTree,
       images: images.slice(0, 25),
     };
 

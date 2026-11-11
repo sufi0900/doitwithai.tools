@@ -20,6 +20,7 @@
     "test:routes": "node scripts/tools-route-smoke.cjs"
   },
   "dependencies": {
+    "@antv/infographic": "0.2.20",
     "@emailjs/browser": "^4.4.1",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
