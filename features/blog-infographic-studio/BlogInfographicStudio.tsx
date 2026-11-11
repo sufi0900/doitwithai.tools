@@ -1,4 +1,5 @@
 "use client";
+
 import React, {
   useDeferredValue,
   useEffect,
@@ -6,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import JSZip from "jszip";
 import {
   ArrowDown,
   ArrowUp,
@@ -14,29 +16,29 @@ import {
   Copy,
   Download,
   FileCode2,
-  FolderArchive,
-  Image as ImageIcon,
+  Layers,
+  Loader2,
+  Palette,
   Plus,
-  Printer,
   Redo2,
-  RotateCcw,
   Sparkles,
   Trash2,
   Undo2,
   Upload,
+  X,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { UrlArticleExtractorBar } from "@/features/tool-ui/UrlArticleExtractorBar";
+import UrlArticleExtractorBar from "@/features/tool-ui/UrlArticleExtractorBar";
 import { printCanvasAsPdfPoster } from "@/features/tool-ui/visualCardExport";
 import type {
   BlogInfographicConfig,
   BlogInfographicNodeItem,
   BlogSectionNode,
+  InfographicAspectRatio,
 } from "@/lib/blog-writer/canonical-state";
 import {
   PRISM_LAYOUTS,
-  autoRecommendPrismLayout,
   buildSectionVisual,
   createPrismSample,
   sectionFromText,
@@ -52,9 +54,7 @@ import {
   buildInfographicScene,
   createSampleInfographicConfig,
   generateBlogInfographicSvg,
-  isSafeInfographicImage,
   renderBlogInfographicToCanvas,
-  renderBlogInfographicToPngDataUrl,
 } from "@/lib/blog-infographic-studio/canvas-renderer";
 import {
   importInfographicProject,
@@ -69,41 +69,43 @@ export interface BlogInfographicStudioProps {
   onSaveConfig?: (updated: BlogInfographicConfig) => void;
   onClose?: () => void;
 }
-
-const uid = () =>
-  `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-
 const field =
-  "mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 shadow-2xs focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white";
+  "mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white";
 const button =
-  "inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition hover:border-indigo-400 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-45 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-indigo-400";
+  "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-indigo-400 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
 const primary =
-  "inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-45";
-
-function svgSource(svg: string) {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-}
-
+  button +
+  " !border-indigo-600 !bg-indigo-600 !text-white hover:!bg-indigo-500";
+const uid = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `item-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const svgSource = (svg: string) =>
+  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+const familyLabels = [
+  "All layouts",
+  "Process",
+  "Comparison",
+  "Data",
+  "Framework",
+  "Checklist",
+  "Cover",
+];
 function saveFile(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const url = URL.createObjectURL(blob),
+    a = document.createElement("a");
   a.href = url;
   a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
-
 function escapeHtml(s: string) {
-  return String(s || "").replace(
+  return s.replace(
     /[&<>"']/g,
     (c) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      })[c] || c,
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ]!,
   );
 }
 
@@ -117,14 +119,10 @@ function PrismTemplateCard({
   onSelect: () => void;
 }) {
   const spec = PRISM_LAYOUTS.find((l) => l.id === layout)!;
-  const candidate = useMemo(
-    () => withPrismLayout(config, layout),
+  const scene = useMemo(
+    () => buildInfographicScene(withPrismLayout(config, layout)),
     [config, layout],
   );
-  const scene = useMemo(() => buildInfographicScene(candidate), [candidate]);
-  const dims =
-    ASPECT_RATIO_DIMENSIONS[candidate.aspectRatio] ||
-    ASPECT_RATIO_DIMENSIONS["4:5"];
   const selected =
     config.visualEngine === "prism-antv" && config.prismLayout === layout;
   return (
@@ -132,44 +130,34 @@ function PrismTemplateCard({
       type="button"
       aria-pressed={selected}
       onClick={onSelect}
-      className={`group flex flex-col overflow-hidden rounded-2xl border-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-        selected
-          ? "border-indigo-500 bg-indigo-50/70 shadow-md dark:bg-indigo-950/35"
-          : "border-slate-200/80 bg-white hover:border-indigo-300 dark:border-slate-800 dark:bg-slate-900"
-      }`}
+      className={`overflow-hidden rounded-xl border-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selected ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" : "border-transparent bg-slate-100 hover:border-indigo-300 dark:bg-slate-800"}`}
     >
-      <div className="relative flex h-72 w-full items-center justify-center overflow-hidden bg-slate-100/90 p-3 dark:bg-slate-950/80">
+      <div className="flex h-64 items-center justify-center bg-slate-200/60 p-3 dark:bg-slate-950/50">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={svgSource(scene.svg)}
           alt={`${spec.name} with your current text`}
           loading="lazy"
-          className="h-full w-full object-contain drop-shadow-md transition-transform duration-200 group-hover:scale-[1.01]"
+          className="max-h-full max-w-full object-contain shadow-md"
         />
-        <span className="pointer-events-none absolute right-2.5 top-2.5 rounded-md bg-slate-900/75 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
-          {dims.width} × {dims.height}
-        </span>
       </div>
-      <div className="flex flex-1 flex-col justify-between border-t border-slate-200/80 bg-white p-3.5 dark:border-slate-800 dark:bg-slate-900">
-        <div>
-          <p className="text-sm font-bold text-slate-900 dark:text-white">
-            {selected ? "✓ " : ""}
-            {spec.name}
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-300">
-            {spec.description}
-          </p>
-        </div>
+      <div className="p-3">
+        <p className="text-sm font-bold text-slate-900 dark:text-white">
+          {selected ? "✓ " : ""}
+          {spec.name}
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-300">
+          {spec.description}
+        </p>
         {scene.issues.length > 0 && (
           <p className="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
-            Needs a text adjustment
+            Needs a text or format adjustment
           </p>
         )}
       </div>
     </button>
   );
 }
-
 function TemplateCard({
   config,
   id,
@@ -181,9 +169,12 @@ function TemplateCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const spec = BLOG_INFOGRAPHIC_25_TEMPLATES[id - 1];
-  const scene = useMemo(
-    () => buildInfographicScene(selectInfographicTemplate(config, id)),
+  const t = BLOG_INFOGRAPHIC_25_TEMPLATES[id - 1];
+  const src = useMemo(
+    () =>
+      svgSource(
+        generateBlogInfographicSvg(selectInfographicTemplate(config, id)),
+      ),
     [config, id],
   );
   return (
@@ -191,54 +182,49 @@ function TemplateCard({
       type="button"
       aria-pressed={selected}
       onClick={onSelect}
-      className={`flex flex-col overflow-hidden rounded-xl border-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-        selected
-          ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30"
-          : "border-transparent bg-slate-100 hover:border-indigo-300 dark:bg-slate-800"
-      }`}
+      className={`group overflow-hidden rounded-2xl border-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${selected ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" : "border-transparent bg-slate-100 hover:border-indigo-300 dark:bg-slate-800/50"}`}
     >
-      <div className="relative flex h-52 w-full items-center justify-center overflow-hidden bg-slate-200/60 p-2.5 dark:bg-slate-950/50">
+      <div className="relative flex h-52 items-center justify-center overflow-hidden bg-slate-200/70 p-4 dark:bg-slate-900/80">
+        {/* The very same scene as the main preview, in the selected aspect ratio. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={svgSource(scene.svg)}
-          alt={`${spec.name} preview`}
+          src={src}
+          alt={`${t.name} layout with your content`}
           loading="lazy"
-          className="h-full w-full object-contain shadow-sm"
+          className="max-h-full max-w-full rounded-sm object-contain shadow-lg transition duration-300 group-hover:scale-[1.03]"
         />
+        {selected && (
+          <span className="absolute right-2 top-2 rounded-full bg-indigo-600 p-1.5 text-white">
+            <Check size={13} />
+          </span>
+        )}
       </div>
-      <div className="border-t border-slate-200/60 p-3 dark:border-slate-700/60">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-500">
-          #{spec.id} · {spec.family}
-        </p>
-        <p className="mt-0.5 text-sm font-bold text-slate-900 dark:text-white">
-          {selected ? "✓ " : ""}
-          {spec.name}
-        </p>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
-          {spec.bestForSectionType}
+      <div className="p-3.5">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">
+          {familyLabels[familyIndex(id)]} · {String(id).padStart(2, "0")}
+        </span>
+        <h4 className="mt-1 text-sm font-bold leading-snug text-slate-900 dark:text-white">
+          {t.name}
+        </h4>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+          {t.bestForSectionType}
         </p>
       </div>
     </button>
   );
 }
-
-const familyLabels = [
-  "All 25",
-  "Steps & Process",
-  "Compare",
-  "Numbers & Charts",
-  "Frameworks",
-  "Checklists",
-  "Blog Covers",
-] as const;
-
 function familyIndex(id: number) {
-  if (id <= 5) return 1;
-  if (id <= 10) return 2;
-  if (id <= 15) return 3;
-  if (id <= 19) return 4;
-  if (id <= 24) return 5;
-  return 6;
+  return id <= 5
+    ? 1
+    : id <= 10
+      ? 2
+      : id <= 15
+        ? 3
+        : id <= 19
+          ? 4
+          : id <= 24
+            ? 5
+            : 6;
 }
 
 export function BlogInfographicStudio({
@@ -254,8 +240,8 @@ export function BlogInfographicStudio({
   const [activeIdx, setActiveIdx] = useState(0),
     [panel, setPanel] = useState<"content" | "design" | "brand">("content"),
     [family, setFamily] = useState(0),
-    [query, setQuery] = useState(""),
-    [paste, setPaste] = useState(""),
+    [query, setQuery] = useState("");
+  const [paste, setPaste] = useState(""),
     [toast, setToast] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -264,149 +250,222 @@ export function BlogInfographicStudio({
   const [past, setPast] = useState<BlogInfographicConfig[][]>([]),
     [future, setFuture] = useState<BlogInfographicConfig[][]>([]);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const projectInputRef = useRef<HTMLInputElement | null>(null);
-  const logoInputRef = useRef<HTMLInputElement | null>(null);
-
-  const active = cards[activeIdx] || cards[0];
+  const active = cards[Math.min(activeIdx, cards.length - 1)];
   const deferred = useDeferredValue(active);
-  const scene = useMemo(() => buildInfographicScene(active), [active]);
-  const dims =
-    ASPECT_RATIO_DIMENSIONS[active.aspectRatio] ||
-    ASPECT_RATIO_DIMENSIONS["4:5"];
-  const spec =
-    BLOG_INFOGRAPHIC_25_TEMPLATES.find((t) => t.id === active.templateId) ||
-    BLOG_INFOGRAPHIC_25_TEMPLATES[0];
-
-  const templates = useMemo(
-    () =>
-      BLOG_INFOGRAPHIC_25_TEMPLATES.filter((t) => {
-        if (family !== 0 && familyIndex(t.id) !== family) return false;
-        if (!query.trim()) return true;
-        const q = query.toLowerCase();
-        return (
-          t.name.toLowerCase().includes(q) ||
-          t.family.toLowerCase().includes(q) ||
-          t.bestForSectionType.toLowerCase().includes(q)
-        );
-      }),
-    [family, query],
+  const scene = useMemo(() => buildInfographicScene(deferred), [deferred]);
+  const dimensions = ASPECT_RATIO_DIMENSIONS[active.aspectRatio];
+  const spec = BLOG_INFOGRAPHIC_25_TEMPLATES.find(
+    (t) => t.id === active.templateId,
+  )!;
+  const templates = BLOG_INFOGRAPHIC_25_TEMPLATES.filter(
+    (t) =>
+      (!family || familyIndex(t.id) === family) &&
+      `${t.name} ${t.bestForSectionType}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
   );
-
-  function notify(msg: string) {
-    setError("");
-    setToast(msg);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(""), 3800);
-  }
-
+  const notify = (s: string) => {
+    setToast(s);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(""), 4500);
+  };
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+  useEffect(() => {
+    if (initialConfig) {
+      setCards([initialConfig]);
+      setActiveIdx(0);
+      setPast([]);
+      setFuture([]);
+    }
+  }, [initialConfig]);
   function commit(next: BlogInfographicConfig[]) {
-    setPast((p) => [...p.slice(-24), cards]);
+    setPast((p) => [...p.slice(-29), cards]);
     setFuture([]);
     setCards(next);
-  }
-
-  function update(patch: Partial<BlogInfographicConfig>) {
     setError("");
-    const merged = patchInfographic(active, patch);
-    const finalized =
-      merged.visualEngine === "prism-antv"
-        ? withPrismLayout(merged, merged.prismLayout || "editorial")
-        : merged;
-    commit(cards.map((c, i) => (i === activeIdx ? finalized : c)));
   }
-
+  function update(patch: Partial<BlogInfographicConfig>) {
+    commit(
+      cards.map((c, i) => (i === activeIdx ? patchInfographic(c, patch) : c)),
+    );
+  }
+  function updateBrand(
+    patch: Partial<NonNullable<BlogInfographicConfig["brand"]>>,
+  ) {
+    update({ brand: { ...active.brand, ...patch } });
+  }
+  function choose(id: number) {
+    update(selectInfographicTemplate(active, id));
+  }
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const d = (event as CustomEvent<{ templateId: number }>).detail;
+      if (!BLOG_INFOGRAPHIC_25_TEMPLATES.some((t) => t.id === d?.templateId))
+        return;
+      setCards((prev) =>
+        prev.map((c, i) =>
+          i === activeIdx ? selectInfographicTemplate(c, d.templateId) : c,
+        ),
+      );
+      setPanel("design");
+    };
+    window.addEventListener("select-blog-infographic-template", handler);
+    return () =>
+      window.removeEventListener("select-blog-infographic-template", handler);
+  }, [activeIdx]);
+  function undo() {
+    if (!past.length) return;
+    setFuture((f) => [cards, ...f]);
+    setCards(past[past.length - 1]);
+    setPast((p) => p.slice(0, -1));
+    setActiveIdx(0);
+  }
+  function redo() {
+    if (!future.length) return;
+    setPast((p) => [...p, cards]);
+    setCards(future[0]);
+    setFuture((f) => f.slice(1));
+    setActiveIdx(0);
+  }
   function updateNode(id: string, patch: Partial<BlogInfographicNodeItem>) {
     update({
       nodes: active.nodes.map((n) => (n.id === id ? { ...n, ...patch } : n)),
     });
   }
-
-  function updateBrand(
-    patch: Partial<NonNullable<BlogInfographicConfig["brand"]>>,
-  ) {
-    update({
-      brand: {
-        ...active.brand,
-        ...patch,
-      },
-    });
+  function moveNode(index: number, delta: number) {
+    const nodes = [...active.nodes],
+      target = index + delta;
+    if (target < 0 || target >= nodes.length) return;
+    [nodes[index], nodes[target]] = [nodes[target], nodes[index]];
+    update({ nodes });
   }
-
-  function choose(id: number) {
-    update(selectInfographicTemplate(active, id));
-  }
-
-  useEffect(() => {
-    const onSelect = (e: Event) => {
-      const detail = (e as CustomEvent<{ templateId?: number }>).detail;
-      if (detail?.templateId) {
-        setCards((curr) =>
-          curr.map((c, i) =>
-            i === activeIdx
-              ? selectInfographicTemplate(c, detail.templateId!)
-              : c,
-          ),
-        );
-      }
-    };
-    window.addEventListener("select-blog-infographic-template", onSelect);
-    return () =>
-      window.removeEventListener("select-blog-infographic-template", onSelect);
-  }, [activeIdx]);
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    void renderBlogInfographicToCanvas(canvasRef.current, active).catch(
-      () => {},
-    );
-  }, [active]);
-
-  const filename =
-    (active.headline || "infographic")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 60) || "infographic";
-
-  async function run(task: () => Promise<void>) {
-    setError("");
+  async function run(action: () => Promise<void>) {
+    if (busy) return;
     setBusy(true);
+    setError("");
     try {
-      await task();
+      await action();
     } catch (e) {
       setError(
         e instanceof Error
           ? e.message
-          : "Fix the reported issues before exporting.",
+          : "This action failed. Please try again.",
       );
     } finally {
       setBusy(false);
     }
   }
-
-  async function handleLogoUpload(file: File) {
-    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      setError("Upload a PNG, JPG, or WebP logo file.");
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setError("Logo image must be under 2 MB.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result || "");
-      if (!isSafeInfographicImage(dataUrl)) {
-        setError("Unsupported logo image format.");
-        return;
-      }
-      updateBrand({ logoDataUrl: dataUrl });
-      notify("Logo applied to your infographic.");
-    };
-    reader.readAsDataURL(file);
+  async function freshCanvas(config = active) {
+    const canvas = document.createElement("canvas");
+    await renderBlogInfographicToCanvas(canvas, config);
+    return canvas;
   }
-
+  const filename = `${active.templateSlug}-${active.aspectRatio.replace(":", "x")}`;
+  async function exportImage(type: "png" | "webp") {
+    await run(async () => {
+      const canvas = await freshCanvas();
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("Image export failed."))),
+          `image/${type}`,
+          0.94,
+        ),
+      );
+      saveFile(blob, `${filename}.${type}`);
+      notify(
+        `Downloaded ${dimensions.width} × ${dimensions.height} ${type.toUpperCase()}.`,
+      );
+    });
+  }
+  async function copyImage() {
+    await run(async () => {
+      if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined")
+        throw new Error(
+          "Image copy is unavailable here. Use Download PNG instead.",
+        );
+      const canvas = await freshCanvas();
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("Image copy failed."))),
+          "image/png",
+        ),
+      );
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob }),
+      ]);
+      notify("Image copied.");
+    });
+  }
+  async function exportZip() {
+    await run(async () => {
+      const zip = new JSZip();
+      for (const [i, card] of cards.entries()) {
+        const stem = `section-${i + 1}-${card.templateSlug}`,
+          canvas = await freshCanvas(card);
+        zip.file(`${stem}.svg`, generateBlogInfographicSvg(card));
+        zip.file(`${stem}.png`, canvas.toDataURL("image/png").split(",")[1], {
+          base64: true,
+        });
+      }
+      zip.file(
+        "editable-project.json",
+        JSON.stringify({ version: 1, cards }, null, 2),
+      );
+      saveFile(
+        await zip.generateAsync({ type: "blob" }),
+        "blog-infographics.zip",
+      );
+      notify("Downloaded images and editable project.");
+    });
+  }
+  async function saveToWriter() {
+    await run(async () => {
+      const canvas = await freshCanvas();
+      onSaveConfig?.({
+        ...active,
+        sectionId: initialConfig?.sectionId || active.sectionId,
+        id: initialConfig?.id || active.id,
+        renderedPngDataUrl: canvas.toDataURL("image/png"),
+        renderedSvgMarkup: generateBlogInfographicSvg(active),
+      });
+      onClose?.();
+    });
+  }
+  async function uploadLogo(file?: File) {
+    if (!file) return;
+    await run(async () => {
+      if (
+        file.size > 2_000_000 ||
+        !["image/png", "image/jpeg", "image/webp"].includes(file.type)
+      )
+        throw new Error("Choose a PNG, JPG or WebP logo under 2 MB.");
+      const src = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(new Error("The logo could not be read."));
+        r.readAsDataURL(file);
+      });
+      const image = new Image();
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = () =>
+          reject(new Error("This image could not be opened."));
+        image.src = src;
+      });
+      const canvas = document.createElement("canvas"),
+        scale = Math.min(1, 640 / Math.max(image.width, image.height));
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      canvas
+        .getContext("2d")!
+        .drawImage(image, 0, 0, canvas.width, canvas.height);
+      updateBrand({
+        logoDataUrl: canvas.toDataURL("image/png"),
+        logoStyle: "plain",
+      });
+      notify("Logo added. It will travel with your saved infographic.");
+    });
+  }
   function addSection() {
     if (cards.length >= 12) return;
     const card = {
@@ -425,7 +484,6 @@ export function BlogInfographicStudio({
     commit([...cards, card]);
     setActiveIdx(cards.length);
   }
-
   function pastePoints() {
     if (
       paste.length > 90000 ||
@@ -448,44 +506,42 @@ export function BlogInfographicStudio({
       return;
     }
     update({
-      ...withPrismLayout(
-        {
-          ...active,
-          headline,
-          subheadline: "",
-          nodes: result.nodes,
-          visualBrief: result.brief,
-          altText: `${headline}: ${result.nodes.map((n) => n.title).join("; ")}`,
-          footerSourceLabel: active.footerSourceLabel.includes(
-            "Illustrative framework",
-          )
-            ? "Source: supplied section text"
-            : active.footerSourceLabel,
-        },
-        active.prismLayout || "editorial",
-      ),
+      ...withPrismLayout(active, active.prismLayout || "editorial"),
+      headline,
+      subheadline: "",
+      nodes: result.nodes,
+      visualBrief: result.brief,
+      altText: `${headline}: ${result.nodes.map((n) => n.title).join("; ")}`,
+      footerSourceLabel: active.footerSourceLabel.includes(
+        "Illustrative framework",
+      )
+        ? "Source: supplied section text"
+        : active.footerSourceLabel,
     });
     notify(
       "Created a source-based draft. Check the explanations and source coverage before exporting.",
     );
   }
-
   return (
-    <div
+    <section
       id="tool-studio-workspace"
-      className="mx-auto max-w-7xl space-y-5 text-slate-900 dark:text-white"
+      aria-label="Blog infographic studio"
+      className={
+        mode === "standalone"
+          ? "mx-auto max-w-[1440px] px-4 py-10 sm:px-6"
+          : "rounded-3xl bg-white p-4 text-slate-900 dark:bg-slate-950 dark:text-white sm:p-6"
+      }
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            Blog Section Infographic Studio
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-indigo-600 dark:text-indigo-300">
+            <Layers size={15} /> The visual editor
           </p>
-          <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-            Turn section explanations into clear, editable visuals
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            Make the idea easy to see.
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Pre-built template dimensions · 9 original editorial layouts + 25
-            classic layouts
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Shape your content, choose a layout, and make it yours.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -498,77 +554,53 @@ export function BlogInfographicStudio({
           <button
             type="button"
             className={button}
-            disabled={!past.length}
-            onClick={() => {
-              const prev = past[past.length - 1];
-              setPast((p) => p.slice(0, -1));
-              setFuture((f) => [cards, ...f]);
-              setCards(prev);
-            }}
+            onClick={undo}
+            disabled={!past.length || busy}
+            title="Undo"
           >
-            <Undo2 size={14} />
+            <Undo2 size={15} />
             Undo
           </button>
           <button
             type="button"
             className={button}
-            disabled={!future.length}
-            onClick={() => {
-              const [next, ...rest] = future;
-              setFuture(rest);
-              setPast((p) => [...p, cards]);
-              setCards(next);
-            }}
+            onClick={redo}
+            disabled={!future.length || busy}
+            title="Redo"
           >
-            <Redo2 size={14} />
+            <Redo2 size={15} />
             Redo
           </button>
-          {mode === "embedded-modal" && onSaveConfig && (
-            <button
-              type="button"
-              className={primary}
-              onClick={() => onSaveConfig(active)}
-            >
-              <Check size={14} />
-              Save to section
-            </button>
-          )}
-          {mode === "embedded-modal" && onClose && (
-            <button type="button" className={button} onClick={onClose}>
-              Close
-            </button>
+          {mode === "embedded-modal" && (
+            <>
+              <button
+                type="button"
+                className={primary}
+                onClick={saveToWriter}
+                disabled={busy}
+              >
+                <Check size={15} />
+                Save to section
+              </button>
+              <button
+                type="button"
+                className={button}
+                onClick={onClose}
+                aria-label="Close infographic editor"
+              >
+                <X size={16} />
+              </button>
+            </>
           )}
         </div>
       </div>
-
-      {toast && (
-        <div
-          role="status"
-          className="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-xs font-semibold text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-200"
-        >
-          {toast}
-        </div>
-      )}
-      {error && (
-        <div
-          role="alert"
-          className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-800 dark:border-rose-500/40 dark:bg-rose-950/40 dark:text-rose-200"
-        >
-          {error}
-        </div>
-      )}
-
       {mode === "standalone" && (
-        <details
-          open
-          className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
-        >
-          <summary className="flex cursor-pointer items-center justify-between text-sm font-bold text-slate-800 dark:text-white">
-            <span className="flex items-center gap-2">
-              <Sparkles size={16} className="text-indigo-500" />
-              Start from an article URL
+        <details className="mb-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+          <summary className="cursor-pointer text-sm font-bold text-slate-700 dark:text-slate-200">
+            Start from an article URL{" "}
+            <span className="ml-2 text-xs font-normal text-slate-500">
+              or edit the example below
             </span>
-            <ChevronDown size={16} />
           </summary>
           <div className="mt-4">
             <UrlArticleExtractorBar
@@ -589,13 +621,14 @@ export function BlogInfographicStudio({
                   );
                   return;
                 }
-                const next = withPrismLayout(
+                let next = withPrismLayout(
                   {
                     ...active,
                     id: active.id,
                     sectionId: input.id,
                     headline: input.title,
                     subheadline: "",
+                    aspectRatio: "4:5",
                     nodes: result.nodes,
                     visualBrief: {
                       ...result.brief,
@@ -606,6 +639,12 @@ export function BlogInfographicStudio({
                   },
                   active.prismLayout || "editorial",
                 );
+                if (
+                  buildInfographicScene(next).issues.some(
+                    (i) => i.field === "Text fit",
+                  )
+                )
+                  next = { ...next, aspectRatio: "9:16" };
                 // Selecting a source replaces the current visual; it never creates a separate card for every paragraph.
                 update(next);
                 notify(
@@ -616,77 +655,49 @@ export function BlogInfographicStudio({
           </div>
         </details>
       )}
-
-      {mode === "standalone" && (
-        <div className="flex flex-wrap items-center gap-2">
-          {cards.map((c, i) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setActiveIdx(i)}
-              className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
-                i === activeIdx
-                  ? "border-indigo-600 bg-indigo-600 text-white"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-indigo-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-              }`}
-            >
-              Section {i + 1}: {(c.headline || "Untitled").slice(0, 24)}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={button}
-            disabled={cards.length >= 12}
-            onClick={addSection}
-          >
-            <Plus size={14} />
-            Add section
-          </button>
-          {cards.length > 1 && (
-            <button
-              type="button"
-              className={button}
-              onClick={() => {
-                const next = cards.filter((_, i) => i !== activeIdx);
-                commit(next);
-                setActiveIdx(Math.max(0, activeIdx - 1));
-              }}
-            >
-              <Trash2 size={14} />
-              Remove section
-            </button>
-          )}
+      {error && (
+        <div
+          role="alert"
+          className="mb-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200"
+        >
+          {error}
         </div>
       )}
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-        <aside className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[370px_minmax(0,1fr)]">
+        <aside className="min-w-0 self-start overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:sticky lg:top-6">
           <div
+            className="flex border-b border-slate-200 p-2 dark:border-slate-800"
             role="tablist"
             aria-label="Editor controls"
-            className="grid grid-cols-3 border-b border-slate-200 bg-slate-50 p-1.5 dark:border-slate-800 dark:bg-slate-950"
+            onKeyDown={(e) => {
+              const tabs = ["content", "design", "brand"] as const;
+              let next = tabs.indexOf(panel);
+              if (e.key === "ArrowRight") next = (next + 1) % 3;
+              else if (e.key === "ArrowLeft") next = (next + 2) % 3;
+              else if (e.key === "Home") next = 0;
+              else if (e.key === "End") next = 2;
+              else return;
+              e.preventDefault();
+              setPanel(tabs[next]);
+              document.getElementById(`infographic-tab-${tabs[next]}`)?.focus();
+            }}
           >
-            {(["content", "design", "brand"] as const).map((t) => (
+            {(["content", "design", "brand"] as const).map((tab) => (
               <button
-                key={t}
-                id={`infographic-tab-${t}`}
                 type="button"
+                id={`infographic-tab-${tab}`}
                 role="tab"
-                aria-selected={panel === t}
-                aria-controls={`infographic-panel-${t}`}
-                tabIndex={panel === t ? 0 : -1}
-                onClick={() => setPanel(t)}
-                className={`rounded-xl py-2 text-xs font-bold capitalize transition ${
-                  panel === t
-                    ? "bg-white text-indigo-600 shadow-2xs dark:bg-slate-900 dark:text-indigo-400"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                }`}
+                tabIndex={panel === tab ? 0 : -1}
+                aria-selected={panel === tab}
+                aria-controls={`infographic-panel-${tab}`}
+                key={tab}
+                onClick={() => setPanel(tab)}
+                className={`flex-1 rounded-lg px-3 py-3 text-sm font-bold capitalize ${panel === tab ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"}`}
               >
-                {t}
+                {tab}
               </button>
             ))}
           </div>
-
           <div
             id={`infographic-panel-${panel}`}
             role="tabpanel"
@@ -795,8 +806,8 @@ export function BlogInfographicStudio({
                     Headline
                     <input
                       className={field}
-                      maxLength={140}
                       value={active.headline}
+                      maxLength={180}
                       onChange={(e) => update({ headline: e.target.value })}
                     />
                   </label>
@@ -805,8 +816,8 @@ export function BlogInfographicStudio({
                     <textarea
                       className={field}
                       rows={2}
-                      maxLength={240}
                       value={active.subheadline}
+                      maxLength={240}
                       onChange={(e) => update({ subheadline: e.target.value })}
                     />
                   </label>
@@ -826,18 +837,19 @@ export function BlogInfographicStudio({
                     rows={5}
                     value={paste}
                     onChange={(e) => setPaste(e.target.value)}
-                    placeholder="Paste a blog section with headings and explanatory paragraphs..."
+                    placeholder="Paste a section or one point per line…"
                   />
                   <button
                     type="button"
-                    className={primary + " mt-2.5 w-full"}
                     onClick={pastePoints}
+                    className={primary + " mt-2 w-full"}
                   >
-                    Build points from text
+                    <Sparkles size={14} />
+                    Use this text
                   </button>
                 </details>
                 <div>
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                       Your points{" "}
                       <span className="text-slate-400">
@@ -860,16 +872,15 @@ export function BlogInfographicStudio({
                                 2,
                                 "0",
                               ),
-                              title: `Point ${active.nodes.length + 1}`,
-                              detail:
-                                "Add a clear, complete explanation from your section.",
+                              title: "New point",
+                              detail: "Explain the idea in one short sentence.",
                               metricValue: "",
                             },
                           ],
                         })
                       }
                     >
-                      <Plus size={13} />
+                      <Plus size={14} />
                       Add
                     </button>
                   </div>
@@ -886,11 +897,11 @@ export function BlogInfographicStudio({
                         className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"
                       >
                         <summary className="flex cursor-pointer items-center gap-2 text-sm font-bold text-slate-800 dark:text-white">
-                          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-indigo-500/15 text-[11px] font-extrabold text-indigo-600 dark:text-indigo-300">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-indigo-100 text-[10px] text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200">
                             {i + 1}
                           </span>
-                          <span className="flex-1 truncate">
-                            {n.title || `Point ${i + 1}`}
+                          <span className="min-w-0 flex-1 truncate">
+                            {n.title || "Untitled point"}
                           </span>
                           <ChevronDown size={13} />
                         </summary>
@@ -935,8 +946,8 @@ export function BlogInfographicStudio({
                             Title
                             <input
                               className={field}
-                              maxLength={90}
                               value={n.title}
+                              maxLength={120}
                               onChange={(e) =>
                                 updateNode(n.id, { title: e.target.value })
                               }
@@ -947,20 +958,20 @@ export function BlogInfographicStudio({
                             <textarea
                               className={field}
                               rows={3}
-                              maxLength={320}
                               value={n.detail}
+                              maxLength={360}
                               onChange={(e) =>
                                 updateNode(n.id, { detail: e.target.value })
                               }
                             />
                           </label>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-[72px_1fr] gap-2">
                             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                              Short label
+                              Badge
                               <input
                                 className={field}
-                                maxLength={16}
                                 value={n.badge}
+                                maxLength={6}
                                 onChange={(e) =>
                                   updateNode(n.id, { badge: e.target.value })
                                 }
@@ -986,39 +997,31 @@ export function BlogInfographicStudio({
                           <div className="flex justify-end gap-1">
                             <button
                               type="button"
-                              aria-label={`Move point ${i + 1} up`}
                               className={button}
+                              aria-label={`Move point ${i + 1} up`}
                               disabled={i === 0}
-                              onClick={() => {
-                                const copy = [...active.nodes];
-                                [copy[i - 1], copy[i]] = [copy[i], copy[i - 1]];
-                                update({ nodes: copy });
-                              }}
+                              onClick={() => moveNode(i, -1)}
                             >
                               <ArrowUp size={13} />
                             </button>
                             <button
                               type="button"
-                              aria-label={`Move point ${i + 1} down`}
                               className={button}
+                              aria-label={`Move point ${i + 1} down`}
                               disabled={i === active.nodes.length - 1}
-                              onClick={() => {
-                                const copy = [...active.nodes];
-                                [copy[i], copy[i + 1]] = [copy[i + 1], copy[i]];
-                                update({ nodes: copy });
-                              }}
+                              onClick={() => moveNode(i, 1)}
                             >
                               <ArrowDown size={13} />
                             </button>
                             <button
                               type="button"
-                              aria-label={`Delete point ${i + 1}`}
                               className={button}
-                              disabled={active.nodes.length <= 2}
+                              aria-label={`Delete point ${i + 1}`}
+                              disabled={active.nodes.length <= 1}
                               onClick={() =>
                                 update({
                                   nodes: active.nodes.filter(
-                                    (item) => item.id !== n.id,
+                                    (x) => x.id !== n.id,
                                   ),
                                 })
                               }
@@ -1031,87 +1034,101 @@ export function BlogInfographicStudio({
                     ))}
                   </div>
                 </div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Source / footer
+                  <input
+                    className={field}
+                    value={active.footerSourceLabel}
+                    maxLength={180}
+                    onChange={(e) =>
+                      update({ footerSourceLabel: e.target.value })
+                    }
+                  />
+                  <span className="mt-1 block text-[11px] font-normal text-slate-500">
+                    Credit the actual source of any figures.
+                  </span>
+                </label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                  Image description (alt text)
+                  <textarea
+                    className={field}
+                    rows={3}
+                    value={active.altText}
+                    onChange={(e) => update({ altText: e.target.value })}
+                  />
+                </label>
               </>
             )}
-
             {panel === "design" && (
               <>
-                <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/40 p-3.5 dark:border-indigo-500/30 dark:bg-indigo-950/25">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                      Pre-built template dimensions
-                    </span>
-                    <span className="rounded-full bg-indigo-600/15 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-300">
-                      {dims.width} × {dims.height} px · Locked
-                    </span>
-                  </div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    Each template’s width and height are pre-built and
-                    automatically fitted to your point count so the layout stays
-                    pixel-perfect.
-                  </p>
-                </div>
-
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Color palette
+                    Canvas format
                   </h3>
-                  <div className="mt-2.5 grid grid-cols-2 gap-2">
-                    {Object.values(BLOG_INFOGRAPHIC_PALETTES).map((p) => (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {(
+                      Object.keys(
+                        ASPECT_RATIO_DIMENSIONS,
+                      ) as InfographicAspectRatio[]
+                    ).map((r) => (
                       <button
                         type="button"
-                        key={p.id}
-                        aria-pressed={active.paletteId === p.id}
-                        onClick={() => update({ paletteId: p.id })}
-                        className={`flex items-center gap-2 rounded-xl border p-2.5 text-left text-xs font-semibold transition ${
-                          active.paletteId === p.id
-                            ? "border-indigo-600 bg-indigo-50/70 dark:border-indigo-400 dark:bg-indigo-950/40"
-                            : "border-slate-200 hover:border-indigo-300 dark:border-slate-700"
-                        }`}
+                        key={r}
+                        aria-pressed={active.aspectRatio === r}
+                        className={active.aspectRatio === r ? primary : button}
+                        onClick={() => update({ aspectRatio: r })}
                       >
-                        <span
-                          className="h-5 w-5 shrink-0 rounded-full border border-black/10"
-                          style={{
-                            background: `linear-gradient(135deg, ${p.bgStart}, ${p.accent})`,
-                          }}
-                        />
-                        <span className="truncate">{p.label}</span>
+                        {r}
+                        <span className="text-[10px] opacity-70">
+                          {r === "16:9"
+                            ? "Landscape"
+                            : r === "1:1"
+                              ? "Square"
+                              : r === "4:5"
+                                ? "Portrait"
+                                : "Tall"}
+                        </span>
                       </button>
                     ))}
                   </div>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    Portrait and tall formats give longer explanations more
+                    breathing room.
+                  </p>
                 </div>
-
-                {(active.visualEngine
-                  ? active.prismLayout === "versus"
-                  : [6, 8, 9, 10, 23].includes(active.templateId)) && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {[0, 1].map((col) => (
+                {[6, 8, 9, 10, 23].includes(active.templateId) && (
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Comparison headings
+                    </h3>
+                    {[0, 1].map((i) => (
                       <label
-                        key={col}
-                        className="text-xs font-bold text-slate-600 dark:text-slate-300"
+                        key={i}
+                        className="block text-xs font-bold text-slate-600 dark:text-slate-300"
                       >
-                        Column {col + 1} header
+                        {i === 0 ? "Left column" : "Right column"}
                         <input
                           className={field}
-                          maxLength={40}
-                          value={
-                            active.comparisonLabels?.[col] ||
-                            (col === 0 ? "Perspective A" : "Perspective B")
+                          maxLength={70}
+                          value={active.comparisonLabels?.[i] || ""}
+                          placeholder={
+                            i === 0
+                              ? "e.g. Manual workflow"
+                              : "e.g. Assisted workflow"
                           }
                           onChange={(e) => {
-                            const next: [string, string] = [
-                              active.comparisonLabels?.[0] || "Perspective A",
-                              active.comparisonLabels?.[1] || "Perspective B",
+                            const labels: [string, string] = [
+                              active.comparisonLabels?.[0] || "Option A",
+                              active.comparisonLabels?.[1] || "Option B",
                             ];
-                            next[col] = e.target.value;
-                            update({ comparisonLabels: next });
+                            labels[i] = e.target.value;
+                            update({ comparisonLabels: labels });
                           }}
                         />
                       </label>
                     ))}
                   </div>
                 )}
-
                 {(active.visualEngine
                   ? active.prismLayout === "constellation"
                   : [3, 19].includes(active.templateId)) && (
@@ -1132,7 +1149,6 @@ export function BlogInfographicStudio({
                     />
                   </label>
                 )}
-
                 <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-500">
                     Selected layout ·{" "}
@@ -1145,9 +1161,7 @@ export function BlogInfographicStudio({
                   </h3>
                   <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                     {active.visualEngine
-                      ? PRISM_LAYOUTS.find((l) => l.id === active.prismLayout)
-                          ?.description ||
-                        "Concepts and source-based explanations"
+                      ? "Concepts and source-based explanations"
                       : spec.bestForSectionType}
                     . Choose a different layout in the gallery; your writing
                     stays in place.
@@ -1157,13 +1171,13 @@ export function BlogInfographicStudio({
                     className={button + " mt-3 w-full"}
                     onClick={() => {
                       if (active.visualEngine) {
-                        const layout = autoRecommendPrismLayout(
-                          active.headline,
-                          active.nodes,
-                        );
+                        const layout =
+                          active.nodes.length <= 3
+                            ? "constellation"
+                            : "editorial";
                         update(withPrismLayout(active, layout));
                         notify(
-                          `Suggested "${PRISM_LAYOUTS.find((l) => l.id === layout)?.name}" for this section.`,
+                          "Suggested an editorial composition for this point count. Check the text fit before exporting.",
                         );
                         return;
                       }
@@ -1172,14 +1186,15 @@ export function BlogInfographicStudio({
                         active.nodes.map((n) => n.detail).join(" "),
                       );
                       choose(rec.templateId);
-                      notify(`Suggested layout: ${rec.templateName}`);
+                      notify(
+                        `Suggested: ${rec.templateName}. You can choose any layout.`,
+                      );
                     }}
                   >
                     <Sparkles size={14} />
                     Suggest a layout
                   </button>
                 </div>
-
                 {!active.visualEngine && (
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -1212,52 +1227,135 @@ export function BlogInfographicStudio({
                 )}
               </>
             )}
-
             {panel === "brand" && (
               <>
                 <div>
+                  <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+                    <Palette size={16} />
+                    Color collection
+                  </h3>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {Object.values(BLOG_INFOGRAPHIC_PALETTES).map((p) => (
+                      <button
+                        type="button"
+                        aria-pressed={active.paletteId === p.id}
+                        key={p.id}
+                        onClick={() =>
+                          update({
+                            paletteId: p.id,
+                            brand: { ...active.brand, customColors: {} },
+                          })
+                        }
+                        className={`rounded-xl border p-3 text-left ${active.paletteId === p.id ? "border-indigo-500 ring-1 ring-indigo-500" : "border-slate-200 dark:border-slate-700"}`}
+                      >
+                        <span className="flex gap-1">
+                          {[p.bgStart, p.accent, p.accentSecondary].map(
+                            (c, i) => (
+                              <span
+                                key={i}
+                                className="h-5 w-5 rounded-full border border-black/10"
+                                style={{ background: c }}
+                              />
+                            ),
+                          )}
+                        </span>
+                        <span className="mt-2 block text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                          {p.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Custom colors
+                  </h3>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    {(
+                      [
+                        ["bgStart", "Background"],
+                        ["surface", "Panels"],
+                        ["accent", "Accent"],
+                        ["textMain", "Text"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <label
+                        key={key}
+                        className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"
+                      >
+                        <input
+                          type="color"
+                          aria-label={label}
+                          className="h-9 w-9 cursor-pointer rounded-lg border-0 bg-transparent"
+                          value={
+                            active.brand?.customColors?.[key] ||
+                            BLOG_INFOGRAPHIC_PALETTES[active.paletteId][key]
+                          }
+                          onChange={(e) =>
+                            updateBrand({
+                              customColors: {
+                                ...active.brand?.customColors,
+                                [key]: e.target.value,
+                              },
+                            })
+                          }
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="mt-3 text-xs font-semibold text-indigo-500"
+                    onClick={() => updateBrand({ customColors: {} })}
+                  >
+                    Reset custom colors
+                  </button>
+                </div>
+                <div className="space-y-4 border-t border-slate-200 pt-5 dark:border-slate-700">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                     Brand logo
                   </h3>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    Upload a PNG, JPG, or WebP logo (under 2 MB) to appear in
-                    the footer of your infographic.
+                  <label className={button + " w-full cursor-pointer"}>
+                    <Upload size={14} />
+                    Upload PNG, JPG or WebP
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="sr-only"
+                      disabled={busy}
+                      onChange={(e) => {
+                        void uploadLogo(e.target.files?.[0]);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <p className="text-xs text-slate-500">
+                    Up to 2 MB. Stored with this infographic.
                   </p>
-                  <input
-                    ref={logoInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void handleLogoUpload(f);
-                      e.target.value = "";
-                    }}
-                  />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className={button}
-                      onClick={() => logoInputRef.current?.click()}
-                    >
-                      <Upload size={14} />
-                      Upload logo
-                    </button>
-                    {active.brand?.logoDataUrl && (
-                      <button
-                        type="button"
-                        className={button}
-                        onClick={() => updateBrand({ logoDataUrl: undefined })}
-                      >
-                        <Trash2 size={14} />
-                        Remove logo
-                      </button>
-                    )}
-                  </div>
                   {active.brand?.logoDataUrl && (
-                    <div className="mt-4 space-y-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
-                        Logo size ({Math.round((active.brand.logoScale || 1) * 100)}%)
+                    <>
+                      <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-100 p-3 dark:bg-slate-800">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={active.brand.logoDataUrl}
+                          alt="Your uploaded brand logo"
+                          className="h-12 max-w-[170px] object-contain"
+                        />
+                        <button
+                          type="button"
+                          className={button}
+                          onClick={() =>
+                            updateBrand({ logoDataUrl: undefined })
+                          }
+                          aria-label="Remove logo"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
+                        Logo size ·{" "}
+                        {Math.round((active.brand.logoScale || 1) * 100)}%
                         <input
                           type="range"
                           min="0.7"
@@ -1267,192 +1365,117 @@ export function BlogInfographicStudio({
                           onChange={(e) =>
                             updateBrand({ logoScale: Number(e.target.value) })
                           }
-                          className="mt-1.5 w-full"
+                          className="mt-3 w-full accent-indigo-600"
                         />
                       </label>
-                      <div>
-                        <span className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
-                          Logo badge style
-                        </span>
-                        <div className="mt-1.5 grid grid-cols-3 gap-2">
-                          {(["plain", "white", "dark"] as const).map((st) => (
-                            <button
-                              type="button"
-                              key={st}
-                              className={
-                                (active.brand?.logoStyle || "plain") === st
-                                  ? primary
-                                  : button
-                              }
-                              onClick={() => updateBrand({ logoStyle: st })}
-                            >
-                              {st}
-                            </button>
-                          ))}
-                        </div>
+                      <div className="flex flex-wrap gap-2">
+                        {(["plain", "white", "dark"] as const).map((s) => (
+                          <button
+                            type="button"
+                            aria-pressed={
+                              (active.brand?.logoStyle || "plain") === s
+                            }
+                            key={s}
+                            onClick={() => updateBrand({ logoStyle: s })}
+                            className={
+                              (active.brand?.logoStyle || "plain") === s
+                                ? primary
+                                : button
+                            }
+                          >
+                            {s === "plain" ? "No box" : `${s} box`}
+                          </button>
+                        ))}
                       </div>
-                    </div>
+                    </>
                   )}
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Custom brand colors
-                    </h3>
-                    {active.brand?.customColors && (
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400"
-                        onClick={() => updateBrand({ customColors: undefined })}
-                      >
-                        <RotateCcw size={12} />
-                        Reset
-                      </button>
-                    )}
-                  </div>
-                  <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-                    {(
-                      [
-                        ["bgStart", "Background"],
-                        ["surface", "Card surface"],
-                        ["accent", "Primary accent"],
-                        ["textMain", "Main text"],
-                      ] as const
-                    ).map(([key, label]) => {
-                      const pal =
-                        BLOG_INFOGRAPHIC_PALETTES[active.paletteId] ||
-                        BLOG_INFOGRAPHIC_PALETTES["blue-trust"];
-                      const val =
-                        active.brand?.customColors?.[key] || pal[key];
-                      return (
-                        <label
-                          key={key}
-                          className="text-xs font-semibold text-slate-600 dark:text-slate-300"
-                        >
-                          {label}
-                          <div className="mt-1 flex items-center gap-1.5">
-                            <input
-                              type="color"
-                              value={val}
-                              onChange={(e) =>
-                                updateBrand({
-                                  customColors: {
-                                    ...active.brand?.customColors,
-                                    [key]: e.target.value,
-                                  },
-                                })
-                              }
-                              className="h-8 w-9 cursor-pointer rounded border border-slate-200 bg-transparent p-0.5 dark:border-slate-700"
-                            />
-                            <input
-                              type="text"
-                              value={val}
-                              maxLength={7}
-                              onChange={(e) =>
-                                updateBrand({
-                                  customColors: {
-                                    ...active.brand?.customColors,
-                                    [key]: e.target.value,
-                                  },
-                                })
-                              }
-                              className={field + " !mt-0 font-mono"}
-                            />
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                    Source / footer label
-                    <input
-                      className={field}
-                      maxLength={120}
-                      value={active.footerSourceLabel}
-                      onChange={(e) =>
-                        update({ footerSourceLabel: e.target.value })
-                      }
-                    />
-                  </label>
-                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300">
-                    Image alt text (accessibility & SEO)
-                    <textarea
-                      className={field}
-                      rows={2}
-                      maxLength={260}
-                      value={active.altText}
-                      onChange={(e) => update({ altText: e.target.value })}
-                    />
-                  </label>
+                  {cards.length > 1 && (
+                    <button
+                      type="button"
+                      className={button + " w-full"}
+                      onClick={() => {
+                        commit(
+                          cards.map((c) =>
+                            patchInfographic(c, {
+                              paletteId: active.paletteId,
+                              brand: { ...active.brand },
+                            }),
+                          ),
+                        );
+                        notify(
+                          "Applied colors, logo and illustration to all sections.",
+                        );
+                      }}
+                    >
+                      Apply brand to all sections
+                    </button>
+                  )}
                 </div>
               </>
             )}
           </div>
         </aside>
-
         <div
           id={`${mode}-infographic-preview`}
           className="min-w-0 scroll-mt-28 space-y-6"
         >
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 p-3 dark:border-slate-800">
-              <div className="mr-auto flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                <span>
-                  {dims.width} × {dims.height} · {active.aspectRatio}
-                </span>
-                <span className="text-indigo-600 dark:text-indigo-400">
-                  Editable source included in ZIP
-                </span>
+              <div
+                className="flex min-w-0 flex-1 gap-2 overflow-x-auto"
+                role="group"
+                aria-label="Infographic sections"
+              >
+                {cards.map((c, i) => (
+                  <button
+                    type="button"
+                    aria-pressed={activeIdx === i}
+                    key={c.id}
+                    onClick={() => setActiveIdx(i)}
+                    className={
+                      (activeIdx === i ? primary : button) + " shrink-0"
+                    }
+                  >
+                    Section {i + 1}
+                  </button>
+                ))}
               </div>
-
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  aria-label="Zoom out"
-                  className={button}
-                  onClick={() =>
-                    setZoom((z) => Math.max(0.6, Number((z - 0.1).toFixed(2))))
-                  }
-                >
-                  <ZoomOut size={14} />
-                </button>
-                <span className="px-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <button
-                  type="button"
-                  aria-label="Zoom in"
-                  className={button}
-                  onClick={() =>
-                    setZoom((z) => Math.min(1.4, Number((z + 0.1).toFixed(2))))
-                  }
-                >
-                  <ZoomIn size={14} />
-                </button>
-              </div>
-
+              <button
+                type="button"
+                className={button}
+                onClick={addSection}
+                disabled={cards.length >= 12 || busy}
+                aria-label="Add section"
+              >
+                <Plus size={15} />
+              </button>
+              <button
+                type="button"
+                className={button}
+                disabled={cards.length <= 1 || busy}
+                onClick={() => {
+                  commit(cards.filter((_, i) => i !== activeIdx));
+                  setActiveIdx(Math.max(0, activeIdx - 1));
+                }}
+                aria-label="Delete active section"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 p-3">
               <button
                 type="button"
                 className={primary}
                 disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    const dataUrl =
-                      await renderBlogInfographicToPngDataUrl(active);
-                    const res = await fetch(dataUrl);
-                    saveFile(await res.blob(), `${filename}.png`);
-                    notify("Downloaded high-resolution PNG.");
-                  })
-                }
+                onClick={() => exportImage("png")}
               >
-                <Download size={14} />
-                PNG
+                {busy ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Download size={14} />
+                )}
+                Download PNG
               </button>
-
               <button
                 type="button"
                 className={button}
@@ -1465,140 +1488,149 @@ export function BlogInfographicStudio({
                       }),
                       `${filename}.svg`,
                     );
-                    notify("Downloaded vector SVG.");
                   })
                 }
               >
                 SVG
               </button>
-
               <button
                 type="button"
                 className={button}
                 disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    if (!canvasRef.current) return;
-                    if (
-                      active.visualEngine === "prism-antv" &&
-                      scene.issues.length
-                    ) {
-                      throw new Error(
-                        scene.issues
-                          .map((i) => `${i.field}: ${i.message}`)
-                          .join(" "),
-                      );
-                    }
-                    await renderBlogInfographicToCanvas(
-                      canvasRef.current,
-                      active,
-                    );
-                    const blob = await new Promise<Blob | null>((r) =>
-                      canvasRef.current!.toBlob(r, "image/webp", 0.94),
-                    );
-                    if (blob) saveFile(blob, `${filename}.webp`);
-                    notify("Downloaded WebP image.");
-                  })
-                }
+                onClick={() => exportImage("webp")}
               >
-                <ImageIcon size={14} />
                 WebP
               </button>
-
               <button
                 type="button"
                 className={button}
                 disabled={busy}
                 onClick={() =>
-                  void run(async () => {
-                    if (!canvasRef.current) return;
-                    if (
-                      active.visualEngine === "prism-antv" &&
-                      scene.issues.length
-                    ) {
-                      throw new Error(
-                        scene.issues
-                          .map((i) => `${i.field}: ${i.message}`)
-                          .join(" "),
-                      );
-                    }
-                    await renderBlogInfographicToCanvas(
-                      canvasRef.current,
-                      active,
-                    );
-                    printCanvasAsPdfPoster(canvasRef.current, active.headline);
-                  })
+                  run(async () =>
+                    printCanvasAsPdfPoster(
+                      await freshCanvas(),
+                      active.headline,
+                    ),
+                  )
                 }
               >
-                <Printer size={14} />
-                PDF
+                Print / PDF
               </button>
-
               <button
                 type="button"
                 className={button}
                 disabled={busy}
-                onClick={() =>
-                  void run(async () => {
-                    const svg = generateBlogInfographicSvg(active);
-                    const html = `<figure class="blog-section-infographic" style="aspect-ratio:${dims.width}/${dims.height};max-width:${dims.width}px;margin:1.5rem auto;"><img src="data:image/svg+xml;utf8,${encodeURIComponent(svg)}" alt="${escapeHtml(active.altText || active.headline)}" width="${dims.width}" height="${dims.height}" loading="lazy" decoding="async" style="width:100%;height:auto;display:block;border-radius:12px;" /><figcaption>${escapeHtml(active.headline)} — ${escapeHtml(active.footerSourceLabel)}</figcaption></figure>`;
-                    await navigator.clipboard.writeText(html);
-                    notify("Copied embeddable HTML figure to clipboard.");
-                  })
-                }
+                onClick={copyImage}
               >
-                <FileCode2 size={14} />
-                HTML
+                <Copy size={13} />
+                Copy
+              </button>
+              <button
+                type="button"
+                className={button}
+                disabled={busy}
+                onClick={exportZip}
+              >
+                All sections ZIP
               </button>
             </div>
-
-            {scene.issues.length > 0 && (
+            <div
+              className="overflow-auto bg-slate-200/70 px-4 py-8 dark:bg-[#080E1B] sm:px-8"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle, #94a3b825 1px, transparent 1px)",
+                backgroundSize: "16px 16px",
+              }}
+            >
               <div
-                role="alert"
-                className="border-b border-amber-200 bg-amber-50/90 px-4 py-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200"
-              >
-                <p className="font-bold">Review before exporting:</p>
-                <ul className="mt-1 list-disc space-y-1 pl-4">
-                  {scene.issues.map((issue, idx) => (
-                    <li key={idx}>
-                      <strong>{issue.field}:</strong> {issue.message}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="flex items-center justify-center overflow-auto bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] p-4 sm:p-8 dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)]">
-              <canvas
-                ref={canvasRef}
-                width={dims.width}
-                height={dims.height}
+                className="mx-auto flex min-h-[300px] justify-center"
                 style={{
-                  aspectRatio: `${dims.width} / ${dims.height}`,
-                  maxWidth: `${Math.round(560 * zoom)}px`,
+                  width: `${zoom * 100}%`,
+                  maxWidth: zoom === 1 ? "100%" : "none",
                 }}
-                className="h-auto w-full rounded-xl shadow-2xl ring-1 ring-black/10 dark:ring-white/10"
-              />
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={svgSource(scene.svg)}
+                  alt={active.altText || active.headline}
+                  width={dimensions.width}
+                  height={dimensions.height}
+                  className="h-auto max-h-[680px] max-w-full object-contain drop-shadow-xl"
+                  style={{ maxHeight: 680 * zoom }}
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-4 py-3 dark:border-slate-800">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {dimensions.width} × {dimensions.height} · {active.aspectRatio}{" "}
+                <span className="ml-2 text-indigo-500">
+                  Editable source included in ZIP
+                </span>
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className={button}
+                  onClick={() => setZoom((z) => Math.max(0.6, z - 0.2))}
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom(1)}
+                  className="w-10 text-xs text-slate-500"
+                  aria-label="Reset zoom"
+                >
+                  {Math.round(zoom * 100)}%
+                </button>
+                <button
+                  type="button"
+                  className={button}
+                  onClick={() => setZoom((z) => Math.min(2, z + 0.2))}
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn size={14} />
+                </button>
+              </div>
             </div>
           </div>
-
-          <div className="rounded-2xl border border-indigo-200 bg-white p-4 dark:border-indigo-500/30 dark:bg-slate-900 sm:p-5">
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[.18em] text-indigo-500">
-                  Pre-built editorial collection · {PRISM_LAYOUTS.length}{" "}
-                  compositions
-                </p>
-                <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
-                  An editorial collection for your section
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  Nine original compositions with pre-built dimensions. Your
-                  explanations, palette and logo stay in place when you switch.
-                </p>
-              </div>
+          {scene.issues.length > 0 && (
+            <div
+              role="status"
+              className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-200"
+            >
+              <p className="font-bold">Check these details before exporting.</p>
+              <ul className="mt-2 max-h-48 list-disc space-y-1 overflow-y-auto pl-4">
+                {scene.issues.map((issue, i) => (
+                  <li key={i}>{issue.message}</li>
+                ))}
+              </ul>
+              {scene.issues.some(
+                (i) => !["Colors", "Values", "nodes"].includes(i.field),
+              ) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    update({ aspectRatio: "9:16" });
+                    setPanel("design");
+                  }}
+                  className="mt-3 font-bold underline"
+                >
+                  Try the tall format
+                </button>
+              )}
             </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          )}
+          <div className="rounded-2xl border border-indigo-200 bg-white p-4 dark:border-indigo-500/30 dark:bg-slate-900 sm:p-5">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+              An editorial collection for your section
+            </h3>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+              Three original compositions. Your explanations, palette and logo
+              stay in place when you switch.
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
               {PRISM_LAYOUTS.map((layout) => (
                 <PrismTemplateCard
                   key={layout.id}
@@ -1609,7 +1641,6 @@ export function BlogInfographicStudio({
               ))}
             </div>
           </div>
-
           <details
             open={classicOpen}
             onToggle={(e) => setClassicOpen(e.currentTarget.open)}
@@ -1649,11 +1680,7 @@ export function BlogInfographicStudio({
                       key={f}
                       aria-pressed={family === i}
                       onClick={() => setFamily(i)}
-                      className={`rounded-full border px-3 py-2 text-xs font-semibold ${
-                        family === i
-                          ? "border-indigo-600 bg-indigo-600 text-white"
-                          : "border-slate-200 text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:text-slate-300"
-                      }`}
+                      className={`rounded-full border px-3 py-2 text-xs font-semibold ${family === i ? "border-indigo-600 bg-indigo-600 text-white" : "border-slate-200 text-slate-600 hover:border-indigo-400 dark:border-slate-700 dark:text-slate-300"}`}
                     >
                       {f}
                     </button>
@@ -1680,49 +1707,16 @@ export function BlogInfographicStudio({
               </>
             )}
           </details>
-
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
             <div>
               <h3 className="text-sm font-bold text-slate-800 dark:text-white">
-                Save or reopen your editable project
+                Keep an editable copy
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Keep the project JSON so you can update wording, icons or
-                branding later without starting over.
+              <p className="mt-1 text-xs text-slate-500">
+                Save the project to continue later or share it with a teammate.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <input
-                ref={projectInputRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    try {
-                      const imported = importInfographicProject(
-                        String(reader.result || ""),
-                      );
-                      commit(imported);
-                      setActiveIdx(0);
-                      notify(
-                        `Loaded ${imported.length} section visual${imported.length > 1 ? "s" : ""} from project JSON.`,
-                      );
-                    } catch (err) {
-                      setError(
-                        err instanceof Error
-                          ? err.message
-                          : "Could not import project JSON.",
-                      );
-                    }
-                  };
-                  reader.readAsText(file);
-                  e.target.value = "";
-                }}
-              />
               <button
                 type="button"
                 className={button}
@@ -1731,40 +1725,73 @@ export function BlogInfographicStudio({
                     new Blob([JSON.stringify({ version: 1, cards }, null, 2)], {
                       type: "application/json",
                     }),
-                    `${filename}-project.json`,
+                    "infographic-project.json",
                   )
                 }
               >
-                <FolderArchive size={14} />
-                Save project JSON
+                <FileCode2 size={14} />
+                Save project
               </button>
-              <button
-                type="button"
-                className={button}
-                onClick={() => projectInputRef.current?.click()}
-              >
+              <label className={button + " cursor-pointer"}>
                 <Upload size={14} />
-                Open project JSON
-              </button>
+                Open project
+                <input
+                  type="file"
+                  className="sr-only"
+                  accept="application/json,.json"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    e.target.value = "";
+                    if (f)
+                      void run(async () => {
+                        if (f.size > 12_000_000)
+                          throw new Error("Project files must be under 12 MB.");
+                        const loaded = importInfographicProject(await f.text());
+                        if (cards.length + loaded.length > 12)
+                          throw new Error(
+                            "A project supports 12 sections. Save your current work before opening more sections.",
+                          );
+                        commit([...cards, ...loaded]);
+                        setActiveIdx(cards.length);
+                        notify(
+                          "Project sections added. Your existing sections were kept.",
+                        );
+                      });
+                  }}
+                />
+              </label>
               <button
                 type="button"
                 className={button}
-                onClick={() => {
-                  void navigator.clipboard?.writeText(
-                    generateBlogInfographicSvg(active),
-                  );
-                  notify("Copied raw SVG markup to clipboard.");
-                }}
+                onClick={() =>
+                  run(async () => {
+                    const html = `<figure><img src="${filename}.webp" alt="${escapeHtml(active.altText || active.headline)}" width="${dimensions.width}" height="${dimensions.height}" loading="lazy" decoding="async" style="max-width:100%;height:auto"/><figcaption>${escapeHtml(active.footerSourceLabel)}</figcaption></figure>`;
+                    await navigator.clipboard.writeText(html);
+                    notify(
+                      "Embed HTML copied. Upload the matching WebP alongside your article.",
+                    );
+                  })
+                }
               >
-                <Copy size={14} />
-                Copy SVG
+                <Copy size={13} />
+                Embed HTML
               </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      <div
+        role="status"
+        aria-live="polite"
+        className={
+          toast
+            ? "fixed bottom-6 left-1/2 z-[100] max-w-[90vw] -translate-x-1/2 rounded-xl bg-slate-950 px-5 py-3 text-center text-sm font-semibold text-white shadow-xl ring-1 ring-white/15"
+            : "sr-only"
+        }
+      >
+        {toast}
+      </div>
+    </section>
   );
 }
-
 export default BlogInfographicStudio;

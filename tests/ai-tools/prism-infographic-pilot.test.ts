@@ -139,7 +139,7 @@ test("three AntV compositions render the real source with complete text, semanti
     assert.equal(generateBlogInfographicSvg(config), scene.svg);
     structures.add(scene.svg);
   }
-  assert.equal(structures.size, PRISM_LAYOUTS.length);
+  assert.equal(structures.size, 3);
 });
 
 test("text overflow, incomplete points and low contrast block exports with actionable messages", () => {
