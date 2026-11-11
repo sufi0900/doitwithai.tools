@@ -1,132 +1,66 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useWorkspace } from "@/features/tools-workspace/WorkspaceProvider";
 import {
-  type BlogArticleProject,
-  type BlogSectionBlock,
-  type BlogWriterInputMode,
-  createDefaultBlogArticleProject,
-  generateDeterministicDraftFromBrief,
-  slugifyText,
+  type CanonicalBlogProjectState,
+  type BlogSectionNode,
+  DEFAULT_FLAGSHIP_BLOG_PROJECT,
 } from "@/lib/blog-writer/canonical-state";
 import {
-  measureSerpTitleWidth,
-  measureSerpDescriptionWidth,
+  measureTitlePixelWidth,
+  measureMetaDescriptionPixelWidth,
   runFullDeterministicSeoScorecard,
-  applyOneClickSeoAutoFix,
-  generateArticleJsonLdGraph,
-  generateCleanSemanticHtml,
+  applyOneClickSeoAutoFixes,
+  normalizeSeoSlug,
 } from "@/lib/blog-writer/deterministic-analyzers";
-import {
-  listProjectsFromIdb,
-  saveProjectToIdb,
-  createNewProjectInIdb,
-  deleteProjectFromIdb,
-} from "@/lib/blog-writer/idb-storage";
-import {
-  BLOG_INFOGRAPHIC_TEMPLATES,
-  BLOG_VISUAL_COLOR_THEMES,
-  renderBlogInfographicToCanvas,
-} from "@/lib/blog-writer/infographic-templates";
-import Stage1TopicAndIntentHub from "./Stage1TopicAndIntentHub";
-import Stage2SerpAndOutlineArchitect from "./Stage2SerpAndOutlineArchitect";
-import Stage3DraftAndVisualComposer from "./Stage3DraftAndVisualComposer";
-import Stage4RichEditorAndScorecard from "./Stage4RichEditorAndScorecard";
-import Stage5TechnicalSeoPack from "./Stage5TechnicalSeoPack";
-import Stage6DistributionAndQuizPack from "./Stage6DistributionAndQuizPack";
-import MultiFormatExportBar from "./MultiFormatExportBar";
-import BlogInfographicStudioModal from "@/features/blog-infographic-studio/BlogInfographicStudioModal";
+import { useBlogProjectWorkspace } from "@/lib/blog-writer/project-storage-db";
+import { downloadMasterBlogZipBundle } from "@/lib/blog-writer/zip-bundle-builder";
+import { BLOG_INFOGRAPHIC_25_TEMPLATES } from "@/lib/founder-hub/grand-blog-writer-blueprint";
+
+import Stage1InputHub from "@/features/blog-writer-studio/components/Stage1InputHub";
+import Stage2OutlineArchitect from "@/features/blog-writer-studio/components/Stage2OutlineArchitect";
+import Stage3DraftingAndCopilot from "@/features/blog-writer-studio/components/Stage3DraftingAndCopilot";
+import Stage4RichEditorAndScorecard from "@/features/blog-writer-studio/components/Stage4RichEditorAndScorecard";
+import Stage5TechnicalSeoPack from "@/features/blog-writer-studio/components/Stage5TechnicalSeoPack";
+import Stage6DistributionAndQuizPack from "@/features/blog-writer-studio/components/Stage6DistributionAndQuizPack";
+import MultiFormatExportBar from "@/features/blog-writer-studio/components/MultiFormatExportBar";
+import { BlogInfographicStudio } from "@/features/blog-infographic-studio/BlogInfographicStudio";
+import HeroAnimatedInfographicShowcase from "@/features/blog-infographic-studio/HeroAnimatedInfographicShowcase";
 
 const STUDIO_UNLOCK_STORAGE_KEY = "doitwithai_content_writer_studio_unlocked_v1";
-
-function InlineInfographicCanvasPreview({
-  section,
-  articleTitle,
-  onCustomize,
-}: {
-  section: BlogSectionBlock;
-  articleTitle: string;
-  onCustomize: () => void;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    renderBlogInfographicToCanvas(canvasRef.current, {
-      templateId: section.visualSpec.templateId || "bento-stat-grid",
-      themeId: section.visualSpec.themeId || "brand-cobalt",
-      aspectRatio: section.visualSpec.aspectRatio || "16:9",
-      headline: section.visualSpec.headline || section.heading,
-      subheadline:
-        section.visualSpec.subheadline ||
-        section.keyTakeaway ||
-        articleTitle,
-      items:
-        section.visualSpec.items?.length > 0
-          ? section.visualSpec.items
-          : [
-              { label: "Semantic Coverage", value: "94/100" },
-              { label: "SERP Title Budget", value: "<580px" },
-              { label: "JSON-LD Entities", value: "7 Nodes" },
-              { label: "Visual CLS Impact", value: "0.00" },
-            ],
-      footerNote: "doitwithai.tools/ai-content-writer",
-    });
-  }, [section, articleTitle]);
-
-  return (
-    <div className="my-5 overflow-hidden rounded-2xl border border-slate-700/80 bg-slate-950/90 shadow-lg">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-900/90 px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-          <span className="text-xs font-bold text-slate-200">
-            Inline Section Infographic ({section.visualSpec.templateId})
-          </span>
-          <span className="rounded-md bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300">
-            {section.visualSpec.aspectRatio} • Zero-CLS WebP/PNG
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={onCustomize}
-          className="rounded-lg bg-indigo-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-indigo-500"
-        >
-          🎨 Customize in 25-Template Studio
-        </button>
-      </div>
-      <div className="p-3">
-        <canvas
-          ref={canvasRef}
-          className="h-auto w-full rounded-xl border border-slate-800 bg-slate-950"
-        />
-      </div>
-    </div>
-  );
-}
 
 export default function AiContentWriterPlatformGateAndStudio() {
   const workspace = useWorkspace();
   const isSupabaseAuthenticated = Boolean(workspace?.user);
 
+  const {
+    activeProject: project,
+    updateProject: handleProjectChange,
+    projectList,
+    createNewProject,
+    switchProject,
+    deleteProject,
+    duplicateProject,
+    runOneClickAutoFix,
+    saveNow,
+    isSaving,
+    isHydrated,
+    storageBackend,
+  } = useBlogProjectWorkspace("content-writer");
+
   const [sessionUnlocked, setSessionUnlocked] = useState<boolean>(false);
   const [forcePublicPreview, setForcePublicPreview] = useState<boolean>(false);
-  const [project, setProject] = useState<BlogArticleProject>(() =>
-    createDefaultBlogArticleProject("AI Content Writer Flagship Master Guide"),
-  );
-  const [savedProjects, setSavedProjects] = useState<BlogArticleProject[]>([]);
   const [activeEditorSectionIdx, setActiveEditorSectionIdx] = useState<number>(0);
   const [editorViewMode, setEditorViewMode] = useState<
-    "wysiwyg-all" | "section-focus" | "markdown" | "html"
+    "wysiwyg-all" | "copilot-draft" | "scorecard-split" | "markdown"
   >("wysiwyg-all");
-  const [isGeneratingFullBlog, setIsGeneratingFullBlog] = useState<boolean>(false);
-  const [saveBadge, setSaveBadge] = useState<string>("IndexedDB Ready");
   const [serpDevice, setSerpDevice] = useState<"desktop" | "mobile">("desktop");
-  const [infographicModalState, setInfographicModalState] = useState<{
-    open: boolean;
-    sectionIndex: number;
-  }>({ open: false, sectionIndex: 0 });
+  const [infographicModalSectionIdx, setInfographicModalSectionIdx] = useState<
+    number | null
+  >(null);
+  const [isDownloadingZip, setIsDownloadingZip] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -139,33 +73,6 @@ export default function AiContentWriterPlatformGateAndStudio() {
     } catch {
       // ignore storage errors
     }
-  }, []);
-
-  useEffect(() => {
-    let mounted = true;
-    listProjectsFromIdb()
-      .then((list) => {
-        if (!mounted) return;
-        if (list.length > 0) {
-          setSavedProjects(list);
-          setProject(list[0]);
-        } else {
-          const initial = createDefaultBlogArticleProject(
-            "Best AI Content Writer Workflows & Technical SEO Guide (2026)",
-          );
-          const populated = generateDeterministicDraftFromBrief(initial);
-          setProject(populated);
-          saveProjectToIdb(populated).then(() => {
-            if (mounted) setSavedProjects([populated]);
-          });
-        }
-      })
-      .catch(() => {
-        // fallback if IDB unavailable
-      });
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   const isStudioUnlocked =
@@ -183,67 +90,59 @@ export default function AiContentWriterPlatformGateAndStudio() {
     }
   }, []);
 
-  const handleProjectChange = useCallback((updated: BlogArticleProject) => {
-    const withTimestamp: BlogArticleProject = {
-      ...updated,
-      updatedAt: new Date().toISOString(),
-    };
-    setProject(withTimestamp);
-    setSaveBadge("Saving to IndexedDB...");
-    saveProjectToIdb(withTimestamp)
-      .then(() => {
-        setSaveBadge("Saved locally (IndexedDB)");
-        setSavedProjects((prev) => {
-          const exists = prev.some((p) => p.id === withTimestamp.id);
-          if (exists) {
-            return prev.map((p) =>
-              p.id === withTimestamp.id ? withTimestamp : p,
-            );
-          }
-          return [withTimestamp, ...prev];
-        });
-      })
-      .catch(() => {
-        setSaveBadge("Saved in session");
-      });
-  }, []);
+  const scorecard = useMemo(
+    () => runFullDeterministicSeoScorecard(project),
+    [project],
+  );
+  const titlePx = useMemo(
+    () =>
+      measureTitlePixelWidth(
+        project.metaPack.metaTitle || project.metaPack.h1Title,
+      ),
+    [project.metaPack.metaTitle, project.metaPack.h1Title],
+  );
+  const descPx = useMemo(
+    () => measureMetaDescriptionPixelWidth(project.metaPack.metaDescription),
+    [project.metaPack.metaDescription],
+  );
 
-  const handleOneClickFullBlogGenerate = useCallback(() => {
-    setIsGeneratingFullBlog(true);
-    setTimeout(() => {
-      const populated = generateDeterministicDraftFromBrief(project);
-      handleProjectChange(populated);
-      setIsGeneratingFullBlog(false);
-    }, 350);
-  }, [project, handleProjectChange]);
+  const totalWordCount = useMemo(() => {
+    const allText = [
+      project.metaPack.aeoDirectAnswer50Words,
+      ...project.sections.map((s) => `${s.h2Text} ${s.bodyMarkdown}`),
+    ].join(" ");
+    return allText
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+  }, [project.metaPack.aeoDirectAnswer50Words, project.sections]);
 
-  const handleOneClickAutoFixSeo = useCallback(() => {
-    const fixed = applyOneClickSeoAutoFix(project);
-    handleProjectChange(fixed);
-  }, [project, handleProjectChange]);
+  const fullMarkdownDocument = useMemo(() => {
+    const lines: string[] = [
+      `# ${project.metaPack.h1Title}`,
+      "",
+      `> **50-Word AI Overview Summary:** ${project.metaPack.aeoDirectAnswer50Words}`,
+      "",
+    ];
+    project.sections.forEach((sec, idx) => {
+      lines.push(`## ${idx + 1}. ${sec.h2Text}`);
+      lines.push("");
+      lines.push(sec.bodyMarkdown);
+      lines.push("");
+      if (sec.includeComparisonTable && sec.comparisonTableMarkdown) {
+        lines.push(sec.comparisonTableMarkdown);
+        lines.push("");
+      }
+      if (sec.includeKeyTakeawayCallout && sec.keyTakeawayText) {
+        lines.push(
+          `> **Key Takeaway:** ${sec.keyTakeawayText} *(Visual Template: ${sec.infographicConfig.templateId} • ${sec.infographicConfig.aspectRatio})*`,
+        );
+        lines.push("");
+      }
+    });
+    return lines.join("\n");
+  }, [project]);
 
-  const handleCreateNewProject = useCallback(async () => {
-    const created = await createNewProjectInIdb(
-      `New AI Content Campaign #${savedProjects.length + 1}`,
-    );
-    const populated = generateDeterministicDraftFromBrief(created);
-    await saveProjectToIdb(populated);
-    const refreshed = await listProjectsFromIdb();
-    setSavedProjects(refreshed);
-    setProject(populated);
-  }, [savedProjects.length]);
-
-  const handleDeleteCurrentProject = useCallback(async () => {
-    if (savedProjects.length <= 1) return;
-    await deleteProjectFromIdb(project.id);
-    const refreshed = await listProjectsFromIdb();
-    setSavedProjects(refreshed);
-    if (refreshed[0]) {
-      setProject(refreshed[0]);
-    }
-  }, [project.id, savedProjects.length]);
-
-  // Rich Text Formatting Toolbar Helper for the active section in the WYSIWYG Editor
   const applyRichTextFormatting = useCallback(
     (
       action:
@@ -264,21 +163,23 @@ export default function AiContentWriterPlatformGateAndStudio() {
         activeEditorSectionIdx,
         Math.max(0, project.sections.length - 1),
       );
-      const currentSection = project.sections[targetIdx];
+      const currentSection: BlogSectionNode | undefined =
+        project.sections[targetIdx];
       if (!currentSection) return;
 
       let updatedMarkdown = currentSection.bodyMarkdown;
-      const pk = project.primaryKeyword || "AI Content Writer";
+      const pk =
+        project.keywordCluster.primaryKeyword || "AI Content Writer";
 
       switch (action) {
         case "bold":
-          updatedMarkdown += `\n\n**Key Strategic Insight for ${pk}:** High-velocity teams combine deterministic pixel validation with human burstiness.`;
+          updatedMarkdown += `\n\n**Key Strategic Insight for ${pk}:** High-velocity editorial teams combine deterministic SERP pixel validation with human sentence burstiness.`;
           break;
         case "italic":
-          updatedMarkdown += `\n\n*Editorial Note: Verify all entity citations and first-hand benchmarks before publishing.*`;
+          updatedMarkdown += `\n\n*Editorial Verification Note: Confirm all first-hand benchmarks and schema entities before publishing.*`;
           break;
         case "underline":
-          updatedMarkdown += `\n\n<ins> Core Deliverable Requirement: Every H2 section includes a dedicated visual card and verifiable data point.</ins>`;
+          updatedMarkdown += `\n\n<ins>Core Deliverable Standard: Pair every H2 section with an explicit Zero-CLS infographic and data takeaway.</ins>`;
           break;
         case "h2":
           updatedMarkdown += `\n\n## Strategic Implementation Framework for ${pk}`;
@@ -287,86 +188,52 @@ export default function AiContentWriterPlatformGateAndStudio() {
           updatedMarkdown += `\n\n### Step-by-Step Execution Checklist & Benchmarks`;
           break;
         case "bullets":
-          updatedMarkdown += `\n\n- **Primary Entity Alignment:** Include "${pk}" naturally in H2/H3 subheadings.\n- **Pixel-Safe SERP Tagging:** Maintain meta title width below 580px.\n- **Zero-CLS Visual Embedding:** Pair each section with an explicit 16:9 or 4:5 infographic.`;
+          updatedMarkdown += `\n\n- **Primary Entity Alignment:** Include "${pk}" naturally in H2 and H3 subheadings.\n- **Pixel-Safe SERP Tagging:** Maintain meta title width under 580px.\n- **Zero-CLS Visual Embedding:** Pair each section with an explicit 16:9 or 4:5 infographic.`;
           break;
         case "numbers":
-          updatedMarkdown += `\n\n1. Audit top 10 SERP competitors for entity gaps and heading depth.\n2. Generate a 50-word AI Overview direct answer lead.\n3. Validate 7-entity JSON-LD @graph schema before publishing.`;
+          updatedMarkdown += `\n\n1. Audit top 10 SERP competitors for entity gaps and heading depth.\n2. Author a 50-word AI Overview direct answer lead.\n3. Validate 7-entity JSON-LD @graph schema before publishing.`;
           break;
         case "quote":
           updatedMarkdown += `\n\n> "Articles that pair deterministic E-E-A-T scoring with custom section infographics achieve 2.4x higher dwell time and AI Overview citation rates." — DoItWithAI Editorial Benchmark`;
           break;
         case "table":
-          updatedMarkdown += `\n\n| Evaluation Metric | Standard AI Text Wrapper | DoItWithAI Content Writer Studio |\n| :--- | :--- | :--- |\n| SERP Title Validation | Character guess only | Exact <580px Arial 20px Canvas Engine |\n| Visual Infographics | None (Plain Text) | 25 Canva/Napkin Templates + Auto-Charts |\n| Technical Schema | None | 7-Entity JSON-LD @graph + Zero-CLS HTML |\n`;
+          updatedMarkdown += `\n\n| Evaluation Metric | Standard AI Text Wrapper | DoItWithAI Content Writer Studio |\n| :--- | :--- | :--- |\n| SERP Title Validation | Character guess only | Exact <580px Arial 20px Canvas Engine |\n| Visual Infographics | None (Plain Text) | 25 Canva/Napkin Templates + Auto-Charts |\n| Technical Schema | None | 7-Entity JSON-LD @graph + Zero-CLS HTML |`;
           break;
         case "link":
-          updatedMarkdown += `\n\nExplore related automation workflows in our [AI SEO & Content Strategy Hub](/ai-seo) and [Autonomous AI Agents Directory](/agents).`;
+          updatedMarkdown += `\n\nExplore connected workflows in our [AI SEO & Content Strategy Hub](/ai-seo) and [Autonomous AI Agents Directory](/agents).`;
           break;
         case "proof-stat":
-          updatedMarkdown += `\n\n**Verified 2026 Benchmark:** Across 1,250 audited long-form guides on **${pk}**, pages embedding structured comparison tables, `<580px` meta titles, and 7-node JSON-LD `@graph` markup recorded a **+41.8% higher organic click-through rate** and **3.1x faster Google Search Console indexing**.`;
+          updatedMarkdown += `\n\n**Verified 2026 Benchmark:** Across 1,250 audited long-form guides on **${pk}**, pages embedding structured comparison tables, \`<580px\` meta titles, and 7-node JSON-LD \`@graph\` markup recorded a **+41.8% higher organic click-through rate** and **3.1x faster Google Search Console indexing**.`;
           break;
         case "ai-expand":
-          updatedMarkdown += `\n\n### Deep-Dive Operational Playbook: Scaling ${currentSection.heading}\nWhen executing **${currentSection.heading}** in production environments, teams often overlook sentence-length burstiness and semantic entity density. By alternating concise 8-word declarative punchlines with detailed 24-word analytical breakdowns, your article satisfies both human skimmers and LLM citation retrievers (ChatGPT Search, Perplexity, and Google AI Overviews).`;
+          updatedMarkdown += `\n\n### Deep-Dive Operational Playbook: Scaling ${currentSection.h2Text}\nWhen executing **${currentSection.h2Text}** in production environments, teams often overlook sentence-length burstiness and semantic entity density. By alternating concise 8-word declarative punchlines with detailed 24-word analytical breakdowns, your article satisfies both human skimmers and LLM citation retrievers (ChatGPT Search, Perplexity, and Google AI Overviews).`;
           break;
       }
 
       const nextSections = project.sections.map((sec, idx) =>
-        idx === targetIdx ? { ...sec, bodyMarkdown: updatedMarkdown } : sec,
+        idx === targetIdx
+          ? {
+              ...sec,
+              bodyMarkdown: updatedMarkdown,
+              actualWordCount: updatedMarkdown
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean).length,
+            }
+          : sec,
       );
       handleProjectChange({ ...project, sections: nextSections });
     },
     [activeEditorSectionIdx, project, handleProjectChange],
   );
 
-  const scorecard = useMemo(
-    () => runFullDeterministicSeoScorecard(project),
-    [project],
-  );
-  const titlePx = useMemo(
-    () => measureSerpTitleWidth(project.metaTitle || project.title),
-    [project.metaTitle, project.title],
-  );
-  const descPx = useMemo(
-    () => measureSerpDescriptionWidth(project.metaDescription),
-    [project.metaDescription],
-  );
-  const jsonLdString = useMemo(
-    () => generateArticleJsonLdGraph(project),
-    [project],
-  );
-  const cleanHtmlString = useMemo(
-    () => generateCleanSemanticHtml(project),
-    [project],
-  );
-
-  const totalWordCount = useMemo(() => {
-    const allText = [
-      project.aeoDirectAnswerLead,
-      ...project.sections.map((s) => `${s.heading} ${s.bodyMarkdown}`),
-    ].join(" ");
-    return allText
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean).length;
-  }, [project.aeoDirectAnswerLead, project.sections]);
-
-  const fullMarkdownDocument = useMemo(() => {
-    const lines: string[] = [
-      `# ${project.title}`,
-      "",
-      `> **50-Word AI Overview Summary:** ${project.aeoDirectAnswerLead}`,
-      "",
-    ];
-    project.sections.forEach((sec, idx) => {
-      lines.push(`## ${idx + 1}. ${sec.heading}`);
-      lines.push("");
-      lines.push(sec.bodyMarkdown);
-      lines.push("");
-      lines.push(
-        `> **Key Takeaway:** ${sec.keyTakeaway} *(Visual Template: ${sec.visualSpec.templateId} • ${sec.visualSpec.aspectRatio})*`,
-      );
-      lines.push("");
-    });
-    return lines.join("\n");
+  const handleDownloadMasterZip = useCallback(async () => {
+    setIsDownloadingZip(true);
+    try {
+      await downloadMasterBlogZipBundle(project);
+    } finally {
+      setIsDownloadingZip(false);
+    }
   }, [project]);
 
   return (
@@ -379,7 +246,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
             Flagship Pillar Platform • /ai-content-writer
           </span>
           <span className="text-xs text-slate-400">
-            Unified Route for Blog, Article & Content Writer + 25-Template Visual Studio
+            Unified Route for AI Content, Blog &amp; Article Writer + 25-Template Visual Studio
           </span>
         </div>
 
@@ -387,7 +254,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
           {isStudioUnlocked ? (
             <>
               <span className="rounded-lg border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-xs font-semibold text-emerald-300">
-                ✓ Studio Unlocked ({workspace?.user?.email || "Authenticated Session"})
+                ✓ Studio Unlocked ({workspace?.user?.email || "Active Studio Session"})
               </span>
               <button
                 type="button"
@@ -400,7 +267,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
           ) : (
             <>
               <span className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300">
-                🔒 Public Visitor & SEO Preview Mode
+                🔒 Public Visitor &amp; SEO Preview Mode
               </span>
               <button
                 type="button"
@@ -419,32 +286,42 @@ export default function AiContentWriterPlatformGateAndStudio() {
          ===================================================================== */}
       {!isStudioUnlocked && (
         <div className="space-y-14">
-          {/* HERO SECTION WITH LOGIN GATE CARD */}
+          {/* HERO SECTION WITH LOGIN GATE CARD & ANIMATED INFOGRAPHIC SHOWCASE */}
           <section className="relative overflow-hidden rounded-3xl border border-indigo-500/30 bg-gradient-to-br from-slate-900 via-slate-900/95 to-indigo-950/80 p-8 shadow-2xl sm:p-10 lg:p-12">
             <div className="grid gap-10 lg:grid-cols-12 lg:items-center">
               <div className="space-y-6 lg:col-span-7">
                 <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-indigo-300">
-                  <span>All-In-One AI Content, Blog & Article Studio</span>
+                  <span>All-In-One AI Content, Blog &amp; Article Studio</span>
                   <span>•</span>
                   <span>25+ Canva/Napkin Infographics</span>
                 </div>
 
                 <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:leading-[1.12]">
-                  The Only <span className="bg-gradient-to-r from-indigo-400 via-cyan-300 to-emerald-300 bg-clip-text text-transparent">AI Content Writer</span> That Ships Rank-Ready Articles, Custom Visuals & 7-Entity Schema
+                  The Only{" "}
+                  <span className="bg-gradient-to-r from-indigo-400 via-cyan-300 to-emerald-300 bg-clip-text text-transparent">
+                    AI Content Writer
+                  </span>{" "}
+                  That Ships Rank-Ready Articles, Custom Visuals &amp; 7-Entity Schema
                 </h1>
 
                 <p className="text-base leading-relaxed text-slate-300 sm:text-lg">
-                  Stop stitching together disconnected text wrappers, manual Canva graphics, and broken schema generators. Sign in to access a complete <strong>WYSIWYG Rich Text Editor</strong>, <strong>25+ interactive section infographic templates</strong>, <strong>&lt;580px pixel-exact SERP validation</strong>, <strong>0–100 E-E-A-T &amp; burstiness scoring</strong>, and <strong>1-click Master .ZIP publishing</strong>.
+                  Stop stitching together disconnected text wrappers, manual Canva graphics, and broken schema generators. Sign in to access a complete{" "}
+                  <strong>WYSIWYG Rich Text Editor</strong>,{" "}
+                  <strong>25+ interactive section infographic templates</strong>,{" "}
+                  <strong>&lt;580px pixel-exact SERP validation</strong>,{" "}
+                  <strong>0–100 E-E-A-T &amp; burstiness scoring</strong>, and{" "}
+                  <strong>1-click Master .ZIP publishing</strong>.
                 </p>
 
                 {/* 50-WORD AEO DIRECT ANSWER DEFINITION BOX */}
                 <div className="rounded-2xl border border-cyan-500/30 bg-slate-950/70 p-5">
                   <div className="mb-1.5 flex items-center justify-between text-xs font-bold uppercase tracking-wider text-cyan-300">
-                    <span>⚡ 50-Word AI Overview & Featured Snippet Definition</span>
+                    <span>⚡ 50-Word AI Overview &amp; Featured Snippet Definition</span>
                     <span>Zero-Hallucination AEO Lead</span>
                   </div>
                   <p className="text-sm leading-relaxed text-slate-200">
-                    <strong>DoItWithAI Content Writer</strong> is a unified SaaS content engineering platform at <code>doitwithai.tools/ai-content-writer</code> that transforms a keyword, topic, or competitor URL into a 2,500+ word E-E-A-T article complete with a rich text editor, 25+ custom HTML5 infographics, pixel-verified meta tags, 7-node JSON-LD schema, and omnichannel social assets.
+                    <strong>DoItWithAI Content Writer</strong> is a unified SaaS content engineering platform at{" "}
+                    <code>doitwithai.tools/ai-content-writer</code> that transforms a keyword, topic, or competitor URL into a 2,500+ word E-E-A-T article complete with a rich text editor, 25+ custom HTML5 infographics, pixel-verified meta tags, 7-node JSON-LD schema, and omnichannel social assets.
                   </p>
                 </div>
 
@@ -479,7 +356,8 @@ export default function AiContentWriterPlatformGateAndStudio() {
                   Sign In to Unlock Your AI Content Writer Dashboard
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                  Your personal dashboard includes the full WYSIWYG Rich Text Editor, 25-template infographic customizer, unlimited 500MB+ IndexedDB project history, and 1-click Master <code>.ZIP</code> export.
+                  Your personal dashboard includes the full WYSIWYG Rich Text Editor, 25-template infographic customizer, unlimited 500MB+ IndexedDB project history, and 1-click Master{" "}
+                  <code>.ZIP</code> export.
                 </p>
 
                 <div className="mt-6 space-y-3">
@@ -528,14 +406,19 @@ export default function AiContentWriterPlatformGateAndStudio() {
             </div>
           </section>
 
-          {/* VERTICAL SCROLLABLE PREVIEW SHOWCASE OF ALL 7 INTEGRATED SUBSYSTEMS */}
+          {/* INTERACTIVE ANIMATED INFOGRAPHIC SHOWCASE */}
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/90 p-6 shadow-xl sm:p-8">
+            <HeroAnimatedInfographicShowcase />
+          </section>
+
+          {/* VERTICAL SCROLLABLE PREVIEW SHOWCASE OF ALL INTEGRATED STUDIO TOOLS */}
           <section className="space-y-8">
             <div className="mx-auto max-w-3xl text-center">
               <span className="rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-indigo-300">
                 Complete Vertical Studio Walkthrough
               </span>
               <h2 className="mt-3 text-2xl font-extrabold text-white sm:text-4xl">
-                Scroll Through Every Tool & Live Preview Inside the Studio
+                Scroll Through Every Tool &amp; Live Preview Inside the Studio
               </h2>
               <p className="mt-3 text-sm text-slate-300 sm:text-base">
                 Before signing in, inspect how every stage of the AI Content Writer works together in one continuous vertical workflow—from the Rich Text Editor and Meta Tag Simulator to the 25 Infographic Templates and Technical Schema Pack.
@@ -559,12 +442,11 @@ export default function AiContentWriterPlatformGateAndStudio() {
                     onClick={handleUnlockStudioSession}
                     className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-indigo-500"
                   >
-                    Open in Studio →
+                    Open Rich Text Editor in Studio →
                   </button>
                 </div>
 
                 <div className="mt-6 rounded-2xl border border-slate-700/80 bg-slate-950 p-4">
-                  {/* Mock Rich Text Formatting Toolbar */}
                   <div className="mb-4 flex flex-wrap items-center gap-1.5 border-b border-slate-800 pb-3">
                     {[
                       "B Bold",
@@ -591,10 +473,12 @@ export default function AiContentWriterPlatformGateAndStudio() {
                   </div>
                   <div className="space-y-3 px-2 py-2 text-sm text-slate-300">
                     <div className="text-lg font-extrabold text-white">
-                      H2: How Deterministic SEO & Section Infographics Outrank Generic AI Text
+                      H2: {project.sections[0]?.h2Text || "Why Single-Prompt AI Blog Writers Fail Modern Search Quality Audits"}
                     </div>
                     <p>
-                      Modern search engines evaluate both <strong>entity completeness</strong> and <strong>user engagement signals</strong>. Inside the Rich Text Editor, every H2 section pairs long-form analytical prose with a structured comparison table and an auto-generated HTML5 infographic card.
+                      Modern search engines evaluate both{" "}
+                      <strong>entity completeness</strong> and{" "}
+                      <strong>user engagement signals</strong>. Inside the Rich Text Editor, every H2 section pairs long-form analytical prose with a structured comparison table and an auto-generated HTML5 infographic card.
                     </p>
                     <div className="rounded-xl border border-indigo-500/30 bg-indigo-950/30 p-3 text-xs text-indigo-200">
                       <strong>Key Takeaway Callout:</strong> Pages combining a 50-word AEO lead with custom 16:9 section visuals earn 2.4x more AI Overview citations.
@@ -626,13 +510,13 @@ export default function AiContentWriterPlatformGateAndStudio() {
                 <div className="mt-6 grid gap-6 lg:grid-cols-2">
                   <div className="rounded-2xl border border-slate-800 bg-white p-5 text-slate-900 shadow-inner">
                     <div className="text-xs text-slate-600">
-                      https://doitwithai.tools › blog › {project.slug}
+                      https://doitwithai.tools › ai-seo › {project.metaPack.urlSlug}
                     </div>
                     <div className="mt-1 text-lg font-medium text-[#1a0dab] hover:underline">
-                      {project.metaTitle || project.title}
+                      {project.metaPack.metaTitle || project.metaPack.h1Title}
                     </div>
                     <div className="mt-1 text-sm leading-snug text-[#4d5156]">
-                      {project.metaDescription}
+                      {project.metaPack.metaDescription}
                     </div>
                   </div>
                   <div className="flex flex-col justify-center space-y-3 rounded-2xl border border-slate-800 bg-slate-950 p-5">
@@ -641,14 +525,14 @@ export default function AiContentWriterPlatformGateAndStudio() {
                         Meta Title Pixel Width (Arial 20px Canvas)
                       </span>
                       <span className="font-extrabold text-emerald-400">
-                        {titlePx.pixelWidth}px / 580px Safe
+                        {titlePx}px / 580px Safe
                       </span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
                       <div
                         className="h-full bg-emerald-500"
                         style={{
-                          width: `${Math.min(100, Math.round((titlePx.pixelWidth / 580) * 100))}%`,
+                          width: `${Math.min(100, Math.round((titlePx / 580) * 100))}%`,
                         }}
                       />
                     </div>
@@ -657,14 +541,14 @@ export default function AiContentWriterPlatformGateAndStudio() {
                         Meta Description Pixel Width
                       </span>
                       <span className="font-extrabold text-cyan-400">
-                        {descPx.pixelWidth}px / 920px Safe
+                        {descPx}px / 920px Safe
                       </span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
                       <div
                         className="h-full bg-cyan-500"
                         style={{
-                          width: `${Math.min(100, Math.round((descPx.pixelWidth / 920) * 100))}%`,
+                          width: `${Math.min(100, Math.round((descPx / 920) * 100))}%`,
                         }}
                       />
                     </div>
@@ -693,7 +577,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
                 </div>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                  {BLOG_INFOGRAPHIC_TEMPLATES.slice(0, 10).map((tpl) => (
+                  {BLOG_INFOGRAPHIC_25_TEMPLATES.slice(0, 10).map((tpl) => (
                     <div
                       key={tpl.id}
                       className="rounded-2xl border border-slate-800 bg-slate-950/90 p-3.5"
@@ -705,7 +589,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
                         {tpl.name}
                       </div>
                       <div className="mt-1 text-xs text-slate-400">
-                        {tpl.description}
+                        {tpl.bestForSectionType}
                       </div>
                     </div>
                   ))}
@@ -717,7 +601,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
                 <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
                   <div>
                     <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                      Subsystem Preview 04 • Technical SEO, Schema & Distribution Pack
+                      Subsystem Preview 04 • Technical SEO, Schema &amp; Distribution Pack
                     </span>
                     <h3 className="mt-1 text-xl font-extrabold text-white sm:text-2xl">
                       0–100 Deterministic SEO Scorecard, 7-Entity JSON-LD @graph &amp; Master .ZIP Export
@@ -757,7 +641,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
                   </div>
                   <div className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
                     <div className="text-xs font-bold uppercase text-slate-400">
-                      Omnichannel & .ZIP Export
+                      Omnichannel &amp; .ZIP Export
                     </div>
                     <div className="mt-2 text-lg font-extrabold text-white">
                       5-Question Reader Quiz + 6 Social Channels + Master .ZIP
@@ -782,12 +666,17 @@ export default function AiContentWriterPlatformGateAndStudio() {
           <div className="rounded-3xl border border-slate-800 bg-slate-900/95 p-6 shadow-2xl">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <span className="rounded-lg bg-indigo-500/20 px-2.5 py-1 text-xs font-bold text-indigo-300">
-                    SaaS Content Studio
+                    SaaS Content Writer Dashboard
                   </span>
                   <span className="text-xs font-semibold text-emerald-400">
-                    • {saveBadge}
+                    •{" "}
+                    {isHydrated
+                      ? isSaving
+                        ? "Autosaving..."
+                        : `Saved (${storageBackend === "indexeddb" ? "IndexedDB" : "Local"})`
+                      : "Hydrating Workspace..."}
                   </span>
                   <span className="text-xs text-slate-400">
                     • {totalWordCount.toLocaleString()} words •{" "}
@@ -795,64 +684,74 @@ export default function AiContentWriterPlatformGateAndStudio() {
                   </span>
                 </div>
                 <h1 className="mt-2 text-2xl font-extrabold text-white sm:text-3xl">
-                  {project.title || "Untitled AI Content Campaign"}
+                  {project.metaPack.h1Title || project.projectTitle}
                 </h1>
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5">
-                <select
-                  aria-label="Select saved project"
-                  value={project.id}
-                  onChange={(e) => {
-                    const found = savedProjects.find(
-                      (p) => p.id === e.target.value,
-                    );
-                    if (found) setProject(found);
-                  }}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-xs font-semibold text-slate-200"
-                >
-                  {savedProjects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      📁 {p.title.slice(0, 42)}
-                    </option>
-                  ))}
-                </select>
+                {projectList.length > 0 && (
+                  <select
+                    aria-label="Select saved project"
+                    value={project.projectId}
+                    onChange={(e) => {
+                      void switchProject(e.target.value);
+                    }}
+                    className="rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-xs font-semibold text-slate-200"
+                  >
+                    {projectList.map((p) => (
+                      <option key={p.projectId} value={p.projectId}>
+                        📁 {p.projectTitle.slice(0, 42)}
+                      </option>
+                    ))}
+                  </select>
+                )}
 
                 <button
                   type="button"
-                  onClick={handleCreateNewProject}
+                  onClick={() =>
+                    void createNewProject({
+                      variant: "content-writer",
+                      title: `New AI Content Campaign #${projectList.length + 1}`,
+                    })
+                  }
                   className="rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-bold text-slate-200 transition hover:border-indigo-400 hover:text-white"
                 >
                   + New Article
                 </button>
 
-                {savedProjects.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={handleDeleteCurrentProject}
-                    className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-bold text-rose-300 transition hover:bg-rose-500/20"
-                  >
-                    Delete
-                  </button>
-                )}
-
                 <button
                   type="button"
-                  onClick={handleOneClickFullBlogGenerate}
-                  disabled={isGeneratingFullBlog}
-                  className="rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 px-4 py-2 text-xs font-extrabold text-white shadow-lg transition hover:from-indigo-500 hover:to-cyan-400 disabled:opacity-50"
+                  onClick={() => void duplicateProject()}
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-200 transition hover:border-indigo-400 hover:text-white"
                 >
-                  {isGeneratingFullBlog
-                    ? "⚡ Generating Full Article & Visuals..."
-                    : "⚡ 1-Click Regenerate Full Article + 25 Visuals"}
+                  Duplicate
                 </button>
 
                 <button
                   type="button"
-                  onClick={handleOneClickAutoFixSeo}
+                  onClick={() => void saveNow()}
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-bold text-slate-200 transition hover:border-indigo-400 hover:text-white"
+                >
+                  💾 Save Now
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => runOneClickAutoFix()}
                   className="rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3.5 py-2 text-xs font-bold text-emerald-300 transition hover:bg-emerald-500/25"
                 >
                   🛠️ 1-Click SEO Auto-Fix ({scorecard.overallScore}/100)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadMasterZip()}
+                  disabled={isDownloadingZip}
+                  className="rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 px-4 py-2 text-xs font-extrabold text-white shadow-lg transition hover:from-indigo-500 hover:to-cyan-400 disabled:opacity-50"
+                >
+                  {isDownloadingZip
+                    ? "📦 Packaging .ZIP..."
+                    : "📦 Download Master .ZIP Bundle"}
                 </button>
               </div>
             </div>
@@ -892,7 +791,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-                  Module 01 • Primary Writing & Visual Canvas
+                  Module 01 • Primary Writing &amp; Visual Canvas
                 </span>
                 <h2 className="mt-1 text-2xl font-extrabold text-white">
                   Interactive Rich Text Editor &amp; Inline 25-Template Infographic Composer
@@ -904,10 +803,10 @@ export default function AiContentWriterPlatformGateAndStudio() {
 
               <div className="flex flex-wrap items-center gap-2">
                 {[
-                  { id: "wysiwyg-all", label: "📄 Full Document Rich View" },
-                  { id: "section-focus", label: "🎯 Section-by-Section Editor" },
+                  { id: "wysiwyg-all", label: "📄 Full Document Rich Editor" },
+                  { id: "copilot-draft", label: "🤖 Section AI Co-Pilot Composer" },
+                  { id: "scorecard-split", label: "📊 70/30 Split Editor & Scorecard" },
                   { id: "markdown", label: "📝 Raw Markdown" },
-                  { id: "html", label: "💻 Clean Semantic HTML" },
                 ].map((mode) => (
                   <button
                     key={mode.id}
@@ -916,9 +815,9 @@ export default function AiContentWriterPlatformGateAndStudio() {
                       setEditorViewMode(
                         mode.id as
                           | "wysiwyg-all"
-                          | "section-focus"
-                          | "markdown"
-                          | "html",
+                          | "copilot-draft"
+                          | "scorecard-split"
+                          | "markdown",
                       )
                     }
                     className={`rounded-xl px-3 py-1.5 text-xs font-bold transition ${
@@ -949,7 +848,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
                 >
                   {project.sections.map((s, idx) => (
                     <option key={s.id} value={idx}>
-                      H2 #{idx + 1}: {s.heading.slice(0, 34)}
+                      H2 #{idx + 1}: {s.h2Text.slice(0, 34)}
                     </option>
                   ))}
                 </select>
@@ -1044,14 +943,11 @@ export default function AiContentWriterPlatformGateAndStudio() {
                 <button
                   type="button"
                   onClick={() =>
-                    setInfographicModalState({
-                      open: true,
-                      sectionIndex: activeEditorSectionIdx,
-                    })
+                    setInfographicModalSectionIdx(activeEditorSectionIdx)
                   }
                   className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-500"
                 >
-                  🎨 Edit Visual ({project.sections[activeEditorSectionIdx]?.visualSpec.templateId || "25 Templates"})
+                  🎨 Customize Visual (25 Templates)
                 </button>
               </div>
             </div>
@@ -1068,12 +964,16 @@ export default function AiContentWriterPlatformGateAndStudio() {
                       </label>
                       <input
                         type="text"
-                        value={project.title}
+                        value={project.metaPack.h1Title}
                         onChange={(e) =>
                           handleProjectChange({
                             ...project,
-                            title: e.target.value,
-                            slug: slugifyText(e.target.value),
+                            projectTitle: e.target.value,
+                            metaPack: {
+                              ...project.metaPack,
+                              h1Title: e.target.value,
+                              urlSlug: normalizeSeoSlug(e.target.value),
+                            },
                           })
                         }
                         className="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-xl font-extrabold text-white focus:border-indigo-500 focus:outline-none sm:text-2xl"
@@ -1082,15 +982,18 @@ export default function AiContentWriterPlatformGateAndStudio() {
 
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-cyan-400">
-                        50-Word AI Overview & Featured Snippet Direct Answer Lead
+                        50-Word AI Overview &amp; Featured Snippet Direct Answer Lead
                       </label>
                       <textarea
                         rows={3}
-                        value={project.aeoDirectAnswerLead}
+                        value={project.metaPack.aeoDirectAnswer50Words}
                         onChange={(e) =>
                           handleProjectChange({
                             ...project,
-                            aeoDirectAnswerLead: e.target.value,
+                            metaPack: {
+                              ...project.metaPack,
+                              aeoDirectAnswer50Words: e.target.value,
+                            },
                           })
                         }
                         className="mt-1.5 w-full rounded-xl border border-cyan-500/30 bg-slate-900/90 p-3.5 text-sm leading-relaxed text-slate-100 focus:border-cyan-400 focus:outline-none"
@@ -1111,19 +1014,20 @@ export default function AiContentWriterPlatformGateAndStudio() {
                     >
                       <div className="flex flex-wrap items-center justify-between gap-2 pb-3">
                         <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-                          Section {idx + 1} of {project.sections.length} • Active in Rich Toolbar
+                          Section {idx + 1} of {project.sections.length} •{" "}
+                          {sec.actualWordCount} words • Active in Rich Toolbar
                         </span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <select
                             aria-label={`Template for section ${idx + 1}`}
-                            value={sec.visualSpec.templateId}
+                            value={sec.infographicConfig.templateId}
                             onChange={(e) => {
                               const next = project.sections.map((s, i) =>
                                 i === idx
                                   ? {
                                       ...s,
-                                      visualSpec: {
-                                        ...s.visualSpec,
+                                      infographicConfig: {
+                                        ...s.infographicConfig,
                                         templateId: e.target.value,
                                       },
                                     }
@@ -1136,24 +1040,108 @@ export default function AiContentWriterPlatformGateAndStudio() {
                             }}
                             className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs font-semibold text-slate-200"
                           >
-                            {BLOG_INFOGRAPHIC_TEMPLATES.map((tpl) => (
+                            {BLOG_INFOGRAPHIC_25_TEMPLATES.map((tpl) => (
                               <option key={tpl.id} value={tpl.id}>
                                 📊 {tpl.name}
                               </option>
                             ))}
                           </select>
 
-                          <select
-                            aria-label={`Color theme for section ${idx + 1}`}
-                            value={sec.visualSpec.themeId}
+                          <button
+                            type="button"
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              setInfographicModalSectionIdx(idx);
+                            }}
+                            className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white transition hover:bg-emerald-500"
+                          >
+                            🎨 Open 25-Template Visual Studio
+                          </button>
+                        </div>
+                      </div>
+
+                      <input
+                        type="text"
+                        value={sec.h2Text}
+                        onChange={(e) => {
+                          const next = project.sections.map((s, i) =>
+                            i === idx
+                              ? {
+                                  ...s,
+                                  h2Text: e.target.value,
+                                  anchorId: normalizeSeoSlug(e.target.value),
+                                }
+                              : s,
+                          );
+                          handleProjectChange({ ...project, sections: next });
+                        }}
+                        className="mb-3 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-lg font-extrabold text-white focus:border-indigo-500 focus:outline-none"
+                      />
+
+                      <textarea
+                        rows={8}
+                        value={sec.bodyMarkdown}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const next = project.sections.map((s, i) =>
+                            i === idx
+                              ? {
+                                  ...s,
+                                  bodyMarkdown: val,
+                                  actualWordCount: val
+                                    .trim()
+                                    .split(/\s+/)
+                                    .filter(Boolean).length,
+                                }
+                              : s,
+                          );
+                          handleProjectChange({ ...project, sections: next });
+                        }}
+                        className="w-full rounded-xl border border-slate-800 bg-slate-950 p-4 font-sans text-sm leading-relaxed text-slate-200 focus:border-indigo-500 focus:outline-none"
+                      />
+
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                            Section Key Takeaway Callout Box
+                          </label>
+                          <input
+                            type="text"
+                            value={sec.keyTakeawayText || ""}
                             onChange={(e) => {
                               const next = project.sections.map((s, i) =>
                                 i === idx
                                   ? {
                                       ...s,
-                                      visualSpec: {
-                                        ...s.visualSpec,
-                                        themeId: e.target.value,
+                                      includeKeyTakeawayCallout: true,
+                                      keyTakeawayText: e.target.value,
+                                    }
+                                  : s,
+                              );
+                              handleProjectChange({
+                                ...project,
+                                sections: next,
+                              });
+                            }}
+                            className="mt-1 w-full rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-3.5 py-2 text-xs font-semibold text-emerald-200 focus:border-emerald-400 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase tracking-wider text-cyan-400">
+                            Infographic Card Headline ({sec.infographicConfig.aspectRatio})
+                          </label>
+                          <input
+                            type="text"
+                            value={sec.infographicConfig.title}
+                            onChange={(e) => {
+                              const next = project.sections.map((s, i) =>
+                                i === idx
+                                  ? {
+                                      ...s,
+                                      infographicConfig: {
+                                        ...s.infographicConfig,
+                                        title: e.target.value,
                                       },
                                     }
                                   : s,
@@ -1163,85 +1151,26 @@ export default function AiContentWriterPlatformGateAndStudio() {
                                 sections: next,
                               });
                             }}
-                            className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 text-xs font-semibold text-slate-200"
-                          >
-                            {BLOG_VISUAL_COLOR_THEMES.map((th) => (
-                              <option key={th.id} value={th.id}>
-                                🎨 {th.name}
-                              </option>
-                            ))}
-                          </select>
+                            className="mt-1 w-full rounded-xl border border-cyan-500/30 bg-cyan-950/20 px-3.5 py-2 text-xs font-semibold text-cyan-200 focus:border-cyan-400 focus:outline-none"
+                          />
                         </div>
                       </div>
-
-                      <input
-                        type="text"
-                        value={sec.heading}
-                        onChange={(e) => {
-                          const next = project.sections.map((s, i) =>
-                            i === idx ? { ...s, heading: e.target.value } : s,
-                          );
-                          handleProjectChange({ ...project, sections: next });
-                        }}
-                        className="mb-3 w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-lg font-extrabold text-white focus:border-indigo-500 focus:outline-none"
-                      />
-
-                      <textarea
-                        rows={7}
-                        value={sec.bodyMarkdown}
-                        onChange={(e) => {
-                          const next = project.sections.map((s, i) =>
-                            i === idx
-                              ? { ...s, bodyMarkdown: e.target.value }
-                              : s,
-                          );
-                          handleProjectChange({ ...project, sections: next });
-                        }}
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950 p-4 font-sans text-sm leading-relaxed text-slate-200 focus:border-indigo-500 focus:outline-none"
-                      />
-
-                      <div className="mt-3">
-                        <label className="block text-[11px] font-bold uppercase tracking-wider text-emerald-400">
-                          Section Key Takeaway Callout Box
-                        </label>
-                        <input
-                          type="text"
-                          value={sec.keyTakeaway}
-                          onChange={(e) => {
-                            const next = project.sections.map((s, i) =>
-                              i === idx
-                                ? { ...s, keyTakeaway: e.target.value }
-                                : s,
-                            );
-                            handleProjectChange({ ...project, sections: next });
-                          }}
-                          className="mt-1 w-full rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-3.5 py-2 text-xs font-semibold text-emerald-200 focus:border-emerald-400 focus:outline-none"
-                        />
-                      </div>
-
-                      {/* LIVE INLINE INFOGRAPHIC RENDERED INSIDE THE RICH EDITOR */}
-                      <InlineInfographicCanvasPreview
-                        section={sec}
-                        articleTitle={project.title}
-                        onCustomize={() =>
-                          setInfographicModalState({
-                            open: true,
-                            sectionIndex: idx,
-                          })
-                        }
-                      />
                     </div>
                   ))}
                 </div>
               )}
 
-              {editorViewMode === "section-focus" && (
-                <Stage3DraftAndVisualComposer
+              {editorViewMode === "copilot-draft" && (
+                <Stage3DraftingAndCopilot
                   project={project}
                   onChange={handleProjectChange}
-                  onOpenInfographicModal={(idx) =>
-                    setInfographicModalState({ open: true, sectionIndex: idx })
-                  }
+                />
+              )}
+
+              {editorViewMode === "scorecard-split" && (
+                <Stage4RichEditorAndScorecard
+                  project={project}
+                  onChange={handleProjectChange}
                 />
               )}
 
@@ -1252,17 +1181,6 @@ export default function AiContentWriterPlatformGateAndStudio() {
                     readOnly
                     value={fullMarkdownDocument}
                     className="w-full rounded-xl bg-slate-950 p-4 font-mono text-xs leading-relaxed text-slate-200 focus:outline-none"
-                  />
-                </div>
-              )}
-
-              {editorViewMode === "html" && (
-                <div className="rounded-2xl border border-slate-800 bg-slate-950 p-4">
-                  <textarea
-                    rows={22}
-                    readOnly
-                    value={cleanHtmlString}
-                    className="w-full rounded-xl bg-slate-950 p-4 font-mono text-xs leading-relaxed text-emerald-300 focus:outline-none"
                   />
                 </div>
               )}
@@ -1284,10 +1202,9 @@ export default function AiContentWriterPlatformGateAndStudio() {
                 Topic, Keyword Cluster, Competitor URL &amp; Tone Configuration
               </h2>
             </div>
-            <Stage1TopicAndIntentHub
+            <Stage1InputHub
               project={project}
               onChange={handleProjectChange}
-              onGenerateFullArticle={handleOneClickFullBlogGenerate}
             />
           </section>
 
@@ -1340,22 +1257,26 @@ export default function AiContentWriterPlatformGateAndStudio() {
                     <span className="text-slate-300">SEO Meta Title</span>
                     <span
                       className={
-                        titlePx.isTruncated
-                          ? "text-rose-400"
-                          : "text-emerald-400"
+                        titlePx > 580 ? "text-rose-400" : "text-emerald-400"
                       }
                     >
-                      {titlePx.pixelWidth}px / 580px ({project.metaTitle.length}{" "}
+                      {titlePx}px / 580px ({project.metaPack.metaTitle.length}{" "}
                       chars)
                     </span>
                   </div>
                   <input
                     type="text"
-                    value={project.metaTitle}
+                    value={project.metaPack.metaTitle}
                     onChange={(e) =>
                       handleProjectChange({
                         ...project,
-                        metaTitle: e.target.value,
+                        metaPack: {
+                          ...project.metaPack,
+                          metaTitle: e.target.value,
+                          metaTitlePixelWidth: measureTitlePixelWidth(
+                            e.target.value,
+                          ),
+                        },
                       })
                     }
                     className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm font-semibold text-white"
@@ -1367,22 +1288,25 @@ export default function AiContentWriterPlatformGateAndStudio() {
                     <span className="text-slate-300">SEO Meta Description</span>
                     <span
                       className={
-                        descPx.isTruncated
-                          ? "text-rose-400"
-                          : "text-emerald-400"
+                        descPx > 920 ? "text-rose-400" : "text-emerald-400"
                       }
                     >
-                      {descPx.pixelWidth}px / 920px (
-                      {project.metaDescription.length} chars)
+                      {descPx}px / 920px (
+                      {project.metaPack.metaDescription.length} chars)
                     </span>
                   </div>
                   <textarea
                     rows={3}
-                    value={project.metaDescription}
+                    value={project.metaPack.metaDescription}
                     onChange={(e) =>
                       handleProjectChange({
                         ...project,
-                        metaDescription: e.target.value,
+                        metaPack: {
+                          ...project.metaPack,
+                          metaDescription: e.target.value,
+                          metaDescriptionPixelWidth:
+                            measureMetaDescriptionPixelWidth(e.target.value),
+                        },
                       })
                     }
                     className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-200"
@@ -1395,14 +1319,17 @@ export default function AiContentWriterPlatformGateAndStudio() {
                   </label>
                   <input
                     type="text"
-                    value={project.slug}
+                    value={project.metaPack.urlSlug}
                     onChange={(e) =>
                       handleProjectChange({
                         ...project,
-                        slug: slugifyText(e.target.value),
+                        metaPack: {
+                          ...project.metaPack,
+                          urlSlug: normalizeSeoSlug(e.target.value),
+                        },
                       })
                     }
-                    className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 text-sm font-mono text-cyan-300"
+                    className="mt-1.5 w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2 font-mono text-sm text-cyan-300"
                   />
                 </div>
               </div>
@@ -1422,15 +1349,16 @@ export default function AiContentWriterPlatformGateAndStudio() {
                         DoItWithAI.tools
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        https://doitwithai.tools › blog › {project.slug}
+                        https://doitwithai.tools › ai-seo ›{" "}
+                        {project.metaPack.urlSlug}
                       </div>
                     </div>
                   </div>
                   <div className="mt-2.5 text-lg font-medium leading-snug text-[#1a0dab] hover:underline">
-                    {titlePx.displayText || project.title}
+                    {project.metaPack.metaTitle || project.metaPack.h1Title}
                   </div>
                   <div className="mt-1.5 text-sm leading-relaxed text-[#4d5156]">
-                    {descPx.displayText}
+                    {project.metaPack.metaDescription}
                   </div>
                 </div>
               </div>
@@ -1452,13 +1380,9 @@ export default function AiContentWriterPlatformGateAndStudio() {
                 Semantic Heading Tree, 50-Word AI Overview Box &amp; Section Visual Mapper
               </h2>
             </div>
-            <Stage2SerpAndOutlineArchitect
+            <Stage2OutlineArchitect
               project={project}
               onChange={handleProjectChange}
-              onNextStage={() => {
-                const el = document.getElementById("studio-rich-editor");
-                el?.scrollIntoView({ behavior: "smooth" });
-              }}
             />
           </section>
 
@@ -1480,10 +1404,6 @@ export default function AiContentWriterPlatformGateAndStudio() {
             <Stage4RichEditorAndScorecard
               project={project}
               onChange={handleProjectChange}
-              onNextStage={() => {
-                const el = document.getElementById("studio-technical-schema");
-                el?.scrollIntoView({ behavior: "smooth" });
-              }}
             />
           </section>
 
@@ -1505,10 +1425,6 @@ export default function AiContentWriterPlatformGateAndStudio() {
             <Stage5TechnicalSeoPack
               project={project}
               onChange={handleProjectChange}
-              onNextStage={() => {
-                const el = document.getElementById("studio-quiz-social-export");
-                el?.scrollIntoView({ behavior: "smooth" });
-              }}
             />
           </section>
 
@@ -1531,9 +1447,13 @@ export default function AiContentWriterPlatformGateAndStudio() {
             <Stage6DistributionAndQuizPack
               project={project}
               onChange={handleProjectChange}
+              onDownloadMasterZip={handleDownloadMasterZip}
             />
 
-            <MultiFormatExportBar project={project} />
+            <MultiFormatExportBar
+              project={project}
+              onChange={handleProjectChange}
+            />
           </section>
         </div>
       )}
@@ -1550,7 +1470,8 @@ export default function AiContentWriterPlatformGateAndStudio() {
             How the DoItWithAI Content Writer Platform Replaces 6 Disconnected Subscriptions
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-300">
-            Unlike basic prompt wrappers under <code>/tools</code>, <code>doitwithai.tools/ai-content-writer</code> operates as a unified content engineering suite combining rich-text authoring, deterministic pixel math, custom HTML5 visual infographics, and structured JSON-LD schema.
+            Unlike basic prompt wrappers under <code>/tools</code>,{" "}
+            <code>doitwithai.tools/ai-content-writer</code> operates as a unified content engineering suite combining rich-text authoring, deterministic pixel math, custom HTML5 visual infographics, and structured JSON-LD schema.
           </p>
         </div>
 
@@ -1562,7 +1483,7 @@ export default function AiContentWriterPlatformGateAndStudio() {
             },
             {
               title: "2. Deterministic <580px & Burstiness Math",
-              body: "Measures meta titles using offscreen HTML5 Canvas Arial 20px metrics (<580px desktop / <920px description) alongside sentence-length standard deviation for human burstiness.",
+              body: "Measures meta titles using proportional Arial 20px metrics (<580px desktop / <920px description) alongside sentence-length standard deviation for human burstiness.",
             },
             {
               title: "3. 25+ Canva/Napkin Visual Templates",
@@ -1612,26 +1533,46 @@ export default function AiContentWriterPlatformGateAndStudio() {
       </section>
 
       {/* 25-TEMPLATE INFOGRAPHIC CUSTOMIZER MODAL */}
-      {infographicModalState.open && (
-        <BlogInfographicStudioModal
-          isOpen={infographicModalState.open}
-          onClose={() =>
-            setInfographicModalState((prev) => ({ ...prev, open: false }))
-          }
-          section={
-            project.sections[infographicModalState.sectionIndex] ||
-            project.sections[0]
-          }
-          articleTitle={project.title}
-          onSaveVisualSpec={(updatedSpec) => {
-            const idx = infographicModalState.sectionIndex;
-            const nextSections = project.sections.map((sec, i) =>
-              i === idx ? { ...sec, visualSpec: updatedSpec } : sec,
-            );
-            handleProjectChange({ ...project, sections: nextSections });
-            setInfographicModalState((prev) => ({ ...prev, open: false }));
-          }}
-        />
+      {infographicModalSectionIdx !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-md">
+          <div className="relative max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-3xl border border-indigo-500/40 bg-slate-900 p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                  25-Template Canva &amp; Napkin Visual Studio
+                </span>
+                <h3 className="text-lg font-extrabold text-white">
+                  Customizing Visual for Section #{infographicModalSectionIdx + 1}:{" "}
+                  {project.sections[infographicModalSectionIdx]?.h2Text}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInfographicModalSectionIdx(null)}
+                className="rounded-xl border border-slate-700 bg-slate-800 px-3.5 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-700"
+              >
+                ✕ Close Studio
+              </button>
+            </div>
+
+            <BlogInfographicStudio
+              mode="embedded-modal"
+              initialConfig={
+                project.sections[infographicModalSectionIdx]?.infographicConfig
+              }
+              onSaveConfig={(updatedConfig) => {
+                const targetIdx = infographicModalSectionIdx;
+                const nextSections = project.sections.map((sec, i) =>
+                  i === targetIdx
+                    ? { ...sec, infographicConfig: updatedConfig }
+                    : sec,
+                );
+                handleProjectChange({ ...project, sections: nextSections });
+                setInfographicModalSectionIdx(null);
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
